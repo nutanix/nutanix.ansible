@@ -1,0 +1,6 @@
+---
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+validate_certs: False
+data:
+    offset: 0
+    length: 100
