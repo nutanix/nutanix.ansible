@@ -16,47 +16,6 @@ version_added: "1.0.0"
 
 description: This module allows to perform the following tasks on /images
 
-- CREATE:   This action submits a request to create a new image based on the input parameters.
-    url: /images
-    params:
-      body:
-       - description: An intentful representation of a image
-       - type: object
-       - required: True
-       - in: body
-
-- UPDATE:   This action submits a request to update an existing image based on the input parameters.
-    url: /images/{uuid}
-    params:
-      uuid
-       - description: The UUID of the entity.
-       - type: string
-       - required: True
-       - in: path
-      body:
-       - description: An intentful representation of a image
-       - type: object
-       - required: True
-       - in: body
-
-- LIST:   This action gets a list of images, allowing for sorting and pagination. Note: Entities that have not been created successfully are not listed.
-    url: /images/list
-    params:
-      get_entities_request:
-       - description: All api calls that return a list will have this metadata block as input
-       - type: object
-       - required: True
-       - in: body
-
-- DELETE:   This action submits a request to delete an existing image.
-    url: /images/{uuid}
-    params:
-      uuid
-       - description: The UUID of the entity.
-       - type: string
-       - required: True
-       - in: path
-
 options:
     action:
         description: This is the action used to indicate the type of request
