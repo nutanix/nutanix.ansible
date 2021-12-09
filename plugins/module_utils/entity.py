@@ -114,9 +114,8 @@ class ModuleBuilder:
             self.url += "/" + str(uuid.UUID(item_uuid))
         else:
             self.url += "/" + str(uuid.UUID(item_uuid)) + "/file"
+        response = self.send_request(self.module, "get", self.url, self.data, self.username, self.password)
 
-        res = self.send_request(self.module, "get", self.url, self.data, self.username, self.password)
-        response = res.json()
         if response.get("state") and response.get("state").lower() == "error":
             self.result["changed"] = False
             self.result["failed"] = True
