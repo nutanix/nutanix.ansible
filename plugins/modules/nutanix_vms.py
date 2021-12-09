@@ -48,13 +48,12 @@ EXAMPLES = r'''
 RETURN = r'''
 '''
 
-from ansible.module_utils.nutanix.entity import BaseModule
-from ansible.module_utils.nutanix.prism.vms import VM
+from plugins.module_utils.entity import BaseModule
+from plugins.module_utils.prism.vms import VM
 
 def run_module():
     module = BaseModule()
-    module_builder = VM(module)
-    module_builder.run_module(module)
+    VM(module)
 
 
 def main():

@@ -4,5 +4,6 @@
 from .prism import Prism
 
 
-class Image(Prism):
-    kind = 'image'
+class Subnet(Prism):
+    kind = 'subnet'
+

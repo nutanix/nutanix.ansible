@@ -139,14 +139,13 @@ responses:
 '''
 
 from plugins.module_utils.entity import BaseModule
-
 from plugins.module_utils.prism.images import Image
 
 
 def run_module():
     module = BaseModule()
-    module_builder = Image(module)
-    module_builder.run_module(module)
+    Image(module)
+
 
 
 def main():
