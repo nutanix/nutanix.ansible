@@ -138,8 +138,8 @@ responses:
 - 202: Request Accepted
 '''
 
-from plugins.module_utils.entity import BaseModule
-from plugins.module_utils.prism.images import Image
+from ..module_utils.entity import BaseModule
+from ..module_utils.prism.images import Image
 
 
 def run_module():

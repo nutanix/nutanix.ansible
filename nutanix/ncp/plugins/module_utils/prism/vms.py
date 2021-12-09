@@ -6,3 +6,9 @@ from .prism import Prism
 
 class VM(Prism):
     kind = 'vm'
+
+
+    data_tmp = {
+
+    }
+

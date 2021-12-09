@@ -4,7 +4,7 @@ from ansible.module_utils.six.moves.urllib.parse import urlparse
 from requests.models import Response
 import json
 
-from plugins.module_utils.entity import ModuleBuilder
+from nutanix.ncp.plugins.module_utils.entity import ModuleBuilder
 
 try:
     from unittest.mock import MagicMock

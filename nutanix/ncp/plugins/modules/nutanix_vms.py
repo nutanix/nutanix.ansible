@@ -8,13 +8,13 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: subnets
+module: nutanix_vms
 
-short_description: This module allows to communicate with the resource /subnets
+short_description: This module allows to communicate with the resource /vms
 
 version_added: "1.0.0"
 
-description: This module allows to perform the following tasks on /subnets
+description: This module allows to perform the following tasks on /vms
 
 options:
     action:
@@ -48,8 +48,8 @@ EXAMPLES = r'''
 RETURN = r'''
 '''
 
-from plugins.module_utils.entity import BaseModule
-from plugins.module_utils.prism.vms import VM
+from ..module_utils.entity import BaseModule
+from ..module_utils.prism.vms import VM
 
 def run_module():
     module = BaseModule()
