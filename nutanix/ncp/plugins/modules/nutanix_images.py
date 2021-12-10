@@ -138,7 +138,7 @@ responses:
 - 202: Request Accepted
 '''
 
-from ..module_utils.entity import BaseModule
+from ..module_utils.base_module import BaseModule
 from ..module_utils.prism.images import Image
 
 
