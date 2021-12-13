@@ -14,7 +14,7 @@ except ImportError:
     from urlparse import urlparse
 
 
-class ModuleBuilder:
+class Entity:
     """Basic functionality for Nutanix modules"""
 
     result = dict(

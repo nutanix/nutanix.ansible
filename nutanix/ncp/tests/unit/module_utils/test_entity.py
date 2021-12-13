@@ -4,7 +4,7 @@ from ansible.module_utils.six.moves.urllib.parse import urlparse
 from requests.models import Response
 import json
 
-from nutanix.ncp.plugins.module_utils.entity import ModuleBuilder
+from nutanix.ncp.plugins.module_utils.entity import Entity
 
 try:
     from unittest.mock import MagicMock
@@ -45,12 +45,12 @@ def exit_json(*args, **kwargs):
     raise AnsibleExitJson(kwargs)
 
 
-class TestModuleBuilder(ModuleTestCase):
+class TestEntity(ModuleTestCase):
 
     def setUp(self):
         module = object()
-        ModuleBuilder.__init__ = MagicMock(side_effect=lambda *args: None)
-        self.builder = ModuleBuilder(module)
+        Entity.__init__ = MagicMock(side_effect=lambda *args: None)
+        self.builder = Entity(module)
         self.builder.username = "username"
         self.builder.password = "password"
         self.builder.credentials = {}
