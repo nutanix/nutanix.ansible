@@ -8,12 +8,17 @@ ansible-galaxy collection install nutanix.ncp-1.0.0.tar.gz
 ```
 _Add `--force` option for rebuilding or reinstalling to overwrite existing data_
 
+##or
+
+### Installing the collection from GitHub repository
+```
+ansible-galaxy collection install git+https://github.com/nutanix/nutanix.ansible.git#nutanix.ncp,<branch>
+```
 # Included modules
 ```
-ncp_prism_image_info
-ncp_prism_image
-ncp_prism_vm_info
-ncp_prism_vm
+nutanix_vms
+nutanix_images
+nutanix_subnets
 ```
 
 # Inventory plugin
