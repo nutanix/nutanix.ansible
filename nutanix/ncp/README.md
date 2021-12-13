@@ -6,14 +6,15 @@ Ansible collections to automate Nutanix Cloud Platform (ncp).
 ansible-galaxy collection build
 ansible-galaxy collection install nutanix.ncp-1.0.0.tar.gz
 ```
-_Add `--force` option for rebuilding or reinstalling to overwrite existing data_
 
 ##or
 
 ### Installing the collection from GitHub repository
 ```
-ansible-galaxy collection install git+https://github.com/nutanix/nutanix.ansible.git#nutanix.ncp,<branch>
+ansible-galaxy collection install git+https://github.com/nutanix/nutanix.ansible.git#nutanix,<branch>
 ```
+_Add `--force` option for rebuilding or reinstalling to overwrite existing data_
+
 # Included modules
 ```
 nutanix_vms
