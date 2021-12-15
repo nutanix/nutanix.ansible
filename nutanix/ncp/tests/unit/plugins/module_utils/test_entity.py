@@ -1,10 +1,7 @@
 from ansible.module_utils import basic
-from units.modules.utils import AnsibleExitJson, AnsibleFailJson, ModuleTestCase, set_module_args
+from ansible_collections.nutanix.ncp.tests.unit.plugins.modules.utils import AnsibleExitJson, AnsibleFailJson, ModuleTestCase, set_module_args
 from ansible.module_utils.six.moves.urllib.parse import urlparse
-from requests.models import Response
-import json
-
-from nutanix.ncp.plugins.module_utils.entity import Entity
+from ansible_collections.nutanix.ncp.plugins.module_utils.entity import Entity
 
 try:
     from unittest.mock import MagicMock
@@ -20,23 +17,22 @@ def send_request(module, req_verb, req_url, req_data, username, password, timeou
     if req_verb == 'get':
         status = 'succeeded'
         spec_version = '1'
-    content = json.dumps({'status': status,
-                          'request': {
-                              'req_verb': req_verb,
-                              'req_url': req_url,
-                              'req_data': req_data,
-                              'username': username,
-                              'password': password
+    response = {'status': status,
+                'status_code': 200,
+                'request': {
+                    'req_verb': req_verb,
+                    'req_url': req_url,
+                    'req_data': req_data,
+                    'username': username,
+                    'password': password
 
-                          },
-                          'metadata': {
-                              'spec_version': spec_version
-                          }
-                          })
-    response = Response()
-    response.status_code = 200
-    response._content = str.encode(content)
-    return response.json()
+                },
+                'metadata': {
+                    'spec_version': spec_version
+                }
+                }
+
+    return response
 
 
 def exit_json(*args, **kwargs):

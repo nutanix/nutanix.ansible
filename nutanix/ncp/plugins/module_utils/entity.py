@@ -110,10 +110,11 @@ class Entity:
     @staticmethod
     def send_request(module, method, req_url, req_data, username, password, timeout=30):
         try:
-            encoded_credentials = b64encode(bytes(username + ":" + password, encoding="ascii")).decode("ascii")
+            credentials = bytes(username + ":" + password, encoding="ascii")
         except:
-            encoded_credentials = b64encode(bytes(username + ":" + password).encode("ascii")).decode("ascii")
+            credentials = bytes(username + ":" + password).encode("ascii")
 
+        encoded_credentials = b64encode(credentials).decode("ascii")
         authorization = "Basic " + encoded_credentials
         headers = {"Accept": "application/json", "Content-Type": "application/json",
                    "Authorization": authorization, "cache-control": "no-cache"}
