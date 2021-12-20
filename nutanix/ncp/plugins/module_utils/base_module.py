@@ -8,9 +8,7 @@ class BaseModule(AnsibleModule):
 
     argument_spec = dict(
         action=dict(type="str", required=True),
-        ip_address=dict(type="str", required=True),
-        port=dict(type="str", required=True),
-        credentials=dict(type="dict", required=True),
+        auth=dict(type="dict", required=True),
         data=dict(type="dict", required=False),
         operations=dict(type="list", required=False),
         wait=dict(type="bool", required=False, default=True),

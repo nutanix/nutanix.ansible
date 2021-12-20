@@ -198,10 +198,11 @@ class Entity:
         for key, value in module.params.items():
             setattr(self, key, value)
 
-        self.url = self.credentials.get("url")
+        self.url = self.auth.get("url")
+        self.credentials = self.auth.get("credentials")
 
         if not self.url:
-            self.url = str(self.ip_address) + ":" + str(self.port)
+            self.url = str(self.auth.get("ip_address")) + ":" + str(self.auth.get("port"))
 
         self.netloc = self.url
         self.module_name = module._name
