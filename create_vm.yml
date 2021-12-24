@@ -1,0 +1,24 @@
+---
+- name: Auto Generated Playbook
+  hosts: localhost
+  vars_files: credentials.yml
+  gather_facts: false
+  tasks:
+  - name: create Vm
+    v5_vms:
+      action: create
+      credentials: '{{credentials}}'
+      ip_address: '{{config.ip_address}}'
+      port: '{{config.port}}'
+      cluster_uuid: "ae0de9fc-20a5-41d6-b582-82d47085734f"
+      name: "test"
+      subnet_uuid: "6c4df84e-1851-41af-b455-6df9e9e6a28a"
+#      subnet_kind: "subnet"
+      is_connected: True
+
+
+    register: output
+
+  - name: output of list Subnets
+    debug:
+      msg: '{{ output }}'

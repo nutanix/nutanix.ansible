@@ -174,10 +174,51 @@ class Entity:
             return url
         raise ValueError("Incorrect URL :", url)
 
+
+    @staticmethod
+    def get_spec_template():
+        file = open('example.json')
+        return json.loads(file.read())
+
+    def generate_spec(self, data, variable_name=''):
+        is_list = False
+        required = data.get('required')
+        if 'additionalProperties' in data.keys():
+            data = data['additionalProperties']
+        if 'items' in data.keys():
+            data = data['items']
+            is_list = True
+        if 'properties' in data.keys():
+            data = data['properties']
+        if 'default' in data.keys():
+            data = data['default']
+            return data
+        # if 'minimum' in data.keys():
+        #     data= data['minimum']
+        #     return data
+        if 'type' in data.keys() and data['type'] in ['string', 'integer', 'boolean']:
+            return getattr(self, variable_name, None)
+
+        for k, v in data.items():
+            data[k] = self.generate_spec(v, variable_name + '__' + str(k) if variable_name else str(k))
+        data = {k: v for k, v in data.items() if v}
+        if required:
+            data = {k: v for k, v in data.items() if set(required) <= data.keys()}
+        if is_list:
+            return [data]
+        return data
+
+    def get_spec(self):
+        spec_tmp = self.get_spec_template()
+        spec = self.generate_spec(spec_tmp)
+        return spec
+
     def build(self):
 
         self.username = self.credentials["username"]
         self.password = self.credentials["password"]
+
+        self.data = self.get_spec()
 
         self.parse_data()
 

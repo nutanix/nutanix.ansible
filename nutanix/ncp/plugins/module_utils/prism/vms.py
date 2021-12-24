@@ -8,7 +8,3 @@ class VM(Prism):
     kind = 'vm'
 
 
-    data_tmp = {
-
-    }
-
