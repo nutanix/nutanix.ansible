@@ -1,0 +1,35 @@
+{
+ "collection_info": {
+  "description": "Ansible collection for v3 Nutanix APIs https://www.nutanix.dev/api-reference-v3/", 
+  "repository": "https://github.com/nutanix/nutanix.ansible", 
+  "tags": [
+   "nutanix", 
+   "prism", 
+   "ahv"
+  ], 
+  "dependencies": {}, 
+  "authors": [
+   "Balu George (@balugeorge)", 
+   "Sarath Kumar K (@kumarsarath588)", 
+   "Prem Karat (@premkarat)", 
+   "Gevorg Khachatryan (@Gevorg-Khachatryan-97)"
+  ], 
+  "issues": "https://github.com/nutanix/nutanix.ansible/issues", 
+  "name": "ncp", 
+  "license": [], 
+  "documentation": "https://github.com/nutanix/nutanix.ansible/nutanix/prism/docs", 
+  "namespace": "nutanix", 
+  "version": "1.0.0", 
+  "readme": "README.md", 
+  "license_file": "LICENSE", 
+  "homepage": "https://github.com/nutanix/nutanix.ansible/nutanix/prism"
+ }, 
+ "file_manifest_file": {
+  "format": 1, 
+  "ftype": "file", 
+  "chksum_sha256": "bffe176124e711bce6dff38d11f333045d0a23d5d6af9383f3327e474d0a5fbb", 
+  "name": "FILES.json", 
+  "chksum_type": "sha256"
+ }, 
+ "format": 1
+}

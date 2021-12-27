@@ -1,5 +1,8 @@
 # Copyright: 2021, Ansible Project
-# Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
+# Simplified BSD License (see licenses/simplified_bsd.txt or
+# https://opensource.org/licenses/BSD-2-Clause )
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 from base64 import b64encode
 import time
 import uuid
@@ -49,15 +52,21 @@ class Entity:
     def check_response(self):
 
         if self.response.get("task_uuid") and self.wait:
-            task = self.validate_request(self.module, self.response.get("task_uuid"), self.netloc, self.wait_timeout)
+            task = self.validate_request(
+                self.module,
+                self.response.get("task_uuid"),
+                self.netloc,
+                self.wait_timeout)
             self.result["task_information"] = task
 
         if not self.response.get("status"):
             if self.response.get("api_response_list"):
-                self.response["status"] = self.response.get("api_response_list")[0].get("api_response").get("status")
+                self.response["status"] = self.response.get("api_response_list")[
+                    0].get("api_response").get("status")
             elif "entities" in self.response:
                 if self.response["entities"]:
-                    self.response["status"] = self.response.get("entities")[0].get("status")
+                    self.response["status"] = self.response.get("entities")[
+                        0].get("status")
                 else:
                     self.response["status"] = {"state": "complete"}
 
@@ -65,14 +74,16 @@ class Entity:
             state = self.response.get("status").get("state")
             if "pending" in state.lower() or "running" in state.lower():
                 task = self.validate_request(self.module,
-                                             self.response.get("status").get("execution_context").get("task_uuid"),
+                                             self.response.get("status").get(
+                                                 "execution_context").get("task_uuid"),
                                              self.netloc,
                                              self.wait_timeout)
                 self.response["status"]["state"] = task.get("status")
                 self.result["task_information"] = task
 
         self.result["changed"] = True
-        status = self.response.get("state") or self.response.get("status").get("state")
+        status = self.response.get(
+            "state") or self.response.get("status").get("state")
         if status and status.lower() != "succeeded" or self.action == "list":
             self.result["changed"] = False
             if status.lower() != "complete":
@@ -89,7 +100,13 @@ class Entity:
             self.url += "/" + str(uuid.UUID(item_uuid))
         else:
             self.url += "/" + str(uuid.UUID(item_uuid)) + "/file"
-        response = self.send_request(self.module, "get", self.url, self.data, self.username, self.password)
+        response = self.send_request(
+            self.module,
+            "get",
+            self.url,
+            self.data,
+            self.username,
+            self.password)
 
         if response.get("state") and response.get("state").lower() == "error":
             self.result["changed"] = False
@@ -108,10 +125,11 @@ class Entity:
             self.data = {"kind": self.kind}
 
     @staticmethod
-    def send_request(module, method, req_url, req_data, username, password, timeout=30):
+    def send_request(module, method, req_url, req_data,
+                     username, password, timeout=30):
         try:
             credentials = bytes(username + ":" + password, encoding="ascii")
-        except:
+        except BaseException:
             credentials = bytes(username + ":" + password).encode("ascii")
 
         encoded_credentials = b64encode(credentials).decode("ascii")
@@ -125,7 +143,11 @@ class Entity:
         resp, info = fetch_url(module=module, url=req_url, headers=headers,
                                method=method, data=module.jsonify(payload), timeout=timeout)
         if not 300 > info['status'] > 199:
-            module.fail_json(msg="Fail: %s" % ("Status: " + str(info['msg']) + ", Message: " + str(info.get('body'))))
+            module.fail_json(msg="Fail: %s" %
+                             ("Status: " +
+                              str(info['msg']) +
+                                 ", Message: " +
+                                 str(info.get('body'))))
 
         body = resp.read() if resp else info.get("body")
         try:
@@ -142,7 +164,8 @@ class Entity:
         task_uuid = str(uuid.UUID(task_uuid))
         url = self.generate_url_from_operations("tasks", netloc, [task_uuid])
         while retries > 0 or not succeeded:
-            response = self.send_request(module, "get", url, None, self.username, self.password)
+            response = self.send_request(
+                module, "get", url, None, self.username, self.password)
             if response.get("status"):
                 status = response.get("status")
                 if "running" not in status.lower():
@@ -158,9 +181,9 @@ class Entity:
         path = self.__BASEURL__ + '/' + name
         if ops:
             for each in ops:
-                if type(each) is str:
+                if isinstance(each, str):
                     path += "/" + each
-                elif type(each) is dict:
+                elif isinstance(each, dict):
                     key = list(each.keys())[0]
                     val = each[key]
                     path += "/{0}/{1}".format(key, val)
@@ -181,7 +204,8 @@ class Entity:
 
         self.parse_data()
 
-        self.url = self.generate_url_from_operations(self.module_name, self.netloc, self.operations)
+        self.url = self.generate_url_from_operations(
+            self.module_name, self.netloc, self.operations)
 
         getattr(self, self.action)()
 
@@ -198,11 +222,10 @@ class Entity:
         for key, value in module.params.items():
             setattr(self, key, value)
 
-        self.url = self.auth.get("url")
-        self.credentials = self.auth.get("credentials")
+        self.url = self.credentials.get("url")
 
         if not self.url:
-            self.url = str(self.auth.get("ip_address")) + ":" + str(self.auth.get("port"))
+            self.url = str(self.ip_address) + ":" + str(self.port)
 
         self.netloc = self.url
         self.module_name = module._name

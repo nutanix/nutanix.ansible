@@ -1,15 +1,17 @@
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 from ansible.module_utils import basic
 from ansible_collections.nutanix.ncp.tests.unit.plugins.modules.utils import AnsibleExitJson, AnsibleFailJson, ModuleTestCase, set_module_args
 from ansible.module_utils.six.moves.urllib.parse import urlparse
 from ansible_collections.nutanix.ncp.plugins.module_utils.entity import Entity
-
 try:
     from unittest.mock import MagicMock
 except Exception:
     from mock import MagicMock
 
 
-def send_request(module, req_verb, req_url, req_data, username, password, timeout=30):
+def send_request(module, req_verb, req_url, req_data,
+                 username, password, timeout=30):
     """ Mock send_request """
     kwargs = locals()
     status = {'state': 'succeeded'}
@@ -202,7 +204,8 @@ class TestEntity(ModuleTestCase):
         ip = str(self.builder.ip_address)
         port = str(self.builder.port)
         netloc = self.builder.netloc or ip + ':' + port
-        actual = self.builder.generate_url_from_operations(module_name, netloc, operations)
+        actual = self.builder.generate_url_from_operations(
+            module_name, netloc, operations)
         actual = urlparse(actual)
         path = "/" + module_name
         for each in operations:

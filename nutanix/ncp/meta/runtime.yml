@@ -1,0 +1,6 @@
+#requires_ansible: '>=2.9.10'
+action_groups:
+  ncp:
+  - nutanix_images
+  - nutanix-subnets
+  - nutanix_vms
