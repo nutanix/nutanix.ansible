@@ -174,43 +174,42 @@ class Entity:
             return url
         raise ValueError("Incorrect URL :", url)
 
-
     @staticmethod
-    def get_spec_template():
-        file = open('example.json')
-        return json.loads(file.read())
+    def get_spec():
+        with open('testjson_spec.json') as f:
+            spec = json.loads(f.read())
+        return spec
 
-    def generate_spec(self, data, variable_name=''):
-        is_list = False
-        required = data.get('required')
-        if 'additionalProperties' in data.keys():
-            data = data['additionalProperties']
-        if 'items' in data.keys():
-            data = data['items']
-            is_list = True
-        if 'properties' in data.keys():
-            data = data['properties']
-        if 'default' in data.keys():
-            data = data['default']
-            return data
-        # if 'minimum' in data.keys():
-        #     data= data['minimum']
-        #     return data
-        if 'type' in data.keys() and data['type'] in ['string', 'integer', 'boolean']:
-            return getattr(self, variable_name, None)
+    def clean_spec(self, spec):
+        for key, value in spec.copy().items():
+            if isinstance(value, str):
+                if value.startswith('{{') and value.endswith('}}'):
+                    value = getattr(self, value[2:-2], None)
+                    if value:
+                        spec[key] = value
+                    else:
+                        spec.pop(key)
 
-        for k, v in data.items():
-            data[k] = self.generate_spec(v, variable_name + '__' + str(k) if variable_name else str(k))
-        data = {k: v for k, v in data.items() if v}
-        if required:
-            data = {k: v for k, v in data.items() if set(required) <= data.keys()}
-        if is_list:
-            return [data]
-        return data
-
-    def get_spec(self):
-        spec_tmp = self.get_spec_template()
-        spec = self.generate_spec(spec_tmp)
+            elif isinstance(value, dict):
+                value = self.clean_spec(value)
+                if value:
+                    spec[key] = value
+                else:
+                    spec.pop(key)
+            elif isinstance(value, list) and key != 'required':
+                obj = value.pop(0)
+                list_key = obj.pop('list_key')
+                # if getattr(self, list_key, None):
+                #     raise ValueError(getattr(self, list_key),'+++++++++++++++++++++++++++++++++',obj)
+                if list_key:
+                    list_values = getattr(self, list_key, None)
+                    if list_values:
+                        spec[key] = list_values
+                    else:
+                        spec.pop(key)
+        requirements = spec.pop('required')
+        if not set(requirements) <= spec.keys() or not spec:
+            return None
         return spec
 
     def build(self):
@@ -238,6 +237,10 @@ class Entity:
 
         for key, value in module.params.items():
             setattr(self, key, value)
+
+        spec = self.get_spec()
+        self.clean_spec(spec)
+        self.data = spec
 
         self.url = self.auth.get("url")
         self.credentials = self.auth.get("credentials")

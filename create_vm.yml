@@ -5,16 +5,23 @@
   gather_facts: false
   tasks:
   - name: create Vm
-    v5_vms:
+    nutanix_vms:
       action: create
-      credentials: '{{credentials}}'
-      ip_address: '{{config.ip_address}}'
-      port: '{{config.port}}'
-      cluster_uuid: "ae0de9fc-20a5-41d6-b582-82d47085734f"
-      name: "test"
-      subnet_uuid: "6c4df84e-1851-41af-b455-6df9e9e6a28a"
-#      subnet_kind: "subnet"
-      is_connected: True
+      auth:
+        credentials: '{{credentials}}'
+        url: '{{config.ip_address}}:{{config.port}}'
+      name: "test1234"
+      cluster:
+        cluster_uuid: "0005d433-f986-ca07-7cba-ac1f6b6f97d8"
+      networks:
+        - subnet_reference:
+            uuid: "337261ed-5007-4e5a-b11e-8d2444e62824"
+            kind: "subnet"
+          is_connected: True
+#        - subnet_reference:
+#            uuid: "337261ed-5007-4e5a-b11e-8d2444e62824"
+#            kind: "subnet"
+#          is_connected: True
 
 
     register: output
