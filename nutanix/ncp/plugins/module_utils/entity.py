@@ -282,7 +282,7 @@ class Entity:
 
         elif isinstance(spec, dict):
             for _k, _v in spec.items():
-                if _v in [None, ""]:
+                if _v in [None, "", []]:
                     spec.pop(_k)
                 self.remove_null_references(_v, spec, _k)
 

@@ -150,11 +150,8 @@ class VMNetwork(Prism):
                 elif 'subnet_' in k and k.split('_')[-1] in nic_final['subnet_reference']:
                     nic_final['subnet_reference'][k.split('_')[-1]] = v
 
-                elif k == "ip_endpoint_list":
-                    for ip in v:
-                        new_dict = {}
-                        new_dict["ip"] = ip
-                        nic_final[k].append(new_dict)
+                elif k == "ip_endpoint_list" and bool(v):
+                    nic_final[k] = [{"ip": v[0]}]
 
             final_nic_list.append(nic_final)
         self.remove_null_references(final_nic_list)

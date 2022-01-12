@@ -75,8 +75,8 @@ def run_module():
             subnet_name=dict(type='str'),
             subnet_kind=dict(type='str', default='subnet'),
             is_connected=dict(type='bool', aliases=['connected'], default=False),
-            ip_endpoint_list=dict(type='list', aliases=['ip_endpoint_list'], default=[]),
-            nic_type=dict(type='str', default=False),
+            ip_endpoint_list=dict(type='list', aliases=['private_ip'], default=[]),
+            nic_type=dict(type='str', default='NORMAL_NIC'),
 
         ), default=[]),
         spec__resources__disk_list=dict(type='list', aliases=['disks'], options=dict(
