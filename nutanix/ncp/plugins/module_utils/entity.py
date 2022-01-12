@@ -3,6 +3,7 @@
 from base64 import b64encode
 import time
 import uuid
+from copy import deepcopy
 
 from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.urls import fetch_url
@@ -16,6 +17,8 @@ except ImportError:
 
 class Entity:
     """Basic functionality for Nutanix modules"""
+
+    entity_type = "Base"
 
     result = dict(
         changed=False,
@@ -122,6 +125,7 @@ class Entity:
             payload = {}
         else:
             payload = req_data
+        # raise ValueError(payload)
         resp, info = fetch_url(module=module, url=req_url, headers=headers,
                                method=method, data=module.jsonify(payload), timeout=timeout)
         if not 300 > info['status'] > 199:
@@ -176,8 +180,10 @@ class Entity:
 
     @staticmethod
     def get_spec():
+        import yaml
         with open('testjson_spec.json') as f:
-            spec = json.loads(f.read())
+            # spec = json.loads(str(f.read()))
+            spec = yaml.safe_load(f.read())
         return spec
 
     def clean_spec(self, spec):
@@ -199,17 +205,18 @@ class Entity:
             elif isinstance(value, list) and key != 'required':
                 obj = value.pop(0)
                 list_key = obj.pop('list_key')
-                # if getattr(self, list_key, None):
-                #     raise ValueError(getattr(self, list_key),'+++++++++++++++++++++++++++++++++',obj)
+                sub_spec_key = list_key.split('__')[-1]
                 if list_key:
-                    list_values = getattr(self, list_key, None)
-                    if list_values:
-                        spec[key] = list_values
+                    # if sub_spec_key=='serial_port_list':
+                    # raise ValueError(self.get_attr_spec(sub_spec_key, getattr(self, list_key, None)))
+                    value = self.get_attr_spec(sub_spec_key, getattr(self, list_key, None))
+                    if value:
+                        spec[key] = value
                     else:
                         spec.pop(key)
         requirements = spec.pop('required')
-        if not set(requirements) <= spec.keys() or not spec:
-            return None
+        # if not set(requirements) <= spec.keys() or not spec:
+        #     return None
         return spec
 
     def build(self):
@@ -217,8 +224,7 @@ class Entity:
         self.username = self.credentials["username"]
         self.password = self.credentials["password"]
 
-        self.data = self.get_spec()
-
+        # self.data = self.get_spec()
         self.parse_data()
 
         self.url = self.generate_url_from_operations(self.module_name, self.netloc, self.operations)
@@ -234,8 +240,10 @@ class Entity:
 
         if module.check_mode:
             module.exit_json(**self.result)
-
         for key, value in module.params.items():
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    setattr(self, k, v)
             setattr(self, key, value)
 
         spec = self.get_spec()
@@ -254,3 +262,29 @@ class Entity:
         self.build()
 
         module.exit_json(**self.result)
+
+    @staticmethod
+    def get_default_spec(self):
+        raise NotImplementedError(
+            "Get Default Spec helper not implemented for {}".format(self.entity_type)
+        )
+
+    def _get_api_spec(self, param_spec, **kwargs):
+        raise NotImplementedError(
+            "Get Api Spec helper not implemented for {}".format(self.entity_type)
+        )
+
+    def remove_null_references(self, spec, parent_spec=None, spec_key=None):
+
+        if isinstance(spec, list):
+            for _i in spec:
+                self.remove_null_references(_i)
+
+        elif isinstance(spec, dict):
+            for _k, _v in spec.items():
+                if _v in [None, ""]:
+                    spec.pop(_k)
+                self.remove_null_references(_v, spec, _k)
+
+            if not bool(spec) and parent_spec and spec_key:
+                parent_spec.pop(spec_key)
