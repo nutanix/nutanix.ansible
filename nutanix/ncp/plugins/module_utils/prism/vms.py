@@ -121,7 +121,7 @@ class VMNetwork(Prism):
                 "nic_type": "",
                 "subnet_reference": {
                     "kind": "",
-                    "name": "subnet_name_default",
+                    "name": "",
                     "uuid": "",
                 },
                 "network_function_chain_reference": "",
