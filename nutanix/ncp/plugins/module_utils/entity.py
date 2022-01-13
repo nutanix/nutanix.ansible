@@ -30,7 +30,8 @@ class Entity:
         "create": "post",
         "list": "post",
         "update": "put",
-        "delete": "delete"
+        "delete": "delete",
+        "absent": "delete"
     }
     kind = ""
     api_version = "3.1.0"

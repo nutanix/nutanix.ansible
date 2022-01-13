@@ -54,17 +54,17 @@ from ..module_utils.prism.vms import VM
 
 def run_module():
     BaseModule.argument_spec.update(dict(
-        spec__name=dict(type='str', required=True, aliases=['name']),
+        spec__name=dict(type='str', required=False, aliases=['name']),
         metadata__uuid=dict(type='str', aliases=['uuid'], required=False),
         cpu_properties=dict(type="dict", default={}, options=dict(
-            spec__resources__num_sockets=dict(type='int', default=1, alises=['core_count']),
+            spec__resources__num_sockets=dict(type='int', default=1, aliases=['core_count']),
             spec__resources__num_threads_per_core=dict(type='int', choices=[1, 2],  # default=1,
-                                                       alises=['threads_per_core']),
+                                                       aliases=['threads_per_core']),
             spec__resources__num_vcpus_per_socket=dict(type='int', default=1, choices=[1, 2],
-                                                       alises=['num_vcpus_per_socket']),
+                                                       aliases=['num_vcpus_per_socket']),
         )),
         cluster=dict(type='dict', default={}, options=dict(
-            spec__cluster_reference__uuid=dict(type='str', aliases=['cluster_uuid', 'uuid'], required=True),
+            spec__cluster_reference__uuid=dict(type='str', aliases=['cluster_uuid', 'uuid'], required=False),
             spec__cluster_reference__name=dict(type='str', aliases=['cluster_name', 'name'], required=False),
             spec__cluster_reference__kind=dict(type='str', aliases=['cluster_kind'], required=False,
                                                default='cluster'), ),
