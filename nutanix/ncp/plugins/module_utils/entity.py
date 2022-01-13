@@ -178,6 +178,14 @@ class Entity:
             return url
         raise ValueError("Incorrect URL :", url)
 
+    def get_action(self):
+        if self.action in self.methods_of_actions.keys():
+            self.action = self.methods_of_actions[self.action]
+        elif self.action == 'present':
+            self.action = 'update' if self.data['metadata'].get('uuid') else 'create'
+        else:
+            raise ValueError("Wrong action: "+ self.action)
+
     @staticmethod
     def get_spec():
         import yaml
@@ -207,8 +215,6 @@ class Entity:
                 list_key = obj.pop('list_key')
                 sub_spec_key = list_key.split('__')[-1]
                 if list_key:
-                    # if sub_spec_key=='serial_port_list':
-                    # raise ValueError(self.get_attr_spec(sub_spec_key, getattr(self, list_key, None)))
                     value = self.get_attr_spec(sub_spec_key, getattr(self, list_key, None))
                     if value:
                         spec[key] = value
@@ -224,15 +230,20 @@ class Entity:
         self.username = self.credentials["username"]
         self.password = self.credentials["password"]
 
-        # self.data = self.get_spec()
         self.parse_data()
 
         self.url = self.generate_url_from_operations(self.module_name, self.netloc, self.operations)
 
+        self.get_action()
+
         getattr(self, self.action)()
 
-        self.response = self.send_request(self.module, self.methods_of_actions[self.action],
-                                          self.url, self.data, self.username, self.password)
+        self.response = self.send_request(self.module,
+                                          self.methods_of_actions[self.action],
+                                          self.url,
+                                          self.data,
+                                          self.username,
+                                          self.password)
 
         self.check_response()
 
@@ -262,29 +273,3 @@ class Entity:
         self.build()
 
         module.exit_json(**self.result)
-
-    @staticmethod
-    def get_default_spec(self):
-        raise NotImplementedError(
-            "Get Default Spec helper not implemented for {}".format(self.entity_type)
-        )
-
-    def _get_api_spec(self, param_spec, **kwargs):
-        raise NotImplementedError(
-            "Get Api Spec helper not implemented for {}".format(self.entity_type)
-        )
-
-    def remove_null_references(self, spec, parent_spec=None, spec_key=None):
-
-        if isinstance(spec, list):
-            for _i in spec:
-                self.remove_null_references(_i)
-
-        elif isinstance(spec, dict):
-            for _k, _v in spec.items():
-                if _v in [None, "", []]:
-                    spec.pop(_k)
-                self.remove_null_references(_v, spec, _k)
-
-            if not bool(spec) and parent_spec and spec_key:
-                parent_spec.pop(spec_key)

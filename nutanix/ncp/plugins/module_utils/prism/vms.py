@@ -25,7 +25,36 @@ class VM(Prism):
         pass
 
 
-class VMDisk(Prism):
+class VMSpec():
+
+    @staticmethod
+    def get_default_spec(self):
+        raise NotImplementedError(
+            "Get Default Spec helper not implemented for {}".format(self.entity_type)
+        )
+
+    def _get_api_spec(self, param_spec, **kwargs):
+        raise NotImplementedError(
+            "Get Api Spec helper not implemented for {}".format(self.entity_type)
+        )
+
+    def remove_null_references(self, spec, parent_spec=None, spec_key=None):
+
+        if isinstance(spec, list):
+            for _i in spec:
+                self.remove_null_references(_i)
+
+        elif isinstance(spec, dict):
+            for _k, _v in spec.items():
+                if _v in [None, "", []]:
+                    spec.pop(_k)
+                self.remove_null_references(_v, spec, _k)
+
+            if not bool(spec) and parent_spec and spec_key:
+                parent_spec.pop(spec_key)
+
+
+class VMDisk(VMSpec):
     entity_type = "VMDisk"
 
     def __init__(self):
@@ -105,7 +134,7 @@ class VMDisk(Prism):
         return self._get_api_spec(param_spec, **kwargs)
 
 
-class VMNetwork(Prism):
+class VMNetwork(VMSpec):
     entity_type = "VMNetwork"
 
     def __init__(self):

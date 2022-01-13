@@ -7,7 +7,7 @@ class BaseModule(AnsibleModule):
     """Basic module with common arguments"""
 
     argument_spec = dict(
-        action=dict(type="str", required=True),
+        action=dict(type="str", required=True, aliases=['state']),
         auth=dict(type="dict", required=True),
         data=dict(type="dict", required=False),
         operations=dict(type="list", required=False),

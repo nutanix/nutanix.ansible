@@ -55,7 +55,7 @@ from ..module_utils.prism.vms import VM
 def run_module():
     BaseModule.argument_spec.update(dict(
         spec__name=dict(type='str', required=True, aliases=['name']),
-        uuid=dict(type='str', required=False),
+        metadata__uuid=dict(type='str', aliases=['uuid'], required=False),
         cpu_properties=dict(type="dict", default={}, options=dict(
             spec__resources__num_sockets=dict(type='int', default=1, alises=['core_count']),
             spec__resources__num_threads_per_core=dict(type='int', choices=[1, 2],  # default=1,
