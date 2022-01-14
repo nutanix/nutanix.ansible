@@ -57,9 +57,6 @@ class VMSpec():
 class VMDisk(VMSpec):
     entity_type = "VMDisk"
 
-    def __init__(self):
-        pass
-
     @staticmethod
     def get_default_spec():
         return deepcopy(
@@ -84,7 +81,7 @@ class VMDisk(VMSpec):
                     "uuid": "",
                     "name": "",
                 },
-                "disk_size_mib": 0,
+                "disk_size_mib": "",
             }
         )
 
@@ -119,7 +116,8 @@ class VMDisk(VMSpec):
             _di_map[disk_param["type"]][disk_param["bus"]] += 1
 
             # Size of disk
-            disk_final["disk_size_mib"] = disk_param["size_gb"] * 1024
+            if disk_param.get("size_gb"):
+                disk_final["disk_size_mib"] = disk_param["size_gb"] * 1024
 
             if disk_param.get("storage_container"):
                 disk_final["storage_config"] = {
@@ -136,9 +134,6 @@ class VMDisk(VMSpec):
 
 class VMNetwork(VMSpec):
     entity_type = "VMNetwork"
-
-    def __init__(self):
-        pass
 
     @staticmethod
     def get_default_spec():
@@ -160,10 +155,7 @@ class VMNetwork(VMSpec):
             }
         )
 
-    def __get_image_ref(self, name):
-        pass
-
-    def __get_storage_container_ref(self, name):
+    def __get_subnet_ref(self, name):
         pass
 
     def _get_api_spec(self, param_spec, **kwargs):
@@ -176,8 +168,16 @@ class VMNetwork(VMSpec):
                 if k in nic_final.keys() and not isinstance(v, list):
                     nic_final[k] = v
 
-                elif 'subnet_' in k and k.split('_')[-1] in nic_final['subnet_reference']:
-                    nic_final['subnet_reference'][k.split('_')[-1]] = v
+                # elif 'subnet_' in k and k.split('_')[-1] in nic_final['subnet_reference']:
+                #     nic_final['subnet_reference'][k.split('_')[-1]] = v
+
+                elif k == "subnet_uuid":
+                    nic_final["subnet_reference"] = {
+                        "kind": "subnet",
+                        "uuid": v
+                    }
+                elif k == "subnet_name" and not nic_param.get("subnet_uuid"):
+                    nic_final["subnet_reference"] = self.__get_subnet_ref(v)
 
                 elif k == "ip_endpoint_list" and bool(v):
                     nic_final[k] = [{"ip": v[0]}]
