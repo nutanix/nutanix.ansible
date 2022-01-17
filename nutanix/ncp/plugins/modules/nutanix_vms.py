@@ -81,12 +81,16 @@ def run_module():
             type=dict(type='str'),
             size_gb=dict(type='int'),
             bus=dict(type='str'),
+            storage_config=dict(type=dict, options=dict(
+                storage_container_name=dict(type='str'),
+                storage_container_uuid=dict(type='str')
+            ))
 
         ), default=[]),
         spec__resources__hardware_clock_timezone=dict(type='str', default='UTC', aliases=['timezone']),
         spec__resources__boot_config__boot_type=dict(type='str',
                                                      default='LEGACY',
-                                                     aliases=['boot_type', 'boot_config']),
+                                                     aliases=['boot_type']),
         spec__resources__boot_config__boot_device_order_list=dict(
             type='list', default=[
                 "CDROM",

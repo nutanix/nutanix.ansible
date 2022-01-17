@@ -126,7 +126,6 @@ class Entity:
             payload = {}
         else:
             payload = req_data
-        # raise ValueError(payload)
         resp, info = fetch_url(module=module, url=req_url, headers=headers,
                                method=method, data=module.jsonify(payload), timeout=timeout)
         if not 300 > info['status'] > 199:
@@ -150,7 +149,7 @@ class Entity:
             response = self.send_request(module, "get", url, None, self.username, self.password)
             if response.get("status"):
                 status = response.get("status")
-                if "running" not in status.lower():
+                if "running" not in status.lower() and "queued" not in status.lower():
                     succeeded = True
                     return response
             time.sleep(timer)
@@ -257,6 +256,7 @@ class Entity:
                 for k, v in value.items():
                     setattr(self, k, v)
             setattr(self, key, value)
+        self.module = module
 
         spec = self.get_spec()
         self.clean_spec(spec)
@@ -270,7 +270,6 @@ class Entity:
 
         self.netloc = self.url
         self.module_name = module._name
-        self.module = module
         self.build()
 
         module.exit_json(**self.result)

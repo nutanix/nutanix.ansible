@@ -18,11 +18,31 @@ class VM(Prism):
 
         if param in param_method_spec:
             handler = param_method_spec[param]()
-            return handler(param_spec)
+            return handler(param_spec, get_ref=self.get_entity_by_name)
         return param_spec
 
     def _get_api_spec(self, param_spec, **kwargs):
         pass
+
+    def get_entity_by_name(self, name='', kind=''):
+        url = self.generate_url_from_operations(kind, netloc=self.url, ops=['list'])
+        data = {
+            'filter': 'name==%s' % name,
+            'length': 1
+        }
+        resp = self.send_request(self.module,
+                                 self.methods_of_actions['list'],
+                                 url,
+                                 data,
+                                 self.credentials['username'],
+                                 self.credentials['password'])
+        try:
+            return resp['entities'][0]['metadata']
+
+        except IndexError:
+            self.result['message'] = 'Entity with name "%s" does not exist.' % name
+            self.result['failed'] = True
+            self.module.exit_json(**self.result)
 
 
 class VMSpec():
@@ -85,11 +105,21 @@ class VMDisk(VMSpec):
             }
         )
 
-    def __get_image_ref(self, name):
-        pass
+    def __get_image_ref(self, name, **kwargs):
+        get_entity_by_name = kwargs['get_ref']
+        entity = get_entity_by_name(name, 'images')
+        return {
+            "kind": entity["kind"],
+            "uuid": entity["uuid"],
+        }
 
-    def __get_storage_container_ref(self, name):
-        pass
+    def __get_storage_container_ref(self, name, **kwargs):
+        get_entity_by_name = kwargs['get_ref']
+        entity = get_entity_by_name(name, 'storage-containers')
+        return {
+            "kind": entity["kind"],
+            "uuid": entity["uuid"],
+        }
 
     def _get_api_spec(self, param_spec, **kwargs):
 
@@ -99,7 +129,7 @@ class VMDisk(VMSpec):
         for disk_param in param_spec:
             disk_final = self.get_default_spec()
             if disk_param.get("clone_image"):
-                disk_final["data_source_reference"] = self.__get_image_ref(disk_param["clone_image"])
+                disk_final["data_source_reference"] = self.__get_image_ref(disk_param["clone_image"], **kwargs)
 
             disk_final["device_properties"]["device_type"] = disk_param["type"]
             disk_final["device_properties"]["disk_address"]["adapter_type"] = disk_param["bus"]
@@ -118,10 +148,17 @@ class VMDisk(VMSpec):
             # Size of disk
             if disk_param.get("size_gb"):
                 disk_final["disk_size_mib"] = disk_param["size_gb"] * 1024
-
-            if disk_param.get("storage_container"):
+            if disk_param.get("storage_container_name"):
                 disk_final["storage_config"] = {
-                    "storage_container_reference": self.__get_storage_container_ref(disk_param["storage_config"])
+                    "storage_container_reference": self.__get_storage_container_ref(disk_param["storage_container_name"],
+                                                                                    **kwargs)
+                }
+            elif disk_param.get("storage_container_uuid"):
+                disk_final["storage_config"] = {
+                    "storage_container_reference": {
+                        "kind": "storage_container",
+                        "uuid": disk_param["storage_container_uuid"]
+                    },
                 }
             final_disk_list.append(disk_final)
         self.remove_null_references(final_disk_list)
@@ -155,8 +192,13 @@ class VMNetwork(VMSpec):
             }
         )
 
-    def __get_subnet_ref(self, name):
-        pass
+    def __get_subnet_ref(self, name, **kwargs):
+        get_entity_by_name = kwargs['get_ref']
+        entity = get_entity_by_name(name, 'subnets')
+        return {
+            "kind": entity["kind"],
+            "uuid": entity["uuid"],
+        }
 
     def _get_api_spec(self, param_spec, **kwargs):
 
@@ -177,7 +219,7 @@ class VMNetwork(VMSpec):
                         "uuid": v
                     }
                 elif k == "subnet_name" and not nic_param.get("subnet_uuid"):
-                    nic_final["subnet_reference"] = self.__get_subnet_ref(v)
+                    nic_final["subnet_reference"] = self.__get_subnet_ref(v, **kwargs)
 
                 elif k == "ip_endpoint_list" and bool(v):
                     nic_final[k] = [{"ip": v[0]}]
