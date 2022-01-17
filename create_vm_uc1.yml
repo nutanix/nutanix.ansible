@@ -1,0 +1,38 @@
+---
+- name: Auto Generated Playbook
+  hosts: localhost
+  vars_files: credentials.yml
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+  - name: create Vm
+    nutanix_vms:
+      state: present
+      auth:
+        credentials: '{{credentials}}'
+        url: '{{config.ip_address}}:{{config.port}}'
+      name: "test_2"
+      cluster:
+        cluster_uuid: "0005d54c-b572-b290-0000-000000029016"
+      networks:
+        - connected: True
+          subnet_uuid: "55d9fbba-71ea-4ef4-b776-1c8f3513b733"
+        - connected: True
+          subnet_uuid: "548d29f3-d98d-44cf-893b-4e17e0066161"
+          private_ip: "10.30.30.15"
+      disks:
+        - type: "DISK"
+          size_gb: 2
+          bus: "SCSI"
+        - type: "DISK"
+          size_gb: 3
+          bus: "SCSI"
+      cpu_properties:
+        core_count: 1
+        threads_per_core: 2
+    register: output
+
+  - name: output of list Subnets
+    debug:
+      msg: '{{ output }}'

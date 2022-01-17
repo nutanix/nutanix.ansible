@@ -1,0 +1,17 @@
+namespace: "nutanix"
+name: "ncp"
+version: "1.0.0"
+readme: "README.md"
+authors:
+  - "Balu George (@balugeorge)"
+  - "Sarath Kumar K (@kumarsarath588)"
+  - "Prem Karat (@premkarat)"
+  - "Gevorg Khachatryan (@Gevorg-Khachatryan-97)"
+description: Ansible collection for v3 Nutanix APIs https://www.nutanix.dev/api-reference-v3/
+license_file: 'LICENSE'
+tags: [nutanix, prism, ahv]
+repository: https://github.com/nutanix/nutanix.ansible
+documentation: https://github.com/nutanix/nutanix.ansible/nutanix/prism/docs
+homepage: https://github.com/nutanix/nutanix.ansible/nutanix/prism
+issues: https://github.com/nutanix/nutanix.ansible/issues
+build_ignore: []
