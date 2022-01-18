@@ -55,6 +55,7 @@ from ..module_utils.prism.vms import VM
 def run_module():
     BaseModule.argument_spec.update(dict(
         spec__name=dict(type='str', required=False, aliases=['name']),
+        spec__description=dict(type='str', required=False, aliases=['desc', 'description']),
         metadata__uuid=dict(type='str', aliases=['uuid'], required=False),
         spec__resources__num_sockets=dict(type='int', default=1, aliases=['core_count', 'vcpus']),
         spec__resources__num_threads_per_core=dict(type='int', choices=[1, 2],  # default=1,#will not provide
@@ -100,11 +101,15 @@ def run_module():
         spec__resources__memory_overcommit_enabled=dict(
             type='bool', default=False, aliases=['memory_overcommit_enabled']),
         spec__resources__memory_size_mib=dict(type='int', default=1, aliases=['memory_size_mib', 'memory_gb']),
-    ))
+        metadata__categories_mapping=dict(type='dict', aliases=['categories']),
+        metadata__use_categories_mapping=dict(type='bool', aliases=['use_categories_mapping'], default=False)
+        ))
 
     module = BaseModule()
     if module.params.get('spec__resources__memory_size_mib'):
         module.params['spec__resources__memory_size_mib'] = module.params['spec__resources__memory_size_mib'] * 1024
+    if module.params.get("metadata__categories_mapping"):
+        module.params["metadata__use_categories_mapping"] = True
     VM(module)
 
 

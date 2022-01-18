@@ -65,7 +65,7 @@ class VMSpec():
                 self.remove_null_references(_i)
 
         elif isinstance(spec, dict):
-            for _k, _v in spec.items():
+            for _k, _v in spec.copy().items():
                 if _v in [None, "", []]:
                     spec.pop(_k)
                 self.remove_null_references(_v, spec, _k)
@@ -213,7 +213,7 @@ class VMNetwork(VMSpec):
                 # elif 'subnet_' in k and k.split('_')[-1] in nic_final['subnet_reference']:
                 #     nic_final['subnet_reference'][k.split('_')[-1]] = v
 
-                elif k == "subnet_uuid":
+                elif k == "subnet_uuid" and v:
                     nic_final["subnet_reference"] = {
                         "kind": "subnet",
                         "uuid": v
