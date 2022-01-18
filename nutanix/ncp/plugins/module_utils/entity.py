@@ -126,6 +126,8 @@ class Entity:
             payload = {}
         else:
             payload = req_data
+        # if "list" not in req_url:
+        #     raise ValueError(payload)
         resp, info = fetch_url(module=module, url=req_url, headers=headers,
                                method=method, data=module.jsonify(payload), timeout=timeout)
         if not 300 > info['status'] > 199:
@@ -189,7 +191,7 @@ class Entity:
     @staticmethod
     def get_spec():
         import yaml
-        with open('testjson_spec.json') as f:
+        with open('/opt/testjson_spec.json') as f:
             # spec = json.loads(str(f.read()))
             spec = yaml.safe_load(f.read())
         return spec
@@ -237,7 +239,7 @@ class Entity:
         self.get_action()
 
         getattr(self, self.action)()
-
+        
         self.response = self.send_request(self.module,
                                           self.methods_of_actions[self.action],
                                           self.url,

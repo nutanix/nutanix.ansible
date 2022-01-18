@@ -65,9 +65,11 @@ class VMSpec():
                 self.remove_null_references(_i)
 
         elif isinstance(spec, dict):
-            for _k, _v in spec.items():
+            for _k, _v in spec.copy().items():
+                
                 if _v in [None, "", []]:
                     spec.pop(_k)
+                    
                 self.remove_null_references(_v, spec, _k)
 
             if not bool(spec) and parent_spec and spec_key:
@@ -195,6 +197,7 @@ class VMNetwork(VMSpec):
     def __get_subnet_ref(self, name, **kwargs):
         get_entity_by_name = kwargs['get_ref']
         entity = get_entity_by_name(name, 'subnets')
+        
         return {
             "kind": entity["kind"],
             "uuid": entity["uuid"],
@@ -206,6 +209,7 @@ class VMNetwork(VMSpec):
         final_nic_list = []
         for nic_param in param_spec:
             nic_final = self.get_default_spec()
+            
             for k, v in nic_param.items():
                 if k in nic_final.keys() and not isinstance(v, list):
                     nic_final[k] = v
@@ -213,19 +217,22 @@ class VMNetwork(VMSpec):
                 # elif 'subnet_' in k and k.split('_')[-1] in nic_final['subnet_reference']:
                 #     nic_final['subnet_reference'][k.split('_')[-1]] = v
 
-                elif k == "subnet_uuid":
+                elif k == "subnet_uuid" and v:
                     nic_final["subnet_reference"] = {
                         "kind": "subnet",
                         "uuid": v
                     }
                 elif k == "subnet_name" and not nic_param.get("subnet_uuid"):
+                   
                     nic_final["subnet_reference"] = self.__get_subnet_ref(v, **kwargs)
-
+                    
+                 
                 elif k == "ip_endpoint_list" and bool(v):
                     nic_final[k] = [{"ip": v[0]}]
-
             final_nic_list.append(nic_final)
+        
         self.remove_null_references(final_nic_list)
+        
 
         return final_nic_list
 

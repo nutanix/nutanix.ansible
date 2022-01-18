@@ -55,11 +55,12 @@ from ..module_utils.prism.vms import VM
 def run_module():
     BaseModule.argument_spec.update(dict(
         spec__name=dict(type='str', required=False, aliases=['name']),
+        spec__description=dict(type='str', required=False, aliases=['desc']),
         metadata__uuid=dict(type='str', aliases=['uuid'], required=False),
         spec__resources__num_sockets=dict(type='int', default=1, aliases=['core_count', 'vcpus']),
-        spec__resources__num_threads_per_core=dict(type='int', choices=[1, 2],  # default=1,#will not provide
+        spec__resources__num_threads_per_core=dict(type='int', # default=1,#will not provide
                                                    aliases=['threads_per_core']),
-        spec__resources__num_vcpus_per_socket=dict(type='int', default=1, choices=[1, 2],
+        spec__resources__num_vcpus_per_socket=dict(type='int', default=1,
                                                    aliases=['num_vcpus_per_socket', 'cores_per_vcpu']),
         cluster=dict(type='dict', default={}, options=dict(
             spec__cluster_reference__uuid=dict(type='str', aliases=['cluster_uuid', 'uuid'], required=False),
@@ -81,9 +82,9 @@ def run_module():
             type=dict(type='str'),
             size_gb=dict(type='int'),
             bus=dict(type='str'),
-            storage_config=dict(type=dict, options=dict(
+            storage_config=dict(type=dict, aliases=['storage_container'],  options=dict(
                 storage_container_name=dict(type='str'),
-                storage_container_uuid=dict(type='str')
+                storage_container_uuid=dict(type='str',aliases=['uuid'])
             ))
 
         ), default=[]),
