@@ -94,9 +94,9 @@
       - type: "DISK"
         size_gb: 2
         bus: "PCI"
-        storage_config:
+        storage_container:
           uuid: "{{storage_config.uuid}}"
-        
+
       - type: "DISK"
         size_gb: 3
         bus: "SATA"
