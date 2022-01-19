@@ -7,4 +7,3 @@ from .prism import Prism
 
 class Subnet(Prism):
     kind = 'subnet'
-
