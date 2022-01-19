@@ -1,5 +1,7 @@
 # Copyright: 2021, Ansible Project
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 from base64 import b64encode
 import time
 import uuid
@@ -53,15 +55,18 @@ class Entity:
     def check_response(self):
 
         if self.response.get("task_uuid") and self.wait:
-            task = self.validate_request(self.module, self.response.get("task_uuid"), self.netloc, self.wait_timeout)
+            task = self.validate_request(self.module, self.response.get(
+                "task_uuid"), self.netloc, self.wait_timeout)
             self.result["task_information"] = task
 
         if not self.response.get("status"):
             if self.response.get("api_response_list"):
-                self.response["status"] = self.response.get("api_response_list")[0].get("api_response").get("status")
+                self.response["status"] = self.response.get("api_response_list")[
+                    0].get("api_response").get("status")
             elif "entities" in self.response:
                 if self.response["entities"]:
-                    self.response["status"] = self.response.get("entities")[0].get("status")
+                    self.response["status"] = self.response.get("entities")[
+                        0].get("status")
                 else:
                     self.response["status"] = {"state": "complete"}
 
@@ -69,14 +74,16 @@ class Entity:
             state = self.response.get("status").get("state")
             if "pending" in state.lower() or "running" in state.lower():
                 task = self.validate_request(self.module,
-                                             self.response.get("status").get("execution_context").get("task_uuid"),
+                                             self.response.get("status").get(
+                                                 "execution_context").get("task_uuid"),
                                              self.netloc,
                                              self.wait_timeout)
                 self.response["status"]["state"] = task.get("status")
                 self.result["task_information"] = task
 
         self.result["changed"] = True
-        status = self.response.get("state") or self.response.get("status").get("state")
+        status = self.response.get(
+            "state") or self.response.get("status").get("state")
         if status and status.lower() != "succeeded" or self.action == "list":
             self.result["changed"] = False
             if status.lower() != "complete":
@@ -93,7 +100,8 @@ class Entity:
             self.url += "/" + str(uuid.UUID(item_uuid))
         else:
             self.url += "/" + str(uuid.UUID(item_uuid)) + "/file"
-        response = self.send_request(self.module, "get", self.url, self.data, self.username, self.password)
+        response = self.send_request(
+            self.module, "get", self.url, self.data, self.username, self.password)
 
         if response.get("state") and response.get("state").lower() == "error":
             self.result["changed"] = False
@@ -115,7 +123,7 @@ class Entity:
     def send_request(module, method, req_url, req_data, username, password, timeout=30):
         try:
             credentials = bytes(username + ":" + password, encoding="ascii")
-        except:
+        except BaseException:
             credentials = bytes(username + ":" + password).encode("ascii")
 
         encoded_credentials = b64encode(credentials).decode("ascii")
@@ -129,7 +137,8 @@ class Entity:
         resp, info = fetch_url(module=module, url=req_url, headers=headers,
                                method=method, data=module.jsonify(payload), timeout=timeout)
         if not 300 > info['status'] > 199:
-            module.fail_json(msg="Fail: %s" % ("Status: " + str(info['msg']) + ", Message: " + str(info.get('body'))))
+            module.fail_json(msg="Fail: %s" % (
+                "Status: " + str(info['msg']) + ", Message: " + str(info.get('body'))))
 
         body = resp.read() if resp else info.get("body")
         try:
@@ -146,7 +155,8 @@ class Entity:
         task_uuid = str(uuid.UUID(task_uuid))
         url = self.generate_url_from_operations("tasks", netloc, [task_uuid])
         while retries > 0 or not succeeded:
-            response = self.send_request(module, "get", url, None, self.username, self.password)
+            response = self.send_request(
+                module, "get", url, None, self.username, self.password)
             if response.get("status"):
                 status = response.get("status")
                 if "running" not in status.lower() and "queued" not in status.lower():
@@ -182,9 +192,10 @@ class Entity:
         if self.action in self.methods_of_actions.keys():
             self.action = self.methods_of_actions[self.action]
         elif self.action == 'present':
-            self.action = 'update' if self.data['metadata'].get('uuid') else 'create'
+            self.action = 'update' if self.data['metadata'].get(
+                'uuid') else 'create'
         else:
-            raise ValueError("Wrong action: "+ self.action)
+            raise ValueError("Wrong action: " + self.action)
 
     def get_spec(self):
         import yaml
@@ -221,7 +232,8 @@ class Entity:
                 list_key = obj.pop('list_key')
                 sub_spec_key = list_key.split('__')[-1]
                 if list_key:
-                    value = self.get_attr_spec(sub_spec_key, getattr(self, list_key, None))
+                    value = self.get_attr_spec(
+                        sub_spec_key, getattr(self, list_key, None))
                     if value:
                         spec[key] = value
                     else:
@@ -238,7 +250,8 @@ class Entity:
 
         self.parse_data()
 
-        self.url = self.generate_url_from_operations(self.module_name, self.netloc, self.operations)
+        self.url = self.generate_url_from_operations(
+            self.module_name, self.netloc, self.operations)
 
         self.get_action()
 
@@ -272,7 +285,8 @@ class Entity:
         self.credentials = self.auth.get("credentials")
 
         if not self.url:
-            self.url = str(self.auth.get("ip_address")) + ":" + str(self.auth.get("port"))
+            self.url = str(self.auth.get("ip_address")) + \
+                ":" + str(self.auth.get("port"))
 
         self.netloc = self.url
         self.module_name = module._name

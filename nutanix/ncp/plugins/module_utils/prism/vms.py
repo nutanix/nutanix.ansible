@@ -1,5 +1,7 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
@@ -25,7 +27,8 @@ class VM(Prism):
         pass
 
     def get_entity_by_name(self, name='', kind=''):
-        url = self.generate_url_from_operations(kind, netloc=self.url, ops=['list'])
+        url = self.generate_url_from_operations(
+            kind, netloc=self.url, ops=['list'])
         data = {
             'filter': 'name==%s' % name,
             'length': 1
@@ -47,15 +50,16 @@ class VM(Prism):
 
 class VMSpec():
 
-    @staticmethod
     def get_default_spec(self):
         raise NotImplementedError(
-            "Get Default Spec helper not implemented for {}".format(self.entity_type)
+            "Get Default Spec helper not implemented for {0}".format(
+                self.entity_type)
         )
 
     def _get_api_spec(self, param_spec, **kwargs):
         raise NotImplementedError(
-            "Get Api Spec helper not implemented for {}".format(self.entity_type)
+            "Get Api Spec helper not implemented for {0}".format(
+                self.entity_type)
         )
 
     def remove_null_references(self, spec, parent_spec=None, spec_key=None):
@@ -129,7 +133,8 @@ class VMDisk(VMSpec):
         for disk_param in param_spec:
             disk_final = self.get_default_spec()
             if disk_param.get("clone_image"):
-                disk_final["data_source_reference"] = self.__get_image_ref(disk_param["clone_image"], **kwargs)
+                disk_final["data_source_reference"] = self.__get_image_ref(
+                    disk_param["clone_image"], **kwargs)
 
             disk_final["device_properties"]["device_type"] = disk_param["type"]
             disk_final["device_properties"]["disk_address"]["adapter_type"] = disk_param["bus"]
@@ -219,7 +224,8 @@ class VMNetwork(VMSpec):
                         "uuid": v
                     }
                 elif k == "subnet_name" and not nic_param.get("subnet_uuid"):
-                    nic_final["subnet_reference"] = self.__get_subnet_ref(v, **kwargs)
+                    nic_final["subnet_reference"] = self.__get_subnet_ref(
+                        v, **kwargs)
 
                 elif k == "ip_endpoint_list" and bool(v):
                     nic_final[k] = [{"ip": v[0]}]

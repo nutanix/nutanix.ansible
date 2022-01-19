@@ -3,6 +3,8 @@
 # Copyright: (c) 2021
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
+from ..module_utils.prism.vms import VM
+from ..module_utils.base_module import BaseModule
 
 __metaclass__ = type
 
@@ -48,33 +50,36 @@ EXAMPLES = r'''
 RETURN = r'''
 '''
 
-from ..module_utils.base_module import BaseModule
-from ..module_utils.prism.vms import VM
-
 
 def run_module():
     BaseModule.argument_spec.update(dict(
         spec__name=dict(type='str', required=False, aliases=['name']),
-        spec__description=dict(type='str', required=False, aliases=['desc', 'description']),
+        spec__description=dict(type='str', required=False, aliases=[
+                               'desc', 'description']),
         metadata__uuid=dict(type='str', aliases=['uuid'], required=False),
-        spec__resources__num_sockets=dict(type='int', default=1, aliases=['core_count', 'vcpus']),
+        spec__resources__num_sockets=dict(
+            type='int', default=1, aliases=['core_count', 'vcpus']),
         spec__resources__num_threads_per_core=dict(type='int',  # default=1,#will not provide
                                                    aliases=['threads_per_core']),
-        spec__resources__num_vcpus_per_socket=dict(type='int', default=1, 
+        spec__resources__num_vcpus_per_socket=dict(type='int', default=1,
                                                    aliases=['num_vcpus_per_socket', 'cores_per_vcpu']),
         cluster=dict(type='dict', default={}, options=dict(
-            spec__cluster_reference__uuid=dict(type='str', aliases=['cluster_uuid', 'uuid'], required=False),
-            spec__cluster_reference__name=dict(type='str', aliases=['cluster_name', 'name'], required=False),
+            spec__cluster_reference__uuid=dict(
+                type='str', aliases=['cluster_uuid', 'uuid'], required=False),
+            spec__cluster_reference__name=dict(
+                type='str', aliases=['cluster_name', 'name'], required=False),
             spec__cluster_reference__kind=dict(type='str', aliases=['cluster_kind'], required=False,
                                                default='cluster'), ),
-                     ),
+        ),
         spec__resources__nic_list=dict(type='list', aliases=['networks'], elements='dict', options=dict(
             uuid=dict(type='str', aliases=['nic_uuid']),
             subnet_uuid=dict(type='str'),
             subnet_name=dict(type='str'),
             subnet_kind=dict(type='str', default='subnet'),
-            is_connected=dict(type='bool', aliases=['connected'], default=False),
-            ip_endpoint_list=dict(type='list', aliases=['private_ip'], default=[]),
+            is_connected=dict(type='bool', aliases=[
+                              'connected'], default=False),
+            ip_endpoint_list=dict(type='list', aliases=[
+                                  'private_ip'], default=[]),
             nic_type=dict(type='str', default='NORMAL_NIC'),
 
         ), default=[]),
@@ -82,13 +87,14 @@ def run_module():
             type=dict(type='str'),
             size_gb=dict(type='int'),
             bus=dict(type='str'),
-            storage_config=dict(type=dict,aliases=['storage_container'], options=dict(
+            storage_config=dict(type=dict, aliases=['storage_container'], options=dict(
                 storage_container_name=dict(type='str'),
-                storage_container_uuid=dict(type='str',aliases=['uuid'])
+                storage_container_uuid=dict(type='str', aliases=['uuid'])
             ))
 
         ), default=[]),
-        spec__resources__hardware_clock_timezone=dict(type='str', default='UTC', aliases=['timezone']),
+        spec__resources__hardware_clock_timezone=dict(
+            type='str', default='UTC', aliases=['timezone']),
         spec__resources__boot_config__boot_type=dict(type='str',
                                                      default='LEGACY',
                                                      aliases=['boot_type']),
@@ -100,10 +106,12 @@ def run_module():
             ], aliases=['boot_device_order_list']),
         spec__resources__memory_overcommit_enabled=dict(
             type='bool', default=False, aliases=['memory_overcommit_enabled']),
-        spec__resources__memory_size_mib=dict(type='int', default=1, aliases=['memory_size_mib', 'memory_gb']),
+        spec__resources__memory_size_mib=dict(type='int', default=1, aliases=[
+                                              'memory_size_mib', 'memory_gb']),
         metadata__categories_mapping=dict(type='dict', aliases=['categories']),
-        metadata__use_categories_mapping=dict(type='bool', aliases=['use_categories_mapping'], default=False)
-        ))
+        metadata__use_categories_mapping=dict(
+            type='bool', aliases=['use_categories_mapping'], default=False)
+    ))
 
     module = BaseModule()
     if module.params.get('spec__resources__memory_size_mib'):

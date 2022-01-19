@@ -3,6 +3,8 @@
 # Copyright: (c) 2021
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
+from ..module_utils.prism.subnets import Subnet
+from ..module_utils.base_module import BaseModule
 __metaclass__ = type
 
 
@@ -98,32 +100,37 @@ EXAMPLES = r'''
 '''
 
 RETURN = r'''
-
-# CREATE /subnets
-responses:
-- default: Internal Error
-- 202: Request Accepted
-
-# UPDATE /subnets/{uuid}
-responses:
-- default: Internal Error
-- 404: Invalid UUID provided
-- 202: Request Accepted
-
-# LIST /subnets/list
-responses:
-- default: Internal Error
-- 200: Success
-
-# DELETE /subnets/{uuid}
-responses:
-- default: Internal Error
-- 404: Invalid UUID provided
-- 202: Request Accepted
+CREATE:
+    description: CREATE /subnets Response for nutanix subnets
+    returned: (for CREATE /subnets  operation)
+    type: str
+    sample:
+        - default Internal Error
+        - 202 Request Accepted
+UPDATE:
+    description: UPDATE /subnets/{uuid} Response for nutanix subnets
+    returned: (for UPDATE /subnets  operation)
+    type: str
+    sample:
+        - default Internal Error
+        - 404 Invalid UUID provided
+        - 202 Request Accepted
+LIST:
+    description:  LIST /subnets/list Response for nutanix subnets
+    returned: (for LIST /subnets  operation)
+    type: str
+    sample:
+        - default Internal Error
+        - 200 Success
+DELETE:
+    description: DELETE /subnets/{uuid} Response for nutanix subnets
+    returned: (for DELETE /subnets  operation)
+    type: str
+    sample:
+        - default Internal Error
+        - 404 Invalid UUID provided
+        - 202 Request Accepted
 '''
-
-from ..module_utils.base_module import BaseModule
-from ..module_utils.prism.subnets import Subnet
 
 
 def run_module():

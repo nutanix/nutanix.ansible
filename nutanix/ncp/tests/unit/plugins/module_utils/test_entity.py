@@ -1,3 +1,5 @@
+from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 from ansible.module_utils import basic
 from ansible_collections.nutanix.ncp.tests.unit.plugins.modules.utils import AnsibleExitJson, AnsibleFailJson, ModuleTestCase, set_module_args
 from ansible.module_utils.six.moves.urllib.parse import urlparse
