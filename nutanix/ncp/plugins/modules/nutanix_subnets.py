@@ -98,28 +98,36 @@ EXAMPLES = r'''
 '''
 
 RETURN = r'''
-
-# CREATE /subnets
-responses:
-- default: Internal Error
-- 202: Request Accepted
-
-# UPDATE /subnets/{uuid}
-responses:
-- default: Internal Error
-- 404: Invalid UUID provided
-- 202: Request Accepted
-
-# LIST /subnets/list
-responses:
-- default: Internal Error
-- 200: Success
-
-# DELETE /subnets/{uuid}
-responses:
-- default: Internal Error
-- 404: Invalid UUID provided
-- 202: Request Accepted
+CREATE:
+    description: CREATE /subnets Response for nutanix subnets
+    returned: (for CREATE /subnets  operation)
+    type: str
+    sample:
+        - default Internal Error
+        - 202 Request Accepted
+UPDATE:
+    description: UPDATE /subnets/{uuid} Response for nutanix subnets
+    returned: (for UPDATE /subnets  operation)
+    type: str
+    sample:
+        - default Internal Error
+        - 404 Invalid UUID provided
+        - 202 Request Accepted
+LIST:
+    description:  LIST /subnets/list Response for nutanix subnets
+    returned: (for LIST /subnets  operation)
+    type: str
+    sample:
+        - default Internal Error
+        - 200 Success
+DELETE:
+    description: DELETE /subnets/{uuid} Response for nutanix subnets
+    returned: (for DELETE /subnets  operation)
+    type: str
+    sample:
+        - default Internal Error
+        - 404 Invalid UUID provided
+        - 202 Request Accepted
 '''
 
 from ..module_utils.base_module import BaseModule

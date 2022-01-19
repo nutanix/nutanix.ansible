@@ -114,28 +114,36 @@ EXAMPLES = r'''
 '''
 
 RETURN = r'''
-
-# CREATE /images
-responses:
-- default: Internal Error
-- 202: Request Accepted
-
-# UPDATE /images/{uuid}
-responses:
-- default: Internal Error
-- 404: Invalid UUID provided
-- 202: Request Accepted
-
-# LIST /images/list
-responses:
-- default: Internal Error
-- 200: Success
-
-# DELETE /images/{uuid}
-responses:
-- default: Internal Error
-- 404: Invalid UUID provided
-- 202: Request Accepted
+CREATE:
+    description: CREATE /images Response for nutanix imagese
+    returned: (for CREATE /images  operation)
+    type: str
+    sample:
+      - default Internal Error
+      - 202 Request Accepted
+UPDATE:
+    description: UPDATE /images/{uuid} Response for nutanix images
+    returned: (for UPDATE /images  operation)
+    type: str
+    sample:
+      - default Internal Error
+      - 404 Invalid UUID provided
+      - 202 Request Accepted
+LIST:
+    description:  LIST /images/list Response for nutanix imagese
+    returned: (for LIST /images  operation)
+    type: str
+    sample:
+      - default Internal Error
+      - 200 Success
+DELETE:
+    description: DELETE /images/{uuid} Response for nutanix images
+    returned: (for DELETE /images  operation)
+    type: str
+    sample:
+      - default Internal Error
+      - 404 Invalid UUID provided
+      - 202 Request Accepted
 '''
 
 from ..module_utils.base_module import BaseModule
