@@ -21,6 +21,22 @@
       - result.response.status.state == 'SUCCEEDED'
     fail_msg: "Unable to Create Vm With Mannaged subnet and subnet_name "
     success_msg: "VM with With Mannaged subnet and subnet_name Created successfully "
+- name: delete With Mannaged subnet and subnet_name
+  nutanix_vms:
+    uuid: '{{ result["response"]["metadata"]["uuid"] }}'
+    state: absent
+    auth:
+      credentials: "{{credentials}}"
+      url: "{{config.ip_address}}:{{config.port}}"
+  register: result
+
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'SUCCEEDED'
+    fail_msg: "Unable to delete Vm"
+    success_msg: "VM  Deleted successfully"
 
 - name: create VM with Minimum Requiremnts
   nutanix_vms:
