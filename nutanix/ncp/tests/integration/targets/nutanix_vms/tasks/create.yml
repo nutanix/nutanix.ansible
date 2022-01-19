@@ -1,0 +1,183 @@
+---
+- name: create Vm With Mannaged subnet and subnet_name
+  nutanix_vms:
+    state: present
+    name: "Vm_Net_Name"
+    auth:
+      credentials: "{{credentials}}"
+      url: "{{config.ip_address}}:{{config.port}}"
+    cluster:
+      cluster_uuid: "{{cluster.uuid}}"
+    networks:
+      - connected: True
+        subnet_name: "{{networks.mannaged.name}}"
+        private_ip: "{{networks.mannaged.ip}}"
+  register: result
+  ignore_errors: True
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'SUCCEEDED'
+    fail_msg: "Unable to Create Vm With Mannaged subnet and subnet_name "
+    success_msg: "VM with With Mannaged subnet and subnet_name Created successfully "
+- name: delete With Mannaged subnet and subnet_name
+  nutanix_vms:
+    uuid: '{{ result["response"]["metadata"]["uuid"] }}'
+    state: absent
+    auth:
+      credentials: "{{credentials}}"
+      url: "{{config.ip_address}}:{{config.port}}"
+  register: result
+
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'SUCCEEDED'
+    fail_msg: "Unable to delete Vm"
+    success_msg: "VM  Deleted successfully"
+
+- name: create VM with Minimum Requiremnts
+  nutanix_vms:
+    state: present
+    name: "MinVm"
+    auth:
+      credentials: "{{credentials}}"
+      url: "{{config.ip_address}}:{{config.port}}"
+    cluster:
+      cluster_uuid: "{{cluster.uuid}}"
+  register: result
+  ignore_errors: True
+
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'SUCCEEDED'
+    fail_msg: "Unable to Create Vm with Minimum Requiremnts"
+    success_msg: "VM with Minimum Requiremnts Created successfully"
+
+- name: Create Vm With Unamannaged vlan
+  nutanix_vms:
+    desc: "This is vm test description"
+    state: present
+    name: "Vm-Nics"
+    timezone: "UTC"
+    auth:
+      credentials: "{{credentials}}"
+      url: "{{config.ip_address}}:{{config.port}}"
+    cluster:
+      cluster_uuid: "{{cluster.uuid}}"
+    networks:
+      - connected: False
+        subnet_uuid: "{{networks.unmannaged.uuid}}"
+    boot_type: "LEGACY"
+    boot_device_order_list:
+      - "DISK"
+      - "CDROM"
+      - "NETWORK"
+    vcpus: 1
+    cores_per_vcpu: 1
+    memory_gb: 1
+  register: result
+  ignore_errors: True
+
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'SUCCEEDED'
+    fail_msg: "Unable to Create Vm With Unamannaged vlan"
+    success_msg: "VM With Unamannaged vlan Created successfully"
+- name: Create Vm with  diffrent disk types and diffrent sizes ,UEFI
+  nutanix_vms:
+    state: present
+    name: "Vm_disks"
+    timezone: "GMT"
+    auth:
+      credentials: "{{credentials}}"
+      url: "{{config.ip_address}}:{{config.port}}"
+    cluster:
+      cluster_uuid: "{{cluster.uuid}}"
+    categories:
+      AppType:
+        - "Apache_Spark"
+    disks:
+      - type: "DISK"
+        size_gb: 1
+        bus: "SCSI"
+      - type: "DISK"
+        size_gb: 2
+        bus: "PCI"
+        storage_container:
+          uuid: "{{storage_config.uuid}}"
+
+      - type: "DISK"
+        size_gb: 3
+        bus: "SATA"
+    boot_type: "UEFI"
+    boot_device_order_list:
+      - "DISK"
+      - "CDROM"
+      - "NETWORK"
+    vcpus: 2
+    cores_per_vcpu: 1
+    memory_gb: 1
+  register: result
+  ignore_errors: True
+
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'SUCCEEDED'
+    fail_msg: "Unable to Create Vm with  diffrent disk types and diffrent sizes ,UEFI "
+    success_msg: "VM with   with  diffrent disk types and diffrent sizes ,UEFI  Created successfully"
+- name: create Vm With different disks and both Mannaged and UnMannaged network
+  nutanix_vms:
+    state: present
+    name: "Vm_Disks_NIC"
+    timezone: "UTC"
+    auth:
+      credentials: "{{credentials}}"
+      url: "{{config.ip_address}}:{{config.port}}"
+    cluster:
+      cluster_uuid: "{{cluster.uuid}}"
+    networks:
+      - connected: True
+        subnet_uuid: "{{networks.unmannaged.uuid}}"
+      - connected: True
+        subnet_uuid: "{{networks.mannaged.uuid}}"
+    disks:
+      - type: "DISK"
+        size_gb: 1
+        bus: "SCSI"
+      - type: "DISK"
+        size_gb: 3
+        bus: "PCI"
+      - type: "DISK"
+        size_gb: 1
+        bus: "SATA"
+      - type: "DISK"
+        size_gb: 5
+        bus: "IDE"
+    boot_type: "UEFI"
+    boot_device_order_list:
+      - "DISK"
+      - "CDROM"
+      - "NETWORK"
+    vcpus: 2
+    cores_per_vcpu: 2
+    memory_gb: 2
+    memory_overcommit_enabled: True
+  register: result
+  ignore_errors: True
+
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'SUCCEEDED'
+    fail_msg: "Unable to Create Vm with both Mannaged and UnMannaged network"
+    success_msg: "VM with   With different disks and both Mannaged and UnMannaged network Created successfully"
