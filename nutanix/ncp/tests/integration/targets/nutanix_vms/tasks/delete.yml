@@ -1,0 +1,36 @@
+---
+- name: create VM with Minimum Requirment
+  nutanix_vms:
+    state: present
+    name: "MinVm"
+    auth:
+      credentials: "{{credentials}}"
+      url: "{{config.ip_address}}:{{config.port}}"
+    cluster:
+      cluster_uuid: "{{cluster.uuid}}"
+  register: result
+  ignore_errors: True
+
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'SUCCEEDED'
+    fail_msg: "Unable to delete Vm"
+    success_msg: "VM   Created successfully"
+- name: delete vm
+  nutanix_vms:
+    uuid: '{{ result["response"]["metadata"]["uuid"] }}'
+    state: absent
+    auth:
+      credentials: "{{credentials}}"
+      url: "{{config.ip_address}}:{{config.port}}"
+  register: result
+
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'SUCCEEDED'
+    fail_msg: "Unable to delete Vm"
+    success_msg: "VM   Deleted successfully"

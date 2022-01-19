@@ -1,0 +1,19 @@
+---
+credentials:
+  username: admin
+  password: Nutanix.123
+config:
+  ip_address: 10.37.161.185
+  port: 9440
+
+cluster:
+  uuid: "0005d5aa-3876-9503-0bb4-204ea767711e"
+networks:
+  mannaged:
+    name: "test_managed_subnet"
+    uuid: "ca7fab15-83be-4cca-bc28-88b0b8db293d"
+    ip: "10.30.30.75"
+  unmannaged:
+    uuid: "50d81e3f-fb84-468e-8ff5-b4ce54f6c7cc"
+storage_config:
+  uuid: "6e78251f-9cf9-45d7-ad16-59274e6f2ea2"
