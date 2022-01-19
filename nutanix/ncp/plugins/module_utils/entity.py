@@ -19,7 +19,7 @@ class Entity:
     """Basic functionality for Nutanix modules"""
 
     entity_type = "Base"
-
+    spec_file = ''
     result = dict(
         changed=False,
         original_message="",
@@ -186,10 +186,16 @@ class Entity:
         else:
             raise ValueError("Wrong action: "+ self.action)
 
-    @staticmethod
-    def get_spec():
+    def get_spec(self):
         import yaml
-        with open('testjson_spec.json') as f:
+        from os.path import join
+
+        # Get the current working directory
+
+        ncp_dir = self.module.tmpdir.split('/tmp')[0] + '/collections/ansible_collections/nutanix/ncp/'
+
+        file_path = join(ncp_dir, self.spec_file)
+        with open(file_path) as f:
             # spec = json.loads(str(f.read()))
             spec = yaml.safe_load(f.read())
         return spec
