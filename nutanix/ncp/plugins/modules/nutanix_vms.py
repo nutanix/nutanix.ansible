@@ -52,7 +52,6 @@ options:
   vcpus:
     description: This is the vcpus description
     aliases:
-      - core_count
       - spec__resources__num_sockets
     required: false
     type: int
@@ -70,15 +69,9 @@ options:
       - spec__description
     required: false
     type: str
-  threads_per_core:
-    description: This is the threads_per_core description
-    aliases:
-      - spec__resources__num_threads_per_core
-    type: int
-  num_vcpus_per_socket:
+  cores_per_vcpu:
     description: This is the num_vcpus_per_socket description
     aliases:
-      - cores_per_vcpu
       - spec__resources__num_vcpus_per_socket
     type: int
     default: 1
@@ -202,7 +195,7 @@ options:
         type: list
       nic_type:
         description: The type of this Network function NIC.
-        default: INGRESS
+        default: NORMAL_NIC
         type: str
   disks:
     description: Disks attached to the VM
@@ -273,11 +266,10 @@ def run_module():
                                'desc', 'description']),
         metadata__uuid=dict(type='str', aliases=['uuid'], required=False),
         spec__resources__num_sockets=dict(
-            type='int', default=1, aliases=['core_count', 'vcpus']),
-        spec__resources__num_threads_per_core=dict(type='int',  # default=1,#will not provide
-                                                   aliases=['threads_per_core']),
+            type='int', default=1, aliases=['vcpus']),
+
         spec__resources__num_vcpus_per_socket=dict(type='int', default=1,
-                                                   aliases=['num_vcpus_per_socket', 'cores_per_vcpu']),
+                                                   aliases=['cores_per_vcpu']),
         cluster=dict(type='dict', default={}, options=dict(
             spec__cluster_reference__uuid=dict(
                 type='str', aliases=['cluster_uuid', 'uuid'], required=False),
@@ -295,7 +287,7 @@ def run_module():
                               'connected'], default=True),
             ip_endpoint_list=dict(type='list', elements='str', aliases=[
                                   'private_ip'], default=[]),
-            nic_type=dict(type='str', default='INGRESS'),
+            nic_type=dict(type='str', default='NORMAL_NIC'),
 
         ), default=[]),
         spec__resources__disk_list=dict(type='list', aliases=['disks'], elements='dict', options=dict(
