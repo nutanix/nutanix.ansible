@@ -3,7 +3,7 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 from copy import deepcopy
-
+from base64 import b64encode
 from .prism import Prism
 
 
@@ -15,7 +15,8 @@ class VM(Prism):
     def get_attr_spec(self, param, param_spec, **kwargs):
         param_method_spec = {
             "disk_list": VMDisk,
-            "nic_list": VMNetwork
+            "nic_list": VMNetwork,
+            "guest_customization": GuestCustomizationSpec
         }
 
         if param in param_method_spec:
@@ -207,7 +208,6 @@ class VMNetwork(VMSpec):
 
     def _get_api_spec(self, param_spec, **kwargs):
 
-        _di_map = {}
         final_nic_list = []
         for nic_param in param_spec:
             nic_final = self.get_default_spec()
@@ -224,8 +224,7 @@ class VMNetwork(VMSpec):
                         "uuid": v
                     }
                 elif k == "subnet_name" and not nic_param.get("subnet_uuid"):
-                    nic_final["subnet_reference"] = self.__get_subnet_ref(
-                        v, **kwargs)
+                    nic_final["subnet_reference"] = self.__get_subnet_ref(v, **kwargs)
 
                 elif k == "ip_endpoint_list" and bool(v):
                     nic_final[k] = [{"ip": v[0]}]
@@ -234,6 +233,48 @@ class VMNetwork(VMSpec):
         self.remove_null_references(final_nic_list)
 
         return final_nic_list
+
+    def __call__(self, param_spec, **kwargs):
+        return self._get_api_spec(param_spec, **kwargs)
+
+
+class GuestCustomizationSpec(VMSpec):
+
+    @staticmethod
+    def get_default_spec():
+        return deepcopy(
+            {
+                "sysprep": {
+                    "install_type": "",
+                    "unattend_xml": "",
+                    "custom_key_values": {},
+                },
+                "cloud_init": {
+                    "meta_data": "",
+                    "user_data": "",
+                    "custom_key_values": {},
+                },
+                "is_overridable": ""
+                }
+        )
+
+    def _get_api_spec(self, param_spec, **kwargs):
+
+        gc_spec = self.get_default_spec()
+        script_file_path = param_spec["script_path"]
+        with open(script_file_path, "r") as f:
+            content = f.read()
+        content = b64encode(content)
+        type = param_spec["type"]
+        if type == "sysprep":
+            gc_spec[type]["unattend_xml"] = content
+        elif type == "cloud_init":
+            gc_spec[type]["user_data"] = content
+        gc_spec["is_overridable"] = param_spec.get("is_overridable")
+
+        self.remove_null_references(gc_spec)
+
+        return gc_spec
 
     def __call__(self, param_spec, **kwargs):
         return self._get_api_spec(param_spec, **kwargs)
