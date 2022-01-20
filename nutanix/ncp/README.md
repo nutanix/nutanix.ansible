@@ -4,7 +4,7 @@ Ansible collections to automate Nutanix Cloud Platform (ncp).
 # Building and installing the collection locally
 ```
 ansible-galaxy collection build
-ansible-galaxy collection install nutanix.ncp-1.0.0.tar.gz
+ansible-galaxy collection install nutanix-ncp-1.0.0.tar.gz
 ```
 
 ##or
@@ -18,31 +18,37 @@ _Add `--force` option for rebuilding or reinstalling to overwrite existing data_
 # Included modules
 ```
 nutanix_vms
-nutanix_images
-nutanix_subnets
 ```
-
-# Inventory plugin
-`ncp_prism_vm_inventory`
-
-# Module documentation and examples
+# Included Tests
 ```
-ansible-doc nutanix.ncp.<module_name>
+Integration Test
+```
+### Running The Integration Test
+```
+cd ~/.ansible/collections/ansible_collections/nutanix/ncp/
+
+ansible-test integration nutanix_vms
+
 ```
 
 # Examples
-## Playbook to print name of vms in PC
+## Playbook to create vm with minumum requiremnt
 ```
 - hosts: localhost
   collections:
   - nutanix.ncp
   tasks:
-  - ncp_prism_vm_info:
-      pc_hostname: {{ pc_hostname }}
-      pc_username: {{ pc_username }}
-      pc_password: {{ pc_password }}
-      validate_certs: False
+  - name: create VM with Minimum Requiremnts
+    nutanix_vms:
+      state: present
+      name: "MinVm"
+      auth:
+        credentials: "{{credentials}}"
+        url: "{{config.ip_address}}:{{config.port}}"
+      cluster:
+        cluster_uuid: "{{cluster.uuid}}"
+      
     register: result
   - debug:
-      msg: "{{ result.vms }}"
+      msg: "{{ result.response.status.state }}"
 ```
