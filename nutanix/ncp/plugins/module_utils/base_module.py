@@ -12,7 +12,7 @@ class BaseModule(AnsibleModule):
         action=dict(type="str", required=True, aliases=['state']),
         auth=dict(type="dict", required=True),
         data=dict(type="dict", required=False),
-        operations=dict(type="list", required=False),
+        operations=dict(type="list", elements="str", required=False),
         wait=dict(type="bool", required=False, default=True),
         wait_timeout=dict(type="int", required=False, default=300),
         validate_certs=dict(type="bool", required=False, default=False),

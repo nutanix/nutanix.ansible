@@ -3,42 +3,255 @@
 # Copyright: (c) 2021
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
-from ..module_utils.prism.vms import VM
-from ..module_utils.base_module import BaseModule
-
 __metaclass__ = type
+
 
 DOCUMENTATION = r'''
 ---
 module: nutanix_vms
-
 short_description: This module allows to communicate with the resource /vms
-
-version_added: "1.0.0"
-
+version_added: 1.0.0
 description: This module allows to perform the following tasks on /vms
-
 options:
-    action:
-        description: This is the HTTP action used to indicate the type of request
-        required: true
+  state:
+    description: This is the action used to indicate the type of request
+    aliases:
+      - action
+    required: true
+    type: str
+  auth:
+    description: Credentials needed for authenticating to the subnet
+    required: true
+    type: dict
+  data:
+    description: >-
+      This acts as either the params or the body payload depending on the HTTP
+      action
+    required: false
+    type: dict
+  operations:
+    description: This acts as the sub_url in the requested url
+    required: false
+    type: list
+    elements: str
+  wait_timeout:
+    description: This is the wait_timeout description
+    required: false
+    type: int
+    default: 300
+  wait:
+    description: This is the wait description
+    required: false
+    type: bool
+    default: true
+  validate_certs:
+    description: This is the validate_certs description
+    required: false
+    type: bool
+    default: false
+  vcpus:
+    description: This is the vcpus description
+    aliases:
+      - core_count
+      - spec__resources__num_sockets
+    required: false
+    type: int
+    default: 1
+  name:
+    description: vm Name
+    aliases:
+      - spec__name
+    required: false
+    type: str
+  desc:
+    description: A description for vm.
+    aliases:
+      - description
+      - spec__description
+    required: false
+    type: str
+  threads_per_core:
+    description: This is the threads_per_core description
+    aliases:
+      - spec__resources__num_threads_per_core
+    type: int
+  num_vcpus_per_socket:
+    description: This is the num_vcpus_per_socket description
+    aliases:
+      - cores_per_vcpu
+      - spec__resources__num_vcpus_per_socket
+    type: int
+    default: 1
+  timezone:
+    description: VM's hardware clock timezone in IANA TZDB format (America/Los_Angeles).
+    aliases:
+      - spec__resources__hardware_clock_timezone
+    type: str
+    default: UTC
+  boot_type:
+    description: >-
+      Indicates whether the VM should use Secure boot, UEFI boot or Legacy
+      boot.If UEFI or Secure boot is enabled then other legacy boot options
+      (like boot_device and boot_device_order_list) are ignored. Secure boot
+      depends on UEFI    boot, i.e. enabling Secure boot means that UEFI boot is
+      also enabled.
+    aliases:
+      - spec__resources__boot_config__boot_type
+    type: str
+    default: LEGACY
+  memory_overcommit_enabled:
+    description: This is the memory_overcommit_enabled description
+    aliases:
+      - spec__resources__memory_overcommit_enabled
+    type: bool
+    default: false
+  memory_size_mib:
+    description: Memory size in MiB
+    aliases:
+      - memory_gb
+      - spec__resources__memory_size_mib
+    type: int
+    default: 1
+  cluster:
+    description: The reference to a cluster
+    type: dict
+    default: {}
+    suboptions:
+      cluster_name:
+        description: Cluster Name
+        aliases:
+          - name
+          - spec__cluster_reference__name
         type: str
-    credentials:
-        description: Credentials needed for authenticating to the subnet
-        required: true
-        type: dict (Variable from file)
-    data:
-        description: This acts as either the params or the body payload depending on the HTTP action
         required: false
+      cluster_uuid:
+        description: Cluster UUID
+        aliases:
+          - uuid
+          - spec__cluster_reference__uuid
+        type: str
+        required: false
+      cluster_kind:
+        description: The Kind Name
+        aliases:
+          - spec__cluster_reference__kind
+        type: str
+        required: false
+        default: cluster
+  categories:
+    description: >-
+      Categories for the vm. This allows assigning one value of a key to any
+      entity. Changes done in this will be reflected   in the categories_mapping
+      field.
+    aliases:
+      - metadata__categories_mapping
+    type: dict
+  use_categories_mapping:
+    description: >-
+      Client need to specify this field as true if user want to use the newer
+      way of assigning the categories. Without this things should work as it was
+      earlier.
+    aliases:
+      - metadata__use_categories_mapping
+    type: bool
+    default: false
+  uuid:
+    description: VM UUID
+    aliases:
+      - metadata__uuid
+    type: str
+    required: false
+  networks:
+    description: NICs attached to the VM.
+    aliases:
+      - spec__resources__nic_list
+    type: list
+    elements: dict
+    default: []
+    suboptions:
+      nic_uuid:
+        description: >-
+          The NIC's UUID, which is used to uniquely identify this particular
+          NIC. This UUID may be used to refer to the   NIC outside the context
+          of the particular VM it is attached to.
+        aliases:
+          - uuid
+        type: str
+      subnet_name:
+        description: This is the subnet_uuid description
+        type: str
+      subnet_uuid:
+        description: The subnet uuid
+        type: str
+      subnet_kind:
+        description: This is the subnet_kind description
+        type: str
+        default: subnet
+      is_connected:
+        description: Whether or not the NIC is connected. True by default.
+        aliases:
+          - connected
+        type: bool
+        default: true
+      private_ip:
+        description: 'IP endpoints for the adapter. Currently, IPv4 addresses are supported.'
+        aliases:
+          - ip_endpoint_list
+        elements: str
+        default: []
+        type: list
+      nic_type:
+        description: The type of this Network function NIC.
+        default: INGRESS
+        type: str
+  disks:
+    description: Disks attached to the VM
+    aliases:
+      - spec__resources__disk_list
+    type: list
+    elements: dict
+    default: []
+    suboptions:
+      type:
+        description: 'Disk Type , CDROM or Disk'
+        default: DISK
+        type: str
+      size_gb:
+        description: The Disk Size in Giga
+        type: int
+      bus:
+        description: 'The Disk bus , like sata or pcie'
+        type: str
+      storage_container:
+        description: >-
+          This preference specifies the storage configuration parameters for VM
+          disks.
+        aliases:
+          - storage_config
         type: dict
-    operation:
-        description: This acts as the sub_url in the requested url
-        required: false
-        type: str
-    ip_address:
-        description: This acts as the ip_address of the subnet. It can be passed as a list in ansible using with_items
-        required: True
-        type: str
+        suboptions:
+          storage_container_name:
+            description: storage container name
+            type: str
+          storage_container_uuid:
+            description: storage container uuid
+            aliases:
+              - uuid
+            type: str
+  boot_device_order_list:
+    description: >-
+      Indicates the order of device types in which VM should try to boot from.
+      If boot device  order is not provided the system will decide appropriate
+      boot device order.
+    aliases:
+      - spec__resources__boot_config__boot_device_order_list
+    type: list
+    elements: str
+    default:
+      - CDROM
+      - DISK
+      - NETWORK
+
 
 author:
  - Gevorg Khachatryan (@gevorg_khachatryan)
@@ -49,6 +262,8 @@ EXAMPLES = r'''
 
 RETURN = r'''
 '''
+from ..module_utils.base_module import BaseModule
+from ..module_utils.prism.vms import VM
 
 
 def run_module():
@@ -77,17 +292,17 @@ def run_module():
             subnet_name=dict(type='str'),
             subnet_kind=dict(type='str', default='subnet'),
             is_connected=dict(type='bool', aliases=[
-                              'connected'], default=False),
-            ip_endpoint_list=dict(type='list', aliases=[
+                              'connected'], default=True),
+            ip_endpoint_list=dict(type='list', elements='str', aliases=[
                                   'private_ip'], default=[]),
-            nic_type=dict(type='str', default='NORMAL_NIC'),
+            nic_type=dict(type='str', default='INGRESS'),
 
         ), default=[]),
-        spec__resources__disk_list=dict(type='list', aliases=['disks'], options=dict(
-            type=dict(type='str'),
+        spec__resources__disk_list=dict(type='list', aliases=['disks'], elements='dict', options=dict(
+            type=dict(type='str', default='DISK'),
             size_gb=dict(type='int'),
             bus=dict(type='str'),
-            storage_config=dict(type=dict, aliases=['storage_container'], options=dict(
+            storage_config=dict(type='dict', aliases=['storage_container'], options=dict(
                 storage_container_name=dict(type='str'),
                 storage_container_uuid=dict(type='str', aliases=['uuid'])
             ))
@@ -99,7 +314,7 @@ def run_module():
                                                      default='LEGACY',
                                                      aliases=['boot_type']),
         spec__resources__boot_config__boot_device_order_list=dict(
-            type='list', default=[
+            type='list', elements="str", default=[
                 "CDROM",
                 "DISK",
                 "NETWORK"
