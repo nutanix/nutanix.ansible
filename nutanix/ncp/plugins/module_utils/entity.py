@@ -204,8 +204,12 @@ class Entity:
         for key, value in spec.copy().items():
             if isinstance(value, str):
                 if value.startswith('{{') and value.endswith('}}'):
-                    value = getattr(self, value[2:-2], None)
+                    value = value[2:-2]
+
+                    value = getattr(self, value, None)
                     if value:
+                        if key == 'guest_customization':
+                            value = self.get_attr_spec(key, value)
                         spec[key] = value
                     else:
                         spec.pop(key)
