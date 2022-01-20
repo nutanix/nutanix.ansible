@@ -1,6 +1,7 @@
 # Copyright: 2021, Ansible Project
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 from ansible.module_utils.basic import AnsibleModule
 
@@ -9,7 +10,7 @@ class BaseModule(AnsibleModule):
     """Basic module with common arguments"""
 
     argument_spec = dict(
-        action=dict(type="str", required=True, aliases=['state']),
+        action=dict(type="str", required=True, aliases=["state"]),
         auth=dict(type="dict", required=True),
         data=dict(type="dict", required=False),
         operations=dict(type="list", required=False),
