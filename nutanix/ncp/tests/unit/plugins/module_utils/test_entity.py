@@ -104,9 +104,7 @@ class TestEntity(ModuleTestCase):
         action = "update"
 
         self.builder.data = {
-            "metadata": {
-                "uuid": "a218f559-0ec0-46d8-a876-38f7d8950098",
-            }
+            "metadata": {"uuid": "a218f559-0ec0-46d8-a876-38f7d8950098"}
         }
         self.builder.credentials = {
             "username": self.builder.username,
@@ -163,9 +161,7 @@ class TestEntity(ModuleTestCase):
         action = "delete"
 
         self.builder.data = {
-            "metadata": {
-                "uuid": "a218f559-0ec0-46d8-a876-38f7d8950098",
-            }
+            "metadata": {"uuid": "a218f559-0ec0-46d8-a876-38f7d8950098"}
         }
         self.builder.credentials = {
             "username": self.builder.username,

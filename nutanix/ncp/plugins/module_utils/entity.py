@@ -2,13 +2,15 @@
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
 from __future__ import absolute_import, division, print_function
 
-__metaclass__ = type
 import json
 import time
 import uuid
 from base64 import b64encode
+
 from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.urls import fetch_url
+
+__metaclass__ = type
 
 try:
     from urllib.parse import urlparse

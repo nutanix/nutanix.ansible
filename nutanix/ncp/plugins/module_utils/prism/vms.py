@@ -110,18 +110,12 @@ class VMDisk(VMSpec):
     def __get_image_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
         entity = get_entity_by_name(name, "images")
-        return {
-            "kind": entity["kind"],
-            "uuid": entity["uuid"],
-        }
+        return {"kind": entity["kind"], "uuid": entity["uuid"]}
 
     def __get_storage_container_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
         entity = get_entity_by_name(name, "storage-containers")
-        return {
-            "kind": entity["kind"],
-            "uuid": entity["uuid"],
-        }
+        return {"kind": entity["kind"], "uuid": entity["uuid"]}
 
     def _get_api_spec(self, param_spec, **kwargs):
 
@@ -165,7 +159,7 @@ class VMDisk(VMSpec):
                     "storage_container_reference": {
                         "kind": "storage_container",
                         "uuid": disk_param["storage_container_uuid"],
-                    },
+                    }
                 }
             final_disk_list.append(disk_final)
         self.remove_null_references(final_disk_list)
@@ -187,11 +181,7 @@ class VMNetwork(VMSpec):
                 "is_connected": False,
                 "network_function_nic_type": "INGRESS",
                 "nic_type": "",
-                "subnet_reference": {
-                    "kind": "",
-                    "name": "",
-                    "uuid": "",
-                },
+                "subnet_reference": {"kind": "", "name": "", "uuid": ""},
                 "network_function_chain_reference": "",
                 "mac_address": "",
                 "ip_endpoint_list": [],
@@ -201,10 +191,7 @@ class VMNetwork(VMSpec):
     def __get_subnet_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
         entity = get_entity_by_name(name, "subnets")
-        return {
-            "kind": entity["kind"],
-            "uuid": entity["uuid"],
-        }
+        return {"kind": entity["kind"], "uuid": entity["uuid"]}
 
     def _get_api_spec(self, param_spec, **kwargs):
 
