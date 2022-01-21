@@ -3,9 +3,6 @@ import json
 
 def generate_spec(data, variable_name="", default={}):
     is_list = False
-    required = []
-    # if data.get('required'):
-    #     required = data['required']
     if "additionalProperties" in data.keys():
         data = data["additionalProperties"]
     if "items" in data.keys():
@@ -13,16 +10,12 @@ def generate_spec(data, variable_name="", default={}):
         is_list = True
     if "properties" in data.keys():
         data = data["properties"]
-    # if 'default' in data.keys():
-    # data = data['default']
-    # return {'default':data['default']}
     elif "type" in data.keys() and data["type"] in ["string", "integer", "boolean"]:
         return "{{" + variable_name + "}}"
     for k, v in data.items():
         data[k] = generate_spec(
             v, variable_name + "__" + str(k) if variable_name else str(k)
         )
-    # data['required'] = required
     if is_list:
         data.update({"list_key": variable_name})
         return [data]

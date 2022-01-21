@@ -6,9 +6,7 @@ from ansible.module_utils.six.moves.urllib.parse import urlparse
 from ansible_collections.nutanix.ncp.plugins.module_utils.entity import Entity
 from ansible_collections.nutanix.ncp.tests.unit.plugins.modules.utils import (
     AnsibleExitJson,
-    AnsibleFailJson,
     ModuleTestCase,
-    set_module_args,
 )
 
 try:

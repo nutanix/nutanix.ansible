@@ -7,8 +7,6 @@ import json
 import time
 import uuid
 from base64 import b64encode
-from copy import deepcopy
-
 from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.urls import fetch_url
 
@@ -278,9 +276,6 @@ class Entity:
                         spec[key] = value
                     else:
                         spec.pop(key)
-        requirements = spec.pop("required")
-        # if not set(requirements) <= spec.keys() or not spec:
-        #     return None
         return spec
 
     def build(self):
