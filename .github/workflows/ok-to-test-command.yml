@@ -6,6 +6,7 @@ on:
 jobs:
   integration_test_cases:
     runs-on: self-hosted
+    if: github.event_name == 'repository_dispatch'
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
 

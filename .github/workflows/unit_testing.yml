@@ -48,6 +48,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install shyaml
+          pip install coverage==4.5.4
       - name: Build and install the collection
         run: |
           cd nutanix/ncp
@@ -59,4 +60,22 @@ jobs:
       - name: Run tests
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
-          ansible-test units --docker default --python 3.9 -v
+          ansible-test units --docker default --python 3.9 --coverage -v
+          ansible-test coverage report > coverage.txt
+
+      - name: Code Coverage Check
+        run:  |
+              cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
+              echo "Code coverage: Checking if code coverage is above threshold..."
+              export TESTCOV_THRESHOLD=55
+              echo "Threshold: $TESTCOV_THRESHOLD %"
+              totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
+              echo "TOTAL_COVERAGE=${totalCoverage}" >> $GITHUB_ENV
+              echo "Current test coverage : $totalCoverage %"
+              if (( $(echo "$totalCoverage $TESTCOV_THRESHOLD" | awk '{print ($1 > $2)}') )); then
+                  echo "Coverage passed"
+              else
+                  echo "Current test coverage is below threshold. Please add more unit tests or adjust threshold to a lower value."
+                  echo "Coverage check failed"
+                  exit 1
+              fi
