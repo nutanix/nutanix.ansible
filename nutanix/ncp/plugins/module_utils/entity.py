@@ -221,11 +221,11 @@ class Entity:
         raise ValueError("Incorrect URL :", url)
 
     def get_action(self):
-        if self.action in self.methods_of_actions.keys():
-            self.action = self.methods_of_actions[self.action]
-        elif self.action == "present":
+        if self.action == "present":
             self.action = "update" if self.data["metadata"].get("uuid") else "create"
-        else:
+        elif self.action == "absent":
+            self.action = self.methods_of_actions[self.action]
+        elif self.action not in self.methods_of_actions.keys():
             raise ValueError("Wrong action: " + self.action)
 
     def get_spec(self):

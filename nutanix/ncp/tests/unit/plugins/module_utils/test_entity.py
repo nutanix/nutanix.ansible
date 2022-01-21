@@ -66,7 +66,7 @@ class TestEntity(ModuleTestCase):
         basic.AnsibleModule.exit_json = MagicMock(side_effect=exit_json)
 
     def test_create_action(self):
-        action = "create"
+        action = "present"
 
         self.builder.data = {}
         self.builder.credentials = {
@@ -74,7 +74,7 @@ class TestEntity(ModuleTestCase):
             "password": self.builder.password,
         }
         req = {
-            "req_verb": self.builder.methods_of_actions[action],
+            "req_verb": "post",
             "req_url": self.builder.url,
             "req_data": self.builder.data,
         }
@@ -85,12 +85,11 @@ class TestEntity(ModuleTestCase):
         self.assertEqual(self.builder.result["changed"], True)
 
     def test_negative_create_action(self):
-        action = "create"
+        action = "present"
 
         self.builder.data = {}
         self.builder.credentials = {
             "username": self.builder.username,
-            # 'password': self.builder.password
         }
         exception = None
         try:
@@ -102,7 +101,7 @@ class TestEntity(ModuleTestCase):
         self.assertEqual(self.builder.result["changed"], False)
 
     def test_update_action(self):
-        action = "update"
+        action = "present"
 
         self.builder.data = {
             "metadata": {"uuid": "a218f559-0ec0-46d8-a876-38f7d8950098"}
@@ -112,7 +111,7 @@ class TestEntity(ModuleTestCase):
             "password": self.builder.password,
         }
         req = {
-            "req_verb": self.builder.methods_of_actions[action],
+            "req_verb": "put",
             "req_url": self.builder.url + "/" + self.builder.data["metadata"]["uuid"],
             "req_data": self.builder.data,
         }
@@ -123,12 +122,11 @@ class TestEntity(ModuleTestCase):
         self.assertEqual(self.builder.result["changed"], True)
 
     def test_negative_update_action(self):
-        action = "update"
+        action = "present"
 
         self.builder.data = {}
         self.builder.credentials = {
             "username": self.builder.username,
-            "password": self.builder.password,
         }
         exception = None
         try:
@@ -148,7 +146,7 @@ class TestEntity(ModuleTestCase):
             "password": self.builder.password,
         }
         req = {
-            "req_verb": self.builder.methods_of_actions[action],
+            "req_verb": "post",
             "req_url": self.builder.url + "/list",
             "req_data": self.builder.data,
         }
@@ -159,7 +157,7 @@ class TestEntity(ModuleTestCase):
         self.assertEqual(self.builder.result["changed"], False)
 
     def test_delete_action(self):
-        action = "delete"
+        action = "absent"
 
         self.builder.data = {
             "metadata": {"uuid": "a218f559-0ec0-46d8-a876-38f7d8950098"}
@@ -169,7 +167,7 @@ class TestEntity(ModuleTestCase):
             "password": self.builder.password,
         }
         req = {
-            "req_verb": self.builder.methods_of_actions[action],
+            "req_verb": "delete",
             "req_url": self.builder.url + "/" + self.builder.data["metadata"]["uuid"],
             "req_data": self.builder.data,
         }
