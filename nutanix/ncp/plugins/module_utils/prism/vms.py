@@ -10,7 +10,6 @@ from .prism import Prism
 __metaclass__ = type
 
 
-
 class VM(Prism):
     kind = "vm"
     spec_file = "vm_spec.json"
