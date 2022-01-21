@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
+from ..entity import Entity
+
 __metaclass__ = type
 
-from ..entity import Entity
 
 
 class Prism(Entity):
