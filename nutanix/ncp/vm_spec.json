@@ -14,17 +14,10 @@
     "owner_reference": {
       "kind": "{{metadata__owner_reference__kind}}",
       "name": "{{metadata__owner_reference__name}}",
-      "uuid": "{{metadata__owner_reference__uuid}}",
-      "required": [
-        "kind",
-        "uuid"
-      ]
+      "uuid": "{{metadata__owner_reference__uuid}}"
     },
     "should_force_translate": "{{metadata__should_force_translate}}",
-    "entity_version": "{{metadata__entity_version}}",
-    "required": [
-      "kind"
-    ]
+    "entity_version": "{{metadata__entity_version}}"
   },
   "spec": {
     "name": "{{spec__name}}",
@@ -43,10 +36,8 @@
         "mechanism": "{{spec__resources__power_state_mechanism__mechanism}}",
         "guest_transition_config": {
           "enable_script_exec": "{{spec__resources__power_state_mechanism__guest_transition_config__enable_script_exec}}",
-          "should_fail_on_script_failure": "{{spec__resources__power_state_mechanism__guest_transition_config__should_fail_on_script_failure}}",
-          "required": []
-        },
-        "required": []
+          "should_fail_on_script_failure": "{{spec__resources__power_state_mechanism__guest_transition_config__should_fail_on_script_failure}}"
+        }
       },
       "hardware_clock_timezone": "{{spec__resources__hardware_clock_timezone}}",
       "is_agent_vm": "{{spec__resources__is_agent_vm}}",
@@ -60,10 +51,8 @@
           "kind": "{{spec__resources__vtpm_config__data_source_reference__kind}}",
           "uuid": "{{spec__resources__vtpm_config__data_source_reference__uuid}}",
           "name": "{{spec__resources__vtpm_config__data_source_reference__name}}",
-          "url": "{{spec__resources__vtpm_config__data_source_reference__url}}",
-          "required": []
-        },
-        "required": []
+          "url": "{{spec__resources__vtpm_config__data_source_reference__url}}"
+        }
       },
       "disk_list": [
         {
@@ -71,14 +60,9 @@
           "device_properties": {
             "disk_address": {
               "adapter_type": "{{spec__resources__disk_list__device_properties__disk_address__adapter_type}}",
-              "device_index": "{{spec__resources__disk_list__device_properties__disk_address__device_index}}",
-              "required": [
-                "adapter_type",
-                "device_index"
-              ]
+              "device_index": "{{spec__resources__disk_list__device_properties__disk_address__device_index}}"
             },
-            "device_type": "{{spec__resources__disk_list__device_properties__device_type}}",
-            "required": []
+            "device_type": "{{spec__resources__disk_list__device_properties__device_type}}"
           },
           "disk_size_mib": "{{spec__resources__disk_list__disk_size_mib}}",
           "disk_size_bytes": "{{spec__resources__disk_list__disk_size_bytes}}",
@@ -87,28 +71,23 @@
             "uuid": "{{spec__resources__disk_list__data_source_reference__uuid}}",
             "name": "{{spec__resources__disk_list__data_source_reference__name}}",
             "is_direct_attach": "{{spec__resources__disk_list__data_source_reference__is_direct_attach}}",
-            "url": "{{spec__resources__disk_list__data_source_reference__url}}",
-            "required": []
+            "url": "{{spec__resources__disk_list__data_source_reference__url}}"
           },
           "volume_group_reference": {
             "kind": "{{spec__resources__disk_list__volume_group_reference__kind}}",
             "uuid": "{{spec__resources__disk_list__volume_group_reference__uuid}}",
             "name": "{{spec__resources__disk_list__volume_group_reference__name}}",
-            "url": "{{spec__resources__disk_list__volume_group_reference__url}}",
-            "required": []
+            "url": "{{spec__resources__disk_list__volume_group_reference__url}}"
           },
           "storage_config": {
             "storage_container_reference": {
               "kind": "{{spec__resources__disk_list__storage_config__storage_container_reference__kind}}",
               "uuid": "{{spec__resources__disk_list__storage_config__storage_container_reference__uuid}}",
               "name": "{{spec__resources__disk_list__storage_config__storage_container_reference__name}}",
-              "url": "{{spec__resources__disk_list__storage_config__storage_container_reference__url}}",
-              "required": []
+              "url": "{{spec__resources__disk_list__storage_config__storage_container_reference__url}}"
             },
-            "flash_mode": "{{spec__resources__disk_list__storage_config__flash_mode}}",
-            "required": []
+            "flash_mode": "{{spec__resources__disk_list__storage_config__flash_mode}}"
           },
-          "required": [],
           "list_key": "spec__resources__disk_list"
         }
       ],
@@ -127,33 +106,23 @@
               "ip_type": "{{spec__resources__nic_list__ip_endpoint_list__ip_type}}",
               "prefix_length": "{{spec__resources__nic_list__ip_endpoint_list__prefix_length}}",
               "gateway_address_list": "{{spec__resources__nic_list__ip_endpoint_list__gateway_address_list}}",
-              "required": [],
               "list_key": "spec__resources__nic_list__ip_endpoint_list"
             }
           ],
           "subnet_reference": {
             "kind": "{{spec__resources__nic_list__subnet_reference__kind}}",
             "name": "{{spec__resources__nic_list__subnet_reference__name}}",
-            "uuid": "{{spec__resources__nic_list__subnet_reference__uuid}}",
-            "required": [
-              "kind",
-              "uuid"
-            ]
+            "uuid": "{{spec__resources__nic_list__subnet_reference__uuid}}"
           },
           "network_function_chain_reference": {
             "kind": "{{spec__resources__nic_list__network_function_chain_reference__kind}}",
             "name": "{{spec__resources__nic_list__network_function_chain_reference__name}}",
-            "uuid": "{{spec__resources__nic_list__network_function_chain_reference__uuid}}",
-            "required": [
-              "kind",
-              "uuid"
-            ]
+            "uuid": "{{spec__resources__nic_list__network_function_chain_reference__uuid}}"
           },
           "network_function_nic_type": "{{spec__resources__nic_list__network_function_nic_type}}",
           "model": "{{spec__resources__nic_list__model}}",
           "is_connected": "{{spec__resources__nic_list__is_connected}}",
           "secondary_ip_address_list": "{{spec__resources__nic_list__secondary_ip_address_list}}",
-          "required": [],
           "list_key": "spec__resources__nic_list"
         }
       ],
@@ -162,7 +131,6 @@
           "mode": "{{spec__resources__gpu_list__mode}}",
           "device_id": "{{spec__resources__gpu_list__device_id}}",
           "vendor": "{{spec__resources__gpu_list__vendor}}",
-          "required": [],
           "list_key": "spec__resources__gpu_list"
         }
       ],
@@ -170,21 +138,15 @@
         "kind": "{{spec__resources__parent_reference__kind}}",
         "uuid": "{{spec__resources__parent_reference__uuid}}",
         "name": "{{spec__resources__parent_reference__name}}",
-        "url": "{{spec__resources__parent_reference__url}}",
-        "required": []
+        "url": "{{spec__resources__parent_reference__url}}"
       },
       "boot_config": {
         "boot_device": {
           "disk_address": {
             "adapter_type": "{{spec__resources__boot_config__boot_device__disk_address__adapter_type}}",
-            "device_index": "{{spec__resources__boot_config__boot_device__disk_address__device_index}}",
-            "required": [
-              "adapter_type",
-              "device_index"
-            ]
+            "device_index": "{{spec__resources__boot_config__boot_device__disk_address__device_index}}"
           },
-          "mac_address": "{{spec__resources__boot_config__boot_device__mac_address}}",
-          "required": []
+          "mac_address": "{{spec__resources__boot_config__boot_device__mac_address}}"
         },
         "boot_device_order_list": "{{spec__resources__boot_config__boot_device_order_list}}",
         "boot_type": "{{spec__resources__boot_config__boot_type}}",
@@ -192,10 +154,8 @@
           "kind": "{{spec__resources__boot_config__data_source_reference__kind}}",
           "uuid": "{{spec__resources__boot_config__data_source_reference__uuid}}",
           "name": "{{spec__resources__boot_config__data_source_reference__name}}",
-          "url": "{{spec__resources__boot_config__data_source_reference__url}}",
-          "required": []
-        },
-        "required": []
+          "url": "{{spec__resources__boot_config__data_source_reference__url}}"
+        }
       },
       "guest_customization": "{{spec__resources__guest_customization}}",
       "guest_tools": {
@@ -203,69 +163,41 @@
           "ngt_state": "{{spec__resources__guest_tools__nutanix_guest_tools__ngt_state}}",
           "credentials": {
             "username": "{{spec__resources__guest_tools__nutanix_guest_tools__credentials__username}}",
-            "password": "{{spec__resources__guest_tools__nutanix_guest_tools__credentials__password}}",
-            "required": [
-              "username"
-            ]
+            "password": "{{spec__resources__guest_tools__nutanix_guest_tools__credentials__password}}"
           },
           "state": "{{spec__resources__guest_tools__nutanix_guest_tools__state}}",
           "iso_mount_state": "{{spec__resources__guest_tools__nutanix_guest_tools__iso_mount_state}}",
           "enabled_capability_list": "{{spec__resources__guest_tools__nutanix_guest_tools__enabled_capability_list}}",
-          "version": "{{spec__resources__guest_tools__nutanix_guest_tools__version}}",
-          "required": []
-        },
-        "required": []
+          "version": "{{spec__resources__guest_tools__nutanix_guest_tools__version}}"
+        }
       },
       "vga_console_enabled": "{{spec__resources__vga_console_enabled}}",
       "vnuma_config": {
-        "num_vnuma_nodes": "{{spec__resources__vnuma_config__num_vnuma_nodes}}",
-        "required": []
+        "num_vnuma_nodes": "{{spec__resources__vnuma_config__num_vnuma_nodes}}"
       },
       "serial_port_list": [
         {
           "is_connected": "{{spec__resources__serial_port_list__is_connected}}",
           "index": "{{spec__resources__serial_port_list__index}}",
-          "required": [],
           "list_key": "spec__resources__serial_port_list"
         }
       ],
       "storage_config": {
         "qos_policy": {
-          "throttled_iops": "{{spec__resources__storage_config__qos_policy__throttled_iops}}",
-          "required": [
-            "throttled_iops"
-          ]
+          "throttled_iops": "{{spec__resources__storage_config__qos_policy__throttled_iops}}"
         },
-        "flash_mode": "{{spec__resources__storage_config__flash_mode}}",
-        "required": []
-      },
-      "required": []
+        "flash_mode": "{{spec__resources__storage_config__flash_mode}}"
+      }
     },
     "availability_zone_reference": {
       "kind": "{{spec__availability_zone_reference__kind}}",
       "name": "{{spec__availability_zone_reference__name}}",
-      "uuid": "{{spec__availability_zone_reference__uuid}}",
-      "required": [
-        "kind",
-        "uuid"
-      ]
+      "uuid": "{{spec__availability_zone_reference__uuid}}"
     },
     "cluster_reference": {
       "kind": "{{spec__cluster_reference__kind}}",
       "name": "{{spec__cluster_reference__name}}",
-      "uuid": "{{spec__cluster_reference__uuid}}",
-      "required": [
-        "kind",
-        "uuid"
-      ]
-    },
-    "required": [
-      "name",
-      "resources"
-    ]
-  },
-  "required": [
-    "metadata",
-    "spec"
-  ]
+      "uuid": "{{spec__cluster_reference__uuid}}"
+    }
+  }
 }
