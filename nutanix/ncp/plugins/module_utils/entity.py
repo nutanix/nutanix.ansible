@@ -5,8 +5,6 @@ __metaclass__ = type
 from base64 import b64encode
 import time
 import uuid
-from copy import deepcopy
-
 from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.urls import fetch_url
 import json
@@ -242,9 +240,6 @@ class Entity:
                         spec[key] = value
                     else:
                         spec.pop(key)
-        requirements = spec.pop('required')
-        # if not set(requirements) <= spec.keys() or not spec:
-        #     return None
         return spec
 
     def build(self):

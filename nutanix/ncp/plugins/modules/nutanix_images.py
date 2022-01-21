@@ -5,8 +5,8 @@
 from __future__ import (absolute_import, division, print_function)
 from ..module_utils.prism.images import Image
 from ..module_utils.base_module import BaseModule
-__metaclass__ = type
 
+__metaclass__ = type
 
 DOCUMENTATION = r'''
 ---

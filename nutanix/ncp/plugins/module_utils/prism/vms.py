@@ -1,7 +1,9 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import (absolute_import, division, print_function)
+
 __metaclass__ = type
+
 from copy import deepcopy
 from base64 import b64encode
 from .prism import Prism
@@ -156,8 +158,9 @@ class VMDisk(VMSpec):
                 disk_final["disk_size_mib"] = disk_param["size_gb"] * 1024
             if disk_param.get("storage_container_name"):
                 disk_final["storage_config"] = {
-                    "storage_container_reference": self.__get_storage_container_ref(disk_param["storage_container_name"],
-                                                                                    **kwargs)
+                    "storage_container_reference": self.__get_storage_container_ref(
+                        disk_param["storage_container_name"],
+                        **kwargs)
                 }
             elif disk_param.get("storage_container_uuid"):
                 disk_final["storage_config"] = {
@@ -255,7 +258,7 @@ class GuestCustomizationSpec(VMSpec):
                     "custom_key_values": {},
                 },
                 "is_overridable": ""
-                }
+            }
         )
 
     def _get_api_spec(self, param_spec, **kwargs):
