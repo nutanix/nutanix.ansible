@@ -276,7 +276,7 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.vms import VM
+from ..module_utils.prism.vms import VM  # noqa: E402
 
 
 def run_module():
