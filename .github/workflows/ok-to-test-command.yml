@@ -1,0 +1,89 @@
+name: Integration Test cases
+on:
+  pull_request:
+  repository_dispatch:
+    types: [ok-to-test-command]
+jobs:
+  integration_test_cases:
+    runs-on: self-hosted
+    if: github.event_name == 'repository_dispatch'
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+
+      - uses: actions/checkout@v2
+        with:
+          ref: 'refs/pull/${{ github.event.client_payload.pull_request.number }}/merge'
+      #- name: Set up Python 3.9.10
+      #  uses: actions/setup-python@v2
+      #  with:
+      #    python-version: '3.9.10'
+      - name: Install ansible
+        run: |
+          virtualenv -p /usr/local/bin/python3.9 venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install ansible
+          pip install shyaml
+      - name: Build and install the collection
+        run: |
+          source venv/bin/activate
+          cd nutanix/ncp
+          NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
+          COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
+          VERSION=$(cat galaxy.yml | shyaml get-value version)
+          ansible-galaxy collection build --force
+          ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
+      - name: Run Integration test cases
+        run: |
+          source venv/bin/activate
+          cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
+          ansible-test integration --python 3.9 -v
+
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+
+      # Update the comment back
+      - name: Update comment
+        uses: peter-evans/create-or-update-comment@v1
+        if: ${{ always() }}
+        with:
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
+          body: |
+            >Integration test run status is : ${{ job.status }}
+            >Job link https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          reaction-type: hooray
+
+      # Update check run for Integration Test
+      - uses: actions/github-script@v5
+        id: update-check-run
+        if: ${{ always() }}
+        env:
+          number: ${{ github.event.client_payload.pull_request.number }}
+          job: ${{ github.job }}
+          # Conveniently, job.status maps to https://developer.github.com/v3/checks/runs/#update-a-check-run
+          conclusion: ${{ job.status }} 
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pull } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number: process.env.number
+            });
+            const ref = pull.head.sha;
+            const { data: checks } = await github.rest.checks.listForRef({
+              ...context.repo,
+              ref
+            });
+            const check = checks.check_runs.filter(c => c.name === process.env.job);
+            console.log(check);
+            console.log(checks);
+            console.log(check.length)
+            if (check.length == 0) {
+              return "Check is not present, ignoring this step."
+            }
+            const { data: result } = await github.rest.checks.update({
+              ...context.repo,
+              check_run_id: check[0].id,
+              status: 'completed',
+              conclusion: process.env.conclusion
+            });
+            return result; 

@@ -1,15 +1,16 @@
 # Copyright: 2021, Ansible Project
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
-from __future__ import (absolute_import, division, print_function)
-__metaclass__ = type
-from base64 import b64encode
+from __future__ import absolute_import, division, print_function
+
+import json
 import time
 import uuid
-from copy import deepcopy
+from base64 import b64encode
 
 from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.urls import fetch_url
-import json
+
+__metaclass__ = type
 
 try:
     from urllib.parse import urlparse
@@ -21,19 +22,15 @@ class Entity:
     """Basic functionality for Nutanix modules"""
 
     entity_type = "Base"
-    spec_file = ''
-    result = dict(
-        changed=False,
-        original_message="",
-        message=""
-    )
+    spec_file = ""
+    result = dict(changed=False, original_message="", message="")
 
     methods_of_actions = {
         "create": "post",
         "list": "post",
         "update": "put",
         "delete": "delete",
-        "absent": "delete"
+        "absent": "delete",
     }
     kind = ""
     api_version = "3.1.0"
@@ -55,35 +52,45 @@ class Entity:
     def check_response(self):
 
         if self.response.get("task_uuid") and self.wait:
-            task = self.validate_request(self.module, self.response.get(
-                "task_uuid"), self.netloc, self.wait_timeout)
+            task = self.validate_request(
+                self.module,
+                self.response.get("task_uuid"),
+                self.netloc,
+                self.wait_timeout,
+            )
             self.result["task_information"] = task
 
         if not self.response.get("status"):
             if self.response.get("api_response_list"):
-                self.response["status"] = self.response.get("api_response_list")[
-                    0].get("api_response").get("status")
+                self.response["status"] = (
+                    self.response.get("api_response_list")[0]
+                    .get("api_response")
+                    .get("status")
+                )
             elif "entities" in self.response:
                 if self.response["entities"]:
-                    self.response["status"] = self.response.get("entities")[
-                        0].get("status")
+                    self.response["status"] = self.response.get("entities")[0].get(
+                        "status"
+                    )
                 else:
                     self.response["status"] = {"state": "complete"}
 
         if self.response.get("status") and self.wait:
             state = self.response.get("status").get("state")
             if "pending" in state.lower() or "running" in state.lower():
-                task = self.validate_request(self.module,
-                                             self.response.get("status").get(
-                                                 "execution_context").get("task_uuid"),
-                                             self.netloc,
-                                             self.wait_timeout)
+                task = self.validate_request(
+                    self.module,
+                    self.response.get("status")
+                    .get("execution_context")
+                    .get("task_uuid"),
+                    self.netloc,
+                    self.wait_timeout,
+                )
                 self.response["status"]["state"] = task.get("status")
                 self.result["task_information"] = task
 
         self.result["changed"] = True
-        status = self.response.get(
-            "state") or self.response.get("status").get("state")
+        status = self.response.get("state") or self.response.get("status").get("state")
         if status and status.lower() != "succeeded" or self.action == "list":
             self.result["changed"] = False
             if status.lower() != "complete":
@@ -101,7 +108,8 @@ class Entity:
         else:
             self.url += "/" + str(uuid.UUID(item_uuid)) + "/file"
         response = self.send_request(
-            self.module, "get", self.url, self.data, self.username, self.password)
+            self.module, "get", self.url, self.data, self.username, self.password
+        )
 
         if response.get("state") and response.get("state").lower() == "error":
             self.result["changed"] = False
@@ -128,17 +136,34 @@ class Entity:
 
         encoded_credentials = b64encode(credentials).decode("ascii")
         authorization = "Basic " + encoded_credentials
-        headers = {"Accept": "application/json", "Content-Type": "application/json",
-                   "Authorization": authorization, "cache-control": "no-cache"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": authorization,
+            "cache-control": "no-cache",
+        }
         if req_data is None:
             payload = {}
         else:
             payload = req_data
-        resp, info = fetch_url(module=module, url=req_url, headers=headers,
-                               method=method, data=module.jsonify(payload), timeout=timeout)
-        if not 300 > info['status'] > 199:
-            module.fail_json(msg="Fail: %s" % (
-                "Status: " + str(info['msg']) + ", Message: " + str(info.get('body'))))
+        resp, info = fetch_url(
+            module=module,
+            url=req_url,
+            headers=headers,
+            method=method,
+            data=module.jsonify(payload),
+            timeout=timeout,
+        )
+        if not 300 > info["status"] > 199:
+            module.fail_json(
+                msg="Fail: %s"
+                % (
+                    "Status: "
+                    + str(info["msg"])
+                    + ", Message: "
+                    + str(info.get("body"))
+                )
+            )
 
         body = resp.read() if resp else info.get("body")
         try:
@@ -156,7 +181,8 @@ class Entity:
         url = self.generate_url_from_operations("tasks", netloc, [task_uuid])
         while retries > 0 or not succeeded:
             response = self.send_request(
-                module, "get", url, None, self.username, self.password)
+                module, "get", url, None, self.username, self.password
+            )
             if response.get("status"):
                 status = response.get("status")
                 if "running" not in status.lower() and "queued" not in status.lower():
@@ -169,7 +195,7 @@ class Entity:
     def generate_url_from_operations(self, name, netloc=None, ops=None):
         name = name.split("_")[-1]
         url = "https://" + netloc
-        path = self.__BASEURL__ + '/' + name
+        path = self.__BASEURL__ + "/" + name
         if ops:
             for each in ops:
                 if type(each) is str:
@@ -184,26 +210,35 @@ class Entity:
     @staticmethod
     def validate_url(url, netloc, path=""):
         parsed_url = urlparse(url)
-        if url and netloc and "http" in parsed_url.scheme and netloc == parsed_url.netloc and path == parsed_url.path:
+        if (
+            url
+            and netloc
+            and "http" in parsed_url.scheme
+            and netloc == parsed_url.netloc
+            and path == parsed_url.path
+        ):
             return url
         raise ValueError("Incorrect URL :", url)
 
     def get_action(self):
-        if self.action in self.methods_of_actions.keys():
+        if self.action == "present":
+            self.action = "update" if self.data["metadata"].get("uuid") else "create"
+        elif self.action == "absent":
             self.action = self.methods_of_actions[self.action]
-        elif self.action == 'present':
-            self.action = 'update' if self.data['metadata'].get(
-                'uuid') else 'create'
-        else:
+        elif self.action not in self.methods_of_actions.keys():
             raise ValueError("Wrong action: " + self.action)
 
     def get_spec(self):
-        import yaml
         from os.path import join
+
+        import yaml
 
         # Get the current working directory
 
-        ncp_dir = self.module.tmpdir.split('/tmp')[0] + '/collections/ansible_collections/nutanix/ncp/'
+        ncp_dir = (
+            self.module.tmpdir.split("/tmp")[0]
+            + "/collections/ansible_collections/nutanix/ncp/"
+        )
 
         file_path = join(ncp_dir, self.spec_file)
         with open(file_path) as f:
@@ -214,9 +249,13 @@ class Entity:
     def clean_spec(self, spec):
         for key, value in spec.copy().items():
             if isinstance(value, str):
-                if value.startswith('{{') and value.endswith('}}'):
-                    value = getattr(self, value[2:-2], None)
+                if value.startswith("{{") and value.endswith("}}"):
+                    value = value[2:-2]
+
+                    value = getattr(self, value, None)
                     if value:
+                        if key == "guest_customization":
+                            value = self.get_attr_spec(key, value)
                         spec[key] = value
                     else:
                         spec.pop(key)
@@ -227,20 +266,18 @@ class Entity:
                     spec[key] = value
                 else:
                     spec.pop(key)
-            elif isinstance(value, list) and key != 'required':
+            elif isinstance(value, list) and key != "required":
                 obj = value.pop(0)
-                list_key = obj.pop('list_key')
-                sub_spec_key = list_key.split('__')[-1]
+                list_key = obj.pop("list_key")
+                sub_spec_key = list_key.split("__")[-1]
                 if list_key:
                     value = self.get_attr_spec(
-                        sub_spec_key, getattr(self, list_key, None))
+                        sub_spec_key, getattr(self, list_key, None)
+                    )
                     if value:
                         spec[key] = value
                     else:
                         spec.pop(key)
-        requirements = spec.pop('required')
-        # if not set(requirements) <= spec.keys() or not spec:
-        #     return None
         return spec
 
     def build(self):
@@ -251,18 +288,21 @@ class Entity:
         self.parse_data()
 
         self.url = self.generate_url_from_operations(
-            self.module_name, self.netloc, self.operations)
+            self.module_name, self.netloc, self.operations
+        )
 
         self.get_action()
 
         getattr(self, self.action)()
 
-        self.response = self.send_request(self.module,
-                                          self.methods_of_actions[self.action],
-                                          self.url,
-                                          self.data,
-                                          self.username,
-                                          self.password)
+        self.response = self.send_request(
+            self.module,
+            self.methods_of_actions[self.action],
+            self.url,
+            self.data,
+            self.username,
+            self.password,
+        )
 
         self.check_response()
 
@@ -285,8 +325,9 @@ class Entity:
         self.credentials = self.auth.get("credentials")
 
         if not self.url:
-            self.url = str(self.auth.get("ip_address")) + \
-                ":" + str(self.auth.get("port"))
+            self.url = (
+                str(self.auth.get("ip_address")) + ":" + str(self.auth.get("port"))
+            )
 
         self.netloc = self.url
         self.module_name = module._name
