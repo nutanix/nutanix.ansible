@@ -2,15 +2,11 @@
 
 # Copyright: (c) 2021
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
-from __future__ import absolute_import, division, print_function
-
-from ..module_utils.base_module import BaseModule
-from ..module_utils.prism.subnets import Subnet
-
+from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 
-DOCUMENTATION = r"""
+DOCUMENTATION = r'''
 ---
 module: nutanix_subnets
 
@@ -21,36 +17,45 @@ version_added: "1.0.0"
 description: This module allows to perform the following tasks on /subnets
 
 options:
-    action:
-        description: This is the HTTP action used to indicate the type of request
+    state:
+        description: This is the action used to indicate the type of request
+        aliases: ['action']
         required: true
         type: str
-    credentials:
+    auth:
         description: Credentials needed for authenticating to the subnet
         required: true
-        type: dict (Variable from file)
+        type: dict #(Variable from file)
     data:
         description: This acts as either the params or the body payload depending on the HTTP action
         required: false
         type: dict
-    operation:
+    operations:
         description: This acts as the sub_url in the requested url
         required: false
-        type: str
-    ip_address:
-        description: This acts as the ip_address of the subnet. It can be passed as a list in ansible using with_items
-        required: True
-        type: str (Variable from file)
-    port:
-        description: This acts as the port of the subnet. It can be passed as a list in ansible using with_items
-        required: True
-        type: str (Variable from file)
+        type: list
+        elements: str
+    wait_timeout: ###
+        description: This is the wait_timeout description
+        required: False
+        type: int
+        default: 300
+    wait: ###
+        description: This is the wait description
+        required: False
+        type: bool
+        default: true
+    validate_certs: ###
+        description: This is the validate_certs description
+        required: False
+        type: bool
+        default: False
 
 author:
  - Gevorg Khachatryan (@gevorg_khachatryan-97)
-"""
+'''
 
-EXAMPLES = r"""
+EXAMPLES = r'''
 
 #CREATE action, request to /subnets
 - hosts: [hosts_group]
@@ -99,9 +104,9 @@ EXAMPLES = r"""
         metadata:
             uuid: string
 
-"""
+'''
 
-RETURN = r"""
+RETURN = r'''
 CREATE:
     description: CREATE /subnets Response for nutanix subnets
     returned: (for CREATE /subnets  operation)
@@ -132,7 +137,9 @@ DELETE:
         - default Internal Error
         - 404 Invalid UUID provided
         - 202 Request Accepted
-"""
+'''
+from ..module_utils.prism.subnets import Subnet
+from ..module_utils.base_module import BaseModule
 
 
 def run_module():
@@ -144,5 +151,5 @@ def main():
     run_module()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
