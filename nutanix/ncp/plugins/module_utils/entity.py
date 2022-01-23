@@ -90,7 +90,8 @@ class Entity:
                 self.result["task_information"] = task
 
         self.result["changed"] = True
-        status = self.response.get("state") or self.response.get("status").get("state")
+        status = self.response.get(
+            "state") or self.response.get("status").get("state")
         if status and status.lower() != "succeeded" or self.action == "list":
             self.result["changed"] = False
             if status.lower() != "complete":
@@ -156,13 +157,10 @@ class Entity:
         )
         if not 300 > info["status"] > 199:
             module.fail_json(
-                msg="Fail: %s"
-                % (
-                    "Status: "
-                    + str(info["msg"])
-                    + ", Message: "
-                    + str(info.get("body"))
-                )
+                msg="Fail: " + "Status: " +
+                    f'{str(info["msg"])}' + ", Message: " +
+                f'{str(info.get("body"))}'
+
             )
 
         body = resp.read() if resp else info.get("body")
@@ -203,7 +201,7 @@ class Entity:
                 elif type(each) is dict:
                     key = list(each.keys())[0]
                     val = each[key]
-                    path += "/{0}/{1}".format(key, val)
+                    path += f"/{key}/{val}"
         url += path
         return self.validate_url(url, netloc, path)
 
@@ -222,7 +220,8 @@ class Entity:
 
     def get_action(self):
         if self.action == "present":
-            self.action = "update" if self.data["metadata"].get("uuid") else "create"
+            self.action = "update" if self.data["metadata"].get(
+                "uuid") else "create"
         elif self.action == "absent":
             self.action = self.methods_of_actions[self.action]
         elif self.action not in self.methods_of_actions.keys():
@@ -241,7 +240,7 @@ class Entity:
         )
 
         file_path = join(ncp_dir, self.spec_file)
-        with open(file_path) as f:
+        with open(file_path, encoding='utf_8') as f:
             # spec = json.loads(str(f.read()))
             spec = yaml.safe_load(f.read())
         return spec
@@ -326,7 +325,8 @@ class Entity:
 
         if not self.url:
             self.url = (
-                str(self.auth.get("ip_address")) + ":" + str(self.auth.get("port"))
+                str(self.auth.get("ip_address")) +
+                ":" + str(self.auth.get("port"))
             )
 
         self.netloc = self.url

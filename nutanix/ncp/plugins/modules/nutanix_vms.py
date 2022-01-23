@@ -7,7 +7,7 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 
 ---
 module: nutanix_vms
@@ -184,10 +184,10 @@ options:
         default: subnet
       is_connected:
         description: Whether or not the NIC is connected. True by default.
+        default: False
         aliases:
           - connected
         type: bool
-        default: true
       private_ip:
         description: 'IP endpoints for the adapter. Currently, IPv4 addresses are supported.'
         aliases:
@@ -209,7 +209,6 @@ options:
     suboptions:
       type:
         description: 'Disk Type , CDROM or Disk'
-        default: DISK
         type: str
       size_gb:
         description: The Disk Size in Giga
@@ -246,18 +245,37 @@ options:
       - CDROM
       - DISK
       - NETWORK
-
-
+  guest_customization:
+    description: >-
+      test desc
+    aliases:
+      - spec__resources__guest_customization
+    type: dict
+    suboptions:
+        type:
+            type: str
+            choices: [ sysprep, cloud_init ]
+            default: sysprep
+            description: Test description
+        script_path:
+            type: str
+            required: True
+            description: Test description
+        is_overridable:
+            type: bool
+            default: False
+            description: Flag to allow override of customization by deployer.
 author:
  - Gevorg Khachatryan (@gevorg_khachatryan)
 """
-
 EXAMPLES = r"""
 """
 
 
 RETURN = r"""
 """
+from ..module_utils.prism.vms import VM
+from ..module_utils.base_module import BaseModule
 
 
 def run_module():
@@ -269,15 +287,13 @@ def run_module():
             ),
             metadata__uuid=dict(type="str", aliases=["uuid"], required=False),
             spec__resources__num_sockets=dict(
-                type="int", default=1, aliases=["core_count", "vcpus"]
+                type="int", default=1, aliases=["vcpus"]
             ),
-            spec__resources__num_threads_per_core=dict(
-                type="int", aliases=["threads_per_core"]  # default=1,#will not provide
-            ),
+
             spec__resources__num_vcpus_per_socket=dict(
                 type="int",
                 default=1,
-                aliases=["num_vcpus_per_socket", "cores_per_vcpu"],
+                aliases=["cores_per_vcpu"],
             ),
             cluster=dict(
                 type="dict",
@@ -299,8 +315,8 @@ def run_module():
             ),
             spec__resources__nic_list=dict(
                 type="list",
-                aliases=["networks"],
                 elements="dict",
+                aliases=["networks"],
                 options=dict(
                     uuid=dict(type="str", aliases=["nic_uuid"]),
                     subnet_uuid=dict(type="str"),
@@ -310,7 +326,7 @@ def run_module():
                         type="bool", aliases=["connected"], default=False
                     ),
                     ip_endpoint_list=dict(
-                        type="list", aliases=["private_ip"], default=[]
+                        type="list", aliases=["private_ip"], default=[], elements="str"
                     ),
                     nic_type=dict(type="str", default="NORMAL_NIC"),
                 ),
@@ -318,17 +334,19 @@ def run_module():
             ),
             spec__resources__disk_list=dict(
                 type="list",
+                elements="dict",
                 aliases=["disks"],
                 options=dict(
                     type=dict(type="str"),
                     size_gb=dict(type="int"),
                     bus=dict(type="str"),
                     storage_config=dict(
-                        type=dict,
+                        type="dict",
                         aliases=["storage_container"],
                         options=dict(
                             storage_container_name=dict(type="str"),
-                            storage_container_uuid=dict(type="str", aliases=["uuid"]),
+                            storage_container_uuid=dict(
+                                type="str", aliases=["uuid"]),
                         ),
                     ),
                 ),
@@ -341,6 +359,7 @@ def run_module():
                 type="str", default="LEGACY", aliases=["boot_type"]
             ),
             spec__resources__boot_config__boot_device_order_list=dict(
+                elements="str",
                 type="list",
                 default=["CDROM", "DISK", "NETWORK"],
                 aliases=["boot_device_order_list"],
@@ -351,7 +370,8 @@ def run_module():
             spec__resources__memory_size_mib=dict(
                 type="int", default=1, aliases=["memory_size_mib", "memory_gb"]
             ),
-            metadata__categories_mapping=dict(type="dict", aliases=["categories"]),
+            metadata__categories_mapping=dict(
+                type="dict", aliases=["categories"]),
             metadata__use_categories_mapping=dict(
                 type="bool", aliases=["use_categories_mapping"], default=False
             ),
@@ -368,7 +388,6 @@ def run_module():
             ),
         )
     )
-
 
     module = BaseModule()
     if module.params.get("spec__resources__memory_size_mib"):

@@ -2,12 +2,11 @@
 
 # Copyright: (c) 2021
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
-
 from __future__ import (absolute_import, division, print_function)
+__metaclass__ = type
 
 
-
-DOCUMENTATION = r"""
+DOCUMENTATION = r'''
 ---
 module: nutanix_images
 
@@ -54,9 +53,9 @@ options:
 
 author:
  - Gevorg Khachatryan (@gevorg_khachatryan)
-"""
+'''
 
-EXAMPLES = r"""
+EXAMPLES = r'''
 
 #CREATE action, request to /images
 - hosts: [hosts_group]
@@ -121,9 +120,9 @@ EXAMPLES = r"""
       data:
         metadata:
           uuid: string
-"""
+'''
 
-RETURN = r"""
+RETURN = r'''
 CREATE:
     description: CREATE /images Response for nutanix imagese
     returned: (for CREATE /images  operation)
@@ -154,10 +153,9 @@ DELETE:
       - default Internal Error
       - 404 Invalid UUID provided
       - 202 Request Accepted
-
+'''
 from ..module_utils.prism.images import Image
 from ..module_utils.base_module import BaseModule
-
 
 
 def run_module():
@@ -169,5 +167,5 @@ def main():
     run_module()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
