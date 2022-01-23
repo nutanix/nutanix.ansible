@@ -2,7 +2,8 @@
 
 # Copyright: (c) 2021
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
@@ -154,8 +155,8 @@ DELETE:
       - 404 Invalid UUID provided
       - 202 Request Accepted
 '''
-from ..module_utils.prism.images import Image
-from ..module_utils.base_module import BaseModule
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.prism.images import Image  # noqa: E402
 
 
 def run_module():
