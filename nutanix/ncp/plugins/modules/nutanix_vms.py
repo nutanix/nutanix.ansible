@@ -276,7 +276,7 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.vms import VM  
+from ..module_utils.prism.vms import VM
 
 
 def run_module():
@@ -287,10 +287,7 @@ def run_module():
                 type="str", required=False, aliases=["desc", "description"]
             ),
             metadata__uuid=dict(type="str", aliases=["uuid"], required=False),
-            spec__resources__num_sockets=dict(
-                type="int", default=1, aliases=["vcpus"]
-            ),
-
+            spec__resources__num_sockets=dict(type="int", default=1, aliases=["vcpus"]),
             spec__resources__num_vcpus_per_socket=dict(
                 type="int",
                 default=1,
@@ -346,8 +343,7 @@ def run_module():
                         aliases=["storage_container"],
                         options=dict(
                             storage_container_name=dict(type="str"),
-                            storage_container_uuid=dict(
-                                type="str", aliases=["uuid"]),
+                            storage_container_uuid=dict(type="str", aliases=["uuid"]),
                         ),
                     ),
                 ),
@@ -371,8 +367,7 @@ def run_module():
             spec__resources__memory_size_mib=dict(
                 type="int", default=1, aliases=["memory_size_mib", "memory_gb"]
             ),
-            metadata__categories_mapping=dict(
-                type="dict", aliases=["categories"]),
+            metadata__categories_mapping=dict(type="dict", aliases=["categories"]),
             metadata__use_categories_mapping=dict(
                 type="bool", aliases=["use_categories_mapping"], default=False
             ),
