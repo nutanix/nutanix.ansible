@@ -274,6 +274,28 @@ author:
  - Gevorg Khachatryan (@gevorg_khachatryan)
 """
 EXAMPLES = r"""
+---
+  - hosts: localhost
+    become: true
+    collections:
+      - nutanix.ncp
+    vars:
+      credentials:
+        username: UserName
+        password: Password
+      config:
+        ip_address: xxx.xxx.xxx.xxx
+        port: 9440
+      cluster:
+        uuid: "0005d632-6a07-32eb-0a75-50a487bc911e"
+      networks:
+        mannaged:
+          name: "test"
+          uuid: "ca7fab15-83be-4cca-bc28-88b0b8db293d"
+          ip: "10.50.0.11"
+      storage_config:
+        uuid: "6e78251f-9cf9-45d7-ad16-59274e6f2ea2"
+    tasks:
     - name: VM with Cluster , Network, UTC time zone, one Disk
       nutanix_vms:
         state: present
