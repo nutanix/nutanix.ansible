@@ -1,3 +1,20 @@
+- name: Creating a script File For Guest Customization
+  copy:
+    dest: /tmp/testscript.json
+    become: true
+    content: |
+
+      {
+          "name": "test",
+          "private_networking": true,
+          "region": "nyc3",
+          "size": "512mb",
+          "image": "ubuntu-14-04-x64",
+          "user_data":"#cloud-config
+              config_data
+              more_config"
+          "ssh_keys":[ 12345,56789 ]
+      }
 - name: create Vm With Mannaged subnet and subnet_name
   nutanix_vms:
     state: present
@@ -11,6 +28,10 @@
       - connected: true
         subnet_name: '{{networks.mannaged.name}}'
         private_ip: '{{networks.mannaged.ip}}'
+    guest_customization:
+      type: cloud_init
+      script_path: /tmp/testscript.json
+      is_overridable: true
   register: result
   ignore_errors: true
 - name: assert when status not complete
@@ -192,3 +213,8 @@
       url: '{{config.ip_address}}:{{config.port}}'
   register: result
   loop: '{{ todelete }}'
+- name: Remove The script File
+  file:
+    path: /tmp/testscript.json
+    state: absent
+  become: true
