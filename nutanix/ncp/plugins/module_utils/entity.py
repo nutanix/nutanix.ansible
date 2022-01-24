@@ -156,13 +156,11 @@ class Entity:
         )
         if not 300 > info["status"] > 199:
             module.fail_json(
-                msg="Fail: %s"
-                % (
-                    "Status: "
-                    + str(info["msg"])
-                    + ", Message: "
-                    + str(info.get("body"))
-                )
+                msg="Fail: "
+                + "Status: "
+                + f'{str(info["msg"])}'
+                + ", Message: "
+                + f'{str(info.get("body"))}'
             )
 
         body = resp.read() if resp else info.get("body")
@@ -203,7 +201,7 @@ class Entity:
                 elif type(each) is dict:
                     key = list(each.keys())[0]
                     val = each[key]
-                    path += "/{0}/{1}".format(key, val)
+                    path += f"/{key}/{val}"
         url += path
         return self.validate_url(url, netloc, path)
 
@@ -241,7 +239,7 @@ class Entity:
         )
 
         file_path = join(ncp_dir, self.spec_file)
-        with open(file_path) as f:
+        with open(file_path, encoding="utf_8") as f:
             # spec = json.loads(str(f.read()))
             spec = yaml.safe_load(f.read())
         return spec
