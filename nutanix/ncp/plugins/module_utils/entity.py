@@ -286,7 +286,7 @@ class Entity:
         self.parse_data()
 
         self.url = self.generate_url_from_operations(
-            self.module_name, self.netloc, self.operations
+            self.module_name, self.netloc
         )
 
         self.get_action()
