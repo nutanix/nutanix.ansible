@@ -23,20 +23,24 @@ options:
     required: true
     type: str
   auth:
-    description: Credentials needed for authenticating to the subnet
+    description: >-
+      we need to define username, password, ip address and port in the following format :
+      -----
+      credentials:
+        username: User Name
+        password: Password
+      config:
+        ip_address: IPv4 Address
+        port: port number
+      -----
+      to be used in the auth as follow:
+      -----
+      auth:
+        credentials: '{{credentials}}'
+        url: '{{config.ip_address}}:{{config.port}}'
+      -----
     required: true
     type: dict
-  data:
-    description: >-
-      This acts as either the params or the body payload depending on the HTTP
-      action
-    required: false
-    type: dict
-  operations:
-    description: This acts as the sub_url in the requested url
-    required: false
-    type: list
-    elements: str
   wait_timeout:
     description: This is the wait_timeout description
     required: false
@@ -63,7 +67,7 @@ options:
     description: vm Name
     aliases:
       - spec__name
-    required: false
+    required: False
     type: str
   desc:
     description: A description for vm.
@@ -174,10 +178,10 @@ options:
           - uuid
         type: str
       subnet_name:
-        description: This is the subnet_uuid description
+        description: This is the subnet_uuid description and it's mutual execlusive with subnet_uuid
         type: str
       subnet_uuid:
-        description: The subnet uuid
+        description: The subnet uuid and it's mutual execlusive with subnet_name
         type: str
       subnet_kind:
         description: This is the subnet_kind description
@@ -257,11 +261,11 @@ options:
             type: str
             choices: [ sysprep, cloud_init ]
             default: sysprep
-            description: Test description
+            description: The Cistomization type
         script_path:
             type: str
             required: True
-            description: Test description
+            description: The Absolute Script Path
         is_overridable:
             type: bool
             default: False
@@ -270,6 +274,126 @@ author:
  - Gevorg Khachatryan (@gevorg_khachatryan)
 """
 EXAMPLES = r"""
+---
+  - hosts: localhost
+    become: true
+    collections:
+      - nutanix.ncp
+    vars:
+      credentials:
+        username: UserName
+        password: Password
+      config:
+        ip_address: xxx.xxx.xxx.xxx
+        port: 9440
+      cluster:
+        uuid: "0005d632-6a07-32eb-0a75-50a487bc911e"
+      networks:
+        mannaged:
+          name: "test"
+          uuid: "ca7fab15-83be-4cca-bc28-88b0b8db293d"
+          ip: "10.50.0.11"
+      storage_config:
+        uuid: "6e78251f-9cf9-45d7-ad16-59274e6f2ea2"
+    tasks:
+    - name: VM with Cluster , Network, UTC time zone, one Disk
+      nutanix_vms:
+        state: present
+        name: "Cluster Network and Disk"
+        timezone: "UTC"
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+        cluster:
+          cluster_uuid: "{{cluster.uuid}}"
+        networks:
+          - connected: True
+            subnet_name: "{{networks.mannaged.name}}"
+        disks:
+          - type: "DISK"
+            size_gb: 5
+            bus: "PCI"
+      register: result
+      ignore_errors: True
+    - name: VM with Cluster, different Disks, memory size
+      nutanix_vms:
+        state: present
+        name: "Different disks"
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+        cluster:
+          cluster_uuid: "{{cluster.uuid}}"
+        disks:
+          - type: "DISK"
+            size_gb: 4
+            bus: "SATA"
+          - type: "DISK"
+            size_gb: 3
+            bus: "SCSI"
+        memory_gb: 20
+      register: result
+      ignore_errors: True
+    - name: VM with Cluster, different CDROMS
+      nutanix_vms:
+        state: present
+        name: "CDROM"
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+        cluster:
+          cluster_uuid: "{{cluster.uuid}}"
+        disks:
+          - type: "CDROM"
+            bus: "SATA"
+          - type: "CDROM"
+            bus: "IDE"
+        cores_per_vcpu: 1
+      register: result
+      ignore_errors: True
+    - name: delete recently created vm
+      nutanix_vms:
+        uuid: '{{ result["response"]["metadata"]["uuid"] }}'
+        state: absent
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+      register: result
+    - name: VM with all specification
+      nutanix_vms:
+        state: present
+        name: "All specification"
+        timezone: "GMT"
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+        cluster:
+          cluster_uuid: "{{cluster.uuid}}"
+        disks:
+          - type: "DISK"
+            size_gb: 1
+            bus: "SCSI"
+          - type: "DISK"
+            size_gb: 4
+            bus: "PCI"
+          - type: "DISK"
+            size_gb: 16
+            bus: "SATA"
+          - type: "DISK"
+            size_gb: 16
+            bus: "SCSI"
+          - type: "CDROM"
+            size_gb: 4
+            bus: "IDE"
+        boot_device_order_list:
+          - "DISK"
+          - "CDROM"
+          - "NETWORK"
+        vcpus: 20
+        cores_per_vcpu: 4
+        memory_gb: 6
+      register: result
+      ignore_errors: True
 """
 
 
