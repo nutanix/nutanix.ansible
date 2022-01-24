@@ -67,7 +67,7 @@ options:
     description: vm Name
     aliases:
       - spec__name
-    required: True
+    required: False
     type: str
   desc:
     description: A description for vm.
@@ -384,7 +384,7 @@ from ..module_utils.prism.vms import VM  # noqa: E402
 def run_module():
     BaseModule.argument_spec.update(
         dict(
-            spec__name=dict(type="str", required=True, aliases=["name"]),
+            spec__name=dict(type="str", required=False, aliases=["name"]),
             spec__description=dict(
                 type="str", required=False, aliases=["desc", "description"]
             ),
