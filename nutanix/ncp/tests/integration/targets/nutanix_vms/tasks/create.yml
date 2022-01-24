@@ -29,7 +29,7 @@
         private_ip: '{{networks.mannaged.ip}}'
     guest_customization:
       type: cloud_init
-      script_path: /tmp/testscript.json
+      script_path: /tmp/cloud_init.json
       is_overridable: true
   register: result
   ignore_errors: true

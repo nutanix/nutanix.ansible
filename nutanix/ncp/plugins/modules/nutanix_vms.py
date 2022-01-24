@@ -274,6 +274,104 @@ author:
  - Gevorg Khachatryan (@gevorg_khachatryan)
 """
 EXAMPLES = r"""
+    - name: VM with Cluster , Network, UTC time zone, one Disk
+      nutanix_vms:
+        state: present
+        name: "Cluster Network and Disk"
+        timezone: "UTC"
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+        cluster:
+          cluster_uuid: "{{cluster.uuid}}"
+        networks:
+          - connected: True
+            subnet_name: "{{networks.mannaged.name}}"
+        disks:
+          - type: "DISK"
+            size_gb: 5
+            bus: "PCI"
+      register: result
+      ignore_errors: True
+    - name: VM with Cluster, different Disks, memory size
+      nutanix_vms:
+        state: present
+        name: "Different disks"
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+        cluster:
+          cluster_uuid: "{{cluster.uuid}}"
+        disks:
+          - type: "DISK"
+            size_gb: 4
+            bus: "SATA"
+          - type: "DISK"
+            size_gb: 3
+            bus: "SCSI"
+        memory_gb: 20
+      register: result
+      ignore_errors: True
+    - name: VM with Cluster, different CDROMS
+      nutanix_vms:
+        state: present
+        name: "CDROM"
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+        cluster:
+          cluster_uuid: "{{cluster.uuid}}"
+        disks:
+          - type: "CDROM"
+            bus: "SATA"
+          - type: "CDROM"
+            bus: "IDE"
+        cores_per_vcpu: 1
+      register: result
+      ignore_errors: True
+    - name: delete recently created vm
+      nutanix_vms:
+        uuid: '{{ result["response"]["metadata"]["uuid"] }}'
+        state: absent
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+      register: result
+    - name: VM with all specification
+      nutanix_vms:
+        state: present
+        name: "All specification"
+        timezone: "GMT"
+        auth:
+          credentials: "{{credentials}}"
+          url: "{{config.ip_address}}:{{config.port}}"
+        cluster:
+          cluster_uuid: "{{cluster.uuid}}"
+        disks:
+          - type: "DISK"
+            size_gb: 1
+            bus: "SCSI"
+          - type: "DISK"
+            size_gb: 4
+            bus: "PCI"
+          - type: "DISK"
+            size_gb: 16
+            bus: "SATA"
+          - type: "DISK"
+            size_gb: 16
+            bus: "SCSI"
+          - type: "CDROM"
+            size_gb: 4
+            bus: "IDE"
+        boot_device_order_list:
+          - "DISK"
+          - "CDROM"
+          - "NETWORK"
+        vcpus: 20
+        cores_per_vcpu: 4
+        memory_gb: 6
+      register: result
+      ignore_errors: True
 """
 
 
