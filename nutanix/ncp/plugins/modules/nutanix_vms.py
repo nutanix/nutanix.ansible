@@ -315,6 +315,9 @@ def run_module():
                 type="list",
                 elements="dict",
                 aliases=["networks"],
+                mutually_exclusive=[
+                    ("subnet_uuid", "subnet_name")
+                ],
                 options=dict(
                     uuid=dict(type="str", aliases=["nic_uuid"]),
                     subnet_uuid=dict(type="str"),

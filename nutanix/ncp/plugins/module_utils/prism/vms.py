@@ -211,7 +211,7 @@ class VMNetwork(VMSpec):
 
                 elif k == "subnet_uuid" and v:
                     nic_final["subnet_reference"] = {"kind": "subnet", "uuid": v}
-                elif k == "subnet_name" and not nic_param.get("subnet_uuid"):
+                elif k == "subnet_name" and v and not nic_param.get("subnet_uuid"):
                     nic_final["subnet_reference"] = self.__get_subnet_ref(v, **kwargs)
 
                 elif k == "ip_endpoint_list" and bool(v):
