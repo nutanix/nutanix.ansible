@@ -23,20 +23,17 @@ options:
     required: true
     type: str
   auth:
-    description: Credentials needed for authenticating to the subnet
+    description: >- 
+      Credentials File needed for authenticating to the subnet like this
+      ---
+      credentials:
+        username: User Name
+        password: Password
+      config:
+        ip_address: IPv4 Address
+        port: port number
     required: true
     type: dict
-  data:
-    description: >-
-      This acts as either the params or the body payload depending on the HTTP
-      action
-    required: false
-    type: dict
-  operations:
-    description: This acts as the sub_url in the requested url
-    required: false
-    type: list
-    elements: str
   wait_timeout:
     description: This is the wait_timeout description
     required: false
@@ -63,7 +60,7 @@ options:
     description: vm Name
     aliases:
       - spec__name
-    required: false
+    required: True
     type: str
   desc:
     description: A description for vm.
@@ -174,10 +171,10 @@ options:
           - uuid
         type: str
       subnet_name:
-        description: This is the subnet_uuid description
+        description: This is the subnet_uuid description and it's mutual execlusive with subnet_uuid
         type: str
       subnet_uuid:
-        description: The subnet uuid
+        description: The subnet uuid and it's mutual execlusive with subnet_name
         type: str
       subnet_kind:
         description: This is the subnet_kind description
@@ -257,11 +254,11 @@ options:
             type: str
             choices: [ sysprep, cloud_init ]
             default: sysprep
-            description: Test description
+            description: The Cistomization type
         script_path:
             type: str
             required: True
-            description: Test description
+            description: The Absolute Script Path
         is_overridable:
             type: bool
             default: False
@@ -282,7 +279,7 @@ from ..module_utils.prism.vms import VM  # noqa: E402
 def run_module():
     BaseModule.argument_spec.update(
         dict(
-            spec__name=dict(type="str", required=False, aliases=["name"]),
+            spec__name=dict(type="str", required=True, aliases=["name"]),
             spec__description=dict(
                 type="str", required=False, aliases=["desc", "description"]
             ),
