@@ -88,9 +88,7 @@ class TestEntity(ModuleTestCase):
         action = "present"
 
         self.builder.data = {}
-        self.builder.credentials = {
-            "username": self.builder.username,
-        }
+        self.builder.credentials = {"username": self.builder.username}
         exception = None
         try:
             self.builder.action = action
@@ -125,9 +123,7 @@ class TestEntity(ModuleTestCase):
         action = "present"
 
         self.builder.data = {}
-        self.builder.credentials = {
-            "username": self.builder.username,
-        }
+        self.builder.credentials = {"username": self.builder.username}
         exception = None
         try:
             self.builder.action = action

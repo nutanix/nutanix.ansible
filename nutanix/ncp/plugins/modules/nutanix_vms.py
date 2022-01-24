@@ -289,9 +289,7 @@ def run_module():
             metadata__uuid=dict(type="str", aliases=["uuid"], required=False),
             spec__resources__num_sockets=dict(type="int", default=1, aliases=["vcpus"]),
             spec__resources__num_vcpus_per_socket=dict(
-                type="int",
-                default=1,
-                aliases=["cores_per_vcpu"],
+                type="int", default=1, aliases=["cores_per_vcpu"]
             ),
             cluster=dict(
                 type="dict",
@@ -315,9 +313,7 @@ def run_module():
                 type="list",
                 elements="dict",
                 aliases=["networks"],
-                mutually_exclusive=[
-                    ("subnet_uuid", "subnet_name")
-                ],
+                mutually_exclusive=[("subnet_uuid", "subnet_name")],
                 options=dict(
                     uuid=dict(type="str", aliases=["nic_uuid"]),
                     subnet_uuid=dict(type="str"),
