@@ -23,8 +23,8 @@ options:
     required: true
     type: str
   auth:
-    description: >- 
-      we need to define username, password, ip address and port in the following format
+    description: >-
+      we need to define username, password, ip address and port in the following format :
       -----
       credentials:
         username: User Name
@@ -39,8 +39,6 @@ options:
         credentials: '{{credentials}}'
         url: '{{config.ip_address}}:{{config.port}}'
       -----
-    
-
     required: true
     type: dict
   wait_timeout:
