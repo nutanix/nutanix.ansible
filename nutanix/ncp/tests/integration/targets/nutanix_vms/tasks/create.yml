@@ -1,7 +1,6 @@
 - name: Creating a script File For Guest Customization
   copy:
-    dest: /tmp/testscript.json
-    become: true
+    dest: /tmp/cloud_init.json
     content: |
 
       {
@@ -215,6 +214,5 @@
   loop: '{{ todelete }}'
 - name: Remove The script File
   file:
-    path: /tmp/testscript.json
+    path: /tmp/cloud_init.json
     state: absent
-  become: true
