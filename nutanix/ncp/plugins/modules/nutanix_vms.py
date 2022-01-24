@@ -24,14 +24,23 @@ options:
     type: str
   auth:
     description: >- 
-      Credentials File needed for authenticating to the subnet like this
-      ---
+      we need to define username, password, ip address and port in the following format
+      -----
       credentials:
         username: User Name
         password: Password
       config:
         ip_address: IPv4 Address
         port: port number
+      -----
+      to be used in the auth as follow:
+      -----
+      auth:
+        credentials: '{{credentials}}'
+        url: '{{config.ip_address}}:{{config.port}}'
+      -----
+    
+
     required: true
     type: dict
   wait_timeout:
