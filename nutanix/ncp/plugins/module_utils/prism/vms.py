@@ -32,7 +32,7 @@ class VM(Prism):
 
     def get_entity_by_name(self, name="", kind=""):
         url = self.generate_url_from_operations(kind, netloc=self.url, ops=["list"])
-        data = {"filter": "name==%s" % name, "length": 1}
+        data = {"filter": f"name=={name}", "length": 1}
         resp = self.send_request(
             self.module,
             self.methods_of_actions["list"],
@@ -41,24 +41,27 @@ class VM(Prism):
             self.credentials["username"],
             self.credentials["password"],
         )
+
         try:
             return resp["entities"][0]["metadata"]
 
         except IndexError:
-            self.result["message"] = 'Entity with name "%s" does not exist.' % name
+
+            self.result["message"] = f"Entity with name {name} does not exist."
             self.result["failed"] = True
+
             self.module.exit_json(**self.result)
 
 
 class VMSpec:
     def get_default_spec(self):
         raise NotImplementedError(
-            "Get Default Spec helper not implemented for {0}".format(self.entity_type)
+            f"Get Default Spec helper not implemented for {self.entity_type}"
         )
 
     def _get_api_spec(self, param_spec, **kwargs):
         raise NotImplementedError(
-            "Get Api Spec helper not implemented for {0}".format(self.entity_type)
+            f"Get Api Spec helper not implemented for {self.entity_type}"
         )
 
     def remove_null_references(self, spec, parent_spec=None, spec_key=None):
@@ -246,7 +249,7 @@ class GuestCustomizationSpec(VMSpec):
 
         gc_spec = self.get_default_spec()
         script_file_path = param_spec["script_path"]
-        with open(script_file_path, "r") as f:
+        with open(script_file_path, "r", encoding="utf_8") as f:
             content = f.read()
         content = b64encode(content)
         type = param_spec["type"]
