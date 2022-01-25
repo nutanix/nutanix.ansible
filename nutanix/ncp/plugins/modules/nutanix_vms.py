@@ -57,7 +57,7 @@ options:
     type: bool
     default: false
   vcpus:
-    description: This is the vcpus description
+    description: Number of vCPU sockets.
     aliases:
       - spec__resources__num_sockets
     required: false
@@ -178,13 +178,13 @@ options:
           - uuid
         type: str
       subnet_name:
-        description: This is the subnet_uuid description and it's mutual execlusive with subnet_uuid
+        description: Network subnet name and it's mutual execlusive with subnet_uuid
         type: str
       subnet_uuid:
-        description: The subnet uuid and it's mutual execlusive with subnet_name
+        description: Network subnet uuid and it's mutual execlusive with subnet_name
         type: str
       subnet_kind:
-        description: This is the subnet_kind description
+        description: The Subnet kind
         type: str
         default: subnet
       is_connected:
@@ -252,7 +252,14 @@ options:
       - NETWORK
   guest_customization:
     description: >-
-      test desc
+        VM guests may be customized at boot time using one of several different
+        methods. Currently, cloud-init w/ ConfigDriveV2 (for Linux VMs) and Sysprep
+        (for Windows VMs) are supported. Only ONE OF sysprep or cloud_init should be
+        provided. Note that guest customization can currently only be set during VM 
+        creation. Attempting to change it after creation will result in an error.
+        Additional properties can be specified. For example - in the context of VM
+        template creation if "override_script" is set to "True" then the deployer
+        can upload their own custom script
     aliases:
       - spec__resources__guest_customization
     type: dict
@@ -261,7 +268,7 @@ options:
             type: str
             choices: [ sysprep, cloud_init ]
             default: sysprep
-            description: The Cistomization type
+            description: The customization type
         script_path:
             type: str
             required: True

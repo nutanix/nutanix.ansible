@@ -28,16 +28,14 @@ ansible-doc nutanix.ncp.<module_name>
 ```
 
 # Examples
-First: Change All Values in vars filed in the playbook
+Make sure to use the correct values that matches your environment for all the variables.
 
-Then to run the playbook 
-
+Create playbook.yml with the content as below, and run it using 
 ```
-ansible-playbook playBookName.yml
+ansible-playbook playbook.yml
 ```
 ## Playbook to Create Different Vm's
 ```
----
   - hosts: localhost
     become: true
     collections:
