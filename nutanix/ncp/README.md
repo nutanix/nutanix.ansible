@@ -28,8 +28,13 @@ ansible-doc nutanix.ncp.<module_name>
 ```
 
 # Examples
-To Run The Playbook you need Change All Values in vars :
+First: Change All Values in vars filed in the playbook
 
+Then to run the playbook 
+
+```
+ansible-playbook playBookName.yml
+```
 ## Playbook to Create Different Vm's
 ```
 ---
