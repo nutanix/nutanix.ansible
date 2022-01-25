@@ -42,10 +42,10 @@ ansible-playbook playbook.yml
     - nutanix.ncp
   vars:
     credentials:
-      username: admin
-      password: Nutanix.123
+      username: UserName
+      password: Password
     config:
-      ip_address: 10.44.76.190
+      ip_address: XXX.XXX.XXX.XXX
       port: 9440
     cluster:
       uuid: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
