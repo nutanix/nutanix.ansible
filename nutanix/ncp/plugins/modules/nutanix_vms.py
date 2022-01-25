@@ -255,7 +255,7 @@ options:
         VM guests may be customized at boot time using one of several different
         methods. Currently, cloud-init w/ ConfigDriveV2 (for Linux VMs) and Sysprep
         (for Windows VMs) are supported. Only ONE OF sysprep or cloud_init should be
-        provided. Note that guest customization can currently only be set during VM 
+        provided. Note that guest customization can currently only be set during VM
         creation. Attempting to change it after creation will result in an error.
         Additional properties can be specified. For example - in the context of VM
         template creation if "override_script" is set to "True" then the deployer
