@@ -20,8 +20,7 @@ _Add `--force` option for rebuilding or reinstalling to overwrite existing data_
 nutanix_vms
 ```
 
-# Inventory plugin
-`ncp_prism_vm_inventory`
+
 
 # Module documentation and examples
 ```
