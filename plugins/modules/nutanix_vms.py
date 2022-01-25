@@ -212,6 +212,9 @@ options:
     elements: dict
     default: []
     suboptions:
+      clone_image:
+        description: Clone from image
+        type: str
       type:
         description: 'Disk Type , CDROM or Disk'
         type: str
