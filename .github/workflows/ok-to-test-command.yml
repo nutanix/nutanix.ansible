@@ -24,6 +24,7 @@ jobs:
           pip install --upgrade pip
           pip install ansible
           pip install shyaml
+          pip install coverage==4.5.4
       - name: Build and install the collection
         run: |
           source venv/bin/activate
@@ -37,7 +38,25 @@ jobs:
         run: |
           source venv/bin/activate
           cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
-          ansible-test integration --python 3.9 -v
+          ansible-test integration --python 3.9 --coverage -v
+          ansible-test coverage report > coverage.txt
+
+      - name: Code Coverage Check
+        run:  |
+              cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
+              echo "Code coverage: Checking if code coverage is above threshold..."
+              export COVERAGE_THRESHOLD=70
+              echo "Threshold: $COVERAGE_THRESHOLD %"
+              totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
+              echo "TOTAL_COVERAGE=${totalCoverage}" >> $GITHUB_ENV
+              echo "Current integration test coverage : $totalCoverage %"
+              if (( $(echo "$totalCoverage $COVERAGE_THRESHOLD" | awk '{print ($1 > $2)}') )); then
+                  echo "Coverage passed"
+              else
+                  echo "Current integration test coverage is below threshold. Please add more integration tests or adjust threshold to a lower value."
+                  echo "Coverage check failed"
+                  exit 1
+              fi
 
       - run: echo "🍏 This job's status is ${{ job.status }}."
 
@@ -49,6 +68,7 @@ jobs:
           comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
           body: |
             >Integration test run status is : ${{ job.status }}
+            >Converage is : ${{ env.TOTAL_COVERAGE }} %
             >Job link https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           reaction-type: hooray
 
