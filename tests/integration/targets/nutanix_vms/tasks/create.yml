@@ -9,8 +9,8 @@
       cluster_uuid: '{{cluster.uuid}}'
     networks:
       - connected: true
-        subnet_name: '{{networks.mannaged.name}}'
-        private_ip: '{{networks.mannaged.ip}}'
+        subnet_name: '{{networks.static.name}}'
+        private_ip: '{{networks.static.ip}}'
   register: result
   ignore_errors: true
 - name: assert when status not complete
@@ -64,7 +64,7 @@
       cluster_uuid: '{{cluster.uuid}}'
     networks:
       - connected: false
-        subnet_uuid: '{{networks.unmannaged.uuid}}'
+        subnet_uuid: '{{networks.dhcp.uuid}}'
     boot_type: LEGACY
     boot_device_order_list:
       - DISK
@@ -144,9 +144,9 @@
       cluster_uuid: '{{cluster.uuid}}'
     networks:
       - connected: true
-        subnet_uuid: '{{networks.unmannaged.uuid}}'
+        subnet_uuid: '{{networks.dhcp.uuid}}'
       - connected: true
-        subnet_uuid: '{{networks.mannaged.uuid}}'
+        subnet_uuid: '{{networks.static.uuid}}'
     disks:
       - type: DISK
         size_gb: 1

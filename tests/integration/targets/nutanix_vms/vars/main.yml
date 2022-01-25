@@ -7,14 +7,14 @@ config:
   port: 9440
 
 cluster:
-  uuid: "0005d54c-b572-b290-0000-000000029016"
+  uuid: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
 networks:
-  mannaged:
-    name: "test_managed_subnet"
-    uuid: "548d29f3-d98d-44cf-893b-4e17e0066161"
+  static:
+    name: "static_subnet"
+    uuid: "72c5057d-93f7-4389-a01a-2c2f42eae3ef"
     ip: "10.30.30.75"
-  unmannaged:
-    uuid: "55d9fbba-71ea-4ef4-b776-1c8f3513b733"
+  dhcp:
+    uuid: "9343da22-886f-4055-88d2-3a8278c68700"
 storage_config:
-  uuid: "985d6049-82a4-4a93-9707-892360040865"
+  uuid: "4446ca0b-7846-4a6f-b00a-386736432121"
 todelete: []
