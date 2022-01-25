@@ -99,6 +99,9 @@
       AppType:
         - Apache_Spark
     disks:
+      - type: "DISK"
+        clone_image: "CentOS-7-cloudinit"
+        bus: "SCSI"
       - type: DISK
         size_gb: 1
         bus: SCSI
@@ -154,11 +157,9 @@
       - type: DISK
         size_gb: 3
         bus: PCI
-      - type: DISK
-        size_gb: 1
+      - type: CDROM
         bus: SATA
-      - type: DISK
-        size_gb: 5
+      - type: CDROM
         bus: IDE
     boot_type: UEFI
     boot_device_order_list:
