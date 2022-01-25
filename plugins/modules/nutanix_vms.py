@@ -469,6 +469,7 @@ def run_module():
                             storage_container_uuid=dict(type="str", aliases=["uuid"]),
                         ),
                     ),
+                    clone_image=dict(type="str"),
                 ),
                 default=[],
             ),
