@@ -3,7 +3,7 @@ credentials:
   username: admin
   password: Nutanix.123
 config:
-  ip_address: 10.44.76.242
+  ip_address: 10.44.76.190
   port: 9440
 
 cluster:
