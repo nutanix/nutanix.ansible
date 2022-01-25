@@ -12,7 +12,7 @@ __metaclass__ = type
 
 class VM(Prism):
     kind = "vm"
-    spec_file = "vm_spec.json"
+    spec_file = "plugins/module_utils/prism/specs/vm_spec.json"
     entity_type = "NutanixVm"
 
     def get_attr_spec(self, param, param_spec, **kwargs):
@@ -26,9 +26,6 @@ class VM(Prism):
             handler = param_method_spec[param]()
             return handler(param_spec, get_ref=self.get_entity_by_name)
         return param_spec
-
-    def _get_api_spec(self, param_spec, **kwargs):
-        pass
 
     def get_entity_by_name(self, name="", kind=""):
         url = self.generate_url_from_operations(kind, netloc=self.url, ops=["list"])
@@ -249,7 +246,7 @@ class GuestCustomizationSpec(VMSpec):
 
         gc_spec = self.get_default_spec()
         script_file_path = param_spec["script_path"]
-        with open(script_file_path, "r", encoding="utf_8") as f:
+        with open(script_file_path, "rb", encoding="utf_8") as f:
             content = f.read()
         content = b64encode(content)
         type = param_spec["type"]

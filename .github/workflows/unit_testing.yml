@@ -24,7 +24,6 @@ jobs:
           pip install shyaml
       - name: Build and install the collection
         run: |
-          cd nutanix/ncp
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
           COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
           VERSION=$(cat galaxy.yml | shyaml get-value version)
@@ -51,7 +50,6 @@ jobs:
           pip install coverage==4.5.4
       - name: Build and install the collection
         run: |
-          cd nutanix/ncp
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
           COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
           VERSION=$(cat galaxy.yml | shyaml get-value version)

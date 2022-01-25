@@ -28,7 +28,6 @@ jobs:
       - name: Build and install the collection
         run: |
           source venv/bin/activate
-          cd nutanix/ncp
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
           COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
           VERSION=$(cat galaxy.yml | shyaml get-value version)
