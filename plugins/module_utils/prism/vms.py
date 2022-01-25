@@ -12,7 +12,7 @@ __metaclass__ = type
 
 class VM(Prism):
     kind = "vm"
-    spec_file = "vm_spec.json"
+    spec_file = "plugins/module_utils/prism/specs/vm_spec.json"
     entity_type = "NutanixVm"
 
     def get_attr_spec(self, param, param_spec, **kwargs):
