@@ -9,8 +9,8 @@
       cluster_uuid: '{{cluster.uuid}}'
     networks:
       - connected: true
-        subnet_name: '{{networks.mannaged.name}}'
-        private_ip: '{{networks.mannaged.ip}}'
+        subnet_name: '{{networks.static.name}}'
+        private_ip: '{{networks.static.ip}}'
   register: result
   ignore_errors: true
 - name: assert when status not complete
@@ -64,7 +64,7 @@
       cluster_uuid: '{{cluster.uuid}}'
     networks:
       - connected: false
-        subnet_uuid: '{{networks.unmannaged.uuid}}'
+        subnet_uuid: '{{networks.dhcp.uuid}}'
     boot_type: LEGACY
     boot_device_order_list:
       - DISK
@@ -99,6 +99,9 @@
       AppType:
         - Apache_Spark
     disks:
+      - type: "DISK"
+        clone_image: "CentOS-7-cloudinit"
+        bus: "SCSI"
       - type: DISK
         size_gb: 1
         bus: SCSI
@@ -144,9 +147,9 @@
       cluster_uuid: '{{cluster.uuid}}'
     networks:
       - connected: true
-        subnet_uuid: '{{networks.unmannaged.uuid}}'
+        subnet_uuid: '{{networks.dhcp.uuid}}'
       - connected: true
-        subnet_uuid: '{{networks.mannaged.uuid}}'
+        subnet_uuid: '{{networks.static.uuid}}'
     disks:
       - type: DISK
         size_gb: 1
@@ -154,11 +157,9 @@
       - type: DISK
         size_gb: 3
         bus: PCI
-      - type: DISK
-        size_gb: 1
+      - type: CDROM
         bus: SATA
-      - type: DISK
-        size_gb: 5
+      - type: CDROM
         bus: IDE
     boot_type: UEFI
     boot_device_order_list:

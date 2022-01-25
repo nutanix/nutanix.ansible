@@ -212,6 +212,9 @@ options:
     elements: dict
     default: []
     suboptions:
+      clone_image:
+        description: Clone from image
+        type: str
       type:
         description: 'Disk Type , CDROM or Disk'
         type: str
@@ -469,6 +472,7 @@ def run_module():
                             storage_container_uuid=dict(type="str", aliases=["uuid"]),
                         ),
                     ),
+                    clone_image=dict(type="str"),
                 ),
                 default=[],
             ),
