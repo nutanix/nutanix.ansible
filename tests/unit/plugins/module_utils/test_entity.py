@@ -207,7 +207,7 @@ class TestEntity(ModuleTestCase):
             elif isinstance(each, dict):
                 key = list(each.keys())[0]
                 val = each[key]
-                path += f"/{key}/{val}"
+                path += "/{0}/{1}".format(key, val)
         self.assertTrue("http" in actual.scheme)
         self.assertEqual(netloc, actual.netloc)
         self.assertEqual(path, actual.path)

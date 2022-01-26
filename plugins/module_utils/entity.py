@@ -158,9 +158,9 @@ class Entity:
             module.fail_json(
                 msg="Fail: "
                 + "Status: "
-                + f'{str(info["msg"])}'
+                + '{0}'.format(str(info["msg"]))
                 + ", Message: "
-                + f'{str(info.get("body"))}'
+                + '{0}'.format(str(info.get("body")))
             )
 
         body = resp.read() if resp else info.get("body")
@@ -201,7 +201,7 @@ class Entity:
                 elif type(each) is dict:
                     key = list(each.keys())[0]
                     val = each[key]
-                    path += f"/{key}/{val}"
+                    path += "/{0}/{1}".format(key, val)
         url += path
         return self.validate_url(url, netloc, path)
 
@@ -239,7 +239,7 @@ class Entity:
         )
 
         file_path = join(ncp_dir, self.spec_file)
-        with open(file_path, encoding="utf_8") as f:
+        with open(file_path, "rb") as f:
             # spec = json.loads(str(f.read()))
             spec = yaml.safe_load(f.read())
         return spec
