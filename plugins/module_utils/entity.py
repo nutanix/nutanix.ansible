@@ -158,9 +158,9 @@ class Entity:
             module.fail_json(
                 msg="Fail: "
                 + "Status: "
-                + '{0}'.format(str(info["msg"]))
+                + "{0}".format(str(info["msg"]))
                 + ", Message: "
-                + '{0}'.format(str(info.get("body")))
+                + "{0}".format(str(info.get("body")))
             )
 
         body = resp.read() if resp else info.get("body")
