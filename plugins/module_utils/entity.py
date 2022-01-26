@@ -55,6 +55,13 @@ class Entity(object):
             url = url + '/{0}'.format(endpoint)
         return self._fetch_url(url, method="POST", data=data, timeout=timeout)
 
+    def get_uuid(self, name):
+        data = {"filter": f"name=={name}", "length": 1}
+        resp, _ = self.list(data)
+        if resp.get("entities"):
+            return resp["entities"][0]["metadata"]["uuid"]
+        return None
+
     def _build_url(self, module, scheme, resource_type):
         host = module.params.get("nutanix_host")
         url = "{proto}://{host}".format(proto=scheme, host=host)
