@@ -11,7 +11,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r'''
 ---
-module: nutanix_vm
+module: ntnx_vm
 
 short_description: VM module which suports VM CRUD operations
 
@@ -232,15 +232,15 @@ options:
                 default: ["CDROM", "DISK", "NETWORK"]
     guest_customization:
         description:
-            - cloud-init or sysprep guest customization
+            - cloud_init or sysprep guest customization
         type: dict
         required: false
         suboptions:
             type:
                 description:
-                    - cloud-init or sysprep type
+                    - cloud_init or sysprep type
                 type: str
-                choices: [sysprep, cloud-init]
+                choices: [sysprep, cloud_init]
                 default: sysprep
                 required: true
             script_path:
@@ -278,17 +278,15 @@ RETURN = r'''
 
 from ansible.module_utils.basic import env_fallback
 
-from ..base_module import BaseModule
-from ....plugins.module_utils.prism.vms import VM
-from ....plugins.module_utils.prism.tasks import Task
+from ..module_utils.base_module import BaseModule
+from ..module_utils.prism.vms import VM
+from ..module_utils.prism.tasks import Task
 
 
 def run_module():
     entity_by_spec = dict(
         name=dict(type='str'),
         uuid=dict(type='str'),
-        mutually_exclusive=[('name', 'uuid'),],
-        required_one_of=[('name', 'uuid'),],
     )
 
     network_spec = dict(
@@ -327,7 +325,7 @@ def run_module():
     )
 
     gc_spec = dict(
-        type=dict(type='str', choices=['cloud-init', 'sysprep'], required=True),
+        type=dict(type='str', choices=['cloud_init', 'sysprep'], required=True),
         script_path=dict(type='path', required=True),
         is_overridable=dict(type='bool', default=False),
     )
@@ -338,8 +336,8 @@ def run_module():
         nutanix_username=dict(type='str', required=True, fallback=(env_fallback, ["NUTANIX_USERNAME"])),
         nutanix_password=dict(type='str', required=True, no_log=True, fallback=(env_fallback, ["NUTANIX_PASSWORD"])),
         validate_certs=dict(type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])),
-        state=dict(type=str, choices=['present', 'absent'], default='present'),
-        wait=dict(type=bool, default=True),
+        state=dict(type='str', choices=['present', 'absent'], default='present'),
+        wait=dict(type='bool', default=True),
         name=dict(type='str', required=True),
         desc=dict(type='str'),
         project=dict(type='dict', options=entity_by_spec),
@@ -363,7 +361,8 @@ def run_module():
         'error': None,
         'response': None,
         'vm_uuid': None,
-        'task_uuid': None
+        'task_uuid': None,
+        'msg': ''
     }
 
     vm = VM(module)
@@ -392,7 +391,7 @@ def run_module():
     result['task_uuid'] = task_uuid
     result["vm_uuid"] = resp["metadata"]["uuid"]
 
-    if module.param["wait"]:
+    if module.params["wait"]:
         task = Task(module)
         resp, status = task.wait_for_completion(task_uuid)
         if status['error']:

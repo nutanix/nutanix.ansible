@@ -40,9 +40,8 @@ class VM(Prism):
         spec = self._get_default_spec()
         for ansible_param, ansible_value in self.module.params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
-            _, error = build_spec_method(spec, ansible_value)
-            if error:
-                return None, error
+            if build_spec_method and ansible_value:
+                _, error = build_spec_method(spec, ansible_value)
         return spec, None
 
     def _get_default_spec(self):
@@ -165,7 +164,7 @@ class VM(Prism):
             if 'is_connected' in network:
                 nic["is_connected"] = network["is_connected"]
 
-            if 'name' in network["subnet"]:
+            if network.get("subnet") and 'name' in network["subnet"]:
                 subnet = Subnet(self.module)
                 name = network["subnet"]["name"]
                 uuid = subnet.get_uuid(name)
@@ -269,19 +268,18 @@ class VM(Prism):
             payload["spec"]["resources"]["machine_type"] = "Q35"
 
     def _build_spec_gc(self, payload, param):
-        fpath = param["guest_customization"]["script_path"]
+        fpath = param["script_path"]
 
         if not os.path.exists(fpath):
             error = "File not found: {}".format(fpath)
             return None, error
 
-        with open(fpath, "rb", encoding="utf_8") as f:
+        with open(fpath, "rb") as f:
             content = base64.b64encode(f.read())
-
-        gc_spec = payload["spec"]["resources"]["guest_customization"]
+        gc_spec = {"guest_customization": {}}
 
         if 'sysprep' in param["type"]:
-            gc_spec = {
+            gc_spec["guest_customization"] = {
                 "sysprep": {
                     "install_type": "PREPARED",
                     "unattend_xml": content
@@ -289,13 +287,13 @@ class VM(Prism):
             }
 
         elif 'cloud_init' in param["type"]:
-            gc_spec = {
+            gc_spec["guest_customization"] = {
                 "cloud_init": {"user_data": content}
             }
 
         if 'is_overridable' in param:
-            gc_spec["is_overridable"] = param["is_overridable"]
-
+            gc_spec["guest_customization"]["is_overridable"] = param["is_overridable"]
+        payload["spec"]["resources"].update(gc_spec)
         return payload, None
 
     def _build_spec_timezone(self, payload, value):

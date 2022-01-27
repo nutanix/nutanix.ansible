@@ -1,0 +1,23 @@
+---
+- name: Auto Generated Playbook
+  hosts: localhost
+  vars_files: credentials.yml
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+  - name: delete Vm
+    ntnx_vms:
+      state: absent
+      auth:
+        credentials: '{{credentials}}'
+        url: '{{config.ip_address}}:{{config.port}}'
+      nutanix_host: '{{config.ip_address}}'
+      nutanix_username: '{{credentials.username}}'
+      nutanix_password: '{{credentials.password}}'
+      uuid: "63f7115e-e071-4dc3-b417-69fe6d6ff37f"
+    register: output
+
+  - name: output of delete vm
+    debug:
+      msg: '{{ output }}'

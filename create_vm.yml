@@ -1,0 +1,46 @@
+---
+- name: Auto Generated Playbook
+  hosts: localhost
+  vars_files: credentials.yml
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+  - name: create Vm
+    ntnx_vms:
+      state: present
+      auth:
+        credentials: '{{credentials}}'
+        url: '{{config.ip_address}}:{{config.port}}'
+      nutanix_host: '{{config.ip_address}}'
+      nutanix_username: '{{credentials.username}}'
+      nutanix_password: '{{credentials.password}}'
+      name: "test_2"
+      desc: "test_description"
+      categories:
+        AppType:
+          - "Apache_Spark"
+      cluster:
+        uuid: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "vlan.800"
+      disks:
+        - type: "DISK"
+          size_gb: 30
+          bus: "SATA"
+          clone_image:
+            name: "SQLServer2014SP2-FullSlipstream-x64-ENU.iso"
+      vcpus: 1
+      cores_per_vcpu: 1
+      memory_gb: 1
+      guest_customization:
+        type: "cloud_init"
+        script_path: "test.json"
+        is_overridable: True
+    register: output
+
+  - name: output of list Subnets
+    debug:
+      msg: '{{ output }}'
