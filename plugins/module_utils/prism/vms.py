@@ -20,27 +20,27 @@ class VM(Prism):
     def __init__(self, module):
         resource_type = '/vms'
         super().__init__(module, resource_type=resource_type)
-        self.update_spec_methods = {
-            "name": self._update_spec_name,
-            "desc": self._update_spec_desc,
-            "project": self._update_spec_project,
-            "cluster": self._update_spec_cluster,
-            "vcpus": self._update_spec_vcpus,
-            "cores_per_vcpu": self._update_spec_cores,
-            "memory_gb": self._update_spec_mem,
-            "networks": self._update_spec_networks,
-            "disks": self._update_spec_disks,
-            "boot_config": self._update_spec_boot_config,
-            "guest_customization": self._update_spec_gc,
-            "timezone": self._update_spec_timezone,
-            "categories": self._update_spec_categories
+        self.build_spec_methods = {
+            "name": self._build_spec_name,
+            "desc": self._build_spec_desc,
+            "project": self._build_spec_project,
+            "cluster": self._build_spec_cluster,
+            "vcpus": self._build_spec_vcpus,
+            "cores_per_vcpu": self._build_spec_cores,
+            "memory_gb": self._build_spec_mem,
+            "networks": self._build_spec_networks,
+            "disks": self._build_spec_disks,
+            "boot_config": self._build_spec_boot_config,
+            "guest_customization": self._build_spec_gc,
+            "timezone": self._build_spec_timezone,
+            "categories": self._build_spec_categories
         }
 
     def get_spec(self):
         spec = self._get_default_spec()
         for ansible_param, ansible_value in self.module.params.items():
-            update_spec = self.update_spec_methods.get(ansible_param)
-            _, error = update_spec(spec, ansible_value)
+            build_spec_method = self.build_spec_methods.get(ansible_param)
+            _, error = build_spec_method(spec, ansible_value)
             if error:
                 return None, error
         return spec, None
@@ -104,15 +104,15 @@ class VM(Prism):
             }
         })
 
-    def _update_spec_name(self, payload, value):
+    def _build_spec_name(self, payload, value):
         payload["spec"]["name"] = value
         return payload, None
 
-    def _update_spec_desc(self, payload, value):
+    def _build_spec_desc(self, payload, value):
         payload["spec"]["description"] = value
         return payload, None
 
-    def _update_spec_project(self, payload, param):
+    def _build_spec_project(self, payload, param):
         if 'name' in param:
             project = Project(self.module)
             name = param["name"]
@@ -127,7 +127,7 @@ class VM(Prism):
         payload["metadata"]["project_reference"]["uuid"] = uuid
         return payload, None
 
-    def _update_spec_cluster(self, payload, param):
+    def _build_spec_cluster(self, payload, param):
         if 'name' in param:
             cluster = Cluster(self.module)
             name = param["name"]
@@ -142,19 +142,19 @@ class VM(Prism):
         payload["spec"]["cluster_reference"]["uuid"] = uuid
         return payload, None
 
-    def _update_spec_vcpus(self, payload, value):
+    def _build_spec_vcpus(self, payload, value):
         payload["spec"]["resources"]["num_sockets"] = value
         return payload, None
 
-    def _update_spec_cores(self, payload, value):
+    def _build_spec_cores(self, payload, value):
         payload["spec"]["resources"]["num_vcpus_per_socket"] = value
         return payload, None
 
-    def _update_spec_mem(self, payload, value):
+    def _build_spec_mem(self, payload, value):
         payload["spec"]["resources"]["memory_size_mib"] = value * 1024
         return payload, None
 
-    def _update_spec_networks(self, payload, networks):
+    def _build_spec_networks(self, payload, networks):
         nics = []
         for network in networks:
             nic = self._get_default_network_spec()
@@ -183,7 +183,7 @@ class VM(Prism):
         payload["spec"]["resources"]["nic_list"] = nics
         return payload, None
 
-    def _update_spec_disks(self, payload, vdisks):
+    def _build_spec_disks(self, payload, vdisks):
         disks = []
         scsi_index = sata_index = pci_index = ide_index = 0
 
@@ -254,7 +254,7 @@ class VM(Prism):
         payload["spec"]["resources"]["disk_list"] = disks
         return payload, None
 
-    def _update_spec_boot_config(self, payload, param):
+    def _build_spec_boot_config(self, payload, param):
         boot_config = payload["spec"]["resources"]["boot_config"]
         if 'LEGACY' in param["boot_config"]["boot_type"] and 'boot_order' in param["boot_config"]:
             boot_config["boot_device_order_list"] = param["boot_config"]["boot_order"]
@@ -266,7 +266,7 @@ class VM(Prism):
             boot_config.pop("boot_device_order_list")
             payload["spec"]["resources"]["machine_type"] = "Q35"
 
-    def _update_spec_gc(self, payload, param):
+    def _build_spec_gc(self, payload, param):
         if 'script_path' in param["guest_customization"]:
             fpath = param["guest_customization"]["script_path"]
 
@@ -295,11 +295,11 @@ class VM(Prism):
 
         return payload, None
 
-    def _update_spec_timezone(self, payload, value):
+    def _build_spec_timezone(self, payload, value):
         payload["spec"]["resources"]["hardware_clock_timezone"] = value
         return payload, None
 
-    def _update_spec_categories(self, payload, value):
+    def _build_spec_categories(self, payload, value):
         payload["metadata"]["categories_mapping"] = value
         payload["metadata"]["use_categories_mapping"] = True
         return payload, None
