@@ -43,7 +43,7 @@ class VM(Prism):
 
         except IndexError:
 
-            self.result["message"] = "Entity does not exist. payload - {}".format(
+            self.result["message"] = "Entity does not exist. payload - {0}".format(
                 payload
             )
             self.result["failed"] = True
@@ -111,7 +111,7 @@ class VMDisk(VMSpec):
 
     def __get_image_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
-        payload = {"entity_type": "image", "filter_criteria": "name=={}".format(name)}
+        payload = {"entity_type": "image", "filter_criteria": "name=={0}".format(name)}
         entity_uuid = get_entity_by_name(payload=payload)
         return {"kind": "image", "uuid": entity_uuid}
 
@@ -119,7 +119,7 @@ class VMDisk(VMSpec):
         get_entity_by_name = kwargs["get_ref"]
         payload = {
             "entity_type": "storage_container",
-            "filter_criteria": "container_name=={}".format(name),
+            "filter_criteria": "container_name=={0}".format(name),
         }
         entity_uuid = get_entity_by_name(payload=payload)
         return {"kind": "storage_container", "uuid": entity_uuid}
@@ -197,7 +197,7 @@ class VMNetwork(VMSpec):
 
     def __get_subnet_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
-        payload = {"entity_type": "subnet", "filter_criteria": "name=={}".format(name)}
+        payload = {"entity_type": "subnet", "filter_criteria": "name=={0}".format(name)}
         entity_uuid = get_entity_by_name(payload=payload)
         return {"kind": "subnet", "uuid": entity_uuid}
 
