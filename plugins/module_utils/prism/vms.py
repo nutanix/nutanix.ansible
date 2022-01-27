@@ -234,7 +234,6 @@ class VM(Prism):
                     disk["storage_config"]["storage_container_reference"]["uuid"] = uuid
 
                 elif 'clone_image' in vdisk:
-                    disk.pop('storage_config')
                     if 'name' in vdisk["clone_image"]:
                         image = Image(self.module)
                         name = vdisk["clone_image"]["name"]
@@ -247,6 +246,10 @@ class VM(Prism):
                         uuid = vdisk["clone_image"]["uuid"]
 
                     disk["data_source_reference"]["uuid"] = uuid
+            if not disk["storage_config"]["storage_container_reference"]["uuid"]:
+                disk.pop('storage_config')
+            if not disk["data_source_reference"]["uuid"]:
+                disk.pop('data_source_reference')
 
             disks.append(disk)
 
@@ -255,17 +258,18 @@ class VM(Prism):
 
     def _build_spec_boot_config(self, payload, param):
         boot_config = payload["spec"]["resources"]["boot_config"]
-        if 'LEGACY' in param["boot_config"]["boot_type"] and 'boot_order' in param["boot_config"]:
-            boot_config["boot_device_order_list"] = param["boot_config"]["boot_order"]
+        if 'LEGACY' == param["boot_type"] and 'boot_order' in param:
+            boot_config["boot_device_order_list"] = param["boot_order"]
 
-        elif "UEFI" in param["boot_config"]["boot_type"]:
+        elif "UEFI" == param["boot_type"]:
             boot_config.pop("boot_device_order_list")
             boot_config["boot_type"] = "UEFI"
 
-        elif "SECURE_BOOT" in param["boot_config"]["boot_type"]:
+        elif "SECURE_BOOT" == param["boot_type"]:
             boot_config.pop("boot_device_order_list")
             boot_config["boot_type"] = "SECURE_BOOT"
             payload["spec"]["resources"]["machine_type"] = "Q35"
+        return payload, None
 
     def _build_spec_gc(self, payload, param):
         fpath = param["script_path"]
