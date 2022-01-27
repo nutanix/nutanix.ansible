@@ -12,7 +12,6 @@ class BaseModule(AnsibleModule):
 
     argument_spec = dict(
         action=dict(type="str", required=True, aliases=["state"]),
-        auth=dict(type="dict", required=True),
         wait=dict(type="bool", required=False, default=True),
         wait_timeout=dict(type="int", required=False, default=300),
         validate_certs=dict(type="bool", required=False, default=False))
@@ -23,7 +22,7 @@ class BaseModule(AnsibleModule):
         else:
             kwargs["argument_spec"] = self.argument_spec
 
-        if not kwargs.get["supports_check_mode"]:
-            kwargs["support_check_mode"] = True
+        if not kwargs.get("supports_check_mode"):
+            kwargs["supports_check_mode"] = True
 
         super(BaseModule, self).__init__(**kwargs)
