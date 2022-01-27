@@ -22,41 +22,45 @@ description: Create, Update, Delete, Power-on, Power-off Nutanix VM's
 options:
     nutanix_host:
         description:
-        - PC hostname or IP address
+            - PC hostname or IP address
         type: str
-        required: True
+        required: true
     nutanix_port:
         description:
-        - PC port
+            - PC port
         type: str
         default: 9440
-        required: False
+        required: false
     nutanix_username:
         description:
-        - PC username
+            - PC username
         type: str
-        required: True
+        required: true
     nutanix_password:
         description:
-        - PC password;
-        required: True
+            - PC password;
+        required: true
         type: str
     validate_certs:
         description:
-        - Set value to C(False) to skip validation for self signed certificates
-        - This is not recommended for production setup
+            - Set value to C(False) to skip validation for self signed certificates
+            - This is not recommended for production setup
         type: bool
-        default: True
-    wait_timeout:
-        description: This is the wait_timeout description.
-        required: false
-        type: int
-        default: 300
+        default: true
+    state:
+        description:
+            - Specify state of Virtual Machine
+            - If C(state) is set to C(present) the VM is created.
+            - If C(state) is set to C(absent) and the VM exists in the cluster, VM with specified name is removed.
+        choices:
+            - present
+            - absent
+        type: str
+        default: present
     wait:
         description: This is the wait description.
         required: false
-        type: bool
-        default: true
+        default: false
     name:
         description: VM Name
         required: true
@@ -68,6 +72,7 @@ options:
     project:
         description: Name or UUID of the project.
         required: false
+        type: dict
         suboptions:
             name:
                 description:
@@ -82,8 +87,9 @@ options:
                 type: str
                 required: true
     cluster:
-        description: Name or UUID of the cluster on which the VM will be placed.
-        required: true
+        description:
+            - Name or UUID of the cluster on which the VM will be placed.
+        required: false
         suboptions:
             name:
                 description:
@@ -98,70 +104,78 @@ options:
                 type: str
                 required: true
     vcpus:
-        description: Number of vCPUs
+        description:
+            - Number number of sockets.
         required: false
         type: int
         default: 1
     cores_per_vcpu:
-        description: This is the num_vcpus_per_socket.
+        description:
+            - This is the number of vcpus per socket.
+        required: false
         type: int
         default: 1
     memory_gb:
-        description: Memory size in GB
+        description:
+            - Memory size in GB
+        required: false
         type: int
         default: 1
-    memory_overcommit_enabled:
-        description: This is the memory_overcommit_enabled description
-        type: bool
-        default: false
     networks:
+        description:
+            - list of subnets to which the VM needs to connect to.
         type: list
         elements: dict
-        required: False
+        required: false
         suboptions:
             subnet:
-                description: Name or UUID of the subnet to which the VM should be connnected.
+                description:
+                    - Name or UUID of the subnet to which the VM should be connnected.
                 suboptions:
                     name:
                         description:
-                            - Cluster Name
+                            - Subnet Name
                             - Mutually exclusive with C(uuid)
                         type: str
                         required: true
                     uuid:
                         description:
-                            - Cluster UUID
+                            - Subnet UUID
                             - Mutually exclusive with C(name)
                         type: str
                         required: true
             private_ip:
-                description: Optionally assign static IP to the VM.
+                description:
+                    - Optionally assign static IP to the VM.
                 type: str
                 required: False
-            connected:
+            is_connected:
+                description:
+                    - connect or disconnect the VM to the subnet.
                 type: bool
                 required: False
                 default: True
     disks:
-        description: Disks attached to the VM
+        description:
+            - List of disks attached to the VM
         type: list
         elements: dict
-        default: []
         suboptions:
             type:
-                description: 'CDROM or DISK'
+                description:
+                    - 'CDROM or DISK'
                 choices: [ 'CDROM', 'DISK' ]
-                default: disk
+                default: DISK
                 type: str
             size_gb:
                 description:
                     - The Disk Size in GB.
-                    - This option is applicable for only disk type above.
+                    - This option is applicable for only DISK type above.
                 type: int
             bus:
                 description: 'Bus type of the device'
-                choices: [ 'SCSI', 'PCI', 'SATA', 'IDE' ] for disk type.
-                choices: [ 'SATA', 'IDE' ] for cdrom type.
+                choices: [ 'SCSI', 'PCI', 'SATA', 'IDE' ] for DISK type.
+                choices: [ 'SATA', 'IDE' ] for CDROM type.
                 type: str
             storage_container:
                 description:
@@ -197,14 +211,16 @@ options:
                         required: true
             empty_cdrom:
                 type: bool
-                description: Mutually exclusive with C(clone_image) and C(storage_container)
+                description:
+                    - Mutually exclusive with C(clone_image) and C(storage_container)
     boot_config:
         description:
             - Indicates whether the VM should use Secure boot, UEFI boot or Legacy boot.
         required: False
         suboptions:
             boot_type:
-                description: Boot type of VM.
+                description:
+                    - Boot type of VM.
                 choices: [ "LEGACY", "UEFI", "SECURE_BOOT" ]
                 default: "LEGACY"
                 type: str
@@ -213,51 +229,178 @@ options:
                     - Applicable only for LEGACY boot_type
                     - Boot device order list
                 type: list
-                default:
-                    - "CDROM",
-                    - "DISK",
-                    - "NETWORK"
+                default: ["CDROM", "DISK", "NETWORK"]
     guest_customization:
         description:
+            - cloud-init or sysprep guest customization
         type: dict
+        required: false
         suboptions:
             type:
+                description:
+                    - cloud-init or sysprep type
                 type: str
-                choices: [ sysprep, cloud_init ]
+                choices: [sysprep, cloud-init]
                 default: sysprep
-                description: The Customization type
+                required: true
             script_path:
-                type: str
-                required: True
-                description: The Absolute Script Path
+                description:
+                    - Absolute file path to the script.
+                type: path
+                required: true
             is_overridable:
+                description:
+                    - Flag to allow override of customization during deployment.
                 type: bool
-                default: False
-                description: Flag to allow override of customization during deployment.
+                default: false
+                required: false
     timezone:
-        description: VM's hardware clock timezone in IANA TZDB format (America/Los_Angeles).
+        description:
+            - VM's hardware clock timezone in IANA TZDB format (America/Los_Angeles).
         type: str
         default: UTC
-
+        required: false
     categories:
-        type: list
-        elements: str
-        required: False
+        description:
+            - categories to be attached to the VM.
+        type: dict
+        required: false
+'''
+
+EXAMPLES = r'''
+# TODO
+'''
+
+RETURN = r'''
+# TODO
 '''
 
 
+from ansible.module_utils.basic import env_fallback
+
 from ..base_module import BaseModule
 from ....plugins.module_utils.prism.vms import VM
+from ....plugins.module_utils.prism.tasks import Task
 
 
 def run_module():
-    module_args = {}
-    module  = BaseModule(argument_spec=module_args)
-    result = {}
+    entity_by_spec = dict(
+        name=dict(type='str'),
+        uuid=dict(type='str'),
+        mutually_exclusive=[('name', 'uuid'),],
+        required_one_of=[('name', 'uuid'),],
+    )
+
+    network_spec = dict(
+        subnet=dict(type='dict', options=entity_by_spec),
+        private_ip=dict(type='str'),
+        is_connected=dict(type='bool', default=True),
+    )
+
+    disk_spec = dict(
+        # TODO
+        # if type='CDROM', then bus==['SATA', 'IDE']
+        # this check needs to be implemented.
+        type=dict(type='str', choices=['CDROM', 'DISK'], default='DISK'),
+        size_gb=dict(type='int'),
+        bus=dict(type='str', choices=['SCSI', 'PCI', 'SATA', 'IDE'], default='SCSI'),
+        storage_container=dict(type='dict', options=entity_by_spec),
+        clone_image=dict(type='dict', options=entity_by_spec),
+        empty_cdrom=dict(type='bool'),
+        mutually_exclusive=[
+            ('storage_container', 'empty_cdrom', 'clone_image'),
+            ('empty_cdrom', 'size_gb')
+        ],
+        required_one_of=[('storage_container', 'empty_cdrom', 'clone_image'),],
+        required_by={
+            'storage_container': 'size_gb',
+            'clone_image': 'size_gb',
+        },
+
+    )
+
+    boot_config_spec = dict(
+        # TODO
+        # if boot_type=UEFI OR SECURE_BOOT, then boot_order is not required.
+        boot_type=dict(type='str', choices=[ "LEGACY", "UEFI", "SECURE_BOOT" ]),
+        boot_order=dict(type='list', elements=str, default=["CDROM", "DISK", "NETWORK"]),
+    )
+
+    gc_spec = dict(
+        type=dict(type='str', choices=['cloud-init', 'sysprep'], required=True),
+        script_path=dict(type='path', required=True),
+        is_overridable=dict(type='bool', default=False),
+    )
+
+    module_args = dict(
+        nutanix_host=dict(type='str', required=True, fallback=(env_fallback, ["NUTANIX_HOST"])),
+        nutanix_port=dict(default="9440", type='str'),
+        nutanix_username=dict(type='str', required=True, fallback=(env_fallback, ["NUTANIX_USERNAME"])),
+        nutanix_password=dict(type='str', required=True, no_log=True, fallback=(env_fallback, ["NUTANIX_PASSWORD"])),
+        validate_certs=dict(type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])),
+        state=dict(type=str, choices=['present', 'absent'], default='present'),
+        wait=dict(type=bool, default=True),
+        name=dict(type='str', required=True),
+        desc=dict(type='str'),
+        project=dict(type='dict', options=entity_by_spec),
+        cluster=dict(type='dict', options=entity_by_spec),
+        vcpus=dict(type='int', default=1),
+        cores_per_vcpu=dict(type='int', default=1),
+        memory_gb=dict(type='int', default=1),
+        networks=dict(type='list', elements=dict, options=network_spec),
+        disks=dict(type='list', elements=dict, options=disk_spec),
+        boot_config=dict(type='dict', options=boot_config_spec),
+        guest_customization=dict(type='dict', options=gc_spec),
+        timezone=dict(type='str', default="UTC"),
+        categories=dict(type='dict'),
+    )
+
+    module = BaseModule(argument_spec=module_args,
+                        supports_check_mode=True)
+
+    result = {
+        'changed': False,
+        'error': None,
+        'response': None,
+        'vm_uuid': None,
+        'task_uuid': None
+    }
+
     vm = VM(module)
-    spec = vm.get_spec()
-    response = vm.create(spec)
-    result = response
+
+    module.debug('Generating VM spec')
+    spec, error = vm.get_spec()
+    if error:
+        module.debug(error)
+        result['error'] = error
+        module.fail_json(**result)
+
+    if module.check_mode:
+        result['response'] = spec
+        return module.exit_json(**result)
+
+    module.debug('VM spec: {}'.format(spec))
+
+    resp, status = vm.create(spec)
+    if status['error']:
+        module.debug(status["error"])
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(**result)
+
+    task_uuid = resp["status"]["execution_context"]["task_uuid"]
+    result['task_uuid'] = task_uuid
+    result["vm_uuid"] = resp["metadata"]["uuid"]
+
+    if module.param["wait"]:
+        task = Task(module)
+        resp, status = task.wait_for_completion(task_uuid)
+        if status['error']:
+            module.debug(status["error"])
+            result["error"] = status["error"]
+            result["response"] = resp
+            module.fail_json(**result)
+
     module.exit_json(**result)
 
 

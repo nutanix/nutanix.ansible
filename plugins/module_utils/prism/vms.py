@@ -8,7 +8,7 @@ from copy import deepcopy
 import base64
 import os
 
-from plugins.module_utils.prism.clusters import Cluster
+from .clusters import Cluster
 from .prism import Prism
 from .projects import Project
 from .subnets import Subnet
@@ -118,7 +118,7 @@ class VM(Prism):
             name = param["name"]
             uuid = project.get_uuid(name)
             if not uuid:
-                error = "Failed to get UUID for project name: {}".format(name])
+                error = "Failed to get UUID for project name: {}".format(name)
                 return None, error
 
         elif 'uuid' in param:

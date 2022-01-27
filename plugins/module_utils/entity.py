@@ -103,9 +103,16 @@ class Entity(object):
                                timeout=timeout)
 
         status_code = info.get("status")
+        self.module.debug('API Response code: {}'.format(status_code))
         body = resp.read() if resp else info.get("body")
         try:
             resp_json = json.loads(to_text(body)) if body else None
         except ValueError:
             resp_json = None
-        return resp_json, status_code
+
+        if 199 < status_code < 300:
+            err = None
+        else:
+            err = info.get("msg", "Refer error detail in response")
+        status = {"error": err, "code": status_code}
+        return resp_json, status
