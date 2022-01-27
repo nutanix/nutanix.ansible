@@ -10,60 +10,67 @@ on:
 jobs:
   sanity:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.9
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: ${{ matrix.python-version }}
       - name: Setup Docker
         uses: docker-practice/actions-setup-docker@v1
       - name: Install ansible
         run: |
           pip install -r requirements.txt
-          pip install shyaml
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
           COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
           VERSION=$(cat galaxy.yml | shyaml get-value version)
+          echo "NAMESPACE=${NAMESPACE}" >> $GITHUB_ENV
+          echo "COLLECTION_NAME=${COLLECTION_NAME}" >> $GITHUB_ENV
           ansible-galaxy collection build --force
           ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
       - name: Run tests
         run: |
-          cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
-          ansible-test sanity --docker default --python 3.9 -v
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          ansible-test sanity --docker default --python ${{ matrix.python-version }} -v
   unit_testing:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python 3.9
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: ${{ matrix.python-version }}
       - name: Setup Docker
         uses: docker-practice/actions-setup-docker@v1
       - name: Install ansible
         run: |
           pip install -r requirements.txt
-          pip install shyaml
-          pip install coverage==4.5.4
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
           COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
           VERSION=$(cat galaxy.yml | shyaml get-value version)
+          echo "NAMESPACE=${NAMESPACE}" >> $GITHUB_ENV
+          echo "COLLECTION_NAME=${COLLECTION_NAME}" >> $GITHUB_ENV
           ansible-galaxy collection build --force
           ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
       - name: Run tests
         run: |
-          cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
-          ansible-test units --docker default --python 3.9 --coverage -v
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          ansible-test units --docker default --python ${{ matrix.python-version }} --coverage -v
           ansible-test coverage report > coverage.txt
 
       - name: Code Coverage Check
         run:  |
-              cd /home/${USER}/.ansible/collections/ansible_collections/nutanix/ncp
+              cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
               echo "Code coverage: Checking if code coverage is above threshold..."
               export TESTCOV_THRESHOLD=55
               echo "Threshold: $TESTCOV_THRESHOLD %"
