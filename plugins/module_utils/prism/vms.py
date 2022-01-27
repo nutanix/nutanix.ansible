@@ -27,24 +27,25 @@ class VM(Prism):
             return handler(param_spec, get_ref=self.get_entity_by_name)
         return param_spec
 
-    def get_entity_by_name(self, name="", kind=""):
-        url = self.generate_url_from_operations(kind, netloc=self.url, ops=["list"])
-        data = {"filter": "name=={0}".format(name), "length": 1}
+    def get_entity_by_name(self, payload=None):
+        url = self.generate_url_from_operations("groups", netloc=self.url)
         resp = self.send_request(
             self.module,
-            self.methods_of_actions["list"],
+            "post",
             url,
-            data,
+            payload,
             self.credentials["username"],
             self.credentials["password"],
         )
 
         try:
-            return resp["entities"][0]["metadata"]
+            return resp["group_results"][0]["entity_results"][0]["entity_id"]
 
         except IndexError:
 
-            self.result["message"] = "Entity with name {0} does not exist.".format(name)
+            self.result["message"] = "Entity does not exist. payload - {}".format(
+                payload
+            )
             self.result["failed"] = True
 
             self.module.exit_json(**self.result)
@@ -110,13 +111,18 @@ class VMDisk(VMSpec):
 
     def __get_image_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
-        entity = get_entity_by_name(name, "images")
-        return {"kind": entity["kind"], "uuid": entity["uuid"]}
+        payload = {"entity_type": "image", "filter_criteria": "name=={}".format(name)}
+        entity_uuid = get_entity_by_name(payload=payload)
+        return {"kind": "image", "uuid": entity_uuid}
 
     def __get_storage_container_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
-        entity = get_entity_by_name(name, "storage-containers")
-        return {"kind": entity["kind"], "uuid": entity["uuid"]}
+        payload = {
+            "entity_type": "storage_container",
+            "filter_criteria": "container_name=={}".format(name),
+        }
+        entity_uuid = get_entity_by_name(payload=payload)
+        return {"kind": "storage_container", "uuid": entity_uuid}
 
     def _get_api_spec(self, param_spec, **kwargs):
 
@@ -136,23 +142,23 @@ class VMDisk(VMSpec):
             ] = disk_param["bus"]
 
             # Calculating device_index for the DISK
-            if disk_param["type"] not in _di_map:
-                _di_map[disk_param["type"]] = {}
-            if disk_param["bus"] not in _di_map[disk_param["type"]]:
-                _di_map[disk_param["type"]][disk_param["bus"]] = 0
+
+            if disk_param["bus"] not in _di_map:
+                _di_map[disk_param["bus"]] = 0
 
             disk_final["device_properties"]["disk_address"]["device_index"] = _di_map[
-                disk_param["type"]
-            ][disk_param["bus"]]
-            _di_map[disk_param["type"]][disk_param["bus"]] += 1
-
+                disk_param["bus"]
+            ]
+            _di_map[disk_param["bus"]] += 1
             # Size of disk
             if disk_param.get("size_gb"):
                 disk_final["disk_size_mib"] = disk_param["size_gb"] * 1024
-            if disk_param.get("storage_container_name"):
+            if disk_param["storage_config"] and disk_param["storage_config"].get(
+                "storage_container_name"
+            ):
                 disk_final["storage_config"] = {
                     "storage_container_reference": self.__get_storage_container_ref(
-                        disk_param["storage_container_name"], **kwargs
+                        disk_param["storage_config"]["storage_container_name"], **kwargs
                     )
                 }
             elif disk_param.get("storage_container_uuid"):
@@ -191,8 +197,9 @@ class VMNetwork(VMSpec):
 
     def __get_subnet_ref(self, name, **kwargs):
         get_entity_by_name = kwargs["get_ref"]
-        entity = get_entity_by_name(name, "subnets")
-        return {"kind": entity["kind"], "uuid": entity["uuid"]}
+        payload = {"entity_type": "subnet", "filter_criteria": "name=={}".format(name)}
+        entity_uuid = get_entity_by_name(payload=payload)
+        return {"kind": "subnet", "uuid": entity_uuid}
 
     def _get_api_spec(self, param_spec, **kwargs):
 
