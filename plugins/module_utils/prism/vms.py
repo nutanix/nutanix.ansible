@@ -261,9 +261,11 @@ class VM(Prism):
 
         elif "UEFI" in param["boot_config"]["boot_type"]:
             boot_config.pop("boot_device_order_list")
+            boot_config["boot_type"] = "UEFI"
 
         elif "SECURE_BOOT" in param["boot_config"]["boot_type"]:
             boot_config.pop("boot_device_order_list")
+            boot_config["boot_type"] = "SECURE_BOOT"
             payload["spec"]["resources"]["machine_type"] = "Q35"
 
     def _build_spec_gc(self, payload, param):
