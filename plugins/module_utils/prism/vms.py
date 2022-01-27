@@ -269,31 +269,32 @@ class VM(Prism):
             payload["spec"]["resources"]["machine_type"] = "Q35"
 
     def _build_spec_gc(self, payload, param):
-        if 'script_path' in param["guest_customization"]:
-            fpath = param["guest_customization"]["script_path"]
+        fpath = param["guest_customization"]["script_path"]
 
-            if not os.path.exists(fpath):
-                error = "File not found: {}".format(fpath)
-                return None, error
+        if not os.path.exists(fpath):
+            error = "File not found: {}".format(fpath)
+            return None, error
 
-            with open(fpath, "rb", encoding="utf_8") as f:
-                content = base64.b64encode(f.read())
+        with open(fpath, "rb", encoding="utf_8") as f:
+            content = base64.b64encode(f.read())
 
-            gc_spec = payload["spec"]["resources"]["guest_customization"]
+        gc_spec = payload["spec"]["resources"]["guest_customization"]
 
-            if 'sysprep' in param["type"]:
-                gc_spec = {
-                    "sysprep": {
-                        "install_type": "PREPARED",
-                        "unattend_xml": content
-                    }
+        if 'sysprep' in param["type"]:
+            gc_spec = {
+                "sysprep": {
+                    "install_type": "PREPARED",
+                    "unattend_xml": content
                 }
-            elif 'cloud_init' in param["type"]:
-                gc_spec = {
-                    "cloud_init": {"user_data": content}
-                }
-            if 'is_overridable' in param:
-                gc_spec["is_overridable"] = param["is_overridable"]
+            }
+
+        elif 'cloud_init' in param["type"]:
+            gc_spec = {
+                "cloud_init": {"user_data": content}
+            }
+
+        if 'is_overridable' in param:
+            gc_spec["is_overridable"] = param["is_overridable"]
 
         return payload, None
 
