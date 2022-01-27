@@ -9,9 +9,6 @@
   - name: create Vm
     ntnx_vms:
       state: present
-      auth:
-        credentials: '{{credentials}}'
-        url: '{{config.ip_address}}:{{config.port}}'
       nutanix_host: '{{config.ip_address}}'
       nutanix_username: '{{credentials.username}}'
       nutanix_password: '{{credentials.password}}'
@@ -21,7 +18,8 @@
         AppType:
           - "Apache_Spark"
       cluster:
-        uuid: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+#        uuid: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+        name: "auto_cluster_prod_1aa888141361"
       networks:
         - is_connected: True
           subnet:
@@ -31,7 +29,7 @@
           size_gb: 30
           bus: "SATA"
           clone_image:
-            name: "SQLServer2014SP2-FullSlipstream-x64-ENU.iso"
+            name: "CentOS-7-cloudinit"
       vcpus: 1
       cores_per_vcpu: 1
       memory_gb: 1

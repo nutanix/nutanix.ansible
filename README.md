@@ -4,16 +4,13 @@ Ansible collections to automate Nutanix Cloud Platform (ncp).
 # Building and installing the collection locally
 ```
 ansible-galaxy collection build
-ansible-galaxy collection install nutanix.ncp-1.0.0.tar.gz
+ansible-galaxy collection install nutanix-ncp-1.0.0.tar.gz
 ```
 _Add `--force` option for rebuilding or reinstalling to overwrite existing data_
 
 # Included modules
 ```
-ncp_prism_image_info
-ncp_prism_image
-ncp_prism_vm_info
-ncp_prism_vm
+ntnx_vms
 ```
 
 # Inventory plugin
@@ -31,10 +28,10 @@ ansible-doc nutanix.ncp.<module_name>
   collections:
   - nutanix.ncp
   tasks:
-  - ncp_prism_vm_info:
-      pc_hostname: {{ pc_hostname }}
-      pc_username: {{ pc_username }}
-      pc_password: {{ pc_password }}
+  - ntnx_vms:
+      nutanix_host: '{{config.ip_address}}'
+      nutanix_username: '{{credentials.username}}'
+      nutanix_password: '{{credentials.password}}'
       validate_certs: False
     register: result
   - debug:
