@@ -11,7 +11,7 @@ class BaseModule(AnsibleModule):
     """Basic module with common arguments"""
 
     argument_spec = dict(
-        action=dict(type="str", required=True, aliases=["state"]),
+        action=dict(type="str", required=True, aliases=["state"], choices=["present", "absent"], default="present"),
         wait=dict(type="bool", required=False, default=True),
         wait_timeout=dict(type="int", required=False, default=300),
         validate_certs=dict(type="bool", required=False, default=False),

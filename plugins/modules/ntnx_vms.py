@@ -57,8 +57,9 @@ options:
     default: present
   wait:
     description: This is the wait description.
+    type: bool
     required: false
-    default: false
+    default: True
   name:
     description: VM Name
     required: true
@@ -94,7 +95,7 @@ options:
           - Cluster Name
           - Mutually exclusive with C(uuid)
         type: str
-        required: true
+        required: False
       uuid:
         description:
           - Cluster UUID
@@ -129,6 +130,7 @@ options:
       subnet:
         description:
           - Name or UUID of the subnet to which the VM should be connnected.
+        type: dict
         suboptions:
           name:
             description:
@@ -174,6 +176,7 @@ options:
         type: int
       bus:
         description: Bus type of the device
+        default: SCSI
         choices:
           - SCSI
           - PCI
@@ -183,6 +186,7 @@ options:
       storage_container:
         description:
           - Mutually exclusive with C(clone_image) and C(empty_cdrom)
+        type: dict
         suboptions:
           name:
             description:
@@ -199,6 +203,7 @@ options:
       clone_image:
         description:
           - Mutually exclusive with C(storage_container) and C(empty_cdrom)
+        type: dict
         suboptions:
           name:
             description:
@@ -221,6 +226,7 @@ options:
       - >-
         Indicates whether the VM should use Secure boot, UEFI boot or Legacy
         boot.
+    type: dict
     required: false
     suboptions:
       boot_type:
@@ -237,6 +243,7 @@ options:
           - Applicable only for LEGACY boot_type
           - Boot device order list
         type: list
+        elements: str
         default:
           - CDROM
           - DISK
@@ -318,14 +325,14 @@ def run_module():
     )
 
     boot_config_spec = dict(
-        boot_type=dict(type="str", choices=["LEGACY", "UEFI", "SECURE_BOOT"]),
+        boot_type=dict(type="str", choices=["LEGACY", "UEFI", "SECURE_BOOT"], default="LEGACY"),
         boot_order=dict(
-            type="list", elements=str, default=["CDROM", "DISK", "NETWORK"]
+            type="list", elements="str", default=["CDROM", "DISK", "NETWORK"]
         ),
     )
 
     gc_spec = dict(
-        type=dict(type="str", choices=["cloud_init", "sysprep"], required=True),
+        type=dict(type="str", choices=["cloud_init", "sysprep"], required=True, default="sysprep"),
         script_path=dict(type="path", required=True),
         is_overridable=dict(type="bool", default=False),
     )
@@ -351,7 +358,7 @@ def run_module():
         wait=dict(type="bool", default=True),
         name=dict(type="str", required=True),
         desc=dict(type="str"),
-        project=dict(type="dict", options=entity_by_spec),
+        project=dict(type="dict", options=entity_by_spec, required=False),
         cluster=dict(type="dict", options=entity_by_spec),
         vcpus=dict(type="int", default=1),
         cores_per_vcpu=dict(type="int", default=1),
