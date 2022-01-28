@@ -327,7 +327,7 @@ def get_module_spec():
     )
 
     module_args = dict(
-        name=dict(type="str", required=True),
+        name=dict(type="str", required=False),
         vm_uuid=dict(type="str"),
         desc=dict(type="str"),
         project=dict(
@@ -421,7 +421,8 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True,
+                        required_if=[("state", "present", ("name",))])
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
