@@ -8,9 +8,9 @@
   - name: create Vm
     ntnx_vms:
       state: present
-      nutanix_host: '10.44.76.131'
-      nutanix_username: 'admin'
-      nutanix_password: 'Nutanix.123'
+      nutanix_host: ''
+      nutanix_username: ''
+      nutanix_password: ''
       name: "ansible_automation_demo"
       desc: "ansible_vm_description"
       categories:
@@ -32,10 +32,10 @@
       vcpus: 1
       cores_per_vcpu: 1
       memory_gb: 1
-      #guest_customization:
-      #  type: "cloud_init"
-      #  script_path: "test.json"
-      #  is_overridable: True
+      guest_customization:
+        type: "cloud_init"
+        script_path: "test.json"
+        is_overridable: True
     register: output
 
   - name: output of list Subnets
