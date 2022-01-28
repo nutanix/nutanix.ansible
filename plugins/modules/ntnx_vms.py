@@ -422,7 +422,8 @@ def wait_for_task_completion(module, result):
 
 def run_module():
     module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True,
-                        required_if=[("state", "present", ("name",))])
+                        required_if=[("state", "present", ("name",)),
+                                     ("state", "absent", ("vm_uuid",))])
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,

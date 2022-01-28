@@ -9,13 +9,11 @@
   - name: delete Vm
     ntnx_vms:
       state: absent
-      auth:
-        credentials: '{{credentials}}'
-        url: '{{config.ip_address}}:{{config.port}}'
       nutanix_host: '{{config.ip_address}}'
+      validate_certs: False
       nutanix_username: '{{credentials.username}}'
       nutanix_password: '{{credentials.password}}'
-      uuid: "63f7115e-e071-4dc3-b417-69fe6d6ff37f"
+      vm_uuid: ""
     register: output
 
   - name: output of delete vm

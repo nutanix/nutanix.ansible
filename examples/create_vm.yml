@@ -9,6 +9,7 @@
     ntnx_vms:
       state: present
       nutanix_host: ''
+      validate_certs: False
       nutanix_username: ''
       nutanix_password: ''
       name: "ansible_automation_demo"
