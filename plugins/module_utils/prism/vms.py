@@ -125,7 +125,12 @@ class VM(Prism):
         elif 'uuid' in param:
             uuid = param['uuid']
 
-        payload["metadata"]["project_reference"]["uuid"] = uuid
+        payload["metadata"].update({
+            "project_reference": {
+                "uuid": uuid,
+                "kind": "project"
+            }
+        })
         return payload, None
 
     def _build_spec_cluster(self, payload, param):

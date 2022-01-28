@@ -5,6 +5,8 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import (absolute_import, division, print_function)
+import re
+from urllib import response
 
 __metaclass__ = type
 
@@ -357,10 +359,8 @@ def run_module():
 
     vm = VM(module)
 
-    module.debug('Generating VM spec')
     spec, error = vm.get_spec()
     if error:
-        module.debug(error)
         result['error'] = error
         module.fail_json(msg="Failed generating VM Spec", **result)
 
@@ -370,24 +370,26 @@ def run_module():
 
     resp, status = vm.create(spec)
     if status['error']:
-        module.debug(status["error"])
         result["error"] = status["error"]
         result["response"] = resp
         module.fail_json(msg="Failed creating VM", **result)
 
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
+    vm_uuid = resp["metadata"]["uuid"]
     result['task_uuid'] = task_uuid
-    result["vm_uuid"] = resp["metadata"]["uuid"]
+    result["vm_uuid"] = vm_uuid
     result["changed"] = True
+
 
     if module.params.get("wait"):
         task = Task(module)
         resp, status = task.wait_for_completion(task_uuid)
         if status['error']:
-            module.debug(status["error"])
             result["error"] = status["error"]
             result["response"] = resp
             module.fail_json(msg="Failed creating VM", **result)
+        resp, _ = vm.read(vm_uuid)
+        result["response"] = resp
 
     module.exit_json(**result)
 
