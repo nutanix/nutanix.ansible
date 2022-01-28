@@ -281,8 +281,6 @@ RETURN = r"""
 # TODO
 """
 
-from ansible.module_utils.basic import env_fallback
-
 from ..module_utils.base_module import BaseModule
 from ..module_utils.prism.vms import VM
 from ..module_utils.prism.tasks import Task
@@ -329,24 +327,6 @@ def get_module_spec():
     )
 
     module_args = dict(
-        nutanix_host=dict(
-            type="str", required=True, fallback=(env_fallback, ["NUTANIX_HOST"])
-        ),
-        nutanix_port=dict(default="9440", type="str"),
-        nutanix_username=dict(
-            type="str", required=True, fallback=(env_fallback, ["NUTANIX_USERNAME"])
-        ),
-        nutanix_password=dict(
-            type="str",
-            required=True,
-            no_log=True,
-            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
-        ),
-        validate_certs=dict(
-            type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
-        ),
-        state=dict(type="str", choices=["present", "absent"], default="present"),
-        wait=dict(type="bool", default=True),
         name=dict(type="str", required=True),
         vm_uuid=dict(type="str"),
         desc=dict(type="str"),

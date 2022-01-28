@@ -3,6 +3,7 @@
 from __future__ import absolute_import, division, print_function
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.basic import env_fallback
 
 __metaclass__ = type
 
@@ -11,10 +12,24 @@ class BaseModule(AnsibleModule):
     """Basic module with common arguments"""
 
     argument_spec = dict(
-        action=dict(type="str", required=True, aliases=["state"]),
-        wait=dict(type="bool", required=False, default=True),
-        wait_timeout=dict(type="int", required=False, default=300),
-        validate_certs=dict(type="bool", required=False, default=False),
+        nutanix_host=dict(
+            type="str", required=True, fallback=(env_fallback, ["NUTANIX_HOST"])
+        ),
+        nutanix_port=dict(default="9440", type="str"),
+        nutanix_username=dict(
+            type="str", required=True, fallback=(env_fallback, ["NUTANIX_USERNAME"])
+        ),
+        nutanix_password=dict(
+            type="str",
+            required=True,
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+        ),
+        validate_certs=dict(
+            type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
+        ),
+        state=dict(type="str", choices=["present", "absent"], default="present"),
+        wait=dict(type="bool", default=True),
     )
 
     def __init__(self, **kwargs):
