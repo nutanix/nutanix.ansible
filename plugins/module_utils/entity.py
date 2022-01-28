@@ -9,11 +9,13 @@ import json
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_text
 from base64 import b64encode
-#from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+
+# from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 try:
     from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 except ImportError:
-     from urlparse import urlparse #python2
+    from urlparse import urlparse  # python2
+
 
 class Entity(object):
     def __init__(

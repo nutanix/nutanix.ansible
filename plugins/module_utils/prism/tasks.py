@@ -13,7 +13,7 @@ from .prism import Prism
 class Task(Prism):
     def __init__(self, module):
         resource_type = "/tasks"
-        super(Task,self).__init__(module, resource_type=resource_type)
+        super(Task, self).__init__(module, resource_type=resource_type)
 
     def create(self, data=None, endpoint=None, query=None, timeout=30):
         raise NotImplementedError("Create not permitted")

@@ -300,15 +300,12 @@ from ..module_utils.utils import remove_param_with_none_value
 
 
 def run_module():
-    entity_by_spec = dict(
-        name=dict(type="str"),
-        uuid=dict(type="str"),
-    )
+    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     network_spec = dict(
-        subnet=dict(type='dict', options=entity_by_spec),
-        private_ip=dict(type='str', required=False),
-        is_connected=dict(type='bool', default=True)
+        subnet=dict(type="dict", options=entity_by_spec),
+        private_ip=dict(type="str"),
+        is_connected=dict(type="bool", default=True),
     )
 
     disk_spec = dict(
