@@ -1,7 +1,6 @@
 ---
-- name: Auto Generated Playbook
+- name: VM Creation using all poissible options
   hosts: localhost
-  vars_files: credentials.yml
   gather_facts: false
   collections:
     - nutanix.ncp
@@ -9,16 +8,16 @@
   - name: create Vm
     ntnx_vms:
       state: present
-      nutanix_host: '{{config.ip_address}}'
-      nutanix_username: '{{credentials.username}}'
-      nutanix_password: '{{credentials.password}}'
-      name: "test_2"
-      desc: "test_description"
+      nutanix_host: ''
+      nutanix_username: ''
+      nutanix_password: ''
+      name: "ansible_automation_demo"
+      desc: "ansible_vm_description"
       categories:
         AppType:
           - "Apache_Spark"
       cluster:
-#        uuid: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+        #uuid: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
         name: "auto_cluster_prod_1aa888141361"
       networks:
         - is_connected: True

@@ -121,7 +121,6 @@ class Entity(object):
         )
 
         status_code = info.get("status")
-        self.module.debug("API Response code: {0}".format(status_code))
         body = resp.read() if resp else info.get("body")
         try:
             resp_json = json.loads(to_text(body)) if body else None

@@ -45,6 +45,8 @@ class VM(Prism):
             build_spec_method = self.build_spec_methods.get(ansible_param)
             if build_spec_method and ansible_value:
                 _, error = build_spec_method(spec, ansible_value)
+                if error:
+                    return None, error
         return spec, None
 
     def _get_default_spec(self):
@@ -154,14 +156,14 @@ class VM(Prism):
         nics = []
         for network in networks:
             nic = self._get_default_network_spec()
+            if network.get('private_ip'):
+                nic["ip_endpoint_list"].append({
+                    "ip": network["private_ip"]
+                })
 
-            if "private_ip" in network:
-                nic["ip_endpoint_list"]["ip"] = network["private_ip"]
+            nic["is_connected"] = network["is_connected"]
 
-            if "is_connected" in network:
-                nic["is_connected"] = network["is_connected"]
-
-            if network.get("subnet") and "name" in network["subnet"]:
+            if network.get("subnet", {}).get('name'):
                 subnet = Subnet(self.module)
                 name = network["subnet"]["name"]
                 uuid = subnet.get_uuid(name)
@@ -169,7 +171,7 @@ class VM(Prism):
                     error = "Failed to get UUID for subnet name: {0}".format(name)
                     return None, error
 
-            elif "uuid" in network["subnet"]:
+            elif network.get("subnet", {}).get('uuid'):
                 uuid = network["subnet"]["uuid"]
 
             nic["subnet_reference"]["uuid"] = uuid
@@ -249,10 +251,12 @@ class VM(Prism):
                         uuid = vdisk["clone_image"]["uuid"]
 
                     disk["data_source_reference"]["uuid"] = uuid
-            if not disk["storage_config"]["storage_container_reference"]["uuid"]:
-                disk.pop("storage_config")
-            if not disk["data_source_reference"]["uuid"]:
-                disk.pop("data_source_reference")
+
+            if not disk.get("storage_config", {}).get("storage_container_reference", {}).get("uuid"):
+                disk.pop('storage_config', None)
+
+            if not disk.get("data_source_reference", {}).get("uuid"):
+                disk.pop('data_source_reference', None)
 
             disks.append(disk)
 
