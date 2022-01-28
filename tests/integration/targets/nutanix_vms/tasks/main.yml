@@ -1,3 +1,0 @@
-- block:
-    - import_tasks: "create.yml"
-    - import_tasks: "delete.yml"
