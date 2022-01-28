@@ -60,6 +60,11 @@ options:
     type: bool
     required: false
     default: True
+  wait_timeout:
+    description: This is the wait_timeout description
+    required: false
+    type: int
+    default: 300
   name:
     description: VM Name
     required: true
@@ -88,6 +93,7 @@ options:
   cluster:
     description:
       - Name or UUID of the cluster on which the VM will be placed.
+    type: dict
     required: false
     suboptions:
       name:
@@ -285,8 +291,8 @@ options:
       - categories to be attached to the VM.
     type: dict
     required: false
-
-
+author:
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
