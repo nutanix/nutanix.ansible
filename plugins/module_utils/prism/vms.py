@@ -156,14 +156,12 @@ class VM(Prism):
         nics = []
         for network in networks:
             nic = self._get_default_network_spec()
-            if network.get('private_ip'):
-                nic["ip_endpoint_list"].append({
-                    "ip": network["private_ip"]
-                })
+            if network.get("private_ip"):
+                nic["ip_endpoint_list"].append({"ip": network["private_ip"]})
 
             nic["is_connected"] = network["is_connected"]
 
-            if network.get("subnet", {}).get('name'):
+            if network.get("subnet", {}).get("name"):
                 subnet = Subnet(self.module)
                 name = network["subnet"]["name"]
                 uuid = subnet.get_uuid(name)
@@ -171,7 +169,7 @@ class VM(Prism):
                     error = "Failed to get UUID for subnet name: {0}".format(name)
                     return None, error
 
-            elif network.get("subnet", {}).get('uuid'):
+            elif network.get("subnet", {}).get("uuid"):
                 uuid = network["subnet"]["uuid"]
 
             nic["subnet_reference"]["uuid"] = uuid
@@ -250,11 +248,15 @@ class VM(Prism):
 
                     disk["data_source_reference"]["uuid"] = uuid
 
-            if not disk.get("storage_config", {}).get("storage_container_reference", {}).get("uuid"):
-                disk.pop('storage_config', None)
+            if (
+                not disk.get("storage_config", {})
+                .get("storage_container_reference", {})
+                .get("uuid")
+            ):
+                disk.pop("storage_config", None)
 
             if not disk.get("data_source_reference", {}).get("uuid"):
-                disk.pop('data_source_reference', None)
+                disk.pop("data_source_reference", None)
 
             disks.append(disk)
 

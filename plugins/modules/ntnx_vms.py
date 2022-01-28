@@ -309,17 +309,19 @@ def run_module():
     )
 
     disk_spec = dict(
-        type=dict(type='str', choices=['CDROM', 'DISK'], default='DISK'),
-        size_gb=dict(type='int'),
-        bus=dict(type='str', choices=['SCSI', 'PCI', 'SATA', 'IDE'], default='SCSI'),
-        storage_container=dict(type='dict', options=entity_by_spec),
-        clone_image=dict(type='dict', options=entity_by_spec),
-        empty_cdrom=dict(type='bool')
+        type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
+        size_gb=dict(type="int"),
+        bus=dict(type="str", choices=["SCSI", "PCI", "SATA", "IDE"], default="SCSI"),
+        storage_container=dict(type="dict", options=entity_by_spec),
+        clone_image=dict(type="dict", options=entity_by_spec),
+        empty_cdrom=dict(type="bool"),
     )
 
     boot_config_spec = dict(
-        boot_type=dict(type='str', choices=[ "LEGACY", "UEFI", "SECURE_BOOT" ]),
-        boot_order=dict(type='list', elements=str, default=["CDROM", "DISK", "NETWORK"])
+        boot_type=dict(type="str", choices=["LEGACY", "UEFI", "SECURE_BOOT"]),
+        boot_order=dict(
+            type="list", elements=str, default=["CDROM", "DISK", "NETWORK"]
+        ),
     )
 
     gc_spec = dict(
@@ -329,42 +331,55 @@ def run_module():
     )
 
     module_args = dict(
-        nutanix_host=dict(type='str', required=True, fallback=(env_fallback, ["NUTANIX_HOST"])),
-        nutanix_port=dict(default="9440", type='str'),
-        nutanix_username=dict(type='str', required=True, fallback=(env_fallback, ["NUTANIX_USERNAME"])),
-        nutanix_password=dict(type='str', required=True, no_log=True, fallback=(env_fallback, ["NUTANIX_PASSWORD"])),
-        validate_certs=dict(type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])),
-        state=dict(type='str', choices=['present', 'absent'], default='present'),
-        wait=dict(type='bool', default=True),
-        name=dict(type='str', required=True),
-        desc=dict(type='str'),
-        project=dict(type='dict', options=entity_by_spec),
-        cluster=dict(type='dict', options=entity_by_spec),
-        vcpus=dict(type='int', default=1),
-        cores_per_vcpu=dict(type='int', default=1),
-        memory_gb=dict(type='int', default=1),
-        networks=dict(type='list', elements='dict', options=network_spec),
-        disks=dict(type='list', elements='dict', options=disk_spec),
-        boot_config=dict(type='dict', options=boot_config_spec),
-        guest_customization=dict(type='dict', options=gc_spec),
-        timezone=dict(type='str', default="UTC"),
-        categories=dict(type='dict')
+        nutanix_host=dict(
+            type="str", required=True, fallback=(env_fallback, ["NUTANIX_HOST"])
+        ),
+        nutanix_port=dict(default="9440", type="str"),
+        nutanix_username=dict(
+            type="str", required=True, fallback=(env_fallback, ["NUTANIX_USERNAME"])
+        ),
+        nutanix_password=dict(
+            type="str",
+            required=True,
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+        ),
+        validate_certs=dict(
+            type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
+        ),
+        state=dict(type="str", choices=["present", "absent"], default="present"),
+        wait=dict(type="bool", default=True),
+        name=dict(type="str", required=True),
+        desc=dict(type="str"),
+        project=dict(type="dict", options=entity_by_spec),
+        cluster=dict(type="dict", options=entity_by_spec),
+        vcpus=dict(type="int", default=1),
+        cores_per_vcpu=dict(type="int", default=1),
+        memory_gb=dict(type="int", default=1),
+        networks=dict(type="list", elements="dict", options=network_spec),
+        disks=dict(type="list", elements="dict", options=disk_spec),
+        boot_config=dict(type="dict", options=boot_config_spec),
+        guest_customization=dict(type="dict", options=gc_spec),
+        timezone=dict(type="str", default="UTC"),
+        categories=dict(type="dict"),
     )
 
     mutually_exclusive = [("name", "uuid")]
 
-    module = BaseModule(argument_spec=module_args,
-                        supports_check_mode=True,
-                        mutually_exclusive=mutually_exclusive)
+    module = BaseModule(
+        argument_spec=module_args,
+        supports_check_mode=True,
+        mutually_exclusive=mutually_exclusive,
+    )
 
     remove_param_with_none_value(module.params)
 
     result = {
-        'changed': False,
-        'error': None,
-        'response': None,
-        'vm_uuid': None,
-        'task_uuid': None,
+        "changed": False,
+        "error": None,
+        "response": None,
+        "vm_uuid": None,
+        "task_uuid": None,
     }
 
     vm = VM(module)
@@ -373,7 +388,7 @@ def run_module():
     spec, error = vm.get_spec()
     if error:
         module.debug(error)
-        result['error'] = error
+        result["error"] = error
         module.fail_json(msg="Failed generating VM Spec", **result)
 
     if module.check_mode:
@@ -399,6 +414,7 @@ def run_module():
             module.debug(status["error"])
             result["error"] = status["error"]
             result["response"] = resp
+            raise ValueError(resp, status)
             module.fail_json(msg="Failed creating VM", **result)
 
     module.exit_json(**result)
