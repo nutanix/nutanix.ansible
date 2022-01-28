@@ -6,5 +6,5 @@ from .prism import Prism
 
 class Subnet(Prism):
     def __init__(self, module):
-        resource_type = '/subnets'
+        resource_type = "/subnets"
         super().__init__(module, resource_type=resource_type)

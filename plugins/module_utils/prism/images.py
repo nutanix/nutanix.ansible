@@ -6,5 +6,5 @@ from .prism import Prism
 
 class Image(Prism):
     def __init__(self, module):
-        resource_type = '/images'
+        resource_type = "/images"
         super().__init__(module, resource_type=resource_type)

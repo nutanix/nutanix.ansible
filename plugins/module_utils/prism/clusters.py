@@ -6,5 +6,5 @@ from .prism import Prism
 
 class Cluster(Prism):
     def __init__(self, module):
-        resource_type = '/clusters'
+        resource_type = "/clusters"
         super().__init__(module, resource_type=resource_type)

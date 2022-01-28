@@ -6,25 +6,26 @@ import time
 
 from .prism import Prism
 
+
 class Task(Prism):
     def __init__(self, module):
-        resource_type = '/tasks'
+        resource_type = "/tasks"
         super().__init__(module, resource_type=resource_type)
 
     def create(self, data=None, endpoint=None, query=None, timeout=30):
-        raise NotImplementedError('Create not permitted')
+        raise NotImplementedError("Create not permitted")
 
     def update(self, data=None, uuid=None, endpoint=None, query=None, timeout=30):
-        raise NotImplementedError('Update not permitted')
+        raise NotImplementedError("Update not permitted")
 
     def delete(self, uuid=None, endpoint=None, query=None, timeout=30):
-        raise NotImplementedError('Delete not permitted')
+        raise NotImplementedError("Delete not permitted")
 
     def list(self, data=None, endpoint=None, use_base_url=False, timeout=30):
-        raise NotImplementedError('List not permitted')
+        raise NotImplementedError("List not permitted")
 
     def get_uuid(self, name):
-        raise NotImplementedError('get_uuid not permitted')
+        raise NotImplementedError("get_uuid not permitted")
 
     def wait_for_completion(self, uuid):
         state = ""
@@ -38,7 +39,7 @@ class Task(Prism):
             if state == "FAILED":
                 status = {
                     "error": response["error_detail"],
-                    "code": response["error_code"]
+                    "code": response["error_code"],
                 }
                 return response, status
 

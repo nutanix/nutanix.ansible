@@ -4,14 +4,14 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 import re
 from urllib import response
 
 __metaclass__ = type
 
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: ntnx_vm
 
@@ -267,15 +267,15 @@ options:
             - categories to be attached to the VM.
         type: dict
         required: false
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 # TODO
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 # TODO
-'''
+"""
 
 
 from ansible.module_utils.basic import env_fallback
@@ -287,104 +287,130 @@ from ..module_utils.utils import remove_param_with_none_value
 
 
 def run_module():
-    entity_by_spec = dict(
-        name=dict(type='str'),
-        uuid=dict(type='str')
-    )
-
-    network_spec = dict(
-        subnet=dict(type='dict', options=entity_by_spec),
-        private_ip=dict(type='str', required=False),
-        is_connected=dict(type='bool', default=True)
-    )
-
-    disk_spec = dict(
-        type=dict(type='str', choices=['CDROM', 'DISK'], default='DISK'),
-        size_gb=dict(type='int'),
-        bus=dict(type='str', choices=['SCSI', 'PCI', 'SATA', 'IDE'], default='SCSI'),
-        storage_container=dict(type='dict', options=entity_by_spec),
-        clone_image=dict(type='dict', options=entity_by_spec),
-        empty_cdrom=dict(type='bool')
-    )
-
-    boot_config_spec = dict(
-        boot_type=dict(type='str', choices=[ "LEGACY", "UEFI", "SECURE_BOOT" ]),
-        boot_order=dict(type='list', elements=str, default=["CDROM", "DISK", "NETWORK"])
-    )
-
-    gc_spec = dict(
-        type=dict(type='str', choices=['cloud_init', 'sysprep'], required=True),
-        script_path=dict(type='path', required=True),
-        is_overridable=dict(type='bool', default=False),
-    )
-
-    module_args = dict(
-        nutanix_host=dict(type='str', required=True, fallback=(env_fallback, ["NUTANIX_HOST"])),
-        nutanix_port=dict(default="9440", type='str'),
-        nutanix_username=dict(type='str', required=True, fallback=(env_fallback, ["NUTANIX_USERNAME"])),
-        nutanix_password=dict(type='str', required=True, no_log=True, fallback=(env_fallback, ["NUTANIX_PASSWORD"])),
-        validate_certs=dict(type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])),
-        state=dict(type='str', choices=['present', 'absent'], default='present'),
-        wait=dict(type='bool', default=True),
-        name=dict(type='str', required=True),
-        desc=dict(type='str'),
-        project=dict(type='dict', options=entity_by_spec),
-        cluster=dict(type='dict', options=entity_by_spec),
-        vcpus=dict(type='int', default=1),
-        cores_per_vcpu=dict(type='int', default=1),
-        memory_gb=dict(type='int', default=1),
-        networks=dict(type='list', elements='dict', options=network_spec),
-        disks=dict(type='list', elements='dict', options=disk_spec),
-        boot_config=dict(type='dict', options=boot_config_spec),
-        guest_customization=dict(type='dict', options=gc_spec),
-        timezone=dict(type='str', default="UTC"),
-        categories=dict(type='dict')
-    )
 
     mutually_exclusive = [("name", "uuid")]
 
-    module = BaseModule(argument_spec=module_args,
-                        supports_check_mode=True,
-                        mutually_exclusive=mutually_exclusive)
+    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+
+    network_spec = dict(
+        subnet=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        private_ip=dict(type="str", required=False),
+        is_connected=dict(type="bool", default=True),
+    )
+
+    disk_spec = dict(
+        type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
+        size_gb=dict(type="int"),
+        bus=dict(type="str", choices=["SCSI", "PCI", "SATA", "IDE"], default="SCSI"),
+        storage_container=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        clone_image=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        empty_cdrom=dict(type="bool"),
+    )
+
+    boot_config_spec = dict(
+        boot_type=dict(type="str", choices=["LEGACY", "UEFI", "SECURE_BOOT"]),
+        boot_order=dict(
+            type="list", elements=str, default=["CDROM", "DISK", "NETWORK"]
+        ),
+    )
+
+    gc_spec = dict(
+        type=dict(type="str", choices=["cloud_init", "sysprep"], required=True),
+        script_path=dict(type="path", required=True),
+        is_overridable=dict(type="bool", default=False),
+    )
+
+    module_args = dict(
+        nutanix_host=dict(
+            type="str", required=True, fallback=(env_fallback, ["NUTANIX_HOST"])
+        ),
+        nutanix_port=dict(default="9440", type="str"),
+        nutanix_username=dict(
+            type="str", required=True, fallback=(env_fallback, ["NUTANIX_USERNAME"])
+        ),
+        nutanix_password=dict(
+            type="str",
+            required=True,
+            no_log=True,
+            fallback=(env_fallback, ["NUTANIX_PASSWORD"]),
+        ),
+        validate_certs=dict(
+            type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
+        ),
+        state=dict(type="str", choices=["present", "absent"], default="present"),
+        wait=dict(type="bool", default=True),
+        name=dict(type="str", required=True),
+        desc=dict(type="str"),
+        project=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        cluster=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        vcpus=dict(type="int", default=1),
+        cores_per_vcpu=dict(type="int", default=1),
+        memory_gb=dict(type="int", default=1),
+        networks=dict(type="list", elements="dict", options=network_spec),
+        disks=dict(
+            type="list",
+            elements="dict",
+            options=disk_spec,
+            mutually_exclusive=[
+                ("storage_container", "clone_image", "empty_cdrom"),
+                ("size_gb", "empty_cdrom"),
+            ],
+        ),
+        boot_config=dict(type="dict", options=boot_config_spec),
+        guest_customization=dict(type="dict", options=gc_spec),
+        timezone=dict(type="str", default="UTC"),
+        categories=dict(type="dict"),
+    )
+
+    module = BaseModule(argument_spec=module_args, supports_check_mode=True)
 
     remove_param_with_none_value(module.params)
 
     result = {
-        'changed': False,
-        'error': None,
-        'response': None,
-        'vm_uuid': None,
-        'task_uuid': None,
+        "changed": False,
+        "error": None,
+        "response": None,
+        "vm_uuid": None,
+        "task_uuid": None,
     }
 
     vm = VM(module)
 
     spec, error = vm.get_spec()
     if error:
-        result['error'] = error
+        result["error"] = error
         module.fail_json(msg="Failed generating VM Spec", **result)
 
     if module.check_mode:
-        result['response'] = spec
+        result["response"] = spec
         return module.exit_json(**result)
 
     resp, status = vm.create(spec)
-    if status['error']:
+    if status["error"]:
         result["error"] = status["error"]
         result["response"] = resp
         module.fail_json(msg="Failed creating VM", **result)
 
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
     vm_uuid = resp["metadata"]["uuid"]
-    result['task_uuid'] = task_uuid
+    result["task_uuid"] = task_uuid
     result["vm_uuid"] = vm_uuid
     result["changed"] = True
-
 
     if module.params.get("wait"):
         task = Task(module)
         resp, status = task.wait_for_completion(task_uuid)
-        if status['error']:
+        if status["error"]:
             result["error"] = status["error"]
             result["response"] = resp
             module.fail_json(msg="Failed creating VM", **result)
@@ -398,5 +424,5 @@ def main():
     run_module()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
