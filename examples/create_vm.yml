@@ -1,0 +1,43 @@
+---
+- name: VM Creation using all poissible options
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+  - name: create Vm
+    ntnx_vms:
+      state: present
+      nutanix_host: ''
+      nutanix_username: ''
+      nutanix_password: ''
+      name: "ansible_automation_demo"
+      desc: "ansible_vm_description"
+      categories:
+        AppType:
+          - "Apache_Spark"
+      cluster:
+        #uuid: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+        name: "auto_cluster_prod_1aa888141361"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "vlan.800"
+      disks:
+        - type: "DISK"
+          size_gb: 30
+          bus: "SATA"
+          clone_image:
+            name: "CentOS-7-cloudinit"
+      vcpus: 1
+      cores_per_vcpu: 1
+      memory_gb: 1
+      guest_customization:
+        type: "cloud_init"
+        script_path: "test.json"
+        is_overridable: True
+    register: output
+
+  - name: output of list Subnets
+    debug:
+      msg: '{{ output }}'

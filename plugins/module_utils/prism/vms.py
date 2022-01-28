@@ -1,271 +1,311 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
-from base64 import b64encode
 from copy import deepcopy
 
-from .prism import Prism
+import base64
+import os
 
-__metaclass__ = type
+from .clusters import Cluster
+from .prism import Prism
+from .projects import Project
+from .subnets import Subnet
+from .groups import Groups
+from .images import Image
 
 
 class VM(Prism):
-    kind = "vm"
-    spec_file = "plugins/module_utils/prism/specs/vm_spec.json"
-    entity_type = "NutanixVm"
-
-    def get_attr_spec(self, param, param_spec, **kwargs):
-        param_method_spec = {
-            "disk_list": VMDisk,
-            "nic_list": VMNetwork,
-            "guest_customization": GuestCustomizationSpec,
+    def __init__(self, module):
+        resource_type = "/vms"
+        super().__init__(module, resource_type=resource_type)
+        self.build_spec_methods = {
+            "name": self._build_spec_name,
+            "desc": self._build_spec_desc,
+            "project": self._build_spec_project,
+            "cluster": self._build_spec_cluster,
+            "vcpus": self._build_spec_vcpus,
+            "cores_per_vcpu": self._build_spec_cores,
+            "memory_gb": self._build_spec_mem,
+            "networks": self._build_spec_networks,
+            "disks": self._build_spec_disks,
+            "boot_config": self._build_spec_boot_config,
+            "guest_customization": self._build_spec_gc,
+            "timezone": self._build_spec_timezone,
+            "categories": self._build_spec_categories,
         }
 
-        if param in param_method_spec:
-            handler = param_method_spec[param]()
-            return handler(param_spec, get_ref=self.get_entity_by_name)
-        return param_spec
+    def get_spec(self):
+        spec = self._get_default_spec()
+        for ansible_param, ansible_value in self.module.params.items():
+            build_spec_method = self.build_spec_methods.get(ansible_param)
+            if build_spec_method and ansible_value:
+                _, error = build_spec_method(spec, ansible_value)
+                if error:
+                    return None, error
+        return spec, None
 
-    def get_entity_by_name(self, payload=None):
-        url = self.generate_url_from_operations("groups", netloc=self.url)
-        resp = self.send_request(
-            self.module,
-            "post",
-            url,
-            payload,
-            self.credentials["username"],
-            self.credentials["password"],
-        )
-
-        try:
-            return resp["group_results"][0]["entity_results"][0]["entity_id"]
-
-        except IndexError:
-
-            self.result["message"] = "Entity does not exist. payload - {0}".format(
-                payload
-            )
-            self.result["failed"] = True
-
-            self.module.exit_json(**self.result)
-
-
-class VMSpec:
-    def get_default_spec(self):
-        raise NotImplementedError(
-            "Get Default Spec helper not implemented for {0}".format(self.entity_type)
-        )
-
-    def _get_api_spec(self, param_spec, **kwargs):
-        raise NotImplementedError(
-            "Get Api Spec helper not implemented for {0}".format(self.entity_type)
-        )
-
-    def remove_null_references(self, spec, parent_spec=None, spec_key=None):
-
-        if isinstance(spec, list):
-            for _i in spec:
-                self.remove_null_references(_i)
-
-        elif isinstance(spec, dict):
-            for _k, _v in spec.copy().items():
-                if _v in [None, "", []]:
-                    spec.pop(_k)
-                self.remove_null_references(_v, spec, _k)
-
-            if not bool(spec) and parent_spec and spec_key:
-                parent_spec.pop(spec_key)
-
-
-class VMDisk(VMSpec):
-    entity_type = "VMDisk"
-
-    @staticmethod
-    def get_default_spec():
+    def _get_default_spec(self):
         return deepcopy(
             {
-                "uuid": "",
-                "storage_config": {
-                    "flash_mode": "",
-                    "storage_container_reference": {
-                        "url": "",
-                        "kind": "",
-                        "uuid": "",
-                        "name": "",
+                "api_version": "3.1.0",
+                "metadata": {"kind": "vm"},
+                "spec": {
+                    "cluster_reference": {"kind": "cluster", "uuid": None},
+                    "name": None,
+                    "resources": {
+                        "num_sockets": 1,
+                        "num_vcpus_per_socket": 1,
+                        "memory_size_mib": 4096,
+                        "power_state": "ON",
+                        "disk_list": [],
+                        "nic_list": [],
+                        "gpu_list": [],
+                        "boot_config": {
+                            "boot_type": "LEGACY",
+                            "boot_device_order_list": ["CDROM", "DISK", "NETWORK"],
+                        },
+                        "hardware_clock_timezone": "UTC",
                     },
                 },
-                "device_properties": {
-                    "device_type": "",
-                    "disk_address": {"device_index": 0, "adapter_type": ""},
-                },
-                "data_source_reference": {
-                    "url": "",
-                    "kind": "",
-                    "uuid": "",
-                    "name": "",
-                },
-                "disk_size_mib": "",
             }
         )
 
-    def __get_image_ref(self, name, **kwargs):
-        get_entity_by_name = kwargs["get_ref"]
-        payload = {"entity_type": "image", "filter_criteria": "name=={0}".format(name)}
-        entity_uuid = get_entity_by_name(payload=payload)
-        return {"kind": "image", "uuid": entity_uuid}
-
-    def __get_storage_container_ref(self, name, **kwargs):
-        get_entity_by_name = kwargs["get_ref"]
-        payload = {
-            "entity_type": "storage_container",
-            "filter_criteria": "container_name=={0}".format(name),
-        }
-        entity_uuid = get_entity_by_name(payload=payload)
-        return {"kind": "storage_container", "uuid": entity_uuid}
-
-    def _get_api_spec(self, param_spec, **kwargs):
-
-        final_disk_list = []
-        _di_map = {}
-
-        for disk_param in param_spec:
-            disk_final = self.get_default_spec()
-            if disk_param.get("clone_image"):
-                disk_final["data_source_reference"] = self.__get_image_ref(
-                    disk_param["clone_image"], **kwargs
-                )
-
-            disk_final["device_properties"]["device_type"] = disk_param["type"]
-            disk_final["device_properties"]["disk_address"][
-                "adapter_type"
-            ] = disk_param["bus"]
-
-            # Calculating device_index for the DISK
-
-            if disk_param["bus"] not in _di_map:
-                _di_map[disk_param["bus"]] = 0
-
-            disk_final["device_properties"]["disk_address"]["device_index"] = _di_map[
-                disk_param["bus"]
-            ]
-            _di_map[disk_param["bus"]] += 1
-            # Size of disk
-            if disk_param.get("size_gb"):
-                disk_final["disk_size_mib"] = disk_param["size_gb"] * 1024
-            if disk_param["storage_config"] and disk_param["storage_config"].get(
-                "storage_container_name"
-            ):
-                disk_final["storage_config"] = {
-                    "storage_container_reference": self.__get_storage_container_ref(
-                        disk_param["storage_config"]["storage_container_name"], **kwargs
-                    )
-                }
-            elif disk_param.get("storage_container_uuid"):
-                disk_final["storage_config"] = {
-                    "storage_container_reference": {
-                        "kind": "storage_container",
-                        "uuid": disk_param["storage_container_uuid"],
-                    }
-                }
-            final_disk_list.append(disk_final)
-        self.remove_null_references(final_disk_list)
-
-        return final_disk_list
-
-    def __call__(self, param_spec, **kwargs):
-        return self._get_api_spec(param_spec, **kwargs)
-
-
-class VMNetwork(VMSpec):
-    entity_type = "VMNetwork"
-
-    @staticmethod
-    def get_default_spec():
-        return deepcopy(
-            {  # fill it with default value if any
-                "uuid": "",
-                "is_connected": False,
-                "network_function_nic_type": "INGRESS",
-                "nic_type": "",
-                "subnet_reference": {"kind": "", "name": "", "uuid": ""},
-                "network_function_chain_reference": "",
-                "mac_address": "",
-                "ip_endpoint_list": [],
-            }
-        )
-
-    def __get_subnet_ref(self, name, **kwargs):
-        get_entity_by_name = kwargs["get_ref"]
-        payload = {"entity_type": "subnet", "filter_criteria": "name=={0}".format(name)}
-        entity_uuid = get_entity_by_name(payload=payload)
-        return {"kind": "subnet", "uuid": entity_uuid}
-
-    def _get_api_spec(self, param_spec, **kwargs):
-
-        final_nic_list = []
-        for nic_param in param_spec:
-            nic_final = self.get_default_spec()
-            for k, v in nic_param.items():
-                if k in nic_final.keys() and not isinstance(v, list):
-                    nic_final[k] = v
-
-                # elif 'subnet_' in k and k.split('_')[-1] in nic_final['subnet_reference']:
-                #     nic_final['subnet_reference'][k.split('_')[-1]] = v
-
-                elif k == "subnet_uuid" and v:
-                    nic_final["subnet_reference"] = {"kind": "subnet", "uuid": v}
-                elif k == "subnet_name" and v and not nic_param.get("subnet_uuid"):
-                    nic_final["subnet_reference"] = self.__get_subnet_ref(v, **kwargs)
-
-                elif k == "ip_endpoint_list" and bool(v):
-                    nic_final[k] = [{"ip": v[0]}]
-
-            final_nic_list.append(nic_final)
-        self.remove_null_references(final_nic_list)
-
-        return final_nic_list
-
-    def __call__(self, param_spec, **kwargs):
-        return self._get_api_spec(param_spec, **kwargs)
-
-
-class GuestCustomizationSpec(VMSpec):
-    @staticmethod
-    def get_default_spec():
+    def _get_default_network_spec(self):
         return deepcopy(
             {
-                "sysprep": {
-                    "install_type": "",
-                    "unattend_xml": "",
-                    "custom_key_values": {},
-                },
-                "cloud_init": {
-                    "meta_data": "",
-                    "user_data": "",
-                    "custom_key_values": {},
-                },
-                "is_overridable": "",
+                "ip_endpoint_list": [],
+                "subnet_reference": {"kind": "subnet", "uuid": None},
+                "is_connected": True,
             }
         )
 
-    def _get_api_spec(self, param_spec, **kwargs):
+    def _get_default_disk_spec(self):
+        return deepcopy(
+            {
+                "device_properties": {
+                    "device_type": "DISK",
+                    "disk_address": {"adapter_type": None, "device_index": None},
+                },
+                "disk_size_bytes": None,
+                "storage_config": {
+                    "storage_container_reference": {
+                        "kind": "storage_container",
+                        "uuid": None,
+                    }
+                },
+                "data_source_reference": {"kind": "image", "uuid": None},
+            }
+        )
 
-        gc_spec = self.get_default_spec()
-        script_file_path = param_spec["script_path"]
-        with open(script_file_path, "rb") as f:
-            content = f.read()
-        content = b64encode(content)
-        type = param_spec["type"]
-        if type == "sysprep":
-            gc_spec[type]["unattend_xml"] = content
-        elif type == "cloud_init":
-            gc_spec[type]["user_data"] = content
-        gc_spec["is_overridable"] = param_spec.get("is_overridable")
+    def _build_spec_name(self, payload, value):
+        payload["spec"]["name"] = value
+        return payload, None
 
-        self.remove_null_references(gc_spec)
+    def _build_spec_desc(self, payload, value):
+        payload["spec"]["description"] = value
+        return payload, None
 
-        return gc_spec
+    def _build_spec_project(self, payload, param):
+        if "name" in param:
+            project = Project(self.module)
+            name = param["name"]
+            uuid = project.get_uuid(name)
+            if not uuid:
+                error = "Failed to get UUID for project name: {}".format(name)
+                return None, error
 
-    def __call__(self, param_spec, **kwargs):
-        return self._get_api_spec(param_spec, **kwargs)
+        elif "uuid" in param:
+            uuid = param["uuid"]
+
+        payload["metadata"].update(
+            {"project_reference": {"uuid": uuid, "kind": "project"}}
+        )
+        return payload, None
+
+    def _build_spec_cluster(self, payload, param):
+        if "name" in param:
+            cluster = Cluster(self.module)
+            name = param["name"]
+            uuid = cluster.get_uuid(name)
+            if not uuid:
+                error = "Failed to get UUID for cluster name: {}".format(name)
+                return None, error
+
+        elif "uuid" in param:
+            uuid = param["uuid"]
+
+        payload["spec"]["cluster_reference"]["uuid"] = uuid
+        return payload, None
+
+    def _build_spec_vcpus(self, payload, value):
+        payload["spec"]["resources"]["num_sockets"] = value
+        return payload, None
+
+    def _build_spec_cores(self, payload, value):
+        payload["spec"]["resources"]["num_vcpus_per_socket"] = value
+        return payload, None
+
+    def _build_spec_mem(self, payload, value):
+        payload["spec"]["resources"]["memory_size_mib"] = value * 1024
+        return payload, None
+
+    def _build_spec_networks(self, payload, networks):
+        nics = []
+        for network in networks:
+            nic = self._get_default_network_spec()
+            if network.get("private_ip"):
+                nic["ip_endpoint_list"].append({"ip": network["private_ip"]})
+
+            nic["is_connected"] = network["is_connected"]
+
+            if network.get("subnet", {}).get("name"):
+                subnet = Subnet(self.module)
+                name = network["subnet"]["name"]
+                uuid = subnet.get_uuid(name)
+                if not uuid:
+                    error = "Failed to get UUID for subnet name: {}".format(name)
+                    return None, error
+
+            elif network.get("subnet", {}).get("uuid"):
+                uuid = network["subnet"]["uuid"]
+
+            nic["subnet_reference"]["uuid"] = uuid
+
+            nics.append(nic)
+
+        payload["spec"]["resources"]["nic_list"] = nics
+        return payload, None
+
+    def _build_spec_disks(self, payload, vdisks):
+        disks = []
+        scsi_index = sata_index = pci_index = ide_index = 0
+
+        for vdisk in vdisks:
+            disk = self._get_default_disk_spec()
+
+            if "type" in vdisk:
+                disk["device_properties"]["device_type"] = vdisk["type"]
+
+            if "bus" in vdisk:
+                if vdisk["bus"] == "SCSI":
+                    device_index = scsi_index
+                    scsi_index += 1
+                elif vdisk["bus"] == "SATA":
+                    device_index = sata_index
+                    sata_index += 1
+                elif vdisk["bus"] == "PCI":
+                    device_index = pci_index
+                    pci_index += 1
+                elif vdisk["bus"] == "IDE":
+                    device_index = ide_index
+                    ide_index += 1
+
+                disk["device_properties"]["disk_address"]["adapter_type"] = vdisk["bus"]
+                disk["device_properties"]["disk_address"]["device_index"] = device_index
+
+            if vdisk.get("empty_cdrom"):
+                disk.pop("disk_size_bytes")
+                disk.pop("data_source_reference")
+                disk.pop("storage_config")
+
+            else:
+                disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
+
+                if vdisk.get("storage_container"):
+                    disk.pop("data_source_reference")
+                    if "name" in vdisk["storage_container"]:
+                        groups = Groups(self.module)
+                        name = vdisk["storage_container"]["name"]
+                        uuid = groups.get_uuid(
+                            entity_type="storage_container",
+                            filter=f"container_name=={name}",
+                        )
+                        if not uuid:
+                            error = "Failed to get UUID for storgae container: {}".format(
+                                name
+                            )
+                            return None, error
+
+                    elif "uuid" in vdisk["storage_container"]:
+                        uuid = vdisk["storage_container"]["uuid"]
+
+                    disk["storage_config"]["storage_container_reference"]["uuid"] = uuid
+
+                elif vdisk.get("clone_image"):
+                    if "name" in vdisk["clone_image"]:
+                        image = Image(self.module)
+                        name = vdisk["clone_image"]["name"]
+                        uuid = image.get_uuid(name)
+                        if not uuid:
+                            error = "Failed to get UUID for image: {}".format(name)
+                            return None, error
+
+                    elif "uuid" in vdisk["clone_image"]:
+                        uuid = vdisk["clone_image"]["uuid"]
+
+                    disk["data_source_reference"]["uuid"] = uuid
+
+            if (
+                not disk.get("storage_config", {})
+                .get("storage_container_reference", {})
+                .get("uuid")
+            ):
+                disk.pop("storage_config", None)
+
+            if not disk.get("data_source_reference", {}).get("uuid"):
+                disk.pop("data_source_reference", None)
+
+            disks.append(disk)
+
+        payload["spec"]["resources"]["disk_list"] = disks
+        return payload, None
+
+    def _build_spec_boot_config(self, payload, param):
+        boot_config = payload["spec"]["resources"]["boot_config"]
+        if "LEGACY" == param["boot_type"] and "boot_order" in param:
+            boot_config["boot_device_order_list"] = param["boot_order"]
+
+        elif "UEFI" == param["boot_type"]:
+            boot_config.pop("boot_device_order_list")
+            boot_config["boot_type"] = "UEFI"
+
+        elif "SECURE_BOOT" == param["boot_type"]:
+            boot_config.pop("boot_device_order_list")
+            boot_config["boot_type"] = "SECURE_BOOT"
+            payload["spec"]["resources"]["machine_type"] = "Q35"
+        return payload, None
+
+    def _build_spec_gc(self, payload, param):
+        fpath = param["script_path"]
+
+        if not os.path.exists(fpath):
+            error = "File not found: {}".format(fpath)
+            return None, error
+
+        with open(fpath, "rb") as f:
+            content = base64.b64encode(f.read())
+        gc_spec = {"guest_customization": {}}
+
+        if "sysprep" in param["type"]:
+            gc_spec["guest_customization"] = {
+                "sysprep": {"install_type": "PREPARED", "unattend_xml": content}
+            }
+
+        elif "cloud_init" in param["type"]:
+            gc_spec["guest_customization"] = {"cloud_init": {"user_data": content}}
+
+        if "is_overridable" in param:
+            gc_spec["guest_customization"]["is_overridable"] = param["is_overridable"]
+        payload["spec"]["resources"].update(gc_spec)
+        return payload, None
+
+    def _build_spec_timezone(self, payload, value):
+        payload["spec"]["resources"]["hardware_clock_timezone"] = value
+        return payload, None
+
+    def _build_spec_categories(self, payload, value):
+        payload["metadata"]["categories_mapping"] = value
+        payload["metadata"]["use_categories_mapping"] = True
+        return payload, None

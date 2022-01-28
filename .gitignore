@@ -1,3 +1,34 @@
+Skip to content
+Search or jump to…
+Pull requests
+Issues
+Marketplace
+Explore
+
+@Gevorg-Khachatryan-97
+nutanix
+/
+nutanix.ansible
+Internal
+Code
+Issues
+12
+Pull requests
+Actions
+Projects
+1
+Wiki
+Security
+Insights
+Settings
+nutanix.ansible/.gitignore
+@kumarsarath588
+kumarsarath588 Add CICD github actions
+Latest commit 0765ecc 6 days ago
+ History
+ 1 contributor
+136 lines (109 sloc)  1.8 KB
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -134,3 +165,16 @@ dmypy.json
 
 # vs code configs
 .vscode
+© 2022 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Docs
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
+Loading complete
