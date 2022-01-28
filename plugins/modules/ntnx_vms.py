@@ -299,10 +299,7 @@ from ..module_utils.prism.tasks import Task
 
 
 def run_module():
-    entity_by_spec = dict(
-        name=dict(type="str"),
-        uuid=dict(type="str"),
-    )
+    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     network_spec = dict(
         subnet=dict(type="dict", options=entity_by_spec),
@@ -324,13 +321,8 @@ def run_module():
             ("storage_container", "empty_cdrom", "clone_image"),
             ("empty_cdrom", "size_gb"),
         ],
-        required_one_of=[
-            ("storage_container", "empty_cdrom", "clone_image"),
-        ],
-        required_by={
-            "storage_container": "size_gb",
-            "clone_image": "size_gb",
-        },
+        required_one_of=[("storage_container", "empty_cdrom", "clone_image")],
+        required_by={"storage_container": "size_gb", "clone_image": "size_gb"},
     )
 
     boot_config_spec = dict(

@@ -10,7 +10,7 @@ from .prism import Prism
 class Groups(Prism):
     def __init__(self, module):
         resource_type = "/groups"
-        super(Groups,self).__init__(module, resource_type=resource_type)
+        super(Groups, self).__init__(module, resource_type=resource_type)
 
     def get_uuid(self, entity_type, filter):
         data = {"entity_type": entity_type, "filter_criteria": filter}

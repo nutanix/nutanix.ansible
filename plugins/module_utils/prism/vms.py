@@ -22,7 +22,7 @@ from .images import Image
 class VM(Prism):
     def __init__(self, module):
         resource_type = "/vms"
-        super(VM,self).__init__(module, resource_type=resource_type)
+        super(VM, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -221,13 +221,11 @@ class VM(Prism):
                         name = vdisk["storage_container"]["name"]
                         uuid = groups.get_uuid(
                             entity_type="storage_container",
-                            filter= "container_name=={0}".format(name),
+                            filter="container_name=={0}".format(name),
                         )
                         if not uuid:
-                            error = (
-                                "Failed to get UUID for storgae container: {0}".format(
-                                    name
-                                )
+                            error = "Failed to get UUID for storgae container: {0}".format(
+                                name
                             )
                             return None, error
 

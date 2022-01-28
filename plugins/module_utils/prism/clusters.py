@@ -10,4 +10,4 @@ from .prism import Prism
 class Cluster(Prism):
     def __init__(self, module):
         resource_type = "/clusters"
-        super(Cluster,self).__init__(module, resource_type=resource_type)
+        super(Cluster, self).__init__(module, resource_type=resource_type)
