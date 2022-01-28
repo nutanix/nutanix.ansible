@@ -4,15 +4,14 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import (absolute_import, division, print_function)
-from operator import mod
+from __future__ import absolute_import, division, print_function
 import re
 from urllib import response
 
 __metaclass__ = type
 
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: ntnx_vm
 
@@ -273,15 +272,15 @@ options:
             - categories to be attached to the VM.
         type: dict
         required: false
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 # TODO
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 # TODO
-'''
+"""
 
 
 from ansible.module_utils.basic import env_fallback
@@ -299,29 +298,37 @@ def get_module_spec():
     )
 
     network_spec = dict(
-        subnet=dict(type='dict', options=entity_by_spec),
-        private_ip=dict(type='str', required=False),
-        is_connected=dict(type='bool', default=True)
+        subnet=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        private_ip=dict(type="str", required=False),
+        is_connected=dict(type="bool", default=True),
     )
 
     disk_spec = dict(
-        type=dict(type='str', choices=['CDROM', 'DISK'], default='DISK'),
-        size_gb=dict(type='int'),
-        bus=dict(type='str', choices=['SCSI', 'PCI', 'SATA', 'IDE'], default='SCSI'),
-        storage_container=dict(type='dict', options=entity_by_spec),
-        clone_image=dict(type='dict', options=entity_by_spec),
-        empty_cdrom=dict(type='bool')
+        type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
+        size_gb=dict(type="int"),
+        bus=dict(type="str", choices=["SCSI", "PCI", "SATA", "IDE"], default="SCSI"),
+        storage_container=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        clone_image=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        empty_cdrom=dict(type="bool"),
     )
 
     boot_config_spec = dict(
-        boot_type=dict(type='str', choices=[ "LEGACY", "UEFI", "SECURE_BOOT" ]),
-        boot_order=dict(type='list', elements=str, default=["CDROM", "DISK", "NETWORK"])
+        boot_type=dict(type="str", choices=["LEGACY", "UEFI", "SECURE_BOOT"]),
+        boot_order=dict(
+            type="list", elements=str, default=["CDROM", "DISK", "NETWORK"]
+        ),
     )
 
     gc_spec = dict(
-        type=dict(type='str', choices=['cloud_init', 'sysprep'], required=True),
-        script_path=dict(type='path', required=True),
-        is_overridable=dict(type='bool', default=False),
+        type=dict(type="str", choices=["cloud_init", "sysprep"], required=True),
+        script_path=dict(type="path", required=True),
+        is_overridable=dict(type="bool", default=False),
     )
 
     module_args = dict(
@@ -355,7 +362,7 @@ def create_vm(module, result):
     vm = VM(module)
     spec, error = vm.get_spec()
     if error:
-        result['error'] = error
+        result["error"] = error
         module.fail_json(msg="Failed generating VM Spec", **result)
 
     if module.check_mode:
@@ -363,7 +370,7 @@ def create_vm(module, result):
         return
 
     resp, status = vm.create(spec)
-    if status['error']:
+    if status["error"]:
         result["error"] = status["error"]
         result["response"] = resp
         module.fail_json(msg="Failed creating VM", **result)
@@ -437,5 +444,5 @@ def main():
     run_module()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

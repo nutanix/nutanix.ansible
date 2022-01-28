@@ -18,7 +18,7 @@ from .images import Image
 
 class VM(Prism):
     def __init__(self, module):
-        resource_type = '/vms'
+        resource_type = "/vms"
         super().__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
@@ -33,7 +33,7 @@ class VM(Prism):
             "boot_config": self._build_spec_boot_config,
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
-            "categories": self._build_spec_categories
+            "categories": self._build_spec_categories,
         }
 
     def get_spec(self):
@@ -47,63 +47,57 @@ class VM(Prism):
         return spec, None
 
     def _get_default_spec(self):
-        return deepcopy({
-            "api_version": "3.1.0",
-            "metadata": {"kind": "vm"},
-            "spec": {
-                "cluster_reference": {
-                    "kind": "cluster",
-                    "uuid": None
-                },
-                "name": None,
-                "resources": {
-                    "num_sockets": 1,
-                    "num_vcpus_per_socket": 1,
-                    "memory_size_mib": 4096,
-                    "power_state": "ON",
-                    "disk_list": [],
-                    "nic_list": [],
-                    "gpu_list": [],
-                    "boot_config": {
-                        "boot_type": "LEGACY",
-                        "boot_device_order_list": ["CDROM", "DISK", "NETWORK"]
+        return deepcopy(
+            {
+                "api_version": "3.1.0",
+                "metadata": {"kind": "vm"},
+                "spec": {
+                    "cluster_reference": {"kind": "cluster", "uuid": None},
+                    "name": None,
+                    "resources": {
+                        "num_sockets": 1,
+                        "num_vcpus_per_socket": 1,
+                        "memory_size_mib": 4096,
+                        "power_state": "ON",
+                        "disk_list": [],
+                        "nic_list": [],
+                        "gpu_list": [],
+                        "boot_config": {
+                            "boot_type": "LEGACY",
+                            "boot_device_order_list": ["CDROM", "DISK", "NETWORK"],
+                        },
+                        "hardware_clock_timezone": "UTC",
                     },
-                    "hardware_clock_timezone": "UTC"
-                }
+                },
             }
-        })
+        )
 
     def _get_default_network_spec(self):
-        return deepcopy({
-          "ip_endpoint_list": [],
-          "subnet_reference": {
-            "kind": "subnet",
-            "uuid": None
-          },
-          "is_connected": True,
-        })
+        return deepcopy(
+            {
+                "ip_endpoint_list": [],
+                "subnet_reference": {"kind": "subnet", "uuid": None},
+                "is_connected": True,
+            }
+        )
 
     def _get_default_disk_spec(self):
-        return deepcopy({
-            "device_properties": {
-                "device_type": "DISK",
-                "disk_address": {
-                    "adapter_type": None,
-                    "device_index": None
-                }
-            },
-            "disk_size_bytes": None,
-            "storage_config": {
-                "storage_container_reference": {
-                    "kind": "storage_container",
-                    "uuid": None
-                }
-            },
-            "data_source_reference": {
-                "kind": "image",
-                "uuid": None
+        return deepcopy(
+            {
+                "device_properties": {
+                    "device_type": "DISK",
+                    "disk_address": {"adapter_type": None, "device_index": None},
+                },
+                "disk_size_bytes": None,
+                "storage_config": {
+                    "storage_container_reference": {
+                        "kind": "storage_container",
+                        "uuid": None,
+                    }
+                },
+                "data_source_reference": {"kind": "image", "uuid": None},
             }
-        })
+        )
 
     def _build_spec_name(self, payload, value):
         payload["spec"]["name"] = value
@@ -114,7 +108,7 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_project(self, payload, param):
-        if 'name' in param:
+        if "name" in param:
             project = Project(self.module)
             name = param["name"]
             uuid = project.get_uuid(name)
@@ -122,19 +116,16 @@ class VM(Prism):
                 error = "Failed to get UUID for project name: {}".format(name)
                 return None, error
 
-        elif 'uuid' in param:
-            uuid = param['uuid']
+        elif "uuid" in param:
+            uuid = param["uuid"]
 
-        payload["metadata"].update({
-            "project_reference": {
-                "uuid": uuid,
-                "kind": "project"
-            }
-        })
+        payload["metadata"].update(
+            {"project_reference": {"uuid": uuid, "kind": "project"}}
+        )
         return payload, None
 
     def _build_spec_cluster(self, payload, param):
-        if 'name' in param:
+        if "name" in param:
             cluster = Cluster(self.module)
             name = param["name"]
             uuid = cluster.get_uuid(name)
@@ -142,8 +133,8 @@ class VM(Prism):
                 error = "Failed to get UUID for cluster name: {}".format(name)
                 return None, error
 
-        elif 'uuid' in param:
-            uuid = param['uuid']
+        elif "uuid" in param:
+            uuid = param["uuid"]
 
         payload["spec"]["cluster_reference"]["uuid"] = uuid
         return payload, None
@@ -164,14 +155,12 @@ class VM(Prism):
         nics = []
         for network in networks:
             nic = self._get_default_network_spec()
-            if network.get('private_ip'):
-                nic["ip_endpoint_list"].append({
-                    "ip": network["private_ip"]
-                })
+            if network.get("private_ip"):
+                nic["ip_endpoint_list"].append({"ip": network["private_ip"]})
 
             nic["is_connected"] = network["is_connected"]
 
-            if network.get("subnet", {}).get('name'):
+            if network.get("subnet", {}).get("name"):
                 subnet = Subnet(self.module)
                 name = network["subnet"]["name"]
                 uuid = subnet.get_uuid(name)
@@ -179,7 +168,7 @@ class VM(Prism):
                     error = "Failed to get UUID for subnet name: {}".format(name)
                     return None, error
 
-            elif network.get("subnet", {}).get('uuid'):
+            elif network.get("subnet", {}).get("uuid"):
                 uuid = network["subnet"]["uuid"]
 
             nic["subnet_reference"]["uuid"] = uuid
@@ -196,10 +185,10 @@ class VM(Prism):
         for vdisk in vdisks:
             disk = self._get_default_disk_spec()
 
-            if 'type' in vdisk:
+            if "type" in vdisk:
                 disk["device_properties"]["device_type"] = vdisk["type"]
 
-            if 'bus' in vdisk:
+            if "bus" in vdisk:
                 if vdisk["bus"] == "SCSI":
                     device_index = scsi_index
                     scsi_index += 1
@@ -216,32 +205,36 @@ class VM(Prism):
                 disk["device_properties"]["disk_address"]["adapter_type"] = vdisk["bus"]
                 disk["device_properties"]["disk_address"]["device_index"] = device_index
 
-            if 'empty_cdrom' in vdisk:
-                disk.pop('disk_size_bytes')
-                disk.pop('data_source_reference')
-                disk.pop('storage_config')
+            if vdisk.get("empty_cdrom"):
+                disk.pop("disk_size_bytes")
+                disk.pop("data_source_reference")
+                disk.pop("storage_config")
 
             else:
                 disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
 
-                if 'storage_container' in vdisk:
-                    disk.pop('data_source_reference')
-                    if 'name' in vdisk["storage_container"]:
+                if vdisk.get("storage_container"):
+                    disk.pop("data_source_reference")
+                    if "name" in vdisk["storage_container"]:
                         groups = Groups(self.module)
                         name = vdisk["storage_container"]["name"]
-                        uuid = groups.get_uuid(entity_type="storage_container",
-                                               filter=f"container_name=={name}")
+                        uuid = groups.get_uuid(
+                            entity_type="storage_container",
+                            filter=f"container_name=={name}",
+                        )
                         if not uuid:
-                            error = "Failed to get UUID for storgae container: {}".format(name)
+                            error = "Failed to get UUID for storgae container: {}".format(
+                                name
+                            )
                             return None, error
 
-                    elif 'uuid' in vdisk["storage_container"]:
+                    elif "uuid" in vdisk["storage_container"]:
                         uuid = vdisk["storage_container"]["uuid"]
 
                     disk["storage_config"]["storage_container_reference"]["uuid"] = uuid
 
-                elif 'clone_image' in vdisk:
-                    if 'name' in vdisk["clone_image"]:
+                elif vdisk.get("clone_image"):
+                    if "name" in vdisk["clone_image"]:
                         image = Image(self.module)
                         name = vdisk["clone_image"]["name"]
                         uuid = image.get_uuid(name)
@@ -249,16 +242,20 @@ class VM(Prism):
                             error = "Failed to get UUID for image: {}".format(name)
                             return None, error
 
-                    elif 'uuid' in vdisk["clone_image"]:
+                    elif "uuid" in vdisk["clone_image"]:
                         uuid = vdisk["clone_image"]["uuid"]
 
                     disk["data_source_reference"]["uuid"] = uuid
 
-            if not disk.get("storage_config", {}).get("storage_container_reference", {}).get("uuid"):
-                disk.pop('storage_config', None)
+            if (
+                not disk.get("storage_config", {})
+                .get("storage_container_reference", {})
+                .get("uuid")
+            ):
+                disk.pop("storage_config", None)
 
             if not disk.get("data_source_reference", {}).get("uuid"):
-                disk.pop('data_source_reference', None)
+                disk.pop("data_source_reference", None)
 
             disks.append(disk)
 
@@ -267,7 +264,7 @@ class VM(Prism):
 
     def _build_spec_boot_config(self, payload, param):
         boot_config = payload["spec"]["resources"]["boot_config"]
-        if 'LEGACY' == param["boot_type"] and 'boot_order' in param:
+        if "LEGACY" == param["boot_type"] and "boot_order" in param:
             boot_config["boot_device_order_list"] = param["boot_order"]
 
         elif "UEFI" == param["boot_type"]:
@@ -291,20 +288,15 @@ class VM(Prism):
             content = base64.b64encode(f.read())
         gc_spec = {"guest_customization": {}}
 
-        if 'sysprep' in param["type"]:
+        if "sysprep" in param["type"]:
             gc_spec["guest_customization"] = {
-                "sysprep": {
-                    "install_type": "PREPARED",
-                    "unattend_xml": content
-                }
+                "sysprep": {"install_type": "PREPARED", "unattend_xml": content}
             }
 
-        elif 'cloud_init' in param["type"]:
-            gc_spec["guest_customization"] = {
-                "cloud_init": {"user_data": content}
-            }
+        elif "cloud_init" in param["type"]:
+            gc_spec["guest_customization"] = {"cloud_init": {"user_data": content}}
 
-        if 'is_overridable' in param:
+        if "is_overridable" in param:
             gc_spec["guest_customization"]["is_overridable"] = param["is_overridable"]
         payload["spec"]["resources"].update(gc_spec)
         return payload, None

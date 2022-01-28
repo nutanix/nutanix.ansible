@@ -6,5 +6,5 @@ from .prism import Prism
 
 class Project(Prism):
     def __init__(self, module):
-        resource_type = '/projects'
+        resource_type = "/projects"
         super().__init__(module, resource_type=resource_type)
