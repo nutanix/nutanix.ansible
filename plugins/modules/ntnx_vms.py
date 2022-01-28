@@ -5,6 +5,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import (absolute_import, division, print_function)
+from operator import mod
 import re
 from urllib import response
 
@@ -67,6 +68,11 @@ options:
         description: VM Name
         required: true
         type: str
+    vm_uuid:
+        description:
+            - VM UUID
+            - Required for VM deletion
+        required: false
     desc:
         description: A description for VM.
         required: false
@@ -286,7 +292,7 @@ from ..module_utils.prism.tasks import Task
 from ..module_utils.utils import remove_param_with_none_value
 
 
-def run_module():
+def get_module_spec():
     entity_by_spec = dict(
         name=dict(type='str'),
         uuid=dict(type='str')
@@ -327,6 +333,7 @@ def run_module():
         state=dict(type='str', choices=['present', 'absent'], default='present'),
         wait=dict(type='bool', default=True),
         name=dict(type='str', required=True),
+        vm_uuid=dict(type='str'),
         desc=dict(type='str'),
         project=dict(type='dict', options=entity_by_spec),
         cluster=dict(type='dict', options=entity_by_spec),
@@ -341,24 +348,11 @@ def run_module():
         categories=dict(type='dict')
     )
 
-    mutually_exclusive = [("name", "uuid")]
+    return module_args
 
-    module = BaseModule(argument_spec=module_args,
-                        supports_check_mode=True,
-                        mutually_exclusive=mutually_exclusive)
 
-    remove_param_with_none_value(module.params)
-
-    result = {
-        'changed': False,
-        'error': None,
-        'response': None,
-        'vm_uuid': None,
-        'task_uuid': None,
-    }
-
+def create_vm(module, result):
     vm = VM(module)
-
     spec, error = vm.get_spec()
     if error:
         result['error'] = error
@@ -366,7 +360,7 @@ def run_module():
 
     if module.check_mode:
         result['response'] = spec
-        return module.exit_json(**result)
+        return
 
     resp, status = vm.create(spec)
     if status['error']:
@@ -374,22 +368,67 @@ def run_module():
         result["response"] = resp
         module.fail_json(msg="Failed creating VM", **result)
 
-    task_uuid = resp["status"]["execution_context"]["task_uuid"]
     vm_uuid = resp["metadata"]["uuid"]
-    result['task_uuid'] = task_uuid
-    result["vm_uuid"] = vm_uuid
     result["changed"] = True
-
+    result["response"] = resp
+    result["vm_uuid"] = vm_uuid
+    result['task_uuid'] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
-        task = Task(module)
-        resp, status = task.wait_for_completion(task_uuid)
-        if status['error']:
-            result["error"] = status["error"]
-            result["response"] = resp
-            module.fail_json(msg="Failed creating VM", **result)
+        wait_for_task_completion(module, result)
         resp, _ = vm.read(vm_uuid)
         result["response"] = resp
+
+
+def delete_vm(module, result):
+    vm_uuid = module.params["vm_uuid"]
+    if not vm_uuid:
+        result["error"] = "Missing parameter vm_uuid in playbook"
+        module.fail_json(msg="Failed deleting VM", **result)
+
+    vm = VM(module)
+    resp, status = vm.delete(vm_uuid)
+    if status['error']:
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(msg="Failed deleting VM", **result)
+
+    result["changed"] = True
+    result["response"] = resp
+    result["vm_uuid"] = vm_uuid
+    result['task_uuid'] = resp["status"]["execution_context"]["task_uuid"]
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+
+
+def wait_for_task_completion(module, result):
+    task = Task(module)
+    task_uuid = result['task_uuid']
+    resp, status = task.wait_for_completion(task_uuid)
+    result["response"] = resp
+    if status['error']:
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(msg="Failed creating VM", **result)
+
+
+def run_module():
+    module = BaseModule(argument_spec=get_module_spec(),
+                        supports_check_mode=True)
+    remove_param_with_none_value(module.params)
+    result = {
+        'changed': False,
+        'error': None,
+        'response': None,
+        'vm_uuid': None,
+        'task_uuid': None,
+    }
+    state = module.params["state"]
+    if  state == "present":
+        create_vm(module, result)
+    elif state == "absent":
+        delete_vm(module, result)
 
     module.exit_json(**result)
 
