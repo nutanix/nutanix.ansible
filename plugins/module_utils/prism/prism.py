@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 from ..entity import Entity
@@ -9,4 +10,4 @@ class Prism(Entity):
 
     def __init__(self, module, resource_type):
         resource_type = self.__BASEURL__ + resource_type
-        super().__init__(module, resource_type)
+        super(Prism,self).__init__(module, resource_type)

@@ -14,7 +14,8 @@ class BaseModule(AnsibleModule):
         action=dict(type="str", required=True, aliases=["state"]),
         wait=dict(type="bool", required=False, default=True),
         wait_timeout=dict(type="int", required=False, default=300),
-        validate_certs=dict(type="bool", required=False, default=False))
+        validate_certs=dict(type="bool", required=False, default=False),
+    )
 
     def __init__(self, **kwargs):
         if kwargs.get("argument_spec"):
