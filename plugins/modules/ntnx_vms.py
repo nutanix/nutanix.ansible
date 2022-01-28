@@ -281,47 +281,33 @@ from ansible.module_utils.basic import env_fallback
 from ..module_utils.base_module import BaseModule
 from ..module_utils.prism.vms import VM
 from ..module_utils.prism.tasks import Task
+from ..module_utils.utils import remove_param_with_none_value
 
 
 def run_module():
     entity_by_spec = dict(
         name=dict(type='str'),
-        uuid=dict(type='str'),
+        uuid=dict(type='str')
     )
 
     network_spec = dict(
         subnet=dict(type='dict', options=entity_by_spec),
-        private_ip=dict(type='str'),
-        is_connected=dict(type='bool', default=True),
+        private_ip=dict(type='str', required=False),
+        is_connected=dict(type='bool', default=True)
     )
 
     disk_spec = dict(
-        # TODO
-        # if type='CDROM', then bus==['SATA', 'IDE']
-        # this check needs to be implemented.
         type=dict(type='str', choices=['CDROM', 'DISK'], default='DISK'),
         size_gb=dict(type='int'),
         bus=dict(type='str', choices=['SCSI', 'PCI', 'SATA', 'IDE'], default='SCSI'),
         storage_container=dict(type='dict', options=entity_by_spec),
         clone_image=dict(type='dict', options=entity_by_spec),
-        empty_cdrom=dict(type='bool'),
-        mutually_exclusive=[
-            ('storage_container', 'empty_cdrom', 'clone_image'),
-            ('empty_cdrom', 'size_gb')
-        ],
-        required_one_of=[('storage_container', 'empty_cdrom', 'clone_image'),],
-        required_by={
-            'storage_container': 'size_gb',
-            'clone_image': 'size_gb',
-        },
-
+        empty_cdrom=dict(type='bool')
     )
 
     boot_config_spec = dict(
-        # TODO
-        # if boot_type=UEFI OR SECURE_BOOT, then boot_order is not required.
         boot_type=dict(type='str', choices=[ "LEGACY", "UEFI", "SECURE_BOOT" ]),
-        boot_order=dict(type='list', elements=str, default=["CDROM", "DISK", "NETWORK"]),
+        boot_order=dict(type='list', elements=str, default=["CDROM", "DISK", "NETWORK"])
     )
 
     gc_spec = dict(
@@ -345,16 +331,21 @@ def run_module():
         vcpus=dict(type='int', default=1),
         cores_per_vcpu=dict(type='int', default=1),
         memory_gb=dict(type='int', default=1),
-        networks=dict(type='list', elements=dict, options=network_spec),
-        disks=dict(type='list', elements=dict, options=disk_spec),
+        networks=dict(type='list', elements='dict', options=network_spec),
+        disks=dict(type='list', elements='dict', options=disk_spec),
         boot_config=dict(type='dict', options=boot_config_spec),
         guest_customization=dict(type='dict', options=gc_spec),
         timezone=dict(type='str', default="UTC"),
-        categories=dict(type='dict'),
+        categories=dict(type='dict')
     )
 
+    mutually_exclusive = [("name", "uuid")]
+
     module = BaseModule(argument_spec=module_args,
-                        supports_check_mode=True)
+                        supports_check_mode=True,
+                        mutually_exclusive=mutually_exclusive)
+
+    remove_param_with_none_value(module.params)
 
     result = {
         'changed': False,
@@ -362,7 +353,6 @@ def run_module():
         'response': None,
         'vm_uuid': None,
         'task_uuid': None,
-        'msg': ''
     }
 
     vm = VM(module)
@@ -372,33 +362,32 @@ def run_module():
     if error:
         module.debug(error)
         result['error'] = error
-        module.fail_json(**result)
+        module.fail_json(msg="Failed generating VM Spec", **result)
 
     if module.check_mode:
         result['response'] = spec
         return module.exit_json(**result)
-
-    module.debug('VM spec: {}'.format(spec))
 
     resp, status = vm.create(spec)
     if status['error']:
         module.debug(status["error"])
         result["error"] = status["error"]
         result["response"] = resp
-        module.fail_json(**result)
+        module.fail_json(msg="Failed creating VM", **result)
 
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
     result['task_uuid'] = task_uuid
     result["vm_uuid"] = resp["metadata"]["uuid"]
+    result["changed"] = True
 
-    if module.params["wait"]:
+    if module.params.get("wait"):
         task = Task(module)
         resp, status = task.wait_for_completion(task_uuid)
         if status['error']:
             module.debug(status["error"])
             result["error"] = status["error"]
             result["response"] = resp
-            module.fail_json(**result)
+            module.fail_json(msg="Failed creating VM", **result)
 
     module.exit_json(**result)
 

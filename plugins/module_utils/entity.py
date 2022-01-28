@@ -58,7 +58,7 @@ class Entity(object):
     def get_uuid(self, name):
         data = {"filter": f"name=={name}", "length": 1}
         resp, _ = self.list(data)
-        if resp.get("entities"):
+        if resp and resp.get("entities"):
             return resp["entities"][0]["metadata"]["uuid"]
         return None
 
@@ -103,7 +103,6 @@ class Entity(object):
                                timeout=timeout)
 
         status_code = info.get("status")
-        self.module.debug('API Response code: {}'.format(status_code))
         body = resp.read() if resp else info.get("body")
         try:
             resp_json = json.loads(to_text(body)) if body else None
@@ -113,6 +112,12 @@ class Entity(object):
         if 199 < status_code < 300:
             err = None
         else:
-            err = info.get("msg", "Refer error detail in response")
+            err=info.get("msg", "Status code != 2xx")
+            self.module.fail_json(
+                msg="Failed fetching URL: {}".format(url),
+                status_code=status_code,
+                error=err,
+                response=resp_json
+            )
         status = {"error": err, "code": status_code}
         return resp_json, status
