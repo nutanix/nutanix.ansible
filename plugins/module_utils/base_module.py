@@ -2,8 +2,7 @@
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
 from __future__ import absolute_import, division, print_function
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.basic import env_fallback
+from ansible.module_utils.basic import AnsibleModule, env_fallback
 
 __metaclass__ = type
 
