@@ -7,13 +7,13 @@ __metaclass__ = type
 import base64
 import os
 from copy import deepcopy
+
 from .clusters import Cluster
 from .groups import Groups
 from .images import Image
 from .prism import Prism
 from .projects import Project
 from .subnets import Subnet
-
 
 
 class VM(Prism):
