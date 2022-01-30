@@ -3,10 +3,8 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 from plugins.module_utils.prism.vms import VM
-from plugins.module_utils.prism.images import Image
 
 import json
-from ansible.module_utils.basic import AnsibleModule
 
 
 class Module:

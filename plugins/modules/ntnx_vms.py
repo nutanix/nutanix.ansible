@@ -287,11 +287,10 @@ RETURN = r"""
 # TODO
 """
 
-from ..module_utils.base_module import BaseModule
-from ..module_utils.prism.vms import VM
-from ..module_utils.prism.tasks import Task
-from ..module_utils.utils import remove_param_with_none_value
-import re
+from ..module_utils.base_module import BaseModule # noqa: E402
+from ..module_utils.prism.tasks import Task # noqa: E402
+from ..module_utils.prism.vms import VM # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value # noqa: E402
 
 
 def get_module_spec():
