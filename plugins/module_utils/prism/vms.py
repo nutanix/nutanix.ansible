@@ -1,7 +1,8 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
-
 from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
 
 from copy import deepcopy
 
@@ -19,7 +20,7 @@ from .images import Image
 class VM(Prism):
     def __init__(self, module):
         resource_type = "/vms"
-        super().__init__(module, resource_type=resource_type)
+        super(VM, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -41,7 +42,7 @@ class VM(Prism):
         for ansible_param, ansible_value in self.module.params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
             if build_spec_method and ansible_value:
-                _, error = build_spec_method(spec, ansible_value)
+                tmp, error = build_spec_method(spec, ansible_value)
                 if error:
                     return None, error
         return spec, None
@@ -113,7 +114,7 @@ class VM(Prism):
             name = param["name"]
             uuid = project.get_uuid(name)
             if not uuid:
-                error = "Failed to get UUID for project name: {}".format(name)
+                error = "Failed to get UUID for project name: {0}".format(name)
                 return None, error
 
         elif "uuid" in param:
@@ -130,7 +131,7 @@ class VM(Prism):
             name = param["name"]
             uuid = cluster.get_uuid(name)
             if not uuid:
-                error = "Failed to get UUID for cluster name: {}".format(name)
+                error = "Failed to get UUID for cluster name: {0}".format(name)
                 return None, error
 
         elif "uuid" in param:
@@ -165,7 +166,7 @@ class VM(Prism):
                 name = network["subnet"]["name"]
                 uuid = subnet.get_uuid(name)
                 if not uuid:
-                    error = "Failed to get UUID for subnet name: {}".format(name)
+                    error = "Failed to get UUID for subnet name: {0}".format(name)
                     return None, error
 
             elif network.get("subnet", {}).get("uuid"):
@@ -220,11 +221,13 @@ class VM(Prism):
                         name = vdisk["storage_container"]["name"]
                         uuid = groups.get_uuid(
                             entity_type="storage_container",
-                            filter=f"container_name=={name}",
+                            filter="container_name=={0}".format(name),
                         )
                         if not uuid:
-                            error = "Failed to get UUID for storgae container: {}".format(
-                                name
+                            error = (
+                                "Failed to get UUID for storgae container: {0}".format(
+                                    name
+                                )
                             )
                             return None, error
 
@@ -239,7 +242,7 @@ class VM(Prism):
                         name = vdisk["clone_image"]["name"]
                         uuid = image.get_uuid(name)
                         if not uuid:
-                            error = "Failed to get UUID for image: {}".format(name)
+                            error = "Failed to get UUID for image: {0}".format(name)
                             return None, error
 
                     elif "uuid" in vdisk["clone_image"]:
@@ -281,7 +284,7 @@ class VM(Prism):
         fpath = param["script_path"]
 
         if not os.path.exists(fpath):
-            error = "File not found: {}".format(fpath)
+            error = "File not found: {0}".format(fpath)
             return None, error
 
         with open(fpath, "rb") as f:

@@ -9,7 +9,11 @@ import json
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils._text import to_text
 from base64 import b64encode
-from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+
+try:
+    from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+except ImportError:
+    from urlparse import urlparse  # python2
 
 
 class Entity(object):
@@ -35,7 +39,7 @@ class Entity(object):
     def read(self, uuid=None, endpoint=None, query=None, timeout=30):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
-            url = url + "/{}".format(endpoint)
+            url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
         return self._fetch_url(url, method="GET", timeout=timeout)
@@ -63,8 +67,8 @@ class Entity(object):
         return self._fetch_url(url, method="POST", data=data, timeout=timeout)
 
     def get_uuid(self, name):
-        data = {"filter": f"name=={name}", "length": 1}
-        resp, _ = self.list(data)
+        data = {"filter": "name=={0}".format(name), "length": 1}
+        resp, tmp = self.list(data)
         if resp and resp.get("entities"):
             return resp["entities"][0]["metadata"]["uuid"]
         return None
@@ -74,11 +78,11 @@ class Entity(object):
         url = "{proto}://{host}".format(proto=scheme, host=host)
         port = module.params.get("nutanix_port")
         if port:
-            url += ":{port}".format(port=port)
+            url += ":{0}".format(port)
         if resource_type.startswith("/"):
             url += resource_type
         else:
-            url += "/{resource_type}".format(resource_type=resource_type)
+            url += "/{0}".format(resource_type)
         return url
 
     def _build_headers(self, module, additional_headers):
@@ -88,8 +92,11 @@ class Entity(object):
         usr = module.params.get("nutanix_username")
         pas = module.params.get("nutanix_password")
         if usr and pas:
-            cred = f"{usr}:{pas}".format(usr=usr, pas=pas)
-            encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
+            cred = "{0}:{1}".format(usr, pas)
+            try:
+                encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
+            except BaseException:
+                encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
             auth_header = "Basic " + encoded_cred
             headers.update({"Authorization": auth_header})
         return headers
@@ -126,7 +133,7 @@ class Entity(object):
         else:
             err = info.get("msg", "Status code != 2xx")
             self.module.fail_json(
-                msg="Failed fetching URL: {}".format(url),
+                msg="Failed fetching URL: {0}".format(url),
                 status_code=status_code,
                 error=err,
                 response=resp_json,
