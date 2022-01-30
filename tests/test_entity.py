@@ -7,7 +7,6 @@ import json
 from plugins.module_utils.prism.vms import VM
 
 
-
 class Module:
     def __init__(self):
         self.params = {

@@ -6,9 +6,9 @@ __metaclass__ = type
 
 import json
 from base64 import b64encode
+
 from ansible.module_utils._text import to_text
 from ansible.module_utils.urls import fetch_url
-
 
 try:
     from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse

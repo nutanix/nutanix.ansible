@@ -4,17 +4,16 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-from copy import deepcopy
-
 import base64
 import os
-
+from copy import deepcopy
 from .clusters import Cluster
+from .groups import Groups
+from .images import Image
 from .prism import Prism
 from .projects import Project
 from .subnets import Subnet
-from .groups import Groups
-from .images import Image
+
 
 
 class VM(Prism):
