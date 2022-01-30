@@ -178,6 +178,7 @@ class VM(Prism):
         payload["spec"]["resources"]["nic_list"] = nics
         return payload, None
 
+    # flake8: noqa: C901
     def _build_spec_disks(self, payload, vdisks):
         disks = []
         scsi_index = sata_index = pci_index = ide_index = 0
