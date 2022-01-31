@@ -113,7 +113,7 @@ class VM(Prism):
             name = param["name"]
             uuid = project.get_uuid(name)
             if not uuid:
-                error = "Failed to get UUID for project name: {}".format(name)
+                error = "Project {} not found.".format(name)
                 return None, error
 
         elif "uuid" in param:
@@ -130,7 +130,7 @@ class VM(Prism):
             name = param["name"]
             uuid = cluster.get_uuid(name)
             if not uuid:
-                error = "Failed to get UUID for cluster name: {}".format(name)
+                error = "Cluster {} not found.".format(name)
                 return None, error
 
         elif "uuid" in param:
@@ -165,7 +165,7 @@ class VM(Prism):
                 name = network["subnet"]["name"]
                 uuid = subnet.get_uuid(name)
                 if not uuid:
-                    error = "Failed to get UUID for subnet name: {}".format(name)
+                    error = "Subnet {} not found.".format(name)
                     return None, error
 
             elif network.get("subnet", {}).get("uuid"):
@@ -223,7 +223,7 @@ class VM(Prism):
                             filter=f"container_name=={name}",
                         )
                         if not uuid:
-                            error = "Failed to get UUID for storgae container: {}".format(
+                            error = "Storage container {} not found.".format(
                                 name
                             )
                             return None, error
@@ -239,7 +239,7 @@ class VM(Prism):
                         name = vdisk["clone_image"]["name"]
                         uuid = image.get_uuid(name)
                         if not uuid:
-                            error = "Failed to get UUID for image: {}".format(name)
+                            error = "Image {} not found.".format(name)
                             return None, error
 
                     elif "uuid" in vdisk["clone_image"]:
