@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2021 [Balu George, Prem Karat]
@@ -66,12 +65,12 @@ DOCUMENTATION = r"""
     requirements: "null"
 """
 
-import json
-import tempfile
-from ansible.errors import AnsibleError
-from ansible.plugins.inventory import BaseInventoryPlugin
+import json  # noqa: E402
+import tempfile  # noqa: E402
 
-from ..module_utils.prism import vms
+from ansible.plugins.inventory import BaseInventoryPlugin  # noqa: E402
+
+from ..module_utils.prism import vms  # noqa: E402
 
 
 class Mock_Module:

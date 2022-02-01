@@ -1,25 +1,25 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
-
 from __future__ import absolute_import, division, print_function
 
-from copy import deepcopy
+__metaclass__ = type
 
 import base64
 import os
+from copy import deepcopy
 
 from .clusters import Cluster
+from .groups import Groups
+from .images import Image
 from .prism import Prism
 from .projects import Project
 from .subnets import Subnet
-from .groups import Groups
-from .images import Image
 
 
 class VM(Prism):
     def __init__(self, module):
         resource_type = "/vms"
-        super().__init__(module, resource_type=resource_type)
+        super(VM, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -41,7 +41,7 @@ class VM(Prism):
         for ansible_param, ansible_value in self.module.params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
             if build_spec_method and ansible_value:
-                _, error = build_spec_method(spec, ansible_value)
+                spec, error = build_spec_method(spec, ansible_value)
                 if error:
                     return None, error
         return spec, None
@@ -113,7 +113,8 @@ class VM(Prism):
             name = param["name"]
             uuid = project.get_uuid(name)
             if not uuid:
-                error = "Project {} not found.".format(name)
+
+                error = "Project {0} not found.".format(name)
                 return None, error
 
         elif "uuid" in param:
@@ -130,7 +131,8 @@ class VM(Prism):
             name = param["name"]
             uuid = cluster.get_uuid(name)
             if not uuid:
-                error = "Cluster {} not found.".format(name)
+
+                error = "Cluster {0} not found.".format(name)
                 return None, error
 
         elif "uuid" in param:
@@ -165,7 +167,7 @@ class VM(Prism):
                 name = network["subnet"]["name"]
                 uuid = subnet.get_uuid(name)
                 if not uuid:
-                    error = "Subnet {} not found.".format(name)
+                    error = "Subnet {0} not found.".format(name)
                     return None, error
 
             elif network.get("subnet", {}).get("uuid"):
@@ -180,30 +182,24 @@ class VM(Prism):
 
     def _build_spec_disks(self, payload, vdisks):
         disks = []
-        scsi_index = sata_index = pci_index = ide_index = 0
+        device_indexes = {}
 
         for vdisk in vdisks:
             disk = self._get_default_disk_spec()
 
-            if "type" in vdisk:
+            if vdisk.get("type"):
                 disk["device_properties"]["device_type"] = vdisk["type"]
 
-            if "bus" in vdisk:
-                if vdisk["bus"] == "SCSI":
-                    device_index = scsi_index
-                    scsi_index += 1
-                elif vdisk["bus"] == "SATA":
-                    device_index = sata_index
-                    sata_index += 1
-                elif vdisk["bus"] == "PCI":
-                    device_index = pci_index
-                    pci_index += 1
-                elif vdisk["bus"] == "IDE":
-                    device_index = ide_index
-                    ide_index += 1
+            if vdisk.get("bus"):
+                if device_indexes.get(vdisk["bus"]):
+                    device_indexes[vdisk["bus"]] += 1
+                else:
+                    device_indexes[vdisk["bus"]] = 0
 
                 disk["device_properties"]["disk_address"]["adapter_type"] = vdisk["bus"]
-                disk["device_properties"]["disk_address"]["device_index"] = device_index
+                disk["device_properties"]["disk_address"][
+                    "device_index"
+                ] = device_indexes[vdisk["bus"]]
 
             if vdisk.get("empty_cdrom"):
                 disk.pop("disk_size_bytes")
@@ -220,12 +216,10 @@ class VM(Prism):
                         name = vdisk["storage_container"]["name"]
                         uuid = groups.get_uuid(
                             entity_type="storage_container",
-                            filter=f"container_name=={name}",
+                            filter="container_name=={0}".format(name),
                         )
                         if not uuid:
-                            error = "Storage container {} not found.".format(
-                                name
-                            )
+                            error = "Storage container {0} not found.".format(name)
                             return None, error
 
                     elif "uuid" in vdisk["storage_container"]:
@@ -239,7 +233,7 @@ class VM(Prism):
                         name = vdisk["clone_image"]["name"]
                         uuid = image.get_uuid(name)
                         if not uuid:
-                            error = "Image {} not found.".format(name)
+                            error = "Image {0} not found.".format(name)
                             return None, error
 
                     elif "uuid" in vdisk["clone_image"]:
@@ -281,7 +275,7 @@ class VM(Prism):
         fpath = param["script_path"]
 
         if not os.path.exists(fpath):
-            error = "File not found: {}".format(fpath)
+            error = "File not found: {0}".format(fpath)
             return None, error
 
         with open(fpath, "rb") as f:

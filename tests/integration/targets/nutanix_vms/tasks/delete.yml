@@ -1,36 +1,40 @@
 ---
-- name: create VM with Minimum Requirment
-  nutanix_vms:
-    state: present
-    name: "MinVm"
-    auth:
-      credentials: "{{credentials}}"
-      url: "{{config.ip_address}}:{{config.port}}"
-    cluster:
-      cluster_uuid: "{{cluster.uuid}}"
+- name: VM with minimum requiremnts
+  ntnx_vms:
+      state: present
+      name: MinReqVM
+      nutanix_host: "{{ IP }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      cluster:
+        name: "{{ ClusterName }}"
   register: result
-  ignore_errors: True
-
-- name: assert when status not complete
+  ignore_errors: true
+    
+- name: Creation Status
   assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'SUCCEEDED'
-    fail_msg: "Unable to delete Vm"
-    success_msg: "VM   Created successfully"
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: ' Unable to create VM with minimum requiremnts '
+      success_msg: ' VM with minimum requiremnts created successfully '
+      
 - name: delete vm
-  nutanix_vms:
-    uuid: '{{ result["response"]["metadata"]["uuid"] }}'
+  ntnx_vms:
+    vm_uuid: '{{ result["response"]["metadata"]["uuid"] }}'
     state: absent
-    auth:
-      credentials: "{{credentials}}"
-      url: "{{config.ip_address}}:{{config.port}}"
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
   register: result
+
 
 - name: assert when status not complete
   assert:
     that:
       - result.response is defined
-      - result.response.status.state == 'SUCCEEDED'
+      - result.response.status == 'SUCCEEDED'
     fail_msg: "Unable to delete Vm"
     success_msg: "VM   Deleted successfully"
