@@ -1,7 +1,7 @@
   
-  - name: Add Script to attached file test.yml
+  - name: Create Cloud init Script file
     copy:
-      dest: "test.yml"
+      dest: "cloud_init.yml"
       content: |
          #cloud-config
          chpasswd:
@@ -43,7 +43,7 @@
       memory_gb: 1
       guest_customization:
         type: "cloud_init"
-        script_path: "./test.yml"
+        script_path: "./cloud_init.yml"
         is_overridable: True
     register: result
     
@@ -58,7 +58,7 @@
     
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-
+    when: result.response.status.state == 'COMPLETE'
     
     
   #########################################################################################
@@ -83,9 +83,10 @@
           bus: "SCSI"
       guest_customization:
         type: "cloud_init"
-        script_path: "./test.yml"
+        script_path: "./cloud_init.yml"
         is_overridable: True
     register: result
+    ignore_errors: True
   - name: Creation Status
     assert:
       that:
@@ -97,7 +98,8 @@
 
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'  
-      
+    when: result.response.status.state == 'COMPLETE'
+
   #################################################################################
   
   
@@ -131,7 +133,8 @@
       
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    
+    when: result.response.status.state == 'COMPLETE'
+
   ########################################################################################  
   
   - name: VM with Cluster, different Disks, Memory size
@@ -165,6 +168,8 @@
 
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    when: result.response.status.state == 'COMPLETE'
+
     
     
   #####################################################################################
@@ -199,7 +204,8 @@
       
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-      
+    when: result.response.status.state == 'COMPLETE'
+
 
   ####################################################################################
   
@@ -252,6 +258,7 @@
       
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    when: result.response.status.state == 'COMPLETE'
 
   ##################################################################################################
   
@@ -285,6 +292,8 @@
       
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    when: result.response.status.state == 'COMPLETE'
+
 
       
   ###################################################################################################
@@ -313,7 +322,7 @@
       
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-
+    when: result.response.status.state == 'COMPLETE'
       
   ##################################################################################################
   
@@ -355,6 +364,7 @@
       
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    when: result.response.status.state == 'COMPLETE'
 
   #################################################################################################    
   
@@ -411,6 +421,7 @@
       
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    when: result.response.status.state == 'COMPLETE'
 
   ######################################################################################
    
@@ -467,6 +478,7 @@
       
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    when: result.response.status.state == 'COMPLETE'
 
       
   #########################################################################################
