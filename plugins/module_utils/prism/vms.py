@@ -114,7 +114,7 @@ class VM(Prism):
             uuid = project.get_uuid(name)
             if not uuid:
 
-                error = "Project {} not found.".format(name)
+                error = "Project {0} not found.".format(name)
                 return None, error
 
         elif "uuid" in param:
@@ -132,7 +132,7 @@ class VM(Prism):
             uuid = cluster.get_uuid(name)
             if not uuid:
 
-                error = "Cluster {} not found.".format(name)
+                error = "Cluster {0} not found.".format(name)
                 return None, error
 
         elif "uuid" in param:
@@ -167,7 +167,7 @@ class VM(Prism):
                 name = network["subnet"]["name"]
                 uuid = subnet.get_uuid(name)
                 if not uuid:
-                    error = "Subnet {} not found.".format(name)
+                    error = "Subnet {0} not found.".format(name)
                     return None, error
 
             elif network.get("subnet", {}).get("uuid"):
@@ -180,7 +180,6 @@ class VM(Prism):
         payload["spec"]["resources"]["nic_list"] = nics
         return payload, None
 
-    # flake8: noqa: C901
     def _build_spec_disks(self, payload, vdisks):
         disks = []
         scsi_index = sata_index = pci_index = ide_index = 0
@@ -226,9 +225,7 @@ class VM(Prism):
                             filter="container_name=={0}".format(name),
                         )
                         if not uuid:
-                            error = "Storage container {} not found.".format(
-                                name
-                            )
+                            error = "Storage container {0} not found.".format(name)
                             return None, error
 
                     elif "uuid" in vdisk["storage_container"]:
@@ -242,7 +239,7 @@ class VM(Prism):
                         name = vdisk["clone_image"]["name"]
                         uuid = image.get_uuid(name)
                         if not uuid:
-                            error = "Image {} not found.".format(name)
+                            error = "Image {0} not found.".format(name)
                             return None, error
 
                     elif "uuid" in vdisk["clone_image"]:
