@@ -197,7 +197,9 @@ class VM(Prism):
                     device_indexes[vdisk["bus"]] = 0
 
                 disk["device_properties"]["disk_address"]["adapter_type"] = vdisk["bus"]
-                disk["device_properties"]["disk_address"]["device_index"] = device_indexes[vdisk["bus"]]
+                disk["device_properties"]["disk_address"][
+                    "device_index"
+                ] = device_indexes[vdisk["bus"]]
 
             if vdisk.get("empty_cdrom"):
                 disk.pop("disk_size_bytes")
