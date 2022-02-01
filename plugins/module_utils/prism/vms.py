@@ -182,30 +182,22 @@ class VM(Prism):
 
     def _build_spec_disks(self, payload, vdisks):
         disks = []
-        scsi_index = sata_index = pci_index = ide_index = 0
+        device_indexes = {}
 
         for vdisk in vdisks:
             disk = self._get_default_disk_spec()
 
-            if "type" in vdisk:
+            if vdisk.get("type"):
                 disk["device_properties"]["device_type"] = vdisk["type"]
 
-            if "bus" in vdisk:
-                if vdisk["bus"] == "SCSI":
-                    device_index = scsi_index
-                    scsi_index += 1
-                elif vdisk["bus"] == "SATA":
-                    device_index = sata_index
-                    sata_index += 1
-                elif vdisk["bus"] == "PCI":
-                    device_index = pci_index
-                    pci_index += 1
-                elif vdisk["bus"] == "IDE":
-                    device_index = ide_index
-                    ide_index += 1
+            if vdisk.get("bus"):
+                if device_indexes.get(vdisk["bus"]):
+                    device_indexes[vdisk["bus"]] += 1
+                else:
+                    device_indexes[vdisk["bus"]] = 0
 
                 disk["device_properties"]["disk_address"]["adapter_type"] = vdisk["bus"]
-                disk["device_properties"]["disk_address"]["device_index"] = device_index
+                disk["device_properties"]["disk_address"]["device_index"] = device_indexes[vdisk["bus"]]
 
             if vdisk.get("empty_cdrom"):
                 disk.pop("disk_size_bytes")
