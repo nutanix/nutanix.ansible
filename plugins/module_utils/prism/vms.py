@@ -41,7 +41,7 @@ class VM(Prism):
         for ansible_param, ansible_value in self.module.params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
             if build_spec_method and ansible_value:
-                tmp, error = build_spec_method(spec, ansible_value)
+                spec, error = build_spec_method(spec, ansible_value)
                 if error:
                     return None, error
         return spec, None

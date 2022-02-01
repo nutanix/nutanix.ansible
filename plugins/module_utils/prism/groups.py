@@ -14,7 +14,7 @@ class Groups(Prism):
 
     def get_uuid(self, entity_type, filter):
         data = {"entity_type": entity_type, "filter_criteria": filter}
-        resp, tmp = self.list(data, use_base_url=True)
+        resp, status = self.list(data, use_base_url=True)
         if resp.get("group_results"):
             return resp["group_results"][0]["entity_results"][0]["entity_id"]
         return None
