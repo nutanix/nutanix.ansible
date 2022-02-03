@@ -191,7 +191,7 @@ class VM(Prism):
                 disk["device_properties"]["device_type"] = vdisk["type"]
 
             if vdisk.get("bus"):
-                if device_indexes.get(vdisk["bus"]):
+                if vdisk["bus"] in device_indexes:
                     device_indexes[vdisk["bus"]] += 1
                 else:
                     device_indexes[vdisk["bus"]] = 0

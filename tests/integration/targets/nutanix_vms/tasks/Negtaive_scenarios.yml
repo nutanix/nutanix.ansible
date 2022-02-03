@@ -1,0 +1,172 @@
+  - debug:
+      msg: "Started Negative Creation Cases"
+  - name: Unknown Cluster
+    ntnx_vms:
+      state: present
+      name: Unknown Cluster
+      timezone: "UTC"
+      nutanix_host: "{{ IP }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      cluster:
+        uuid: "auto_cluster_1aa888141361"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          clone_image:
+            name:  "{{ CentOS }}"
+          bus: "SCSI"
+    register: result
+    ignore_errors: True
+
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.state == 'ERROR'
+        - result.status_code==422
+      success_msg: 'Sucess: Returned Error as Expected '
+      fail_msg: 'Fail Vm Created successfully with Unknown cluster'
+  ################################################################################ 
+
+  - name: Unknown Network
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ IP }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: Unknown Network
+      desc: "Unknown network"
+      categories:
+        AppType:
+          - "Apache_Spark"
+      cluster:
+        name: "{{ ClusterName }}"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "vlan.8000"
+    register: result
+    ignore_errors: True
+
+ 
+
+       
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+        - result.msg=="Failed generating VM Spec"
+      success_msg: 'Sucess: Returned Error as Expected '
+      fail_msg: 'Fail Vm Created successfully with unknown network name '
+
+  ###################################################################################        
+    
+  - name: Unknow Image
+    ntnx_vms:
+      state: present
+      name: unknown image_vm
+      timezone: "UTC"
+      nutanix_host: "{{ IP }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      cluster:
+        name: "{{ ClusterName }}"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          clone_image:
+            name: "centos-7-cloudinit"
+          bus: "SCSI"
+    register: result
+    ignore_errors: True
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+        - result.msg=="Failed generating VM Spec"
+      success_msg: 'Sucess: Returned Error as Expected '
+      fail_msg: 'Fail Vm Created successfully with not existed image  '
+
+  #########################################################################################
+    
+  - name: Wrong disk size value
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ IP }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: "Wrong disk size value"
+      timezone: "UTC"
+      cluster:
+        name: "{{ ClusterName }}"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "{{ NetworkName }}"
+      disks:
+        - type: "DISK"
+          size_gb: 10g
+          bus: "PCI"
+    register: result
+    ignore_errors: True
+
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed is defined
+      success_msg: 'Sucess: Returned Error as Expected '
+      fail_msg: 'Fail Vm created successfully with invalid argument for size_gb '
+    
+  ############################################################################################# 
+  - name: Image size less than actual
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ IP }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: "image size less than actual"
+      categories:
+        AppType:
+          - "Apache_Spark"
+      cluster:
+        name: "{{ ClusterName }}"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "{{ NetworkName }}"
+      disks:
+        - type: "DISK"
+          size_gb: 2 #must be 20
+          bus: "SATA"
+          clone_image:
+            name: "{{ Ubuntu }}"
+      vcpus: 1
+      cores_per_vcpu: 1
+      memory_gb: 1
+      guest_customization:
+        type: "cloud_init"
+        script_path: "cloud_init.yml"
+        is_overridable: True
+    register: result
+    ignore_errors: True
+    
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+        - result.status_code==400
+      success_msg: 'Sucess: Returned Error as Expected '
+      fail_msg: 'Fail: Vm created successfully with image size is less than actual '
+    
+    #####################################################################################################
+    
