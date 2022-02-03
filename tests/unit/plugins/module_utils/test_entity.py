@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 import json
 from base64 import b64encode
+
 from ansible.module_utils.six.moves.urllib.parse import urlparse
 from ansible_collections.nutanix.ncp.plugins.module_utils.entity import Entity
 from ansible_collections.nutanix.ncp.tests.unit.plugins.modules.utils import (
