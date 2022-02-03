@@ -290,7 +290,7 @@ RETURN = r"""
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value, validate_spec  # noqa: E402
 
 
 def get_module_spec():
@@ -352,6 +352,9 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=disk_spec,
+            required_by={
+                "clone_image": "size_gb",
+            },
             mutually_exclusive=[
                 ("storage_container", "clone_image", "empty_cdrom"),
                 ("size_gb", "empty_cdrom"),
@@ -438,6 +441,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
+
     result = {
         "changed": False,
         "error": None,
@@ -445,6 +449,9 @@ def run_module():
         "vm_uuid": None,
         "task_uuid": None,
     }
+    error, error_msg = validate_spec(module.params)
+    if error:
+        module.fail_json(msg=error_msg, **result)
     state = module.params["state"]
     if state == "present":
         create_vm(module, result)
