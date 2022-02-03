@@ -1,10 +1,12 @@
 from __future__ import absolute_import, division, print_function
 
-from ansible.module_utils import basic
+import json
+from base64 import b64encode
 from ansible.module_utils.six.moves.urllib.parse import urlparse
 from ansible_collections.nutanix.ncp.plugins.module_utils.entity import Entity
 from ansible_collections.nutanix.ncp.tests.unit.plugins.modules.utils import (
     AnsibleExitJson,
+    AnsibleFailJson,
     ModuleTestCase,
 )
 
@@ -16,25 +18,26 @@ except Exception:
     from mock import MagicMock
 
 
-def send_request(module, req_verb, req_url, req_data, username, password, timeout=30):
+class Module:
+    def __init__(self):
+        self.params = {
+            "nutanix_host": "99.99.99.99",
+            "nutanix_port": "9999",
+            "nutanix_username": "username",
+            "nutanix_password": "password",
+        }
+        self.tmpdir = "/tmp"
+
+    def jsonify(self, data):
+        return json.dumps(data)
+
+
+def _fetch_url(url, method, data=None, **kwargs):
     """Mock send_request"""
-    kwargs = locals()
-    status = {"state": "succeeded"}
-    spec_version = None
-    if req_verb == "get":
-        status = "succeeded"
-        spec_version = "1"
     response = {
-        "status": status,
+        "status": {"state": "succeeded"},
         "status_code": 200,
-        "request": {
-            "req_verb": req_verb,
-            "req_url": req_url,
-            "req_data": req_data,
-            "username": username,
-            "password": password,
-        },
-        "metadata": {"spec_version": spec_version},
+        "request": {"method": method, "url": url, "data": data},
     }
 
     return response
@@ -46,197 +49,107 @@ def exit_json(*args, **kwargs):
     raise AnsibleExitJson(kwargs)
 
 
+def fail_json(*args, **kwargs):
+    kwargs["failed"] = True
+    raise AnsibleFailJson(kwargs)
+
+
 class TestEntity(ModuleTestCase):
     def setUp(self):
-        module = object()
-        Entity.__init__ = MagicMock(side_effect=lambda *args: None)
-        self.builder = Entity(module)
-        self.builder.username = "username"
-        self.builder.password = "password"
-        self.builder.credentials = {}
-        self.builder.ip_address = "99.99.99.99"
-        self.builder.port = "9999"
-        self.builder.netloc = "test.com"
-        self.builder.url = "https://test.com/test"
-        self.builder.operations = ""
-        self.builder.wait = True
-        self.builder.module_name = "test"
-        self.builder.module = module
-        self.builder.send_request = MagicMock(side_effect=send_request)
-        basic.AnsibleModule.exit_json = MagicMock(side_effect=exit_json)
+        self.module = Module()
+        Entity._fetch_url = MagicMock(side_effect=_fetch_url)
+        self.entity = Entity(self.module, resource_type="/test")
+        self.module.exit_json = MagicMock(side_effect=exit_json)
+        self.module.fail_json = MagicMock(side_effect=fail_json)
 
     def test_create_action(self):
-        action = "present"
-
-        self.builder.data = {}
-        self.builder.credentials = {
-            "username": self.builder.username,
-            "password": self.builder.password,
-        }
-        req = {
-            "req_verb": "post",
-            "req_url": self.builder.url,
-            "req_data": self.builder.data,
-        }
-        req.update(self.builder.credentials)
-        self.builder.action = action
-        self.builder.build()
-        self.assertEqual(self.builder.result["response"]["request"], req)
-        self.assertEqual(self.builder.result["changed"], True)
+        data = {}
+        req = {"method": "POST", "url": "https://99.99.99.99:9999/test", "data": data}
+        result = self.entity.create(data)
+        self.assertEqual(result["request"], req)
 
     def test_negative_create_action(self):
-        action = "present"
+        data = {}
+        self.module.params = {}
+        entity = Entity(self.module, resource_type="")
 
-        self.builder.data = {}
-        self.builder.credentials = {"username": self.builder.username}
-        exception = None
-        try:
-            self.builder.action = action
-            self.builder.build()
-        except Exception as e:
-            exception = e
-        self.assertEqual(type(exception), KeyError)
-        self.assertEqual(self.builder.result["changed"], False)
+        req = {"method": "POST", "url": "https://None/", "data": data}
+        result = entity.create(data)
+        self.assertEqual(result["request"], req)
+        self.assertEqual(entity.headers.get("Authorization"), None)
 
     def test_update_action(self):
-        action = "present"
-
-        self.builder.data = {
-            "metadata": {"uuid": "a218f559-0ec0-46d8-a876-38f7d8950098"}
-        }
-        self.builder.credentials = {
-            "username": self.builder.username,
-            "password": self.builder.password,
-        }
-        req = {
-            "req_verb": "put",
-            "req_url": self.builder.url + "/" + self.builder.data["metadata"]["uuid"],
-            "req_data": self.builder.data,
-        }
-        req.update(self.builder.credentials)
-        self.builder.action = action
-        self.builder.build()
-        self.assertEqual(self.builder.result["response"]["request"], req)
-        self.assertEqual(self.builder.result["changed"], True)
+        data = {}
+        req = {"method": "PUT", "url": "https://99.99.99.99:9999/test", "data": data}
+        result = self.entity.update(data)
+        self.assertEqual(result["request"], req)
 
     def test_negative_update_action(self):
-        action = "present"
+        data = {}
+        self.module.params = {}
+        entity = Entity(self.module, resource_type="")
 
-        self.builder.data = {}
-        self.builder.credentials = {"username": self.builder.username}
-        exception = None
-        try:
-            self.builder.action = action
-            self.builder.build()
-        except Exception as e:
-            exception = e
-        self.assertEqual(type(exception), KeyError)
-        self.assertEqual(self.builder.result["changed"], False)
+        req = {"method": "PUT", "url": "https://None/", "data": data}
+        result = entity.update(data)
+        self.assertEqual(result["request"], req)
+        self.assertEqual(entity.headers.get("Authorization"), None)
 
     def test_list_action(self):
-        action = "list"
-
-        self.builder.data = {"kind": ""}
-        self.builder.credentials = {
-            "username": self.builder.username,
-            "password": self.builder.password,
-        }
+        data = {}
         req = {
-            "req_verb": "post",
-            "req_url": self.builder.url + "/list",
-            "req_data": self.builder.data,
+            "method": "POST",
+            "url": "https://99.99.99.99:9999/test/list",
+            "data": data,
         }
-        req.update(self.builder.credentials)
-        self.builder.action = action
-        self.builder.build()
-        self.assertEqual(self.builder.result["response"]["request"], req)
-        self.assertEqual(self.builder.result["changed"], False)
+        result = self.entity.list(data)
+        self.assertEqual(result["request"], req)
 
     def test_delete_action(self):
-        action = "absent"
-
-        self.builder.data = {
-            "metadata": {"uuid": "a218f559-0ec0-46d8-a876-38f7d8950098"}
-        }
-        self.builder.credentials = {
-            "username": self.builder.username,
-            "password": self.builder.password,
-        }
+        uuid = "test_uuid"
         req = {
-            "req_verb": "delete",
-            "req_url": self.builder.url + "/" + self.builder.data["metadata"]["uuid"],
-            "req_data": self.builder.data,
+            "method": "DELETE",
+            "url": "https://99.99.99.99:9999/test/{0}".format(uuid),
+            "data": None,
         }
-        req.update(self.builder.credentials)
-        self.builder.action = action
-        self.builder.build()
-        self.assertEqual(self.builder.result["response"]["request"], req)
-        self.assertEqual(self.builder.result["changed"], True)
+        result = self.entity.delete(uuid=uuid)
+        self.assertEqual(result["request"], req)
 
-    def test_negative_delete_action(self):
-        action = "delete"
-
-        self.builder.data = {}  # testing without uuid
-        self.builder.credentials = {
-            "username": self.builder.username,
-            "password": self.builder.password,
-        }
-        exception = None
-        try:
-            self.builder.action = action
-            self.builder.build()
-        except Exception as e:
-            exception = e
-        self.assertEqual(type(exception), KeyError)
-        self.assertEqual(self.builder.result["changed"], False)
-
-    def test_generate_url(self):
+    def test_build_url(self):
         module_name = "test"
-        operations = ["update", {"clone": "test"}]
-        ip = str(self.builder.ip_address)
-        port = str(self.builder.port)
-        netloc = self.builder.netloc or ip + ":" + port
-        actual = self.builder.generate_url_from_operations(
-            module_name, netloc, operations
-        )
+        actual = self.entity._build_url(self.module, "https", "/test")
         actual = urlparse(actual)
         path = "/" + module_name
-        for each in operations:
-            if isinstance(each, str):
-                path += "/" + each
-            elif isinstance(each, dict):
-                key = list(each.keys())[0]
-                val = each[key]
-                path += "/{0}/{1}".format(key, val)
         self.assertTrue("http" in actual.scheme)
-        self.assertEqual(netloc, actual.netloc)
         self.assertEqual(path, actual.path)
 
-    def test_negative_generate_url(self):
-        operations = ["update", {"clone": "test"}]
-        exception = None
+    def test_build_url_with_query(self):
+        query = {"some_id": "1234"}
+        url = "https://99.99.99.99:9999/test"
+        generated_url = self.entity._build_url_with_query(url, query)
+        url_with_query = "https://99.99.99.99:9999/test?some_id=1234"
+        self.assertEqual(url_with_query, generated_url)
+
+    def test_build_headers(self):
+        actual_headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+        usr = self.module.params.get("nutanix_username")
+        pas = self.module.params.get("nutanix_password")
+
+        cred = "{0}:{1}".format(usr, pas)
         try:
-            self.builder.generate_url_from_operations("", "", operations)
+            encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
+        except BaseException:
+            encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
+        auth_header = "Basic " + encoded_cred
 
-        except Exception as e:
-            exception = e
-        self.assertEqual(type(exception), ValueError)
+        actual_headers.update({"Authorization": auth_header})
+        additional_headers = {"some_header": "test"}
 
-    def test_validate_request(self):
-        response = self.builder.validate_request(
-            self.builder.module,
-            "a218f559-0ec0-46d8-a876-38f7d8950098",
-            self.builder.netloc,
-            1,
-        )
-        self.assertEqual(response.get("status"), "succeeded")
+        actual_headers.update(additional_headers)
 
-    def test_negative_validate_request(self):
-        exception = None
-        try:
-            self.builder.validate_request(
-                self.builder.module, "wrong_uuid", self.builder.netloc, 1
-            )
-        except Exception as e:
-            exception = e
-        self.assertEqual(type(exception), ValueError)
+        generated_headers = self.entity._build_headers(self.module, additional_headers)
+
+        self.assertEqual(actual_headers, generated_headers)
