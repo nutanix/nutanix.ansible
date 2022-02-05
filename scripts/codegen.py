@@ -1,4 +1,8 @@
-module_content = '''#!/usr/bin/python
+import os
+import sys
+
+
+ansible_module_content = '''#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2021, Prem Karat
@@ -9,10 +13,10 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_objects
-short_description: object module which suports object CRUD operations
+module: ntnx_MNAME
+short_description: MNAME module which suports INAME CRUD operations
 version_added: 1.0.0
-description: 'Create, Update, Delete, Power-on, Power-off Nutanix object''s'
+description: 'Create, Update, Delete MNAME'
 options:
   nutanix_host:
     description:
@@ -43,24 +47,31 @@ options:
     default: true
   state:
     description:
-      - Specify state of Virtual Machine
-      - If C(state) is set to C(present) the object is created.
+      - Specify state of INAME
+      - If C(state) is set to C(present) then INAME is created.
       - >-
-        If C(state) is set to C(absent) and the object exists in the cluster, object
-        with specified name is removed.
+        If C(state) is set to C(absent) and if the INAME exists, then
+        INAME is removed.
     choices:
       - present
       - absent
     type: str
     default: present
   wait:
-    description: This is the wait description.
+    description: Wait for INAME CRUD operation to complete.
     type: bool
     required: false
     default: True
-  
+  name:
+    description: INAME Name
+    required: False
+    type: str
+  INAME_uuid:
+    description: INAME UUID
+    type: str
+
   #TODO here should be additional arguments documentation
-  
+
 """
 
 EXAMPLES = r"""
@@ -73,64 +84,63 @@ RETURN = r"""
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.objects import Object  # noqa: E402
+from ..module_utils.prism.MNAME import CNAME  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
-
     module_args = dict(
-    #TODO here should be additional arguments
+    # TODO: Ansible module spec and spec validation
     )
 
     return module_args
 
 
-def create_object(module, result):
-    object = Object(module)
-    spec, error = object.get_spec()
+def create_INAME(module, result):
+    INAME = CNAME(module)
+    spec, error = INAME.get_spec()
     if error:
         result["error"] = error
-        module.fail_json(msg="Failed generating object Spec", **result)
+        module.fail_json(msg="Failed generating INAME spec", **result)
 
     if module.check_mode:
         result["response"] = spec
         return
 
-    resp, status = object.create(spec)
+    resp, status = INAME.create(spec)
     if status["error"]:
         result["error"] = status["error"]
         result["response"] = resp
-        module.fail_json(msg="Failed creating object", **result)
+        module.fail_json(msg="Failed creating INAME", **result)
 
-    object_uuid = resp["metadata"]["uuid"]
+    INAME_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
-    result["object_uuid"] = object_uuid
+    result["INAME_uuid"] = INAME_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = object.read(object_uuid)
+        resp, tmp = INAME.read(INAME_uuid)
         result["response"] = resp
 
 
-def delete_object(module, result):
-    object_uuid = module.params["object_uuid"]
-    if not object_uuid:
-        result["error"] = "Missing parameter object_uuid in playbook"
-        module.fail_json(msg="Failed deleting object", **result)
+def delete_INAME(module, result):
+    INAME_uuid = module.params["INAME_uuid"]
+    if not INAME_uuid:
+        result["error"] = "Missing parameter INAME_uuid in playbook"
+        module.fail_json(msg="Failed deleting INAME", **result)
 
-    object = Object(module)
-    resp, status = object.delete(object_uuid)
+    INAME = CNAME(module)
+    resp, status = INAME.delete(INAME_uuid)
     if status["error"]:
         result["error"] = status["error"]
         result["response"] = resp
-        module.fail_json(msg="Failed deleting object", **result)
+        module.fail_json(msg="Failed deleting INAME", **result)
 
     result["changed"] = True
     result["response"] = resp
-    result["object_uuid"] = object_uuid
+    result["INAME_uuid"] = INAME_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
@@ -145,7 +155,7 @@ def wait_for_task_completion(module, result):
     if status["error"]:
         result["error"] = status["error"]
         result["response"] = resp
-        module.fail_json(msg="Failed creating object", **result)
+        module.fail_json(msg="Failed creating INAME", **result)
 
 
 def run_module():
@@ -158,14 +168,14 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
-        "object_uuid": None,
+        "INAME_uuid": None,
         "task_uuid": None,
     }
     state = module.params["state"]
     if state == "present":
-        create_object(module, result)
+        create_INAME(module, result)
     elif state == "absent":
-        delete_object(module, result)
+        delete_INAME(module, result)
 
     module.exit_json(**result)
 
@@ -179,78 +189,96 @@ if __name__ == "__main__":
 
 '''
 
-object_content = """# This file is part of Ansible
+client_sdk_content = """# This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-import os
 from copy import deepcopy
 
 from .prism import Prism
 
 
-class Object(Prism):
+class CNAME(Prism):
     def __init__(self, module):
-        resource_type = "/objects"
-        super(Object, self).__init__(module, resource_type=resource_type)
+        resource_type = "/MNAME"
+        super(CNAME, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
-            #TODO here should be methods to build spec for each attribute {attribute: method }
+            # TODO. This is a Map of
+            # ansible attirbute and corresponding API spec generation method
+            # Example: method name should start with _build_spec_<method_name>
+            # name: _build_spec_name
         }
-
-    def get_spec(self):
-        spec = self._get_default_spec()
-        for ansible_param, ansible_value in self.module.params.items():
-            build_spec_method = self.build_spec_methods.get(ansible_param)
-            if build_spec_method and ansible_value:
-                spec, error = build_spec_method(spec, ansible_value)
-                if error:
-                    return None, error
-        return spec, None
 
     def _get_default_spec(self):
         return deepcopy(
             {
-                #TODO here should be default main spec
+                # TODO: Default API spec
             }
         )
 """
 
 
 def create_module(name):
-    with open("plugins/modules/ntnx_{0}s.py".format(name), "w") as f:
-        f.write(
-            module_content.replace("object", name.lower()).replace(
-                "Object", name.capitalize()
-            )
-        )
+    """
+    MNAME: Module name
+    CNAME: Class name
+    INAME: Function/Instance name
+    """
 
-    with open("plugins/module_utils/prism/{0}s.py".format(name), "w") as f:
-        f.write(
-            object_content.replace("object", name.lower()).replace(
-                "Object", name.capitalize()
+    mname = name.lower()
+    name = name[:-1]
+    cname = name.capitalize()
+    iname = name
+
+    success = True
+    module = "plugins/modules/ntnx_{0}.py".format(mname)
+    if os.path.exists(module):
+        print("Aborting: {} already exists".format(module))
+        success = False
+    else:
+        with open(module, "w") as f:
+            f.write(
+                ansible_module_content.replace("MNAME", mname)
+                .replace("CNAME", cname)
+                .replace("INAME", iname)
             )
+            print("Successfully generated code: {}".format(module))
+
+    sdk = "plugins/module_utils/prism/{0}.py".format(mname)
+    if os.path.exists(sdk):
+        print("Aborting: {} already exists".format(sdk))
+        success = False
+        return success
+
+    with open(sdk, "w") as f:
+        f.write(
+            client_sdk_content.replace("MNAME", mname)
+            .replace("CNAME", cname)
+            .replace("INAME", iname)
         )
+        print("Successfully generated code: {}".format(sdk))
+    return success
 
 
 def main():
-    import sys
-
     args = sys.argv[1:]
 
     if "--help" in args:
         print(
             """
         Description:  Script to create module template with base files and functionality
-        
+
         Usage: create_module.py <module_name>
-            module_name    Use for naming, by default "Object"
+            module_name    Use for naming, by default "objects".
+            module_name should end with 's'
         """
         )
     else:
-
-        create_module(args[0] if len(args) else "object")
+        if not create_module(args[0] if len(args) else "objects"):
+            sys.exit(1)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
