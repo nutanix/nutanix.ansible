@@ -105,6 +105,16 @@ class TestEntity(ModuleTestCase):
         result = self.entity.list(data)
         self.assertEqual(result["request"], req)
 
+    def test_negative_list_action(self):
+        data = {}
+        self.module.params = {}
+        entity = Entity(self.module, resource_type="")
+
+        req = {"method": "POST", "url": "https://None//list", "data": data}
+        result = entity.list(data)
+        self.assertEqual(result["request"], req)
+        self.assertEqual(entity.headers.get("Authorization"), None)
+
     def test_delete_action(self):
         uuid = "test_uuid"
         req = {
@@ -114,6 +124,16 @@ class TestEntity(ModuleTestCase):
         }
         result = self.entity.delete(uuid=uuid)
         self.assertEqual(result["request"], req)
+
+    def test_negative_delete_action(self):
+        data = None
+        self.module.params = {}
+        entity = Entity(self.module, resource_type="")
+
+        req = {"method": "DELETE", "url": "https://None/", "data": data}
+        result = entity.delete(data)
+        self.assertEqual(result["request"], req)
+        self.assertEqual(entity.headers.get("Authorization"), None)
 
     def test_build_url(self):
         module_name = "test"

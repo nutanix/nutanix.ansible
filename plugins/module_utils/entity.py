@@ -66,6 +66,16 @@ class Entity(object):
             url = url + "/{0}".format(endpoint)
         return self._fetch_url(url, method="POST", data=data, timeout=timeout)
 
+    def get_spec(self):
+        spec = self._get_default_spec()
+        for ansible_param, ansible_value in self.module.params.items():
+            build_spec_method = self.build_spec_methods.get(ansible_param)
+            if build_spec_method and ansible_value:
+                spec, error = build_spec_method(spec, ansible_value)
+                if error:
+                    return None, error
+        return spec, None
+
     def get_uuid(self, name):
         data = {"filter": "name=={0}".format(name), "length": 1}
         resp, status = self.list(data)
