@@ -66,7 +66,7 @@ options:
     description: subnet UUID
     type: str
 
-  # TODO here should be additional arguments documentation
+  #TODO here should be additional arguments documentation
 
 """
 
@@ -118,10 +118,10 @@ def get_module_spec():
             type="dict", required=True, options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         ipam=dict(
-            type="dict", options=ipam_spec,
+            type="dict", options=ipam_spec
         ),
 
-    ),
+    )
     external_subnet_spec = dict(
         vlan_id=dict(type="int", required=True),
         enable_nat=dict(type="bool", default=True),
@@ -129,18 +129,21 @@ def get_module_spec():
             type="dict", required=True, options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         ipam=dict(
-            type="dict", options=ipam_spec,
-        )),
+            type="dict", options=ipam_spec
+        ),
 
+    )
     overlay_subnet_spec = dict(
+
         vpc=dict(
             type="dict", required=True, options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         ipam=dict(
-            type="dict", options=ipam_spec,
+            type="dict", options=ipam_spec
         ),
 
     )
+
     module_args = dict(
 
         name=dict(type="str", required=False),
@@ -229,10 +232,10 @@ def wait_for_task_completion(module, result):
 def run_module():
     module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True,
                         mutually_exclusive=[
-        ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet")],
+                            ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet")],
 
 
-        required_one_of=[  # check
+                        required_one_of=[  # check
         ('vlan_subnet', 'external_subnet', 'subnet_uuid', 'overlay_subnet'),
     ],
     )
