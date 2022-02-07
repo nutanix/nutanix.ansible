@@ -7,14 +7,14 @@ __metaclass__ = type
 from .groups import Groups
 
 
-##### Helper functions #####
+# Helper functions
 
 
 def get_dvs_uuid(config, module):
     if "name" in config["virtual_switch"]:
         groups = Groups(module)
         name = config["virtual_switch"]["name"]
-        uuid = groups.get_uuid("distributed_virtual_switch", "name=={}".format(name))
+        uuid = groups.get_uuid("distributed_virtual_switch", "name=={0}".format(name))
         if not uuid:
             error = "Virtual Switch {0} not found.".format(name)
             return None, error

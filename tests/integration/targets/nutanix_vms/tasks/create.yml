@@ -186,11 +186,11 @@
         name: "{{ ClusterName }}"
       disks:
         - type: "CDROM"
-          size_gb: 10
           bus: "SATA"
+          empty_cdrom: True
         - type: "CDROM"
-          size_gb: 10
           bus: "IDE"
+          empty_cdrom: True
       cores_per_vcpu: 1
     register: result
     ignore_errors: True
@@ -234,8 +234,8 @@
           size_gb: 10
           bus: "SCSI"
         - type: "CDROM"
-          size_gb: 10
           bus: "IDE"
+          empty_cdrom: True
       boot_config: 
         boot_type: "LEGACY"
         boot_order:
@@ -452,10 +452,10 @@
           bus: PCI
         - type: CDROM
           bus: SATA
-          size_gb: 1
+          empty_cdrom: True
         - type: CDROM
           bus: IDE
-          size_gb: 1
+          empty_cdrom: True
       boot_config: 
         boot_type: UEFI
         boot_order:

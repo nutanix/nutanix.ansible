@@ -1,0 +1,58 @@
+  - name: VM with All Vlan subnet
+    ntnx_subnets:
+      state: present
+      name: Minsubnet
+      nutanix_host: "{{ IP }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False 
+      vlan_subnet:
+        cluster:
+          #uuid: "{{ ClusterUUID }}"
+          name: "{{ClusterName}}"
+        vlan_id: 120
+        virtual_switch:
+          name: vs0
+        ipam:
+          network_ip: "172.16.0.0"
+          network_prefix: "24"
+          gateway_ip: "172.16.0.1"
+          dhcp:
+            dns_servers:
+              - "8.8.4.4"
+              - "8.8.8.8"
+            domain_search:
+              - "calm.nutanix.com"
+              - "eng.nutanix.com"
+            domain_name: "calm.nutanix.com"
+            boot_file: "pxelinux.0"
+            tftp_server_name: "10.5.0.10"
+          #  dhcp_server_ip: 172.16.0.254       
+    register: result
+    ignore_errors: True
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: 'Unable to Create Subnet with vlan  '
+      success_msg: 'Subnet with vlan created successfully '
+    
+  - set_fact:
+      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    when: result.response.status.state == 'COMPLETE'
+
+
+  - name: Delete All the Creaeted Subnet
+    ntnx_subnets:
+        state: absent
+        name: Minsubnet
+        nutanix_host: "{{ IP }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False 
+        subnet_uuid: '{{ item }}'
+    register: result
+    loop: '{{ todelete }}'
+ 

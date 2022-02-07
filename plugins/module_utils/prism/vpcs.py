@@ -28,7 +28,7 @@ class Vpc(Prism):
         )
 
 
-##### Helper functions #####
+# Helper functions
 
 
 def get_vpc_uuid(config, module):

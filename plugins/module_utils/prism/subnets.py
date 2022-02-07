@@ -50,7 +50,6 @@ class Subnet(Prism):
         if error:
             return None, error
         payload["spec"]["resources"]["virtual_switch_uuid"] = dvs_uuid
-
         cluster_uuid, error = get_cluster_uuid(config, self.module)
         if error:
             return None, error

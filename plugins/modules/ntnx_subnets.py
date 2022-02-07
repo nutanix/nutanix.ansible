@@ -82,10 +82,70 @@ from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.subnets import Subnet  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from email.policy import default  # noqa: E402
 
 
 def get_module_spec():
+    mutually_exclusive = [("name", "uuid")]
+
+    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+    dhcp_spec = dict(
+        dns_servers=dict(type="list", elements="str"),
+        domain_name=dict(type="str"),
+        tftp_server_name=dict(type="str"),
+        boot_file=dict(type="str"),
+        dhcp_server_ip=dict(type="str"),
+        domain_search=dict(type="list", elements="str"),
+
+
+
+    )
+    ipam_spec = dict(
+        network_ip=dict(type="str"),
+        network_prefix=dict(type="int"),
+        gateway_ip=dict(type="str"),
+        ip_pools=dict(type="list", elements="str"),
+        dhcp=dict(
+            type="dict", options=dhcp_spec,
+        ),
+    )
+    vlan_subnet_spec = dict(
+        vlan_id=dict(type="int", required=True),
+        cluster=dict(
+            type="dict", required=True, options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        virtual_switch=dict(
+            type="dict", required=True, options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        ipam=dict(
+            type="dict", options=ipam_spec, mutually_exclusive=mutually_exclusive
+        ),
+
+    )
+    external_subnet_spec = dict(
+        vlan_id=dict(type="int", required=True),
+        enable_nat=dict(type="bool", default=True),
+        cluster=dict(
+            type="dict", required=True, options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        ipam=dict(
+            type="dict", options=ipam_spec, mutually_exclusive=mutually_exclusive
+        ),
+
+    )
     module_args = dict(
+
+        name=dict(type="str", required=False),
+        subnet_uuid=dict(type="str", required=False),
+        vlan_subnet=dict(
+            type="dict",
+            options=vlan_subnet_spec,
+        ),
+        external_subnet=dict(
+            type="dict",
+            options=external_subnet_spec,
+        ),
+
         # TODO: Ansible module spec and spec validation
     )
 
@@ -155,7 +215,15 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True,
+                        mutually_exclusive=[
+                            ("vlan_subnet", "external_subnet", "subnet_uuid")],
+
+
+                        required_one_of=[  # check
+        ('vlan_subnet', 'external_subnet', 'subnet_uuid'),
+    ],
+    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
