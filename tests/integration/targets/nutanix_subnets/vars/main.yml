@@ -11,6 +11,8 @@ Network_Prefix: 24
 Gateway_IP: 192.168.0.254
 Start_IP: 192.168.0.20
 End_IP: 192.168.0.30
+Start_IP2: 192.168.0.20
+End_IP2: 192.168.0.30
 DNS_Servers: ["8.8.8.8","8.8.4.4"]
 Domain_Search: ["calm.nutanix.com","eng.nutanix.com"]
 Domain_Name: "nutanix.com"
