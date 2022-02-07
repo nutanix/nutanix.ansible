@@ -4,11 +4,12 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+from copy import deepcopy
+
 from .clusters import get_cluster_uuid
 from .prism import Prism
 from .virtual_switches import get_dvs_uuid
 from .vpcs import get_vpc_uuid
-from copy import deepcopy
 
 class Subnet(Prism):
     def __init__(self, module):
