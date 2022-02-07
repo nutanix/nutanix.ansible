@@ -66,7 +66,7 @@ options:
     description: subnet UUID
     type: str
 
-  #TODO here should be additional arguments documentation
+  # TODO here should be additional arguments documentation
 
 """
 
@@ -118,10 +118,10 @@ def get_module_spec():
             type="dict", required=True, options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         ipam=dict(
-            type="dict", options=ipam_spec, mutually_exclusive=mutually_exclusive
+            type="dict", options=ipam_spec,
         ),
 
-    )
+    ),
     external_subnet_spec = dict(
         vlan_id=dict(type="int", required=True),
         enable_nat=dict(type="bool", default=True),
@@ -129,11 +129,20 @@ def get_module_spec():
             type="dict", required=True, options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         ipam=dict(
-            type="dict", options=ipam_spec, mutually_exclusive=mutually_exclusive
+            type="dict", options=ipam_spec,
+        )),
+    
+
+    overlay_subnet_spec=dict(
+        vpc=dict(
+            type="dict", required=True, options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        ipam=dict(
+            type="dict", options=ipam_spec,
         ),
 
     )
-    module_args = dict(
+    module_args=dict(
 
         name=dict(type="str", required=False),
         subnet_uuid=dict(type="str", required=False),
@@ -145,6 +154,10 @@ def get_module_spec():
             type="dict",
             options=external_subnet_spec,
         ),
+        overlay_subnet=dict(
+            type="dict",
+            options=overlay_subnet_spec,
+        ),
 
         # TODO: Ansible module spec and spec validation
     )
@@ -153,86 +166,86 @@ def get_module_spec():
 
 
 def create_subnet(module, result):
-    subnet = Subnet(module)
-    spec, error = subnet.get_spec()
+    subnet=Subnet(module)
+    spec, error=subnet.get_spec()
     if error:
-        result["error"] = error
+        result["error"]=error
         module.fail_json(msg="Failed generating subnet spec", **result)
 
     if module.check_mode:
-        result["response"] = spec
+        result["response"]=spec
         return
 
-    resp, status = subnet.create(spec)
+    resp, status=subnet.create(spec)
     if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
+        result["error"]=status["error"]
+        result["response"]=resp
         module.fail_json(msg="Failed creating subnet", **result)
 
-    subnet_uuid = resp["metadata"]["uuid"]
-    result["changed"] = True
-    result["response"] = resp
-    result["subnet_uuid"] = subnet_uuid
-    result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
+    subnet_uuid=resp["metadata"]["uuid"]
+    result["changed"]=True
+    result["response"]=resp
+    result["subnet_uuid"]=subnet_uuid
+    result["task_uuid"]=resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = subnet.read(subnet_uuid)
-        result["response"] = resp
+        resp, tmp=subnet.read(subnet_uuid)
+        result["response"]=resp
 
 
 def delete_subnet(module, result):
-    subnet_uuid = module.params["subnet_uuid"]
+    subnet_uuid=module.params["subnet_uuid"]
     if not subnet_uuid:
-        result["error"] = "Missing parameter subnet_uuid in playbook"
+        result["error"]="Missing parameter subnet_uuid in playbook"
         module.fail_json(msg="Failed deleting subnet", **result)
 
-    subnet = Subnet(module)
-    resp, status = subnet.delete(subnet_uuid)
+    subnet=Subnet(module)
+    resp, status=subnet.delete(subnet_uuid)
     if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
+        result["error"]=status["error"]
+        result["response"]=resp
         module.fail_json(msg="Failed deleting subnet", **result)
 
-    result["changed"] = True
-    result["response"] = resp
-    result["subnet_uuid"] = subnet_uuid
-    result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
+    result["changed"]=True
+    result["response"]=resp
+    result["subnet_uuid"]=subnet_uuid
+    result["task_uuid"]=resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
 
 
 def wait_for_task_completion(module, result):
-    task = Task(module)
-    task_uuid = result["task_uuid"]
-    resp, status = task.wait_for_completion(task_uuid)
-    result["response"] = resp
+    task=Task(module)
+    task_uuid=result["task_uuid"]
+    resp, status=task.wait_for_completion(task_uuid)
+    result["response"]=resp
     if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
+        result["error"]=status["error"]
+        result["response"]=resp
         module.fail_json(msg="Failed creating subnet", **result)
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True,
+    module=BaseModule(argument_spec=get_module_spec(), supports_check_mode=True,
                         mutually_exclusive=[
-                            ("vlan_subnet", "external_subnet", "subnet_uuid")],
+                            ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet")],
 
 
                         required_one_of=[  # check
-        ('vlan_subnet', 'external_subnet', 'subnet_uuid'),
+        ('vlan_subnet', 'external_subnet', 'subnet_uuid', 'overlay_subnet'),
     ],
     )
     remove_param_with_none_value(module.params)
-    result = {
+    result={
         "changed": False,
         "error": None,
         "response": None,
         "subnet_uuid": None,
         "task_uuid": None,
     }
-    state = module.params["state"]
+    state=module.params["state"]
     if state == "present":
         create_subnet(module, result)
     elif state == "absent":
