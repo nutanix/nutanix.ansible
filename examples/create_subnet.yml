@@ -174,7 +174,7 @@
             domain_search: "{{ Domain_Search }}"
             domain_name: "{{ Domain_Name }}"
             tftp_server_name: "{{ TFTP_Server_Name }}"
-            boot_file: "{{ Boot_File_Name }}"
+            boot_file: "{{ Boot_File }}"
         #dhcp_server_ip: "{{ DHCP_Server_IP }}"
     register: result
     ignore_errors: True
@@ -287,7 +287,7 @@
 #            domain_search: "{{ Domain_Search }}"
 #            domain_name: "{{ Domain_Name }}"
 #            tftp_server_name: "{{ TFTP_Server_Name }}"
-#            boot_file_name: "{{ Boot_File_Name }}"
+#            boot_file_name: "{{ Boot_File}}"
 #    register: result
 #    ignore_errors: True
 #    
