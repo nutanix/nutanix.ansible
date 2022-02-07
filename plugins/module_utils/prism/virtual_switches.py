@@ -6,7 +6,6 @@ __metaclass__ = type
 
 from .groups import Groups
 
-
 # Helper functions
 
 

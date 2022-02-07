@@ -11,6 +11,7 @@ from .prism import Prism
 from .virtual_switches import get_dvs_uuid
 from .vpcs import get_vpc_uuid
 
+
 class Subnet(Prism):
     def __init__(self, module):
         resource_type = "/subnets"
