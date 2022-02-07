@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_subnets
 short_description: subnets module which suports subnet CRUD operations
 version_added: 1.0.0
-description: 'Create, Update, Delete subnets'
+description: "Create, Update, Delete subnets"
 options:
   nutanix_host:
     description:
@@ -65,9 +65,285 @@ options:
   subnet_uuid:
     description: subnet UUID
     type: str
+  vlan_subnet:
+    description: TO_WRITE
+    type: dict
+    suboptions:
+      vlan_id:
+        description: TO_WRITE
+        type: int
+        required: True
+      cluster:
+        description:
+          - Name or UUID of the cluster on which the VM will be placed.
+        type: dict
+        required: True
+        suboptions:
+          name:
+            description:
+              - Cluster Name
+              - Mutually exclusive with C(uuid)
+            type: str
+          uuid:
+            description:
+              - Cluster UUID
+              - Mutually exclusive with C(name)
+            type: str
+      virtual_switch:
+        description:
+          - Name or UUID of the virtual_switch on which the VM will be placed.
+        type: dict
+        required: True
+        suboptions:
+          name:
+            description:
+              - virtual switch Name
+              - Mutually exclusive with (uuid)
+            type: str
+          uuid:
+            description:
+              - virtual switch UUID
+              - Mutually exclusive with (name)
+            type: str
+      ipam:
+        description:
+          -  TO_WRITE
+        type: dict
+        suboptions:
+          network_ip:
+            description:
+              -  TO_WRITE
+            type: str
+          network_prefix:
+            description:
+              -  TO_WRITE
+            type: int
+          gateway_ip:
+            description:
+              -  TO_WRITE
+            type: str
+          ip_pools:
+            description:
+              -  TO_WRITE
+            type: list
+            elements: dict
+            suboptions:
+              start_ip:
+                description:
+                  -  TO_WRITE
+                type: str
+              end_ip:
+                description:
+                  -  TO_WRITE
+                type: str
+          dhcp:
+            description:
+              -  TO_WRITE
+            type: dict
+            suboptions:
+              dns_servers:
+                description:
+                  -  TO_WRITE
+                type: list
+                elements: str
+              domain_name:
+                description:
+                  -  TO_WRITE
+                type: str
+              tftp_server_name:
+                description:
+                  -  TO_WRITE
+                type: str
+              boot_file:
+                description:
+                  -  TO_WRITE
+                type: str
+              dhcp_server_ip:
+                description:
+                  -  TO_WRITE
+                type: str
+              domain_search:
+                description:
+                  -  TO_WRITE
+                type: list
+                elements: str
+  external_subnet:
+    description: TO_WRITE
+    type: dict
+    suboptions:
+      vlan_id:
+        description: TO_WRITE
+        type: int
+        required: True
+      cluster:
+        description:
+          - Name or UUID of the cluster on which the VM will be placed.
+        type: dict
+        required: True
+        suboptions:
+          name:
+            description:
+              - Cluster Name
+              - Mutually exclusive with C(uuid)
+            type: str
+          uuid:
+            description:
+              - Cluster UUID
+              - Mutually exclusive with C(name)
+            type: str
+      enable_nat:
+        description:
+          -  TO_WRITE
+        type: bool
+        default: True
+      ipam:
+        description:
+          -  TO_WRITE
+        type: dict
+        suboptions:
+          network_ip:
+            description:
+              -  TO_WRITE
+            type: str
+          network_prefix:
+            description:
+              -  TO_WRITE
+            type: int
+          gateway_ip:
+            description:
+              -  TO_WRITE
+            type: str
+          ip_pools:
+            description:
+              -  TO_WRITE
+            type: list
+            elements: dict
+            suboptions:
+              start_ip:
+                description:
+                  -  TO_WRITE
+                type: str
+              end_ip:
+                description:
+                  -  TO_WRITE
+                type: str
+          dhcp:
+            description:
+              -  TO_WRITE
+            type: dict
+            suboptions:
+              dns_servers:
+                description:
+                  -  TO_WRITE
+                type: list
+                elements: str
+              domain_name:
+                description:
+                  -  TO_WRITE
+                type: str
+              tftp_server_name:
+                description:
+                  -  TO_WRITE
+                type: str
+              boot_file:
+                description:
+                  -  TO_WRITE
+                type: str
+              dhcp_server_ip:
+                description:
+                  -  TO_WRITE
+                type: str
+              domain_search:
+                description:
+                  -  TO_WRITE
+                type: list
+                elements: str
+  overlay_subnet:
+    description:
+      -  TO_WRITE
+    type: dict
+    suboptions:
+      vpc:
+        description:
+          -  TO_WRITE
+        type: dict
+        required: true
+        suboptions:
+          name:
+            description:
+              - Vpc Name
+              - Mutually exclusive with (uuid)
+            type: str
+          uuid:
+            description:
+              - VPC UUID
+              - Mutually exclusive with (name)
+            type: str
+      ipam:
+        description:
+          -  TO_WRITE
+        type: dict
+        suboptions:
+          network_ip:
+            description:
+              -  TO_WRITE
+            type: str
+          network_prefix:
+            description:
+              -  TO_WRITE
+            type: int
+          gateway_ip:
+            description:
+              -  TO_WRITE
+            type: str
+          ip_pools:
+            description:
+              -  TO_WRITE
+            type: list
+            elements: dict
+            suboptions:
+              start_ip:
+                description:
+                  -  TO_WRITE
+                type: str
+              end_ip:
+                description:
+                  -  TO_WRITE
+                type: str
+          dhcp:
+            description:
+              -  TO_WRITE
+            type: dict
+            suboptions:
+              dns_servers:
+                description:
+                  -  TO_WRITE
+                type: list
+                elements: str
+              domain_name:
+                description:
+                  -  TO_WRITE
+                type: str
+              tftp_server_name:
+                description:
+                  -  TO_WRITE
+                type: str
+              boot_file:
+                description:
+                  -  TO_WRITE
+                type: str
+              dhcp_server_ip:
+                description:
+                  -  TO_WRITE
+                type: str
+              domain_search:
+                description:
+                  -  TO_WRITE
+                type: list
+                elements: str
 
-  #TODO here should be additional arguments documentation
-
+author:
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
@@ -87,8 +363,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-    ip_pool_spec = dict(start_ip=dict(type="str"), end_ip=dict(type="str")
-                        )
+    ip_pool_spec = dict(start_ip=dict(type="str"), end_ip=dict(type="str"))
     dhcp_spec = dict(
         dns_servers=dict(type="list", elements="str"),
         domain_name=dict(type="str"),
@@ -101,9 +376,14 @@ def get_module_spec():
         network_ip=dict(type="str"),
         network_prefix=dict(type="int"),
         gateway_ip=dict(type="str"),
-        ip_pools=dict(type="list", elements="dict", options=ip_pool_spec, required_together=[
-            ('start_ip', 'end_ip'),
-        ],),
+        ip_pools=dict(
+            type="list",
+            elements="dict",
+            options=ip_pool_spec,
+            required_together=[
+                ("start_ip", "end_ip"),
+            ],
+        ),
         dhcp=dict(
             type="dict",
             options=dhcp_spec,
