@@ -1,0 +1,20 @@
+---
+IP: 10.44.76.190
+username: "admin" 
+password: "Nutanix.123"
+ClusterName:  "auto_cluster_prod_1aa888141361" 
+ClusterUUID: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+Virtual_Switch_Name: "vs0"
+Virtual_Switch_UUID: "f0a1c48a-5b79-446b-ba37-0b8dac8fb918"
+Network_IP: 192.168.0.0
+Network_Prefix: 24
+Gateway_IP: 192.168.0.254
+Start_IP: 192.168.0.20
+End_IP: 192.168.0.30
+DNS_Servers: ["8.8.8.8","8.8.4.4"]
+Domain_Search: ["calm.nutanix.com","eng.nutanix.com"]
+Domain_Name: "nutanix.com"
+TFTP_Server_Name: 10.5.0.10
+Boot_File: "pxelinux.0"
+DHCP_Server_IP: 192.168.0.35
+todelete: []

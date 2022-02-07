@@ -1,4 +1,0 @@
-- block:
-    - import_tasks: "create.yml"
-    # - import_tasks: "Negtaive_scenarios.yml"
-    # - import_tasks: "delete.yml"

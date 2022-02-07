@@ -1,0 +1,322 @@
+---
+- name: Auto Generated Playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+    
+  ###############################################################
+  
+  tasks:
+    
+  - name: Setting Variables
+    set_fact: 
+      IP: ""
+      username: "" 
+      password: ""
+      ClusterName:  "auto_cluster_prod_1aa888141361" 
+      ClusterUUID: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+      Virtual_Switch_Name: "vs0"
+      Virtual_Switch_UUID: ""
+      Network_IP:
+      Network_Prefix: 
+      Gateway_IP: 
+      Start_IP: 
+      End_IP: 
+      DNS_Servers: []
+      Domain_Search: []
+      Domain_Name: []
+      TFTP_Server_Name: ""
+      Boot_File: ""
+      DHCP_Server_IP: 
+      todelete: []
+      
+
+      
+  ##########################################################################
+  
+  - name: VLAN subnet without IPAM
+    ntnx_subnets:
+      state: present
+      nutanix_host: "{{ IP }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: "VLAN subnet without IPAM"
+      vlan_subnet:
+        vlan_id: 26                          
+        virtual_switch:                      
+          name: "{{ Virtual_Switch_Name }}"
+          # uuid: "{{ Virtual_Switch_UUID }}"
+        cluster:                               
+          name: "{{ ClusterName }}"            
+          # uuid: "{{ Cluster_UUID }}"
+    register: result
+    
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: ' Unable to create VLAN subnet without IPAM '
+      success_msg: ' VLAN subnet without IPAM created successfully '
+      
+  - set_fact:
+      todelete: '{{ todelete + [  result.subnet_uuid ] }}'
+      
+  ######################################################################    
+      
+  - name: VLAN subnet with IPAM
+    ntnx_subnets:
+      state: present
+      nutanix_host: "{{ IP }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: "VLAN subnet with IPAM"
+      vlan_subnet:
+        vlan_id: 27                          
+        virtual_switch:                      
+          name: "{{ Virtual_Switch_Name }}"
+          # uuid: "{{ Virtual_Switch_UUID }}"
+        cluster:                               
+          name: "{{ ClusterName }}"            
+          # uuid: "{{ Cluster_UUID }}"
+        ipam:                                    
+          network_ip: "{{ Network_IP }}"         
+          network_prefix: "{{ Network_Prefix }}"
+          gateway_ip: "{{ Gateway_IP }}"   
+    register: result
+    ignore_errors: True
+    
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: ' Unable to create VLAN subnet with IPAM '
+      success_msg: ' VLAN subnet with IPAM created successfully '
+      
+  - set_fact:
+      todelete: '{{ todelete + [  result.subnet_uuid ] }}'
+  
+  #######################################################################
+  
+ - name: VLAN subnet with IPAM and IP pools
+    ntnx_subnets:
+      state: present
+      nutanix_host: "{{ IP }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: "VLAN subnet with IPAM and IP pools"
+      vlan_subnet:
+        vlan_id: 28                          
+        virtual_switch:                      
+          name: "{{ Virtual_Switch_Name }}"
+          # uuid: "{{ Virtual_Switch_UUID }}"
+        cluster:                               
+          name: "{{ ClusterName }}"            
+          # uuid: "{{ Cluster_UUID }}"
+        ipam:                                    
+          network_ip: "{{ Network_IP }}"         
+          network_prefix: "{{ Network_Prefix }}"
+          gateway_ip: "{{ Gateway_IP }}"  
+          ip_pools:
+            - 
+              start_ip: "{{ Start_IP }}"
+              end_ip: "{{ End_IP }}" 
+                 
+    register: result
+    ignore_errors: True
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: ' Unable to create VLAN subnet with IPAM and IP pools'
+      success_msg: ' VLAN subnet with IPAM and IP pools created successfully '
+      
+  - set_fact:
+      todelete: '{{ todelete + [  result.subnet_uuid ] }}'
+    
+  ############################################################################
+  
+  - name: VLAN subnet with IPAM, IP pools and DHCP 
+    ntnx_subnets:
+      state: present
+      nutanix_host: "{{ IP }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: "VLAN subnet with IPAM IP pools and DHCP"
+      vlan_subnet:
+        vlan_id: 29                          
+        virtual_switch:                      
+          name: "{{ Virtual_Switch_Name }}"
+          # uuid: "{{ Virtual_Switch_UUID }}"
+        cluster:                               
+          name: "{{ ClusterName }}"            
+          # uuid: "{{ Cluster_UUID }}"
+        ipam:                                    
+          network_ip: "{{ Network_IP }}"         
+          network_prefix: "{{ Network_Prefix }}"
+          gateway_ip: "{{ Gateway_IP }}"  
+          ip_pools:
+            - 
+              start_ip: "{{ Start_IP }}"
+              end_ip: "{{ End_IP }}"    
+          dhcp:                                  
+            dns_servers: "{{ DNS_Servers }}"
+            domain_search: "{{ Domain_Search }}"
+            domain_name: "{{ Domain_Name }}"
+            tftp_server_name: "{{ TFTP_Server_Name }}"
+            boot_file: "{{ Boot_File_Name }}"
+        #dhcp_server_ip: "{{ DHCP_Server_IP }}"
+    register: result
+    ignore_errors: True
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: ' Unable to create VLAN subnet with IPAM, IP pools and DHCP '
+      success_msg: ' VLAN subnet with IPAM, IP pools and DHCP created successfully '
+
+  - set_fact:
+      todelete: '{{ todelete + [  result.subnet_uuid ] }}'
+    
+  #################################################################################
+  
+#  - name: External subnet without NAT
+#    ntnx_subnets:
+#      state: present
+#      nutanix_host: "{{ IP }}"
+#      validate_certs: False
+#      nutanix_username: "{{ username }}"
+#      nutanix_password: "{{ password }}"
+#      name: " External subnet without NAT "
+#      external_subnet:
+#        vlan_id: 30 
+#        enable_nat: False                         
+#        cluster:                               
+#          name: "{{ ClusterName }}"            
+#          # uuid: "{{ Cluster_UUID }}"
+#        ipam:                                    
+#          network_ip: "{{ Network_IP }}"         
+#          network_prefix: "{{ Network_Prefix }}"
+#          gateway_ip: "{{ Gateway_IP }}"  
+#          ip_pools:
+#            - 
+#              start_ip: "{{ Start_IP }}"
+#              end_ip: "{{ End_IP }}"    
+#    register: result
+#    ignore_errors: True
+#    
+#  - name: Creation Status
+#    assert:
+#      that:
+#        - result.response is defined
+#        - result.response.status.state == 'COMPLETE'
+#      fail_msg: ' Unable to create External subnet without NAT '
+#      success_msg: ' External subnet without NAT created successfully '
+#      
+#  - set_fact:
+#      todelete: '{{ todelete + [  result.subnet_uuid ] }}'
+#      
+#  ####################################################################################
+#  
+#  - name: Overlay Subnet with minimum requirements
+#    ntnx_subnets:
+#      state: present
+#      nutanix_host: "{{ IP }}"
+#      validate_certs: False
+#      nutanix_username: "{{ username }}"
+#      nutanix_password: "{{ password }}"
+#      name: "Overlay Subnet with minimum requirements"
+#      overlay_subnet:
+#        vpc:                                     
+#          name: "{{ VPC_Name }}"
+#          #uuid: "{{ VPC_UUID }}"
+#        ipam:                                    
+#          network_ip: "{{ Network_IP }}"         
+#          network_prefix: "{{ Network_Prefix }}"
+#          gateway_ip: "{{ Gateway_IP }}"  
+#    register: result
+#    ignore_errors: True
+#    
+#  - name: Creation Status
+#    assert:
+#      that:
+#        - result.response is defined
+#        - result.response.status.state == 'COMPLETE'
+#      fail_msg: ' Unable to create Overlay Subnet with minimum requirements '
+#      success_msg: ' Overlay Subnet with minimum requirements created successfully '
+#  
+#  - set_fact:
+#      todelete: '{{ todelete + [  result.subnet_uuid ] }}'
+#  
+#  #####################################################################################
+#  
+#  - name: Overlay Subnet with IP_pools and DHCP
+#    ntnx_subnets:
+#      state: present
+#      nutanix_host: "{{ IP }}"
+#      validate_certs: False
+#      nutanix_username: "{{ username }}"
+#      nutanix_password: "{{ password }}"
+#      name: "Overlay Subnet with IP_pools and DHCP"
+#      overlay_subnet:
+#        vpc:                                     
+#          name: "{{ VPC_Name }}"
+#          #uuid: "{{ VPC_UUID }}"
+#        ipam:                                    
+#          network_ip: "{{ Network_IP }}"         
+#          network_prefix: "{{ Network_Prefix }}"
+#          gateway_ip: "{{ Gateway_IP }}"  
+#          ip_pools:
+#            - 
+#              start_ip: "{{ Start_IP }}"
+#              end_ip: "{{ End_IP }}"  
+#          dhcp:                                 
+#            dns_servers: "{{ DNS_Servers }}"
+#            domain_search: "{{ Domain_Search }}"
+#            domain_name: "{{ Domain_Name }}"
+#            tftp_server_name: "{{ TFTP_Server_Name }}"
+#            boot_file_name: "{{ Boot_File_Name }}"
+#    register: result
+#    ignore_errors: True
+#    
+#  - name: Creation Status
+#    assert:
+#      that:
+#        - result.response is defined
+#        - result.response.status.state == 'COMPLETE'
+#      fail_msg: ' Unable to create Overlay Subnet with IP_pools and DHCP '
+#      success_msg: ' Overlay Subnet with IP_pools and DHCP created successfully '
+#  
+#  - set_fact:
+#      todelete: '{{ todelete + [  result.subnet_uuid ] }}'
+  
+  
+ ######################################################################################
+
+
+  - name: Delete all Created VM  
+    ntnx_subnets:
+      state: absent
+      nutanix_host: "{{ IP }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      subnet_uuid: '{{ item }}'
+    register: result
+    loop: '{{ todelete }}'
+    
+  
+
+  
