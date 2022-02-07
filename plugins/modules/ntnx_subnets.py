@@ -86,8 +86,9 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
-
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+    ip_pool_spec = dict(start_ip=dict(type="str"), end_ip=dict(type="str")
+                        )
     dhcp_spec = dict(
         dns_servers=dict(type="list", elements="str"),
         domain_name=dict(type="str"),
@@ -100,7 +101,9 @@ def get_module_spec():
         network_ip=dict(type="str"),
         network_prefix=dict(type="int"),
         gateway_ip=dict(type="str"),
-        ip_pools=dict(type="list", elements="dict"),
+        ip_pools=dict(type="list", elements="dict", options=ip_pool_spec, required_together=[
+            ('start_ip', 'end_ip'),
+        ],),
         dhcp=dict(
             type="dict",
             options=dhcp_spec,
