@@ -116,7 +116,7 @@ class Subnet(Prism):
             if "tftp_server_ip" in dhcp_config:
                 dhcp_spec["tftp_server_name"] = dhcp_config["tftp_server_ip"]
             if "dhcp_server_ip" in dhcp_config:
-                dhcp_spec["dhcp_server_address"] = {"ip": dhcp_config["dhcp_server_ip"]}
+                ipam_spec["dhcp_server_address"] = {"ip": dhcp_config["dhcp_server_ip"]}
 
             ipam_spec["dhcp_options"] = dhcp_spec
         return ipam_spec
