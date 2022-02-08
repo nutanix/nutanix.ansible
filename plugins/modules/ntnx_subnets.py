@@ -520,7 +520,7 @@ def run_module():
             ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet"),
         ],
         required_if=[
-            ("state", "absent", ("subnet_uuid")),
+            ["state", "absent", ["subnet_uuid"]],
         ],
     )
     remove_param_with_none_value(module.params)
