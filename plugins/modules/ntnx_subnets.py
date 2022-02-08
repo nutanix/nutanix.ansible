@@ -67,7 +67,7 @@ options:
     type: str
   vlan_subnet:
     description:
-      - One of the subnets types 
+      - One of the subnets types
       - Mutually exclusive with C(external_subnet) and C(overlay_subnet)
     type: dict
     suboptions:
@@ -170,8 +170,8 @@ options:
                 type: list
                 elements: str
   external_subnet:
-    description: 
-      - One of the subnets types 
+    description:
+      - One of the subnets types
       - Mutually exclusive with C(vlan_subnet) and C(overlay_subnet)
     type: dict
     suboptions:
@@ -204,19 +204,23 @@ options:
         description:
           - ip address management configuration
         type: dict
+        required: True
         suboptions:
           network_ip:
             description:
               - Subnet ip address
             type: str
+            required: True
           network_prefix:
             description:
               - Subnet ip address prefix length
             type: int
+            required: True
           gateway_ip:
             description:
               - The gateway ip address
             type: str
+            required: True
           ip_pools:
             description:
               - Range of IPs
@@ -231,40 +235,9 @@ options:
                 description:
                   - The last address of the IPs range
                 type: str
-          dhcp:
-            description:
-              - The DHCP options
-            type: dict
-            suboptions:
-              dns_servers:
-                description:
-                  - List of DNS servers
-                type: list
-                elements: str
-              domain_name:
-                description:
-                  - The domain name
-                type: str
-              tftp_server_name:
-                description:
-                  - The TFTP server name
-                type: str
-              boot_file:
-                description:
-                  - The boot file name
-                type: str
-              dhcp_server_ip:
-                description:
-                  - The DHCP server ip
-                type: str
-              domain_search:
-                description:
-                  - List of domain search
-                type: list
-                elements: str
   overlay_subnet:
-    description: 
-      - One of the subnets types 
+    description:
+      - One of the subnets types
       - Mutually exclusive with C(vlan_subnet) and C(external_subnet)
     type: dict
     suboptions:
@@ -289,19 +262,23 @@ options:
         description:
           - ip address management configuration
         type: dict
+        required: True
         suboptions:
           network_ip:
             description:
               - Subnet ip address
             type: str
+            required: True
           network_prefix:
             description:
               - Subnet ip address prefix length
             type: int
+            required: True
           gateway_ip:
             description:
               - The gateway ip address
             type: str
+            required: True
           ip_pools:
             description:
               - Range of IPs
