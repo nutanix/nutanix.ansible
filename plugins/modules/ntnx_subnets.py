@@ -519,6 +519,9 @@ def run_module():
         required_one_of=[  # check
             ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet"),
         ],
+        required_if=[
+            ("state", "absent", ("subnet_uuid")),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {
