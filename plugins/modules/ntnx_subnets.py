@@ -145,7 +145,7 @@ options:
             suboptions:
               dns_servers:
                 description:
-                  - List of DNS servers
+                  - List of DNS servers IPs
                 type: list
                 elements: str
               domain_name:
@@ -197,7 +197,7 @@ options:
             type: str
       enable_nat:
         description:
-          - Option to enable nat or not
+          - Perform Network Address Translation (NAT) on the traffic to / from the VPCs attached to it.
         type: bool
         default: True
       ipam:
@@ -300,7 +300,7 @@ options:
             suboptions:
               dns_servers:
                 description:
-                  - List of DNS servers
+                  - List of DNS servers IPs
                 type: list
                 elements: str
               domain_name:
