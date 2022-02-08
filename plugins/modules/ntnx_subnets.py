@@ -59,18 +59,20 @@ options:
     required: false
     default: True
   name:
-    description: subnet Name
+    description: Subnet Name
     required: False
     type: str
   subnet_uuid:
-    description: subnet UUID
+    description: Subnet UUID
     type: str
   vlan_subnet:
-    description: TO_WRITE
+    description:
+      - One of the subnets types 
+      - Mutually exclusive with C(external_subnet) and C(overlay_subnet)
     type: dict
     suboptions:
       vlan_id:
-        description: TO_WRITE
+        description: Id of the vlan
         type: int
         required: True
       cluster:
@@ -97,82 +99,84 @@ options:
         suboptions:
           name:
             description:
-              - virtual switch Name
+              - Virtual switch Name
               - Mutually exclusive with (uuid)
             type: str
           uuid:
             description:
-              - virtual switch UUID
+              - Virtual switch UUID
               - Mutually exclusive with (name)
             type: str
       ipam:
         description:
-          -  TO_WRITE
+          -  ip address management configuration
         type: dict
         suboptions:
           network_ip:
             description:
-              -  TO_WRITE
+              - Subnet ip address
             type: str
           network_prefix:
             description:
-              -  TO_WRITE
+              - Subnet ip address prefix length
             type: int
           gateway_ip:
             description:
-              -  TO_WRITE
+              - The gateway ip address
             type: str
           ip_pools:
             description:
-              -  TO_WRITE
+              - Range of IPs
             type: list
             elements: dict
             suboptions:
               start_ip:
                 description:
-                  -  TO_WRITE
+                  - The start address of the IPs range
                 type: str
               end_ip:
                 description:
-                  -  TO_WRITE
+                  - The last address of the IPs range
                 type: str
           dhcp:
             description:
-              -  TO_WRITE
+              - The DHCP options
             type: dict
             suboptions:
               dns_servers:
                 description:
-                  -  TO_WRITE
+                  - List of DNS servers
                 type: list
                 elements: str
               domain_name:
                 description:
-                  -  TO_WRITE
+                  - The domain name
                 type: str
               tftp_server_name:
                 description:
-                  -  TO_WRITE
+                  - The TFTP server name
                 type: str
               boot_file:
                 description:
-                  -  TO_WRITE
+                  - The boot file name
                 type: str
               dhcp_server_ip:
                 description:
-                  -  TO_WRITE
+                  - The DHCP server ip
                 type: str
               domain_search:
                 description:
-                  -  TO_WRITE
+                  - List of domain search
                 type: list
                 elements: str
   external_subnet:
-    description: TO_WRITE
+    description: 
+      - One of the subnets types 
+      - Mutually exclusive with C(vlan_subnet) and C(overlay_subnet)
     type: dict
     suboptions:
       vlan_id:
-        description: TO_WRITE
+        description: id of vlan
         type: int
         required: True
       cluster:
@@ -193,85 +197,87 @@ options:
             type: str
       enable_nat:
         description:
-          -  TO_WRITE
+          - Option to enable nat or not
         type: bool
         default: True
       ipam:
         description:
-          -  TO_WRITE
+          - ip address management configuration
         type: dict
         suboptions:
           network_ip:
             description:
-              -  TO_WRITE
+              - Subnet ip address
             type: str
           network_prefix:
             description:
-              -  TO_WRITE
+              - Subnet ip address prefix length
             type: int
           gateway_ip:
             description:
-              -  TO_WRITE
+              - The gateway ip address
             type: str
           ip_pools:
             description:
-              -  TO_WRITE
+              - Range of IPs
             type: list
             elements: dict
             suboptions:
               start_ip:
                 description:
-                  -  TO_WRITE
+                  - The start address of the IPs range
                 type: str
               end_ip:
                 description:
-                  -  TO_WRITE
+                  - The last address of the IPs range
                 type: str
           dhcp:
             description:
-              -  TO_WRITE
+              - The DHCP options
             type: dict
             suboptions:
               dns_servers:
                 description:
-                  -  TO_WRITE
+                  - List of DNS servers
                 type: list
                 elements: str
               domain_name:
                 description:
-                  -  TO_WRITE
+                  - The domain name
                 type: str
               tftp_server_name:
                 description:
-                  -  TO_WRITE
+                  - The TFTP server name
                 type: str
               boot_file:
                 description:
-                  -  TO_WRITE
+                  - The boot file name
                 type: str
               dhcp_server_ip:
                 description:
-                  -  TO_WRITE
+                  - The DHCP server ip
                 type: str
               domain_search:
                 description:
-                  -  TO_WRITE
+                  - List of domain search
                 type: list
                 elements: str
   overlay_subnet:
-    description:
-      -  TO_WRITE
+    description: 
+      - One of the subnets types 
+      - Mutually exclusive with C(vlan_subnet) and C(external_subnet)
     type: dict
     suboptions:
       vpc:
         description:
-          -  TO_WRITE
+          - Virtual Private Clouds
+          - VPCs are required to be attached to Subnets with External Connectivity to send traffic outside the VPC
         type: dict
         required: true
         suboptions:
           name:
             description:
-              - Vpc Name
+              - VPC Name
               - Mutually exclusive with (uuid)
             type: str
           uuid:
@@ -281,64 +287,64 @@ options:
             type: str
       ipam:
         description:
-          -  TO_WRITE
+          - ip address management configuration
         type: dict
         suboptions:
           network_ip:
             description:
-              -  TO_WRITE
+              - Subnet ip address
             type: str
           network_prefix:
             description:
-              -  TO_WRITE
+              - Subnet ip address prefix length
             type: int
           gateway_ip:
             description:
-              -  TO_WRITE
+              - The gateway ip address
             type: str
           ip_pools:
             description:
-              -  TO_WRITE
+              - Range of IPs
             type: list
             elements: dict
             suboptions:
               start_ip:
                 description:
-                  -  TO_WRITE
+                  - The start address of the IPs range
                 type: str
               end_ip:
                 description:
-                  -  TO_WRITE
+                  - The last address of the IPs range
                 type: str
           dhcp:
             description:
-              -  TO_WRITE
+              - The DHCP options
             type: dict
             suboptions:
               dns_servers:
                 description:
-                  -  TO_WRITE
+                  - List of DNS servers
                 type: list
                 elements: str
               domain_name:
                 description:
-                  -  TO_WRITE
+                  - The domain name
                 type: str
               tftp_server_name:
                 description:
-                  -  TO_WRITE
+                  - The TFTP server name
                 type: str
               boot_file:
                 description:
-                  -  TO_WRITE
+                  - The boot file name
                 type: str
               dhcp_server_ip:
                 description:
-                  -  TO_WRITE
+                  - The DHCP server ip
                 type: str
               domain_search:
                 description:
-                  -  TO_WRITE
+                  - List of domain search
                 type: list
                 elements: str
 
