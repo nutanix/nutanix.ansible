@@ -380,15 +380,12 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=ip_pool_spec,
-            required_together=[
-                ("start_ip", "end_ip"),
-            ],
+            required_together=[("start_ip", "end_ip")],
         ),
-        dhcp=dict(
-            type="dict",
-            options=dhcp_spec,
-        ),
+        dhcp=dict(type="dict", options=dhcp_spec),
     )
+    external_ipam_spec = ipam_spec
+    external_ipam_spec.pop("dhcp")
     vlan_subnet_spec = dict(
         vlan_id=dict(type="int", required=True),
         cluster=dict(
@@ -414,7 +411,7 @@ def get_module_spec():
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
         ),
-        ipam=dict(type="dict", options=ipam_spec),
+        ipam=dict(type="dict", options=external_ipam_spec),
     )
     overlay_subnet_spec = dict(
         vpc=dict(
@@ -432,23 +429,17 @@ def get_module_spec():
         vlan_subnet=dict(
             type="dict",
             options=vlan_subnet_spec,
-            required_by={
-                "vlan_subnet": ("vlan_id", "virtual_switch", "cluster"),
-            },
+            required_by={"vlan_subnet": ("vlan_id", "virtual_switch", "cluster")},
         ),
         external_subnet=dict(
             type="dict",
             options=external_subnet_spec,
-            required_by={
-                "external_subnet": ("vlan_id", "ipam", "cluster"),
-            },
+            required_by={"external_subnet": ("vlan_id", "ipam", "cluster")},
         ),
         overlay_subnet=dict(
             type="dict",
             options=overlay_subnet_spec,
-            required_by={
-                "overlay_subnet": ("vpc", "ipam"),
-            },
+            required_by={"overlay_subnet": ("vpc", "ipam")},
         ),
         # TODO: Ansible module spec and spec validation
     )
@@ -526,11 +517,9 @@ def run_module():
             ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet")
         ],
         required_one_of=[  # check
-            ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet"),
+            ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet")
         ],
-        required_if=[
-            ["state", "absent", ["subnet_uuid"]],
-        ],
+        required_if=[["state", "absent", ["subnet_uuid"]]],
     )
     remove_param_with_none_value(module.params)
     result = {

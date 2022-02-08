@@ -30,10 +30,7 @@ class Subnet(Prism):
                 "metadata": {"kind": "subnet"},
                 "spec": {
                     "name": "",
-                    "resources": {
-                        "ip_config": {},
-                        "subnet_type": None,
-                    },
+                    "resources": {"ip_config": {}, "subnet_type": None},
                 },
             }
         )
