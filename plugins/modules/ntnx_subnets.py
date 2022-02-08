@@ -432,14 +432,23 @@ def get_module_spec():
         vlan_subnet=dict(
             type="dict",
             options=vlan_subnet_spec,
+            required_by={
+                "vlan_subnet": ("vlan_id", "virtual_switch", "cluster"),
+            },
         ),
         external_subnet=dict(
             type="dict",
             options=external_subnet_spec,
+            required_by={
+                "external_subnet": ("vlan_id", "ipam", "cluster"),
+            },
         ),
         overlay_subnet=dict(
             type="dict",
             options=overlay_subnet_spec,
+            required_by={
+                "overlay_subnet": ("vpc", "ipam"),
+            },
         ),
         # TODO: Ansible module spec and spec validation
     )
