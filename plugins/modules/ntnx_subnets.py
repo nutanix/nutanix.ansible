@@ -384,8 +384,23 @@ def get_module_spec():
         ),
         dhcp=dict(type="dict", options=dhcp_spec),
     )
-    external_ipam_spec = ipam_spec
+
+    overlay_ipam_spec = dict(
+        network_ip=dict(type="str", required=True),
+        network_prefix=dict(type="int", required=True),
+        gateway_ip=dict(type="str", required=True),
+        ip_pools=dict(
+            type="list",
+            elements="dict",
+            options=ip_pool_spec,
+            required_together=[("start_ip", "end_ip")],
+        ),
+        dhcp=dict(type="dict", options=dhcp_spec),
+    )
+
+    external_ipam_spec = overlay_ipam_spec.copy()
     external_ipam_spec.pop("dhcp")
+
     vlan_subnet_spec = dict(
         vlan_id=dict(type="int", required=True),
         cluster=dict(
@@ -411,7 +426,7 @@ def get_module_spec():
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
         ),
-        ipam=dict(type="dict", options=external_ipam_spec),
+        ipam=dict(type="dict", options=external_ipam_spec, required=True),
     )
     overlay_subnet_spec = dict(
         vpc=dict(
@@ -420,28 +435,15 @@ def get_module_spec():
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
         ),
-        ipam=dict(type="dict", options=ipam_spec),
+        ipam=dict(type="dict", options=overlay_ipam_spec, required=True),
     )
 
     module_args = dict(
         name=dict(type="str", required=False),
         subnet_uuid=dict(type="str", required=False),
-        vlan_subnet=dict(
-            type="dict",
-            options=vlan_subnet_spec,
-            required_by={"vlan_subnet": ("vlan_id", "virtual_switch", "cluster")},
-        ),
-        external_subnet=dict(
-            type="dict",
-            options=external_subnet_spec,
-            required_by={"external_subnet": ("vlan_id", "ipam", "cluster")},
-        ),
-        overlay_subnet=dict(
-            type="dict",
-            options=overlay_subnet_spec,
-            required_by={"overlay_subnet": ("vpc", "ipam")},
-        ),
-        # TODO: Ansible module spec and spec validation
+        vlan_subnet=dict(type="dict", options=vlan_subnet_spec),
+        external_subnet=dict(type="dict", options=external_subnet_spec),
+        overlay_subnet=dict(type="dict", options=overlay_subnet_spec),
     )
 
     return module_args
