@@ -322,17 +322,17 @@
 #  
 #  
 #   
- - name: Delete all Created VM  
-   ntnx_subnets:
-     state: absent
-     nutanix_host: "{{ IP }}"
-     nutanix_username: "{{ username }}"
-     nutanix_password: "{{ password }}"
-     validate_certs: False
-     subnet_uuid: '{{ item }}'
-   register: result
-   loop: '{{ todelete }}'
-      
+# - name: Delete all Created VM  
+#   ntnx_subnets:
+#     state: absent
+#     nutanix_host: "{{ IP }}"
+#     nutanix_username: "{{ username }}"
+#     nutanix_password: "{{ password }}"
+#     validate_certs: False
+#     subnet_uuid: '{{ item }}'
+#   register: result
+#   loop: '{{ todelete }}'
+#      
   
       
       
