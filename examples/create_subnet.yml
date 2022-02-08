@@ -104,7 +104,7 @@
   
   #######################################################################
   
- - name: VLAN subnet with IPAM and IP pools
+  - name: VLAN subnet with IPAM and IP pools
     ntnx_subnets:
       state: present
       nutanix_host: "{{ IP }}"

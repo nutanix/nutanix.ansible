@@ -70,7 +70,8 @@
         network_prefix: '{{ Network_Prefix }}'
         gateway_ip: '{{ Gateway_IP }}'
         ip_pools:
-          - start_ip: '{{ Start_IP }}'
+          - 
+            start_ip: '{{ Start_IP }}'
             end_ip: '{{ End_IP }}'
   register: result
   ignore_errors: true
@@ -102,7 +103,8 @@
         network_prefix: '{{ Network_Prefix }}'
         gateway_ip: '{{ Gateway_IP }}'
         ip_pools:
-          - start_ip: '{{ Start_IP }}'
+          - 
+            start_ip: '{{ Start_IP }}'
             end_ip: '{{ End_IP }}'
         dhcp:
           dns_servers: '{{ DNS_Servers }}'
@@ -141,9 +143,11 @@
         network_prefix: '{{ Network_Prefix }}'
         gateway_ip: '{{ Gateway_IP }}'
         ip_pools:
-          - start_ip: '{{ Start_IP }}'
+          - 
+            start_ip: '{{ Start_IP }}'
             end_ip: '{{ End_IP }}'
-          - start_ip: '{{ Start_IP2 }}'
+          - 
+            start_ip: '{{ Start_IP2 }}'
             end_ip: '{{ End_IP2 }}'
         dhcp:
           dns_servers: '{{ DNS_Servers }}'
@@ -181,7 +185,8 @@
         network_prefix: '{{ Network_Prefix }}'
         gateway_ip: '{{ Gateway_IP }}'
         ip_pools:
-          - start_ip: '{{ Start_IP }}'
+          - 
+            start_ip: '{{ Start_IP }}'
             end_ip: '{{ End_IP }}'
   register: result
   ignore_errors: true
@@ -296,5 +301,3 @@
 #   
 
       
-      
-  
