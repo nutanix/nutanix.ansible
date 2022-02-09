@@ -41,3 +41,4 @@ def get_vpc_uuid(config, module):
             return None, error
     elif "uuid" in config["vpc"]:
         uuid = config["vpc"]["uuid"]
+    return uuid, None
