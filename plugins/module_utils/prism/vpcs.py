@@ -7,7 +7,6 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-from .subnets import get_subnet_uuid
 
 
 class Vpc(Prism):
@@ -25,10 +24,7 @@ class Vpc(Prism):
         return deepcopy(
             {
                 "api_version": "3.1.0",
-                "metadata": {
-                    "kind": "vpc",
-                    "categories": {},
-                },
+                "metadata": {"kind": "vpc", "categories": {}},
                 "spec": {
                     "name": None,
                     "resources": {
@@ -45,6 +41,8 @@ class Vpc(Prism):
         return payload, None
 
     def _build_spec_external_subnet(self, payload, subnets):
+        from .subnets import get_subnet_uuid
+
         external_subnets = []
         for subnet in subnets:
             uuid, error = get_subnet_uuid(subnet, self.module)
@@ -53,7 +51,7 @@ class Vpc(Prism):
             subnet_ref_spec = self._get_external_subnet_ref_spec(uuid)
             external_subnets.append(subnet_ref_spec)
 
-        payload["spec"]["external_subnet_list"] = external_subnets
+        payload["spec"]["resources"]["external_subnet_list"] = external_subnets
         return payload, None
 
     def _build_spec_routable_ips(self, payload, ips):
@@ -64,11 +62,11 @@ class Vpc(Prism):
             )
             routable_ips.append(routable_ip_ref_spec)
 
-        payload["spec"]["externally_routable_prefix_list"] = routable_ips
+        payload["spec"]["resources"]["externally_routable_prefix_list"] = routable_ips
         return payload, None
 
     def _build_dns_servers(self, payload, dns_servers):
-        payload["spec"]["common_domain_name_server_ip_list"] = dns_servers
+        payload["spec"]["resources"]["common_domain_name_server_ip_list"] = dns_servers
         return payload, None
 
     def _get_external_subnet_ref_spec(self, uuid):
@@ -91,3 +89,4 @@ def get_vpc_uuid(config, module):
             return None, error
     elif "uuid" in config["vpc"]:
         uuid = config["vpc"]["uuid"]
+    return uuid, None
