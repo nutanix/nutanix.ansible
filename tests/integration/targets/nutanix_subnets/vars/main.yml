@@ -22,7 +22,7 @@ Domain_Name: nutanix.com
 TFTP_Server_Name: 10.5.0.10
 Boot_File: pxelinux.0
 DHCP_Server_IP: 192.168.0.35
-vlan_subnets_ids: [105,106,107,108,109,110]
+vlan_subnets_ids: [105, 106, 107, 108, 109, 110]
 vpc:
   name: test vpc
   uuid: a3a19c52-44f4-468e-86ad-04ab64e41563
