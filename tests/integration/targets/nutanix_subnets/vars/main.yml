@@ -1,51 +1,66 @@
-IP: 10.44.76.88
+
+
+ip: 10.44.76.88
 username: admin
 password: Nutanix.123
-ClusterName:  auto_cluster_prod_1a642ea0a5c3
-ClusterUUID: 0005d734-09d4-0462-185b-ac1f6b6f97e2 
-Virtual_Switch_Name: vs0
-Virtual_Switch_UUID: 91639374-c0b9-48c3-bfc1-f9c89343b3e7
-Network_IP: 192.168.0.0
-Network_Prefix: 24
-Gateway_IP: 192.168.0.254
-Start_IP: 192.168.0.20
-End_IP: 192.168.0.30
-Start_IP2: 192.168.0.40
-End_IP2: 192.168.0.50
-DNS_Servers:
-  - 8.8.8.8
-  - 8.8.4.4
-Domain_Search:
-  - calm.nutanix.com
-  - eng.nutanix.com
-Domain_Name: nutanix.com
-TFTP_Server_Name: 10.5.0.10
-Boot_File: pxelinux.0
-DHCP_Server_IP: 192.168.0.35
 vlan_subnets_ids: [105, 106, 107, 108, 109, 110]
+
+cluster:
+  name:  auto_cluster_prod_1a642ea0a5c3
+  uuid: 0005d734-09d4-0462-185b-ac1f6b6f97e2 
+  
+virtual_switch:
+  name: vs0
+  uuid: 91639374-c0b9-48c3-bfc1-f9c89343b3e7
+  
+ip_address_management:
+  network_ip: 192.168.0.0
+  network_prefix: 24
+  gateway_ip_address: 192.168.0.254
+
+ip_address_pools:
+  start_address: 192.168.0.20
+  end_address: 192.168.0.30
+  start_address_2: 192.168.0.40
+  end_address_2: 192.168.0.50
+
+dhcp_settings:
+  dns_servers: [8.8.8.8, 8.8.4.4]
+  domain_search: ["calm.nutanix.com", "eng.nutanix.com"]
+  domain_name: nutanix.com
+  tftp_server_name: 10.5.0.10
+  boot_file: pxelinux.0
+  
+dhcp_server_address: 192.168.0.35
+
+
 vpc:
   name: test vpc
   uuid: a3a19c52-44f4-468e-86ad-04ab64e41563
-external_Nat_subnet:
-  vlan_id: 101 #with nat
-  gateway_ip: 10.44.3.193
-  Network_Prefix: 27
-  Network_IP: 10.44.3.192
+
+
+external_nat_subnet:
+  vlan_id: 101
+  gateway_ip_address: 10.44.3.193
+  network_prefix: 27
+  network_ip: 10.44.3.192
   dhcp:
-    start_ip: 10.44.3.198
-    end_ip: 10.44.3.207
+    start_address: 10.44.3.198
+    end_address: 10.44.3.207
   static:
-    start_ip: 10.44.3.208
-    end_ip: 10.44.3.217
-external_NoNat_subnet:
+    start_address: 10.44.3.208
+    end_address: 10.44.3.217
+
+external_nonat_subnet:
   vlan_id: 103
-  gateway_ip: 10.44.3.225
-  Network_Prefix: 27
-  Network_IP: 10.44.3.224
+  gateway_ip_address: 10.44.3.225
+  network_prefix: 27
+  network_ip: 10.44.3.224
   dhcp:
-    start_ip: 10.44.3.230
-    end_ip: 10.44.3.239
+    start_address: 10.44.3.230
+    end_address: 10.44.3.239
   static:
-    start_ip: 10.44.3.240
-    end_ip: 10.44.3.249 
+    start_address: 10.44.3.240
+    end_address: 10.44.3.249 
+    
 todelete: []
