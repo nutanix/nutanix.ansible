@@ -18,7 +18,7 @@ class Vpc(Prism):
             "name": self._build_spec_name,
             "external_subnets": self._build_spec_external_subnet,
             "routable_ips": self._build_spec_routable_ips,
-            "dns_servers": self._build_dns_servers
+            "dns_servers": self._build_dns_servers,
         }
 
     def _get_default_spec(self):
@@ -34,9 +34,9 @@ class Vpc(Prism):
                     "resources": {
                         "common_domain_name_server_ip_list": [],
                         "external_subnet_list": [],
-                        "externally_routable_prefix_list": []
-                    }
-                }
+                        "externally_routable_prefix_list": [],
+                    },
+                },
             }
         )
 
@@ -72,19 +72,11 @@ class Vpc(Prism):
         return payload, None
 
     def _get_external_subnet_ref_spec(self, uuid):
-        return deepcopy(
-            {
-                "external_subnet_reference": {"kind": "subnet", "uuid": uuid}
-            }
-        )
+        return deepcopy({"external_subnet_reference": {"kind": "subnet", "uuid": uuid}})
 
     def _get_routable_ip_spec(self, ip, prefix):
-        return deepcopy(
-            {
-                "ip": ip,
-                "prefix_length": prefix
-            }
-        )
+        return deepcopy({"ip": ip, "prefix_length": prefix})
+
 
 ##### Helper functions #####
 
