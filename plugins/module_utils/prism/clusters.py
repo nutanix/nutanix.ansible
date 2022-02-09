@@ -11,3 +11,20 @@ class Cluster(Prism):
     def __init__(self, module):
         resource_type = "/clusters"
         super(Cluster, self).__init__(module, resource_type=resource_type)
+
+
+# Helper functions
+
+
+def get_cluster_uuid(config, module):
+    if "name" in config["cluster"]:
+        cluster = Cluster(module)
+        name = config["cluster"]["name"]
+        uuid = cluster.get_uuid(name)
+        if not uuid:
+            error = "Cluster {0} not found.".format(name)
+            return None, error
+        return uuid, None
+    elif "uuid" in config["cluster"]:
+        uuid = config["cluster"]["uuid"]
+        return uuid, None
