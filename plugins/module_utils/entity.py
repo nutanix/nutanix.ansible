@@ -79,8 +79,11 @@ class Entity(object):
     def get_uuid(self, name):
         data = {"filter": "name=={0}".format(name), "length": 1}
         resp, status = self.list(data)
-        if resp and resp.get("entities"):
-            return resp["entities"][0]["metadata"]["uuid"]
+        entities = resp.get("entities") if resp else None
+        if entities:
+            for entity in entities:
+                if entity["spec"]["name"] == name:
+                    return entity["metadata"]["uuid"]
         return None
 
     def _build_url(self, module, scheme, resource_type):
