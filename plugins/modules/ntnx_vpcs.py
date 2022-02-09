@@ -85,8 +85,22 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
+    external_subnets_spec = dict(
+        subnet_name=dict(type="str"), subnet_uuid=dict(type="str")
+    )
+    routable_ips_spec = dict(
+        network_ip=dict(type="str"), network_prefix=dict(type="str")
+    )
     module_args = dict(
-    # TODO: Ansible module spec and spec validation
+        name=dict(type="str", required=True),
+        external_subnets=dict(
+            type="list",
+            elements="dict",
+            options=external_subnets_spec,
+            mutually_exclusive=[("subnet_name", "subnet_uuid")],
+        ),
+        routable_ips=dict(type="list", elements="dict", options=routable_ips_spec),
+        dns_servers=dict(type="list", elements="str"),
     )
 
     return module_args
@@ -155,10 +169,7 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(
-        argument_spec=get_module_spec(),
-        supports_check_mode=True
-    )
+    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
@@ -182,4 +193,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
