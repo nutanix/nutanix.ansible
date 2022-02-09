@@ -58,9 +58,7 @@ options:
     type: bool
     required: false
     default: True
-  
   #TODO here should be additional arguments documentation
-  
 """
 
 EXAMPLES = r"""
@@ -243,7 +241,6 @@ def main():
         print(
             """
         Description:  Script to create module template with base files and functionality
-        
         Usage: create_module.py <module_name>
             module_name    Use for naming, by default "Object"
         """

@@ -76,7 +76,7 @@ class Vpc(Prism):
         return deepcopy({"ip": ip, "prefix_length": prefix})
 
 
-##### Helper functions #####
+# Helper functions
 
 
 def get_vpc_uuid(config, module):

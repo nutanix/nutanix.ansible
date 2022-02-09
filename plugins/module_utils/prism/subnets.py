@@ -1,9 +1,10 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-from copy import deepcopy
 
 __metaclass__ = type
+
+from copy import deepcopy
 
 from .clusters import get_cluster_uuid
 from .prism import Prism
@@ -29,10 +30,7 @@ class Subnet(Prism):
                 "metadata": {"kind": "subnet"},
                 "spec": {
                     "name": "",
-                    "resources": {
-                        "ip_config": {},
-                        "subnet_type": None,
-                    },
+                    "resources": {"ip_config": {}, "subnet_type": None},
                 },
             }
         )
@@ -50,7 +48,6 @@ class Subnet(Prism):
         if error:
             return None, error
         payload["spec"]["resources"]["virtual_switch_uuid"] = dvs_uuid
-
         cluster_uuid, error = get_cluster_uuid(config, self.module)
         if error:
             return None, error
@@ -116,7 +113,7 @@ class Subnet(Prism):
             if "tftp_server_ip" in dhcp_config:
                 dhcp_spec["tftp_server_name"] = dhcp_config["tftp_server_ip"]
             if "dhcp_server_ip" in dhcp_config:
-                dhcp_spec["dhcp_server_address"] = {"ip": dhcp_config["dhcp_server_ip"]}
+                ipam_spec["dhcp_server_address"] = {"ip": dhcp_config["dhcp_server_ip"]}
 
             ipam_spec["dhcp_options"] = dhcp_spec
         return ipam_spec
