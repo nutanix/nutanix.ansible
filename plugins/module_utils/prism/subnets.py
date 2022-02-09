@@ -141,3 +141,20 @@ class Subnet(Prism):
                 "tftp_server_name": "",
             }
         )
+
+
+##### Helper functions #####
+
+
+def get_subnet_uuid(config, module):
+    if "name" in config or "subnet_name" in config:
+        subnet = Subnet(module)
+        name = config.get("name") or config.get("subnet_name")
+        uuid = subnet.get_uuid(name)
+        if not uuid:
+            error = "Subnet {0} not found.".format(name)
+            return None, error
+    elif "uuid" in config or "subnet_uuid" in config:
+        uuid = config.get("uuid") or config.get("subnet_uuid")
+
+    return uuid, None
