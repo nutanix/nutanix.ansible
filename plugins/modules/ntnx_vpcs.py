@@ -60,14 +60,41 @@ options:
     default: True
   name:
     description: vpc Name
-    required: False
     type: str
   vpc_uuid:
-    description: vpc UUID
+    description: vpc uuid
     type: str
-
-  #TODO here should be additional arguments documentation
-
+  dns_servers:
+    description: List of DNS servers IPs
+    type: list
+    elements: str
+  routable_ips:
+    description: Address space within the VPC which can talk externally without NAT. These are in effect when No-NAT External subnet is used.
+    type: list
+    elements: dict
+    suboptions:
+      network_ip:
+        description: ip address
+        type: str
+      network_prefix:
+        description: Subnet ip address prefix length
+        type: int
+  external_subnets:
+    description: A subnet with external connectivity
+    type: list
+    elements: dict
+    suboptions:
+      subnet_uuid:
+        description: Subnet UUID
+        type: str
+      subnet_name:
+        description: Subnet Name
+        type: str
+author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
+ - Dina AbuHijleh (@dina-abuhijleh)
 """
 
 EXAMPLES = r"""
@@ -89,10 +116,11 @@ def get_module_spec():
         subnet_name=dict(type="str"), subnet_uuid=dict(type="str")
     )
     routable_ips_spec = dict(
-        network_ip=dict(type="str"), network_prefix=dict(type="str")
+        network_ip=dict(type="str"), network_prefix=dict(type="int")
     )
     module_args = dict(
-        name=dict(type="str", required=True),
+        name=dict(type="str"),
+        vpc_uuid=dict(type="str"),
         external_subnets=dict(
             type="list",
             elements="dict",
@@ -169,7 +197,14 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseModule(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+        required_if=[
+            ("state", "present", ("name",)),
+            ("state", "absent", ("vpc_uuid",)),
+        ],
+    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
