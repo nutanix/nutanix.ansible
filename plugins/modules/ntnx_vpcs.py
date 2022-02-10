@@ -89,7 +89,7 @@ def get_module_spec():
         subnet_name=dict(type="str"), subnet_uuid=dict(type="str")
     )
     routable_ips_spec = dict(
-        network_ip=dict(type="str"), network_prefix=dict(type="str")
+        network_ip=dict(type="str"), network_prefix=dict(type="int")
     )
     module_args = dict(
         name=dict(type="str", required=True),
