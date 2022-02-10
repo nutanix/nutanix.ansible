@@ -1,9 +1,7 @@
-
-
 ip: 10.44.76.88
 username: admin
 password: Nutanix.123
-vlan_subnets_ids: [105, 106, 107, 108, 109, 110]
+vlan_subnets_ids: [205, 206, 207, 208, 209, 210]
 
 cluster:
   name:  auto_cluster_prod_1a642ea0a5c3
@@ -33,14 +31,12 @@ dhcp_settings:
   
 dhcp_server_address: 192.168.0.35
 
-
 vpc:
-  name: test vpc
-  uuid: a3a19c52-44f4-468e-86ad-04ab64e41563
-
+  name: ET_1
+  uuid: 2f09613c-0f59-426a-8721-2f989434b06f
 
 external_nat_subnet:
-  vlan_id: 101
+  vlan_id: 201
   gateway_ip_address: 10.44.3.193
   network_prefix: 27
   network_ip: 10.44.3.192
@@ -52,7 +48,7 @@ external_nat_subnet:
     end_address: 10.44.3.217
 
 external_nonat_subnet:
-  vlan_id: 103
+  vlan_id: 202
   gateway_ip_address: 10.44.3.225
   network_prefix: 27
   network_ip: 10.44.3.224
