@@ -6,28 +6,31 @@
   tasks:
     - name: Setting Variables
       set_fact:
-        IP: ''
-        username: ''
-        password: ''
-        ClusterName: auto_cluster_prod_1aa888141361
-        ClusterUUID: 0005d578-2faf-9fb6-3c07-ac1f6b6f9780
-        Virtual_Switch_Name: vs0
-        Virtual_Switch_UUID: ''
-        Network_IP: null
-        Network_Prefix: null
-        Gateway_IP: null
-        Start_IP: null
-        End_IP: null
-        DNS_Servers: []
-        Domain_Search: []
-        Domain_Name: []
-        TFTP_Server_Name: ''
-        Boot_File: ''
-        DHCP_Server_IP: null
+        ip: ""
+        username: ""
+        password: ""
+        cluster_name: ""
+        cluster_uuid: ""
+        virtual_switch_name: ""
+        virtual_switch_uuid: ""
+        network_ip: ""
+        network_prefix: 
+        gateway_ip_address: ""
+        start_address: ""
+        end_address: ""
+        dns_servers: []
+        domain_search: []
+        domain_name: []
+        tftp_server_name: ""
+        boot_file: ""
+        dhcp_server_address: ""
+        vpc_name: ""
+        vpc_uuid: ""
+        
     - name: 'VLAN subnet with IPAM, IP pools and DHCP'
       ntnx_subnets:
         state: present
-        nutanix_host: '{{ IP }}'
+        nutanix_host: '{{ ip }}'
         validate_certs: false
         nutanix_username: '{{ username }}'
         nutanix_password: '{{ password }}'
@@ -35,29 +38,30 @@
         vlan_subnet:
           vlan_id: 29
           virtual_switch:
-            name: '{{ Virtual_Switch_Name }}'
+            name: '{{ virtual_switch_name }}'
           cluster:
-            name: '{{ ClusterName }}'
+            name: '{{ cluster_name }}'
           ipam:
-            network_ip: '{{ Network_IP }}'
-            network_prefix: '{{ Network_Prefix }}'
-            gateway_ip: '{{ Gateway_IP }}'
+            network_ip: '{{ network_ip }}'
+            network_prefix: '{{ network_prefix }}'
+            gateway_ip: '{{ gateway_ip_address }}'
             ip_pools:
-              - start_ip: '{{ Start_IP }}'
-                end_ip: '{{ End_IP }}'
+              - start_ip: '{{ start_address }}'
+                end_ip: '{{ end_address }}'
             dhcp:
-              dns_servers: '{{ DNS_Servers }}'
-              domain_search: '{{ Domain_Search }}'
-              domain_name: '{{ Domain_Name }}'
-              tftp_server_name: '{{ TFTP_Server_Name }}'
-              boot_file: '{{ Boot_File }}'
-              dhcp_server_ip: '{{ DHCP_Server_IP }}'
+              dns_servers: '{{ dns_servers }}'
+              domain_search: '{{ domain_search }}'
+              domain_name: '{{ domain_name }}'
+              tftp_server_name: '{{ tftp_server_name }}'
+              boot_file: '{{ boot_file }}'
+              dhcp_server_ip: '{{ dhcp_server_address }}'
       register: result
       ignore_errors: true
+      
     - name: External subnet with NAT
       ntnx_subnets:
         state: present
-        nutanix_host: '{{ IP }}'
+        nutanix_host: '{{ ip }}'
         validate_certs: false
         nutanix_username: '{{ username }}'
         nutanix_password: '{{ password }}'
@@ -66,39 +70,40 @@
           vlan_id: 30
           enable_nat: true
           cluster:
-            name: '{{ ClusterName }}'
+            name: '{{ cluster_name }}'
           ipam:
-            network_ip: '{{ Network_IP }}'
-            network_prefix: '{{ Network_Prefix }}'
-            gateway_ip: '{{ Gateway_IP }}'
+            network_ip: '{{ network_ip }}'
+            network_prefix: '{{ network_prefix }}'
+            gateway_ip: '{{ gateway_ip_address }}'
             ip_pools:
-              - start_ip: '{{ Start_IP }}'
-                end_ip: '{{ End_IP }}'
+              - start_ip: '{{ start_address }}'
+                end_ip: '{{ end_address }}'
       register: result
       ignore_errors: true
+      
     - name: Overlay Subnet with IP_pools and DHCP
       ntnx_subnets:
         state: present
-        nutanix_host: '{{ IP }}'
+        nutanix_host: '{{ ip }}'
         validate_certs: false
         nutanix_username: '{{ username }}'
         nutanix_password: '{{ password }}'
         name: Overlay Subnet with IP_pools and DHCP
         overlay_subnet:
           vpc:
-            name: '{{ VPC_Name }}'
+            name: '{{ vpc_name }}'
           ipam:
-            network_ip: '{{ Network_IP }}'
-            network_prefix: '{{ Network_Prefix }}'
-            gateway_ip: '{{ Gateway_IP }}'
+            network_ip: '{{ network_ip }}'
+            network_prefix: '{{ network_prefix }}'
+            gateway_ip: '{{ gateway_ip_address }}'
             ip_pools:
-              - start_ip: '{{ Start_IP }}'
-                end_ip: '{{ End_IP }}'
+              - start_ip: '{{ start_address }}'
+                end_ip: '{{ end_address }}'
             dhcp:
-              dns_servers: '{{ DNS_Servers }}'
-              domain_search: '{{ Domain_Search }}'
-              domain_name: '{{ Domain_Name }}'
-              tftp_server_name: '{{ TFTP_Server_Name }}'
-              boot_file_name: '{{ Boot_File}}'
+              dns_servers: '{{ dns_servers }}'
+              domain_search: '{{ domain_search }}'
+              domain_name: '{{ domain_name }}'
+              tftp_server_name: '{{ tftp_server_name }}'
+              boot_file_name: '{{ boot_file }}'
       register: result
       ignore_errors: true
