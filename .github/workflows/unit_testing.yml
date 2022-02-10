@@ -66,7 +66,7 @@ jobs:
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           ansible-test units --docker default --python ${{ matrix.python-version }} --coverage -v
-          ansible-test coverage report --include */plugins/* --omit */utils.py* > coverage.txt
+          ansible-test coverage report --include */plugins/* --omit */utils.py,_fetch_url* > coverage.txt
       - name: Code Coverage Check
         run:  |
               cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
