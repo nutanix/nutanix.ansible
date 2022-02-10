@@ -7,7 +7,9 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-from .vms import VM
+from .subnets import get_subnet_uuid
+from .vms import VM, get_vm_uuid
+from .vpcs import get_vpc_uuid
 
 
 class FloatingIP(Prism):
@@ -18,31 +20,23 @@ class FloatingIP(Prism):
             "external_subnet": self._build_spec_external_subnet,
             "vm": self._build_spec_vm,
             "vpc": self._build_spec_vpc,
-            "private_ip": self._build_spec_private_ip
+            "private_ip": self._build_spec_private_ip,
         }
 
     def _get_default_spec(self):
         return deepcopy(
             {
                 "api_version": "3.1.0",
-                "metadata": {
-                    "kind": "floating_ip",
-                    "spec_version": 0
-                },
+                "metadata": {"kind": "floating_ip", "spec_version": 0},
                 "spec": {
                     "resources": {
-                        "external_subnet_reference": {
-                            "kind": "subnet",
-                            "uuid": None
-                        }
+                        "external_subnet_reference": {"kind": "subnet", "uuid": None}
                     }
-                }
+                },
             }
         )
 
     def _build_spec_external_subnet(self, payload, config):
-        from .subnets import get_subnet_uuid
-
         uuid, error = get_subnet_uuid(config, self.module)
         if error:
             return None, error
@@ -50,8 +44,6 @@ class FloatingIP(Prism):
         return payload, None
 
     def _build_spec_vm(self, payload, config):
-        from .vms import get_vm_uuid
-
         uuid, error = get_vm_uuid(config, self.module)
         if error:
             return None, error
@@ -59,8 +51,6 @@ class FloatingIP(Prism):
         return payload, None
 
     def _build_spec_vpc(self, payload, config):
-        from .vpcs import get_vpc_uuid
-
         uuid, error = get_vpc_uuid(config, self.module)
         if error:
             return None, error
