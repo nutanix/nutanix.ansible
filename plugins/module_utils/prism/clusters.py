@@ -24,7 +24,6 @@ def get_cluster_uuid(config, module):
         if not uuid:
             error = "Cluster {0} not found.".format(name)
             return None, error
-        return uuid, None
     elif "uuid" in config["cluster"]:
         uuid = config["cluster"]["uuid"]
-        return uuid, None
+    return uuid, None
