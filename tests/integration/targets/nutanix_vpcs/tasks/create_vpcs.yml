@@ -1,4 +1,4 @@
-- name: create VPC
+- name: create Min VPC
   ntnx_vpcs:
     validate_certs: False
     state: present
@@ -22,8 +22,6 @@
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 
-- debug:
-    var: result
 
 - name: create VPC with routable_ips
   ntnx_vpcs:
@@ -40,6 +38,7 @@
         network_prefix:  "{{routable_ips.network_prefix}}"
   register: result
   ignore_errors: True
+
 - name: Creation Status
   assert:
     that:
@@ -62,6 +61,7 @@
     name: vpc_with_dns_servers
     external_subnets:
       - subnet_name: "{{external_subnet.subnet_name}}"
+    dns_servers: "{{dns_servers}}"
   register: result
   ignore_errors: True
 - name: Creation Status
@@ -76,7 +76,6 @@
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 
 
-
 - name: create VPC with All specfactions
   ntnx_vpcs:
     validate_certs: False
@@ -87,6 +86,7 @@
     name: vpc_with_add_specfactions
     external_subnets:
       - subnet_name: "{{external_subnet.subnet_name}}"
+    dns_servers: "{{dns_servers}}"
   register: result
   ignore_errors: True
 - name: Creation Status
