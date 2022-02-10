@@ -60,7 +60,9 @@ options:
     default: True
   name:
     description: vpc Name
-    required: True
+    type: str
+  vpc_uuid:
+    description: vpc uuid
     type: str
   dns_servers:
     description: List of DNS servers IPs
@@ -117,7 +119,8 @@ def get_module_spec():
         network_ip=dict(type="str"), network_prefix=dict(type="str")
     )
     module_args = dict(
-        name=dict(type="str", required=True),
+        name=dict(type="str"),
+        vpc_uuid=dict(type="str"),
         external_subnets=dict(
             type="list",
             elements="dict",
@@ -194,7 +197,14 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseModule(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+        required_if=[
+            ("state", "present", ("name",)),
+            ("state", "absent", ("vpc_uuid",)),
+        ],
+    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
