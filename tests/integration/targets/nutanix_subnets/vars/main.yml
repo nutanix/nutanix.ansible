@@ -57,6 +57,5 @@ external_nonat_subnet:
     end_address: 10.44.3.239
   static:
     start_address: 10.44.3.240
-    end_address: 10.44.3.249 
-    
+    end_address: 10.44.3.249    
 todelete: []
