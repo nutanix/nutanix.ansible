@@ -217,14 +217,14 @@ class Object(Prism):
 
 
 def create_module(name):
-    with open("plugins/modules/ntnx_{0}s.py".format(name), "w") as f:
+    with open("plugins/modules/ntnx_{0}s.py".format(name), "wb") as f:
         f.write(
             module_content.replace("object", name.lower()).replace(
                 "Object", name.capitalize()
             )
         )
 
-    with open("plugins/module_utils/prism/{0}s.py".format(name), "w") as f:
+    with open("plugins/module_utils/prism/{0}s.py".format(name), "wb") as f:
         f.write(
             object_content.replace("object", name.lower()).replace(
                 "Object", name.capitalize()

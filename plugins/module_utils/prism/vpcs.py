@@ -66,7 +66,9 @@ class Vpc(Prism):
         return payload, None
 
     def _build_dns_servers(self, payload, dns_servers):
-        payload["spec"]["resources"]["common_domain_name_server_ip_list"] = dns_servers
+        payload["spec"]["resources"]["common_domain_name_server_ip_list"] = [
+            {"ip": i} for i in dns_servers
+        ]
         return payload, None
 
     def _get_external_subnet_ref_spec(self, uuid):

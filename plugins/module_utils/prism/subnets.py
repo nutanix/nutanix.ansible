@@ -140,7 +140,7 @@ class Subnet(Prism):
         )
 
 
-##### Helper functions #####
+# Helper functions
 
 
 def get_subnet_uuid(config, module):
