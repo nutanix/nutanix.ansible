@@ -1,0 +1,114 @@
+- name: create VPC
+  ntnx_vpcs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: MinVPC
+    external_subnets:
+      - subnet_name: "{{external_subnet.subnet_name}}"
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create Min vpc "
+    success_msg: " Min vpc created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+
+- debug:
+    var: result
+
+- name: create VPC with routable_ips
+  ntnx_vpcs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: vpc_with_routable_ips
+    external_subnets:
+      - subnet_name: "{{external_subnet.subnet_name}}"
+    routable_ips:
+      - network_ip: "{{routable_ips.network_ip}}"
+        network_prefix:  "{{routable_ips.network_prefix}}"
+  register: result
+  ignore_errors: True
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create  vpc with routable_ips "
+    success_msg: "  vpc with routable_ips created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+
+
+- name: create VPC with dns_servers
+  ntnx_vpcs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: vpc_with_dns_servers
+    external_subnets:
+      - subnet_name: "{{external_subnet.subnet_name}}"
+  register: result
+  ignore_errors: True
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create  vpc with dns_servers "
+    success_msg: "  vpc with dns_servers created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+
+
+
+- name: create VPC with All specfactions
+  ntnx_vpcs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: vpc_with_add_specfactions
+    external_subnets:
+      - subnet_name: "{{external_subnet.subnet_name}}"
+  register: result
+  ignore_errors: True
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create  vpc all specfactions "
+    success_msg: "  vpc with all specfactions created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+
+
+- name: Delete all Created vpcs
+  ntnx_vpcs:
+    state: absent
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    vpc_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
