@@ -85,20 +85,20 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
+    mutually_exclusive = [("name", "uuid")]
+    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     module_args = dict(
-    # TODO: Ansible module spec and spec validation
-    #external_subnet: < Mandatory>
-	    #name:
-	    #uuid:
-    #vm: <optional>
-	    #name
-	    #uuid
-    #vpc: <optional>
-	    #name
-	    #uuid
-    #private_ip <optional>
-
-    # Mutually exclusive vm & vpc
+        external_subnet=dict(type="dict",
+                             options=entity_by_spec,
+                             mutually_exclusive=mutually_exclusive,
+                             required=True),
+        vm=dict(type="dict",
+                options=entity_by_spec,
+                mutually_exclusive=mutually_exclusive),
+        vpc=dict(type="dict",
+                 options=entity_by_spec,
+                 mutually_exclusive=mutually_exclusive),
+        private_ip=dict(type="str")
     )
 
     return module_args
@@ -169,7 +169,8 @@ def wait_for_task_completion(module, result):
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=True
+        supports_check_mode=True,
+        mutually_exclusive=[("vm", "vpc")]
     )
     remove_param_with_none_value(module.params)
     result = {

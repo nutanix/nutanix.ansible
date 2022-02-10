@@ -1,13 +1,13 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-from tkinter.messagebox import NO
 
 __metaclass__ = type
 
 from copy import deepcopy
 
 from .prism import Prism
+from .vms import VM
 
 
 class FloatingIP(Prism):
@@ -41,17 +41,29 @@ class FloatingIP(Prism):
         )
 
     def _build_spec_external_subnet(self, payload, config):
-        uuid = None
+        from .subnets import get_subnet_uuid
+
+        uuid, error = get_subnet_uuid(config, self.module)
+        if error:
+            return None, error
         payload["spec"]["resources"]["external_subnet_reference"]["uuid"] = uuid
         return payload, None
 
     def _build_spec_vm(self, payload, config):
-        uuid = None
+        from .vms import get_vm_uuid
+
+        uuid, error = get_vm_uuid(config, self.module)
+        if error:
+            return None, error
         payload["spec"]["resources"]["vm_nic_reference"] = self._get_vm_nic_ref(uuid)
         return payload, None
 
     def _build_spec_vpc(self, payload, config):
-        uuid = None
+        from .vpcs import get_vpc_uuid
+
+        uuid, error = get_vpc_uuid(config, self.module)
+        if error:
+            return None, error
         payload["spec"]["resources"]["vm_nic_reference"] = self._get_vpc_ref(uuid)
         return payload, None
 
@@ -60,6 +72,18 @@ class FloatingIP(Prism):
         return payload, None
 
     def _get_vm_nic_ref(self, uuid):
+        vm = VM(self.module)
+        vm, info = vm.read(uuid)
+        nic_list = vm["spec"]["resources"]["nic_list"]
+        private_ip = self.module.params.get("private_ip")
+        if len(nic_list) > 1 and private_ip:
+            for nic in nic_list:
+                if private_ip in nic["ip_endpoint_list"][0]:
+                    uuid = nic["uuid"]
+                    break
+        else:
+            uuid = nic_list[0]["uuid"]
+
         return deepcopy({"kind": "vm_nic", "uuid": uuid})
 
     def _get_vpc_ref(self, uuid):

@@ -76,13 +76,13 @@ class Entity(object):
                     return None, error
         return spec, None
 
-    def get_uuid(self, name):
-        data = {"filter": "name=={0}".format(name), "length": 1}
+    def get_uuid(self, value, key="name"):
+        data = {"filter": "{0}=={1}".format(key, value), "length": 1}
         resp, status = self.list(data)
         entities = resp.get("entities") if resp else None
         if entities:
             for entity in entities:
-                if entity["spec"]["name"] == name:
+                if entity["spec"]["name"] == value:
                     return entity["metadata"]["uuid"]
         return None
 

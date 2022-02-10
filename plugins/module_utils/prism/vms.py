@@ -293,3 +293,19 @@ class VM(Prism):
         payload["metadata"]["categories_mapping"] = value
         payload["metadata"]["use_categories_mapping"] = True
         return payload, None
+
+# Helper functions
+
+
+def get_vm_uuid(config, module):
+    if "name" in config:
+        vm = VM(module)
+        name = config.get("name")
+        uuid = vm.get_uuid(name, "vm_name")
+        if not uuid:
+            error = "VM {0} not found.".format(name)
+            return None, error
+    elif "uuid" in config:
+        uuid = config.get("uuid")
+
+    return uuid, None
