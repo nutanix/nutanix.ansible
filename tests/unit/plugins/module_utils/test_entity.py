@@ -39,9 +39,12 @@ def _fetch_url(url, method, data=None, **kwargs):
         "status": {"state": "succeeded"},
         "status_code": 200,
         "request": {"method": method, "url": url, "data": data},
+        "entities": [
+            {"spec": {"name": "test_name"}, "metadata": {"uuid": "test_uuid"}}
+        ],
     }
 
-    return response
+    return response, 200
 
 
 def exit_json(*args, **kwargs):
@@ -59,6 +62,10 @@ class TestEntity(ModuleTestCase):
     def setUp(self):
         self.module = Module()
         Entity._fetch_url = MagicMock(side_effect=_fetch_url)
+        Entity._get_default_spec = MagicMock(side_effect=lambda: {})
+        Entity.build_spec_methods = {
+            "test_param": lambda s, v: ({"test_param": v}, None)
+        }
         self.entity = Entity(self.module, resource_type="/test")
         self.module.exit_json = MagicMock(side_effect=exit_json)
         self.module.fail_json = MagicMock(side_effect=fail_json)
@@ -66,7 +73,7 @@ class TestEntity(ModuleTestCase):
     def test_create_action(self):
         data = {}
         req = {"method": "POST", "url": "https://99.99.99.99:9999/test", "data": data}
-        result = self.entity.create(data)
+        result, status = self.entity.create(data)
         self.assertEqual(result["request"], req)
 
     def test_negative_create_action(self):
@@ -75,14 +82,14 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "POST", "url": "https://None/", "data": data}
-        result = entity.create(data)
+        result, status = entity.create(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
     def test_update_action(self):
         data = {}
         req = {"method": "PUT", "url": "https://99.99.99.99:9999/test", "data": data}
-        result = self.entity.update(data)
+        result, status = self.entity.update(data)
         self.assertEqual(result["request"], req)
 
     def test_negative_update_action(self):
@@ -91,7 +98,7 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "PUT", "url": "https://None/", "data": data}
-        result = entity.update(data)
+        result, status = entity.update(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
@@ -102,7 +109,7 @@ class TestEntity(ModuleTestCase):
             "url": "https://99.99.99.99:9999/test/list",
             "data": data,
         }
-        result = self.entity.list(data)
+        result, status = self.entity.list(data)
         self.assertEqual(result["request"], req)
 
     def test_negative_list_action(self):
@@ -111,7 +118,27 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "POST", "url": "https://None//list", "data": data}
-        result = entity.list(data)
+        result, status = entity.list(data)
+        self.assertEqual(result["request"], req)
+        self.assertEqual(entity.headers.get("Authorization"), None)
+
+    def test_raed_action(self):
+        uuid = "test_uuid"
+        req = {
+            "method": "GET",
+            "url": "https://99.99.99.99:9999/test/{0}".format(uuid),
+            "data": None,
+        }
+        result, status = self.entity.read(uuid=uuid)
+        self.assertEqual(result["request"], req)
+
+    def test_negative_read_action(self):
+        data = None
+        self.module.params = {}
+        entity = Entity(self.module, resource_type="")
+
+        req = {"method": "GET", "url": "https://None/", "data": data}
+        result, status = entity.read(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
@@ -122,7 +149,7 @@ class TestEntity(ModuleTestCase):
             "url": "https://99.99.99.99:9999/test/{0}".format(uuid),
             "data": None,
         }
-        result = self.entity.delete(uuid=uuid)
+        result, status = self.entity.delete(uuid=uuid)
         self.assertEqual(result["request"], req)
 
     def test_negative_delete_action(self):
@@ -131,7 +158,7 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "DELETE", "url": "https://None/", "data": data}
-        result = entity.delete(data)
+        result, status = entity.delete(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
@@ -174,3 +201,29 @@ class TestEntity(ModuleTestCase):
         generated_headers = self.entity._build_headers(self.module, additional_headers)
 
         self.assertEqual(actual_headers, generated_headers)
+
+    def test_get_uuid(self):
+        name = "test_name"
+        result = self.entity.get_uuid(name=name)
+        self.assertEqual(result, "test_uuid")
+
+    def test_negative_get_uuid(self):
+        name = "wrong_test_name"
+        result = self.entity.get_uuid(name=name)
+        self.assertEqual(result, None)
+
+    def test_get_spec(self):
+        result = self.entity.get_spec()
+        self.assertEqual(result, ({}, None))
+
+    def test_build_spec_methods(self):
+        self.module.params = {"test_param": "test_value"}
+        entity = Entity(self.module, resource_type="/test")
+        result = entity.get_spec()
+        self.assertEqual(result, ({"test_param": "test_value"}, None))
+
+    def test_negative_build_spec_methods(self):
+        self.module.params = {"wrong_param": "test_value"}
+        entity = Entity(self.module, resource_type="/test")
+        result = entity.get_spec()
+        self.assertNotEqual(result, ({"wrong_param": "test_value"}, None))
