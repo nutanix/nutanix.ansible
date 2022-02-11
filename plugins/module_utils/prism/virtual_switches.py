@@ -10,13 +10,16 @@ from .groups import Groups
 
 
 def get_dvs_uuid(config, module):
-    if "name" in config["virtual_switch"]:
+    if "name" in config:
         groups = Groups(module)
-        name = config["virtual_switch"]["name"]
+        name = config["name"]
         uuid = groups.get_uuid("distributed_virtual_switch", "name=={0}".format(name))
         if not uuid:
             error = "Virtual Switch {0} not found.".format(name)
             return None, error
-    elif "uuid" in config["virtual_switch"]:
-        uuid = config["virtual_switch"]["uuid"]
+    elif "uuid" in config:
+        uuid = config["uuid"]
+    else:
+        error = "Config {} doesn't have name or uuid key".format(config)
+        None, error
     return uuid, None

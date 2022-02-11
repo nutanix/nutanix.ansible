@@ -68,10 +68,10 @@ class Entity(object):
 
     def get_spec(self):
         spec = self._get_default_spec()
-        for ansible_param, ansible_value in self.module.params.items():
+        for ansible_param, ansible_config in self.module.params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
-            if build_spec_method and ansible_value:
-                spec, error = build_spec_method(spec, ansible_value)
+            if build_spec_method and ansible_config:
+                spec, error = build_spec_method(spec, ansible_config)
                 if error:
                     return None, error
         return spec, None
