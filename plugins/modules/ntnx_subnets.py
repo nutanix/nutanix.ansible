@@ -420,7 +420,67 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-# TODO
+response:
+    returned: on success
+    description: >
+        The  
+    type: dict
+    sample: {
+      "response": {
+            "api_version": "3.1",
+            "metadata": {
+                "categories": {},
+                "categories_mapping": {},
+                "creation_time": "2022-02-13T14:19:41Z",
+                "kind": "subnet",
+                "last_update_time": "2022-02-13T14:19:44Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_version": 1,
+                "uuid": "f5043dec-aef6-4939-ba1b-81cdbd8f3bd2"
+            },
+            "spec": {
+                "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_1a642ea0a5c3",
+                    "uuid": "0005d734-09d4-0462-185b-ac1f6b6f97e2"
+                },
+                "name": "VLAN subnet without IPAM",
+                "resources": {
+                    "subnet_type": "VLAN",
+                    "virtual_switch_uuid": "91639374-c0b9-48c3-bfc1-f9c89343b3e7",
+                    "vlan_id": 205,
+                    "vswitch_name": "br0"
+                }
+            },
+            "status": {
+                "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_1a642ea0a5c3",
+                    "uuid": "0005d734-09d4-0462-185b-ac1f6b6f97e2"
+                },
+                "execution_context": {
+                    "task_uuid": [
+                        "ae015bd7-eada-4e23-a225-4f02f9b2b21e"
+                    ]
+                },
+                "name": "VLAN subnet without IPAM",
+                "resources": {
+                    "subnet_type": "VLAN",
+                    "virtual_switch_uuid": "91639374-c0b9-48c3-bfc1-f9c89343b3e7",
+                    "vlan_id": 205,
+                    "vswitch_name": "br0"
+                },
+                "state": "COMPLETE"
+            }
+        },
+        "subnet_uuid": "f5043dec-aef6-4939-ba1b-81cdbd8f3bd2",
+        "task_uuid": "ae015bd7-eada-4e23-a225-4f02f9b2b21e"
+
+      }
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

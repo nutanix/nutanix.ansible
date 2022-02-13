@@ -437,7 +437,274 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-# TODO
+response:
+    returned: on success
+    description: >
+        The response when creating new VM succesful
+  
+    type: dict
+    sample: {
+        "response": {
+            "api_version": "3.1",
+            "metadata": {
+                "categories": {
+                    "AppType": "Apache_Spark"
+                },
+                "categories_mapping": {
+                    "AppType": [
+                        "Apache_Spark"
+                    ]
+                },
+                "creation_time": "2022-02-13T14:13:38Z",
+                "entity_version": "2",
+                "kind": "vm",
+                "last_update_time": "2022-02-13T14:13:38Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "project_reference": {
+                    "kind": "project",
+                    "name": "_internal",
+                    "uuid": "d32032b3-8384-459e-9de7-e0e3d54e13c1"
+                },
+                "spec_version": 0,
+                "uuid": "2b011db0-4d44-43e3-828a-d0a32dab340c"
+            },
+            "spec": {
+                "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_1aa888141361",
+                    "uuid": "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+                },
+                "description": "VM with cluster, network, category, disk with Ubuntu image, guest customization ",
+                "name": "VM with Ubuntu image",
+                "resources": {
+                    "boot_config": {
+                        "boot_device_order_list": [
+                            "CDROM",
+                            "DISK",
+                            "NETWORK"
+                        ],
+                        "boot_type": "LEGACY"
+                    },
+                    "disk_list": [
+                        {
+                            "data_source_reference": {
+                                "kind": "image",
+                                "uuid": "64ccb355-fd73-4b68-a44b-24bc03ef3c66"
+                            },
+                            "device_properties": {
+                                "device_type": "DISK",
+                                "disk_address": {
+                                    "adapter_type": "SATA",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 32212254720,
+                            "disk_size_mib": 30720,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "47ca25c3-9d27-4b94-b6b1-dfa5b25660b4"
+                                }
+                            },
+                            "uuid": "e7d5d42f-c14b-4f9b-aa64-56661a9ec822"
+                        },
+                        {
+                            "device_properties": {
+                                "device_type": "CDROM",
+                                "disk_address": {
+                                    "adapter_type": "IDE",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 382976,
+                            "disk_size_mib": 1,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "47ca25c3-9d27-4b94-b6b1-dfa5b25660b4"
+                                }
+                            },
+                            "uuid": "1ce566d3-1c8c-4492-96d1-c39ed7c47513"
+                        }
+                    ],
+                    "gpu_list": [],
+                    "guest_customization": {
+                        "cloud_init": {
+                            "user_data": "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICByb290Ok51dGFuaXguMTIzCiAgICBleHBpcmU6IEZhbHNlCmZxZG46IG15TnV0YW5peFZNIAo="
+                        },
+                        "is_overridable": true
+                    },
+                    "hardware_clock_timezone": "UTC",
+                    "is_agent_vm": false,
+                    "machine_type": "PC",
+                    "memory_size_mib": 1024,
+                    "nic_list": [
+                        {
+                            "ip_endpoint_list": [],
+                            "is_connected": true,
+                            "mac_address": "50:6b:8d:f9:06:68",
+                            "nic_type": "NORMAL_NIC",
+                            "subnet_reference": {
+                                "kind": "subnet",
+                                "name": "vlan.800",
+                                "uuid": "671c0590-8496-4068-8480-702837fa2e42"
+                            },
+                            "trunked_vlan_list": [],
+                            "uuid": "4e15796b-67eb-4f93-8e01-3b60ecf80894",
+                            "vlan_mode": "ACCESS"
+                        }
+                    ],
+                    "num_sockets": 1,
+                    "num_threads_per_core": 1,
+                    "num_vcpus_per_socket": 1,
+                    "power_state": "ON",
+                    "power_state_mechanism": {
+                        "guest_transition_config": {
+                            "enable_script_exec": false,
+                            "should_fail_on_script_failure": false
+                        },
+                        "mechanism": "HARD"
+                    },
+                    "serial_port_list": [],
+                    "vga_console_enabled": true,
+                    "vnuma_config": {
+                        "num_vnuma_nodes": 0
+                    }
+                }
+            },
+            "status": {
+                "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_1aa888141361",
+                    "uuid": "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+                },
+                "description": "VM with cluster, network, category, disk with Ubuntu image, guest customization ",
+                "execution_context": {
+                    "task_uuid": [
+                        "82c5c1d3-eb6a-406a-8f58-306028099d21"
+                    ]
+                },
+                "name": "VM with Ubuntu image",
+                "resources": {
+                    "boot_config": {
+                        "boot_device_order_list": [
+                            "CDROM",
+                            "DISK",
+                            "NETWORK"
+                        ],
+                        "boot_type": "LEGACY"
+                    },
+                    "disk_list": [
+                        {
+                            "data_source_reference": {
+                                "kind": "image",
+                                "uuid": "64ccb355-fd73-4b68-a44b-24bc03ef3c66"
+                            },
+                            "device_properties": {
+                                "device_type": "DISK",
+                                "disk_address": {
+                                    "adapter_type": "SATA",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 32212254720,
+                            "disk_size_mib": 30720,
+                            "is_migration_in_progress": false,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "47ca25c3-9d27-4b94-b6b1-dfa5b25660b4"
+                                }
+                            },
+                            "uuid": "e7d5d42f-c14b-4f9b-aa64-56661a9ec822"
+                        },
+                        {
+                            "device_properties": {
+                                "device_type": "CDROM",
+                                "disk_address": {
+                                    "adapter_type": "IDE",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 382976,
+                            "disk_size_mib": 1,
+                            "is_migration_in_progress": false,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "47ca25c3-9d27-4b94-b6b1-dfa5b25660b4"
+                                }
+                            },
+                            "uuid": "1ce566d3-1c8c-4492-96d1-c39ed7c47513"
+                        }
+                    ],
+                    "gpu_list": [],
+                    "guest_customization": {
+                        "cloud_init": {
+                            "user_data": "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICByb290Ok51dGFuaXguMTIzCiAgICBleHBpcmU6IEZhbHNlCmZxZG46IG15TnV0YW5peFZNIAo="
+                        },
+                        "is_overridable": true
+                    },
+                    "hardware_clock_timezone": "UTC",
+                    "host_reference": {
+                        "kind": "host",
+                        "name": "10.46.136.134",
+                        "uuid": "7da77782-5e38-4ef8-a098-d6f63a001aae"
+                    },
+                    "hypervisor_type": "AHV",
+                    "is_agent_vm": false,
+                    "machine_type": "PC",
+                    "memory_size_mib": 1024,
+                    "nic_list": [
+                        {
+                            "ip_endpoint_list": [],
+                            "is_connected": true,
+                            "mac_address": "50:6b:8d:f9:06:68",
+                            "nic_type": "NORMAL_NIC",
+                            "subnet_reference": {
+                                "kind": "subnet",
+                                "name": "vlan.800",
+                                "uuid": "671c0590-8496-4068-8480-702837fa2e42"
+                            },
+                            "trunked_vlan_list": [],
+                            "uuid": "4e15796b-67eb-4f93-8e01-3b60ecf80894",
+                            "vlan_mode": "ACCESS"
+                        }
+                    ],
+                    "num_sockets": 1,
+                    "num_threads_per_core": 1,
+                    "num_vcpus_per_socket": 1,
+                    "power_state": "ON",
+                    "power_state_mechanism": {
+                        "guest_transition_config": {
+                            "enable_script_exec": false,
+                            "should_fail_on_script_failure": false
+                        },
+                        "mechanism": "HARD"
+                    },
+                    "protection_type": "UNPROTECTED",
+                    "serial_port_list": [],
+                    "vga_console_enabled": true,
+                    "vnuma_config": {
+                        "num_vnuma_nodes": 0
+                    }
+                },
+                "state": "COMPLETE"
+            }
+        },
+        "task_uuid": "82c5c1d3-eb6a-406a-8f58-306028099d21",
+        "vm_uuid": "2b011db0-4d44-43e3-828a-d0a32dab340c"
+    }
+
+
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

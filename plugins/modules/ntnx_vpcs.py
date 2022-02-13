@@ -151,7 +151,81 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-# TODO
+response:
+    returned: on success
+    description: >
+        The response when creating new VPC succesful
+  
+    type: dict
+    sample: {
+        "response": {
+            "api_version": "3.1",
+            "metadata": {
+                "categories": {},
+                "categories_mapping": {},
+                "creation_time": "2022-02-13T12:13:23Z",
+                "kind": "vpc",
+                "last_update_time": "2022-02-13T12:13:26Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_version": 0,
+                "uuid": "26f353fc-424b-4925-9d7d-16f19f1312a9"
+            },
+            "spec": {
+                "name": "MinVPC",
+                "resources": {
+                    "common_domain_name_server_ip_list": [],
+                    "external_subnet_list": [
+                        {
+                            "external_subnet_reference": {
+                                "kind": "subnet",
+                                "uuid": "57959f75-6b21-431c-b76b-516447d52621"
+                            }
+                        }
+                    ],
+                    "externally_routable_prefix_list": []
+                }
+            },
+            "status": {
+                "execution_context": {
+                    "task_uuid": [
+                        "9829d43d-85aa-4560-9862-81db1433a85a"
+                    ]
+                },
+                "name": "MinVPC",
+                "resources": {
+                    "availability_zone_reference_list": [],
+                    "common_domain_name_server_ip_list": [],
+                    "external_subnet_list": [
+                        {
+                            "active_gateway_node": {
+                                "host_reference": {
+                                    "kind": "host",
+                                    "uuid": "e16b6989-a149-4f93-989f-bc3e96f88a40"
+                                },
+                                "ip_address": "10.46.136.28"
+                            },
+                            "external_ip_list": [
+                                "192.168.1.109"
+                            ],
+                            "external_subnet_reference": {
+                                "kind": "subnet",
+                                "uuid": "57959f75-6b21-431c-b76b-516447d52621"
+                            }
+                        }
+                    ],
+                    "externally_routable_prefix_list": []
+                },
+                "state": "COMPLETE"
+            }
+        },
+        "task_uuid": "9829d43d-85aa-4560-9862-81db1433a85a",
+        "vpc_uuid": "26f353fc-424b-4925-9d7d-16f19f1312a9"
+    
+}
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
