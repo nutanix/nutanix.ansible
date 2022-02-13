@@ -441,7 +441,6 @@ response:
     returned: on success
     description: >
         The response when creating new VM succesful
-  
     type: dict
     sample: {
         "response": {
@@ -536,7 +535,8 @@ response:
                     "gpu_list": [],
                     "guest_customization": {
                         "cloud_init": {
-                            "user_data": "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICByb290Ok51dGFuaXguMTIzCiAgICBleHBpcmU6IEZhbHNlCmZxZG46IG15TnV0YW5peFZNIAo="
+                            "user_data": "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICByb290Ok51
+                                          dGFuaXguMTIzCiAgICBleHBpcmU6IEZhbHNlCmZxZG46IG15TnV0YW5peFZNIAo="
                         },
                         "is_overridable": true
                     },
@@ -649,7 +649,8 @@ response:
                     "gpu_list": [],
                     "guest_customization": {
                         "cloud_init": {
-                            "user_data": "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICByb290Ok51dGFuaXguMTIzCiAgICBleHBpcmU6IEZhbHNlCmZxZG46IG15TnV0YW5peFZNIAo="
+                            "user_data": "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICByb290Ok51dGFuaXguMTIz
+                                          CiAgICBleHBpcmU6IEZhbHNlCmZxZG46IG15TnV0YW5peFZNIAo="
                         },
                         "is_overridable": true
                     },

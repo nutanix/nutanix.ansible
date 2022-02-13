@@ -423,7 +423,7 @@ RETURN = r"""
 response:
     returned: on success
     description: >
-        The  
+        The response when creating new SUBNET succesful
     type: dict
     sample: {
       "response": {

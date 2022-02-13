@@ -155,7 +155,6 @@ response:
     returned: on success
     description: >
         The response when creating new VPC succesful
-  
     type: dict
     sample: {
         "response": {
@@ -224,7 +223,6 @@ response:
         },
         "task_uuid": "9829d43d-85aa-4560-9862-81db1433a85a",
         "vpc_uuid": "26f353fc-424b-4925-9d7d-16f19f1312a9"
-    
 }
 """
 
