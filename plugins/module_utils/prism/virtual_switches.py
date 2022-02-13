@@ -20,6 +20,6 @@ def get_dvs_uuid(config, module):
     elif "uuid" in config:
         uuid = config["uuid"]
     else:
-        error = "Config {} doesn't have name or uuid key".format(config)
+        error = "Config {0} doesn't have name or uuid key".format(config)
         None, error
     return uuid, None
