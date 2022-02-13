@@ -320,6 +320,10 @@ options:
                   - List of domain search
                 type: list
                 elements: str
+              dhcp_server_ip:
+                description:
+                  - The DHCP server IP
+                type: str
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)

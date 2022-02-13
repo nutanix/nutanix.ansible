@@ -5,7 +5,7 @@ password: Nutanix.123
 external_subnet:
   name: ET_2
   uuiid: 57959f75-6b21-431c-b76b-516447d52621
-dns_servers: ["8.8.8.8","8.8.4.4"]
+dns_servers: ["8.8.8.8", "8.8.4.4"]
 
 routable_ips:
   network_ip: 192.168.2.0
