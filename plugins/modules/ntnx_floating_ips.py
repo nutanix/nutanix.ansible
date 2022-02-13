@@ -58,13 +58,58 @@ options:
     type: bool
     required: false
     default: True
-  name:
-    description: floating_ip Name
-    required: False
-    type: str
   floating_ip_uuid:
     description: floating_ip UUID
     type: str
+  external_subnet:
+    description: A subnet with external connectivity
+    type: dict
+    suboptions:
+      uuid:
+        description: Subnet UUID
+        type: str
+      name:
+        description: Subnet Name
+        type: str
+  private_ip:
+    description: to-write
+    type: str
+  vpc:
+        description:
+          - Virtual Private Clouds
+          - VPCs are required to be attached to Subnets with External Connectivity to send traffic outside the VPC
+        type: dict
+        suboptions:
+          name:
+            description:
+              - VPC Name
+              - Mutually exclusive with (uuid)
+            type: str
+          uuid:
+            description:
+              - VPC UUID
+              - Mutually exclusive with (name)
+            type: str
+  vm:
+        description:
+          - to-write
+        type: dict
+        suboptions:
+          name:
+            description:
+              - VM Name
+              - Mutually exclusive with (uuid)
+            type: str
+          uuid:
+            description:
+              - VM UUID
+              - Mutually exclusive with (name)
+            type: str
+author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
+ - Dina AbuHijleh (@dina-abuhijleh)
 
   #TODO here should be additional arguments documentation
 
@@ -88,17 +133,19 @@ def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     module_args = dict(
-        external_subnet=dict(type="dict",
-                             options=entity_by_spec,
-                             mutually_exclusive=mutually_exclusive,
-                             required=True),
-        vm=dict(type="dict",
-                options=entity_by_spec,
-                mutually_exclusive=mutually_exclusive),
-        vpc=dict(type="dict",
-                 options=entity_by_spec,
-                 mutually_exclusive=mutually_exclusive),
-        private_ip=dict(type="str")
+        external_subnet=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+        ),
+        vm=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        vpc=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        private_ip=dict(type="str"),
+        floating_ip_uuid=dict(type="str"),
     )
 
     return module_args
@@ -170,7 +217,11 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[("vm", "vpc")]
+        mutually_exclusive=[("vm", "vpc")],
+        required_if=[
+            ("state", "present", ("external_subnet",)),
+            ("state", "absent", ("floating_ip_uuid",)),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {
