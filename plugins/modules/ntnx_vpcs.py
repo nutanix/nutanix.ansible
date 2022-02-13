@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_vpcs
-short_description: vpcs module which suports vpc CRUD operations
+short_description: Virtual Private Cloud (VPC) module which suports vpc CRUD operations
 version_added: 1.0.0
 description: 'Create, Update, Delete vpcs'
 options:
@@ -32,7 +32,7 @@ options:
     required: true
   nutanix_password:
     description:
-      - PC password;
+      - PC password
     required: true
     type: str
   validate_certs:
@@ -57,38 +57,43 @@ options:
     description: Wait for vpc CRUD operation to complete.
     type: bool
     required: false
-    default: True
+    default: true
   name:
-    description: vpc Name
+    description: VPC name
     type: str
+    required: true
   vpc_uuid:
-    description: vpc uuid
+    description: VPC uuid
     type: str
   dns_servers:
-    description: List of DNS servers IPs
+    description:
+      - List of DNS servers IPs
+      - DNS is advertised to Guest VMs via DHCP
     type: list
     elements: str
   routable_ips:
-    description: Address space within the VPC which can talk externally without NAT. These are in effect when No-NAT External subnet is used.
+    description: Address space within the VPC which can talk externally without NAT. These are in effect when No-NAT External subnet is used
     type: list
     elements: dict
     suboptions:
       network_ip:
-        description: ip address
+        description: Network ip address
         type: str
       network_prefix:
-        description: Subnet ip address prefix length
+        description: Network ip address prefix length
         type: int
   external_subnets:
-    description: A subnet with external connectivity
+    description:
+      - Subnet with external connectivity
+      - Required if the VPC needs to send traffic to a destination outside of the VPC
     type: list
     elements: dict
     suboptions:
       subnet_uuid:
-        description: Subnet UUID
+        description: External subnet uuid
         type: str
       subnet_name:
-        description: Subnet Name
+        description: External subnet name
         type: str
 author:
  - Prem Karat (@premkarat)
@@ -98,7 +103,51 @@ author:
 """
 
 EXAMPLES = r"""
-# TODO
+
+  - name: Create min VPC
+    ntnx_vpcs:
+      validate_certs: False
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: MinVPC
+      external_subnets:
+        - subnet_name: "{{ external_subnet.name }}"
+
+  - name: Create VPC with dns_servers
+    ntnx_vpcs:
+      validate_certs: False
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: vpc_with_dns_servers
+      dns_servers: "{{ dns_servers }}"
+
+  - name: Create VPC with all specfactions
+    ntnx_vpcs:
+      validate_certs: False
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: vpc_with_add_specfactions
+      external_subnets:
+        - subnet_name: "{{ external_subnet.name }}"
+      dns_servers: "{{ dns_servers }}"
+      routable_ips:
+        - network_ip: "{{ routable_ips.network_ip }}"
+          network_prefix:  "{{ routable_ips.network_prefix }}"
+
+  - name: Delete VPC
+    ntnx_vpcs:
+      state: absent
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      vpc_uuid: "{{ vpc_uuid }}"
 """
 
 RETURN = r"""

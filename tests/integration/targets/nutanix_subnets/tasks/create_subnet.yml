@@ -25,6 +25,8 @@
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 
+#################################################################
+
 - name: VLAN subnet with IPAM
   ntnx_subnets:
     state: present
@@ -56,6 +58,8 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
+    
+#################################################################
 
 - name: VLAN subnet with IPAM and IP pools
   ntnx_subnets:
@@ -91,6 +95,8 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
+    
+#################################################################
 
 - name: VLAN subnet with IPAM IP pools and DHCP
   ntnx_subnets:
@@ -133,6 +139,8 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
+
+#################################################################
 
 - name: VLAN subnet with IPAM multiple IP pools and DHCP
   ntnx_subnets:
@@ -177,6 +185,8 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
+    
+#################################################################
 
 - name: External subnet without NAT
   ntnx_subnets:
@@ -213,8 +223,8 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-
-
+    
+#################################################################
 
 - name: External subnet with NAT
   ntnx_subnets:
@@ -251,6 +261,8 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
+    
+#################################################################
 
 - name: Overlay Subnet with minimum requirements
   ntnx_subnets:
@@ -280,6 +292,8 @@
     
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
+    
+#################################################################
 
 - name: Delete all Created Subnets
   ntnx_subnets:
@@ -295,6 +309,8 @@
   
 - set_fact:
     todelete: []
+    
+#################################################################
 
 - name: Overlay Subnet with IP_pools and DHCP
   ntnx_subnets:
@@ -331,6 +347,8 @@
     success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
+    
+#################################################################
 
 - name: Delete all Created Subnets
   ntnx_subnets:

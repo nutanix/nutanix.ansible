@@ -1,0 +1,52 @@
+---
+- name: Overlay Subnet with IP_pools and DHCP
+  ntnx_subnets:
+    state: present
+    nutanix_host: "{{ ip }}"
+    validate_certs: false
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: Overlay Subnet with IP_pools and DHCP
+    overlay_subnet:
+      vpc:
+        name: "{{ vpc.name }}"
+      ipam:
+        network_ip: "{{ ip_address_management.network_ip }}"
+        network_prefix: "{{ ip_address_management.network_prefix }}"
+        gateway_ip: "{{ ip_address_management.gateway_ip_address }}"
+        ip_pools:
+          - start_ip: "{{ ip_address_pools.start_address }}"
+            end_ip: "{{ ip_address_pools.end_address }}"
+        dhcp:
+          dns_servers: "{{ dhcp_settings.dns_servers }}"
+          domain_search: "{{ dhcp_settings.domain_search }}"
+          domain_name: "{{ dhcp_settings.domain_name }}"
+          tftp_server_name: "{{ dhcp_settings.tftp_server_name }}"
+          boot_file: "{{ dhcp_settings.boot_file }}"
+  register: result
+  ignore_errors: true
+  
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create Overlay Subnet with IP_pools and DHCP "
+    success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
+      
+- name: Delete subnet
+  ntnx_subnets:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    subnet_uuid: "{{ result.subnet_uuid }}"
+
+- name: Deletion Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status == 'COMPLETE'
+    fail_msg: "Unable to delete subnet"
+    success_msg: "Subnet deleted successfully"

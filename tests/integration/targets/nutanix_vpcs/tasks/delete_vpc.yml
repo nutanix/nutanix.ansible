@@ -1,0 +1,35 @@
+---
+- name: Create VPC with all specfactions
+  ntnx_vpcs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: vpc_with_add_specfactions
+    external_subnets:
+      - subnet_name: "{{ external_subnet.name }}"
+    dns_servers: "{{ dns_servers }}"
+    routable_ips:
+      - network_ip: "{{ routable_ips.network_ip }}"
+        network_prefix:  "{{ routable_ips.network_prefix }}"
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create vpc all specfactions "
+    success_msg: " VPC with all specfactions created successfully "
+
+
+- name: Delete vpc
+  ntnx_vpcs:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    vpc_uuid: "{{ result.vpc_uuid }}"

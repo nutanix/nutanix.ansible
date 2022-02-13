@@ -3,12 +3,12 @@
   ntnx_vms:
       state: present
       name: MinReqVM
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
   register: result
   ignore_errors: true
     
@@ -20,11 +20,11 @@
       fail_msg: ' Unable to create VM with minimum requiremnts '
       success_msg: ' VM with minimum requiremnts created successfully '
       
-- name: delete vm
+- name: Delete VM
   ntnx_vms:
     vm_uuid: '{{ result["response"]["metadata"]["uuid"] }}'
     state: absent
-    nutanix_host: "{{ IP }}"
+    nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: False
@@ -36,5 +36,5 @@
     that:
       - result.response is defined
       - result.response.status == 'SUCCEEDED'
-    fail_msg: "Unable to delete Vm"
-    success_msg: "VM   Deleted successfully"
+    fail_msg: "Unable to delete VM"
+    success_msg: "VM deleted successfully"

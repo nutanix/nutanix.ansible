@@ -10,8 +10,6 @@
              expire: False
          fqdn: myNutanixVM 
     
-          
-
   ################################################################
   
   - name: VM with ubuntu image and different specifications 
