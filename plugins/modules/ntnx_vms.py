@@ -60,7 +60,7 @@ options:
     default: true
   name:
     description: VM Name
-    required: true
+    required: false
     type: str
   vm_uuid:
     description: VM UUID
@@ -88,7 +88,7 @@ options:
     description:
       - Name or UUID of the cluster on which the VM will be placed
     type: dict
-    required: true
+    required: false
     suboptions:
       name:
         description:
@@ -275,7 +275,7 @@ options:
       - categories to be attached to the VM.
     type: dict
     required: false
-authors:
+author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)

@@ -60,7 +60,7 @@ options:
     default: true
   name:
     description: Subnet Name
-    required: true
+    required: false
     type: str
   subnet_uuid:
     description: Subnet UUID
@@ -210,14 +210,17 @@ options:
             description:
               - Subnet network address
             type: str
+            required: true
           network_prefix:
             description:
               - Subnet network address prefix length
             type: int
+            required: true
           gateway_ip:
             description:
               - The gateway ip address
             type: str
+            required: true
           ip_pools:
             description:
               - Range of IPs
@@ -265,14 +268,17 @@ options:
             description:
               - Subnet network address
             type: str
+            required: true
           network_prefix:
             description:
               - Subnet network address prefix length
             type: int
+            required: true
           gateway_ip:
             description:
               - The gateway ip address
             type: str
+            required: true
           ip_pools:
             description:
               - Range of IPs
@@ -314,7 +320,7 @@ options:
                   - List of domain search
                 type: list
                 elements: str
-authors:
+author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -406,7 +412,7 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: false
-      subnet_uuid: "{{ subnet_uuid}}"
+      subnet_uuid: "{{ subnet_uuid }}"
 """
 
 RETURN = r"""

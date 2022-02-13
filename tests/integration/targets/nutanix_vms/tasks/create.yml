@@ -44,8 +44,7 @@
         script_path: "./cloud_init.yml"
         is_overridable: True
     register: result
-    
-    
+
   - name: Creation Status
     assert:
       that:
@@ -57,11 +56,9 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-    
-    
+
   #########################################################################################
-    
-    
+ 
   - name: VM with CentOS-7-cloud-init image
     ntnx_vms:
       state: present
@@ -99,8 +96,7 @@
     when: result.response.status.state == 'COMPLETE'
 
   #################################################################################
-  
-  
+
   - name: VM with Cluster, Network, Universal time zone, one Disk
     ntnx_vms:
       state: present
@@ -168,10 +164,8 @@
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
 
-    
-    
   #####################################################################################
-  
+
   - name: VM with Cluster, different CDROMs
     ntnx_vms:
       state: present
@@ -204,9 +198,8 @@
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
 
-
   ####################################################################################
-  
+
   - name: VM with all specification
     ntnx_vms:
       state: present

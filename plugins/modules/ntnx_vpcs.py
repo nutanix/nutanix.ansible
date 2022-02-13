@@ -61,7 +61,7 @@ options:
   name:
     description: VPC name
     type: str
-    required: true
+    required: false
   vpc_uuid:
     description: VPC uuid
     type: str
