@@ -43,10 +43,3 @@
     validate_certs: false
     subnet_uuid: "{{ result.subnet_uuid }}"
 
-- name: Deletion Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status == 'COMPLETE'
-    fail_msg: "Unable to delete subnet"
-    success_msg: "Subnet deleted successfully"
