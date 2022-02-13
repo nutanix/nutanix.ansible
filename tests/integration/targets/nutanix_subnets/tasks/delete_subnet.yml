@@ -42,4 +42,3 @@
     nutanix_password: "{{ password }}"
     validate_certs: false
     subnet_uuid: "{{ result.subnet_uuid }}"
-

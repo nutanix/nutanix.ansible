@@ -1,5 +1,5 @@
   
-  - name: Create Cloud init Script file
+  - name: Create Cloud-init Script file
     copy:
       dest: "cloud_init.yml"
       content: |
@@ -15,7 +15,7 @@
   - name: VM with ubuntu image and different specifications 
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       validate_certs: False
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -25,17 +25,17 @@
         AppType:
           - "Apache_Spark"
       cluster:
-        name: "{{ClusterName}}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: True
           subnet:
-            name: "{{ NetworkName }}"
+            name: "{{ network.dhcp.name }}"
       disks:
         - type: "DISK"
           size_gb: 30
           bus: "SATA"
           clone_image:
-            name: "{{ Ubuntu }}"
+            name: "{{ ubuntu }}"
       vcpus: 1
       cores_per_vcpu: 1
       memory_gb: 1
@@ -67,17 +67,17 @@
       state: present
       name: VM with CentOS-7-cloud-init image 
       timezone: "UTC"
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       disks:
         - type: "DISK"
           size_gb: 10
           clone_image:
-            name:  "{{ CentOS }}"
+            name:  "{{ centos }}"
           bus: "SCSI"
       guest_customization:
         type: "cloud_init"
@@ -104,18 +104,18 @@
   - name: VM with Cluster, Network, Universal time zone, one Disk
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       name: "VM with Cluster Network and Disk"
       timezone: "Universal"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: True
           subnet:
-            name: "{{ NetworkName }}"
+            name: "{{ network.dhcp.name }}"
       disks:
         - type: "DISK"
           size_gb: 10
@@ -138,14 +138,14 @@
   - name: VM with Cluster, different Disks, Memory size
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       name: "VM with different disks"
       timezone: "UTC"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       disks:
         - type: "DISK"
           size_gb: 10
@@ -175,13 +175,13 @@
   - name: VM with Cluster, different CDROMs
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       name: "VM with multiple CDROMs"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       disks:
         - type: "CDROM"
           bus: "SATA"
@@ -210,14 +210,14 @@
   - name: VM with all specification
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       name: "All specification"
       timezone: "GMT"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       disks:
         - type: "DISK"
           size_gb: 2
@@ -265,17 +265,17 @@
     ntnx_vms:
       state: present
       name: VM with managed subnet
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       validate_certs: False
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: true
           subnet: 
-            name: "{{ StaticNetworkName }}"
-          private_ip: "{{ StaticNetworkIP }}"
+            name: "{{ network.static.name }}"
+          private_ip: "{{ network.static.ip }}"
     register: result
     ignore_errors: true
     
@@ -300,12 +300,12 @@
     ntnx_vms:
       state: present
       name: MinReqVM
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
     register: result
     ignore_errors: true
     
@@ -330,16 +330,16 @@
       state: present
       name: VM with unmanaged vlan
       timezone: UTC
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: false
           subnet:
-            uuid: "{{ dhcpUUID }}"
+            uuid: "{{ network.dhcp.uuid }}"
       boot_config: 
         boot_type: LEGACY
         boot_order:
@@ -371,19 +371,19 @@
       state: present
       name: VM with UEFI boot type 
       timezone: GMT
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       categories:
         AppType:
           - Apache_Spark
       disks:
         - type: "DISK"
           clone_image: 
-            name: "{{ Ubuntu }}"
+            name: "{{ ubuntu }}"
           bus: "SCSI"
           size_gb: 20
         - type: DISK
@@ -393,7 +393,7 @@
           size_gb: 2
           bus: PCI
           storage_container:
-            name: "{{ StorageContainerName }}"
+            name: "{{ storage_container.name }}"
         - type: DISK
           size_gb: 3
           bus: SATA
@@ -427,20 +427,20 @@
     ntnx_vms:
       state: present
       name: VM_NIC
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       timezone: UTC
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: true
           subnet:
-            uuid: "{{ dhcpUUID }}"
+            uuid: "{{ network.dhcp.uuid }}"
         - is_connected: true
           subnet:
-            uuid: "{{ StaticNetworkUUID }}"
+            uuid: "{{ network.static.uuid }}"
       disks:
         - type: DISK
           size_gb: 1
@@ -477,14 +477,13 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-
       
   #########################################################################################
-  - name: Delete all Created VM
-    
+  
+  - name: Delete all Created VM  
     ntnx_vms:
       state: absent
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
