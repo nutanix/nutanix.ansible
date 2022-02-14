@@ -10,5 +10,6 @@ vpc:
 vm:
   vm_name: ET_11
   vm_uuid: 98f78bad-cfb0-4dc1-84a1-6a0d17a933a7
-private_ip: 192.168.1.150
+private_ip: 192.168.1.153
 todelete: []
+vm_subnet_name: ext_102

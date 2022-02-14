@@ -10,7 +10,8 @@
       uuid: "{{external_subnet.subnet_uuiid}}"
   register: result
   ignore_errors: True
-
+- debug:
+    var: result
 - name: Creation Status
   assert:
     that:
@@ -46,9 +47,17 @@
     fail_msg: " Unable to create  Floating ip with vpc "
     success_msg: "  Floating ip with vpc created successfully "
 
-- set_fact:
-    todelete: "{{ todelete + [  result.floating_ip_uuid ] }}"    
 
+- name: Delete the Floating IP with vpc Name with external subnet uuid
+  ntnx_floating_ips:
+    state: absent
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    floating_ip_uuid: "{{result.floating_ip_uuid}}"
+  register: result
+  ignore_errors: True
 
 - name: create Floating IP with External Subnet with vm
   ntnx_floating_ips:
@@ -58,11 +67,10 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      uuid: "{{external_subnet.subnet_uuiid}}"
+      name: "{{vm_subnet_name}}"
     vm:
       name: "{{vm.vm_name}}"
-    private_ip: "{{private_ip}}"
-    ignore_errors: True
+  ignore_errors: True
 
   register: result
 
