@@ -154,7 +154,7 @@ def get_subnet_uuid(config, module):
     elif "uuid" in config or "subnet_uuid" in config:
         uuid = config.get("uuid") or config.get("subnet_uuid")
     else:
-        error = "Config {} doesn't have name or uuid key".format(config)
+        error = "Config {0} doesn't have name or uuid key".format(config)
         None, error
 
     return uuid, None
