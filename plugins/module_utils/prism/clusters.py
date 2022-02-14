@@ -28,6 +28,6 @@ def get_cluster_uuid(config, module):
         uuid = config["uuid"]
     else:
         error = "Config {0} doesn't have name or uuid key".format(config)
-        None, error
+        return None, error
 
     return uuid, None
