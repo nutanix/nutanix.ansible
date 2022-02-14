@@ -420,15 +420,16 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-response:
-    returned: on success
-    description: >
-        The response when creating new SUBNET succesful
-    type: dict
-    sample: {
-      "response": {
-            "api_version": "3.1",
-            "metadata": {
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The subnet kind metadata
+  returned: always
+  type: dict
+  sample: {
                 "categories": {},
                 "categories_mapping": {},
                 "creation_time": "2022-02-13T14:19:41Z",
@@ -441,8 +442,12 @@ response:
                 },
                 "spec_version": 1,
                 "uuid": "f5043dec-aef6-4939-ba1b-81cdbd8f3bd2"
-            },
-            "spec": {
+            }
+spec:
+  description: An intentful representation of a subnet spec
+  returned: always
+  type: dict
+  sample: {
                 "cluster_reference": {
                     "kind": "cluster",
                     "name": "auto_cluster_prod_1a642ea0a5c3",
@@ -455,8 +460,12 @@ response:
                     "vlan_id": 205,
                     "vswitch_name": "br0"
                 }
-            },
-            "status": {
+            }
+status:
+  description: An intentful representation of a subnet status
+  returned: always
+  type: dict
+  sample:  {
                 "cluster_reference": {
                     "kind": "cluster",
                     "name": "auto_cluster_prod_1a642ea0a5c3",
@@ -476,11 +485,16 @@ response:
                 },
                 "state": "COMPLETE"
             }
-        },
-        "subnet_uuid": "f5043dec-aef6-4939-ba1b-81cdbd8f3bd2",
-        "task_uuid": "ae015bd7-eada-4e23-a225-4f02f9b2b21e"
-
-      }
+subnet_uuid:
+  description: The created subnet uuid
+  returned: always
+  type: str
+  sample: "f5043dec-aef6-4939-ba1b-81cdbd8f3bd2"
+task_uuid:
+  description: The task uuid for the creation
+  returned: always
+  type: str
+  sample: "ae015bd7-eada-4e23-a225-4f02f9b2b21e"
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

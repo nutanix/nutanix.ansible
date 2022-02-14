@@ -437,15 +437,16 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-response:
-    returned: on success
-    description: >
-        The response when creating new VM succesful
-    type: dict
-    sample: {
-        "response": {
-            "api_version": "3.1",
-            "metadata": {
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The vm kind metadata
+  returned: always
+  type: dict
+  sample: {
                 "categories": {
                     "AppType": "Apache_Spark"
                 },
@@ -470,8 +471,12 @@ response:
                 },
                 "spec_version": 0,
                 "uuid": "2b011db0-4d44-43e3-828a-d0a32dab340c"
-            },
-            "spec": {
+            }
+spec:
+  description: An intentful representation of a vm spec
+  returned: always
+  type: dict
+  sample: {
                 "cluster_reference": {
                     "kind": "cluster",
                     "name": "auto_cluster_prod_1aa888141361",
@@ -577,8 +582,12 @@ response:
                         "num_vnuma_nodes": 0
                     }
                 }
-            },
-            "status": {
+            }
+status:
+  description: An intentful representation of a vm status
+  returned: always
+  type: dict
+  sample: {
                 "cluster_reference": {
                     "kind": "cluster",
                     "name": "auto_cluster_prod_1aa888141361",
@@ -699,13 +708,17 @@ response:
                     }
                 },
                 "state": "COMPLETE"
-            }
-        },
-        "task_uuid": "82c5c1d3-eb6a-406a-8f58-306028099d21",
-        "vm_uuid": "2b011db0-4d44-43e3-828a-d0a32dab340c"
-    }
-
-
+}
+vm_uuid:
+  description: The created vm uuid
+  returned: always
+  type: str
+  sample: "2b011db0-4d44-43e3-828a-d0a32dab340c"
+task_uuid:
+  description: The task uuid for the creation
+  returned: always
+  type: str
+  sample: "82c5c1d3-eb6a-406a-8f58-306028099d21"
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

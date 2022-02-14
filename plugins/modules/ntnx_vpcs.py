@@ -151,15 +151,16 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-response:
-    returned: on success
-    description: >
-        The response when creating new VPC succesful
-    type: dict
-    sample: {
-        "response": {
-            "api_version": "3.1",
-            "metadata": {
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The VPC  metadata
+  returned: always
+  type: dict
+  sample: {
                 "categories": {},
                 "categories_mapping": {},
                 "creation_time": "2022-02-13T12:13:23Z",
@@ -172,8 +173,12 @@ response:
                 },
                 "spec_version": 0,
                 "uuid": "26f353fc-424b-4925-9d7d-16f19f1312a9"
-            },
-            "spec": {
+            }
+spec:
+  description: An intentful representation of a VPC spec
+  returned: always
+  type: dict
+  sample: {
                 "name": "MinVPC",
                 "resources": {
                     "common_domain_name_server_ip_list": [],
@@ -187,8 +192,12 @@ response:
                     ],
                     "externally_routable_prefix_list": []
                 }
-            },
-            "status": {
+            }
+status:
+  description: An intentful representation of a VPC status
+  returned: always
+  type: dict
+  sample:  {
                 "execution_context": {
                     "task_uuid": [
                         "9829d43d-85aa-4560-9862-81db1433a85a"
@@ -219,11 +228,17 @@ response:
                     "externally_routable_prefix_list": []
                 },
                 "state": "COMPLETE"
-            }
-        },
-        "task_uuid": "9829d43d-85aa-4560-9862-81db1433a85a",
-        "vpc_uuid": "26f353fc-424b-4925-9d7d-16f19f1312a9"
 }
+vpc_uuid:
+  description: The created VPC uuid
+  returned: always
+  type: str
+  sample: "26f353fc-424b-4925-9d7d-16f19f1312a9"
+task_uuid:
+  description: The task uuid for the creation
+  returned: always
+  type: str
+  sample: "9829d43d-85aa-4560-9862-81db1433a85a"
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
