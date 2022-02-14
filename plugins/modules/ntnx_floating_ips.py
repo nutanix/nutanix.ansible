@@ -219,8 +219,8 @@ task_uuid:
 
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.floating_ips import FloatingIP  # noqa: E402
+from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -229,9 +229,7 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     module_args = dict(
         external_subnet=dict(
-            type="dict",
-            options=entity_by_spec,
-            mutually_exclusive=mutually_exclusive,
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         vm=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive

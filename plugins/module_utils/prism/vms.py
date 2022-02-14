@@ -294,6 +294,7 @@ class VM(Prism):
         payload["metadata"]["use_categories_mapping"] = True
         return payload, None
 
+
 # Helper functions
 
 

@@ -204,12 +204,12 @@ class TestEntity(ModuleTestCase):
 
     def test_get_uuid(self):
         name = "test_name"
-        result = self.entity.get_uuid(name=name)
+        result = self.entity.get_uuid(value=name)
         self.assertEqual(result, "test_uuid")
 
     def test_negative_get_uuid(self):
         name = "wrong_test_name"
-        result = self.entity.get_uuid(name=name)
+        result = self.entity.get_uuid(value=name)
         self.assertEqual(result, None)
 
     def test_get_spec(self):
