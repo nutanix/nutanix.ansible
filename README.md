@@ -11,6 +11,9 @@ _Add `--force` option for rebuilding or reinstalling to overwrite existing data_
 # Included modules
 ```
 ntnx_vms
+ntnx_vpcs
+ntnx_subnets
+ntnx_floating_ips
 ```
 
 # Inventory plugin
