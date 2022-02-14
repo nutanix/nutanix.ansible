@@ -54,7 +54,7 @@ class FloatingIP(Prism):
         uuid, error = get_vpc_uuid(config, self.module)
         if error:
             return None, error
-        payload["spec"]["resources"]["vm_nic_reference"] = self._get_vpc_ref(uuid)
+        payload["spec"]["resources"]["vpc_reference"] = self._get_vpc_ref(uuid)
         return payload, None
 
     def _build_spec_private_ip(self, payload, private_ip):
