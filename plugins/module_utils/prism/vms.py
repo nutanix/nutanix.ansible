@@ -201,7 +201,7 @@ class VM(Prism):
 
                 if vdisk.get("storage_container"):
                     disk.pop("data_source_reference")
-                    if "name" in vdisk["storage_container"]:
+                    if vdisk["storage_container"].get("name"):
                         groups = Groups(self.module)
                         name = vdisk["storage_container"]["name"]
                         uuid = groups.get_uuid(
@@ -212,7 +212,7 @@ class VM(Prism):
                             error = "Storage container {0} not found.".format(name)
                             return None, error
 
-                    elif "uuid" in vdisk["storage_container"]:
+                    elif vdisk["storage_container"].get("uuid"):
                         uuid = vdisk["storage_container"]["uuid"]
 
                     disk["storage_config"]["storage_container_reference"]["uuid"] = uuid
