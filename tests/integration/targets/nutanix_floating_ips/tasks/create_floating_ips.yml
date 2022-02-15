@@ -1,5 +1,5 @@
 ---
-- name: create Floating IP with External Subnet Name
+- name: create Floating IP with External Subnet uuid
   ntnx_floating_ips:
     validate_certs: False
     state: present
@@ -10,8 +10,7 @@
       uuid: "{{external_subnet.subnet_uuiid}}"
   register: result
   ignore_errors: True
-- debug:
-    var: result
+
 - name: Creation Status
   assert:
     that:
@@ -21,7 +20,7 @@
     success_msg: "  Floating ip created successfully "
 
 - set_fact:
-    todelete: "{{ todelete + [  result.floating_ip_uuid ] }}"
+    todelete: "{{ todelete + [  result.fip_uuid ] }}"
 
 
 - name: create Floating IP with vpc Name with external subnet uuid
@@ -58,6 +57,7 @@
     fip_uuid: "{{result.fip_uuid}}"
   register: result
   ignore_errors: True
+
 
 - name: create Floating IP with External Subnet with vm
   ntnx_floating_ips:

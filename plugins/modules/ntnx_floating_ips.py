@@ -174,7 +174,7 @@ metadata:
                 "uuid": "d34a85bc-67c5-4888-892c-76f51b1935fd"
             }
 spec:
-  description: An intentful representation of a VPC spec
+  description: An intentful representation of a Floating ip spec
   returned: always
   type: dict
   sample: {
@@ -205,7 +205,7 @@ status:
                 },
                 "state": "COMPLETE"
 }
-floating_ip_uuid:
+fip_uuid:
   description: The created Floating ip uuid
   returned: always
   type: str
