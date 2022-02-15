@@ -44,11 +44,11 @@ class Subnet(Prism):
         payload["spec"]["resources"]["vlan_id"] = config["vlan_id"]
         payload["spec"]["resources"]["is_external"] = False
 
-        dvs_uuid, error = get_dvs_uuid(config, self.module)
+        dvs_uuid, error = get_dvs_uuid(config["virtual_switch"], self.module)
         if error:
             return None, error
         payload["spec"]["resources"]["virtual_switch_uuid"] = dvs_uuid
-        cluster_uuid, error = get_cluster_uuid(config, self.module)
+        cluster_uuid, error = get_cluster_uuid(config["cluster"], self.module)
         if error:
             return None, error
         payload["spec"]["cluster_reference"] = self._get_cluster_ref_spec(cluster_uuid)
@@ -64,7 +64,7 @@ class Subnet(Prism):
         payload["spec"]["resources"]["is_external"] = True
         payload["spec"]["resources"]["enable_nat"] = config["enable_nat"]
         payload["spec"]["resources"]["ip_config"] = self._get_ipam_spec(config)
-        cluster_uuid, error = get_cluster_uuid(config, self.module)
+        cluster_uuid, error = get_cluster_uuid(config["cluster"], self.module)
         if error:
             return None, error
         payload["spec"]["cluster_reference"] = self._get_cluster_ref_spec(cluster_uuid)
@@ -73,7 +73,7 @@ class Subnet(Prism):
 
     def _build_spec_overlay_subnet(self, payload, config):
         payload["spec"]["resources"]["subnet_type"] = "OVERLAY"
-        vpc_uuid, error = get_vpc_uuid(config, self.module)
+        vpc_uuid, error = get_vpc_uuid(config["vpc"], self.module)
         if error:
             return None, error
         payload["spec"]["resources"]["vpc_reference"] = self._get_vpc_ref_spec(vpc_uuid)
@@ -153,5 +153,8 @@ def get_subnet_uuid(config, module):
             return None, error
     elif "uuid" in config or "subnet_uuid" in config:
         uuid = config.get("uuid") or config.get("subnet_uuid")
+    else:
+        error = "Config {0} doesn't have name or uuid key".format(config)
+        None, error
 
     return uuid, None

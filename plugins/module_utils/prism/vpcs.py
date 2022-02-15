@@ -82,13 +82,13 @@ class Vpc(Prism):
 
 
 def get_vpc_uuid(config, module):
-    if "name" in config["vpc"]:
+    if "name" in config:
         vpc = Vpc(module)
-        name = config["vpc"]["name"]
+        name = config["name"]
         uuid = vpc.get_uuid(name)
         if not uuid:
             error = "VPC {0} not found.".format(name)
             return None, error
-    elif "uuid" in config["vpc"]:
-        uuid = config["vpc"]["uuid"]
+    elif "uuid" in config:
+        uuid = config["uuid"]
     return uuid, None

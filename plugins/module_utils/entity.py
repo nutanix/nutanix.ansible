@@ -68,21 +68,21 @@ class Entity(object):
 
     def get_spec(self):
         spec = self._get_default_spec()
-        for ansible_param, ansible_value in self.module.params.items():
+        for ansible_param, ansible_config in self.module.params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
-            if build_spec_method and ansible_value:
-                spec, error = build_spec_method(spec, ansible_value)
+            if build_spec_method and ansible_config:
+                spec, error = build_spec_method(spec, ansible_config)
                 if error:
                     return None, error
         return spec, None
 
-    def get_uuid(self, name):
-        data = {"filter": "name=={0}".format(name), "length": 1}
+    def get_uuid(self, value, key="name"):
+        data = {"filter": "{0}=={1}".format(key, value), "length": 1}
         resp, status = self.list(data)
         entities = resp.get("entities") if resp else None
         if entities:
             for entity in entities:
-                if entity["spec"]["name"] == name:
+                if entity["spec"]["name"] == value:
                     return entity["metadata"]["uuid"]
         return None
 
