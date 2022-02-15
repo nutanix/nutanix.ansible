@@ -1,5 +1,5 @@
-  
-  - name: Create Cloud init Script file
+
+  - name: Create Cloud-init Script file
     copy:
       dest: "cloud_init.yml"
       content: |
@@ -10,14 +10,12 @@
              expire: False
          fqdn: myNutanixVM 
     
-          
-
   ################################################################
   
   - name: VM with ubuntu image and different specifications 
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       validate_certs: False
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -27,17 +25,17 @@
         AppType:
           - "Apache_Spark"
       cluster:
-        name: "{{ClusterName}}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: True
           subnet:
-            name: "{{ NetworkName }}"
+            name: "{{ network.dhcp.name }}"
       disks:
         - type: "DISK"
           size_gb: 30
           bus: "SATA"
           clone_image:
-            name: "{{ Ubuntu }}"
+            name: "{{ ubuntu }}"
       vcpus: 1
       cores_per_vcpu: 1
       memory_gb: 1
@@ -46,8 +44,7 @@
         script_path: "./cloud_init.yml"
         is_overridable: True
     register: result
-    
-    
+
   - name: Creation Status
     assert:
       that:
@@ -59,27 +56,25 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-    
-    
+
   #########################################################################################
-    
-    
+ 
   - name: VM with CentOS-7-cloud-init image
     ntnx_vms:
       state: present
       name: VM with CentOS-7-cloud-init image 
       timezone: "UTC"
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       cluster:
-        name: "{{ ClusterName }}"
+        uuid: "{{ cluster.uuid }}"
       disks:
         - type: "DISK"
           size_gb: 10
           clone_image:
-            name:  "{{ CentOS }}"
+            name:  "{{ centos }}"
           bus: "SCSI"
       guest_customization:
         type: "cloud_init"
@@ -101,23 +96,22 @@
     when: result.response.status.state == 'COMPLETE'
 
   #################################################################################
-  
-  
+
   - name: VM with Cluster, Network, Universal time zone, one Disk
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       name: "VM with Cluster Network and Disk"
       timezone: "Universal"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: True
           subnet:
-            name: "{{ NetworkName }}"
+            uuid: "{{ network.dhcp.uuid }}"
       disks:
         - type: "DISK"
           size_gb: 10
@@ -140,14 +134,14 @@
   - name: VM with Cluster, different Disks, Memory size
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       name: "VM with different disks"
       timezone: "UTC"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       disks:
         - type: "DISK"
           size_gb: 10
@@ -170,20 +164,18 @@
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
 
-    
-    
   #####################################################################################
-  
+
   - name: VM with Cluster, different CDROMs
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       name: "VM with multiple CDROMs"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       disks:
         - type: "CDROM"
           bus: "SATA"
@@ -206,20 +198,19 @@
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
 
-
   ####################################################################################
-  
+
   - name: VM with all specification
     ntnx_vms:
       state: present
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       name: "All specification"
       timezone: "GMT"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       disks:
         - type: "DISK"
           size_gb: 2
@@ -267,17 +258,16 @@
     ntnx_vms:
       state: present
       name: VM with managed subnet
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       validate_certs: False
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: true
           subnet: 
-            name: "{{ StaticNetworkName }}"
-          private_ip: "{{ StaticNetworkIP }}"
+            uuid: "{{ network.dhcp.uuid }}"
     register: result
     ignore_errors: true
     
@@ -302,12 +292,12 @@
     ntnx_vms:
       state: present
       name: MinReqVM
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
     register: result
     ignore_errors: true
     
@@ -332,16 +322,17 @@
       state: present
       name: VM with unmanaged vlan
       timezone: UTC
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: false
           subnet:
-            uuid: "{{ dhcpUUID }}"
+            uuid: "{{ network.static.uuid }}"
+          private_ip: "{{ network.static.ip }}"
       boot_config: 
         boot_type: LEGACY
         boot_order:
@@ -366,62 +357,18 @@
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
 
-  #################################################################################################    
-  
-  - name: VM with diffrent disk types and diffrent sizes with UEFI boot type
+  - name: Delete all Created VM  
     ntnx_vms:
-      state: present
-      name: VM with UEFI boot type 
-      timezone: GMT
-      nutanix_host: "{{ IP }}"
+      state: absent
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      cluster:
-        name: "{{ ClusterName }}"
-      categories:
-        AppType:
-          - Apache_Spark
-      disks:
-        - type: "DISK"
-          clone_image: 
-            name: "{{ Ubuntu }}"
-          bus: "SCSI"
-          size_gb: 20
-        - type: DISK
-          size_gb: 1
-          bus: SCSI
-        - type: DISK
-          size_gb: 2
-          bus: PCI
-          storage_container:
-            name: "{{ StorageContainerName }}"
-        - type: DISK
-          size_gb: 3
-          bus: SATA
-      boot_config: 
-        boot_type: UEFI
-        boot_order:
-          - DISK
-          - CDROM
-          - NETWORK
-      vcpus: 2
-      cores_per_vcpu: 1
-      memory_gb: 1
+      vm_uuid: '{{ item }}'
     register: result
-    
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: ' Unable to create VM with diffrent disk types and diffrent sizes with UEFI boot type '
-      success_msg: ' VM with diffrent disk types and diffrent sizes with UEFI boot type created successfully '
-      
-      
+    loop: '{{ todelete }}'
   - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+      todelete: []
 
   ######################################################################################
    
@@ -429,20 +376,20 @@
     ntnx_vms:
       state: present
       name: VM_NIC
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       timezone: UTC
       cluster:
-        name: "{{ ClusterName }}"
+        name: "{{ cluster.name }}"
       networks:
         - is_connected: true
           subnet:
-            uuid: "{{ dhcpUUID }}"
+            uuid: "{{ network.dhcp.uuid }}"
         - is_connected: true
           subnet:
-            uuid: "{{ StaticNetworkUUID }}"
+            uuid: "{{ network.static.uuid }}"
       disks:
         - type: DISK
           size_gb: 1
@@ -479,14 +426,128 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-
       
   #########################################################################################
-  - name: Delete all Created VM
-    
+  
+  - name: VM with diffrent disk types and diffrent sizes with UEFI boot type
+    ntnx_vms:
+      state: present
+      name: VM with UEFI boot type 
+      timezone: GMT
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      cluster:
+        name: "{{ cluster.name }}"
+      categories:
+        AppType:
+          - Apache_Spark
+      disks:
+        - type: "DISK"
+          clone_image: 
+            name: "{{ ubuntu }}"
+          bus: "SCSI"
+          size_gb: 20
+        - type: DISK
+          size_gb: 1
+          bus: SCSI
+          storage_container:
+            name: "{{ storage_container.name }}"
+        - type: DISK
+          size_gb: 2
+          bus: PCI
+          storage_container:
+            name: "{{ storage_container.name }}"
+        - type: DISK
+          size_gb: 3
+          bus: SATA
+      boot_config: 
+        boot_type: UEFI
+        boot_order:
+          - DISK
+          - CDROM
+          - NETWORK
+      vcpus: 2
+      cores_per_vcpu: 1
+      memory_gb: 1
+    register: result
+
+  ################################################################################
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: ' Unable to create VM with diffrent disk types and diffrent sizes with UEFI boot type '
+      success_msg: ' VM with diffrent disk types and diffrent sizes with UEFI boot type created successfully '
+      
+      
+  - set_fact:
+      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    when: result.response.status.state == 'COMPLETE' 
+ 
+  
+  - name: Delete all Created VM  
     ntnx_vms:
       state: absent
-      nutanix_host: "{{ IP }}"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      vm_uuid: '{{ item }}'
+    register: result
+    loop: '{{ todelete }}'
+    
+  - set_fact:
+      todelete: []
+    
+  #####################################################################################
+  
+  - name: VM with storage container
+    ntnx_vms:
+      state: present
+      name: VM with UEFI boot type 
+      timezone: GMT
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      cluster:
+        name: "{{ cluster.name }}"
+      categories:
+        AppType:
+          - Apache_Spark
+      disks:
+        - type: DISK
+          size_gb: 1
+          bus: SCSI
+          storage_container:
+            uuid: "{{ storage_container.uuid }}"
+      vcpus: 2
+      cores_per_vcpu: 1
+      memory_gb: 1
+    register: result
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: ' Unable to create VM withstorage container '
+      success_msg: ' VM with storage container created successfully '
+      
+      
+  - set_fact:
+      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    when: result.response.status.state == 'COMPLETE' 
+ 
+  
+  - name: Delete all Created VM  
+    ntnx_vms:
+      state: absent
+      nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
@@ -494,6 +555,5 @@
     register: result
     loop: '{{ todelete }}'
 
-  
-  
+  ######################################################################################
   

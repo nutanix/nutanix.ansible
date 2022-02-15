@@ -1,3 +1,2 @@
 - block:
     - import_tasks: "create_floating_ips.yml"
-   
