@@ -7,7 +7,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      uuid: "{{ external_subnet.subnet_uuid }}"
+      uuid: "{{ external_subnet.uuid }}"
   register: result
   ignore_errors: True
 - debug:
