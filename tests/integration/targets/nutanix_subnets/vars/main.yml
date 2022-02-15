@@ -33,7 +33,7 @@ dhcp_server_address: 192.168.0.35
 
 vpc:
   name: ET_1
-  uuid: 2f09613c-0f59-426a-8721-2f989434b06f
+  uuid: 47262dd0-ef44-4261-8c3b-32fba154c914
 
 external_nat_subnet:
   vlan_id: 201
