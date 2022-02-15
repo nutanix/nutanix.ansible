@@ -58,7 +58,7 @@ options:
     type: bool
     required: false
     default: True
-  floating_ip_uuid:
+  fip_uuid:
     description: floating_ip UUID
     type: str
   external_subnet:
@@ -174,7 +174,7 @@ metadata:
                 "uuid": "d34a85bc-67c5-4888-892c-76f51b1935fd"
             }
 spec:
-  description: An intentful representation of a VPC spec
+  description: An intentful representation of a Floating ip spec
   returned: always
   type: dict
   sample: {
@@ -205,7 +205,7 @@ status:
                 },
                 "state": "COMPLETE"
 }
-floating_ip_uuid:
+fip_uuid:
   description: The created Floating ip uuid
   returned: always
   type: str
@@ -228,6 +228,7 @@ def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     module_args = dict(
+        fip_uuid=dict(type="str", required=False),
         external_subnet=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
@@ -238,7 +239,6 @@ def get_module_spec():
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         private_ip=dict(type="str"),
-        floating_ip_uuid=dict(type="str"),
     )
 
     return module_args
@@ -261,26 +261,26 @@ def create_floating_ip(module, result):
         result["response"] = resp
         module.fail_json(msg="Failed creating floating_ip", **result)
 
-    floating_ip_uuid = resp["metadata"]["uuid"]
+    fip_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
-    result["floating_ip_uuid"] = floating_ip_uuid
+    result["fip_uuid"] = fip_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = floating_ip.read(floating_ip_uuid)
+        resp, tmp = floating_ip.read(fip_uuid)
         result["response"] = resp
 
 
 def delete_floating_ip(module, result):
-    floating_ip_uuid = module.params["floating_ip_uuid"]
-    if not floating_ip_uuid:
-        result["error"] = "Missing parameter floating_ip_uuid in playbook"
+    fip_uuid = module.params["fip_uuid"]
+    if not fip_uuid:
+        result["error"] = "Missing parameter fip_uuid in playbook"
         module.fail_json(msg="Failed deleting floating_ip", **result)
 
     floating_ip = FloatingIP(module)
-    resp, status = floating_ip.delete(floating_ip_uuid)
+    resp, status = floating_ip.delete(fip_uuid)
     if status["error"]:
         result["error"] = status["error"]
         result["response"] = resp
@@ -288,7 +288,7 @@ def delete_floating_ip(module, result):
 
     result["changed"] = True
     result["response"] = resp
-    result["floating_ip_uuid"] = floating_ip_uuid
+    result["fip_uuid"] = fip_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
@@ -310,10 +310,15 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[("vm", "vpc")],
+        mutually_exclusive=[
+            ("vm", "vpc"),
+            ("fip_uuid", "external_subnet"),
+            ("fip_uuid", "vm"),
+            ("fip_uuid", "vpc"),
+        ],
         required_if=[
             ("state", "present", ("external_subnet",)),
-            ("state", "absent", ("floating_ip_uuid",)),
+            ("state", "absent", ("fip_uuid",)),
         ],
     )
     remove_param_with_none_value(module.params)
@@ -321,7 +326,7 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
-        "floating_ip_uuid": None,
+        "fip_uuid": None,
         "task_uuid": None,
     }
     state = module.params["state"]
