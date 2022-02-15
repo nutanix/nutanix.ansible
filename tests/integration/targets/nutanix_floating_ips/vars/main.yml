@@ -12,4 +12,4 @@ vm:
   uuid: 83c9c094-2b18-4e65-bf6f-234640e07bc0
 private_ip: 192.168.1.153
 todelete: []
-vm_subnet_name: ext_102
+vm_subnet_name: Prod-NAT
