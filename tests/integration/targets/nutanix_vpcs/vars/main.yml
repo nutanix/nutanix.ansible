@@ -3,7 +3,7 @@ username: admin
 password: Nutanix.123
 external_subnet:
   subnet_name: ET_2
-  subnet_uuiid: 57959f75-6b21-431c-b76b-516447d52621
+  subnet_uuiid: 60a3e1ab-38e7-4c03-916e-383651fd4689
 dns_servers:
   - 8.8.8.8
   - 8.8.4.4
