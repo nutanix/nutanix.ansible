@@ -55,7 +55,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    floating_ip_uuid: "{{result.floating_ip_uuid}}"
+    fip_uuid: "{{result.fip_uuid}}"
   register: result
   ignore_errors: True
 
@@ -83,7 +83,7 @@
     success_msg: "  Floating ip created successfully with vm "
 
 - set_fact:
-    todelete: "{{ todelete + [  result.floating_ip_uuid ] }}"
+    todelete: "{{ todelete + [  result.fip_uuid ] }}"
  
 
 - name: Delete all Created Floating ips
@@ -93,7 +93,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    floating_ip_uuid: "{{ item }}"
+    fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True

@@ -42,6 +42,7 @@ class Vpc(Prism):
 
     def _build_spec_external_subnet(self, payload, subnets):
         from .subnets import get_subnet_uuid
+
         external_subnets = []
         for subnet in subnets:
             uuid, error = get_subnet_uuid(subnet, self.module)

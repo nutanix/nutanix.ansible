@@ -229,16 +229,16 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     module_args = dict(
         fip_uuid=dict(type="str", required=False),
-        external_subnet=dict(type="dict",
-                             options=entity_by_spec,
-                             mutually_exclusive=mutually_exclusive),
-        vm=dict(type="dict",
-                options=entity_by_spec,
-                mutually_exclusive=mutually_exclusive),
-        vpc=dict(type="dict",
-                 options=entity_by_spec,
-                 mutually_exclusive=mutually_exclusive),
-        private_ip=dict(type="str")
+        external_subnet=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        vm=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        vpc=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        private_ip=dict(type="str"),
     )
 
     return module_args
@@ -314,12 +314,12 @@ def run_module():
             ("vm", "vpc"),
             ("fip_uuid", "external_subnet"),
             ("fip_uuid", "vm"),
-            ("fip_uuid", "vpc")
+            ("fip_uuid", "vpc"),
         ],
         required_if=[
-          ("state", "present", ("external_subnet",)),
-          ("state", "absent", ("fip_uuid",)),
-        ]
+            ("state", "present", ("external_subnet",)),
+            ("state", "absent", ("fip_uuid",)),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {
