@@ -3,14 +3,13 @@ username: admin
 password: Nutanix.123
 
 external_subnet:
+
   name: ET_2
   uuid: 60a3e1ab-38e7-4c03-916e-383651fd4689
 dns_servers: ["8.8.8.8", "8.8.4.4"]
-
 routable_ips:
   network_ip: 192.168.2.0
   network_prefix: 24
   network_ip_2: 192.168.8.0
   network_prefix_2: 24
-  
 todelete: []
