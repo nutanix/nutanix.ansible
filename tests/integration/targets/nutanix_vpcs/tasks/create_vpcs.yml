@@ -8,7 +8,7 @@
     nutanix_password: "{{ password }}"
     name: MinVPC
     external_subnets:
-      - subnet_name: "{{ external_subnet.uuid }}"
+      - subnet_name: "{{ external_subnet.name }}"
   register: result
   ignore_errors: True
 
