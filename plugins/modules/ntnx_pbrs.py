@@ -110,7 +110,7 @@ def get_module_spec():
         udp=dict(type="dict",
                  options=tcp_and_udp_spec),
         number=dict(type="int"),
-        icmp=dict(type="object",
+        icmp=dict(type="dict",
                   options=icmp_spec),
     )
 
