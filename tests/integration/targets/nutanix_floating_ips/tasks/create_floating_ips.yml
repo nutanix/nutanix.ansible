@@ -165,31 +165,6 @@
     vm:
       uuid: "{{ vm.uuid }}"
   ignore_errors: True
-
-
-
-- name: create Floating IP with External Subnet with vm
-  ntnx_floating_ips:
-    validate_certs: False
-    state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    external_subnet:
-      name: "{{vm_subnet_name}}"
-    vm:
-      name: "{{vm.name}}"
-  ignore_errors: True
-  register: result
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create floating ip with vm"
-    success_msg: " Floating ip created successfully with vm "
-
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 
