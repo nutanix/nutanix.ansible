@@ -86,7 +86,7 @@ def get_module_spec():
     )
 
     route_spec = dict(
-        any=dict(type="bool", default=True),
+        any=dict(type="bool"),
         external=dict(type="bool"),
         network=dict(type="dict",
                      options=network_spec,
@@ -104,7 +104,7 @@ def get_module_spec():
     )
 
     protocol_spec = dict(
-        any=dict(type="bool", default=True),
+        any=dict(type="bool"),
         tcp=dict(type="dict",
                  options=tcp_and_udp_spec),
         udp=dict(type="dict",
@@ -116,12 +116,12 @@ def get_module_spec():
 
     action_spec = dict(
         deny=dict(type="bool"),
-        allow=dict(type="bool", default=True),
+        allow=dict(type="bool"),
         reroute=dict(type="str"),
     )
 
     module_args = dict(
-        priority=dict(type="int", required=True),
+        priority=dict(type="int"),
 
         pbr_uuid=dict(type="str"),
 
@@ -220,6 +220,11 @@ def wait_for_task_completion(module, result):
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
+        mutually_exclusive=[("priority", "pbr_uuid")],
+        required_if=[
+            ("state", "present", ("priority",)),
+            ("state", "absent", ("pbr_uuid",)),
+        ],
         supports_check_mode=True
     )
     remove_param_with_none_value(module.params)

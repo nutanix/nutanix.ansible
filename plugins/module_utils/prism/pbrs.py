@@ -61,7 +61,7 @@ class Pbr(Prism):
             source["address_type"] = "INTERNET"
         elif config.get("network"):
             source["ip_subnet"] = {"ip": config["network"].get("ip"),
-                                   "prefix_length": config["network"].get("prefix")}
+                                   "prefix_length": int(config["network"].get("prefix"))}
 
         payload["spec"]["resources"]["source"] = source
 
@@ -75,7 +75,7 @@ class Pbr(Prism):
             destination["address_type"] = "INTERNET"
         elif config.get("network"):
             destination["ip_subnet"] = {"ip": config["network"].get("ip"),
-                                        "prefix_length": config["network"].get("prefix")}
+                                        "prefix_length": int(config["network"].get("prefix"))}
 
         payload["spec"]["resources"]["destination"] = destination
 
@@ -146,14 +146,13 @@ class Pbr(Prism):
 
     def _build_spec_action(self, payload, config):
         action = {}
-
-        if config.get("allow"):
-            action["action"] = "PERMIT"
         if config.get("deny"):
             action["action"] = "DENY"  # TODO check
-        if config.get("reroute"):
+        elif config.get("reroute"):
             action["action"] = "REROUTE"
             action["service_ip_list"] = [config.get("reroute")]
+        elif config.get("allow"):
+            action["action"] = "PERMIT"
 
         payload["spec"]["resources"]["action"] = action
 
