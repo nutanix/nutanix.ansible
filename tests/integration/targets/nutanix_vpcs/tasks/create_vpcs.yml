@@ -2,47 +2,25 @@
   ntnx_vpcs:
     validate_certs: False
     state: present
+    wait: false
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     name: MinVPC
     external_subnets:
-      - subnet_name: "{{ external_subnet.name }}"
+      - subnet_uuid: "{{ result.subnet_uuid }}"
   register: result
   ignore_errors: True
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create Min vpc "
-    success_msg: " Min vpc created successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
     
-- name: Delete all created vpcs
-  ntnx_vpcs:
-    state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: False
-    vpc_uuid: "{{ item }}"
-  register: result
-  loop: "{{ todelete }}"
-  ignore_errors: True
-
-- set_fact:
-    todelete: []
-    
-##########################################################
 
 - name: Create min VPC with external_subnet uuid
   ntnx_vpcs:
     validate_certs: False
     state: present
+    wait: true
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -62,7 +40,26 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+
+
+
+
+- name: Delete all created vpcs
+  ntnx_vpcs:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    vpc_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- set_fact:
+    todelete: []
     
+##########################################################
 
 - name: Create VPC with routable_ips
   ntnx_vpcs:

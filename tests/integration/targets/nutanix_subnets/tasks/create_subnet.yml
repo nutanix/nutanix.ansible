@@ -1,6 +1,7 @@
 - name: VLAN subnet without IPAM
   ntnx_subnets:
     state: present
+    wait: false
     nutanix_host: "{{ ip }}"
     validate_certs: false
     nutanix_username: "{{ username }}"
@@ -14,14 +15,6 @@
         uuid: "{{ cluster.uuid }}"
   register: result
 
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VLAN subnet without IPAM "
-    success_msg: " VLAN subnet without IPAM created successfully "
-
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 
@@ -31,6 +24,7 @@
   ntnx_subnets:
     state: present
     nutanix_host: "{{ ip }}"
+    wait: true
     validate_certs: false
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

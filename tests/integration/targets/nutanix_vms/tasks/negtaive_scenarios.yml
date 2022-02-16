@@ -1,5 +1,37 @@
   - debug:
       msg: "Started Negative Creation Cases"
+      
+      
+  - name: Unknown project name
+    ntnx_vms:
+      state: present
+      name: Unknown project name
+      timezone: "UTC"
+      project:
+        name: project
+      nutanix_host: "{{ ip }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      cluster:
+        uuid: "{{ cluster.uuid }}"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          clone_image:
+            name:  "{{ centos }}"
+          bus: "SCSI"
+    register: result
+    ignore_errors: True
+
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed is defined
+      success_msg: ' Success: returned error as expected '
+      
+      
   - name: Unknown Cluster uuid
     ntnx_vms:
       state: present
@@ -252,5 +284,43 @@
         - result.msg=="Failed generating VM Spec"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with unknown storage container name '
-
+      
+      
+  - name: Delete vm with unknown uuid
+    ntnx_vms:
+      state: absent
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      vm_uuid: 5
+    register: result
+    ignore_errors: True
+      
+  - name: Creation Status
+    assert:
+      that:
+        - result.status_code==400
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail deleting VM with unknown uuid '
     
+         
+  - name: Delete vm with missing uuid
+    ntnx_vms:
+      state: absent
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+    register: result
+    ignore_errors: True
+      
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail deleting VM with missing uuid '
+      
+
+ 
