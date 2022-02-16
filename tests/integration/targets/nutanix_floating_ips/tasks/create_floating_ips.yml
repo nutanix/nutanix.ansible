@@ -106,85 +106,85 @@
     todelete: []
 
 
-# - name: Create floating ip with external subnet and vm name
-#   ntnx_floating_ips:
-#     validate_certs: False
-#     state: present
-#     nutanix_host: "{{ ip }}"
-#     nutanix_username: "{{ username }}"
-#     nutanix_password: "{{ password }}"
-#     external_subnet:
-#       name: "{{ vm_subnet_name }}"
-#     vm:
-#       name: "{{ vm.name }}"
-#   ignore_errors: True
+- name: Create floating ip with external subnet and vm name
+  ntnx_floating_ips:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    external_subnet:
+      name: "{{ vm_subnet_name }}"
+    vm:
+      name: "{{ vm.name }}"
+  ignore_errors: True
 
-#   register: result
+  register: result
 
-# - name: Creation Status
-#   assert:
-#     that:
-#       - result.response is defined
-#       - result.response.status.state == 'COMPLETE'
-#     fail_msg: " Unable to create floating ip with vm"
-#     success_msg: " Floating ip created successfully with vm "
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create floating ip with vm"
+    success_msg: " Floating ip created successfully with vm "
 
-# - set_fact:
-#     todelete: "{{ todelete + [  result.fip_uuid ] }}"
+- set_fact:
+    todelete: "{{ todelete + [  result.fip_uuid ] }}"
  
 
-# - name: Delete all created floating ips
-#   ntnx_floating_ips:
-#     state: absent
-#     nutanix_host: "{{ ip }}"
-#     nutanix_username: "{{ username }}"
-#     nutanix_password: "{{ password }}"
-#     validate_certs: false
-#     fip_uuid: "{{ item }}"
-#   register: result
-#   loop: "{{ todelete }}"
-#   ignore_errors: True 
+- name: Delete all created floating ips
+  ntnx_floating_ips:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fip_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True 
  
-# - set_fact:
-#     todelete: []
+- set_fact:
+    todelete: []
  
 
-# - name: Create floating ip with external subnet and vm uuid
-#   ntnx_floating_ips:
-#     validate_certs: False
-#     state: present
-#     nutanix_host: "{{ ip }}"
-#     nutanix_username: "{{ username }}"
-#     nutanix_password: "{{ password }}"
-#     external_subnet:
-#       name: "{{ vm_subnet_name }}"
-#     vm:
-#       uuid: "{{ vm.uuid }}"
-#   ignore_errors: True
+- name: Create floating ip with external subnet and vm uuid
+  ntnx_floating_ips:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    external_subnet:
+      name: "{{ vm_subnet_name }}"
+    vm:
+      uuid: "{{ vm.uuid }}"
+  ignore_errors: True
 
-#   register: result
+  register: result
 
-# - name: Creation Status
-#   assert:
-#     that:
-#       - result.response is defined
-#       - result.response.status.state == 'COMPLETE'
-#     fail_msg: " Unable to create floating ip with vm"
-#     success_msg: " Floating ip created successfully with vm "
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create floating ip with vm"
+    success_msg: " Floating ip created successfully with vm "
 
-# - set_fact:
-#     todelete: "{{ todelete + [  result.fip_uuid ] }}"
+- set_fact:
+    todelete: "{{ todelete + [  result.fip_uuid ] }}"
 
 
 
-# - name: Delete all created floating ips
-#   ntnx_floating_ips:
-#     state: absent
-#     nutanix_host: "{{ ip }}"
-#     nutanix_username: "{{ username }}"
-#     nutanix_password: "{{ password }}"
-#     validate_certs: false
-#     fip_uuid: "{{ item }}"
-#   register: result
-#   loop: "{{ todelete }}"
-#   ignore_errors: True
+- name: Delete all created floating ips
+  ntnx_floating_ips:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fip_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
