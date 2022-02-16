@@ -8,7 +8,6 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
----
 module: ntnx_pbrs
 short_description: pbr module which suports pbr CRUD operations
 version_added: 1.0.0
@@ -57,8 +56,143 @@ options:
     description: This is the wait description.
     type: bool
     required: false
-    default: True
-  #TODO here should be additional arguments documentation
+    default: true
+  priority:
+    description: To-Write
+    type: int
+    required: true
+  pbr_uuid:
+    description: To-Write
+    type: str
+  vpc:
+    description:
+      - Virtual Private Clouds
+    type: dict
+    suboptions:
+      name:
+        description:
+          - VPC Name
+          - Mutually exclusive with (uuid)
+        type: str
+      uuid:
+        description:
+          - VPC UUID
+          - Mutually exclusive with (name)
+        type: str
+  source:
+    description:
+      - To-Write
+    type: dict
+    suboptions:
+      any:
+        description:
+          - To-Write
+        type: bool
+        default: true
+      external:
+        description:
+          - To-Write
+        type: bool
+      network:
+        description:
+          - To-Write
+        type: dict
+        suboptions:
+          ip:
+            description: Subnet ip address
+            type: str
+          prefix:
+            description: ip address prefix length
+            type: str
+  destination:
+    type: dict
+    description: To-Write
+    suboptions:
+      any:
+        description:
+          - To-Write
+        type: bool
+        default: true
+      external:
+        description:
+          - To-Write
+        type: bool
+      network:
+        description:
+          - To-Write
+        type: dict
+        suboptions:
+          ip:
+            description: Subnet ip address
+            type: str
+          prefix:
+            description: ip address prefix length
+            type: str
+  protocol:
+    type: dict
+    description: The Network Protocol that will used
+    suboptions:
+      any:
+        description: To-Write
+        type: bool
+        default: true
+      tcp:
+        description: To-Write
+        type: dict
+        suboptions:
+          src:
+            default: '*'
+            type: list
+            elements: str
+            description: To-Write
+          dst:
+            default: '*'
+            type: list
+            elements: str
+            description: To-Write
+      udp:
+        description: To-Write
+        type: dict
+        suboptions:
+          src:
+            default: '*'
+            type: list
+            elements: str
+            description: To-Write
+          dst:
+            default: '*'
+            type: list
+            elements: str
+            description: To-Write
+      number:
+        type: int
+        description: To-Write
+      icmp:
+        description: To-Write
+        type: dict
+        suboptions:
+          code:
+            type: int
+            description: To-Write
+  action:
+    type: dict
+    description: To-Write
+    suboptions:
+      deny:
+        type: bool
+        description: To-Write
+      allow:
+        type: bool
+        default: true
+        description: To-Write
+      reroute:
+        type: str
+        description: To-Write
+author:
+  - Prem Karat (@premkarat)
+  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+  - Alaa Bishtawi (@alaa-bish)
+  - Dina AbuHijleh (@dina-abuhijleh)
 """
 
 EXAMPLES = r"""
@@ -80,38 +214,30 @@ def get_module_spec():
 
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
-    network_spec = dict(
-        ip=dict(),
-        prefix=dict()
-    )
+    network_spec = dict(ip=dict(type="str"), prefix=dict(type="str"))
 
     route_spec = dict(
         any=dict(type="bool", default=True),
         external=dict(type="bool"),
-        network=dict(type="dict",
-                     options=network_spec,
-                     ),
+        network=dict(
+            type="dict",
+            options=network_spec,
+        ),
     )
 
     tcp_and_udp_spec = dict(
-        src=dict(type="list", default=["*"]),
-        dst=dict(type="list", default=["*"])
+        src=dict(type="list", default=["*"], elements="str"),
+        dst=dict(type="list", default=["*"], elements="str"),
     )
 
-    icmp_spec = dict(
-        code=dict(type="int"),
-        type=dict(type="int")
-    )
+    icmp_spec = dict(code=dict(type="int"), type=dict(type="int"))
 
     protocol_spec = dict(
         any=dict(type="bool", default=True),
-        tcp=dict(type="dict",
-                 options=tcp_and_udp_spec),
-        udp=dict(type="dict",
-                 options=tcp_and_udp_spec),
+        tcp=dict(type="dict", options=tcp_and_udp_spec),
+        udp=dict(type="dict", options=tcp_and_udp_spec),
         number=dict(type="int"),
-        icmp=dict(type="object",
-                  options=icmp_spec),
+        icmp=dict(type="dict", options=icmp_spec),
     )
 
     action_spec = dict(
@@ -122,34 +248,34 @@ def get_module_spec():
 
     module_args = dict(
         priority=dict(type="int", required=True),
-
         pbr_uuid=dict(type="str"),
-
-        vpc=dict(type="dict",
-                 options=entity_by_spec,
-                 mutually_exclusive=mutually_exclusive),
-
-        source=dict(type="dict",
-                    options=route_spec,
-                    apply_defaults=True,
-                    mutually_exclusive=[("any", "external", "network")]),
-
-        destination=dict(type="dict",
-                         options=route_spec,
-                         apply_defaults=True,
-                         mutually_exclusive=[("any", "external", "network")]),
-
-        protocol=dict(type="dict",
-                      options=protocol_spec,
-                      apply_defaults=True,
-                      mutually_exclusive=[("any", "tcp", "udp", "number", "icmp")]
-                      ),
-
-        action=dict(type="dict",
-                    options=action_spec,
-                    apply_defaults=True,
-                    mutually_exclusive=[("deny", "allow", "reroute")]
-                    ),
+        vpc=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        source=dict(
+            type="dict",
+            options=route_spec,
+            apply_defaults=True,
+            mutually_exclusive=[("any", "external", "network")],
+        ),
+        destination=dict(
+            type="dict",
+            options=route_spec,
+            apply_defaults=True,
+            mutually_exclusive=[("any", "external", "network")],
+        ),
+        protocol=dict(
+            type="dict",
+            options=protocol_spec,
+            apply_defaults=True,
+            mutually_exclusive=[("any", "tcp", "udp", "number", "icmp")],
+        ),
+        action=dict(
+            type="dict",
+            options=action_spec,
+            apply_defaults=True,
+            mutually_exclusive=[("deny", "allow", "reroute")],
+        ),
     )
 
     return module_args
@@ -218,10 +344,7 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(
-        argument_spec=get_module_spec(),
-        supports_check_mode=True
-    )
+    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
