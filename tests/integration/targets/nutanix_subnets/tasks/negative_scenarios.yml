@@ -1,7 +1,7 @@
   - debug:
       msg: "Started Negative Creation Cases"
       
-  - name: Unknow switch name
+  - name: Unknow virtual switch name
     ntnx_subnets:
       state: present
       nutanix_host: "{{ ip }}"

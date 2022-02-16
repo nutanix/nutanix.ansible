@@ -6,10 +6,10 @@ external_subnet:
   uuid: 54e295c3-16d3-49de-96ba-b921948b3a4d
 vpc:
   name: ET_8
-  uuiid: 471181f8-eb2d-4303-9a61-6b25a1b3553e
+  uuid: 471181f8-eb2d-4303-9a61-6b25a1b3553e
 vm:
   name: ET_11
   uuid: 83c9c094-2b18-4e65-bf6f-234640e07bc0
-private_ip: 192.168.1.153
+private_ip: 192.168.2.1
 todelete: []
-vm_subnet_name: ext_102
+vm_subnet_name: Prod-NAT
