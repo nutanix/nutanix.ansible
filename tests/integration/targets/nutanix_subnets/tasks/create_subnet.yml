@@ -476,3 +476,4 @@
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True
+  
