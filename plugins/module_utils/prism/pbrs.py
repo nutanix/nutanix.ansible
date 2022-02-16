@@ -85,6 +85,7 @@ class Pbr(Prism):
         protocol_type = None
         protocol_parameters = {}
         if config.get("tcp"):
+            tcp = {}
             protocol_type = "TCP"
             src_port_range_list = []
             if "*" not in config["tcp"]["src"]:
@@ -97,11 +98,14 @@ class Pbr(Prism):
                     port = port.split("-")
                     dest_port_range_list.append({"start_port": int(port[0]), "end_port": int(port[-1])})
             if src_port_range_list:
-                protocol_parameters["tcp"]["source_port_range_list"] = src_port_range_list
+                tcp["source_port_range_list"] = src_port_range_list
             if dest_port_range_list:
-                protocol_parameters["tcp"]["destination_port_range_list"] = dest_port_range_list
+                tcp["destination_port_range_list"] = dest_port_range_list
+            if tcp:
+                protocol_parameters["tcp"] = tcp
 
         elif config.get("udp"):
+            udp = {}
             protocol_type = "UDP"
             src_port_range_list = []
             if "*" not in config["udp"]["src"]:
@@ -114,14 +118,16 @@ class Pbr(Prism):
                     port = port.split("-")
                     dest_port_range_list.append({"start_port": int(port[0]), "end_port": int(port[-1])})
             if src_port_range_list:
-                protocol_parameters["udp"]["source_port_range_list"] = src_port_range_list
+                udp["source_port_range_list"] = src_port_range_list
             if dest_port_range_list:
-                protocol_parameters["udp"]["destination_port_range_list"] = dest_port_range_list
+                udp["destination_port_range_list"] = dest_port_range_list
+            if udp:
+                protocol_parameters["udp"] = udp
 
         elif config.get("icmp"):
             protocol_type = "ICMP"
             if config["icmp"].get("code"):
-                protocol_parameters["icmp"]["icmp_code"] = config["icmp"]["code"]
+                protocol_parameters["icmp"] = {"icmp_code": config["icmp"]["code"]}
                 if config["icmp"].get("type"):
                     protocol_parameters["icmp"]["icmp_type"] = config["icmp"]["type"]
 
@@ -129,7 +135,7 @@ class Pbr(Prism):
             protocol_type = "PROTOCOL_NUMBER"
             protocol_parameters["protocol_number"] = config["number"]
 
-        elif config.get("any"):
+        else:
             protocol_type = "ALL"
 
         payload["spec"]["resources"]["protocol_type"] = protocol_type
