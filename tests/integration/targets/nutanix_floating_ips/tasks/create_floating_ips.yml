@@ -1,5 +1,4 @@
 ---
-
 - name: Create floating ip with external subnet uuid
   ntnx_floating_ips:
     validate_certs: False
@@ -12,7 +11,6 @@
       uuid: "{{ external_subnet.uuid }}"
   register: result
   ignore_errors: True
-
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
@@ -143,8 +141,6 @@
     nutanix_password: "{{ password }}"
     validate_certs: false
     fip_uuid: "{{ item }}"
-
-
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True 
@@ -165,8 +161,20 @@
     vm:
       uuid: "{{ vm.uuid }}"
   ignore_errors: True
+
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create floating ip with vm"
+    success_msg: " Floating ip created successfully with vm "
+
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
+
 
 
 - name: Delete all created floating ips
