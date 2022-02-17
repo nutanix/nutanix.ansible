@@ -1,16 +1,25 @@
 ---
-IP: 10.44.76.190
+ip: 10.44.76.190
 username: "admin" 
 password: "Nutanix.123"
-CentOS: "CentOS-7-cloudinit" 
-Ubuntu: "Ubuntu1404" 
-ClusterName:  "auto_cluster_prod_1aa888141361" 
-ClusterUUID: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
-NetworkName: "vlan.800"  
-dhcpUUID: "df7bef18-1ad1-4f45-9b89-21418df71a15"  
-StaticNetworkName: "static_subnet" 
-StaticNetworkUUID: "72c5057d-93f7-4389-a01a-2c2f42eae3ef" 
-StaticNetworkIP: 10.30.30.75 
-StorageConfigUUID: "98b0fa80-a74b-4dac-b1b9-0fe90b2f5526" 
-StorageContainerName: "SelfServiceContainer"
+centos: "CentOS-7-cloudinit" 
+ubuntu: "Ubuntu1404" 
+
+cluster:
+  name: auto_cluster_prod_1aa888141361
+  uuid: 0005d578-2faf-9fb6-3c07-ac1f6b6f9780
+
+storage_container:
+  name: SelfServiceContainer
+  uuid: 98b0fa80-a74b-4dac-b1b9-0fe90b2f5526
+  
+network:
+  dhcp:
+    name: vlan.800
+    uuid: df7bef18-1ad1-4f45-9b89-21418df71a15
+  static:
+    name: static_subnet
+    uuid: 72c5057d-93f7-4389-a01a-2c2f42eae3ef
+    ip:   10.30.30.75
+
 todelete: []

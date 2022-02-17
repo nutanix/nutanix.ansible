@@ -1,40 +1,32 @@
 ---
-- name: create Floating IP with External Subnet uuid
+- name: Create floating ip with external subnet uuid
   ntnx_floating_ips:
     validate_certs: False
     state: present
-    nutanix_host: "{{ IP }}"
+    nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
+    wait: False
     external_subnet:
-      uuid: "{{external_subnet.subnet_uuiid}}"
+      uuid: "{{ external_subnet.uuid }}"
   register: result
   ignore_errors: True
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create  Floating ip "
-    success_msg: "  Floating ip created successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
-
-
-- name: create Floating IP with vpc Name with external subnet uuid
+##############################################################
+- name: Create floating ip with vpc name and external subnet uuid
   ntnx_floating_ips:
     validate_certs: False
     state: present
-    nutanix_host: "{{ IP }}"
+    nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      uuid: "{{external_subnet.subnet_uuiid}}"
+      uuid: "{{external_subnet.uuid}}"
     vpc:
-       name: "{{vpc.vpc_name}}"
-    private_ip: "{{private_ip}}"
+       name: "{{ vpc.name }}"
+    private_ip: "{{ private_ip }}"
   register: result
   ignore_errors: True
 
@@ -43,35 +35,87 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create  Floating ip with vpc "
-    success_msg: "  Floating ip with vpc created successfully "
+    fail_msg: " Unable to create floating ip with vpc "
+    success_msg: " Floating ip with vpc name and external subnet uuid created successfully "
 
-
-- name: Delete the Floating IP with vpc Name with external subnet uuid
+- set_fact:
+    todelete: "{{ todelete + [  result.fip_uuid ] }}"
+##########################################################
+- name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
-    nutanix_host: "{{ IP }}"
+    nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    fip_uuid: "{{result.fip_uuid}}"
+    fip_uuid: "{{ item }}"
   register: result
-  ignore_errors: True
+  loop: "{{ todelete }}"
 
-
-- name: create Floating IP with External Subnet with vm
+- set_fact:
+    todelete: []
+###########################################################
+- name: Create floating ip with external subnet name
   ntnx_floating_ips:
     validate_certs: False
     state: present
-    nutanix_host: "{{ IP }}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    wait: False
+    external_subnet:
+      name: "{{ external_subnet.name }}"
+  register: result
+  ignore_errors: True
+
+- set_fact:
+    todelete: "{{ todelete + [  result.fip_uuid ] }}"
+############################################################
+- name: Create floating ip with vpc uuid and external subnet name
+  ntnx_floating_ips:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      name: "{{vm_subnet_name}}"
-    vm:
-      name: "{{vm.vm_name}}"
+      name: "{{ external_subnet.name }}"
+    vpc:
+       uuid: "{{ vpc.uuid }}"
+    private_ip: "{{ private_ip }}"
+  register: result
   ignore_errors: True
-
+  
+- set_fact:
+    todelete: "{{ todelete + [  result.fip_uuid ] }}"
+############################################################
+- name: Delete all created floating ips
+  ntnx_floating_ips:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fip_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True 
+ 
+- set_fact:
+    todelete: []
+##########################################################
+- name: Create floating ip with external subnet and vm name
+  ntnx_floating_ips:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    external_subnet:
+      name: "{{ vm_subnet_name }}"
+    vm:
+      name: "{{ vm.name }}"
+  ignore_errors: True
   register: result
 
 - name: Creation Status
@@ -79,17 +123,56 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create  Floating ip with vm"
-    success_msg: "  Floating ip created successfully with vm "
+    fail_msg: " Unable to create floating ip with vm"
+    success_msg: " Floating ip with external subnet and vm created successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
- 
-
-- name: Delete all Created Floating ips
+##########################################################
+- name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
-    nutanix_host: "{{ IP }}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fip_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True 
+ 
+- set_fact:
+    todelete: []
+#########################################################
+- name: Create floating ip with external subnet and vm uuid
+  ntnx_floating_ips:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    external_subnet:
+      name: "{{ vm_subnet_name }}"
+    vm:
+      uuid: "{{ vm.uuid }}"
+  ignore_errors: True
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create floating ip with vm"
+    success_msg: " Floating ip with external subnet and vm created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.fip_uuid ] }}"
+###########################################################
+- name: Delete all created floating ips
+  ntnx_floating_ips:
+    state: absent
+    nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
