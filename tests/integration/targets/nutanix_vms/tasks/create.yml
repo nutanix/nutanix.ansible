@@ -45,7 +45,7 @@
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       project:
-        name: "default"
+        uuid: "2aa99058-7555-4e53-9e5f-50594c0ecfe2"
       name: "VM with Ubuntu image"
       desc: "VM with cluster, network, category, disk with Ubuntu image, guest customization "
       categories:
