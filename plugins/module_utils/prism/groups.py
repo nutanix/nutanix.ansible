@@ -12,8 +12,8 @@ class Groups(Prism):
         resource_type = "/groups"
         super(Groups, self).__init__(module, resource_type=resource_type)
 
-    def get_uuid(self, entity_type, filter):
-        data = {"entity_type": entity_type, "filter_criteria": filter}
+    def get_uuid(self, value, key):
+        data = {"entity_type": value, "filter_criteria": key}
         resp, status = self.list(data, use_base_url=True)
         if resp.get("group_results"):
             return resp["group_results"][0]["entity_results"][0]["entity_id"]

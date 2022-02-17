@@ -22,7 +22,7 @@ class Pbr(Prism):
             "source": self._build_spec_source,
             "destination": self._build_spec_destination,
             "protocol": self._build_spec_protocol,
-            "action": self._build_spec_action
+            "action": self._build_spec_action,
         }
 
     def _get_default_spec(self):
@@ -31,8 +31,7 @@ class Pbr(Prism):
                 "api_version": "3.1.0",
                 "metadata": {"kind": "routing_policy"},
                 "spec": {
-                    "resources": {
-                    },
+                    "resources": {},
                 },
             }
         )
@@ -60,8 +59,10 @@ class Pbr(Prism):
         elif config.get("external"):
             source["address_type"] = "INTERNET"
         elif config.get("network"):
-            source["ip_subnet"] = {"ip": config["network"].get("ip"),
-                                   "prefix_length": int(config["network"].get("prefix"))}
+            source["ip_subnet"] = {
+                "ip": config["network"].get("ip"),
+                "prefix_length": int(config["network"].get("prefix")),
+            }
 
         payload["spec"]["resources"]["source"] = source
 
@@ -74,8 +75,10 @@ class Pbr(Prism):
         elif config.get("external"):
             destination["address_type"] = "INTERNET"
         elif config.get("network"):
-            destination["ip_subnet"] = {"ip": config["network"].get("ip"),
-                                        "prefix_length": int(config["network"].get("prefix"))}
+            destination["ip_subnet"] = {
+                "ip": config["network"].get("ip"),
+                "prefix_length": int(config["network"].get("prefix")),
+            }
 
         payload["spec"]["resources"]["destination"] = destination
 
@@ -91,12 +94,16 @@ class Pbr(Prism):
             if "*" not in config["tcp"]["src"]:
                 for port in config["tcp"]["src"]:
                     port = port.split("-")
-                    src_port_range_list.append({"start_port": int(port[0]), "end_port": int(port[-1])})
+                    src_port_range_list.append(
+                        {"start_port": int(port[0]), "end_port": int(port[-1])}
+                    )
             dest_port_range_list = []
             if "*" not in config["tcp"]["dst"]:
                 for port in config["tcp"]["dst"]:
                     port = port.split("-")
-                    dest_port_range_list.append({"start_port": int(port[0]), "end_port": int(port[-1])})
+                    dest_port_range_list.append(
+                        {"start_port": int(port[0]), "end_port": int(port[-1])}
+                    )
             if src_port_range_list:
                 tcp["source_port_range_list"] = src_port_range_list
             if dest_port_range_list:
@@ -111,12 +118,16 @@ class Pbr(Prism):
             if "*" not in config["udp"]["src"]:
                 for port in config["udp"]["src"]:
                     port = port.split("-")
-                    src_port_range_list.append({"start_port": int(port[0]), "end_port": int(port[-1])})
+                    src_port_range_list.append(
+                        {"start_port": int(port[0]), "end_port": int(port[-1])}
+                    )
             dest_port_range_list = []
             if "*" not in config["udp"]["dst"]:
                 for port in config["udp"]["dst"]:
                     port = port.split("-")
-                    dest_port_range_list.append({"start_port": int(port[0]), "end_port": int(port[-1])})
+                    dest_port_range_list.append(
+                        {"start_port": int(port[0]), "end_port": int(port[-1])}
+                    )
             if src_port_range_list:
                 udp["source_port_range_list"] = src_port_range_list
             if dest_port_range_list:
