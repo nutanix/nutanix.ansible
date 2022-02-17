@@ -33,7 +33,7 @@ dhcp_server_address: 192.168.0.35
 
 vpc:
   name: ET_1
-  uuid: 2f09613c-0f59-426a-8721-2f989434b06f
+  uuid: d1199e44-eb58-4672-bccc-c4bf6b26f670
 
 external_nat_subnet:
   vlan_id: 201
@@ -57,5 +57,6 @@ external_nonat_subnet:
     end_address: 10.44.3.239
   static:
     start_address: 10.44.3.240
-    end_address: 10.44.3.249    
+    end_address: 10.44.3.249
+
 todelete: []

@@ -1,6 +1,7 @@
 - name: VLAN subnet without IPAM
   ntnx_subnets:
     state: present
+    wait: false
     nutanix_host: "{{ ip }}"
     validate_certs: false
     nutanix_username: "{{ username }}"
@@ -14,23 +15,14 @@
         uuid: "{{ cluster.uuid }}"
   register: result
 
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VLAN subnet without IPAM "
-    success_msg: " VLAN subnet without IPAM created successfully "
-
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-
 #################################################################
-
 - name: VLAN subnet with IPAM
   ntnx_subnets:
     state: present
     nutanix_host: "{{ ip }}"
+    wait: true
     validate_certs: false
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -58,9 +50,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-    
 #################################################################
-
 - name: VLAN subnet with IPAM and IP pools
   ntnx_subnets:
     state: present
@@ -96,8 +86,71 @@
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
     
-#################################################################
+- name: Delete all Created Subnets
+  ntnx_subnets:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    subnet_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
 
+- set_fact:
+    todelete: []
+#################################################################
+- name: VLAN subnet with IPAM and IP pools and cluster uuid
+  ntnx_subnets:
+    state: present
+    nutanix_host: "{{ ip }}"
+    validate_certs: false
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: VLAN subnet with IPAM and IP pools
+    vlan_subnet:
+      vlan_id: "{{ vlan_subnets_ids.2 }}"
+      virtual_switch:
+        name: "{{ virtual_switch.name }}"
+      cluster:
+        uuid: "{{ cluster.uuid }}"
+      ipam:
+        network_ip: "{{ ip_address_management.network_ip }}"
+        network_prefix: "{{ ip_address_management.network_prefix }}"
+        gateway_ip: "{{ ip_address_management.gateway_ip_address }}"
+        ip_pools:
+          - start_ip: "{{ ip_address_pools.start_address }}"
+            end_ip: "{{ ip_address_pools.end_address }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VLAN subnet with IPAM and IP pools and cluster uuid "
+    success_msg: " VLAN subnet with IPAM and IP pools and cluster uuid created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.subnet_uuid ] }}"
+    
+- name: Delete all Created Subnets
+  ntnx_subnets:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    subnet_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+  
+- set_fact:
+    todelete: []
+#################################################################
 - name: VLAN subnet with IPAM IP pools and DHCP
   ntnx_subnets:
     state: present
@@ -139,9 +192,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-
 #################################################################
-
 - name: VLAN subnet with IPAM multiple IP pools and DHCP
   ntnx_subnets:
     state: present
@@ -185,9 +236,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-    
 #################################################################
-
 - name: External subnet without NAT
   ntnx_subnets:
     state: present
@@ -223,9 +272,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-    
 #################################################################
-
 - name: External subnet with NAT
   ntnx_subnets:
     state: present
@@ -261,9 +308,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-    
 #################################################################
-
 - name: Overlay Subnet with minimum requirements
   ntnx_subnets:
     state: present
@@ -292,9 +337,7 @@
     
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-    
 #################################################################
-
 - name: Delete all Created Subnets
   ntnx_subnets:
     state: absent
@@ -309,9 +352,7 @@
   
 - set_fact:
     todelete: []
-    
 #################################################################
-
 - name: Overlay Subnet with IP_pools and DHCP
   ntnx_subnets:
     state: present
@@ -336,6 +377,7 @@
           domain_name: "{{ dhcp_settings.domain_name }}"
           tftp_server_name: "{{ dhcp_settings.tftp_server_name }}"
           boot_file: "{{ dhcp_settings.boot_file }}"
+          
   register: result
   ignore_errors: true
 - name: Creation Status
@@ -347,8 +389,57 @@
     success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-    
 #################################################################
+- name: Delete all Created Subnets
+  ntnx_subnets:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    subnet_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- set_fact:
+    todelete: []
+#################################################################
+- name: Overlay Subnet with IP_pools and DHCP with vpc uuid
+  ntnx_subnets:
+    state: present
+    nutanix_host: "{{ ip }}"
+    validate_certs: false
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: Overlay Subnet with IP_pools and DHCP
+    overlay_subnet:
+      vpc:
+        uuid: "{{ vpc.uuid }}"
+      ipam:
+        network_ip: "{{ ip_address_management.network_ip }}"
+        network_prefix: "{{ ip_address_management.network_prefix }}"
+        gateway_ip: "{{ ip_address_management.gateway_ip_address }}"
+        ip_pools:
+          - start_ip: "{{ ip_address_pools.start_address }}"
+            end_ip: "{{ ip_address_pools.end_address }}"
+        dhcp:
+          dns_servers: "{{ dhcp_settings.dns_servers }}"
+          domain_search: "{{ dhcp_settings.domain_search }}"
+          domain_name: "{{ dhcp_settings.domain_name }}"
+          tftp_server_name: "{{ dhcp_settings.tftp_server_name }}"
+          boot_file: "{{ dhcp_settings.boot_file }}"
+  register: result
+  ignore_errors: true
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create Overlay Subnet with IP_pools and DHCP with vpc uuid "
+    success_msg: " Overlay Subnet with IP_pools and DHCP with vpc uuid created successfully "
+- set_fact:
+    todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 
 - name: Delete all Created Subnets
   ntnx_subnets:
@@ -361,3 +452,4 @@
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True
+  

@@ -17,13 +17,17 @@ class Cluster(Prism):
 
 
 def get_cluster_uuid(config, module):
-    if "name" in config["cluster"]:
+    if "name" in config:
         cluster = Cluster(module)
-        name = config["cluster"]["name"]
+        name = config["name"]
         uuid = cluster.get_uuid(name)
         if not uuid:
             error = "Cluster {0} not found.".format(name)
             return None, error
-    elif "uuid" in config["cluster"]:
-        uuid = config["cluster"]["uuid"]
+    elif "uuid" in config:
+        uuid = config["uuid"]
+    else:
+        error = "Config {0} doesn't have name or uuid key".format(config)
+        return None, error
+
     return uuid, None

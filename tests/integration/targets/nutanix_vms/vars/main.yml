@@ -22,4 +22,8 @@ network:
     uuid: 72c5057d-93f7-4389-a01a-2c2f42eae3ef
     ip:   10.30.30.75
 
+project:
+  name: test_project
+  uuid: 4ca37775-65a1-44c8-8927-4ec7b0a57fd4
+
 todelete: []

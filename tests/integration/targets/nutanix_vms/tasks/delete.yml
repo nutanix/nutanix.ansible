@@ -30,7 +30,6 @@
     validate_certs: False
   register: result
 
-
 - name: assert when status not complete
   assert:
     that:

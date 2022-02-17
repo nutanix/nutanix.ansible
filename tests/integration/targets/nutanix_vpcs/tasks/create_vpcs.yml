@@ -1,7 +1,8 @@
-- name: Create min VPC
+- name: Create min VPC with subnet name
   ntnx_vpcs:
     validate_certs: False
     state: present
+    wait: false
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -11,19 +12,49 @@
   register: result
   ignore_errors: True
 
+- set_fact:
+    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+##########################################################
+- name: Create min VPC with external_subnet uuid
+  ntnx_vpcs:
+    validate_certs: False
+    state: present
+    wait: true
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: MinVPC
+    external_subnets:
+      - subnet_uuid: "{{ external_subnet.uuid }}"
+  register: result
+  ignore_errors: True
+
 - name: Creation Status
   assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create Min vpc "
-    success_msg: " Min vpc created successfully "
+    fail_msg: " Unable to create Min vpc with external subnet uuid "
+    success_msg: " Min vpc with external subnet uuid created successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
-
 ##########################################################
+- name: Delete all created vpcs
+  ntnx_vpcs:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    vpc_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
 
+- set_fact:
+    todelete: []
+##########################################################
 - name: Create VPC with routable_ips
   ntnx_vpcs:
     validate_certs: False
@@ -48,9 +79,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
-
 ##########################################################
-
 - name: Create VPC with routable_ips and external subnet
   ntnx_vpcs:
     validate_certs: False
@@ -77,9 +106,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
-
 ##########################################################
-
 - name: Create VPC with dns_servers
   ntnx_vpcs:
     validate_certs: False
@@ -101,9 +128,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
-
 ##########################################################
-
 - name: Delete all created vpcs
   ntnx_vpcs:
     state: absent
@@ -118,9 +143,7 @@
 
 - set_fact:
     todelete: []
-
 ##########################################################
-
 - name: Create VPC with all specfactions
   ntnx_vpcs:
     validate_certs: False
@@ -148,9 +171,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
-    
 ##########################################################
-
 - name: Delete all created vpcs
   ntnx_vpcs:
     state: absent
