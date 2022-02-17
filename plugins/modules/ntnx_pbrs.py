@@ -451,13 +451,11 @@ def get_module_spec():
         source=dict(
             type="dict",
             options=route_spec,
-            apply_defaults=True,
             mutually_exclusive=[("any", "external", "network")],
         ),
         destination=dict(
             type="dict",
             options=route_spec,
-            apply_defaults=True,
             mutually_exclusive=[("any", "external", "network")],
         ),
         protocol=dict(
@@ -469,7 +467,6 @@ def get_module_spec():
         action=dict(
             type="dict",
             options=action_spec,
-            apply_defaults=True,
             mutually_exclusive=[("deny", "allow", "reroute")],
         ),
     )
@@ -544,7 +541,7 @@ def run_module():
         argument_spec=get_module_spec(),
         mutually_exclusive=[("priority", "pbr_uuid")],
         required_if=[
-            ("state", "present", ("priority",)),
+            ("state", "present", ("priority", "action", "source", "destination")),
             ("state", "absent", ("pbr_uuid",)),
         ],
         supports_check_mode=True,
