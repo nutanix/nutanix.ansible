@@ -85,55 +85,31 @@ class Pbr(Prism):
         return payload, None
 
     def _build_spec_protocol(self, payload, config):
-        protocol_type = None
         protocol_parameters = {}
-        if config.get("tcp"):
-            tcp = {}
-            protocol_type = "TCP"
+        if config.get("tcp") or config.get("udp"):
+            key = "tcp" if config.get("tcp") else "udp"
+            value = {}
+            protocol_type = key.upper()
             src_port_range_list = []
-            if "*" not in config["tcp"]["src"]:
-                for port in config["tcp"]["src"]:
+            if "*" not in config[key]["src"]:
+                for port in config[key]["src"]:
                     port = port.split("-")
                     src_port_range_list.append(
                         {"start_port": int(port[0]), "end_port": int(port[-1])}
                     )
             dest_port_range_list = []
-            if "*" not in config["tcp"]["dst"]:
-                for port in config["tcp"]["dst"]:
+            if "*" not in config[key]["dst"]:
+                for port in config[key]["dst"]:
                     port = port.split("-")
                     dest_port_range_list.append(
                         {"start_port": int(port[0]), "end_port": int(port[-1])}
                     )
             if src_port_range_list:
-                tcp["source_port_range_list"] = src_port_range_list
+                value["source_port_range_list"] = src_port_range_list
             if dest_port_range_list:
-                tcp["destination_port_range_list"] = dest_port_range_list
-            if tcp:
-                protocol_parameters["tcp"] = tcp
-
-        elif config.get("udp"):
-            udp = {}
-            protocol_type = "UDP"
-            src_port_range_list = []
-            if "*" not in config["udp"]["src"]:
-                for port in config["udp"]["src"]:
-                    port = port.split("-")
-                    src_port_range_list.append(
-                        {"start_port": int(port[0]), "end_port": int(port[-1])}
-                    )
-            dest_port_range_list = []
-            if "*" not in config["udp"]["dst"]:
-                for port in config["udp"]["dst"]:
-                    port = port.split("-")
-                    dest_port_range_list.append(
-                        {"start_port": int(port[0]), "end_port": int(port[-1])}
-                    )
-            if src_port_range_list:
-                udp["source_port_range_list"] = src_port_range_list
-            if dest_port_range_list:
-                udp["destination_port_range_list"] = dest_port_range_list
-            if udp:
-                protocol_parameters["udp"] = udp
+                value["destination_port_range_list"] = dest_port_range_list
+            if value:
+                protocol_parameters[key] = value
 
         elif config.get("icmp"):
             protocol_type = "ICMP"
