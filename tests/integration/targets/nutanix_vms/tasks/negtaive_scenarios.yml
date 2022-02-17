@@ -1,6 +1,34 @@
   - debug:
       msg: "Started Negative Creation Cases"
 
+  - name: Unknown project name
+    ntnx_vms:
+      state: present
+      name: Unknown project name
+      timezone: "UTC"
+      project:
+        name: project
+      nutanix_host: "{{ ip }}"
+      validate_certs: False
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      cluster:
+        uuid: "{{ cluster.uuid }}"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          clone_image:
+            name:  "{{ centos }}"
+          bus: "SCSI"
+    register: result
+    ignore_errors: True
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed is defined
+      success_msg: ' Success: returned error as expected '
+#############################################################
   - name: Unknown Cluster
     ntnx_vms:
       state: present
@@ -29,7 +57,6 @@
         - result.status_code==422
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail Vm created successfully with unknown cluster '
-
 ################################################################################ 
   - name: Unknown Cluster name
     ntnx_vms:
@@ -86,8 +113,6 @@
         - result.msg=="Failed generating VM Spec"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with unknown network name '
-
-
 ###################################################################################        
   - name: Unknown Network uuid
     ntnx_vms:
@@ -144,7 +169,6 @@
         - result.msg=="Failed generating VM Spec"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with not existed image '
-
 #########################################################################################
   - name: Wrong disk size value
     ntnx_vms:
@@ -174,7 +198,6 @@
         - result.failed is defined
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with invalid argument for size_gb '
-
 ############################################################################################# 
   - name: Image size less than actual
     ntnx_vms:
@@ -213,7 +236,6 @@
     assert:
       that:
         - result.failed==True
-
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail: VM created successfully with image size is less than actual '
 ################################################################################
