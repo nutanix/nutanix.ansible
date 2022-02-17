@@ -30,9 +30,7 @@ class Pbr(Prism):
             {
                 "api_version": "3.1.0",
                 "metadata": {"kind": "routing_policy"},
-                "spec": {
-                    "resources": {},
-                },
+                "spec": {"resources": {}},
             }
         )
 

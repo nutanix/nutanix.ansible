@@ -420,10 +420,7 @@ def get_module_spec():
     route_spec = dict(
         any=dict(type="bool"),
         external=dict(type="bool"),
-        network=dict(
-            type="dict",
-            options=network_spec,
-        ),
+        network=dict(type="dict", options=network_spec),
     )
 
     tcp_and_udp_spec = dict(
@@ -442,9 +439,7 @@ def get_module_spec():
     )
 
     action_spec = dict(
-        deny=dict(type="bool"),
-        allow=dict(type="bool"),
-        reroute=dict(type="str"),
+        deny=dict(type="bool"), allow=dict(type="bool"), reroute=dict(type="str")
     )
 
     module_args = dict(
