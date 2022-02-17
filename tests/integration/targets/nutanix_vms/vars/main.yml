@@ -23,7 +23,7 @@ network:
     ip:   10.30.30.75
 
 project:
-  name: test_project
-  uuid: 4ca37775-65a1-44c8-8927-4ec7b0a57fd4
+  name: Dev_Project
+  uuid: 0dd7b89b-a7c1-4962-9a55-efa03a2f07ee
 
 todelete: []
