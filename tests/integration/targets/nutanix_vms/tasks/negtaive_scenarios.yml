@@ -168,8 +168,6 @@
     register: result
     ignore_errors: True
 
-
-
   - name: Creation Status
     assert:
       that:
@@ -210,8 +208,6 @@
         is_overridable: True
     register: result
     ignore_errors: True
-
-
 
   - name: Creation Status
     assert:
@@ -282,4 +278,3 @@
         - result.failed==True
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail deleting VM with missing uuid '
-   
