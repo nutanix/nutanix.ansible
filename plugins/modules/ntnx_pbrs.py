@@ -60,7 +60,6 @@ options:
   priority:
     description: To-Write
     type: int
-    required: true
   pbr_uuid:
     description: To-Write
     type: str
@@ -88,7 +87,6 @@ options:
         description:
           - To-Write
         type: bool
-        default: true
       external:
         description:
           - To-Write
@@ -112,7 +110,6 @@ options:
         description:
           - To-Write
         type: bool
-        default: true
       external:
         description:
           - To-Write
@@ -135,7 +132,6 @@ options:
       any:
         description: To-Write
         type: bool
-        default: true
       tcp:
         description: To-Write
         type: dict
@@ -174,6 +170,9 @@ options:
           code:
             type: int
             description: To-Write
+          type:
+            description: To-Write
+            type: int
   action:
     type: dict
     description: To-Write
@@ -183,7 +182,6 @@ options:
         description: To-Write
       allow:
         type: bool
-        default: true
         description: To-Write
       reroute:
         type: str
@@ -234,13 +232,10 @@ def get_module_spec():
 
     protocol_spec = dict(
         any=dict(type="bool"),
-        tcp=dict(type="dict",
-                 options=tcp_and_udp_spec),
-        udp=dict(type="dict",
-                 options=tcp_and_udp_spec),
+        tcp=dict(type="dict", options=tcp_and_udp_spec),
+        udp=dict(type="dict", options=tcp_and_udp_spec),
         number=dict(type="int"),
-        icmp=dict(type="dict",
-                  options=icmp_spec),
+        icmp=dict(type="dict", options=icmp_spec),
     )
 
     action_spec = dict(
@@ -251,7 +246,6 @@ def get_module_spec():
 
     module_args = dict(
         priority=dict(type="int"),
-
         pbr_uuid=dict(type="str"),
         vpc=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
@@ -355,7 +349,7 @@ def run_module():
             ("state", "present", ("priority",)),
             ("state", "absent", ("pbr_uuid",)),
         ],
-        supports_check_mode=True
+        supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
     result = {

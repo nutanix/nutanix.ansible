@@ -13,7 +13,9 @@ def get_dvs_uuid(config, module):
     if "name" in config:
         groups = Groups(module)
         name = config["name"]
-        uuid = groups.get_uuid("distributed_virtual_switch", "name=={0}".format(name))
+        uuid = groups.get_uuid(
+            entity_type="distributed_virtual_switch", filter="name=={0}".format(name)
+        )
         if not uuid:
             error = "Virtual Switch {0} not found.".format(name)
             return None, error

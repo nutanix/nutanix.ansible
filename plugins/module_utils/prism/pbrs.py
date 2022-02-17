@@ -59,8 +59,10 @@ class Pbr(Prism):
         elif config.get("external"):
             source["address_type"] = "INTERNET"
         elif config.get("network"):
-            source["ip_subnet"] = {"ip": config["network"].get("ip"),
-                                   "prefix_length": int(config["network"].get("prefix"))}
+            source["ip_subnet"] = {
+                "ip": config["network"].get("ip"),
+                "prefix_length": int(config["network"].get("prefix")),
+            }
 
         payload["spec"]["resources"]["source"] = source
 
@@ -73,8 +75,10 @@ class Pbr(Prism):
         elif config.get("external"):
             destination["address_type"] = "INTERNET"
         elif config.get("network"):
-            destination["ip_subnet"] = {"ip": config["network"].get("ip"),
-                                        "prefix_length": int(config["network"].get("prefix"))}
+            destination["ip_subnet"] = {
+                "ip": config["network"].get("ip"),
+                "prefix_length": int(config["network"].get("prefix")),
+            }
 
         payload["spec"]["resources"]["destination"] = destination
 
