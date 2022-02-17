@@ -20,7 +20,7 @@
       nutanix_password: "{{ password }}"
       validate_certs: False
       project:
-        uuid: "3972d1c5-e015-40e4-b9d2-5ae296e654e3"
+        uuid: "{{ project.uuid }}"
       cluster:
         name: "{{ cluster.name }}"
       categories:
@@ -45,7 +45,7 @@
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       project:
-        name: "default"
+        name: "{{ project.name }}"
       name: "VM with Ubuntu image"
       desc: "VM with cluster, network, category, disk with Ubuntu image, guest customization "
       categories:
