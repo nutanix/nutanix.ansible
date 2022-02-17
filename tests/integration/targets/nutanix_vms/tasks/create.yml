@@ -562,4 +562,3 @@
       vm_uuid: '{{ item }}'
     register: result
     loop: '{{ todelete }}'
-
