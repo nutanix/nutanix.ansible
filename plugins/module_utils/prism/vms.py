@@ -205,8 +205,9 @@ class VM(Prism):
                         groups = Groups(self.module)
                         name = vdisk["storage_container"]["name"]
                         uuid = groups.get_uuid(
+                            value=name,
+                            key="container_name",
                             entity_type="storage_container",
-                            filter="container_name=={0}".format(name),
                         )
                         if not uuid:
                             error = "Storage container {0} not found.".format(name)
