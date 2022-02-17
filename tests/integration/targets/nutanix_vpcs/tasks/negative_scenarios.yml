@@ -20,8 +20,7 @@
         - result.msg=="Failed generating vpc spec"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VPC created successfully with unknown subnet name '
-      
-      
+#######################################################
   - name: Unknown subnet uuid
     ntnx_vpcs:
       validate_certs: False
@@ -41,7 +40,7 @@
         - result.msg=="Failed creating vpc"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VPC created successfully with unknown subnet name '
-      
+#######################################################
   - name: Create VPC with same routable_ips
     ntnx_vpcs:
       validate_certs: False
@@ -65,8 +64,8 @@
         - result.msg=="Failed creating vpc"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VPC created successfully with unknown subnet name '
-
-  - name: Delete vpc unknown uuid
+#######################################################
+  - name: Delete vpc with unknown uuid
     ntnx_vpcs:
       state: absent
       nutanix_host: "{{ ip }}"
@@ -82,8 +81,8 @@
         - result.status_code==400
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail deleting vpc with unknown uuid '
-    
-  - name: Delete vpc missing uuid
+#######################################################
+  - name: Delete vpc with missing uuid
     ntnx_vpcs:
       state: absent
       nutanix_host: "{{ ip }}"
@@ -92,12 +91,10 @@
       validate_certs: False
     ignore_errors: True
     register: result
+
   - name: Creation Status
     assert:
       that:
         - result.failed==True
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail deleting vpc with missing  uuid '
-    
-  
-  

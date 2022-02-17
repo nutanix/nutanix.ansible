@@ -2,15 +2,14 @@ ip: 10.44.76.88
 username: admin
 password: Nutanix.123
 external_subnet:
-  name: ET_7
-  uuid: 54e295c3-16d3-49de-96ba-b921948b3a4d
+  name: Ext-Nat
+  uuid: 581b6d25-4064-4cd0-b8ef-5aa0f3b98700
 vpc:
   name: ET_8
-  uuid: 471181f8-eb2d-4303-9a61-6b25a1b3553e
+  uuid: 55c50dad-7b45-4067-9ee9-97c0275a69f5
 vm:
   name: ET_11
-  uuid: 83c9c094-2b18-4e65-bf6f-234640e07bc0
-private_ip: 192.168.2.1
+  uuid: a34604ae-a092-4994-ae29-50c906da41fa
+private_ip: 192.168.0.10
+vm_subnet_name: Ext-Nat
 todelete: []
-vm_subnet_name: Prod-NAT
-

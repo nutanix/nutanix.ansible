@@ -7,8 +7,8 @@
            list: |
              root:Nutanix.123
              expire: False
-         fqdn: myNutanixVM 
-    
+         fqdn: myNutanixVM
+         
   ################################################################
   - name: VM with none values
     ntnx_vms:
@@ -37,7 +37,8 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     
-##################################################################################  
+  ##################################################################################
+
   - name: VM with ubuntu image and different specifications 
     ntnx_vms:
       state: present
@@ -238,6 +239,7 @@
       cores_per_vcpu: 1
     register: result
     ignore_errors: True
+
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
@@ -282,6 +284,7 @@
       memory_gb: 2
     register: result
     ignore_errors: True 
+
   - name: Creation Status
     assert:
       that:
@@ -289,14 +292,12 @@
         - result.response.status.state == 'COMPLETE'
       fail_msg: ' Unable to create VM with all specification '
       success_msg: ' VM with all specification created successfully '
-      
-      
+
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
 
   ##################################################################################################
-  
 
   - name: VM with managed subnet 
     ntnx_vms:
@@ -322,14 +323,11 @@
         - result.response.status.state == 'COMPLETE'
       fail_msg: ' Unable to create VM with managed subnet '
       success_msg: ' VM with with managed subnet created successfully '
-      
-      
+
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
 
-
-      
   ###################################################################################################
   
   - name: VM with minimum requiremnts
@@ -352,8 +350,7 @@
         - result.response.status.state == 'COMPLETE'
       fail_msg: ' Unable to create VM with minimum requiremnts '
       success_msg: ' VM with minimum requiremnts created successfully '
-      
-      
+
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
@@ -395,8 +392,7 @@
         - result.response.status.state == 'COMPLETE'
       fail_msg: ' Unable to create VM with unmanaged vlan '
       success_msg: ' VM with unmanaged vlan created successfully '
-      
-      
+
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
@@ -526,13 +522,11 @@
         - result.response.status.state == 'COMPLETE'
       fail_msg: ' Unable to create VM with diffrent disk types and diffrent sizes with UEFI boot type '
       success_msg: ' VM with diffrent disk types and diffrent sizes with UEFI boot type created successfully '
-      
-      
+
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE' 
- 
-  
+
   - name: Delete all Created VM  
     ntnx_vms:
       state: absent
@@ -581,16 +575,10 @@
         - result.response.status.state == 'COMPLETE'
       fail_msg: ' Unable to create VM withstorage container '
       success_msg: ' VM with storage container created successfully '
-      
-      
+
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE' 
-    
-  - name: list tasks 
-    debug:
-      msg: "{{ result.task_uuid }}"
-      
  
 
   - name: Delete all Created VM  
@@ -603,5 +591,4 @@
       vm_uuid: '{{ item }}'
     register: result
     loop: '{{ todelete }}'
-  ######################################################################################
   

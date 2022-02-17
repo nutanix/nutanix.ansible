@@ -30,8 +30,9 @@
       that:
         - result.failed is defined
       success_msg: ' Success: returned error as expected '
-      
-      
+
+################################################################################
+
   - name: Unknown Cluster uuid
     ntnx_vms:
       state: present
@@ -52,7 +53,6 @@
     register: result
     ignore_errors: True
 
-    
   - name: Creation Status
     assert:
       that:
@@ -84,7 +84,6 @@
     register: result
     ignore_errors: True
 
-    
   - name: Creation Status
     assert:
       that:
@@ -257,7 +256,9 @@
         - result.failed==True
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail: VM created successfully with image size is less than actual '
-      
+
+  ################################################################################
+
   - name: Unknow storage container name
     ntnx_vms:
       state: present
@@ -284,8 +285,9 @@
         - result.msg=="Failed generating VM Spec"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with unknown storage container name '
-      
-      
+
+  ################################################################################ 
+
   - name: Delete vm with unknown uuid
     ntnx_vms:
       state: absent
@@ -304,7 +306,8 @@
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail deleting VM with unknown uuid '
     
-         
+  ################################################################################
+
   - name: Delete vm with missing uuid
     ntnx_vms:
       state: absent
@@ -321,6 +324,3 @@
         - result.failed==True
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail deleting VM with missing uuid '
-      
-
- 

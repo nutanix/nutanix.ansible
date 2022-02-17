@@ -1,6 +1,6 @@
   - debug:
       msg: "Started Negative Creation Cases"
-      
+
   - name: Unknow virtual switch name
     ntnx_subnets:
       state: present
@@ -24,7 +24,7 @@
         - result.failed==True
         - result.msg=="Failed generating subnet spec"
       success_msg: ' Success: returned error as expected '
-
+###############################################################
   - name: Unknow virtual switch uuid
     ntnx_subnets:
       state: present
@@ -51,7 +51,7 @@
       that:
         - result.failed==True
       success_msg: ' Success: returned error as expected '
-
+###############################################################
   - name: Unknown Cluster 
     ntnx_subnets:
       state: present
@@ -76,6 +76,23 @@
     register: result
     ignore_errors: true
     
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+      success_msg: ' Success: returned error as expected '
+###############################################################
+  - name: Delete subnet with unknown uuid
+    ntnx_subnets:
+      state: absent
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      subnet_uuid: 5
+    register: resultt
+    ignore_errors: true
+      
   - name: Creation Status
     assert:
       that:

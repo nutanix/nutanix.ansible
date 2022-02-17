@@ -18,8 +18,8 @@
       - result.failed==True
       - result.msg=="Failed generating floating_ip spec"
     success_msg: ' Success: returned error as expected '
-
-- name: Create floating ip with external unknown subnet uuid
+#################################################################
+- name: Create floating ip with unknown external subnet uuid
   ntnx_floating_ips:
     validate_certs: False
     state: present
@@ -37,9 +37,8 @@
     that:
       - result.status_code==422
     success_msg: ' Success: returned error as expected '
-
-
-- name: Create floating ip with unknown vpc name and external subnet name
+###############################################################
+- name: Create floating ip with unknown vpc
   ntnx_floating_ips:
     validate_certs: False
     state: present
@@ -60,9 +59,8 @@
       - result.failed==True
       - result.msg=="Failed generating floating_ip spec"
     success_msg: ' Success: returned error as expected '
-
-
-- name: Create floating ip with unknown vpc uuid and external subnet name
+###############################################################
+- name: Create floating ip with unknown vpc uuid
   ntnx_floating_ips:
     validate_certs: False
     state: present
@@ -82,8 +80,7 @@
     that:
       - result.status_code==422
     success_msg: ' Success: returned error as expected '
-    
-
+##############################################################
 - name: Delete floating ip with unknown uuid
   ntnx_floating_ips:
     state: absent
@@ -94,7 +91,6 @@
     fip_uuid: 5
   register: result
   ignore_errors: True
-  
   
 - name: Creation Status
   assert:

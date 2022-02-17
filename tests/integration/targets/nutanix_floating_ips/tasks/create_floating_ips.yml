@@ -14,8 +14,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
-
-
+##############################################################
 - name: Create floating ip with vpc name and external subnet uuid
   ntnx_floating_ips:
     validate_certs: False
@@ -37,11 +36,11 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create floating ip with vpc "
-    success_msg: " Floating ip with vpc created successfully "
+    success_msg: " Floating ip with vpc name and external subnet uuid created successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
-
+##########################################################
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
@@ -55,7 +54,7 @@
 
 - set_fact:
     todelete: []
-
+###########################################################
 - name: Create floating ip with external subnet name
   ntnx_floating_ips:
     validate_certs: False
@@ -71,8 +70,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
-
-
+############################################################
 - name: Create floating ip with vpc uuid and external subnet name
   ntnx_floating_ips:
     validate_certs: False
@@ -87,9 +85,10 @@
     private_ip: "{{ private_ip }}"
   register: result
   ignore_errors: True
+  
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
-    
+############################################################
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
@@ -104,8 +103,7 @@
  
 - set_fact:
     todelete: []
-
-
+##########################################################
 - name: Create floating ip with external subnet and vm name
   ntnx_floating_ips:
     validate_certs: False
@@ -118,7 +116,6 @@
     vm:
       name: "{{ vm.name }}"
   ignore_errors: True
-
   register: result
 
 - name: Creation Status
@@ -127,12 +124,11 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create floating ip with vm"
-    success_msg: " Floating ip created successfully with vm "
+    success_msg: " Floating ip with external subnet and vm created successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
- 
-
+##########################################################
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
@@ -147,8 +143,7 @@
  
 - set_fact:
     todelete: []
- 
-
+#########################################################
 - name: Create floating ip with external subnet and vm uuid
   ntnx_floating_ips:
     validate_certs: False
@@ -161,7 +156,6 @@
     vm:
       uuid: "{{ vm.uuid }}"
   ignore_errors: True
-
   register: result
 
 - name: Creation Status
@@ -170,13 +164,11 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create floating ip with vm"
-    success_msg: " Floating ip created successfully with vm "
+    success_msg: " Floating ip with external subnet and vm created successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
-
-
-
+###########################################################
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
