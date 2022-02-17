@@ -217,7 +217,7 @@ def get_module_spec():
     network_spec = dict(ip=dict(type="str"), prefix=dict(type="str"))
 
     route_spec = dict(
-        any=dict(type="bool", default=True),
+        any=dict(type="bool"),
         external=dict(type="bool"),
         network=dict(
             type="dict",
@@ -233,21 +233,25 @@ def get_module_spec():
     icmp_spec = dict(code=dict(type="int"), type=dict(type="int"))
 
     protocol_spec = dict(
-        any=dict(type="bool", default=True),
-        tcp=dict(type="dict", options=tcp_and_udp_spec),
-        udp=dict(type="dict", options=tcp_and_udp_spec),
+        any=dict(type="bool"),
+        tcp=dict(type="dict",
+                 options=tcp_and_udp_spec),
+        udp=dict(type="dict",
+                 options=tcp_and_udp_spec),
         number=dict(type="int"),
-        icmp=dict(type="dict", options=icmp_spec),
+        icmp=dict(type="dict",
+                  options=icmp_spec),
     )
 
     action_spec = dict(
         deny=dict(type="bool"),
-        allow=dict(type="bool", default=True),
+        allow=dict(type="bool"),
         reroute=dict(type="str"),
     )
 
     module_args = dict(
-        priority=dict(type="int", required=True),
+        priority=dict(type="int"),
+
         pbr_uuid=dict(type="str"),
         vpc=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
@@ -344,7 +348,15 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseModule(
+        argument_spec=get_module_spec(),
+        mutually_exclusive=[("priority", "pbr_uuid")],
+        required_if=[
+            ("state", "present", ("priority",)),
+            ("state", "absent", ("pbr_uuid",)),
+        ],
+        supports_check_mode=True
+    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
