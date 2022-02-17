@@ -9,7 +9,7 @@
              expire: False
          fqdn: myNutanixVM
          
-  ################################################################
+##########################################################################
   - name: VM with none values
     ntnx_vms:
       state: present
@@ -36,9 +36,7 @@
     register: result
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    
-  ##################################################################################
-
+##################################################################################
   - name: VM with ubuntu image and different specifications 
     ntnx_vms:
       state: present
@@ -85,9 +83,7 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-
-  #########################################################################################
- 
+#########################################################################################
   - name: VM with CentOS-7-cloud-init image
     ntnx_vms:
       state: present
@@ -119,13 +115,10 @@
       fail_msg: 'Unable to create VM with CentOS-7-cloud-init image'
       success_msg: 'VM with CentOS-7-cloud-init image created successfully '
 
-
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'  
     when: result.response.status.state == 'COMPLETE'
-
-  #################################################################################
-
+#################################################################################
   - name: VM with Cluster, Network, Universal time zone, one Disk
     ntnx_vms:
       state: present
@@ -157,9 +150,7 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-
-  ########################################################################################  
-  
+########################################################################################  
   - name: VM with Cluster, different Disks, Memory size
     ntnx_vms:
       state: present
@@ -192,9 +183,7 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-
-  #####################################################################################
-
+#####################################################################################
   - name: VM with Cluster, different CDROMs
     ntnx_vms:
       state: present
@@ -242,9 +231,7 @@
 
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-
-  ####################################################################################
-
+####################################################################################
   - name: VM with all specification
     ntnx_vms:
       state: present
@@ -296,9 +283,7 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-
-  ##################################################################################################
-
+##################################################################################################
   - name: VM with managed subnet 
     ntnx_vms:
       state: present
@@ -327,9 +312,7 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-
-  ###################################################################################################
-  
+###################################################################################################
   - name: VM with minimum requiremnts
     ntnx_vms:
       state: present
@@ -354,9 +337,7 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-      
-  ##################################################################################################
-  
+##################################################################################################
   - name: VM with unmanaged vlan
     ntnx_vms:
       desc: "VM with unmanaged vlan"
@@ -409,9 +390,7 @@
     loop: '{{ todelete }}'
   - set_fact:
       todelete: []
-
-  ######################################################################################
-   
+######################################################################################
   - name: VM with managed and unmanaged network
     ntnx_vms:
       state: present
@@ -466,9 +445,7 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
-      
-  #########################################################################################
-  
+#########################################################################################
   - name: VM with diffrent disk types and diffrent sizes with UEFI boot type
     ntnx_vms:
       state: present
@@ -512,9 +489,7 @@
       cores_per_vcpu: 1
       memory_gb: 1
     register: result
-
-  ################################################################################
-
+################################################################################
   - name: Creation Status
     assert:
       that:
@@ -540,9 +515,7 @@
     
   - set_fact:
       todelete: []
-    
-  #####################################################################################
-
+####################################################################################
   - name: VM with storage container
     ntnx_vms:
       state: present
@@ -579,9 +552,8 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE' 
- 
-
-  - name: Delete all Created VM  
+####################################################################################
+  - name: Delete all Created VMs 
     ntnx_vms:
       state: absent
       nutanix_host: "{{ ip }}"
