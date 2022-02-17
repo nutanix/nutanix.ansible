@@ -8,7 +8,6 @@
              root:Nutanix.123
              expire: False
          fqdn: myNutanixVM
-         
 ##########################################################################
   - name: VM with none values
     ntnx_vms:
@@ -563,4 +562,3 @@
       vm_uuid: '{{ item }}'
     register: result
     loop: '{{ todelete }}'
-  

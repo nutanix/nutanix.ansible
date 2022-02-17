@@ -1,6 +1,7 @@
 ip: 10.44.76.88
 username: admin
 password: Nutanix.123
+
 external_subnet:
   name: ET_2
   uuid: 019f2086-207d-43ff-ae0c-1ec1045ef33c

@@ -32,7 +32,7 @@ options:
     required: true
   nutanix_password:
     description:
-      - PC password;
+      - PC password
     required: true
     type: str
   validate_certs:
@@ -57,10 +57,10 @@ options:
     description: Wait for subnet CRUD operation to complete.
     type: bool
     required: false
-    default: True
+    default: true
   name:
     description: Subnet Name
-    required: False
+    required: false
     type: str
   subnet_uuid:
     description: Subnet UUID
@@ -72,14 +72,14 @@ options:
     type: dict
     suboptions:
       vlan_id:
-        description: Id of the vlan
+        description: Unique id of the vlan
         type: int
-        required: True
+        required: true
       cluster:
         description:
-          - Name or UUID of the cluster on which the VM will be placed.
+          - Name or UUID of the cluster on which the subnet will be placed
         type: dict
-        required: True
+        required: true
         suboptions:
           name:
             description:
@@ -93,32 +93,32 @@ options:
             type: str
       virtual_switch:
         description:
-          - Name or UUID of the virtual_switch on which the VM will be placed.
+          - Name or UUID of the virtual_switch that the subnet will use
         type: dict
-        required: True
+        required: true
         suboptions:
           name:
             description:
-              - Virtual switch Name
-              - Mutually exclusive with (uuid)
+              - Virtual switch name
+              - Mutually exclusive with C(uuid)
             type: str
           uuid:
             description:
               - Virtual switch UUID
-              - Mutually exclusive with (name)
+              - Mutually exclusive with C(name)
             type: str
       ipam:
         description:
-          -  ip address management configuration
+          -  ip address management configurations of the subnet
         type: dict
         suboptions:
           network_ip:
             description:
-              - Subnet ip address
+              - Subnet network address
             type: str
           network_prefix:
             description:
-              - Subnet ip address prefix length
+              - Subnet network address prefix length
             type: int
           gateway_ip:
             description:
@@ -132,15 +132,15 @@ options:
             suboptions:
               start_ip:
                 description:
-                  - The start address of the IPs range
+                  - The start address of the IPs pool range
                 type: str
               end_ip:
                 description:
-                  - The last address of the IPs range
+                  - The end address of the IPs pool range
                 type: str
           dhcp:
             description:
-              - The DHCP options
+              - The DHCP settings of the subnet
             type: dict
             suboptions:
               dns_servers:
@@ -162,7 +162,7 @@ options:
                 type: str
               dhcp_server_ip:
                 description:
-                  - The DHCP server ip
+                  - The DHCP server IP
                 type: str
               domain_search:
                 description:
@@ -176,14 +176,14 @@ options:
     type: dict
     suboptions:
       vlan_id:
-        description: id of vlan
+        description: Unique id of vlan
         type: int
-        required: True
+        required: true
       cluster:
         description:
-          - Name or UUID of the cluster on which the VM will be placed.
+          - Name or UUID of the cluster on which the subnet will be placed.
         type: dict
-        required: True
+        required: true
         suboptions:
           name:
             description:
@@ -197,30 +197,30 @@ options:
             type: str
       enable_nat:
         description:
-          - Perform Network Address Translation (NAT) on the traffic to / from the VPCs attached to it.
+          - Perform Network Address Translation (NAT) on the traffic to / from the VPCs attached to it
         type: bool
-        default: True
+        default: true
       ipam:
         description:
-          - ip address management configuration
+          - IP address management configurations of the subnet
         type: dict
-        required: True
+        required: true
         suboptions:
           network_ip:
             description:
-              - Subnet ip address
+              - Subnet network address
             type: str
-            required: True
+            required: true
           network_prefix:
             description:
-              - Subnet ip address prefix length
+              - Subnet network address prefix length
             type: int
-            required: True
+            required: true
           gateway_ip:
             description:
               - The gateway ip address
             type: str
-            required: True
+            required: true
           ip_pools:
             description:
               - Range of IPs
@@ -229,11 +229,11 @@ options:
             suboptions:
               start_ip:
                 description:
-                  - The start address of the IPs range
+                  - The start address of the IPs pool range
                 type: str
               end_ip:
                 description:
-                  - The last address of the IPs range
+                  - The end address of the IPs pool range
                 type: str
   overlay_subnet:
     description:
@@ -251,34 +251,34 @@ options:
           name:
             description:
               - VPC Name
-              - Mutually exclusive with (uuid)
+              - Mutually exclusive with C(uuid)
             type: str
           uuid:
             description:
               - VPC UUID
-              - Mutually exclusive with (name)
+              - Mutually exclusive with C(name)
             type: str
       ipam:
         description:
-          - ip address management configuration
+          - IP address management configurations of the subnet
         type: dict
-        required: True
+        required: true
         suboptions:
           network_ip:
             description:
-              - Subnet ip address
+              - Subnet network address
             type: str
-            required: True
+            required: true
           network_prefix:
             description:
-              - Subnet ip address prefix length
+              - Subnet network address prefix length
             type: int
-            required: True
+            required: true
           gateway_ip:
             description:
               - The gateway ip address
             type: str
-            required: True
+            required: true
           ip_pools:
             description:
               - Range of IPs
@@ -287,15 +287,15 @@ options:
             suboptions:
               start_ip:
                 description:
-                  - The start address of the IPs range
+                  - The start address of the IPs pool range
                 type: str
               end_ip:
                 description:
-                  - The last address of the IPs range
+                  - The end address of the IPs pool range
                 type: str
           dhcp:
             description:
-              - The DHCP options
+              - The DHCP settings of the subnet
             type: dict
             suboptions:
               dns_servers:
@@ -315,26 +315,186 @@ options:
                 description:
                   - The boot file name
                 type: str
-              dhcp_server_ip:
-                description:
-                  - The DHCP server ip
-                type: str
               domain_search:
                 description:
                   - List of domain search
                 type: list
                 elements: str
-
+              dhcp_server_ip:
+                description:
+                  - The DHCP server IP
+                type: str
 author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
+ - Dina AbuHijleh (@dina-abuhijleh)
 """
 
 EXAMPLES = r"""
-# TODO
+  - name: VLAN subnet with IPAM IP pools and DHCP
+    ntnx_subnets:
+      state: present
+      nutanix_host: "{{ ip }}"
+      validate_certs: false
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: VLAN subnet with IPAM IP pools and DHCP
+      vlan_subnet:
+        vlan_id: "{{vlan_subnets_ids.3}}"
+        virtual_switch:
+          name: "{{ virtual_switch.name }}"
+        cluster:
+          name: "{{ cluster.name }}"
+        ipam:
+          network_ip: "{{ network_ip }}"
+          network_prefix: "{{ network_prefix }}"
+          gateway_ip: "{{ gateway_ip_address }}"
+          ip_pools:
+            - start_ip: "{{ start_address }}"
+              end_ip: "{{ end_address }}"
+          dhcp:
+            dns_servers: "{{ dns_servers }}"
+            domain_search: "{{ domain_search }}"
+            domain_name: "{{ domain_name }}"
+            tftp_server_name: "{{ tftp_server_name }}"
+            boot_file: "{{ boot_file }}"
+            dhcp_server_ip: "{{ dhcp_server_address }}"
+
+  - name: External subnet with NAT
+    ntnx_subnets:
+      state: present
+      nutanix_host: "{{ ip }}"
+      validate_certs: false
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: " External subnet with NAT "
+      external_subnet:
+        vlan_id: "{{ vlan_id }}"
+        enable_nat: True
+        cluster:
+          name: "{{ cluster_name }}"
+        ipam:
+          network_ip: "{{ network_ip }}"
+          network_prefix: "{{ network_prefix }}"
+          gateway_ip: "{{ gateway_ip_address }}"
+          ip_pools:
+            - start_ip: "{{ dhcp.start_address }}"
+              end_ip: "{{ dhcp.end_address }}"
+            - start_ip: "{{ static.start_address }}"
+              end_ip: "{{ static.end_address }}"
+
+  - name: Overlay Subnet with IP_pools and DHCP
+    ntnx_subnets:
+      state: present
+      nutanix_host: "{{ ip }}"
+      validate_certs: false
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      name: Overlay Subnet with IP_pools and DHCP
+      overlay_subnet:
+        vpc:
+          name: "{{ vpc_name }}"
+        ipam:
+          network_ip: "{{ network_ip }}"
+          network_prefix: "{{ network_prefix }}"
+          gateway_ip: "{{ gateway_ip_address }}"
+          ip_pools:
+            - start_ip: "{{ start_address }}"
+              end_ip: "{{ end_address }}"
+          dhcp:
+            dns_servers: "{{ dns_servers }}"
+            domain_search: "{{ domain_search }}"
+            domain_name: "{{ domain_name }}"
+            tftp_server_name: "{{ tftp_server_name }}"
+            boot_file: "{{ boot_file }}"
+
+  - name: Delete subnets
+    ntnx_subnets:
+      state: absent
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      subnet_uuid: "{{ subnet_uuid }}"
 """
 
 RETURN = r"""
-# TODO
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The subnet kind metadata
+  returned: always
+  type: dict
+  sample: {
+                "categories": {},
+                "categories_mapping": {},
+                "creation_time": "2022-02-13T14:19:41Z",
+                "kind": "subnet",
+                "last_update_time": "2022-02-13T14:19:44Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_version": 1,
+                "uuid": "f5043dec-aef6-4939-ba1b-81cdbd8f3bd2"
+            }
+spec:
+  description: An intentful representation of a subnet spec
+  returned: always
+  type: dict
+  sample: {
+                "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_1a642ea0a5c3",
+                    "uuid": "0005d734-09d4-0462-185b-ac1f6b6f97e2"
+                },
+                "name": "VLAN subnet without IPAM",
+                "resources": {
+                    "subnet_type": "VLAN",
+                    "virtual_switch_uuid": "91639374-c0b9-48c3-bfc1-f9c89343b3e7",
+                    "vlan_id": 205,
+                    "vswitch_name": "br0"
+                }
+            }
+status:
+  description: An intentful representation of a subnet status
+  returned: always
+  type: dict
+  sample:  {
+                "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_1a642ea0a5c3",
+                    "uuid": "0005d734-09d4-0462-185b-ac1f6b6f97e2"
+                },
+                "execution_context": {
+                    "task_uuid": [
+                        "ae015bd7-eada-4e23-a225-4f02f9b2b21e"
+                    ]
+                },
+                "name": "VLAN subnet without IPAM",
+                "resources": {
+                    "subnet_type": "VLAN",
+                    "virtual_switch_uuid": "91639374-c0b9-48c3-bfc1-f9c89343b3e7",
+                    "vlan_id": 205,
+                    "vswitch_name": "br0"
+                },
+                "state": "COMPLETE"
+            }
+subnet_uuid:
+  description: The created subnet uuid
+  returned: always
+  type: str
+  sample: "f5043dec-aef6-4939-ba1b-81cdbd8f3bd2"
+task_uuid:
+  description: The task uuid for the creation
+  returned: always
+  type: str
+  sample: "ae015bd7-eada-4e23-a225-4f02f9b2b21e"
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

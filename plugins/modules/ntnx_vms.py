@@ -32,7 +32,7 @@ options:
     required: true
   nutanix_password:
     description:
-      - PC password;
+      - PC password
     required: true
     type: str
   validate_certs:
@@ -44,7 +44,7 @@ options:
   state:
     description:
       - Specify state of Virtual Machine
-      - If C(state) is set to C(present) the VM is created.
+      - If C(state) is set to C(present) the VM is created
       - >-
         If C(state) is set to C(absent) and the VM exists in the cluster, VM
         with specified name is removed.
@@ -54,13 +54,13 @@ options:
     type: str
     default: present
   wait:
-    description: This is the wait description.
+    description: This is the wait description
     type: bool
     required: false
-    default: True
+    default: true
   name:
     description: VM Name
-    required: False
+    required: false
     type: str
   vm_uuid:
     description: VM UUID
@@ -70,7 +70,7 @@ options:
     required: false
     type: str
   project:
-    description: Name or UUID of the project.
+    description: Name or UUID of the project
     required: false
     type: dict
     suboptions:
@@ -86,7 +86,7 @@ options:
         type: str
   cluster:
     description:
-      - Name or UUID of the cluster on which the VM will be placed.
+      - Name or UUID of the cluster on which the VM will be placed
     type: dict
     required: false
     suboptions:
@@ -102,13 +102,13 @@ options:
         type: str
   vcpus:
     description:
-      - Number number of sockets.
+      - Number of sockets
     required: false
     type: int
     default: 1
   cores_per_vcpu:
     description:
-      - This is the number of vcpus per socket.
+      - This is the number of vcpus per socket
     required: false
     type: int
     default: 1
@@ -120,14 +120,14 @@ options:
     default: 1
   networks:
     description:
-      - list of subnets to which the VM needs to connect to.
+      - list of subnets to which the VM needs to connect to
     type: list
     elements: dict
     required: false
     suboptions:
       subnet:
         description:
-          - Name or UUID of the subnet to which the VM should be connnected.
+          - Name or UUID of the subnet to which the VM should be connnected
         type: dict
         suboptions:
           name:
@@ -142,12 +142,12 @@ options:
             type: str
       private_ip:
         description:
-          - Optionally assign static IP to the VM.
+          - Optionally assign static IP to the VM
         type: str
         required: false
       is_connected:
         description:
-          - connect or disconnect the VM to the subnet.
+          - Connect or disconnect the VM to the subnet
         type: bool
         required: false
         default: true
@@ -276,15 +276,449 @@ options:
     type: dict
     required: false
 author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
+ - Dina AbuHijleh (@dina-abuhijleh)
 """
 
 EXAMPLES = r"""
-# TODO
+  - name: VM with CentOS-7-cloud-init image
+    ntnx_vms:
+      state: present
+      name: VM with CentOS-7-cloud-init image
+      timezone: "UTC"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      cluster:
+        name: "{{ cluster_name }}"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          clone_image:
+            name:  "{{ centos }}"
+          bus: "SCSI"
+      guest_customization:
+        type: "cloud_init"
+        script_path: "./cloud_init.yml"
+        is_overridable: True
+
+  - name: VM with Cluster, Network, Universal time zone, one Disk
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      name: "VM with Cluster Network and Disk"
+      timezone: "Universal"
+      cluster:
+        name: "{{ cluster_name }}"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "{{ network_name }}"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          bus: "PCI"
+
+  - name: VM with Cluster, different CDROMs
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      name: "VM with multiple CDROMs"
+      cluster:
+        name: "{{ cluster_name }}"
+      disks:
+        - type: "CDROM"
+          bus: "SATA"
+          empty_cdrom: True
+        - type: "CDROM"
+          bus: "IDE"
+          empty_cdrom: True
+      cores_per_vcpu: 1
+
+  - name: VM with diffrent disk types and diffrent sizes with UEFI boot type
+    ntnx_vms:
+      state: present
+      name: VM with UEFI boot type
+      timezone: GMT
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      cluster:
+        name: "{{ cluster_name }}"
+      categories:
+        AppType:
+          - Apache_Spark
+      disks:
+        - type: "DISK"
+          clone_image:
+            name: "{{ ubuntu }}"
+          bus: "SCSI"
+          size_gb: 20
+        - type: DISK
+          size_gb: 1
+          bus: SCSI
+        - type: DISK
+          size_gb: 2
+          bus: PCI
+          storage_container:
+            name: "{{ storage_container_name }}"
+        - type: DISK
+          size_gb: 3
+          bus: SATA
+      boot_config:
+        boot_type: UEFI
+        boot_order:
+          - DISK
+          - CDROM
+          - NETWORK
+      vcpus: 2
+      cores_per_vcpu: 1
+      memory_gb: 1
+
+  - name: VM with managed and unmanaged network
+    ntnx_vms:
+      state: present
+      name: VM_NIC
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      timezone: UTC
+      cluster:
+        name: "{{ cluster.name }}"
+      networks:
+        - is_connected: true
+          subnet:
+            uuid: "{{ network.dhcp.uuid }}"
+        - is_connected: true
+          subnet:
+            uuid: "{{ network.static.uuid }}"
+      disks:
+        - type: DISK
+          size_gb: 1
+          bus: SCSI
+        - type: DISK
+          size_gb: 3
+          bus: PCI
+        - type: CDROM
+          bus: SATA
+          empty_cdrom: True
+        - type: CDROM
+          bus: IDE
+          empty_cdrom: True
+      boot_config:
+        boot_type: UEFI
+        boot_order:
+          - DISK
+          - CDROM
+          - NETWORK
+      vcpus: 2
+      cores_per_vcpu: 2
+      memory_gb: 2
+
+  - name: Delete VM
+    ntnx_vms:
+      state: absent
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      vm_uuid: '{{ vm_uuid }}'
 """
 
 RETURN = r"""
-# TODO
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The vm kind metadata
+  returned: always
+  type: dict
+  sample: {
+                "categories": {
+                    "AppType": "Apache_Spark"
+                },
+                "categories_mapping": {
+                    "AppType": [
+                        "Apache_Spark"
+                    ]
+                },
+                "creation_time": "2022-02-13T14:13:38Z",
+                "entity_version": "2",
+                "kind": "vm",
+                "last_update_time": "2022-02-13T14:13:38Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "project_reference": {
+                    "kind": "project",
+                    "name": "_internal",
+                    "uuid": "d32032b3-8384-459e-9de7-e0e3d54e13c1"
+                },
+                "spec_version": 0,
+                "uuid": "2b011db0-4d44-43e3-828a-d0a32dab340c"
+            }
+spec:
+  description: An intentful representation of a vm spec
+  returned: always
+  type: dict
+  sample: {
+                "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_1aa888141361",
+                    "uuid": "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+                },
+                "description": "VM with cluster, network, category, disk with Ubuntu image, guest customization ",
+                "name": "VM with Ubuntu image",
+                "resources": {
+                    "boot_config": {
+                        "boot_device_order_list": [
+                            "CDROM",
+                            "DISK",
+                            "NETWORK"
+                        ],
+                        "boot_type": "LEGACY"
+                    },
+                    "disk_list": [
+                        {
+                            "data_source_reference": {
+                                "kind": "image",
+                                "uuid": "64ccb355-fd73-4b68-a44b-24bc03ef3c66"
+                            },
+                            "device_properties": {
+                                "device_type": "DISK",
+                                "disk_address": {
+                                    "adapter_type": "SATA",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 32212254720,
+                            "disk_size_mib": 30720,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "47ca25c3-9d27-4b94-b6b1-dfa5b25660b4"
+                                }
+                            },
+                            "uuid": "e7d5d42f-c14b-4f9b-aa64-56661a9ec822"
+                        },
+                        {
+                            "device_properties": {
+                                "device_type": "CDROM",
+                                "disk_address": {
+                                    "adapter_type": "IDE",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 382976,
+                            "disk_size_mib": 1,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "47ca25c3-9d27-4b94-b6b1-dfa5b25660b4"
+                                }
+                            },
+                            "uuid": "1ce566d3-1c8c-4492-96d1-c39ed7c47513"
+                        }
+                    ],
+                    "gpu_list": [],
+                    "guest_customization": {
+                        "cloud_init": {
+                            "user_data": "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICByb290Ok51
+                                          dGFuaXguMTIzCiAgICBleHBpcmU6IEZhbHNlCmZxZG46IG15TnV0YW5peFZNIAo="
+                        },
+                        "is_overridable": true
+                    },
+                    "hardware_clock_timezone": "UTC",
+                    "is_agent_vm": false,
+                    "machine_type": "PC",
+                    "memory_size_mib": 1024,
+                    "nic_list": [
+                        {
+                            "ip_endpoint_list": [],
+                            "is_connected": true,
+                            "mac_address": "50:6b:8d:f9:06:68",
+                            "nic_type": "NORMAL_NIC",
+                            "subnet_reference": {
+                                "kind": "subnet",
+                                "name": "vlan.800",
+                                "uuid": "671c0590-8496-4068-8480-702837fa2e42"
+                            },
+                            "trunked_vlan_list": [],
+                            "uuid": "4e15796b-67eb-4f93-8e01-3b60ecf80894",
+                            "vlan_mode": "ACCESS"
+                        }
+                    ],
+                    "num_sockets": 1,
+                    "num_threads_per_core": 1,
+                    "num_vcpus_per_socket": 1,
+                    "power_state": "ON",
+                    "power_state_mechanism": {
+                        "guest_transition_config": {
+                            "enable_script_exec": false,
+                            "should_fail_on_script_failure": false
+                        },
+                        "mechanism": "HARD"
+                    },
+                    "serial_port_list": [],
+                    "vga_console_enabled": true,
+                    "vnuma_config": {
+                        "num_vnuma_nodes": 0
+                    }
+                }
+            }
+status:
+  description: An intentful representation of a vm status
+  returned: always
+  type: dict
+  sample: {
+                "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_1aa888141361",
+                    "uuid": "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
+                },
+                "description": "VM with cluster, network, category, disk with Ubuntu image, guest customization ",
+                "execution_context": {
+                    "task_uuid": [
+                        "82c5c1d3-eb6a-406a-8f58-306028099d21"
+                    ]
+                },
+                "name": "VM with Ubuntu image",
+                "resources": {
+                    "boot_config": {
+                        "boot_device_order_list": [
+                            "CDROM",
+                            "DISK",
+                            "NETWORK"
+                        ],
+                        "boot_type": "LEGACY"
+                    },
+                    "disk_list": [
+                        {
+                            "data_source_reference": {
+                                "kind": "image",
+                                "uuid": "64ccb355-fd73-4b68-a44b-24bc03ef3c66"
+                            },
+                            "device_properties": {
+                                "device_type": "DISK",
+                                "disk_address": {
+                                    "adapter_type": "SATA",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 32212254720,
+                            "disk_size_mib": 30720,
+                            "is_migration_in_progress": false,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "47ca25c3-9d27-4b94-b6b1-dfa5b25660b4"
+                                }
+                            },
+                            "uuid": "e7d5d42f-c14b-4f9b-aa64-56661a9ec822"
+                        },
+                        {
+                            "device_properties": {
+                                "device_type": "CDROM",
+                                "disk_address": {
+                                    "adapter_type": "IDE",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 382976,
+                            "disk_size_mib": 1,
+                            "is_migration_in_progress": false,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "47ca25c3-9d27-4b94-b6b1-dfa5b25660b4"
+                                }
+                            },
+                            "uuid": "1ce566d3-1c8c-4492-96d1-c39ed7c47513"
+                        }
+                    ],
+                    "gpu_list": [],
+                    "guest_customization": {
+                        "cloud_init": {
+                            "user_data": "I2Nsb3VkLWNvbmZpZwpjaHBhc3N3ZDoKICBsaXN0OiB8CiAgICByb290Ok51dGFuaXguMTIz
+                                          CiAgICBleHBpcmU6IEZhbHNlCmZxZG46IG15TnV0YW5peFZNIAo="
+                        },
+                        "is_overridable": true
+                    },
+                    "hardware_clock_timezone": "UTC",
+                    "host_reference": {
+                        "kind": "host",
+                        "name": "10.46.136.134",
+                        "uuid": "7da77782-5e38-4ef8-a098-d6f63a001aae"
+                    },
+                    "hypervisor_type": "AHV",
+                    "is_agent_vm": false,
+                    "machine_type": "PC",
+                    "memory_size_mib": 1024,
+                    "nic_list": [
+                        {
+                            "ip_endpoint_list": [],
+                            "is_connected": true,
+                            "mac_address": "50:6b:8d:f9:06:68",
+                            "nic_type": "NORMAL_NIC",
+                            "subnet_reference": {
+                                "kind": "subnet",
+                                "name": "vlan.800",
+                                "uuid": "671c0590-8496-4068-8480-702837fa2e42"
+                            },
+                            "trunked_vlan_list": [],
+                            "uuid": "4e15796b-67eb-4f93-8e01-3b60ecf80894",
+                            "vlan_mode": "ACCESS"
+                        }
+                    ],
+                    "num_sockets": 1,
+                    "num_threads_per_core": 1,
+                    "num_vcpus_per_socket": 1,
+                    "power_state": "ON",
+                    "power_state_mechanism": {
+                        "guest_transition_config": {
+                            "enable_script_exec": false,
+                            "should_fail_on_script_failure": false
+                        },
+                        "mechanism": "HARD"
+                    },
+                    "protection_type": "UNPROTECTED",
+                    "serial_port_list": [],
+                    "vga_console_enabled": true,
+                    "vnuma_config": {
+                        "num_vnuma_nodes": 0
+                    }
+                },
+                "state": "COMPLETE"
+}
+vm_uuid:
+  description: The created vm uuid
+  returned: always
+  type: str
+  sample: "2b011db0-4d44-43e3-828a-d0a32dab340c"
+task_uuid:
+  description: The task uuid for the creation
+  returned: always
+  type: str
+  sample: "82c5c1d3-eb6a-406a-8f58-306028099d21"
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

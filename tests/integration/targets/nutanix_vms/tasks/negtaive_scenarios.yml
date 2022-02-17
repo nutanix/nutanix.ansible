@@ -28,8 +28,8 @@
       that:
         - result.failed is defined
       success_msg: ' Success: returned error as expected '
-################################################################################
-  - name: Unknown Cluster uuid
+#############################################################
+  - name: Unknown Cluster
     ntnx_vms:
       state: present
       name: Unknown Cluster
