@@ -1,29 +1,29 @@
 ---
-ip: 10.44.76.190
+ip:  10.44.76.88
 username: "admin" 
 password: "Nutanix.123"
 centos: "CentOS-7-cloudinit" 
 ubuntu: "Ubuntu1404" 
 
 cluster:
-  name: auto_cluster_prod_1aa888141361
-  uuid: 0005d578-2faf-9fb6-3c07-ac1f6b6f9780
+  name:  auto_cluster_prod_1a642ea0a5c3
+  uuid: 0005d734-09d4-0462-185b-ac1f6b6f97e2 
 
 storage_container:
   name: SelfServiceContainer
-  uuid: 98b0fa80-a74b-4dac-b1b9-0fe90b2f5526
+  uuid: a569d3d4-74b2-46a9-9441-2f716eb20eda
   
 network:
   dhcp:
     name: vlan.800
-    uuid: df7bef18-1ad1-4f45-9b89-21418df71a15
+    uuid: 86f7e39b-96cd-44e1-8c9d-53abfd46e036
   static:
     name: static_subnet
-    uuid: 72c5057d-93f7-4389-a01a-2c2f42eae3ef
+    uuid: 7912cfa5-79e7-4724-830a-3094fec4dd00
     ip:   10.30.30.75
 
 project:
-  name: test_project
-  uuid: 4ca37775-65a1-44c8-8927-4ec7b0a57fd4
+  name: test
+  uuid: 846aab50-48dd-49a7-9540-858312ee8fa7
 
 todelete: []
