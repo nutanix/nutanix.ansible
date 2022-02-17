@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
 module: ntnx_pbrs
 short_description: pbr module which suports pbr CRUD operations
 version_added: 1.0.0
@@ -58,10 +59,10 @@ options:
     required: false
     default: true
   priority:
-    description: To-Write
+    description: The policy priority number
     type: int
   pbr_uuid:
-    description: To-Write
+    description: PBR UUID
     type: str
   vpc:
     description:
@@ -79,21 +80,17 @@ options:
           - Mutually exclusive with (name)
         type: str
   source:
-    description:
-      - To-Write
+    description: Where the traffic came from
     type: dict
     suboptions:
       any:
-        description:
-          - To-Write
+        description: From any source
         type: bool
       external:
-        description:
-          - To-Write
+        description: External Network
         type: bool
       network:
-        description:
-          - To-Write
+        description: specfic network address
         type: dict
         suboptions:
           ip:
@@ -104,19 +101,16 @@ options:
             type: str
   destination:
     type: dict
-    description: To-Write
+    description:  Where the traffic going to
     suboptions:
       any:
-        description:
-          - To-Write
+        description: From any destination
         type: bool
       external:
-        description:
-          - To-Write
+        description: External Network
         type: bool
       network:
-        description:
-          - To-Write
+        description: specfic network address
         type: dict
         suboptions:
           ip:
@@ -130,62 +124,62 @@ options:
     description: The Network Protocol that will used
     suboptions:
       any:
-        description: To-Write
+        description: any protcol number
         type: bool
       tcp:
-        description: To-Write
+        description: The Transmission Control will be used
         type: dict
         suboptions:
           src:
             default: '*'
             type: list
             elements: str
-            description: To-Write
+            description: Where the traffic came from
           dst:
             default: '*'
             type: list
             elements: str
-            description: To-Write
+            description: Where the traffic going to
       udp:
-        description: To-Write
+        description: User datagram protocol will be used
         type: dict
         suboptions:
           src:
             default: '*'
             type: list
             elements: str
-            description: To-Write
+            description: Where the traffic came from
           dst:
             default: '*'
             type: list
             elements: str
-            description: To-Write
+            description: Where the traffic going to
       number:
         type: int
-        description: To-Write
+        description: The internet protocol number
       icmp:
-        description: To-Write
+        description: Internet Control Message Protocol will be used
         type: dict
         suboptions:
           code:
             type: int
-            description: To-Write
+            description: ICMP code
           type:
-            description: To-Write
+            description: ICMP type
             type: int
   action:
     type: dict
-    description: To-Write
+    description: The behavior on the request
     suboptions:
       deny:
         type: bool
-        description: To-Write
+        description: Drop the request
       allow:
         type: bool
-        description: To-Write
+        description: Accept the request
       reroute:
         type: str
-        description: To-Write
+        description: Change the request route
 author:
   - Prem Karat (@premkarat)
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -194,11 +188,220 @@ author:
 """
 
 EXAMPLES = r"""
-# TODO
+
+- name: create PBR with vpc name with any source or destination or protocol with deny action
+  ntnx_pbrs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    priority: "{{ priority.0 }}"
+    vpc:
+      name: "{{ vpc.name }}"
+    source:
+      any: True
+    destination:
+      any: True
+    action:
+      deny: True
+    protocol:
+      any: True
+
+- name: create PBR with vpc uuid with source Any and destination external and allow action with protocol number
+  ntnx_pbrs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    priority: "{{ priority.1 }}"
+    vpc:
+      uuid: "{{ vpc.uuid }}"
+    source:
+      any: True
+    destination:
+      external: True
+    action:
+      allow: True
+    protocol:
+      number: "{{protocol.number}}"
+
+- name: create PBR with vpc name with source external and destination network with reroute action and  tcp port rangelist
+  ntnx_pbrs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    priority: "{{ priority.2 }}"
+    vpc:
+      name: "{{ vpc.name }}"
+    source:
+      external: True
+    destination:
+      network:
+        ip: "{{ network.ip }}"
+        prefix: "{{ network.prefix }}"
+    action:
+      reroute: "{{reroute_ip}}"
+    protocol:
+      tcp:
+        src: "{{tcp.port}}"
+        dst: "{{tcp.port_rangelist}}"
+
+- name: create PBR with vpc name with source network and destination external with reroute action and  udp port rangelist
+  ntnx_pbrs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    priority: "{{ priority.3 }}"
+    vpc:
+      name: "{{ vpc.name }}"
+    source:
+      network:
+        ip: "{{ network.ip }}"
+        prefix: "{{ network.prefix }}"
+    destination:
+      any: True
+    action:
+      reroute: "{{reroute_ip}}"
+    protocol:
+      udp:
+        src: "{{udp.port_rangelist}}"
+        dst: "{{udp.port}}"
+
+- name: create PBR with vpc name with source network and destination external with reroute action and icmp
+  ntnx_pbrs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    priority: "{{ priority.5 }}"
+    vpc:
+      name: "{{ vpc.name }}"
+    source:
+      network:
+        ip: "{{ network.ip }}"
+        prefix: "{{ network.prefix }}"
+    destination:
+      external: True
+    action:
+      reroute: "{{reroute_ip}}"
+    protocol:
+      icmp:
+        code: "{{icmp.code}}"
+        type: "{{icmp.type}}"
+
+- name: Delete all Created pbrs
+  ntnx_pbrs:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    pbr_uuid: "{{ item }}"
 """
 
 RETURN = r"""
-# TODO
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The PBR  metadata
+  returned: always
+  type: dict
+  sample:  {
+            "api_version": "3.1",
+            "metadata": {
+                "categories": {},
+                "categories_mapping": {},
+                "creation_time": "2022-02-17T08:29:31Z",
+                "kind": "routing_policy",
+                "last_update_time": "2022-02-17T08:29:33Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_version": 0,
+                "uuid": "64c5a93d-7cd4-45f9-81e9-e0b08d35077a"
+            }
+}
+spec:
+  description: An intentful representation of a PRB spec
+  returned: always
+  type: dict
+  sample: {
+                "name": "Policy with priority205",
+                "resources": {
+                    "action": {
+                        "action": "DENY"
+                    },
+                    "destination": {
+                        "address_type": "ALL"
+                    },
+                    "priority": 205,
+                    "protocol_type": "ALL",
+                    "source": {
+                        "address_type": "ALL"
+                    },
+                    "vpc_reference": {
+                        "kind": "vpc",
+                        "uuid": "ebf8130e-09b8-48d9-a9d3-5ef29983f5fe"
+                    }
+                }
+            }
+status:
+  description: An intentful representation of a PBR status
+  returned: always
+  type: dict
+  sample:  {
+                "execution_context": {
+                    "task_uuid": [
+                        "f83bbb29-3ca8-42c2-b29b-4fca4a7a25c3"
+                    ]
+                },
+                "name": "Policy with priority205",
+                "resources": {
+                    "action": {
+                        "action": "DENY"
+                    },
+                    "destination": {
+                        "address_type": "ALL"
+                    },
+                    "priority": 205,
+                    "protocol_type": "ALL",
+                    "routing_policy_counters": {
+                        "byte_count": 0,
+                        "packet_count": 0
+                    },
+                    "source": {
+                        "address_type": "ALL"
+                    },
+                    "vpc_reference": {
+                        "kind": "vpc",
+                        "name": "ET_pbr",
+                        "uuid": "ebf8130e-09b8-48d9-a9d3-5ef29983f5fe"
+                    }
+                },
+                "state": "COMPLETE"
+            }
+pbr_uuid:
+  description: The created VPC uuid
+  returned: always
+  type: str
+  sample: "64c5a93d-7cd4-45f9-81e9-e0b08d35077a"
+task_uuid:
+  description: The task uuid for the creation
+  returned: always
+  type: str
+  sample: "f83bbb29-3ca8-42c2-b29b-4fca4a7a25c3"
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
