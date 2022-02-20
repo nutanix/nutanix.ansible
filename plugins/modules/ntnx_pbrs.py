@@ -92,14 +92,14 @@ options:
           - Mutually exclusive with C(external) and C(network)
         type: bool
       external:
-        description: 
+        description:
           - Traffic from external network
           - Mutually exclusive with C(any) and C(network)
         type: bool
       network:
-        description: 
+        description:
           - Traffic from specfic network address
-          - Mutually exclusive with C(any) and C(external) 
+          - Mutually exclusive with C(any) and C(external)
         type: dict
         suboptions:
           ip:
@@ -114,17 +114,17 @@ options:
     default: any
     suboptions:
       any:
-        description: 
+        description:
           - Traffic to any destination with no specification
           - Mutually exclusive with C(external) and C(network)
         type: bool
       external:
-        description: 
+        description:
           - Traffic to external network
           - Mutually exclusive with C(any) and C(network)
         type: bool
       network:
-        description: 
+        description:
           - Traffic to specfic network address
           - Mutually exclusive with C(any) and C(external)
         type: dict
@@ -141,12 +141,12 @@ options:
     default: any
     suboptions:
       any:
-        description: 
+        description:
           - Any protcol number
           - Mutually exclusive with C(tcp) and C(udp) and C(number) and C(icmp)
         type: bool
       tcp:
-        description: 
+        description:
           - The Transmission Control protocol will be used
           - Mutually exclusive with C(any) and C(udp) and C(number) and C(icmp)
         type: dict
@@ -162,7 +162,7 @@ options:
             elements: str
             description: The destination port
       udp:
-        description: 
+        description:
           - User Datagram protocol will be used
           - Mutually exclusive with C(any) and C(tcp) and C(number) and C(icmp)
         type: dict
@@ -178,7 +178,7 @@ options:
             elements: str
             description: The destination port
       number:
-        description: 
+        description:
           - The internet protocol number
           - Mutually exclusive with C(any) and C(tcp) and C(udp) and C(icmp)
         type: int
@@ -198,17 +198,17 @@ options:
     default: allow
     suboptions:
       deny:
-        description: 
+        description:
           - Drop the request
           - Mutually exclusive with C(allow) and C(reroute)
         type: bool
       allow:
-        description: 
+        description:
           - Accept the request
           - Mutually exclusive with C(deny) and C(reroute)
         type: bool
       reroute:
-        description: 
+        description:
           - Change the request route
           - Mutually exclusive with C(allow) and C(deny)
         type: str
