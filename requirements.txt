@@ -10,7 +10,7 @@ coverage==4.5.4
 shyaml==0.6.2
 paramiko
 PyYAML
-jinja2==2
+jinja2
 httplib2
 boto
 markupsafe==2
