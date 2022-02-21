@@ -163,10 +163,17 @@ options:
         suboptions:
           code:
             type: int
-            description: ICMP code
+            description:
+              - ICMP code and it's required by type
+              - Mutually exclusive with any
           type:
-            description: ICMP type
+            description:
+              - ICMP type
+              - Mutually exclusive with any
             type: int
+          any:
+            description: allow any icmp code or type
+            type: bool
   action:
     type: dict
     description: The behavior on the request
@@ -428,14 +435,21 @@ def get_module_spec():
         dst=dict(type="list", default=["*"], elements="str"),
     )
 
-    icmp_spec = dict(code=dict(type="int"), type=dict(type="int"))
+    icmp_spec = dict(
+        any=dict(type="bool"), code=dict(type="int"), type=dict(type="int")
+    )
 
     protocol_spec = dict(
         any=dict(type="bool"),
         tcp=dict(type="dict", options=tcp_and_udp_spec),
         udp=dict(type="dict", options=tcp_and_udp_spec),
         number=dict(type="int"),
-        icmp=dict(type="dict", options=icmp_spec),
+        icmp=dict(
+            type="dict",
+            options=icmp_spec,
+            mutually_exclusive=[("any", "code"), ("any", "type")],
+            required_by={"type": "code"},
+        ),
     )
 
     action_spec = dict(
