@@ -61,7 +61,6 @@ options:
   priority:
     description: The policy priority number
     type: int
-    required: true
   pbr_uuid:
     description: PBR UUID
     type: str
@@ -69,7 +68,6 @@ options:
     description:
       - Virtual Private Clouds
     type: dict
-    required: true
     suboptions:
       name:
         description:
@@ -84,7 +82,6 @@ options:
   source:
     description: Where the traffic come from
     type: dict
-    default: any
     suboptions:
       any:
         description:
@@ -111,7 +108,6 @@ options:
   destination:
     type: dict
     description: Where the traffic going to
-    default: any
     suboptions:
       any:
         description:
@@ -138,7 +134,6 @@ options:
   protocol:
     type: dict
     description: The Network Protocol that will be used
-    default: any
     suboptions:
       any:
         description:
@@ -195,7 +190,6 @@ options:
   action:
     type: dict
     description: The behavior on the request
-    default: allow
     suboptions:
       deny:
         description:
@@ -256,6 +250,7 @@ EXAMPLES = r"""
       external: True
     action:
       allow: True
+      type: bool
     protocol:
       number: "{{ protocol.number }}"
 
