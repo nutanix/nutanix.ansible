@@ -235,7 +235,7 @@ def create_module(args):
     success = True
     module = "plugins/modules/ntnx_{0}.py".format(mname)
     if os.path.exists(module):
-        print("Aborting: {} already exists".format(module))
+        print("Aborting: {0} already exists".format(module))
         success = False
     else:
         with open(module, "w") as f:
@@ -244,11 +244,11 @@ def create_module(args):
                 .replace("CNAME", cname)
                 .replace("INAME", iname)
             )
-            print("Successfully generated code: {}".format(module))
+            print("Successfully generated code: {0}".format(module))
 
     sdk = "plugins/module_utils/prism/{0}.py".format(mname)
     if os.path.exists(sdk):
-        print("Aborting: {} already exists".format(sdk))
+        print("Aborting: {0} already exists".format(sdk))
         success = False
         return success
 
@@ -259,7 +259,7 @@ def create_module(args):
             .replace("INAME", iname)
             .replace("APIPREFIX", api_prefix)
         )
-        print("Successfully generated code: {}".format(sdk))
+        print("Successfully generated code: {0}".format(sdk))
     return success
 
 
