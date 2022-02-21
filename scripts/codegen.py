@@ -1,7 +1,6 @@
 import os
 import sys
 
-
 ansible_module_content = '''#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
@@ -70,16 +69,16 @@ options:
     description: INAME UUID
     type: str
 
-  #TODO here should be additional arguments documentation
+  # Step 4: here should be additional arguments documentation
 
 """
 
 EXAMPLES = r"""
-# TODO
+# Step 5
 """
 
 RETURN = r"""
-# TODO
+# Step 6
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
@@ -90,7 +89,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 def get_module_spec():
     module_args = dict(
-    # TODO: Ansible module spec and spec validation
+    # Step 1: Ansible module spec and spec validation
     )
 
     return module_args
@@ -202,10 +201,10 @@ from .prism import Prism
 
 class CNAME(Prism):
     def __init__(self, module):
-        resource_type = "/MNAME"
+        resource_type = "/APIPREFIX"
         super(CNAME, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
-            # TODO. This is a Map of
+            # Step 2. This is a Map of
             # ansible attirbute and corresponding API spec generation method
             # Example: method name should start with _build_spec_<method_name>
             # name: _build_spec_name
@@ -214,23 +213,24 @@ class CNAME(Prism):
     def _get_default_spec(self):
         return deepcopy(
             {
-                # TODO: Default API spec
+                # Step 3: Default API spec
             }
         )
 """
 
 
-def create_module(name):
+def create_module(args):
     """
     MNAME: Module name
     CNAME: Class name
     INAME: Function/Instance name
+    APIPREFIX: URL prefix
     """
 
-    mname = name.lower()
-    name = name[:-1]
-    cname = name.capitalize()
-    iname = name
+    iname = args[0]
+    cname = args[1] if len(args) >= 2 else iname.capitalize()
+    mname = args[2] if len(args) >= 3 else iname.lower() + "s"
+    api_prefix = args[3] if len(args) >= 4 else iname
 
     success = True
     module = "plugins/modules/ntnx_{0}.py".format(mname)
@@ -257,6 +257,7 @@ def create_module(name):
             client_sdk_content.replace("MNAME", mname)
             .replace("CNAME", cname)
             .replace("INAME", iname)
+            .replace("APIPREFIX", api_prefix)
         )
         print("Successfully generated code: {}".format(sdk))
     return success
@@ -270,13 +271,13 @@ def main():
             """
         Description:  Script to create module template with base files and functionality
 
-        Usage: create_module.py <module_name>
-            module_name    Use for naming, by default "objects".
-            module_name should end with 's'
+        Usage: codegen.py <iname> <cname> <mname> <apiprefix>
+            mname    Use for naming, by default "objects".
+                    mname should end with 's'
         """
         )
     else:
-        if not create_module(args[0] if len(args) else "objects"):
+        if not create_module(args if len(args) else ["objects"]):
             sys.exit(1)
         sys.exit(0)
 
