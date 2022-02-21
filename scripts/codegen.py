@@ -271,9 +271,11 @@ def main():
             """
         Description:  Script to create module template with base files and functionality
 
-        Usage: codegen.py <iname> <cname> <mname> <apiprefix>
-            mname    Use for naming, by default "objects".
-                    mname should end with 's'
+        Usage: codegen.py <iname> <cname> <mname> <api_prefix>
+                iname: Function/Instance name
+                cname: Class name
+                mname: Module name
+                api_prefix: URL prefix
         """
         )
     else:
