@@ -16,7 +16,6 @@ class Pbr(Prism):
         super(Pbr, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "priority": self._build_spec_priority,
-            # "pbr_uuid": self.build_spec_pbr_uuid,
             "vpc": self._build_spec_vpc,
             "source": self._build_spec_source,
             "destination": self._build_spec_destination,
