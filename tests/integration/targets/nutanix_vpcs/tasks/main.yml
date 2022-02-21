@@ -1,0 +1,4 @@
+- block:
+    - import_tasks: "create_vpcs.yml"
+    - import_tasks: "delete_vpc.yml"
+    - import_tasks: "negative_scenarios.yml"

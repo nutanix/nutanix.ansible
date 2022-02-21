@@ -1,0 +1,29 @@
+ip: 10.44.76.88
+username: admin
+password: Nutanix.123
+
+external_subnet:
+  name: ET_2
+  uuid: 019f2086-207d-43ff-ae0c-1ec1045ef33c
+dns_servers: ["8.8.8.8", "8.8.4.4"]
+routable_ips:
+  network_ip: 192.168.2.0
+  network_prefix: 24
+  network_ip_2: 192.168.8.0
+  network_prefix_2: 24
+cluster:
+  name:  auto_cluster_prod_1a642ea0a5c3
+  uuid: 0005d734-09d4-0462-185b-ac1f6b6f97e2 
+  
+external_nat_subnet:
+  vlan_id: 201
+  gateway_ip_address: 10.44.3.193
+  network_prefix: 27
+  network_ip: 10.44.3.192
+  dhcp:
+    start_address: 10.44.3.198
+    end_address: 10.44.3.207
+  static:
+    start_address: 10.44.3.208
+    end_address: 10.44.3.217
+todelete: []

@@ -1,0 +1,99 @@
+- debug:
+      msg: "Started Negative Creation Cases"
+- name: Create floating ip with unknown external subnet name
+  ntnx_floating_ips:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    external_subnet:
+      name: "external_subnet"
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.failed==True
+      - result.msg=="Failed generating floating_ip spec"
+    success_msg: ' Success: returned error as expected '
+#################################################################
+- name: Create floating ip with unknown external subnet uuid
+  ntnx_floating_ips:
+    validate_certs: False
+    state: present
+    wait: false
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    external_subnet:
+      uuid: 54e295c3-16d3-49de-96ba-b921948b3a
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.status_code==422
+    success_msg: ' Success: returned error as expected '
+###############################################################
+- name: Create floating ip with unknown vpc
+  ntnx_floating_ips:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    external_subnet:
+      name: "{{ external_subnet.name}}"
+    vpc:
+       name: vpc
+    private_ip: "{{ private_ip }}"
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.failed==True
+      - result.msg=="Failed generating floating_ip spec"
+    success_msg: ' Success: returned error as expected '
+###############################################################
+- name: Create floating ip with unknown vpc uuid
+  ntnx_floating_ips:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    external_subnet:
+      name: "{{ external_subnet.name }}"
+    vpc:
+       uuid: 471181f8-eb2d-4303-9a61-6b25a1b3
+    private_ip: "{{ private_ip }}"
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.status_code==422
+    success_msg: ' Success: returned error as expected '
+##############################################################
+- name: Delete floating ip with unknown uuid
+  ntnx_floating_ips:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fip_uuid: 5
+  register: result
+  ignore_errors: True
+  
+- name: Creation Status
+  assert:
+    that:
+      - result.status_code==400
+    success_msg: ' Success: returned error as expected '

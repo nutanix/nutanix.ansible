@@ -4,30 +4,22 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-from .prism import Prism
-
-
-class Cluster(Prism):
-    def __init__(self, module):
-        resource_type = "/clusters"
-        super(Cluster, self).__init__(module, resource_type=resource_type)
-
+from .groups import Groups
 
 # Helper functions
 
 
-def get_cluster_uuid(config, module):
+def get_dvs_uuid(config, module):
     if "name" in config:
-        cluster = Cluster(module)
+        groups = Groups(module)
         name = config["name"]
-        uuid = cluster.get_uuid(name)
+        uuid = groups.get_uuid(value=name, entity_type="distributed_virtual_switch")
         if not uuid:
-            error = "Cluster {0} not found.".format(name)
+            error = "Virtual Switch {0} not found.".format(name)
             return None, error
     elif "uuid" in config:
         uuid = config["uuid"]
     else:
         error = "Config {0} doesn't have name or uuid key".format(config)
-        return None, error
-
+        None, error
     return uuid, None
