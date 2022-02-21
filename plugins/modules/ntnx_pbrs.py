@@ -163,10 +163,17 @@ options:
         suboptions:
           code:
             type: int
-            description: ICMP code
+            description:
+              - ICMP code and it's required by type
+              - Mutually exclusive with any
           type:
-            description: ICMP type
+            description:
+              - ICMP type
+              - Mutually exclusive with any
             type: int
+          any:
+            description: allow any icmp code or type
+            type: bool
   action:
     type: dict
     description: The behavior on the request
