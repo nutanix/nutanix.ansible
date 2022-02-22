@@ -105,7 +105,7 @@
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    priority: "{{ priority.6 }}"
+    priority: "{{ priority.3 }}"
     vpc:
       name: "{{ vpc.name }}"
     source:
@@ -141,7 +141,7 @@
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    priority: "{{ priority.3 }}"
+    priority: "{{ priority.4 }}"
     vpc:
       name: "{{ vpc.name }}"
     source:
@@ -178,7 +178,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     wait: true
-    priority: "{{ priority.7 }}"
+    priority: "{{ priority.5 }}"
     vpc:
       name: "{{ vpc.name }}"
     source:
@@ -214,7 +214,7 @@
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    priority: "{{ priority.5 }}"
+    priority: "{{ priority.6 }}"
     wait: false
     vpc:
       name: "{{ vpc.name }}"
