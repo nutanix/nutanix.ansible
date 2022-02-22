@@ -352,7 +352,7 @@
       networks:
         - is_connected: false
           subnet:
-            uuid: "{{ network.static.uuid }}"
+            uuid: "{{ static.uuid }}"
           private_ip: "{{ network.static.ip }}"
       boot_config: 
         boot_type: LEGACY
@@ -365,6 +365,7 @@
       memory_gb: 1
     register: result
     ignore_errors: true
+ 
   - name: Creation Status
     assert:
       that:
@@ -407,7 +408,7 @@
             uuid: "{{ network.dhcp.uuid }}"
         - is_connected: true
           subnet:
-            uuid: "{{ network.static.uuid }}"
+            uuid: "{{ static.uuid }}"
       disks:
         - type: DISK
           size_gb: 1

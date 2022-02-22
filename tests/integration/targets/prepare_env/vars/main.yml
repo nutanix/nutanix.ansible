@@ -1,0 +1,9 @@
+ip: 10.44.76.88
+username: admin
+password: Nutanix.123
+cluster:
+  name:  auto_cluster_prod_1a642ea0a5c3
+  uuid: 0005d734-09d4-0462-185b-ac1f6b6f97e2 
+virtual_switch:
+  name: vs0
+  uuid: 91639374-c0b9-48c3-bfc1-f9c89343b3e7

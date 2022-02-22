@@ -1,13 +1,7 @@
 ---
-ip:  10.44.76.88
-username: "admin" 
-password: "Nutanix.123"
 centos: "CentOS-7-cloudinit" 
 ubuntu: "Ubuntu1404" 
 
-cluster:
-  name:  auto_cluster_prod_1a642ea0a5c3
-  uuid: 0005d734-09d4-0462-185b-ac1f6b6f97e2 
 
 storage_container:
   name: SelfServiceContainer
@@ -18,8 +12,8 @@ network:
     name: vlan.800
     uuid: 86f7e39b-96cd-44e1-8c9d-53abfd46e036
   static:
-    name: static_subnet
-    uuid: 7912cfa5-79e7-4724-830a-3094fec4dd00
+    # name: static_subnet
+    # uuid: 7912cfa5-79e7-4724-830a-3094fec4dd00
     ip:   10.30.30.75
 
 project:

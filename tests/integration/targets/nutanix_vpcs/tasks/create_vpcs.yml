@@ -2,7 +2,7 @@
   ntnx_vpcs:
     validate_certs: False
     state: present
-    wait: false
+    wait: True
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -14,6 +14,15 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create Min vpc with subnet name"
+    success_msg: " Min vpc with subnet name created successfully "
+
 ##########################################################
 - name: Create min VPC with external_subnet uuid
   ntnx_vpcs:
