@@ -56,7 +56,7 @@ We glady welcome contributions from the community. From updating the documentati
 # Examples
 ## Playbook for IaaS provisioning on Nutanix
 
-**Refer to `examples/iaas` for full implementation**
+**Refer to [`examples/iaas`](https://github.com/nutanix/nutanix.ansible/tree/main/examples/iaas) for full implementation**
 
 ```yaml
 ---
