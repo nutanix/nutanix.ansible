@@ -1,5 +1,7 @@
+import argparse
 import os
 import sys
+
 
 ansible_module_content = '''#!/usr/bin/python
 # -*- coding: utf-8 -*-
@@ -201,7 +203,7 @@ from .prism import Prism
 
 class CNAME(Prism):
     def __init__(self, module):
-        resource_type = "/APIPREFIX"
+        resource_type = "/API_ENDPOINT"
         super(CNAME, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             # Step 2. This is a Map of
@@ -224,13 +226,14 @@ def create_module(args):
     MNAME: Module name
     CNAME: Class name
     INAME: Function/Instance name
-    APIPREFIX: URL prefix
+    API_ENDPOINT: URL prefix
     """
 
-    iname = args[0]
-    cname = args[1] if len(args) >= 2 else iname.capitalize()
-    mname = args[2] if len(args) >= 3 else iname.lower() + "s"
-    api_prefix = args[3] if len(args) >= 4 else iname
+    api_endpoint = args.api.lower()
+    name = api_endpoint[:-1]
+    iname = args.iname if args.iname else name
+    cname = args.cname if args.cname else name.capitalize()
+    mname = args.mname if args.mname else api_endpoint
 
     success = True
     module = "plugins/modules/ntnx_{0}.py".format(mname)
@@ -257,31 +260,23 @@ def create_module(args):
             client_sdk_content.replace("MNAME", mname)
             .replace("CNAME", cname)
             .replace("INAME", iname)
-            .replace("APIPREFIX", api_prefix)
+            .replace("API_ENDPOINT", api_endpoint)
         )
         print("Successfully generated code: {0}".format(sdk))
     return success
 
 
 def main():
-    args = sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("api", help="api endpoint")
+    parser.add_argument("-m", "--mname", help="ansible module name")
+    parser.add_argument("-c", "--cname", help="class name of the entity")
+    parser.add_argument("-i", "--iname", help="instance name of the entity")
+    args = parser.parse_args()
 
-    if "--help" in args:
-        print(
-            """
-        Description:  Script to create module template with base files and functionality
-
-        Usage: codegen.py <iname> <cname> <mname> <api_prefix>
-                iname: Function/Instance name
-                cname: Class name
-                mname: Module name
-                api_prefix: URL prefix
-        """
-        )
-    else:
-        if not create_module(args if len(args) else ["objects"]):
-            sys.exit(1)
-        sys.exit(0)
+    if not create_module(args):
+        sys.exit(1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
