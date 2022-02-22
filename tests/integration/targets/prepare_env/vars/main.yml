@@ -1,9 +1,36 @@
 ip: 10.44.76.88
 username: admin
 password: Nutanix.123
+validate_certs: False
+todelete: []
+
 cluster:
   name:  auto_cluster_prod_1a642ea0a5c3
   uuid: 0005d734-09d4-0462-185b-ac1f6b6f97e2 
+
 virtual_switch:
   name: vs0
   uuid: 91639374-c0b9-48c3-bfc1-f9c89343b3e7
+
+external_nat_subnet:
+  name: Ext-Nat2
+  vlan_id: 102
+  gateway_ip_address: 10.44.3.193
+  network_prefix: 27
+  network_ip: 10.44.3.192
+  dhcp:
+    start_address: 10.44.3.198
+    end_address: 10.44.3.207
+  static:
+    start_address: 10.44.3.208
+    end_address: 10.44.3.217
+
+vpc_name: ET_88
+overlay_name: ET_5
+vm_name: ET_111
+static_name: static_subnett
+overlay_subnet:
+          network_ip: 192.168.1.0
+          network_prefix: 24
+          gateway_ip: 192.168.1.1
+          private_ip: 192.168.1.13
