@@ -1,14 +1,5 @@
 ---
-ip: 10.44.76.88
-username: admin
-password: Nutanix.123
 priority: [205, 206, 207, 208, 209, 210]
-vpc:
-  name: ET_pbr
-  uuid: ebf8130e-09b8-48d9-a9d3-5ef29983f5fe
-external_subnet:
-  subnet_name: ET_2
-  subnet_uuiid: ebf8130e- 09b8-48d9-a9d3-5ef29983f5fe
 network:
   ip: 192.168.2.0
   prefix: 24

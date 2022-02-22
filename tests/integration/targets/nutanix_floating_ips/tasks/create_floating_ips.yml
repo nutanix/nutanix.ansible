@@ -103,7 +103,7 @@
  
 - set_fact:
     todelete: []
-##########################################################
+#########################################################
 - name: Create floating ip with external subnet and vm name
   ntnx_floating_ips:
     validate_certs: False
@@ -112,7 +112,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      name: "{{ vm_subnet_name }}"
+      name: "{{ external_subnet.name }}"
     vm:
       name: "{{ vm.name }}"
   ignore_errors: True
@@ -128,7 +128,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
-##########################################################
+#########################################################
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
@@ -152,7 +152,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      name: "{{ vm_subnet_name }}"
+      name: "{{ external_subnet.name }}"
     vm:
       uuid: "{{ vm.uuid }}"
   ignore_errors: True
@@ -168,7 +168,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
-###########################################################
+##########################################################
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
@@ -180,3 +180,4 @@
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True
+
