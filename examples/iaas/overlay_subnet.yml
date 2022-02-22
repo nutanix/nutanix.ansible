@@ -1,4 +1,4 @@
-
+---
 - name: Create {{ item.name }} overlay subnet
   ntnx_subnets:
     state: present
@@ -19,6 +19,6 @@
             domain_search:  "{{ item.domain_search }}"
   register: overlay
 - debug:
-    msg: 
-      - "name: {{ overlay.response.status.name }}" 
+    msg:
+      - "name: {{ overlay.response.status.name }}"
       - "uuid: {{ overlay.subnet_uuid }}"

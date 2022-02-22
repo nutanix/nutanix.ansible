@@ -1,3 +1,4 @@
+---
 - name: Assign Floating IP for "{{ item.vm_name }}"
   ntnx_floating_ips:
       state: present
@@ -7,6 +8,6 @@
         name: "{{ item.vm_name }}"
   register: fip
 - debug:
-    msg: 
+    msg:
         - "VM name: {{ item.vm_name }}"
         - "uuid: {{ fip.fip_uuid }}"

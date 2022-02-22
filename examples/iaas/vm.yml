@@ -1,4 +1,4 @@
-
+---
 - name: Create "{{ item.name }}" VM
   ntnx_vms:
     state: present
@@ -19,6 +19,6 @@
             name: "{{ item.image_name }}"
   register: vm
 - debug:
-    msg: 
+    msg:
         - "name: {{ vm.response.status.name }}"
         - "uuid: {{ vm.vm_uuid }}"
