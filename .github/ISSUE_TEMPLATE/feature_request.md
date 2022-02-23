@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: New feature - Use this template to create new feature request.
+about: Use this to request new feature
 title: "[Feat] Develop ansible module for <api_endpoint>"
 labels: feature
 assignees: alaa-bish, dina-abuhijleh, Gevorg-Khachatryan-97, premkarat
