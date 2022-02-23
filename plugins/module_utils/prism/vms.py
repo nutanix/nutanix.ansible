@@ -78,7 +78,6 @@ class VM(Prism):
                     "device_type": "DISK",
                     "disk_address": {"adapter_type": None, "device_index": None},
                 },
-                "disk_size_bytes": None,
                 "storage_config": {
                     "storage_container_reference": {
                         "kind": "storage_container",
@@ -192,12 +191,12 @@ class VM(Prism):
                 ] = device_indexes[vdisk["bus"]]
 
             if vdisk.get("empty_cdrom"):
-                disk.pop("disk_size_bytes")
                 disk.pop("data_source_reference")
                 disk.pop("storage_config")
 
             else:
-                disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
+                if vdisk.get("size_gb"):
+                    disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
 
                 if vdisk.get("storage_container"):
                     disk.pop("data_source_reference")
