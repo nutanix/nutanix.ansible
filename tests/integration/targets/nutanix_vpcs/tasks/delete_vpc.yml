@@ -8,7 +8,7 @@
     nutanix_password: "{{ password }}"
     name: vpc_with_add_specfactions
     external_subnets:
-      - subnet_name: "{{ external_subnet.name }}"
+      - subnet_name: "{{ external_nat_subnet.name }}"
     dns_servers: "{{ dns_servers }}"
     routable_ips:
       - network_ip: "{{ routable_ips.network_ip }}"
