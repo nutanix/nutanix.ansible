@@ -1,0 +1,24 @@
+---
+- name: Create {{ item.name }} overlay subnet
+  ntnx_subnets:
+    state: present
+    name: "{{ item.name }}"
+    overlay_subnet:
+      vpc:
+        name: "{{ item.vpc_name }}"
+      ipam:
+        network_ip: "{{ item.nip }}"
+        network_prefix: "{{ item.prefix }}"
+        gateway_ip: "{{ item.gip }}"
+        ip_pools:
+            - start_ip: "{{ item.sip }}"
+              end_ip: "{{ item.eip }}"
+        dhcp:
+            dns_servers: "{{ item.dns_servers }}"
+            domain_name: "{{ item.domain_name }}"
+            domain_search:  "{{ item.domain_search }}"
+  register: overlay
+- debug:
+    msg:
+      - "name: {{ overlay.response.status.name }}"
+      - "uuid: {{ overlay.subnet_uuid }}"

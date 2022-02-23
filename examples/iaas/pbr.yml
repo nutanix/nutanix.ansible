@@ -1,0 +1,22 @@
+---
+- name: Create PBR for vpc "{{ item.vpc_name }}"
+  ntnx_pbrs:
+    state: present
+    vpc:
+      name: "{{ item.vpc_name }}"
+    priority: "{{ item.priority }}"
+    source:
+      network:
+        ip: "{{item.nip}}"
+        prefix: "{{item.prefix}}"
+    destination:
+      external: True
+    protocol:
+      any: True
+    action:
+      deny: True
+  register: pbr
+- debug:
+    msg:
+        - "vpc_name: {{ item.vpc_name }}"
+        - "uuid: {{ pbr.pbr_uuid }}"

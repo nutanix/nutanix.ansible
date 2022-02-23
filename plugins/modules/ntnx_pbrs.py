@@ -54,7 +54,7 @@ options:
     type: str
     default: present
   wait:
-    description: This is the wait description.
+    description: Wait for pbr CRUD operation to complete.
     type: bool
     required: false
     default: true
@@ -72,93 +72,113 @@ options:
       name:
         description:
           - VPC Name
-          - Mutually exclusive with (uuid)
+          - Mutually exclusive with C(uuid)
         type: str
       uuid:
         description:
           - VPC UUID
-          - Mutually exclusive with (name)
+          - Mutually exclusive with C(name)
         type: str
   source:
-    description: Where the traffic came from
+    description: Where the traffic come from
     type: dict
     suboptions:
       any:
-        description: From any source
+        description:
+          - Traffic from any source with no specification
+          - Mutually exclusive with C(external) and C(network)
         type: bool
       external:
-        description: External Network
+        description:
+          - Traffic from external network
+          - Mutually exclusive with C(any) and C(network)
         type: bool
       network:
-        description: specfic network address
+        description:
+          - Traffic from specfic network address
+          - Mutually exclusive with C(any) and C(external)
         type: dict
         suboptions:
           ip:
             description: Subnet ip address
             type: str
           prefix:
-            description: ip address prefix length
+            description: IP address prefix length
             type: str
   destination:
     type: dict
-    description:  Where the traffic going to
+    description: Where the traffic going to
     suboptions:
       any:
-        description: From any destination
+        description:
+          - Traffic to any destination with no specification
+          - Mutually exclusive with C(external) and C(network)
         type: bool
       external:
-        description: External Network
+        description:
+          - Traffic to external network
+          - Mutually exclusive with C(any) and C(network)
         type: bool
       network:
-        description: specfic network address
+        description:
+          - Traffic to specfic network address
+          - Mutually exclusive with C(any) and C(external)
         type: dict
         suboptions:
           ip:
             description: Subnet ip address
             type: str
           prefix:
-            description: ip address prefix length
+            description: IP address prefix length
             type: str
   protocol:
     type: dict
-    description: The Network Protocol that will used
+    description: The Network Protocol that will be used
     suboptions:
       any:
-        description: any protcol number
+        description:
+          - Any protcol number
+          - Mutually exclusive with C(tcp) and C(udp) and C(number) and C(icmp)
         type: bool
       tcp:
-        description: The Transmission Control will be used
+        description:
+          - The Transmission Control protocol will be used
+          - Mutually exclusive with C(any) and C(udp) and C(number) and C(icmp)
         type: dict
         suboptions:
           src:
             default: '*'
             type: list
             elements: str
-            description: Where the traffic came from
+            description: The source port
           dst:
             default: '*'
             type: list
             elements: str
-            description: Where the traffic going to
+            description: The destination port
       udp:
-        description: User datagram protocol will be used
+        description:
+          - User Datagram protocol will be used
+          - Mutually exclusive with C(any) and C(tcp) and C(number) and C(icmp)
         type: dict
         suboptions:
           src:
             default: '*'
             type: list
             elements: str
-            description: Where the traffic came from
+            description: The source port
           dst:
             default: '*'
             type: list
             elements: str
-            description: Where the traffic going to
+            description: The destination port
       number:
+        description:
+          - The internet protocol number
+          - Mutually exclusive with C(any) and C(tcp) and C(udp) and C(icmp)
         type: int
-        description: The internet protocol number
       icmp:
-        description: Internet Control Message Protocol will be used
+        description: Internet Control Message protocol will be used
         type: dict
         suboptions:
           code:
@@ -179,14 +199,20 @@ options:
     description: The behavior on the request
     suboptions:
       deny:
+        description:
+          - Drop the request
+          - Mutually exclusive with C(allow) and C(reroute)
         type: bool
-        description: Drop the request
       allow:
+        description:
+          - Accept the request
+          - Mutually exclusive with C(deny) and C(reroute)
         type: bool
-        description: Accept the request
       reroute:
+        description:
+          - Change the request route
+          - Mutually exclusive with C(allow) and C(deny)
         type: str
-        description: Change the request route
 author:
   - Prem Karat (@premkarat)
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -231,8 +257,9 @@ EXAMPLES = r"""
       external: True
     action:
       allow: True
+      type: bool
     protocol:
-      number: "{{protocol.number}}"
+      number: "{{ protocol.number }}"
 
 - name: create PBR with vpc name with source external and destination network with reroute action and  tcp port rangelist
   ntnx_pbrs:
@@ -251,11 +278,11 @@ EXAMPLES = r"""
         ip: "{{ network.ip }}"
         prefix: "{{ network.prefix }}"
     action:
-      reroute: "{{reroute_ip}}"
+      reroute: "{{ reroute_ip }}"
     protocol:
       tcp:
-        src: "{{tcp.port}}"
-        dst: "{{tcp.port_rangelist}}"
+        src: "{{ tcp.port }}"
+        dst: "{{ tcp.port_rangelist }}"
 
 - name: create PBR with vpc name with source network and destination external with reroute action and  udp port rangelist
   ntnx_pbrs:
@@ -277,8 +304,8 @@ EXAMPLES = r"""
       reroute: "{{reroute_ip}}"
     protocol:
       udp:
-        src: "{{udp.port_rangelist}}"
-        dst: "{{udp.port}}"
+        src: "{{ udp.port_rangelist }}"
+        dst: "{{ udp.port }}"
 
 - name: create PBR with vpc name with source network and destination external with reroute action and icmp
   ntnx_pbrs:
@@ -297,11 +324,11 @@ EXAMPLES = r"""
     destination:
       external: True
     action:
-      reroute: "{{reroute_ip}}"
+      reroute: "{{ reroute_ip }}"
     protocol:
       icmp:
-        code: "{{icmp.code}}"
-        type: "{{icmp.type}}"
+        code: "{{ icmp.code }}"
+        type: "{{ icmp.type }}"
 
 - name: Delete all Created pbrs
   ntnx_pbrs:
@@ -320,7 +347,7 @@ api_version:
   type: str
   sample: "3.1"
 metadata:
-  description: The PBR  metadata
+  description: The PBR metadata
   returned: always
   type: dict
   sample:  {
@@ -400,7 +427,7 @@ status:
                 "state": "COMPLETE"
             }
 pbr_uuid:
-  description: The created VPC uuid
+  description: The created PBR uuid
   returned: always
   type: str
   sample: "64c5a93d-7cd4-45f9-81e9-e0b08d35077a"

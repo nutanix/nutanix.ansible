@@ -1,0 +1,13 @@
+---
+- name: Assign Floating IP for "{{ item.vm_name }}"
+  ntnx_floating_ips:
+      state: present
+      external_subnet:
+        name: "Ext-Nat"
+      vm:
+        name: "{{ item.vm_name }}"
+  register: fip
+- debug:
+    msg:
+        - "VM name: {{ item.vm_name }}"
+        - "uuid: {{ fip.fip_uuid }}"

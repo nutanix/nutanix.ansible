@@ -1,0 +1,12 @@
+---
+- name: Create {{ item.name }} VPC with external connectivity to "{{ item.subnet_name }}"
+  ntnx_vpcs:
+        state: present
+        name: "{{ item.name }}"
+        external_subnets:
+          - subnet_name: "{{ item.subnet_name }}"
+  register: vpc
+- debug:
+    msg:
+        - "name: {{ vpc.response.status.name }}"
+        - "uuid: {{ vpc.vpc_uuid }}"

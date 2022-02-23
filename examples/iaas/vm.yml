@@ -1,0 +1,24 @@
+---
+- name: Create "{{ item.name }}" VM
+  ntnx_vms:
+    state: present
+    name: "{{ item.name }}"
+    desc: "{{ item.desc }}"
+    cluster:
+      name: auto_cluster_prod_1a642ea0a5c3
+    networks:
+      - is_connected: "{{ item.is_connected }}"
+        subnet:
+          name: "{{ item.subnet_name }}"
+        private_ip: "{{ item.private_ip }}"
+    disks:
+        - type: "DISK"
+          size_gb: 30
+          bus: "SATA"
+          clone_image:
+            name: "{{ item.image_name }}"
+  register: vm
+- debug:
+    msg:
+        - "name: {{ vm.response.status.name }}"
+        - "uuid: {{ vm.vm_uuid }}"

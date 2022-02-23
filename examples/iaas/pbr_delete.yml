@@ -1,0 +1,9 @@
+---
+- name: Delete PBR "{{ item.pbr_uuid }}"
+  ntnx_pbrs:
+    state: absent
+    pbr_uuid: "{{ item.pbr_uuid }}"
+  register: pbr
+- debug:
+    msg:
+        - "uuid: {{ pbr.pbr_uuid }}"
