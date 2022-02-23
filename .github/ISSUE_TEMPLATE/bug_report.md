@@ -3,7 +3,7 @@ name: Bug report
 about: Bug - Use this template for reporting bugs in existing module
 title: "[Bug] <summary of issue> in module <module_name>"
 labels: bug
-assignees: premkarat, alaa-bish, Gevorg-Khachatryan-97, dina-abuhijleh
+assignees: alaa-bish, dina-abuhijleh, Gevorg-Khachatryan-97, premkarat
 
 ---
 
