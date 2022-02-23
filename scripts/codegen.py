@@ -2,7 +2,6 @@ import argparse
 import os
 import sys
 
-
 ansible_module_content = '''#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
