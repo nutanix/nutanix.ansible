@@ -829,6 +829,40 @@ def create_vm(module, result):
         result["response"] = resp
 
 
+def update_vm(module, result):
+    vm_uuid = module.params["vm_uuid"]
+    if not vm_uuid:
+        result["error"] = "Missing parameter vm_uuid in playbook"
+        module.fail_json(msg="Failed updating VM", **result)
+
+    vm = VM(module)
+    spec, error = vm.get_spec()
+    if error:
+        result["error"] = error
+        module.fail_json(msg="Failed generating VM Spec", **result)
+
+    if module.check_mode:
+        result["response"] = spec
+        return
+
+    resp, status = vm.update(spec, vm_uuid)
+    if status["error"]:
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(msg="Failed updating VM", **result)
+
+    vm_uuid = resp["metadata"]["uuid"]
+    result["changed"] = True
+    result["response"] = resp
+    result["vm_uuid"] = vm_uuid
+    result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp, tmp = vm.read(vm_uuid)
+        result["response"] = resp
+
+
 def delete_vm(module, result):
     vm_uuid = module.params["vm_uuid"]
     if not vm_uuid:
@@ -881,7 +915,10 @@ def run_module():
     }
     state = module.params["state"]
     if state == "present":
-        create_vm(module, result)
+        if module.params.get("vm_uuid"):
+            update_vm(module, result)
+        else:
+            create_vm(module, result)
     elif state == "absent":
         delete_vm(module, result)
 
