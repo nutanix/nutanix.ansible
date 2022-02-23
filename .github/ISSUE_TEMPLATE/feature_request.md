@@ -1,7 +1,7 @@
 ---
 name: Feature request
-about: Suggest an idea for this project
-title: Develop ansible module for <api_endpoint>
+about: New feature - Use this template to create new feature request.
+title: "[Feat] Develop ansible module for <api_endpoint>"
 labels: feature
 assignees: alaa-bish, dina-abuhijleh, Gevorg-Khachatryan-97, premkarat
 
