@@ -1,5 +1,5 @@
 ---
-- name: IaaS Provisioning
+- name: clean up the environment
   hosts: localhost
   gather_facts: false
   collections:
@@ -42,5 +42,5 @@
       validate_certs: false
       subnet_uuid: "{{item }}"
     loop:
-      - "{{external_subnet.uuid}}"
+      - "{{external_nat_subnet.uuid}}"
       - "{{static.uuid}}"

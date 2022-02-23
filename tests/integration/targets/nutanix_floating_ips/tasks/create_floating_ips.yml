@@ -8,7 +8,7 @@
     nutanix_password: "{{ password }}"
     wait: True
     external_subnet:
-      uuid: "{{ external_subnet.uuid }}"
+      uuid: "{{ external_nat_subnet.uuid }}"
   register: result
   ignore_errors: True
 - name: Creation Status
@@ -30,7 +30,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      uuid: "{{external_subnet.uuid}}"
+      uuid: "{{external_nat_subnet.uuid}}"
     vpc:
        name: "{{ vpc.name }}"
     private_ip: "{{ private_ip }}"
@@ -71,7 +71,7 @@
     nutanix_password: "{{ password }}"
     wait: true
     external_subnet:
-      name: "{{ external_subnet.name }}"
+      name: "{{ external_nat_subnet.name }}"
   register: result
   ignore_errors: True
 
@@ -94,7 +94,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      name: "{{ external_subnet.name }}"
+      name: "{{ external_nat_subnet.name }}"
     vpc:
        uuid: "{{ vpc.uuid }}"
     private_ip: "{{ private_ip }}"
@@ -135,7 +135,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      name: "{{ external_subnet.name }}"
+      name: "{{ external_nat_subnet.name }}"
     vm:
       name: "{{ vm.name }}"
   ignore_errors: True
@@ -175,7 +175,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      name: "{{ external_subnet.name }}"
+      name: "{{ external_nat_subnet.name }}"
     vm:
       uuid: "{{ vm.uuid }}"
   ignore_errors: True
