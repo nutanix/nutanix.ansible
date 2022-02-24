@@ -86,7 +86,7 @@
  * **Title** should contain <font color="red">one of</font> the follwoing
     - [Feat] Develop ansible module for \<api_name>
     - [Imprv] Modify ansible module to support \<new_functionality>
-    - [Fix] Fix \<summary of issue> bug in \<ansible_module_name>
+    - [Bug] Fix \<summary of issue> bug in \<ansible_module_name>
  * **Labels** should contain <font color="red">one of</font> the following
     - **feature**
     - **enhancement**
@@ -104,7 +104,7 @@
 2. Create <font color="red">one of</font> the following git branch from <font color="red">`main`</font> branch. Use `issue#<id>` from 1).
  * `feat/<module_name>_issue#<id>`
  * `imprv/issue#<id>`
- * `fix/issue#<id>`
+ * `bug/issue#<id>`
 
 3. Develop `sanity`, `unit` and `integrtaion` tests.
 
