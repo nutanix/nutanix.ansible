@@ -1,6 +1,6 @@
 ---
 - module_defaults:
-    group/ntnx:
+    group/nutanix.ncp.ntnx:
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"
