@@ -13,7 +13,7 @@ virtual_switch:
   uuid: 91639374-c0b9-48c3-bfc1-f9c89343b3e7
 
 external_nat_subnets:
-  name: Ext-Nat
+  name: integration_test_Ext-Nat
   vlan_id: 102
   gateway_ip_address: 10.44.3.193
   network_prefix: 27

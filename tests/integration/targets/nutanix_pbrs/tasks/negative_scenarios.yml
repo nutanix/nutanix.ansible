@@ -3,11 +3,7 @@
 
 - name: Create PBR with unknown vpc name
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.8 }}"
     vpc:
       name: vpc
@@ -34,11 +30,7 @@
 ##################################################################  
 - name: Create PBR with priority less than 10
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: 8
     vpc:
       name: "{{ vpc.name }}"
@@ -65,11 +57,7 @@
 ###################################################################
 - name: Create PBR with invalid network ip
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.5 }}"
     vpc:
       name: "{{ vpc.name }}"
@@ -93,11 +81,7 @@
 #################################################################
 - name: Create PBR with unknown vpc uuid
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.8 }}"
     vpc:
       uuid: ebf8130e-09b8-48d9-a9d3-5ef29983
@@ -124,11 +108,7 @@
 #################################################################
 - name: Create PBR with invalid type and code values for icmp
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.8 }}"
     vpc:
       uuid: "{{ vpc.uuid }}"
@@ -156,10 +136,6 @@
 - name: Delete pbrs with unknown uuid
   ntnx_pbrs:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     pbr_uuid: 5
   register: result
   loop: "{{ todelete }}"
@@ -173,10 +149,6 @@
 - name: Delete pbrs with unknown uuid
   ntnx_pbrs:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True

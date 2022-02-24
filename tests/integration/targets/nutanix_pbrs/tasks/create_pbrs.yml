@@ -1,10 +1,6 @@
 - name: Create PBR with vpc name, any source, any destination, any protocol and deny action
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.0 }}"
     vpc:
       name: "{{ vpc.name }}"
@@ -32,11 +28,7 @@
 ###############################################################################################
 - name: Create PBR with vpc uuid, any source, external destination and allow action with protocol number
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.1 }}"
     vpc:
       uuid: "{{ vpc.uuid }}"
@@ -64,11 +56,7 @@
 #######################################################################################################
 - name: create PBR with vpc name with source external and destination network with reroute action and tcp port rangelist
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.2 }}"
     vpc:
       name: "{{ vpc.name }}"
@@ -100,11 +88,7 @@
 ##########################################################################################################
 - name: create PBR with vpc name with source external and destination network with reroute action and any tcp port rangelist
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.3 }}"
     vpc:
       name: "{{ vpc.name }}"
@@ -136,11 +120,7 @@
 ###########################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and udp port rangelist
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.4 }}"
     vpc:
       name: "{{ vpc.name }}"
@@ -172,11 +152,7 @@
 ##############################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and any udp ports
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     wait: true
     priority: "{{ priority.5 }}"
     vpc:
@@ -209,11 +185,7 @@
 ##################################################################################################################
 - name: Create PBR with vpc name, source network, external destination, with reroute action and icmp
   ntnx_pbrs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     priority: "{{ priority.6 }}"
     wait: false
     vpc:
@@ -239,10 +211,6 @@
 - name: Delete all created pbrs
   ntnx_pbrs:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     pbr_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"

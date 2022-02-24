@@ -14,10 +14,6 @@
       state: present
       name: none
       timezone: GMT
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       project:
         uuid: "{{ project.uuid }}"
       cluster:
@@ -33,16 +29,22 @@
       cores_per_vcpu:
       memory_gb:
     register: result
+    ignore_errors: true
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: 'Unable to Create VM with none values  '
+      success_msg: 'VM with none values created successfully '
+
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 ##################################################################################
   - name: VM with ubuntu image and different specifications 
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       project:
         name: "{{ project.name }}"
       name: "VM with Ubuntu image"
@@ -88,10 +90,6 @@
       state: present
       name: VM with CentOS-7-cloud-init image 
       timezone: "UTC"
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       cluster:
         uuid: "{{ cluster.uuid }}"
       disks:
@@ -123,10 +121,6 @@
       state: present
       name: VM with CentOS-7-cloud-init image without image size
       timezone: "UTC"
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       cluster:
         uuid: "{{ cluster.uuid }}"
       disks:
@@ -155,10 +149,6 @@
   - name: VM with Cluster, Network, Universal time zone, one Disk
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       name: "VM with Cluster Network and Disk"
       timezone: "Universal"
       cluster:
@@ -187,10 +177,6 @@
   - name: VM with Cluster, different Disks, Memory size
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       name: "VM with different disks"
       timezone: "UTC"
       cluster:
@@ -220,34 +206,7 @@
   - name: VM with Cluster, different CDROMs
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      wait: False
-      name: "VM with multiple CDROMs"
-      cluster:
-        uuid: "{{ cluster.uuid }}"
-      disks:
-        - type: "CDROM"
-          bus: "SATA"
-          empty_cdrom: True
-        - type: "CDROM"
-          bus: "IDE"
-          empty_cdrom: True
-      cores_per_vcpu: 1
-    register: result
-    ignore_errors: True
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-  - name: VM with Cluster, different CDROMs
-    ntnx_vms:
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      wait: False
+      wait: true
       name: "VM with multiple CDROMs"
       cluster:
         name: "{{ cluster.name }}"
@@ -262,16 +221,20 @@
     register: result
     ignore_errors: True
 
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+      fail_msg: 'Unable to Create VM with Cluster, different CDROMs '
+      success_msg: 'VM with Cluster, different CDROMs created successfully '
+
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 ####################################################################################
   - name: VM with all specification
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       wait: True
       name: "All specification"
       timezone: "GMT"
@@ -321,10 +284,6 @@
     ntnx_vms:
       state: present
       name: VM with managed subnet
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       cluster:
         name: "{{ cluster.name }}"
       networks:
@@ -350,10 +309,6 @@
     ntnx_vms:
       state: present
       name: MinReqVM
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       cluster:
         name: "{{ cluster.name }}"
     register: result
@@ -377,10 +332,6 @@
       state: present
       name: VM with unmanaged vlan
       timezone: UTC
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       cluster:
         uuid: "{{ cluster.uuid }}"
       networks:
@@ -415,10 +366,6 @@
   - name: Delete all Created VM  
     ntnx_vms:
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       vm_uuid: '{{ item }}'
     register: result
     loop: '{{ todelete }}'
@@ -429,10 +376,6 @@
     ntnx_vms:
       state: present
       name: VM_NIC
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       timezone: UTC
       cluster:
         name: "{{ cluster.name }}"
@@ -485,10 +428,6 @@
       state: present
       name: VM with UEFI boot type 
       timezone: GMT
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       cluster:
         name: "{{ cluster.name }}"
       categories:
@@ -539,10 +478,6 @@
   - name: Delete all Created VM  
     ntnx_vms:
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       vm_uuid: '{{ item }}'
     register: result
     loop: '{{ todelete }}'
@@ -555,10 +490,6 @@
       state: present
       name: VM with UEFI boot type 
       timezone: GMT
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       cluster:
         name: "{{ cluster.name }}"
       categories:
@@ -590,10 +521,6 @@
   - name: Delete all Created VMs 
     ntnx_vms:
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       vm_uuid: '{{ item }}'
     register: result
     loop: '{{ todelete }}'
