@@ -1,11 +1,7 @@
 ---
 - name: Create VPC with all specfactions
   ntnx_vpcs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: vpc_with_add_specfactions
     external_subnets:
       - subnet_name: "{{ external_nat_subnet.name }}"
@@ -28,8 +24,4 @@
 - name: Delete vpc
   ntnx_vpcs:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: False
     vpc_uuid: "{{ result.vpc_uuid }}"

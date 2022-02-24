@@ -8,10 +8,6 @@
       timezone: "UTC"
       project:
         name: project
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       cluster:
         uuid: "{{ cluster.uuid }}"
       disks:
@@ -34,10 +30,6 @@
       state: present
       name: Unknown Cluster
       timezone: "UTC"
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       cluster:
         uuid: "auto_cluster_1aa888141361"
       disks:
@@ -63,10 +55,6 @@
       state: present
       name: Unknown Cluster
       timezone: "UTC"
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       cluster:
         name: "auto_cluster"
       disks:
@@ -88,10 +76,6 @@
   - name: Unknown Network name
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: Unknown Network
       desc: "Unknown network"
       categories:
@@ -117,10 +101,6 @@
   - name: Unknown Network uuid
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: Unknown Network
       desc: "Unknown network"
       categories:
@@ -147,10 +127,6 @@
       state: present
       name: unknown image_vm
       timezone: "UTC"
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       cluster:
         name: "{{ cluster.name }}"
       disks:
@@ -173,10 +149,6 @@
   - name: Wrong disk size value
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: "Wrong disk size value"
       timezone: "UTC"
       cluster:
@@ -202,10 +174,6 @@
   - name: Image size less than actual
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: "image size less than actual"
       categories:
         AppType:
@@ -244,10 +212,6 @@
       state: present
       name: unknown storage container
       timezone: "UTC"
-      nutanix_host: "{{ ip }}"
-      validate_certs: False
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       cluster:
         name: "{{ cluster.name }}"
       disks:
@@ -269,10 +233,6 @@
   - name: Delete vm with unknown uuid
     ntnx_vms:
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       vm_uuid: 5
     register: result
     ignore_errors: True
@@ -287,10 +247,6 @@
   - name: Delete vm with missing uuid
     ntnx_vms:
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
     register: result
     ignore_errors: True
       

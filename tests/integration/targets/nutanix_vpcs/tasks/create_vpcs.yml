@@ -1,11 +1,7 @@
 - name: Create min VPC with subnet name
   ntnx_vpcs:
-    validate_certs: False
     state: present
     wait: True
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: MinVPC
     external_subnets:
       - subnet_name: "{{ external_nat_subnet.name }}"
@@ -26,12 +22,8 @@
 ##########################################################
 - name: Create min VPC with external_nat_subnet uuid
   ntnx_vpcs:
-    validate_certs: False
     state: present
     wait: true
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: MinVPC
     external_subnets:
       - subnet_uuid: "{{ external_nat_subnet.uuid }}"
@@ -52,10 +44,6 @@
 - name: Delete all created vpcs
   ntnx_vpcs:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: False
     vpc_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
@@ -66,11 +54,7 @@
 ##########################################################
 - name: Create VPC with routable_ips
   ntnx_vpcs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: vpc_with_routable_ips
     routable_ips:
       - network_ip: "{{ routable_ips.network_ip }}"
@@ -91,11 +75,7 @@
 ##########################################################
 - name: Create VPC with routable_ips and external subnet
   ntnx_vpcs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: vpc_with_routable_ips and external subnet
     external_subnets:
       - subnet_name: "{{ external_nat_subnet.name }}"
@@ -118,11 +98,7 @@
 ##########################################################
 - name: Create VPC with dns_servers
   ntnx_vpcs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: vpc_with_dns_servers
     dns_servers: "{{ dns_servers }}"
   register: result
@@ -141,10 +117,6 @@
 - name: Delete all created vpcs
   ntnx_vpcs:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: False
     vpc_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
@@ -155,11 +127,7 @@
 ##########################################################
 - name: Create VPC with all specfactions
   ntnx_vpcs:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: vpc_with_add_specfactions
     external_subnets:
       - subnet_name: "{{ external_nat_subnet.name }}"
@@ -184,10 +152,6 @@
 - name: Delete all created vpcs
   ntnx_vpcs:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: False
     vpc_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
