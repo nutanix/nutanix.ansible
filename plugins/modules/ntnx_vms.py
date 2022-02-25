@@ -724,7 +724,7 @@ task_uuid:
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value, strip_extra_attrs_from_status  # noqa: E402
 
 
 def get_module_spec():
@@ -733,6 +733,7 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     network_spec = dict(
+        uuid=dict(type="str"),
         subnet=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
@@ -742,6 +743,7 @@ def get_module_spec():
 
     disk_spec = dict(
         type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
+        uuid=dict(type="str"),
         size_gb=dict(type="int"),
         bus=dict(type="str", choices=["SCSI", "PCI", "SATA", "IDE"], default="SCSI"),
         storage_container=dict(
@@ -836,15 +838,22 @@ def update_vm(module, result):
         module.fail_json(msg="Failed updating VM", **result)
 
     vm = VM(module)
-    spec, error = vm.get_spec()
+    resp, status = vm.read(vm_uuid)
+
+    strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    resp["spec"] = resp.pop("status")
+    spec, error = vm.get_spec(resp)
+
     if error:
         result["error"] = error
         module.fail_json(msg="Failed generating VM Spec", **result)
 
+    if spec == resp:
+        module.fail_json(msg="Nothing to change", **result)
+
     if module.check_mode:
         result["response"] = spec
         return
-
     resp, status = vm.update(spec, vm_uuid)
     if status["error"]:
         result["error"] = status["error"]

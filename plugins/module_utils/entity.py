@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+import copy
 import json
 from base64 import b64encode
 
@@ -66,8 +67,8 @@ class Entity(object):
             url = url + "/{0}".format(endpoint)
         return self._fetch_url(url, method="POST", data=data, timeout=timeout)
 
-    def get_spec(self):
-        spec = self._get_default_spec()
+    def get_spec(self, old_spec=None):
+        spec = copy.deepcopy(old_spec) or self._get_default_spec()
         for ansible_param, ansible_config in self.module.params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
             if build_spec_method and ansible_config:

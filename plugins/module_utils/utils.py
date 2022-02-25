@@ -16,4 +16,14 @@ def remove_param_with_none_value(d):
             for e in v:
                 if isinstance(e, dict):
                     remove_param_with_none_value(e)
-                break
+
+
+def strip_extra_attrs_from_status(status, spec):
+    for k, v in status.copy().items():
+        if k not in spec:
+            status.pop(k)
+        elif isinstance(v, dict):
+            strip_extra_attrs_from_status(status[k], spec[k])
+        elif isinstance(v, list) and v and isinstance(v[0], dict):
+            for i in range(len(v)):
+                strip_extra_attrs_from_status(status[k][i], spec[k][i])

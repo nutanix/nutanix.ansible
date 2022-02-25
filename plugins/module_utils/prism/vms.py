@@ -36,6 +36,9 @@ class VM(Prism):
             "categories": self._build_spec_categories,
         }
 
+    def clone(self, uuid):
+        return
+
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -103,7 +106,6 @@ class VM(Prism):
             name = param["name"]
             uuid = project.get_uuid(name)
             if not uuid:
-
                 error = "Project {0} not found.".format(name)
                 return None, error
 
@@ -121,7 +123,6 @@ class VM(Prism):
             name = param["name"]
             uuid = cluster.get_uuid(name)
             if not uuid:
-
                 error = "Cluster {0} not found.".format(name)
                 return None, error
 
@@ -146,28 +147,33 @@ class VM(Prism):
     def _build_spec_networks(self, payload, networks):
         nics = []
         for network in networks:
-            nic = self._get_default_network_spec()
+            if network.get("uuid"):
+                nic = self.filter_by_uuid(network["uuid"], payload["spec"]["resources"]["nic_list"])
+                payload["spec"]["resources"]["nic_list"].remove(nic)
+            else:
+                nic = self._get_default_network_spec()
             if network.get("private_ip"):
                 nic["ip_endpoint_list"].append({"ip": network["private_ip"]})
 
             nic["is_connected"] = network["is_connected"]
+            if network.get("subnet"):
 
-            if network.get("subnet", {}).get("name"):
-                subnet = Subnet(self.module)
-                name = network["subnet"]["name"]
-                uuid = subnet.get_uuid(name)
-                if not uuid:
-                    error = "Subnet {0} not found.".format(name)
-                    return None, error
+                if network.get("subnet", {}).get("uuid"):
+                    uuid = network["subnet"]["uuid"]
 
-            elif network.get("subnet", {}).get("uuid"):
-                uuid = network["subnet"]["uuid"]
+                elif network.get("subnet", {}).get("name"):
+                    subnet = Subnet(self.module)
+                    name = network["subnet"]["name"]
+                    uuid = subnet.get_uuid(name)
+                    if not uuid:
+                        error = "Subnet {0} not found.".format(name)
+                        return None, error
 
-            nic["subnet_reference"]["uuid"] = uuid
+                nic["subnet_reference"]["uuid"] = uuid
 
             nics.append(nic)
 
-        payload["spec"]["resources"]["nic_list"] = nics
+        payload["spec"]["resources"]["nic_list"] += nics
         return payload, None
 
     def _build_spec_disks(self, payload, vdisks):
@@ -175,7 +181,12 @@ class VM(Prism):
         device_indexes = {}
 
         for vdisk in vdisks:
-            disk = self._get_default_disk_spec()
+            if vdisk.get("uuid"):
+                disk = self.filter_by_uuid(vdisk["uuid"], payload["spec"]["resources"]["disk_list"])
+                payload["spec"]["resources"]["disk_list"].remove(disk)
+                disk.pop("disk_size_mib")
+            else:
+                disk = self._get_default_disk_spec()
 
             if vdisk.get("type"):
                 disk["device_properties"]["device_type"] = vdisk["type"]
@@ -244,7 +255,7 @@ class VM(Prism):
 
             disks.append(disk)
 
-        payload["spec"]["resources"]["disk_list"] = disks
+        payload["spec"]["resources"]["disk_list"] += disks
         return payload, None
 
     def _build_spec_boot_config(self, payload, param):
@@ -295,6 +306,11 @@ class VM(Prism):
         payload["metadata"]["use_categories_mapping"] = True
         return payload, None
 
+    def filter_by_uuid(self, uuid, items_list):
+        try:
+            return next(filter(lambda d: d.get("uuid") == uuid, items_list))
+        except:
+            raise ValueError(uuid, items_list)
 
 # Helper functions
 
