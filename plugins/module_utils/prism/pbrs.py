@@ -106,7 +106,7 @@ class Pbr(Prism):
                 value["destination_port_range_list"] = dest_port_range_list
             if value:
                 protocol_parameters[key] = value
-                      
+
         elif config.get("icmp"):
             protocol_type = "ICMP"
             if config["icmp"].get("type"):
