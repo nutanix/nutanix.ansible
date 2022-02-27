@@ -184,11 +184,11 @@ options:
           code:
             type: int
             description:
-              - ICMP code and it's required by type
+              - ICMP code
               - Mutually exclusive with any
           type:
             description:
-              - ICMP type
+              - ICMP type it's required by code
               - Mutually exclusive with any
             type: int
           any:
@@ -475,7 +475,7 @@ def get_module_spec():
             type="dict",
             options=icmp_spec,
             mutually_exclusive=[("any", "code"), ("any", "type")],
-            required_by={"type": "code"},
+            required_by={"code": "type"},
         ),
     )
 

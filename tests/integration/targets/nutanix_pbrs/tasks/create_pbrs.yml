@@ -1,3 +1,38 @@
+- name: Create PBR with vpc name, source network, external destination, with reroute action and any type and code icmp
+  ntnx_pbrs:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    priority: 102
+    vpc:
+      name: "{{ vpc.name }}"
+    source:
+      network:
+        ip: "{{ network.ip }}"
+        prefix: "{{ network.prefix }}"
+    destination:
+      external: True
+    action:
+      allow: True
+    protocol:
+      icmp:
+        type: 25
+  register: result 
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create PBR with vpc name with source network and destination external with reroute action and udp port rangelist"
+    success_msg: " PBR with vpc name with source network and destination external with reroute action and  udp port rangelist created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.pbr_uuid ] }}"
+################################################################################################################################
 - name: Create PBR with vpc name, any source, any destination, any protocol and deny action
   ntnx_pbrs:
     validate_certs: False
