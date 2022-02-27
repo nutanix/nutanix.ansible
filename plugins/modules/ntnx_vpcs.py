@@ -16,29 +16,33 @@ description: 'Create, Update, Delete vpcs'
 options:
   nutanix_host:
     description:
-      - PC hostname or IP address
+      - Prism central hostname or IP address
+      - C(nutanix_host). If not set then the value of the C(NUTANIX_HOST), environment variable is used.
     type: str
     required: true
   nutanix_port:
     description:
-      - PC port
+      - Prism central port
+      - C(nutanix_port). If not set then the value of the C(NUTANIX_PORT), environment variable is used.
     type: str
     default: 9440
-    required: false
   nutanix_username:
     description:
-      - PC username
+      - Prism central username
+      - C(nutanix_username). If not set then the value of the C(NUTANIX_USERNAME), environment variable is used.
     type: str
     required: true
   nutanix_password:
     description:
-      - PC password
+      - Prism central password
+      - C(nutanix_password). If not set then the value of the C(NUTANIX_PASSWORD), environment variable is used.
     required: true
     type: str
   validate_certs:
     description:
-      - Set value to C(False) to skip validation for self signed certificates
-      - This is not recommended for production setup
+        - Set value to C(False) to skip validation for self signed certificates
+        - This is not recommended for production setup
+        - C(validate_certs). If not set then the value of the C(VALIDATE_CERTS), environment variable is used.
     type: bool
     default: true
   state:
