@@ -13,6 +13,10 @@ For <font color=royalblue>Developers</font>, please follow [this install guide](
 
 ```git clone https://github.com/nutanix/nutanix.ansible.git```
 
+**Git checkout release version**
+
+```git checkout <release_version> -b <release_version>```
+
 **Build the collection**
 
 ```ansible-galaxy collection build```
