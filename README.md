@@ -1,5 +1,8 @@
-# Nutanix Ansible Collection - nutanix.ncp
-Official Nutanix ansible collections to automate Nutanix Cloud Platform (ncp).
+# Nutanix Ansible Collection
+Official nutanix ansible collections
+
+# About
+Nutanix ansible collections <font color=rolyalblue>nutanix.ncp</font> is the official Nutanix ansible collections to automate Nutanix Cloud Platform (ncp).
 
 # Installation
 
