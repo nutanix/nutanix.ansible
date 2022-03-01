@@ -46,7 +46,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      name: "{{ external_subnet.name}}"
+      name: "{{ external_nat_subnet.name}}"
     vpc:
        name: vpc
     private_ip: "{{ private_ip }}"
@@ -68,7 +68,7 @@
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      name: "{{ external_subnet.name }}"
+      name: "{{ external_nat_subnet.name }}"
     vpc:
        uuid: 471181f8-eb2d-4303-9a61-6b25a1b3
     private_ip: "{{ private_ip }}"

@@ -109,10 +109,10 @@ class Pbr(Prism):
 
         elif config.get("icmp"):
             protocol_type = "ICMP"
-            if config["icmp"].get("code"):
-                protocol_parameters["icmp"] = {"icmp_code": config["icmp"]["code"]}
-                if config["icmp"].get("type"):
-                    protocol_parameters["icmp"]["icmp_type"] = config["icmp"]["type"]
+            if config["icmp"].get("type"):
+                protocol_parameters["icmp"] = {"icmp_type": config["icmp"]["type"]}
+                if config["icmp"].get("code"):
+                    protocol_parameters["icmp"]["icmp_code"] = config["icmp"]["code"]
 
         elif config.get("number"):
             protocol_type = "PROTOCOL_NUMBER"

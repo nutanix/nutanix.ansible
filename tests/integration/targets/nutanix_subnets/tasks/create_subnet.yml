@@ -110,7 +110,7 @@
     nutanix_password: "{{ password }}"
     name: VLAN subnet with IPAM and IP pools
     vlan_subnet:
-      vlan_id: "{{ vlan_subnets_ids.2 }}"
+      vlan_id: "{{ vlan_subnets_ids.3 }}"
       virtual_switch:
         name: "{{ virtual_switch.name }}"
       cluster:
@@ -160,7 +160,7 @@
     nutanix_password: "{{ password }}"
     name: VLAN subnet with IPAM IP pools and DHCP
     vlan_subnet:
-      vlan_id: "{{vlan_subnets_ids.3}}"
+      vlan_id: "{{vlan_subnets_ids.4}}"
       virtual_switch:
         name: "{{ virtual_switch.name }}"
       cluster:
@@ -202,7 +202,7 @@
     nutanix_password: "{{ password }}"
     name: VLAN subnet with IPAM multiple IP pools and DHCP
     vlan_subnet:
-      vlan_id: "{{ vlan_subnets_ids.4 }}"
+      vlan_id: "{{ vlan_subnets_ids.5 }}"
       virtual_switch:
         name: "{{ virtual_switch.name }}"
       cluster:

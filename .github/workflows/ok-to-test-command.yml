@@ -36,8 +36,10 @@ jobs:
       - name: Run Integration test cases
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          ansible-playbook tests/integration/targets/prepare_env/tasks/prepare_env.yml
           ansible-test integration --python ${{ matrix.python-version }} --coverage -v
           ansible-test coverage report > coverage.txt
+          ansible-playbook tests/integration/targets/prepare_env/tasks/cleanup.yml
 
       - name: Code Coverage Check
         run:  |
