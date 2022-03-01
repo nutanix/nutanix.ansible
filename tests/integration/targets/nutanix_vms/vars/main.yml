@@ -11,5 +11,5 @@ network:
   static:
     ip:   10.30.30.75
 project:
-  name: test
-  uuid: 846aab50-48dd-49a7-9540-858312ee8fa7
+  name: integration_test_project
+  uuid: 88c32df1-b661-4b5f-8f7e-5be6030c3cea
