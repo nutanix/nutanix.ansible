@@ -148,8 +148,14 @@ class VM(Prism):
         nics = []
         for network in networks:
             if network.get("uuid"):
-                nic = self.filter_by_uuid(network["uuid"], payload["spec"]["resources"]["nic_list"])
+                nic, error = self.filter_by_uuid(
+                    network["uuid"], payload["spec"]["resources"]["nic_list"]
+                )
+                if error:
+                    return None, error
                 payload["spec"]["resources"]["nic_list"].remove(nic)
+                if network.get("state") == "absent":
+                    continue
             else:
                 nic = self._get_default_network_spec()
             if network.get("private_ip"):
@@ -182,8 +188,14 @@ class VM(Prism):
 
         for vdisk in vdisks:
             if vdisk.get("uuid"):
-                disk = self.filter_by_uuid(vdisk["uuid"], payload["spec"]["resources"]["disk_list"])
+                disk, error = self.filter_by_uuid(
+                    vdisk["uuid"], payload["spec"]["resources"]["disk_list"]
+                )
+                if error:
+                    return None, error
                 payload["spec"]["resources"]["disk_list"].remove(disk)
+                if vdisk.get("state") == "absent":
+                    continue
                 disk.pop("disk_size_mib")
             else:
                 disk = self._get_default_disk_spec()
@@ -308,9 +320,11 @@ class VM(Prism):
 
     def filter_by_uuid(self, uuid, items_list):
         try:
-            return next(filter(lambda d: d.get("uuid") == uuid, items_list))
+            return next(filter(lambda d: d.get("uuid") == uuid, items_list)), None
         except:
-            raise ValueError(uuid, items_list)
+            error = "Entity {0} not found.".format(uuid)
+            return None, error
+
 
 # Helper functions
 

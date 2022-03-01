@@ -724,7 +724,10 @@ task_uuid:
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value, strip_extra_attrs_from_status  # noqa: E402
+from ..module_utils.utils import (
+    remove_param_with_none_value,
+    strip_extra_attrs_from_status,
+)  # noqa: E402
 
 
 def get_module_spec():
@@ -734,6 +737,7 @@ def get_module_spec():
 
     network_spec = dict(
         uuid=dict(type="str"),
+        state=dict(type="str", choices=["absent"]),
         subnet=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
@@ -744,6 +748,7 @@ def get_module_spec():
     disk_spec = dict(
         type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
         uuid=dict(type="str"),
+        state=dict(type="str", choices=["absent"]),
         size_gb=dict(type="int"),
         bus=dict(type="str", choices=["SCSI", "PCI", "SATA", "IDE"], default="SCSI"),
         storage_container=dict(

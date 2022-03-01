@@ -26,4 +26,8 @@ def strip_extra_attrs_from_status(status, spec):
             strip_extra_attrs_from_status(status[k], spec[k])
         elif isinstance(v, list) and v and isinstance(v[0], dict):
             for i in range(len(v)):
-                strip_extra_attrs_from_status(status[k][i], spec[k][i])
+                try:
+                    strip_extra_attrs_from_status(status[k][i], spec[k][i])
+                except IndexError:
+                    status[k] = spec[k]
+                    break
