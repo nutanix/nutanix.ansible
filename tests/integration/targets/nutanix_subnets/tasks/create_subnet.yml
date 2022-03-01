@@ -1,11 +1,7 @@
 - name: VLAN subnet without IPAM
   ntnx_subnets:
     state: present
-    wait: false
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
+    wait: true
     name: VLAN subnet without IPAM
     vlan_subnet:
       vlan_id: "{{ vlan_subnets_ids.0 }}"
@@ -14,6 +10,15 @@
       cluster:
         uuid: "{{ cluster.uuid }}"
   register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VLAN subnet without IPAM "
+    success_msg: " VLAN subnet without IPAM created successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
@@ -21,11 +26,7 @@
 - name: VLAN subnet with IPAM
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
     wait: true
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: VLAN subnet with IPAM
     vlan_subnet:
       vlan_id: "{{ vlan_subnets_ids.1 }}"
@@ -54,10 +55,6 @@
 - name: VLAN subnet with IPAM and IP pools
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: VLAN subnet with IPAM and IP pools
     vlan_subnet:
       vlan_id: "{{vlan_subnets_ids.2}}"
@@ -89,10 +86,6 @@
 - name: Delete all Created Subnets
   ntnx_subnets:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     subnet_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
@@ -104,10 +97,6 @@
 - name: VLAN subnet with IPAM and IP pools and cluster uuid
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: VLAN subnet with IPAM and IP pools
     vlan_subnet:
       vlan_id: "{{ vlan_subnets_ids.3 }}"
@@ -139,10 +128,6 @@
 - name: Delete all Created Subnets
   ntnx_subnets:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     subnet_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
@@ -154,10 +139,6 @@
 - name: VLAN subnet with IPAM IP pools and DHCP
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: VLAN subnet with IPAM IP pools and DHCP
     vlan_subnet:
       vlan_id: "{{vlan_subnets_ids.4}}"
@@ -196,10 +177,6 @@
 - name: VLAN subnet with IPAM multiple IP pools and DHCP
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: VLAN subnet with IPAM multiple IP pools and DHCP
     vlan_subnet:
       vlan_id: "{{ vlan_subnets_ids.5 }}"
@@ -240,10 +217,6 @@
 - name: External subnet without NAT
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: " External subnet without NAT "
     external_subnet:
       vlan_id: "{{external_nonat_subnet.vlan_id}}"
@@ -276,10 +249,6 @@
 - name: External subnet with NAT
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: " External subnet with NAT "
     external_subnet:
       vlan_id: "{{ external_nat_subnet.vlan_id }}"
@@ -312,10 +281,6 @@
 - name: Overlay Subnet with minimum requirements
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: Overlay Subnet with minimum requirements
     overlay_subnet:
       vpc:
@@ -341,10 +306,6 @@
 - name: Delete all Created Subnets
   ntnx_subnets:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     subnet_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
@@ -356,10 +317,6 @@
 - name: Overlay Subnet with IP_pools and DHCP
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: Overlay Subnet with IP_pools and DHCP
     overlay_subnet:
       vpc:
@@ -393,10 +350,6 @@
 - name: Delete all Created Subnets
   ntnx_subnets:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     subnet_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
@@ -408,10 +361,6 @@
 - name: Overlay Subnet with IP_pools and DHCP with vpc uuid
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: Overlay Subnet with IP_pools and DHCP
     overlay_subnet:
       vpc:
@@ -444,10 +393,6 @@
 - name: Delete all Created Subnets
   ntnx_subnets:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     subnet_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"

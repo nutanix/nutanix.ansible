@@ -3,10 +3,6 @@
   ntnx_vms:
       state: present
       name: MinReqVM
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
       cluster:
         name: "{{ cluster.name }}"
   register: result
@@ -24,10 +20,6 @@
   ntnx_vms:
     vm_uuid: '{{ result["response"]["metadata"]["uuid"] }}'
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: False
   register: result
 
 - name: assert when status not complete

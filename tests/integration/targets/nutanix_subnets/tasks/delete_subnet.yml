@@ -2,10 +2,6 @@
 - name: Overlay Subnet with IP_pools and DHCP
   ntnx_subnets:
     state: present
-    nutanix_host: "{{ ip }}"
-    validate_certs: false
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     name: Overlay Subnet with IP_pools and DHCP
     overlay_subnet:
       vpc:

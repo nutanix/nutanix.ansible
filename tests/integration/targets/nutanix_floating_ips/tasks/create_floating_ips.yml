@@ -1,11 +1,7 @@
 ---
 - name: Create floating ip with external subnet uuid
   ntnx_floating_ips:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     wait: True
     external_subnet:
       uuid: "{{ external_nat_subnet.uuid }}"
@@ -24,11 +20,7 @@
 ##############################################################
 - name: Create floating ip with vpc name and external subnet uuid
   ntnx_floating_ips:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     external_subnet:
       uuid: "{{external_nat_subnet.uuid}}"
     vpc:
@@ -51,10 +43,6 @@
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
@@ -64,11 +52,7 @@
 ###########################################################
 - name: Create floating ip with external subnet name
   ntnx_floating_ips:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     wait: true
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
@@ -88,11 +72,7 @@
 ############################################################
 - name: Create floating ip with vpc uuid and external subnet name
   ntnx_floating_ips:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
     vpc:
@@ -115,10 +95,6 @@
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
@@ -129,11 +105,7 @@
 #########################################################
 - name: Create floating ip with external subnet and vm name
   ntnx_floating_ips:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
     vm:
@@ -155,10 +127,6 @@
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
@@ -169,11 +137,7 @@
 #########################################################
 - name: Create floating ip with external subnet and vm uuid
   ntnx_floating_ips:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
     vm:
@@ -195,10 +159,6 @@
 - name: Delete all created floating ips
   ntnx_floating_ips:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
