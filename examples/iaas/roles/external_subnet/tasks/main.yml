@@ -1,0 +1,5 @@
+---
+- name: Inputs for external subnets task
+  include_tasks: external_subnet.yml
+  with_items:
+    - { name: Ext-Nat, vlan_id: 102, ip: 10.44.3.192, prefix: 27, gip: 10.44.3.193, sip: 10.44.3.198, eip: 10.44.3.207, eNat: True }
