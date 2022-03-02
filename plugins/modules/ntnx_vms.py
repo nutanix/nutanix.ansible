@@ -109,19 +109,16 @@ options:
       - Number of sockets
     required: false
     type: int
-    default: 1
   cores_per_vcpu:
     description:
       - This is the number of vcpus per socket
     required: false
     type: int
-    default: 1
   memory_gb:
     description:
       - Memory size in GB
     required: false
     type: int
-    default: 1
   networks:
     description:
       - list of subnets to which the VM needs to connect to
@@ -789,9 +786,9 @@ def get_module_spec():
         cluster=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
-        vcpus=dict(type="int", default=1),
-        cores_per_vcpu=dict(type="int", default=1),
-        memory_gb=dict(type="int", default=1),
+        vcpus=dict(type="int"),
+        cores_per_vcpu=dict(type="int"),
+        memory_gb=dict(type="int"),
         networks=dict(type="list", elements="dict", options=network_spec),
         disks=dict(
             type="list",
@@ -806,6 +803,18 @@ def get_module_spec():
         guest_customization=dict(type="dict", options=gc_spec),
         timezone=dict(type="str", default="UTC"),
         categories=dict(type="dict"),
+        operations=dict(
+            type="str",
+            choices=[
+                "soft_shutdown",
+                "hard_poweroff",
+                "on",
+                "clone",
+                "create_ova_image",
+                "pause_replication",
+                "resume_replication",
+            ],
+        ),
     )
 
     return module_args
@@ -881,6 +890,46 @@ def update_vm(module, result):
         result["response"] = resp
 
 
+def clone_vm(module, result):
+    vm_uuid = module.params["vm_uuid"]
+    if not vm_uuid:
+        result["error"] = "Missing parameter vm_uuid in playbook"
+        module.fail_json(msg="Failed cloning VM", **result)
+
+    if module.params.get("disks"):
+        result["error"] = "Disks cannot be changed during a clone operation"
+        module.fail_json(msg="Failed cloning VM", **result)
+
+    vm = VM(module)
+
+    spec, error = vm.get_spec({"spec": {"resources": {}}})
+    if error:
+        result["error"] = error
+        module.fail_json(msg="Failed generating VM Spec", **result)
+
+    spec, endpoint = vm.prepare_to_clone(spec, vm_uuid)
+    if module.check_mode:
+        result["response"] = spec
+        return
+
+    resp, status = vm.create(spec, endpoint)
+
+    if status["error"]:
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(msg="Failed cloning VM", **result)
+
+    result["changed"] = True
+    result["response"] = resp
+    result["vm_uuid"] = vm_uuid
+    result["task_uuid"] = resp["task_uuid"]
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp, tmp = vm.read(vm_uuid)
+        result["response"] = resp
+
+
 def delete_vm(module, result):
     vm_uuid = module.params["vm_uuid"]
     if not vm_uuid:
@@ -934,7 +983,10 @@ def run_module():
     state = module.params["state"]
     if state == "present":
         if module.params.get("vm_uuid"):
-            update_vm(module, result)
+            if module.params.get("operations") == "clone":
+                clone_vm(module, result)
+            else:
+                update_vm(module, result)
         else:
             create_vm(module, result)
     elif state == "absent":

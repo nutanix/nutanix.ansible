@@ -34,10 +34,16 @@ class VM(Prism):
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
             "categories": self._build_spec_categories,
+            "operations": self._build_spec_for_operation,
         }
 
-    def clone(self, uuid):
-        return
+    @staticmethod
+    def prepare_to_clone(spec=None, uuid=None):
+        spec["spec"].update(spec["spec"].pop("resources", {}))
+        spec["spec"].pop("hardware_clock_timezone")
+        spec = {"override_spec": spec["spec"]}
+        endpoint = "{0}/clone".format(uuid)
+        return spec, endpoint
 
     def _get_default_spec(self):
         return deepcopy(
@@ -315,6 +321,17 @@ class VM(Prism):
     def _build_spec_categories(self, payload, value):
         payload["metadata"]["categories_mapping"] = value
         payload["metadata"]["use_categories_mapping"] = True
+        return payload, None
+
+    def _build_spec_for_operation(self, payload, value):
+        if value in ["soft_shutdown", "hard_poweroff"]:
+            payload["spec"]["resources"]["power_state"] = "OFF"
+            payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = (
+                "HARD" if value == "hard_poweroff" else "ACPI"
+            )
+        elif value == "on":
+            payload["spec"]["resources"]["power_state"] = "ON"
+
         return payload, None
 
     def filter_by_uuid(self, uuid, items_list):
