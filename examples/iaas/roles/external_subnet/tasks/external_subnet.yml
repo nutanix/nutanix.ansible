@@ -6,7 +6,7 @@
       external_subnet:
         vlan_id: "{{ item.vlan_id }}"
         cluster:
-          name: auto_cluster_prod_1a642ea0a5c3
+          name: "{{ cluster.name }}"
         enable_nat: "{{ item.eNat }}"
         ipam:
           network_ip: "{{ item.ip }}"

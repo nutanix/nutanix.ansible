@@ -1,0 +1,6 @@
+---
+- name: Include PBR  task
+  include_tasks: pbr_delete.yml
+  with_items:
+    - { pbr_uuid: 8c6ce427-a63d-482d-bf59-b8a14a062c1d }
+    - { pbr_uuid: fb6fb539-7b24-48a1-b285-9a1fb8b97e5f }
