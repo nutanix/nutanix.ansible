@@ -10,16 +10,13 @@
       nutanix_password: Nutanix.123
       validate_certs: false
   module_defaults:
-    
-    ntnx_pbrs:
+
+    group/nutanix.ncp.ntnx:
       nutanix_host: '{{ nutanix_host }}'
       nutanix_username: '{{ nutanix_username }}'
       nutanix_password: '{{ nutanix_password }}'
       validate_certs: '{{ validate_certs }}'
   ignore_errors: true
   tasks:
-    - name: Include PBR  task
-      include_tasks: pbr.yml
-      with_items:
-        - { vpc_name: Prod, priority: 101, nip: 10.1.2.0, prefix: 24 }
-        - { vpc_name: Dev, priority: 101, nip: 10.1.2.0, prefix: 24 }
+    - include_role:
+        name: pbr

@@ -1,0 +1,12 @@
+---
+- name: Inputs for overlay subnets
+  include_tasks: overlay_subnet.yml
+  with_items:
+      - { name: Prod-SubnetA, vpc_name: Prod, nip: 10.1.1.0, prefix: 24, gip: 10.1.1.1, sip: 10.1.1.2, eip: 10.1.1.5,
+          domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
+      - { name: Prod-SubnetB, vpc_name: Prod, nip: 10.1.2.0, prefix: 24, gip: 10.1.2.1, sip: 10.1.2.2, eip: 10.1.2.5,
+          domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
+      - { name: Dev-SubnetA, vpc_name:  Dev, nip: 10.1.1.0, prefix: 24, gip: 10.1.1.1, sip: 10.1.1.2, eip: 10.1.1.5,
+          domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
+      - { name: Dev-SubnetB, vpc_name:  Dev, nip: 10.1.2.0, prefix: 24, gip: 10.1.2.1, sip: 10.1.2.2, eip: 10.1.2.5,
+          domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }

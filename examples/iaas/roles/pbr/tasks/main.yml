@@ -1,0 +1,6 @@
+---
+- name: Include PBR  task
+  include_tasks: pbr.yml
+  with_items:
+    - { vpc_name: Prod, priority: 101, nip: 10.1.2.0, prefix: 24 }
+    - { vpc_name: Dev, priority: 101, nip: 10.1.2.0, prefix: 24 }
