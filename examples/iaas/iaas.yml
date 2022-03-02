@@ -5,9 +5,9 @@
   collections:
     - nutanix.ncp
   vars:
-      nutanix_host: <host_ip>
-      nutanix_username: <user>
-      nutanix_password: <password>
+      nutanix_host: #<host_ip>
+      nutanix_username: #<user>
+      nutanix_password: #<password>
       validate_certs: false
       
   module_defaults:
