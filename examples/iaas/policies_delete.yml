@@ -4,22 +4,12 @@
   gather_facts: false
   collections:
     - nutanix.ncp
-  vars:
-      nutanix_host: 10.44.76.88
-      nutanix_username: admin
-      nutanix_password: Nutanix.123
-      validate_certs: false
   module_defaults:
-
-    ntnx_pbrs:
-      nutanix_host: '{{ nutanix_host }}'
-      nutanix_username: '{{ nutanix_username }}'
-      nutanix_password: '{{ nutanix_password }}'
-      validate_certs: '{{ validate_certs }}'
-  ignore_errors: true
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
   tasks:
-    - name: Include PBR  task
-      include_tasks: pbr_delete.yml
-      with_items:
-        - { pbr_uuid: 8c6ce427-a63d-482d-bf59-b8a14a062c1d }
-        - { pbr_uuid: fb6fb539-7b24-48a1-b285-9a1fb8b97e5f }
+    - include_role:
+        name: pbr_delete

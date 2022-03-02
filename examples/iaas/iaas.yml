@@ -3,68 +3,21 @@
   hosts: localhost
   gather_facts: false
   collections:
-    - nutanix.ncp
-  vars:
+    - nutanix.ncp    
+  module_defaults:
+    group/nutanix.ncp.ntnx:
       nutanix_host: <host_ip>
       nutanix_username: <user>
-      nutanix_password: <password>
+      nutanix_password: <pass>
       validate_certs: false
-  module_defaults:
-    ntnx_floating_ips:
-      nutanix_host: '{{ nutanix_host }}'
-      nutanix_username: '{{ nutanix_username }}'
-      nutanix_password: '{{ nutanix_password }}'
-      validate_certs: '{{ validate_certs }}'
-    ntnx_vms:
-      nutanix_host: '{{ nutanix_host }}'
-      nutanix_username: '{{ nutanix_username }}'
-      nutanix_password: '{{ nutanix_password }}'
-      validate_certs: '{{ validate_certs }}'
-    ntnx_subnets:
-      nutanix_host: '{{ nutanix_host }}'
-      nutanix_username: '{{ nutanix_username }}'
-      nutanix_password: '{{ nutanix_password }}'
-      validate_certs: '{{ validate_certs }}'
-    ntnx_vpcs:
-      nutanix_host: '{{ nutanix_host }}'
-      nutanix_username: '{{ nutanix_username }}'
-      nutanix_password: '{{ nutanix_password }}'
-      validate_certs: '{{ validate_certs }}'
-  ignore_errors: true
   tasks:
-    - name: Inputs for external subnets task
-      include_tasks: external_subnet.yml
-      with_items:
-        - { name: Ext-Nat, vlan_id: 102, ip: 10.44.3.192, prefix: 27, gip: 10.44.3.193, sip: 10.44.3.198, eip: 10.44.3.207, eNat: True }
-
-    - name: Inputs vpcs task
-      include_tasks: vpc.yml
-      with_items:
-      - { name: Prod, subnet_name: Ext-Nat}
-      - { name: Dev, subnet_name: Ext-Nat}
-
-    - name: Inputs for overlay subnets
-      include_tasks: overlay_subnet.yml
-      with_items:
-        - { name: Prod-SubnetA, vpc_name: Prod, nip: 10.1.1.0, prefix: 24, gip: 10.1.1.1, sip: 10.1.1.2, eip: 10.1.1.5,
-            domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
-        - { name: Prod-SubnetB, vpc_name: Prod, nip: 10.1.2.0, prefix: 24, gip: 10.1.2.1, sip: 10.1.2.2, eip: 10.1.2.5,
-            domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
-        - { name: Dev-SubnetA, vpc_name:  Dev, nip: 10.1.1.0, prefix: 24, gip: 10.1.1.1, sip: 10.1.1.2, eip: 10.1.1.5,
-            domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
-        - { name: Dev-SubnetB, vpc_name:  Dev, nip: 10.1.2.0, prefix: 24, gip: 10.1.2.1, sip: 10.1.2.2, eip: 10.1.2.5,
-            domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
-
-    - name: Inputs for vm task
-      include_tasks: vm.yml
-      with_items:
-       - {name: "Prod-Wordpress-App", desc: "Prod-Wordpress-App", is_connected: True, subnet_name: Prod-SubnetA, image_name: "wordpress-appserver", private_ip: ""}
-       - {name: "Prod-Wordpress-DB", desc: "Prod-Wordpress-DB", is_connected: True, subnet_name: Prod-SubnetB, image_name: "wordpress-db", private_ip: 10.1.2.5}
-       - {name: "Dev-Wordpress-App", desc: "Dev-Wordpress-App", is_connected: True, subnet_name: Dev-SubnetA, image_name: "wordpress-appserver", private_ip: ""}
-       - {name: "Dev-Wordpress-DB", desc: "Dev-Wordpress-DB", is_connected: True, subnet_name: Dev-SubnetB, image_name: "wordpress-db", private_ip: 10.1.2.5}
-
-    - name: Inputs for Floating IP task
-      include_tasks: fip.yml
-      with_items:
-        - {vm_name: "Prod-Wordpress-App"}
-        - {vm_name: "Dev-Wordpress-App"}
+    - include_role:
+        name: external_subnet
+    - include_role:
+        name: vpc
+    - include_role:
+        name: overlay_subnet
+    - include_role:
+        name: vm
+    - include_role:
+        name: fip

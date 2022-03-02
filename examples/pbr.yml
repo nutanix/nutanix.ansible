@@ -1,15 +1,18 @@
 ---
-- name: Auto Generated Playbook
+- name: PBR playbook
   hosts: localhost
   gather_facts: false
   collections:
     - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
   tasks:
     - name: Setting Variables
       set_fact:
-        ip: ""
-        username: ""
-        password: ""
         cluster_name: ""
         cluster_uuid: ""
         priority: ""
@@ -17,11 +20,7 @@
         
     - name: create PBR with vpc uuid with any source or destination or protocol with deny action
       ntnx_pbrs:
-          validate_certs: False
           state: present
-          nutanix_host: "{{ ip }}"
-          nutanix_username: "{{ username }}"
-          nutanix_password: "{{ password }}"
           priority: "{{ priority }}"
           vpc:
             uuid: "{{ vpc_uuid }}"
@@ -37,8 +36,4 @@
     - name: Delete  pbrs
       ntnx_pbrs:
         state: absent
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: false
         pbr_uuid: "{{ result.pbr_uuid }}"
