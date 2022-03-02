@@ -9,7 +9,7 @@ authors:
   - "Gevorg Khachatryan (@Gevorg-Khachatryan-97)"
 description: Ansible collection for v3 Nutanix APIs https://www.nutanix.dev/api-reference-v3/
 license_file: 'LICENSE'
-tags: [nutanix, prism, ahv]
+tags: [nutanix, prism, ahv, cloud, infrastructure]
 repository: https://github.com/nutanix/nutanix.ansible
 documentation: https://github.com/nutanix/nutanix.ansible/nutanix/prism/docs
 homepage: https://github.com/nutanix/nutanix.ansible/nutanix/prism
