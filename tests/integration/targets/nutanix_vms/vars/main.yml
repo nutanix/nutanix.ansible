@@ -12,4 +12,4 @@ network:
     ip:   10.30.30.75
 project:
   name: integration_test_project
-  uuid: 88c32df1-b661-4b5f-8f7e-5be6030c3cea
+  uuid: 02d116b3-804d-4f98-b403-1abfff8d17c3
