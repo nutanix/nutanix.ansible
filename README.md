@@ -1,10 +1,10 @@
 # Nutanix Ansible
-Official nutanix ansible collections
+Official nutanix ansible collection
 
 # About
-Nutanix ansible collections <font color=rolyalblue>nutanix.ncp</font> is the official Nutanix ansible collections to automate Nutanix Cloud Platform (ncp).
+Nutanix ansible collection <font color=rolyalblue>nutanix.ncp</font> is the official Nutanix ansible collection to automate Nutanix Cloud Platform (ncp).
 
-It is designed keeping simplicity as the core value. Hence it is 
+It is designed keeping simplicity as the core value. Hence it is
 1. Easy to use
 2. Easy to develop
 
@@ -40,7 +40,7 @@ For <font color=royalblue>Developers</font>, please follow [this install guide](
 **Note** Add <font color=red>`--force`</font> option for rebuilding or reinstalling to overwrite existing data
 
 # Using this collection
-You can either call modules by their Fully Qualified Collection Namespace (FQCN), such as<font color=royalblue> nutanix.ncp.ntnx_vms</font>, or you can call modules by their short name if you list the <font color=royalblue>nutanix.ncp </font>collection in the playbook's collections keyword:
+You can either call modules by their Fully Qualified Collection Namespace (FQCN), such as<font color=royalblue> nutanix.ncp.ntnx_vms</font>, or you can call modules by their short name if you list the <font color=royalblue>nutanix.ncp </font>collection in the playbook's ```collections:``` keyword
 
 For example, the playbook for iaas.yml is as follows:
 ```yaml
