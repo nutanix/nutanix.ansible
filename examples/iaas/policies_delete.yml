@@ -4,19 +4,12 @@
   gather_facts: false
   collections:
     - nutanix.ncp
-  vars:
-      nutanix_host: 10.44.76.88
-      nutanix_username: admin
-      nutanix_password: Nutanix.123
-      validate_certs: false
   module_defaults:
-
     group/nutanix.ncp.ntnx:
-      nutanix_host: '{{ nutanix_host }}'
-      nutanix_username: '{{ nutanix_username }}'
-      nutanix_password: '{{ nutanix_password }}'
-      validate_certs: '{{ validate_certs }}'
-  ignore_errors: true
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
   tasks:
     - include_role:
         name: pbr_delete

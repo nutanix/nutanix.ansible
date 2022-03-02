@@ -1,0 +1,40 @@
+---
+- name: FIP playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      set_fact:
+        external_subnet_name: ""
+        vm_name: ""
+        
+    - name: Create floating ip with external subnet uuid
+      ntnx_floating_ips:
+        state: present
+        wait: True
+        external_subnet:
+          name: "{{ external_subnet_name }}"
+      register: result
+
+    - name: Assign floating ip to vm 
+      ntnx_floating_ips:
+        state: present
+        external_subnet:
+          name: "{{ external_subnet.name }}"
+        vm:
+          name: "{{ vm_name }}"
+      register: result
+
+    - name: Delete all created floating ips
+      ntnx_floating_ips:
+        state: absent
+        fip_uuid: "{{ result.fip_uuid }}"
+      register: result

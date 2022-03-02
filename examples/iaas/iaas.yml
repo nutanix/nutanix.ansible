@@ -3,20 +3,13 @@
   hosts: localhost
   gather_facts: false
   collections:
-    - nutanix.ncp
-  vars:
+    - nutanix.ncp    
+  module_defaults:
+    group/nutanix.ncp.ntnx:
       nutanix_host: <host_ip>
       nutanix_username: <user>
-      nutanix_password: <password>
+      nutanix_password: <pass>
       validate_certs: false
-      
-  module_defaults:
-
-    group/nutanix.ncp.ntnx:
-      nutanix_host: '{{ nutanix_host }}'
-      nutanix_username: '{{ nutanix_username }}'
-      nutanix_password: '{{ nutanix_password }}'
-      validate_certs: '{{ validate_certs }}'
   tasks:
     - include_role:
         name: external_subnet
