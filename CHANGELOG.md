@@ -1,3 +1,19 @@
+## v1.0.0 (2nd Mar 2022)
+
+**Improvements**
+
+- Allow environment variables for nutanix connection parameters #128
+- Add meta file for collection #134
+
+**Bugs**
+
+- Creating a VM based on a disk_image without specifying the size_gb #127
+- icmp "any" code value in module PBR #138
+
+
+**Full Changelog** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.0.0-beta.2...v1.0.0)
+
+
 ## v1.0.0-beta.2 (22 Feb 2022)
 
 **Features:**
