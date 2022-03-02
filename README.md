@@ -7,8 +7,10 @@ Nutanix ansible collections <font color=rolyalblue>nutanix.ncp</font> is the off
 It is designed keeping simplicity as the core value. Hence it is 
 1. Easy to use
 2. Easy to develop
+
 # Ansible version compatibility
 This collection has been tested against following Ansible versions: >=2.12.2.
+
 # Python version compatibility
 This collection requires Python 2.7 or greater
 
