@@ -61,6 +61,13 @@ DOCUMENTATION = r"""
             type: boolean
             env:
                 - name: VALIDATE_CERTS
+        group_category:
+            description:
+                - Prism central category for mapping ansible groups
+            default: ansible_group
+            type: str
+            env:
+                - name: GROUP_CATEGORY
     notes: "null"
     requirements: "null"
 """
@@ -74,7 +81,7 @@ from ..module_utils.prism import vms  # noqa: E402
 
 
 class Mock_Module:
-    def __init__(self, host, port, username, password, validate_certs=False):
+    def __init__(self, host, port, username, password, validate_certs=False, group_category='ansible_group'):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
             "nutanix_host": host,
@@ -82,6 +89,7 @@ class Mock_Module:
             "nutanix_username": username,
             "nutanix_password": password,
             "validate_certs": validate_certs,
+            "group_category": group_category,
         }
 
     def jsonify(self, data):
@@ -116,6 +124,7 @@ class InventoryModule(BaseInventoryPlugin):
         self.nutanix_port = self.get_option("nutanix_port")
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
+        self.group_category = self.get_option("group_category")
 
         module = Mock_Module(
             self.nutanix_hostname,
@@ -123,6 +132,7 @@ class InventoryModule(BaseInventoryPlugin):
             self.nutanix_username,
             self.nutanix_password,
             self.validate_certs,
+            self.group_category,
         )
         vm = vms.VM(module)
         resp, status_code = vm.list(self.data)
@@ -154,6 +164,11 @@ class InventoryModule(BaseInventoryPlugin):
                             vm_ip = endpoint["ip"]
                             nic_count += 1
                             continue
+
+            # Add groups from Prism Central Category mapping if any
+            if self.group_category in entity["metadata"]["categories_mapping"]:
+              for group in entity["metadata"]["categories_mapping"][self.group_category]:
+                self.inventory.add_group(group)
 
             # Add inventory groups and hosts to inventory groups
             self.inventory.add_group(cluster)
