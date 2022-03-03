@@ -12,17 +12,13 @@ class BaseModule(AnsibleModule):
 
     argument_spec = dict(
         nutanix_host=dict(
-            type="str",
-            fallback=(env_fallback, ["NUTANIX_HOST"]),
-            required=True,
+            type="str", fallback=(env_fallback, ["NUTANIX_HOST"]), required=True
         ),
         nutanix_port=dict(
             default="9440", type="str", fallback=(env_fallback, ["NUTANIX_PORT"])
         ),
         nutanix_username=dict(
-            type="str",
-            fallback=(env_fallback, ["NUTANIX_USERNAME"]),
-            required=True,
+            type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
         ),
         nutanix_password=dict(
             type="str",

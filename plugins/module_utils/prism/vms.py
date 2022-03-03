@@ -37,14 +37,45 @@ class VM(Prism):
             "operations": self._build_spec_for_operation,
         }
 
-    @staticmethod
-    def prepare_to_clone(spec=None, uuid=None):
+    def get_clone_spec(self):
+        spec, error = self.get_spec({"spec": {"resources": {}}})
         spec["spec"].update(spec["spec"].pop("resources", {}))
         spec["spec"].pop("hardware_clock_timezone")
         spec = {"override_spec": spec["spec"]}
-        endpoint = "{0}/clone".format(uuid)
-        return spec, endpoint
+        return spec, None
 
+    def clone(self, spec):
+        endpoint = "{0}/clone".format(self.module.params["vm_uuid"])
+        resp, status = self.create(spec, endpoint)
+        return resp, status
+
+    def pause_replication(self):
+        self._replication()
+
+    def resume_replication(self):
+        self._replication()
+
+    def _replication(self):
+        endpoint = "{0}/{1}".format(
+            self.module.params["vm_uuid"], self.module.params["operations"]
+        )
+        resp, status = self.create(endpoint=endpoint)
+        return resp, status
+
+    def get_ova_image_spec(self):
+        return deepcopy(
+            {
+                "name": self.module.params["ova_name"],
+                "disk_file_format": self.module.params["ova_file_format"]
+            }
+        )
+
+    def create_ova_image(self,  spec):
+        endpoint = "{0}/{1}".format(
+            self.module.params["vm_uuid"], "export"
+        )
+        resp, status = self.create(spec, endpoint)
+        return resp, status
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -261,9 +292,9 @@ class VM(Prism):
                     disk["data_source_reference"]["uuid"] = uuid
 
             if (
-                not disk.get("storage_config", {})
-                .get("storage_container_reference", {})
-                .get("uuid")
+                    not disk.get("storage_config", {})
+                            .get("storage_container_reference", {})
+                            .get("uuid")
             ):
                 disk.pop("storage_config", None)
 

@@ -815,6 +815,8 @@ def get_module_spec():
                 "resume_replication",
             ],
         ),
+        ova_name=dict(type="str"),
+        ova_file_format=dict(type="str", choices=['QCOW2', 'VMDK']),
     )
 
     return module_args
@@ -857,6 +859,10 @@ def update_vm(module, result):
 
     vm = VM(module)
     resp, status = vm.read(vm_uuid)
+    if status["error"]:
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(msg="Failed updating VM", **result)
 
     strip_extra_attrs_from_status(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
@@ -902,17 +908,16 @@ def clone_vm(module, result):
 
     vm = VM(module)
 
-    spec, error = vm.get_spec({"spec": {"resources": {}}})
+    spec, error = vm.get_clone_spec()
     if error:
         result["error"] = error
         module.fail_json(msg="Failed generating VM Spec", **result)
 
-    spec, endpoint = vm.prepare_to_clone(spec, vm_uuid)
     if module.check_mode:
         result["response"] = spec
         return
 
-    resp, status = vm.create(spec, endpoint)
+    resp, status = vm.clone(spec)
 
     if status["error"]:
         result["error"] = status["error"]
@@ -922,6 +927,86 @@ def clone_vm(module, result):
     result["changed"] = True
     result["response"] = resp
     result["vm_uuid"] = vm_uuid
+    result["task_uuid"] = resp["task_uuid"]
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp, tmp = vm.read(vm_uuid)
+        result["response"] = resp
+
+
+def pause_replication(module, result):
+    vm_uuid = module.params["vm_uuid"]
+    if not vm_uuid:
+        result["error"] = "Missing parameter vm_uuid in playbook"
+        module.fail_json(msg="Failed deleting VM", **result)
+
+    vm = VM(module)
+    result["vm_uuid"] = vm_uuid
+
+    resp, status = vm.pause_replication()
+    if status["error"]:
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(msg="Failed to pause replication", **result)
+
+    result["changed"] = True
+    result["response"] = resp
+    result["task_uuid"] = resp["task_uuid"]
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp, tmp = vm.read(vm_uuid)
+        result["response"] = resp
+
+
+def resume_replication(module, result):
+    vm_uuid = module.params["vm_uuid"]
+    if not vm_uuid:
+        result["error"] = "Missing parameter vm_uuid in playbook"
+        module.fail_json(msg="Failed deleting VM", **result)
+
+    vm = VM(module)
+    result["vm_uuid"] = vm_uuid
+
+    resp, status = vm.resume_replication()
+    if status["error"]:
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(msg="Failed to resume replication", **result)
+
+    result["changed"] = True
+    result["response"] = resp
+    result["task_uuid"] = resp["task_uuid"]
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp, tmp = vm.read(vm_uuid)
+        result["response"] = resp
+
+
+def create_ova_image(module, result):
+    vm_uuid = module.params["vm_uuid"]
+    if not vm_uuid:
+        result["error"] = "Missing parameter vm_uuid in playbook"
+        module.fail_json(msg="Failed deleting VM", **result)
+
+    vm = VM(module)
+    spec = vm.get_ova_image_spec()
+    result["vm_uuid"] = vm_uuid
+
+    if module.check_mode:
+        result["response"] = spec
+        return
+
+    resp, status = vm.create_ova_image(spec)
+    if status["error"]:
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(msg="Failed creating VM", **result)
+
+    result["changed"] = True
+    result["response"] = resp
     result["task_uuid"] = resp["task_uuid"]
 
     if module.params.get("wait"):
@@ -968,9 +1053,11 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("name",)),
+            ("vm_uuid", None, ("name",)),
             ("state", "absent", ("vm_uuid",)),
+            ("operations", "create_ova_image", ("ova_name", "ova_file_format")),
         ],
+        required_by={"operations": "vm_uuid"},
     )
     remove_param_with_none_value(module.params)
     result = {
@@ -983,8 +1070,15 @@ def run_module():
     state = module.params["state"]
     if state == "present":
         if module.params.get("vm_uuid"):
-            if module.params.get("operations") == "clone":
+            operation = module.params.get("operations")
+            if operation == "clone":
                 clone_vm(module, result)
+            elif "pause_replication" in operation:
+                pause_replication(module, result)
+            elif "resume_replication" in operation:
+                resume_replication(module, result)
+            elif operation == "create_ova_image":
+                create_ova_image(module, result)
             else:
                 update_vm(module, result)
         else:
