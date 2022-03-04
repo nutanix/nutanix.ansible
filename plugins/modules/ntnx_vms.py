@@ -816,7 +816,7 @@ def get_module_spec():
             ],
         ),
         ova_name=dict(type="str"),
-        ova_file_format=dict(type="str", choices=['QCOW2', 'VMDK']),
+        ova_file_format=dict(type="str", choices=["QCOW2", "VMDK"]),
     )
 
     return module_args

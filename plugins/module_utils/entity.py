@@ -87,6 +87,26 @@ class Entity(object):
                     return entity["metadata"]["uuid"]
         return None
 
+    def get_info_spec(self):
+        params = self.module.params
+        spec = {
+            "kind": None,
+            "offset": None,
+            "length": None,
+            "filter": None,
+            "sort_order": None,
+            "sort_attribute": None,
+        }
+
+        for key in spec.copy().keys():
+            if params.get(key):
+                spec[key] = params[key]
+            else:
+                spec.pop(key)
+        if spec.get("name") and spec.get("kind") == "vm":
+            spec["vm_name"] = spec.pop("name")
+        return spec, None
+
     def _build_url(self, module, scheme, resource_type):
         host = module.params.get("nutanix_host")
         url = "{proto}://{host}".format(proto=scheme, host=host)

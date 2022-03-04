@@ -66,16 +66,15 @@ class VM(Prism):
         return deepcopy(
             {
                 "name": self.module.params["ova_name"],
-                "disk_file_format": self.module.params["ova_file_format"]
+                "disk_file_format": self.module.params["ova_file_format"],
             }
         )
 
-    def create_ova_image(self,  spec):
-        endpoint = "{0}/{1}".format(
-            self.module.params["vm_uuid"], "export"
-        )
+    def create_ova_image(self, spec):
+        endpoint = "{0}/{1}".format(self.module.params["vm_uuid"], "export")
         resp, status = self.create(spec, endpoint)
         return resp, status
+
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -292,9 +291,9 @@ class VM(Prism):
                     disk["data_source_reference"]["uuid"] = uuid
 
             if (
-                    not disk.get("storage_config", {})
-                            .get("storage_container_reference", {})
-                            .get("uuid")
+                not disk.get("storage_config", {})
+                .get("storage_container_reference", {})
+                .get("uuid")
             ):
                 disk.pop("storage_config", None)
 
