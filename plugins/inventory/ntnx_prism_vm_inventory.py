@@ -169,6 +169,8 @@ class InventoryModule(BaseInventoryPlugin):
             if self.group_category in entity["metadata"]["categories_mapping"]:
               for group in entity["metadata"]["categories_mapping"][self.group_category]:
                 self.inventory.add_group(group)
+                self.inventory.add_child("all", group)
+                self.inventory.add_host(vm_name, group=group)
 
             # Add inventory groups and hosts to inventory groups
             self.inventory.add_group(cluster)
