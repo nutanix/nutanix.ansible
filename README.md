@@ -1,38 +1,78 @@
 # Nutanix Ansible
-Official nutanix ansible collections
+Official nutanix ansible collection
 
 # About
-Nutanix ansible collections <font color=rolyalblue>nutanix.ncp</font> is the official Nutanix ansible collections to automate Nutanix Cloud Platform (ncp).
+Nutanix ansible collection <font color=rolyalblue>nutanix.ncp</font> is the official Nutanix ansible collection to automate Nutanix Cloud Platform (ncp).
 
-It is designed keeping simplicity as the core value. Hence it is 
+It is designed keeping simplicity as the core value. Hence it is
 1. Easy to use
 2. Easy to develop
 
-# Installation
+# Ansible version compatibility
+This collection has been tested against following Ansible versions: >=2.12.2.
 
+# Python version compatibility
+This collection requires Python 2.7 or greater
+
+# Installing the collection
 **Prerequisite**
 
 Ansible should be pre-installed. If not, please follow official ansible [install guide](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) .
 
 For <font color=royalblue>Developers</font>, please follow [this install guide](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.html) for setting up dev environment.
 
-**Clone the GitHub repository to a local directory**
+**1. Clone the GitHub repository to a local directory**
 
 ```git clone https://github.com/nutanix/nutanix.ansible.git```
 
-**Git checkout release version**
+**2. Git checkout release version**
 
 ```git checkout <release_version> -b <release_version>```
 
-**Build the collection**
+**3. Build the collection**
 
 ```ansible-galaxy collection build```
 
-**Install the collection**
+**4. Install the collection**
 
 ```ansible-galaxy collection install nutanix-ncp-<version>.tar.gz```
 
-Add <font color=red>`--force`</font> option for rebuilding or reinstalling to overwrite existing data
+**Note** Add <font color=red>`--force`</font> option for rebuilding or reinstalling to overwrite existing data
+
+# Using this collection
+You can either call modules by their Fully Qualified Collection Namespace (FQCN), such as<font color=royalblue> nutanix.ncp.ntnx_vms</font>, or you can call modules by their short name if you list the <font color=royalblue>nutanix.ncp </font>collection in the playbook's ```collections:``` keyword
+
+For example, the playbook for iaas.yml is as follows:
+```yaml
+---
+- name: IaaS Provisioning
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: true
+  tasks:
+    - include_role:
+        name: external_subnet
+    - include_role:
+        name: vpc
+    - include_role:
+        name: overlay_subnet
+    - include_role:
+        name: vm
+    - include_role:
+        name: fip
+```
+To run this playbook, use <font color=royalblue>ansible-playbook</font> command as follows:
+```
+ansible-playbook <playbook_name>
+ansible-playbook examples/iaas/iaas.yml
+```
 
 # Included Content
 
@@ -80,8 +120,7 @@ We glady welcome contributions from the community. From updating the documentati
       nutanix_host: <host_ip>
       nutanix_username: <user>
       nutanix_password: <pass>
-      validate_certs: false
-  ignore_errors: true
+      validate_certs: true
   tasks:
     - name: Inputs for external subnets task
       include_tasks: external_subnet.yml

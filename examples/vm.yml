@@ -1,44 +1,58 @@
 ---
-- name: VM Creation using all poissible options
+- name: VM playbook
   hosts: localhost
   gather_facts: false
   collections:
     - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
   tasks:
+  - name: Setting Variables
+    set_fact:
+        cluster_name: ""
+        script_path: ""
+        subnet_name: ""
+        image_name: ""
+        
   - name: create Vm
     ntnx_vms:
       state: present
-      nutanix_host: ''
-      validate_certs: False
-      nutanix_username: ''
-      nutanix_password: ''
       name: "ansible_automation_demo"
       desc: "ansible_vm_description"
       categories:
         AppType:
           - "Apache_Spark"
       cluster:
-        #uuid: "0005d578-2faf-9fb6-3c07-ac1f6b6f9780"
-        name: "auto_cluster_prod_1aa888141361"
+        name: "{{cluster_name}}"
       networks:
         - is_connected: True
           subnet:
-            name: "vlan.800"
+            name: "{{ subnet_name }}"
       disks:
         - type: "DISK"
           size_gb: 30
           bus: "SATA"
           clone_image:
-            name: "CentOS-7-cloudinit"
+            name: "{{ image_name }}"
       vcpus: 1
       cores_per_vcpu: 1
       memory_gb: 1
       guest_customization:
         type: "cloud_init"
-        script_path: "test.json"
+        script_path: "{{ script_path }}"
         is_overridable: True
     register: output
 
   - name: output of list Subnets
     debug:
       msg: '{{ output }}'
+
+  - name: delete VM
+    ntnx_vms:
+      state: absent
+      vm_uuid: "{{output.vm_uuid}}"
+      register: output

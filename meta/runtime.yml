@@ -1,3 +1,5 @@
+---
+requires_ansible: '>=2.11.6'
 action_groups:
   ntnx:
   - ntnx_floating_ips

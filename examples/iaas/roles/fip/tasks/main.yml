@@ -1,0 +1,6 @@
+---
+- name: Inputs for Floating IP task
+  include_tasks: fip.yml
+  with_items:
+    - {vm_name: "Prod-Wordpress-App"}
+    - {vm_name: "Dev-Wordpress-App"}

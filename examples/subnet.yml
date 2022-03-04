@@ -1,14 +1,17 @@
-- name: Auto Generated Playbook
+- name: Subnet playbook
   hosts: localhost
   gather_facts: false
   collections:
     - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
   tasks:
     - name: Setting Variables
       set_fact:
-        ip: ""
-        username: ""
-        password: ""
         cluster_name: ""
         cluster_uuid: ""
         virtual_switch_name: ""
@@ -30,10 +33,6 @@
     - name: 'VLAN subnet with IPAM, IP pools and DHCP'
       ntnx_subnets:
         state: present
-        nutanix_host: '{{ ip }}'
-        validate_certs: false
-        nutanix_username: '{{ username }}'
-        nutanix_password: '{{ password }}'
         name: VLAN subnet with IPAM IP pools and DHCP
         vlan_subnet:
           vlan_id: 29
@@ -61,10 +60,6 @@
     - name: External subnet with NAT
       ntnx_subnets:
         state: present
-        nutanix_host: '{{ ip }}'
-        validate_certs: false
-        nutanix_username: '{{ username }}'
-        nutanix_password: '{{ password }}'
         name: ' External subnet with NAT '
         external_subnet:
           vlan_id: 30
@@ -84,10 +79,6 @@
     - name: Overlay Subnet with IP_pools and DHCP
       ntnx_subnets:
         state: present
-        nutanix_host: '{{ ip }}'
-        validate_certs: false
-        nutanix_username: '{{ username }}'
-        nutanix_password: '{{ password }}'
         name: Overlay Subnet with IP_pools and DHCP
         overlay_subnet:
           vpc:

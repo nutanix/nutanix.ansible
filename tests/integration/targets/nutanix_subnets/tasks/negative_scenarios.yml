@@ -4,10 +4,6 @@
   - name: Unknow virtual switch name
     ntnx_subnets:
       state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: VLAN subnet without IPAM
       vlan_subnet:
         vlan_id: "{{ vlan_subnets_ids.0 }}"
@@ -28,10 +24,6 @@
   - name: Unknow virtual switch uuid
     ntnx_subnets:
       state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: VLAN subnet with IPAM
       vlan_subnet:
         vlan_id: "{{ vlan_subnets_ids.1 }}"
@@ -55,10 +47,6 @@
   - name: Unknown Cluster 
     ntnx_subnets:
       state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: VLAN subnet with IPAM and IP pools
       vlan_subnet:
         vlan_id: "{{vlan_subnets_ids.2}}"
@@ -85,10 +73,6 @@
   - name: Delete subnet with unknown uuid
     ntnx_subnets:
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: false
       subnet_uuid: 5
     register: resultt
     ignore_errors: true

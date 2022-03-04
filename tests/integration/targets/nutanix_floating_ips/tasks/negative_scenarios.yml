@@ -2,11 +2,7 @@
       msg: "Started Negative Creation Cases"
 - name: Create floating ip with unknown external subnet name
   ntnx_floating_ips:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     external_subnet:
       name: "external_subnet"
   register: result
@@ -21,12 +17,8 @@
 #################################################################
 - name: Create floating ip with unknown external subnet uuid
   ntnx_floating_ips:
-    validate_certs: False
     state: present
     wait: false
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     external_subnet:
       uuid: 54e295c3-16d3-49de-96ba-b921948b3a
   register: result
@@ -40,11 +32,7 @@
 ###############################################################
 - name: Create floating ip with unknown vpc
   ntnx_floating_ips:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     external_subnet:
       name: "{{ external_nat_subnet.name}}"
     vpc:
@@ -62,11 +50,7 @@
 ###############################################################
 - name: Create floating ip with unknown vpc uuid
   ntnx_floating_ips:
-    validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
     vpc:
@@ -84,10 +68,6 @@
 - name: Delete floating ip with unknown uuid
   ntnx_floating_ips:
     state: absent
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     fip_uuid: 5
   register: result
   ignore_errors: True
