@@ -11,7 +11,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_foundation_image_nodes
+module: ntnx_foundation
 short_description: Nutanix module to foundation nodes
 version_added: 1.0.0
 description: 'Foundation nodes'
@@ -62,6 +62,7 @@ from ansible_collections.nutanix.ncp.plugins.module_utils.utils import (  # noqa
 
 
 def get_module_spec():
+    hypervisor_options=["kvm", "hyperv", "xen", "esx", "ahv"]
     manual_mode_node_spec=dict(
       node_uuid=dict(type="str", required=True),
       node_position=dict(type="str", required=True, choices=["A","B","C","D"]),
@@ -73,12 +74,14 @@ def get_module_spec():
       ipmi_user=dict(type="str", required=False),
       image_now=dict(type=bool, required=True),
       node_serial=dict(type=str,required=False),
+      hypervisor=dict(type="str", required=True, choice=hypervisor_options),
     )
     discovery_override=dict(
       hypervisor_hostname=dict(type="str", required=False),
       hypervisor_ip=dict(type="str", required=False),
       cvm_ip=dict(type="str", required=False),
       ipmi_ip=dict(type="str", required=False),
+      hypervisor=dict(type="str", required=False, choice=hypervisor_options),
     )
     discovery_mode_node_spec=dict(
       node_serial=dict(type="str",required=True),
@@ -115,9 +118,17 @@ def get_module_spec():
           cvm_dns_servers =dict(type="list",elements="str",required=False),
           cluster_init_now=dict(type="bool",default=True)
     )
-    hypervisor_iso_spec=dict(
+
+    hypervisor_iso_spec_dict=dict(
       filename=dict(type="str", required=True),
-      checksum=dict(type="str", required=True),
+      checksum=dict(type="str", required=False),
+    )
+    hypervisor_iso_spec=dict(
+      kvm=dict(type="dict", required=False,options=hypervisor_iso_spec_dict),
+      esx=dict(type="dict", required=False,options=hypervisor_iso_spec_dict),
+      hyperv=dict(type="dict", required=False,options=hypervisor_iso_spec_dict),
+      xen=dict(type="dict", required=False,options=hypervisor_iso_spec_dict),
+      ahv=dict(type="dict", required=False,options=hypervisor_iso_spec_dict),
     )
 
     foundation_central=dict(
@@ -126,7 +137,6 @@ def get_module_spec():
     )
 
     module_args = dict(
-        hypervisor=dict(type="str", required=True, choice=["kvm", "hyperv", "xen", "esx", "ahv"]),
         cvm_gateway =dict(type="str", required=True),
         cvm_netmask =dict(type="str", required=True),
         hypervisor_gateway =dict(type="str", required=True),
@@ -135,7 +145,7 @@ def get_module_spec():
       	nos_package=dict(type="str", required=True),
         blocks=dict(type="list", required=True, options=block_spec, elements="dict"),
         cluster=dict(type="dict", required=False, options=cluster_spec),
-        hypervisor_iso=dict(type="dict", required=False, options=hypervisor_iso_spec),
+        hypervisor_iso=dict(type="dict", required=False, options=hypervisor_iso_spec, mutually_exclusive=[("ahv","kvm")]),
         ipmi_gateway =dict(type="str", required=False),
         ipmi_netmask =dict(type="str", required=False),
         default_ipmi_user=dict(type="str", required=False),
@@ -167,7 +177,6 @@ def get_module_spec():
         install_script=dict(type="str", required=False)
 
     )
-
     return module_args
 
 def image_nodes(module,result):

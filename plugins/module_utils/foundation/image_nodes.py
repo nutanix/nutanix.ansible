@@ -22,12 +22,10 @@ class ImageNodes(Foundation):
         resource_type = "/image_nodes"
         super(ImageNodes, self).__init__(module, resource_type=resource_type)
         self.node_discovery = NodeDiscovery(module)
-        self._ahv_hypervisor_conversion(module)
         self.build_spec_methods = {
             "nos_package": self._build_spec_nos_package,
             "blocks": self._build_spec_blocks,
             "cluster": self._build_spec_cluster,
-            "hypervisor": self._build_spec_hypervisor,
             "hypervisor_iso": self._build_spec_hypervisor_iso,
             "cvm_gateway": self._build_spec_cvm_gateway ,
             "cvm_netmask": self._build_spec_cvm_netmask ,
@@ -79,6 +77,7 @@ class ImageNodes(Foundation):
                 "ipmi_password": "",
                 "ipmi_user": "",
                 "node_serial": "",
+                "hypervisor":"",
         }
 
     
@@ -162,22 +161,22 @@ class ImageNodes(Foundation):
         return payload, None
 
     def _build_spec_hypervisor_iso(self,payload,value):
-        hypervisor = self.module.params["hypervisor"]
-        payload["hypervisor_iso"] = {
-            hypervisor: {
-                "checksum": value.get("checksum"),
-                "filename": value.get("filename")
+        hypervisor_iso = {}
+        for hi in value:
+            hi_name = hi 
+            hi_val = value[hi]
+            hi_name = self._ahv_hypervisor_conversion(hi_name)
+            hypervisor_iso[hi_name] = {
+                "checksum": hi_val.get("checksum"),
+                "filename": hi_val.get("filename")
             }
-        }
+
+        payload["hypervisor_iso"] = hypervisor_iso
         return payload, None
 
 
     def _build_spec_nos_package(self,payload,value):
         payload["nos_package"] = value
-        return payload, None
-
-    def _build_spec_hypervisor(self,payload,value):
-        payload["hypervisor"] = value
         return payload, None
 
     def _build_spec_cvm_gateway(self,payload,value):
@@ -310,11 +309,6 @@ class ImageNodes(Foundation):
 
 
 # Helper functions
-    def _ahv_hypervisor_conversion(self, module):
-        hypervisor = module.params.get("hypervisor")
-        if hypervisor == "ahv":
-            module.params["hypervisor"] = "kvm"
-
     def _flatten_server_list(self,server_list):
         return ",".join(server_list)
 
@@ -348,5 +342,12 @@ class ImageNodes(Foundation):
         for node_attr in node_template:
             n_val = n.get(node_attr)
             if n_val:
+                if node_attr== "hypervisor":
+                    n_val = self._ahv_hypervisor_conversion(n_val)
                 node[node_attr] = n_val
         return node
+
+    def _ahv_hypervisor_conversion(self, hypervisor):
+        if hypervisor == "ahv":
+            return "kvm"
+        return hypervisor
