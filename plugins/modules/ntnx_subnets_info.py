@@ -58,7 +58,7 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.prism.subnets import Subnet  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
@@ -67,9 +67,6 @@ def get_module_spec():
 
     module_args = dict(
         kind=dict(type="str", default="subnet"),
-        offset=dict(type="int"),
-        length=dict(type="int"),
-        filter=dict(type="str"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
     )
@@ -94,12 +91,11 @@ def list_vm(module, result):
         result["response"] = resp
         module.fail_json(msg="Failed to get information", **result)
 
-    result["changed"] = False
     result["response"] = resp
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseInfoModule(argument_spec=get_module_spec(), supports_check_mode=True)
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
