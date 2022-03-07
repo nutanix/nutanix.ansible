@@ -14,7 +14,8 @@ class BaseInfoModule(BaseModule):
     )
 
     def __init__(self, **kwargs):
-        BaseModule.argument_spec.pop("state")
-        BaseModule.argument_spec.pop("wait")
-        BaseModule.argument_spec.update(self.info_argument_spec)
+        self.argument_spec = self.argument_spec.copy()
+        self.argument_spec.pop("state")
+        self.argument_spec.pop("wait")
+        self.argument_spec.update(self.info_argument_spec)
         super(BaseInfoModule, self).__init__(**kwargs)
