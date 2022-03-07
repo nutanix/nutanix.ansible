@@ -9,3 +9,4 @@
         - import_tasks: "create.yml"
         - import_tasks: "negtaive_scenarios.yml"
         - import_tasks: "delete.yml"
+        - import_tasks: "vm_operations.yml"
