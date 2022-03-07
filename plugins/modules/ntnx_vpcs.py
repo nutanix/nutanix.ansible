@@ -14,54 +14,6 @@ short_description: Virtual Private Cloud (VPC) module which suports vpc CRUD ope
 version_added: 1.0.0
 description: 'Create, Update, Delete vpcs'
 options:
-  nutanix_host:
-    description:
-      - Prism central hostname or IP address
-      - C(nutanix_host). If not set then the value of the C(NUTANIX_HOST), environment variable is used.
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - Prism central port
-      - C(nutanix_port). If not set then the value of the C(NUTANIX_PORT), environment variable is used.
-    type: str
-    default: 9440
-  nutanix_username:
-    description:
-      - Prism central username
-      - C(nutanix_username). If not set then the value of the C(NUTANIX_USERNAME), environment variable is used.
-    type: str
-    required: true
-  nutanix_password:
-    description:
-      - Prism central password
-      - C(nutanix_password). If not set then the value of the C(NUTANIX_PASSWORD), environment variable is used.
-    required: true
-    type: str
-  validate_certs:
-    description:
-        - Set value to C(False) to skip validation for self signed certificates
-        - This is not recommended for production setup
-        - C(validate_certs). If not set then the value of the C(VALIDATE_CERTS), environment variable is used.
-    type: bool
-    default: true
-  state:
-    description:
-      - Specify state of vpc
-      - If C(state) is set to C(present) then vpc is created.
-      - >-
-        If C(state) is set to C(absent) and if the vpc exists, then
-        vpc is removed.
-    choices:
-      - present
-      - absent
-    type: str
-    default: present
-  wait:
-    description: Wait for vpc CRUD operation to complete.
-    type: bool
-    required: false
-    default: true
   name:
     description: VPC name
     type: str
@@ -99,6 +51,9 @@ options:
       subnet_name:
         description: External subnet name
         type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_opperations
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
