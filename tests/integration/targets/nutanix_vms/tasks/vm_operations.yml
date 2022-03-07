@@ -1,0 +1,188 @@
+- debug:
+    msg: Start testing VM with different opperations
+
+- name: VM with minimum requiremnts
+  ntnx_vms:
+      state: present
+      name: integration_test_opperations_vm
+      cluster:
+        name: "{{ cluster.name }}"
+      disks:
+        - type: "DISK"
+          clone_image: 
+            name: "{{ ubuntu }}"
+          bus: "SCSI"
+          size_gb: 20
+  register: vm
+  ignore_errors: true
+    
+- name: Creation Status
+  assert:
+    that:
+      - vm.response is defined
+      - vm.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to create VM with minimum requiremnts '
+    success_msg: ' VM with minimum requiremnts created successfully '
+
+# ###########################################
+- name: hard power off the vm
+  ntnx_vms:
+      state: present
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: hard_poweroff
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to hard power off the vm '
+    success_msg: ' VM powerd off successfully '
+# ###########################################
+- name: power on the vm
+  ntnx_vms:
+      state: present
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: on
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to power on vm '
+    success_msg: ' VM powerd on successfully '
+##########################################
+- name: clone vm while it's on and add network and memort
+  ntnx_vms:
+      state: present
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: clone
+      wait: true
+      vcpus: 2
+      cores_per_vcpu: 2
+      memory_gb: 2
+      networks:
+        - is_connected: true
+          subnet:
+            uuid: "{{ network.dhcp.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to clone vm while it is on '
+    success_msg: ' VM cloned  successfully '
+###########################################
+- name: create_ova_image  while vm it's on
+  ntnx_vms:
+      state: present
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: create_ova_image
+      ova_name: integration_test_VMDK_ova
+      ova_file_format: VMDK
+      wait: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to create VMDK ova_image while vm is on '
+    success_msg: ' create VMDK ova_image successfully '
+###########################################
+- name: soft shut down the vm
+  ntnx_vms:
+      state: present
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: soft_shutdown
+      wait: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to soft soft_shutdown   the vm '
+    success_msg: ' VM soft_shutdown  successfully '
+###########################################
+- name: clone vm while it's off
+  ntnx_vms:
+      state: present
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: clone
+      wait: true
+      networks:
+        - is_connected: true
+          subnet:
+            uuid: "{{ network.dhcp.uuid }}"
+  register: result
+  ignore_errors: true
+  
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to clone vm while it is off '
+    success_msg: ' VM cloned  successfully '
+###########################################
+- name: create QCOW2 ova_image  while vm it's off
+  ntnx_vms:
+      state: present
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: create_ova_image
+      ova_name: integration_test_QCOW2_ova
+      ova_file_format: QCOW2
+      wait: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to create QCOW2 ova_image while vm is off '
+    success_msg: ' create QCOW2 ova_image successfully '
+###########################################
+- name: clone vm while it's off and add network and script 
+  ntnx_vms:
+      state: present
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: clone
+      wait: true
+      networks:
+        - is_connected: true
+          subnet:
+            uuid: "{{ network.dhcp.uuid }}"
+      guest_customization:
+        type: "cloud_init"
+        script_path: "./cloud_init.yml"
+        is_overridable: True
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to clone vm while it is off '
+    success_msg: ' VM cloned  successfully '
+###########################################
+- name: Delete VM
+  ntnx_vms:
+    vm_uuid: '{{ vm.vm_uuid }}'
+    state: absent

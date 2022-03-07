@@ -50,10 +50,10 @@ class VM(Prism):
         return resp, status
 
     def pause_replication(self):
-        self._replication()
+        return self._replication()
 
     def resume_replication(self):
-        self._replication()
+        return self._replication()
 
     def _replication(self):
         endpoint = "{0}/{1}".format(
@@ -66,16 +66,15 @@ class VM(Prism):
         return deepcopy(
             {
                 "name": self.module.params["ova_name"],
-                "disk_file_format": self.module.params["ova_file_format"]
+                "disk_file_format": self.module.params["ova_file_format"],
             }
         )
 
-    def create_ova_image(self,  spec):
-        endpoint = "{0}/{1}".format(
-            self.module.params["vm_uuid"], "export"
-        )
+    def create_ova_image(self, spec):
+        endpoint = "{0}/{1}".format(self.module.params["vm_uuid"], "export")
         resp, status = self.create(spec, endpoint)
         return resp, status
+
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -214,8 +213,12 @@ class VM(Prism):
                 nic["subnet_reference"]["uuid"] = uuid
 
             nics.append(nic)
+        if payload["spec"]["resources"].get("nic_list"):
+            payload["spec"]["resources"]["nic_list"] += nics
+        else:
+            payload["spec"]["resources"]["nic_list"] = []
+            payload["spec"]["resources"]["nic_list"] += nics
 
-        payload["spec"]["resources"]["nic_list"] += nics
         return payload, None
 
     def _build_spec_disks(self, payload, vdisks):
@@ -292,9 +295,9 @@ class VM(Prism):
                     disk["data_source_reference"]["uuid"] = uuid
 
             if (
-                    not disk.get("storage_config", {})
-                            .get("storage_container_reference", {})
-                            .get("uuid")
+                not disk.get("storage_config", {})
+                .get("storage_container_reference", {})
+                .get("uuid")
             ):
                 disk.pop("storage_config", None)
 
@@ -368,7 +371,7 @@ class VM(Prism):
     def filter_by_uuid(self, uuid, items_list):
         try:
             return next(filter(lambda d: d.get("uuid") == uuid, items_list)), None
-        except:
+        except BaseException:
             error = "Entity {0} not found.".format(uuid)
             return None, error
 

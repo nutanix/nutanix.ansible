@@ -126,6 +126,16 @@ options:
     elements: dict
     required: false
     suboptions:
+      uuid:
+        description:
+          - to-write
+        type: str
+      state:
+        description:
+          - to-write
+        type: str
+        choices:
+          - absent
       subnet:
         description:
           - Name or UUID of the subnet to which the VM should be connnected
@@ -158,6 +168,16 @@ options:
     type: list
     elements: dict
     suboptions:
+      uuid:
+        description:
+          - to-write
+        type: str
+      state:
+        description:
+          - to-write
+        type: str
+        choices:
+          - absent
       type:
         description:
           - CDROM or DISK
@@ -276,6 +296,29 @@ options:
       - categories to be attached to the VM.
     type: dict
     required: false
+  operations:
+    description:
+      - The opperation on the vm
+    type: str
+    choices:
+        - "soft_shutdown"
+        - "hard_poweroff"
+        - "on"
+        - "clone"
+        - "create_ova_image"
+        - "pause_replication"
+        - "resume_replication"
+  ova_name:
+    description:
+      - to-write
+    type: str
+  ova_file_format:
+    description:
+      - to-write
+    type: str
+    choices:
+      - QCOW2
+      - VMDK
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -435,6 +478,85 @@ EXAMPLES = r"""
       nutanix_password: "{{ password }}"
       validate_certs: False
       vm_uuid: '{{ vm_uuid }}'
+
+  - name: hard power off the vm
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: hard_poweroff
+
+  - name: power on the vm
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: on
+
+  - name: soft shut down the vm
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      vm_uuid: "{{ vm.vm_uuid }}"
+      operations: soft_shutdown
+      wait: true
+
+  - name: create VMDK ova_image
+    ntnx_vms:
+        state: present
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False
+        vm_uuid: "{{ vm.vm_uuid }}"
+        operations: create_ova_image
+        ova_name: ova_image_name
+        ova_file_format: VMDK
+        wait: true
+
+  - name: create QCOW2 ova_image
+    ntnx_vms:
+        state: present
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False
+        vm_uuid: "{{ vm.vm_uuid }}"
+        operations: create_ova_image
+        ova_name: ova_image_name
+        ova_file_format: QCOW2
+        wait: true
+
+  - name: clone vm while it's off and add network and script
+    ntnx_vms:
+        state: present
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False
+        vm_uuid: "{{ vm.vm_uuid }}"
+        operations: clone
+        wait: true
+        networks:
+          - is_connected: true
+            subnet:
+              uuid: "{{ network.dhcp.uuid }}"
+        guest_customization:
+          type: "cloud_init"
+          script_path: "./cloud_init.yml"
+          is_overridable: True
+        vcpus: 2
+        cores_per_vcpu: 2
+        memory_gb: 2
 """
 
 RETURN = r"""
@@ -722,13 +844,14 @@ task_uuid:
   sample: "82c5c1d3-eb6a-406a-8f58-306028099d21"
 """
 
+
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
-from ..module_utils.utils import (
+from ..module_utils.utils import (  # noqa: E402
     remove_param_with_none_value,
     strip_extra_attrs_from_status,
-)  # noqa: E402
+)
 
 
 def get_module_spec():
@@ -816,7 +939,7 @@ def get_module_spec():
             ],
         ),
         ova_name=dict(type="str"),
-        ova_file_format=dict(type="str", choices=['QCOW2', 'VMDK']),
+        ova_file_format=dict(type="str", choices=["QCOW2", "VMDK"]),
     )
 
     return module_args
@@ -918,7 +1041,6 @@ def clone_vm(module, result):
         return
 
     resp, status = vm.clone(spec)
-
     if status["error"]:
         result["error"] = status["error"]
         result["response"] = resp
