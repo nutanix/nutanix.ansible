@@ -304,10 +304,9 @@ class VM(Prism):
                 disk.pop("data_source_reference", None)
 
             disks.append(disk)
-        if payload["spec"]["resources"].get("disk_list"):
-            payload["spec"]["resources"]["disk_list"] += disks
-        else:
-            payload["spec"]["resources"]["disk_list"] = disks
+
+        payload["spec"]["resources"]["disk_list"] += disks
+
         return payload, None
 
     def _build_spec_boot_config(self, payload, param):
