@@ -22,15 +22,14 @@ class DiscoverNodes(Foundation):
     def discover(self, include_configured=False): 
         resp, status_obj = self.read()
         blocks = []
-        if not include_configured:
-            for block in resp:
-                nodes = block.get("nodes",[])
-                result_nodes = []
-                for n in nodes:
-                    configured = n.get("configured")
-                    if type(configured) == bool and not configured:
-                        result_nodes.append(n)
-                if len(result_nodes) > 0:
-                    block["nodes"] = result_nodes
-                    blocks.append(block)
+        for block in resp:
+            nodes = block.get("nodes",[])
+            result_nodes = []
+            for n in nodes:
+                configured = n.get("configured")
+                if include_configured or (type(configured) == bool and not configured):
+                    result_nodes.append(n)
+            if len(result_nodes) > 0:
+                block["nodes"] = result_nodes
+                blocks.append(block)
         return blocks, status_obj
