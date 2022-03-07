@@ -216,8 +216,7 @@ class VM(Prism):
         if payload["spec"]["resources"].get("nic_list"):
             payload["spec"]["resources"]["nic_list"] += nics
         else:
-            payload["spec"]["resources"]["nic_list"] = []
-            payload["spec"]["resources"]["nic_list"] += nics
+            payload["spec"]["resources"]["nic_list"] = nics
 
         return payload, None
 
@@ -305,8 +304,10 @@ class VM(Prism):
                 disk.pop("data_source_reference", None)
 
             disks.append(disk)
-
-        payload["spec"]["resources"]["disk_list"] += disks
+        if payload["spec"]["resources"].get("disk_list"):
+            payload["spec"]["resources"]["disk_list"] += disks
+        else:
+            payload["spec"]["resources"]["disk_list"] = disks
         return payload, None
 
     def _build_spec_boot_config(self, payload, param):
