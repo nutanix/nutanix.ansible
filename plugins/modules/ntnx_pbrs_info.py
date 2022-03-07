@@ -9,42 +9,19 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_floating_ips_info
-short_description: 
+module: ntnx_pbrs_info
+short_description: PBR  info module
 version_added: 1.0.0
-description: 'Create, Update, Delete, Power-on, Power-off Nutanix VM''s'
+description: 'Get PBR"s info'
 options:
-  nutanix_host:
-    description:
-      - Prism central hostname or IP address
-      - C(nutanix_host). If not set then the value of the C(NUTANIX_HOST), environment variable is used.
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - Prism central port
-      - C(nutanix_port). If not set then the value of the C(NUTANIX_PORT), environment variable is used.
-    type: str
-    default: 9440
-  nutanix_username:
-    description:
-      - Prism central username
-      - C(nutanix_username). If not set then the value of the C(NUTANIX_USERNAME), environment variable is used.
-    type: str
-    required: true
-  nutanix_password:
-    description:
-      - Prism central password
-      - C(nutanix_password). If not set then the value of the C(NUTANIX_PASSWORD), environment variable is used.
-    required: true
-    type: str
-  validate_certs:
-    description:
-        - Set value to C(False) to skip validation for self signed certificates
-        - This is not recommended for production setup
-        - C(validate_certs). If not set then the value of the C(VALIDATE_CERTS), environment variable is used.
-    type: bool
-    default: true
+      kind:
+        description:
+          - The kind name
+        type: str
+        default: routing_policy
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_info
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
