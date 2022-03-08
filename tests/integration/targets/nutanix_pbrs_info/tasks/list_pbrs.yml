@@ -1,0 +1,72 @@
+- name: List pbrs using virtual_network_uuid filter criteria
+  ntnx_pbrs_info:
+    filter: "name==a"
+    kind: "routing_policy"
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='status.name') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list pbrs "
+    success_msg: " PBRs listed successfully "
+#################################################
+- name: List PBRs using length and offset
+  ntnx_pbrs_info:
+    length: 1
+    offset: 0
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list pbrs "
+    success_msg: " PBRs listed successfully "
+#################################################
+- name: List PBRs using ascending priority sorting
+  ntnx_pbrs_info:
+    sort_order: "ASCENDING"
+    sort_attribute: "priority"
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='status.name') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list pbrs "
+    success_msg: " PBRs listed successfully "
+#################################################
+- name: List pbrs using descending and length and filter name
+  ntnx_pbrs_info:
+    sort_order: "DESCENDING"
+    sort_attribute: "priority"
+    length: 10
+    offset: 0
+    kind: routing_policy
+    filter: "name==a"
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='spec.name') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list pbrs "
+    success_msg: " pbrs listed successfully "
+####################################################

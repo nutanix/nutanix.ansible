@@ -1,0 +1,76 @@
+- name: List floating_ips using ip filter criteria
+  ntnx_floating_ips_info:
+    filter: "floating_ip==10."
+    kind: floating_ip
+  register: result
+  ignore_errors: True
+  
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='status.resources.floating_ip') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list floating_ips "
+    success_msg: " Floatong_ips listed successfully "
+##############################################################
+- name: List floating_ips using length and offset
+  ntnx_floating_ips_info:
+    length: 1
+    offset: 0
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='status.resources.floating_ip') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list floating_ips "
+    success_msg: " Floatong_ips listed successfully "
+#############################################################
+- name: List floating_ips using ascending ip sorting
+  ntnx_floating_ips_info:
+    sort_order: "ASCENDING"
+    sort_attribute: "floating_ip"
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='status.resources.floating_ip') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list floating_ips "
+    success_msg: " Floatong_ips listed successfully "
+#############################################################
+- name: List floting ips using descending and length and filter name
+  ntnx_floating_ips_info:
+    sort_order: "DESCENDING"
+    sort_attribute: "floating_ip"
+    length: 10
+    offset: 0
+    kind: floating_ip
+    filter: "floating_ip==192."
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='spec.name') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list floating_ips "
+    success_msg: " floating_ips listed successfully "
+####################################################
