@@ -73,4 +73,3 @@
       - result.response is defined
     fail_msg: " Unable to list vpcs "
     success_msg: " vpcs listed successfully "
-####################################################

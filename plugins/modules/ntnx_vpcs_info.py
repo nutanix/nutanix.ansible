@@ -72,7 +72,13 @@ def list_vm(module, result):
 
 
 def run_module():
-    module = BaseInfoModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseInfoModule(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+        required_together=[
+            ("sort_order", "sort_attribute"),
+        ],
+    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
