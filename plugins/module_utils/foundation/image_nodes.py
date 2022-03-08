@@ -118,6 +118,7 @@ class ImageNodes(Foundation):
         node = self._create_spec_based_on_node_template(node_info)
         discovery_override = n.get("discovery_override",{})
         node.update(discovery_override)
+        node["hypervisor"] = self._ahv_hypervisor_conversion(node.get("hypervisor"))
         node["image_now"] = n.get("image_now")
         node["ipmi_password"] = n.get("ipmi_password")
         node["ipmi_user"] = n.get("ipmi_user")
@@ -166,11 +167,11 @@ class ImageNodes(Foundation):
             hi_name = hi 
             hi_val = value[hi]
             hi_name = self._ahv_hypervisor_conversion(hi_name)
-            hypervisor_iso[hi_name] = {
-                "checksum": hi_val.get("checksum"),
-                "filename": hi_val.get("filename")
-            }
-
+            hypervisor_iso[hi_name] = {}
+            if "checksum" in hi_val:
+                hypervisor_iso[hi_name]["checksum"]= hi_val.get("checksum")
+            if "filename" in hi_val:        
+                hypervisor_iso[hi_name]["filename"]= hi_val.get("filename")
         payload["hypervisor_iso"] = hypervisor_iso
         return payload, None
 
