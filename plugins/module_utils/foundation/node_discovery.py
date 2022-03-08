@@ -24,23 +24,23 @@ class NodeDiscovery:
     def __init__(self, module):
        self.module = module
 
-    def discover(self, include_configured=False, include_network_details=False): 
+    def discover(self, include_configured=False, include_network_details=False, timeout=60): 
         nodes = DiscoverNodes(self.module)
         resp, status = nodes.discover(include_configured)
         if status["error"]:
                 return resp, status
         if include_network_details:
-            resp, status = self._add_network_details(resp)
+            resp, status = self._add_network_details(resp, timeout)
             if status["error"]:
                 return resp, status
         return {
             "blocks": resp
             }, status
 
-    def _add_network_details(self, blocks):
+    def _add_network_details(self, blocks, timeout):
         node_network_details = NodeNetworkDetails(self.module)
         ipv6_addresses = self._get_ipv6_address(blocks)
-        resp, status = node_network_details.retrieve_network_info(ipv6_addresses)
+        resp, status = node_network_details.retrieve_network_info(ipv6_addresses, timeout)
         if status.get("error"):
                return resp,status
         node_network_info = self._create_network_details_dict(resp)
