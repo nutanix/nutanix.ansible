@@ -1,301 +1,258 @@
-- debug:
-    msg: Start testing VM with different opperations
+  - debug:
+      msg: "Started Negative Creation Cases"
 
-- name: VM with minimum requiremnts
-  ntnx_vms:
+  - name: Unknown project name
+    ntnx_vms:
       state: present
-      name: integration_test_opperations_vm
+      name: Unknown project name
+      timezone: "UTC"
+      project:
+        name: project
+      cluster:
+        uuid: "{{ cluster.uuid }}"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          clone_image:
+            name:  "{{ centos }}"
+          bus: "SCSI"
+    register: result
+    ignore_errors: True
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed is defined
+      success_msg: ' Success: returned error as expected '
+#############################################################
+  - name: Unknown Cluster
+    ntnx_vms:
+      state: present
+      name: Unknown Cluster
+      timezone: "UTC"
+      cluster:
+        uuid: "auto_cluster_1aa888141361"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          clone_image:
+            name:  "{{ centos }}"
+          bus: "SCSI"
+    register: result
+    ignore_errors: True
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.state == 'ERROR'
+        - result.status_code==422
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail Vm created successfully with unknown cluster '
+################################################################################ 
+  - name: Unknown Cluster name
+    ntnx_vms:
+      state: present
+      name: Unknown Cluster
+      timezone: "UTC"
+      cluster:
+        name: "auto_cluster"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          clone_image:
+            name:  "{{ centos }}"
+          bus: "SCSI"
+    register: result
+    ignore_errors: True
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.msg=="Failed generating VM Spec"
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail Vm created successfully with unknown cluster '
+###################################################################################
+  - name: Unknown Network name
+    ntnx_vms:
+      state: present
+      name: Unknown Network
+      desc: "Unknown network"
+      categories:
+        AppType:
+          - "Apache_Spark"
+      cluster:
+        name: "{{ cluster.name }}"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "vlan.8000"
+    register: result
+    ignore_errors: True
+       
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+        - result.msg=="Failed generating VM Spec"
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail VM created successfully with unknown network name '
+###################################################################################        
+  - name: Unknown Network uuid
+    ntnx_vms:
+      state: present
+      name: Unknown Network
+      desc: "Unknown network"
+      categories:
+        AppType:
+          - "Apache_Spark"
+      cluster:
+        name: "{{ cluster.name }}"
+      networks:
+        - is_connected: True
+          subnet:
+            uuid: "8000"
+    register: result
+    ignore_errors: True
+       
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail VM created successfully with unknown network name '  
+####################################################################################  
+  - name: Unknow Image name
+    ntnx_vms:
+      state: present
+      name: unknown image_vm
+      timezone: "UTC"
       cluster:
         name: "{{ cluster.name }}"
       disks:
         - type: "DISK"
-          clone_image: 
-            name: "{{ ubuntu }}"
+          size_gb: 10
+          clone_image:
+            name: "centos-7-cloudinit"
           bus: "SCSI"
-          size_gb: 20
-  register: vm
-  ignore_errors: true
+    register: result
+    ignore_errors: True
     
-- name: Creation Status
-  assert:
-    that:
-      - vm.response is defined
-      - vm.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to create VM with minimum requiremnts '
-    success_msg: ' VM with minimum requiremnts created successfully '
-
-############################################
-- name: VM with minimum requiremnts with check mode
-  ntnx_vms:
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+        - result.msg=="Failed generating VM Spec"
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail VM created successfully with not existed image '
+#########################################################################################
+  - name: Wrong disk size value
+    ntnx_vms:
       state: present
-      name: integration_test_opperations_vm
+      name: "Wrong disk size value"
+      timezone: "UTC"
       cluster:
         name: "{{ cluster.name }}"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "{{ network.dhcp.name }}"
       disks:
         - type: "DISK"
-          clone_image: 
+          size_gb: 10g
+          bus: "PCI"
+    register: result
+    ignore_errors: True
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed is defined
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail VM created successfully with invalid argument for size_gb '
+############################################################################################# 
+  - name: Image size less than actual
+    ntnx_vms:
+      state: present
+      name: "image size less than actual"
+      categories:
+        AppType:
+          - "Apache_Spark"
+      cluster:
+        name: "{{ cluster.name }}"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "{{ network.dhcp.name }}"
+      disks:
+        - type: "DISK"
+          size_gb: 2 #must be 20
+          bus: "SATA"
+          clone_image:
             name: "{{ ubuntu }}"
-          bus: "SCSI"
-          size_gb: 20
-  register: vm
-  ignore_errors: true
-  check_mode: yes
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.task_uuid != ""
-    success_msg: ' Success: returned  as expected '
-    fail_msg: ' Fail '
-###########################################
-- name: hard power off the vm
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: hard_poweroff
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to hard power off the vm '
-    success_msg: ' VM powerd off successfully '
-# ###########################################
-- name: power on the vm
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: on
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to power on vm '
-    success_msg: ' VM powerd on successfully '
-##########################################
-- name: power on the vm while it's on
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: on
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.msg == "Nothing to change"
-    success_msg: ' Success: returned msg as expected '
-    fail_msg: ' Fail '
-##########################################
-
-- name: clone vm while it's on and add network and memort
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
-      wait: true
-      vcpus: 2
-      cores_per_vcpu: 2
-      memory_gb: 2
-      networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to clone vm while it is on '
-    success_msg: ' VM cloned  successfully '
-    
-###########################################
-- name: create_ova_image  while vm it's on
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: create_ova_image
-      ova_name: integration_test_VMDK_ova
-      ova_file_format: VMDK
-      wait: true
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to create VMDK ova_image while vm is on '
-    success_msg: ' create VMDK ova_image successfully '
-###########################################
-- name: create_ova_image  while vm it's on with check mode
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: create_ova_image
-      ova_name: integration_test_VMDK_ova
-      ova_file_format: VMDK
-      wait: true
-  register: result
-  ignore_errors: true
-  check_mode: yes
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.task_uuid != ""
-    success_msg: ' Success: returned  as expected '
-    fail_msg: ' Fail '
-###########################################
-- name: soft shut down the vm
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: soft_shutdown
-      wait: true
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to soft soft_shutdown   the vm '
-    success_msg: ' VM soft_shutdown  successfully '
-###########################################
-- name: clone vm while it's off
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
-      wait: true
-      networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
-  register: result
-  ignore_errors: true
-  
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to clone vm while it is off '
-    success_msg: ' VM cloned  successfully '
-###########################################
-- name: clone vm while it's off with check mode
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
-      wait: true
-      networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
-  register: result
-  ignore_errors: true
-  check_mode: yes
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.task_uuid != ""
-    success_msg: ' Success: returned  as expected '
-    fail_msg: ' Fail '
-###########################################
-- name: create QCOW2 ova_image  while vm it's off
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: create_ova_image
-      ova_name: integration_test_QCOW2_ova
-      ova_file_format: QCOW2
-      wait: true
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to create QCOW2 ova_image while vm is off '
-    success_msg: ' create QCOW2 ova_image successfully '
-###########################################
-- name: clone vm while it's off and add network and script 
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
-      wait: true
-      networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
+      vcpus: 1
+      cores_per_vcpu: 1
+      memory_gb: 1
       guest_customization:
         type: "cloud_init"
-        script_path: "./cloud_init.yml"
+        script_path: "cloud_init.yml"
         is_overridable: True
-  register: result
-  ignore_errors: true
+    register: result
+    ignore_errors: True
 
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to clone vm while it is off '
-    success_msg: ' VM cloned  successfully '
-###########################################
-
-- name: try clone vm with disk 
-  ntnx_vms:
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail: VM created successfully with image size is less than actual '
+################################################################################
+  - name: Unknow storage container name
+    ntnx_vms:
       state: present
-      operations: clone
-      vm_uuid: "{{vm.vm_uuid}}"
+      name: unknown storage container
+      timezone: "UTC"
+      cluster:
+        name: "{{ cluster.name }}"
       disks:
-        - type: DISK
-          size_gb: 5
-          bus: SCSI
-      wait: true
-      vcpus: 2
-      cores_per_vcpu: 2
-      memory_gb: 2
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.error == "Disks cannot be changed during a clone operation"
-    success_msg: ' Success: returned error as expected '
-    fail_msg: ' Fail '
-###############################
-- name: Delete VM
-  ntnx_vms:
-    vm_uuid: '{{ vm.vm_uuid }}'
-    state: absent
+        - type: "DISK"
+          size_gb: 10
+          storage_container:
+            name: "storage"
+          bus: "SCSI"
+    register: result
+    ignore_errors: True
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.msg=="Failed generating VM Spec"
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail VM created successfully with unknown storage container name '
+################################################################################ 
+  - name: Delete vm with unknown uuid
+    ntnx_vms:
+      state: absent
+      vm_uuid: 5
+    register: result
+    ignore_errors: True
+      
+  - name: Creation Status
+    assert:
+      that:
+        - result.status_code==400
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail deleting VM with unknown uuid '
+################################################################################
+  - name: Delete vm with missing uuid
+    ntnx_vms:
+      state: absent
+    register: result
+    ignore_errors: True
+      
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail deleting VM with missing uuid '
