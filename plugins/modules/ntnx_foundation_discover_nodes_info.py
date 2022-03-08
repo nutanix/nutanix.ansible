@@ -102,6 +102,7 @@ def get_module_spec():
     module_args = dict(
         include_configured=dict(type="bool", required=False, default=False),
         include_network_details=dict(type="bool", required=False, default=False),
+        timeout=dict(type="int", required=False ,default=60),
     )
 
     return module_args
@@ -109,9 +110,10 @@ def get_module_spec():
 
 def discover_nodes(module, result):
   include_configured = module.params["include_configured"]
-  include_network_details = module.params.get("include_network_details")  
+  include_network_details = module.params.get("include_network_details") 
+  timeout=module.params.get("timeout") 
   node_discovery = NodeDiscovery(module)
-  resp, status = node_discovery.discover(include_configured, include_network_details)
+  resp, status = node_discovery.discover(include_configured, include_network_details, timeout)
   if status["error"]:
         result["error"] = status["error"]
         module.fail_json(msg="Failed discover nodes via foundation", **result)

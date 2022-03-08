@@ -19,13 +19,13 @@ class NodeNetworkDetails(Foundation):
         super(NodeNetworkDetails, self).__init__(module, resource_type=resource_type)
        
 
-    def retrieve_network_info(self, nodes, timeout=None):
+    def retrieve_network_info(self, nodes, timeout=60):
         nodes_query = {
             "nodes": list(map(lambda e: {"ipv6_address": e} ,nodes))
         }
         if timeout:
-            nodes_query["timeout"] = timeout
-        resp, status_obj = self.create(data=nodes_query)
+            nodes_query["timeout"] = str(timeout)
+        resp, status_obj = self.create(data=nodes_query, timeout=timeout)
         nodes = resp.get("nodes",[])
         return nodes, status_obj
 
