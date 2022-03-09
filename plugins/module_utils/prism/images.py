@@ -11,3 +11,17 @@ class Image(Prism):
     def __init__(self, module):
         resource_type = "/images"
         super(Image, self).__init__(module, resource_type=resource_type)
+
+
+def get_image_uuid(config, module):
+    if "name" in config:
+        image = Image(module)
+        name = config["name"]
+        uuid = image.get_uuid(name)
+        if not uuid:
+            error = "Image {0} not found.".format(name)
+            return None, error
+    elif "uuid" in config:
+        uuid = config["uuid"]
+
+    return uuid, None
