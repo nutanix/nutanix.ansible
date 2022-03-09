@@ -39,6 +39,8 @@ class VM(Prism):
 
     def get_clone_spec(self):
         spec, error = self.get_spec({"spec": {"resources": {}}})
+        if error:
+            return spec, error
         spec["spec"].update(spec["spec"].pop("resources", {}))
         spec["spec"].pop("hardware_clock_timezone")
         spec = {"override_spec": spec["spec"]}

@@ -931,9 +931,6 @@ def create_vm(module, result):
 
 def update_vm(module, result):
     vm_uuid = module.params["vm_uuid"]
-    if not vm_uuid:
-        result["error"] = "Missing parameter vm_uuid in playbook"
-        module.fail_json(msg="Failed updating VM", **result)
 
     vm = VM(module)
     resp, status = vm.read(vm_uuid)
@@ -976,10 +973,6 @@ def update_vm(module, result):
 
 def clone_vm(module, result):
     vm_uuid = module.params["vm_uuid"]
-    if not vm_uuid:
-        result["error"] = "Missing parameter vm_uuid in playbook"
-        module.fail_json(msg="Failed cloning VM", **result)
-
     if module.params.get("disks"):
         result["error"] = "Disks cannot be changed during a clone operation"
         module.fail_json(msg="Failed cloning VM", **result)
@@ -1014,9 +1007,6 @@ def clone_vm(module, result):
 
 def pause_replication(module, result):
     vm_uuid = module.params["vm_uuid"]
-    if not vm_uuid:
-        result["error"] = "Missing parameter vm_uuid in playbook"
-        module.fail_json(msg="Failed deleting VM", **result)
 
     vm = VM(module)
     result["vm_uuid"] = vm_uuid
@@ -1039,9 +1029,6 @@ def pause_replication(module, result):
 
 def resume_replication(module, result):
     vm_uuid = module.params["vm_uuid"]
-    if not vm_uuid:
-        result["error"] = "Missing parameter vm_uuid in playbook"
-        module.fail_json(msg="Failed deleting VM", **result)
 
     vm = VM(module)
     result["vm_uuid"] = vm_uuid
@@ -1064,9 +1051,6 @@ def resume_replication(module, result):
 
 def create_ova_image(module, result):
     vm_uuid = module.params["vm_uuid"]
-    if not vm_uuid:
-        result["error"] = "Missing parameter vm_uuid in playbook"
-        module.fail_json(msg="Failed deleting VM", **result)
 
     vm = VM(module)
     spec = vm.get_ova_image_spec()
