@@ -28,11 +28,119 @@ author:
  - Alaa Bishtawi (@alaa-bish)
  - Dina AbuHijleh (@dina-abuhijleh)
 """
-
 EXAMPLES = r"""
+  - name: List VPC using name filter criteria
+    ntnx_vpcs_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      filter: "name=={{ vpc.name }}"
+      kind: vpc
+    register: result
+    
+  - name: List VPC using length, offset, sort order and name sort attribute
+    ntnx_vpcs_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      length: 1
+      offset: 1
+      sort_order: "ASCENDING"
+      sort_attribute: "name"
+    register: result
 """
-
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: Metadata for vpc list output
+  returned: always 
+  type: dict
+  sample: {
+    "metadata": {
+            "kind": "vpc",
+            "length": 1,
+            "offset": 2,
+            "sort_attribute": "name",
+            "sort_order": "DESCENDING",
+            "total_matches": 3
+        }
+entities: 
+  description: VPC intent response
+  returned: always
+  type: list
+  sample: {
+    "entities": [
+            {
+                "metadata": {
+                    "categories": {},
+                    "categories_mapping": {},
+                    "creation_time": "2022-03-09T08:37:15Z",
+                    "kind": "vpc",
+                    "last_update_time": "2022-03-09T08:37:17Z",
+                    "owner_reference": {
+                        "kind": "user",
+                        "name": "admin",
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec_version": 0,
+                    "uuid": "7ee05b9d-4021-4f57-8a03-df9503adea9d"
+                },
+                "spec": {
+                    "name": "integration_test_vpc",
+                    "resources": {
+                        "common_domain_name_server_ip_list": [],
+                        "external_subnet_list": [
+                            {
+                                "external_subnet_reference": {
+                                    "kind": "subnet",
+                                    "uuid": "946d59d1-65fe-48cc-9882-e93439404e89"
+                                }
+                            }
+                        ],
+                        "externally_routable_prefix_list": []
+                    }
+                },
+                "status": {
+                    "execution_context": {
+                        "task_uuids": [
+                            "b3d99b77-dfe0-4067-b2ec-4fbaca6c30ac"
+                        ]
+                    },
+                    "name": "integration_test_vpc",
+                    "resources": {
+                        "availability_zone_reference_list": [],
+                        "common_domain_name_server_ip_list": [],
+                        "external_subnet_list": [
+                            {
+                                "active_gateway_node": {
+                                    "host_reference": {
+                                        "kind": "host",
+                                        "uuid": "e16b6989-a149-4f93-989f-bc3e96f88a40"
+                                    },
+                                    "ip_address": "10.46.136.28"
+                                },
+                                "external_ip_list": [
+                                    "10.44.3.198"
+                                ],
+                                "external_subnet_reference": {
+                                    "kind": "subnet",
+                                    "uuid": "946d59d1-65fe-48cc-9882-e93439404e89"
+                                }
+                            }
+                        ],
+                        "externally_routable_prefix_list": []
+                    },
+                    "state": "COMPLETE"
+                }
+            }
+        ],
+        }    
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
@@ -51,12 +159,9 @@ def get_module_spec():
     return module_args
 
 
-def list_vm(module, result):
+def list_vpc(module, result):
     vpc = Vpc(module)
     spec, error = vpc.get_info_spec()
-    if error:
-        result["error"] = error
-        module.fail_json(msg="Failed generating filter Spec", **result)
 
     if module.check_mode:
         result["response"] = spec
@@ -84,10 +189,10 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
-        "vm_uuid": None,
+        "vpc_uuid": None,
         "task_uuid": None,
     }
-    list_vm(module, result)
+    list_vpc(module, result)
 
     module.exit_json(**result)
 

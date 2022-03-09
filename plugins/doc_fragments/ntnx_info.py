@@ -15,22 +15,22 @@ class ModuleDocFragment(object):
 options:
   sort_order:
     description:
-      - The sorting order of the list assending or dessinding
+      - The sort order in which results are returned
     type: str
   sort_attribute:
     description:
-      - Sort the list by specfic attribute
+      - The attribute to perform sort on
     type: str
   offset:
     description:
-      - The offset to start searching the list
+      - Offset from the start of the entity list
     type: int
   length:
     description:
-      - The length of the element in the list
+      - The number of records to retrieve relative to the offset
     type: int
   filter:
     description:
-      - Refine The Search list by given filter
+      - The filter in FIQL syntax used for the results
     type: str
 """

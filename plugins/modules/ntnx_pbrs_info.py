@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_pbrs_info
 short_description: PBR  info module
 version_added: 1.0.0
-description: 'Get PBR"s info'
+description: 'Get pbr info'
 options:
       kind:
         description:
@@ -28,11 +28,120 @@ author:
  - Alaa Bishtawi (@alaa-bish)
  - Dina AbuHijleh (@dina-abuhijleh)
 """
-
 EXAMPLES = r"""
-"""
+  - name: List pbrs using priority filter criteria
+    ntnx_pbrs_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      filter: "priority==2"
+      kind: routing_policy
+    register: result
+    
+  - name: List pbrs using length, offset, sort order and priority sort attribute
+    ntnx_pbrs_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      length: 2
+      offset: 0
+      sort_order: "ASCENDING"
+      sort_attribute: "priority"
+    register: result
 
+"""
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: Metadata for pbrs list output
+  returned: always 
+  type: dict
+  sample: {
+    "metadata": {
+            "kind": "routing_policy",
+            "length": 6,
+            "offset": 0,
+            "sort_attribute": "priority",
+            "sort_order": "ASCENDING",
+            "total_matches": 6
+        }
+        }
+entities: 
+  description: PBR intent response
+  returned: always
+  type: list
+  sample: {
+    "entities": [
+            {
+                "metadata": {
+                    "categories": {},
+                    "categories_mapping": {},
+                    "creation_time": "2022-03-09T08:37:16Z",
+                    "kind": "routing_policy",
+                    "last_update_time": "2022-03-09T08:41:37Z",
+                    "owner_reference": {
+                        "kind": "user",
+                        "name": "admin",
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec_version": 0,
+                    "uuid": "11a80bee-2bca-4ce8-8662-6a4e4b44b4f3"
+                },
+                "spec": {
+                    "name": "virtual-network-deny-all",
+                    "resources": {
+                        "action": {
+                            "action": "DENY"
+                        },
+                        "destination": {
+                            "address_type": "ALL"
+                        },
+                        "priority": 1,
+                        "protocol_type": "ALL",
+                        "source": {
+                            "address_type": "ALL"
+                        },
+                        "vpc_reference": {
+                            "kind": "vpc",
+                            "uuid": "7ee05b9d-4021-4f57-8a03-df9503adea9d"
+                        }
+                    }
+                },
+                "status": {
+                    "name": "virtual-network-deny-all",
+                    "resources": {
+                        "action": {
+                            "action": "DENY"
+                        },
+                        "destination": {
+                            "address_type": "ALL"
+                        },
+                        "priority": 1,
+                        "protocol_type": "ALL",
+                        "routing_policy_counters": {
+                            "byte_count": 0,
+                            "packet_count": 0
+                        },
+                        "source": {
+                            "address_type": "ALL"
+                        },
+                        "vpc_reference": {
+                            "kind": "vpc",
+                            "name": "integration_test_vpc",
+                            "uuid": "7ee05b9d-4021-4f57-8a03-df9503adea9d"
+                        }
+                    },
+                    "state": "COMPLETE"
+                }
+            }
+        ],
+        }
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
@@ -51,12 +160,9 @@ def get_module_spec():
     return module_args
 
 
-def list_vm(module, result):
+def list_pbr(module, result):
     pbr = Pbr(module)
     spec, error = pbr.get_info_spec()
-    if error:
-        result["error"] = error
-        module.fail_json(msg="Failed generating filter Spec", **result)
 
     if module.check_mode:
         result["response"] = spec
@@ -84,10 +190,10 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
-        "vm_uuid": None,
+        "pbr_uuid": None,
         "task_uuid": None,
     }
-    list_vm(module, result)
+    list_pbr(module, result)
 
     module.exit_json(**result)
 

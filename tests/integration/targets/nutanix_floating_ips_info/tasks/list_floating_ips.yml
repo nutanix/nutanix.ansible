@@ -20,12 +20,9 @@
   ntnx_floating_ips_info:
     length: 1
     offset: 0
+  check_mode: true
   register: result
   ignore_errors: True
-
-- name: Show result
-  debug:
-    msg: "{{ result.response.entities | map(attribute='status.resources.floating_ip') }}"
 
 - name: Listing Status
   assert:
@@ -52,25 +49,3 @@
     fail_msg: " Unable to list floating_ips "
     success_msg: " Floatong_ips listed successfully "
 #############################################################
-- name: List floting ips using descending and length and filter name
-  ntnx_floating_ips_info:
-    sort_order: "DESCENDING"
-    sort_attribute: "floating_ip"
-    length: 10
-    offset: 0
-    kind: floating_ip
-    filter: "floating_ip==192."
-  register: result
-  ignore_errors: True
-
-- name: Show result
-  debug:
-    msg: "{{ result.response.entities | map(attribute='spec.name') }}"
-
-- name: Listing Status
-  assert:
-    that:
-      - result.response is defined
-    fail_msg: " Unable to list floating_ips "
-    success_msg: " floating_ips listed successfully "
-####################################################
