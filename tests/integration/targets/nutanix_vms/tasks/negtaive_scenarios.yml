@@ -216,13 +216,14 @@
     register: result
     ignore_errors: True
 
+
+
   - name: Creation Status
     assert:
       that:
         - result.response is defined
         - result.failed == True
         - result.msg == "Failed generating VM Spec"
-        - result.error == "File not found: cloud_init.yml"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail: VM created successfully with image size is less than actual '
 #################################################################################
