@@ -260,9 +260,6 @@ def create_vpc(module, result):
 
 def delete_vpc(module, result):
     vpc_uuid = module.params["vpc_uuid"]
-    if not vpc_uuid:
-        result["error"] = "Missing parameter vpc_uuid in playbook"
-        module.fail_json(msg="Failed deleting vpc", **result)
 
     vpc = Vpc(module)
     resp, status = vpc.delete(vpc_uuid)

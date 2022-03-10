@@ -582,9 +582,6 @@ def create_subnet(module, result):
 
 def delete_subnet(module, result):
     subnet_uuid = module.params["subnet_uuid"]
-    if not subnet_uuid:
-        result["error"] = "Missing parameter subnet_uuid in playbook"
-        module.fail_json(msg="Failed deleting subnet", **result)
 
     subnet = Subnet(module)
     resp, status = subnet.delete(subnet_uuid)
