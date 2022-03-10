@@ -1,0 +1,9 @@
+---
+- module_defaults:
+    group/nutanix.ncp.ntnx:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: "{{ validate_certs }}"
+  block:
+    - import_tasks: "list_floating_ips.yml"

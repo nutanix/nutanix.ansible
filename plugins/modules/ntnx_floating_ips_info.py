@@ -10,52 +10,115 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_floating_ips_info
-short_description: 
+short_description: Floting ips info module
 version_added: 1.0.0
-description: 'Create, Update, Delete, Power-on, Power-off Nutanix VM''s'
+description: 'Get floating_ip info'
 options:
-  nutanix_host:
-    description:
-      - Prism central hostname or IP address
-      - C(nutanix_host). If not set then the value of the C(NUTANIX_HOST), environment variable is used.
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - Prism central port
-      - C(nutanix_port). If not set then the value of the C(NUTANIX_PORT), environment variable is used.
-    type: str
-    default: 9440
-  nutanix_username:
-    description:
-      - Prism central username
-      - C(nutanix_username). If not set then the value of the C(NUTANIX_USERNAME), environment variable is used.
-    type: str
-    required: true
-  nutanix_password:
-    description:
-      - Prism central password
-      - C(nutanix_password). If not set then the value of the C(NUTANIX_PASSWORD), environment variable is used.
-    required: true
-    type: str
-  validate_certs:
-    description:
-        - Set value to C(False) to skip validation for self signed certificates
-        - This is not recommended for production setup
-        - C(validate_certs). If not set then the value of the C(VALIDATE_CERTS), environment variable is used.
-    type: bool
-    default: true
+      kind:
+        description:
+          - The kind name
+        type: str
+        default: floating_ip
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_info
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
  - Dina AbuHijleh (@dina-abuhijleh)
 """
-
 EXAMPLES = r"""
-"""
+  - name: List pbrs using ip starts with 10 filter criteria
+    ntnx_floating_ips_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      filter: "floating_ip==10."
+      kind: floating_ip
+    register: result
 
+  - name: List pbrs using length, offset, sort order and floating_ip sort attribute
+    ntnx_floating_ips_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      length: 3
+      offset: 0
+      sort_order: "DESCENDING"
+      sort_attribute: "floating_ip"
+    register: result
+
+"""
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: Metadata for floating_ip list output
+  returned: always
+  type: dict
+  sample: {
+    "metadata": {
+            "filter": "floating_ip==10.*",
+            "kind": "floating_ip",
+            "length": 1,
+            "offset": 0,
+            "total_matches": 1
+        }
+        }
+entities:
+  description: Floating_ip intent response
+  returned: always
+  type: list
+  sample: {
+    "entities": [
+            {
+                "metadata": {
+                    "categories": {},
+                    "categories_mapping": {},
+                    "creation_time": "2022-03-09T10:13:58Z",
+                    "kind": "floating_ip",
+                    "last_update_time": "2022-03-09T10:14:00Z",
+                    "owner_reference": {
+                        "kind": "user",
+                        "name": "admin",
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec_version": 0,
+                    "uuid": "d578ce7a-7610-4581-b815-f44476b3613e"
+                },
+                "spec": {
+                    "resources": {
+                        "external_subnet_reference": {
+                            "kind": "subnet",
+                            "uuid": "946d59d1-65fe-48cc-9882-e93439404e89"
+                        }
+                    }
+                },
+                "status": {
+                    "execution_context": {
+                        "task_uuids": [
+                            "739eb335-db26-472c-a27f-d9dd10de8241"
+                        ]
+                    },
+                    "name": "",
+                    "resources": {
+                        "external_subnet_reference": {
+                            "kind": "subnet",
+                            "uuid": "946d59d1-65fe-48cc-9882-e93439404e89"
+                        },
+                        "floating_ip": "10.44.3.203"
+                    },
+                    "state": "COMPLETE"
+                }
+            }
+        ],
+        }
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
@@ -74,12 +137,9 @@ def get_module_spec():
     return module_args
 
 
-def list_vm(module, result):
+def list_fip(module, result):
     floating_ip = FloatingIP(module)
     spec, error = floating_ip.get_info_spec()
-    if error:
-        result["error"] = error
-        module.fail_json(msg="Failed generating filter Spec", **result)
 
     if module.check_mode:
         result["response"] = spec
@@ -95,16 +155,22 @@ def list_vm(module, result):
 
 
 def run_module():
-    module = BaseInfoModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseInfoModule(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+        required_together=[
+            ("sort_order", "sort_attribute"),
+        ],
+    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
         "error": None,
         "response": None,
-        "vm_uuid": None,
+        "fip_uuid": None,
         "task_uuid": None,
     }
-    list_vm(module, result)
+    list_fip(module, result)
 
     module.exit_json(**result)
 

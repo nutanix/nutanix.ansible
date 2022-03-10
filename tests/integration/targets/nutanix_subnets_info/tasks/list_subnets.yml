@@ -1,0 +1,52 @@
+- name: List subnets using subnet_type filter criteria
+  ntnx_subnets_info:
+    filter: "subnet_type==VLAN"
+    kind: subnet
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='status.name') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list subnets "
+    success_msg: " Subnets listed successfully "
+##########################################################
+- name: List subnets using length and offset
+  ntnx_subnets_info:
+    length: 1
+    offset: 2
+  check_mode: true
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list subnets "
+    success_msg: " Subnets listed successfully "
+#########################################################
+- name: List subnets using ascending vlan_id sorting
+  ntnx_subnets_info:
+    sort_order: "ASCENDING"
+    sort_attribute: "vlan_id"
+    kind: subnet
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='status.name') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list subnets "
+    success_msg: " Subnets listed successfully "
+#########################################################

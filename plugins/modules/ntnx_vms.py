@@ -680,10 +680,10 @@ task_uuid:
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
-from ..module_utils.utils import (
+from ..module_utils.utils import (  # noqa: E402
     remove_param_with_none_value,
     strip_extra_attrs_from_status,
-)  # noqa: E402
+)
 
 
 def get_module_spec():
