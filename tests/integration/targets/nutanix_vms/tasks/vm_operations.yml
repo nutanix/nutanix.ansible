@@ -111,7 +111,7 @@
       networks:
         - is_connected: true
           subnet:
-            uuid: "{{ network.dhcp.uuid }}"
+            name: vlan.800
   register: result
   ignore_errors: true
 
@@ -191,7 +191,7 @@
       networks:
         - is_connected: true
           subnet:
-            uuid: "{{ network.dhcp.uuid }}"
+            name: vlan.800
   register: result
   ignore_errors: true
   
@@ -212,7 +212,7 @@
       networks:
         - is_connected: true
           subnet:
-            uuid: "{{ network.dhcp.uuid }}"
+            name: vlan.800
   register: result
   ignore_errors: true
   check_mode: yes
@@ -253,7 +253,7 @@
       networks:
         - is_connected: true
           subnet:
-            uuid: "{{ network.dhcp.uuid }}"
+            name: vlan.800
       guest_customization:
         type: "cloud_init"
         script_path: "./cloud_init.yml"
