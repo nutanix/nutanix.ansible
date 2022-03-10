@@ -56,3 +56,39 @@
       state: absent
       vm_uuid: "{{output.vm_uuid}}"
       register: output
+
+###### VM OPERATIONS ########
+
+  - name: hard power off the vm
+    ntnx_vms:
+        state: present
+        vm_uuid: "{{ vm_uuid }}"
+        operations: hard_poweroff
+    register: result
+    ignore_errors: true
+    
+  - name: create_ova_image  while vm is on
+    ntnx_vms:
+        state: present
+        vm_uuid: "{{ vm_uuid }}"
+        operations: create_ova_image
+        ova_name: integration_test_VMDK_ova
+        ova_file_format: VMDK
+        wait: true
+    register: result
+    ignore_errors: true
+  - name: clone vm while it's off and add network and script 
+    ntnx_vms:
+        state: present
+        vm_uuid: "{{ vm_uuid }}"
+        operations: clone
+        networks:
+          - is_connected: true
+            subnet:
+              name: "{{ subnet_name }}"
+        guest_customization:
+          type: "cloud_init"
+          script_path: "{{ script_path }}"
+          is_overridable: True
+    register: result
+    ignore_errors: true
