@@ -9,8 +9,8 @@ import os
 from copy import deepcopy
 
 from .clusters import Cluster
-from .groups import Groups
-from .images import Image
+from .groups import get_entity_uuid
+from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
 from .subnets import Subnet
@@ -39,6 +39,8 @@ class VM(Prism):
 
     def get_clone_spec(self):
         spec, error = self.get_spec({"spec": {"resources": {}}})
+        if error:
+            return spec, error
         spec["spec"].update(spec["spec"].pop("resources", {}))
         spec["spec"].pop("hardware_clock_timezone")
         spec = {"override_spec": spec["spec"]}
@@ -262,34 +264,21 @@ class VM(Prism):
 
                 if vdisk.get("storage_container"):
                     disk.pop("data_source_reference")
-                    if vdisk["storage_container"].get("name"):
-                        groups = Groups(self.module)
-                        name = vdisk["storage_container"]["name"]
-                        uuid = groups.get_uuid(
-                            value=name,
-                            key="container_name",
-                            entity_type="storage_container",
-                        )
-                        if not uuid:
-                            error = "Storage container {0} not found.".format(name)
-                            return None, error
-
-                    elif vdisk["storage_container"].get("uuid"):
-                        uuid = vdisk["storage_container"]["uuid"]
+                    uuid, error = get_entity_uuid(
+                        vdisk["storage_container"],
+                        self.module,
+                        key="container_name",
+                        entity_type="storage_container",
+                    )
+                    if error:
+                        return None, error
 
                     disk["storage_config"]["storage_container_reference"]["uuid"] = uuid
 
                 elif vdisk.get("clone_image"):
-                    if "name" in vdisk["clone_image"]:
-                        image = Image(self.module)
-                        name = vdisk["clone_image"]["name"]
-                        uuid = image.get_uuid(name)
-                        if not uuid:
-                            error = "Image {0} not found.".format(name)
-                            return None, error
-
-                    elif "uuid" in vdisk["clone_image"]:
-                        uuid = vdisk["clone_image"]["uuid"]
+                    uuid, error = get_image_uuid(vdisk["clone_image"], self.module)
+                    if error:
+                        return None, error
 
                     disk["data_source_reference"]["uuid"] = uuid
 
