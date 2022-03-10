@@ -55,7 +55,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: hard_poweroff
+      operation: hard_poweroff
   register: result
   ignore_errors: true
 
@@ -71,7 +71,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: on
+      operation: on
   register: result
   ignore_errors: true
 
@@ -87,7 +87,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: on
+      operation: on
   register: result
   ignore_errors: true
 
@@ -103,7 +103,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       wait: true
       vcpus: 2
       cores_per_vcpu: 2
@@ -128,7 +128,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: create_ova_image
+      operation: create_ova_image
       ova_name: integration_test_VMDK_ova
       ova_file_format: VMDK
       wait: true
@@ -147,7 +147,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: create_ova_image
+      operation: create_ova_image
       ova_name: integration_test_VMDK_ova
       ova_file_format: VMDK
       wait: true
@@ -169,7 +169,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: soft_shutdown
+      operation: soft_shutdown
       wait: true
   register: result
   ignore_errors: true
@@ -186,7 +186,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       wait: true
       networks:
         - is_connected: true
@@ -207,7 +207,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       wait: true
       networks:
         - is_connected: true
@@ -231,7 +231,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: create_ova_image
+      operation: create_ova_image
       ova_name: integration_test_QCOW2_ova
       ova_file_format: QCOW2
   register: result
@@ -249,7 +249,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       networks:
         - is_connected: true
           subnet:
@@ -273,7 +273,7 @@
 - name: try clone vm with disk 
   ntnx_vms:
       state: present
-      operations: clone
+      operation: clone
       vm_uuid: "{{vm.vm_uuid}}"
       disks:
         - type: DISK
@@ -297,7 +297,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       wait: true
       networks:
         - is_connected: true

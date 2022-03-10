@@ -248,7 +248,7 @@ options:
       - categories to be attached to the VM.
     type: dict
     required: false
-  operations:
+  operation:
     description:
       - The opperation on the vm
     type: str
@@ -442,7 +442,7 @@ EXAMPLES = r"""
       nutanix_password: "{{ password }}"
       validate_certs: False
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: hard_poweroff
+      operation: hard_poweroff
 
   - name: power on the vm
     ntnx_vms:
@@ -452,7 +452,7 @@ EXAMPLES = r"""
       nutanix_password: "{{ password }}"
       validate_certs: False
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: on
+      operation: on
 
   - name: soft shut down the vm
     ntnx_vms:
@@ -462,7 +462,7 @@ EXAMPLES = r"""
       nutanix_password: "{{ password }}"
       validate_certs: False
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: soft_shutdown
+      operation: soft_shutdown
       wait: true
 
   - name: create VMDK ova_image
@@ -473,7 +473,7 @@ EXAMPLES = r"""
         nutanix_password: "{{ password }}"
         validate_certs: False
         vm_uuid: "{{ vm.vm_uuid }}"
-        operations: create_ova_image
+        operation: create_ova_image
         ova_name: ova_image_name
         ova_file_format: VMDK
         wait: true
@@ -486,7 +486,7 @@ EXAMPLES = r"""
         nutanix_password: "{{ password }}"
         validate_certs: False
         vm_uuid: "{{ vm.vm_uuid }}"
-        operations: create_ova_image
+        operation: create_ova_image
         ova_name: ova_image_name
         ova_file_format: QCOW2
         wait: true
@@ -499,7 +499,7 @@ EXAMPLES = r"""
         nutanix_password: "{{ password }}"
         validate_certs: False
         vm_uuid: "{{ vm.vm_uuid }}"
-        operations: clone
+        operation: clone
         wait: true
         networks:
           - is_connected: true
@@ -881,7 +881,7 @@ def get_module_spec():
         guest_customization=dict(type="dict", options=gc_spec),
         timezone=dict(type="str", default="UTC"),
         categories=dict(type="dict"),
-        operations=dict(
+        operation=dict(
             type="str",
             choices=[
                 "soft_shutdown",
@@ -996,7 +996,7 @@ def clone_vm(module, result):
 
     result["changed"] = True
     result["response"] = resp
-    result["vm_uuid"] = vm_uuid
+    # result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["task_uuid"]
 
     if module.params.get("wait"):
@@ -1103,6 +1103,8 @@ def wait_for_task_completion(module, result):
     task_uuid = result["task_uuid"]
     resp, status = task.wait_for_completion(task_uuid)
     result["response"] = resp
+    if not result.get("vm_uuid") and resp.get("entity_reference_list"):
+        result["vm_uuid"] = resp["entity_reference_list"][0]["uuid"]
     if status["error"]:
         result["error"] = status["error"]
         result["response"] = resp
@@ -1116,9 +1118,9 @@ def run_module():
         required_if=[
             ("vm_uuid", None, ("name",)),
             ("state", "absent", ("vm_uuid",)),
-            ("operations", "create_ova_image", ("ova_name", "ova_file_format")),
+            ("operation", "create_ova_image", ("ova_name", "ova_file_format")),
         ],
-        required_by={"operations": "vm_uuid"},
+        required_by={"operation": "vm_uuid"},
     )
     remove_param_with_none_value(module.params)
     result = {
@@ -1131,7 +1133,7 @@ def run_module():
     state = module.params["state"]
     if state == "present":
         if module.params.get("vm_uuid"):
-            operation = module.params.get("operations")
+            operation = module.params.get("operation")
             if operation == "clone":
                 clone_vm(module, result)
             elif "pause_replication" in operation:

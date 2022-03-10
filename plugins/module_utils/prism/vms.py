@@ -34,7 +34,7 @@ class VM(Prism):
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
             "categories": self._build_spec_categories,
-            "operations": self._build_spec_for_operation,
+            "operation": self._build_spec_for_operation,
         }
 
     def get_clone_spec(self):
@@ -59,7 +59,7 @@ class VM(Prism):
 
     def _replication(self):
         endpoint = "{0}/{1}".format(
-            self.module.params["vm_uuid"], self.module.params["operations"]
+            self.module.params["vm_uuid"], self.module.params["operation"]
         )
         resp, status = self.create(endpoint=endpoint)
         return resp, status
@@ -89,7 +89,7 @@ class VM(Prism):
                         "num_sockets": 1,
                         "num_vcpus_per_socket": 1,
                         "memory_size_mib": 4096,
-                        "power_state": "ON",
+                        "power_state": "OFF",
                         "disk_list": [],
                         "nic_list": [],
                         "gpu_list": [],
