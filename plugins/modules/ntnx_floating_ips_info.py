@@ -38,7 +38,7 @@ EXAMPLES = r"""
       filter: "floating_ip==10."
       kind: floating_ip
     register: result
-    
+
   - name: List pbrs using length, offset, sort order and floating_ip sort attribute
     ntnx_floating_ips_info:
       nutanix_host: "{{ ip }}"
@@ -60,7 +60,7 @@ api_version:
   sample: "3.1"
 metadata:
   description: Metadata for floating_ip list output
-  returned: always 
+  returned: always
   type: dict
   sample: {
     "metadata": {
@@ -71,7 +71,7 @@ metadata:
             "total_matches": 1
         }
         }
-entities: 
+entities:
   description: Floating_ip intent response
   returned: always
   type: list

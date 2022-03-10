@@ -38,7 +38,7 @@ EXAMPLES = r"""
       filter: "vm_name=={{ vm.name }}"
       kind: vm
     register: result
-    
+
   - name: List VMS using length, offset, sort order and vm_name sort attribute
     ntnx_vms_info:
       nutanix_host: "{{ ip }}"
@@ -60,7 +60,7 @@ api_version:
   sample: "3.1"
 metadata:
   description: Metadata for vm list output
-  returned: always 
+  returned: always
   type: dict
   sample: {
     "metadata": {
@@ -72,7 +72,7 @@ metadata:
             "total_matches": 11
         }
         }
-entities: 
+entities:
   description: VM intent response
   returned: always
   type: list

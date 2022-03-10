@@ -38,7 +38,7 @@ EXAMPLES = r"""
       filter: "subnet_type=={{ subnet.type }}"
       kind: subnet
     register: result
-    
+
   - name: List subnets using length, offset, sort order and sort attribute
     ntnx_subnets_info:
       nutanix_host: "{{ ip }}"
@@ -60,7 +60,7 @@ api_version:
   sample: "3.1"
 metadata:
   description: Metadata for subnet list output
-  returned: always 
+  returned: always
   type: dict
   sample: {
     "metadata": {
@@ -71,7 +71,7 @@ metadata:
             "total_matches": 4
         }
     }
-entities: 
+entities:
   description: Subnet intent response
   returned: always
   type: list

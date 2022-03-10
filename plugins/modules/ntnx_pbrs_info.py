@@ -38,7 +38,7 @@ EXAMPLES = r"""
       filter: "priority==2"
       kind: routing_policy
     register: result
-    
+
   - name: List pbrs using length, offset, sort order and priority sort attribute
     ntnx_pbrs_info:
       nutanix_host: "{{ ip }}"
@@ -60,7 +60,7 @@ api_version:
   sample: "3.1"
 metadata:
   description: Metadata for pbrs list output
-  returned: always 
+  returned: always
   type: dict
   sample: {
     "metadata": {
@@ -72,7 +72,7 @@ metadata:
             "total_matches": 6
         }
         }
-entities: 
+entities:
   description: PBR intent response
   returned: always
   type: list

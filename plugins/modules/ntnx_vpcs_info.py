@@ -38,7 +38,7 @@ EXAMPLES = r"""
       filter: "name=={{ vpc.name }}"
       kind: vpc
     register: result
-    
+
   - name: List VPC using length, offset, sort order and name sort attribute
     ntnx_vpcs_info:
       nutanix_host: "{{ ip }}"
@@ -59,7 +59,7 @@ api_version:
   sample: "3.1"
 metadata:
   description: Metadata for vpc list output
-  returned: always 
+  returned: always
   type: dict
   sample: {
     "metadata": {
@@ -69,8 +69,8 @@ metadata:
             "sort_attribute": "name",
             "sort_order": "DESCENDING",
             "total_matches": 3
-        }
-entities: 
+        } }
+entities:
   description: VPC intent response
   returned: always
   type: list
@@ -140,7 +140,7 @@ entities:
                 }
             }
         ],
-        }    
+        }
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402

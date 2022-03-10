@@ -6,19 +6,8 @@
     external_subnets:
       - subnet_name: "{{ external_nat_subnet.name }}"
   register: result
+  check_mode: true
   ignore_errors: True
-
-- set_fact:
-    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create Min vpc with subnet name"
-    success_msg: " Min vpc with subnet name created successfully "
-
 ##########################################################
 - name: Create min VPC with external_nat_subnet uuid
   ntnx_vpcs:
@@ -27,6 +16,7 @@
     name: MinVPC
     external_subnets:
       - subnet_uuid: "{{ external_nat_subnet.uuid }}"
+  check_mode: false
   register: result
   ignore_errors: True
 
@@ -101,15 +91,10 @@
     state: present
     name: vpc_with_dns_servers
     dns_servers: "{{ dns_servers }}"
+    wait: false
   register: result
   ignore_errors: True
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create vpc with dns_servers "
-    success_msg: " VPC with dns_servers created successfully "
+
 
 - set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
