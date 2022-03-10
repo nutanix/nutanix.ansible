@@ -89,7 +89,7 @@ class VM(Prism):
                         "num_sockets": 1,
                         "num_vcpus_per_socket": 1,
                         "memory_size_mib": 4096,
-                        "power_state": "OFF",
+                        "power_state": "ON",
                         "disk_list": [],
                         "nic_list": [],
                         "gpu_list": [],
