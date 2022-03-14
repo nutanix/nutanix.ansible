@@ -1,6 +1,8 @@
 - debug:
     msg: Start testing VM with different opperations
 
+- set_fact:
+      todelete: []
 - name: VM with minimum requiremnts
   ntnx_vms:
       state: present
@@ -55,7 +57,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: hard_poweroff
+      operation: hard_poweroff
   register: result
   ignore_errors: true
 
@@ -71,7 +73,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: on
+      operation: on
   register: result
   ignore_errors: true
 
@@ -87,7 +89,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: on
+      operation: on
   register: result
   ignore_errors: true
 
@@ -103,7 +105,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       wait: true
       vcpus: 2
       cores_per_vcpu: 2
@@ -111,7 +113,7 @@
       networks:
         - is_connected: true
           subnet:
-            name: vlan.800
+            name: "{{ network.dhcp.name }}"
   register: result
   ignore_errors: true
 
@@ -122,13 +124,15 @@
       - result.response.status.state == 'COMPLETE'
     fail_msg: ' Unable to clone vm while it is on '
     success_msg: ' VM cloned  successfully '
-    
+
+- set_fact:
+      todelete: '{{ todelete + [  result.vm_uuid ] }}'
 ###########################################
 - name: create_ova_image  while vm it's on
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: create_ova_image
+      operation: create_ova_image
       ova_name: integration_test_VMDK_ova
       ova_file_format: VMDK
       wait: true
@@ -147,7 +151,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: create_ova_image
+      operation: create_ova_image
       ova_name: integration_test_VMDK_ova
       ova_file_format: VMDK
       wait: true
@@ -169,7 +173,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: soft_shutdown
+      operation: soft_shutdown
       wait: true
   register: result
   ignore_errors: true
@@ -186,12 +190,12 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       wait: true
       networks:
         - is_connected: true
           subnet:
-            name: vlan.800
+            name: "{{ network.dhcp.name }}"
   register: result
   ignore_errors: true
   
@@ -202,17 +206,20 @@
       - result.response.status.state == 'COMPLETE'
     fail_msg: ' Unable to clone vm while it is off '
     success_msg: ' VM cloned  successfully '
+
+- set_fact:
+      todelete: '{{ todelete + [  result.vm_uuid ] }}'
 ###########################################
 - name: clone vm while it's off with check mode
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       wait: true
       networks:
         - is_connected: true
           subnet:
-            name: vlan.800
+            name: "{{ network.dhcp.name }}"
   register: result
   ignore_errors: true
   check_mode: yes
@@ -231,7 +238,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: create_ova_image
+      operation: create_ova_image
       ova_name: integration_test_QCOW2_ova
       ova_file_format: QCOW2
   register: result
@@ -249,11 +256,11 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       networks:
         - is_connected: true
           subnet:
-            name: vlan.800
+            name: "{{ network.dhcp.name }}"
       guest_customization:
         type: "cloud_init"
         script_path: "./cloud_init.yml"
@@ -268,12 +275,15 @@
       - result.response.status.state == 'COMPLETE'
     fail_msg: ' Unable to clone vm while it is off '
     success_msg: ' VM cloned  successfully '
+
+- set_fact:
+      todelete: '{{ todelete + [  result.vm_uuid ] }}'
 ###########################################
 
 - name: try clone vm with disk 
   ntnx_vms:
       state: present
-      operations: clone
+      operation: clone
       vm_uuid: "{{vm.vm_uuid}}"
       disks:
         - type: DISK
@@ -297,7 +307,7 @@
   ntnx_vms:
       state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operations: clone
+      operation: clone
       wait: true
       networks:
         - is_connected: true
@@ -315,7 +325,18 @@
     fail_msg: ' Fail cloned vm with unknown network name'
     success_msg: ' Returned error as expected'
 ###############################
-- name: Delete VM
+- name: Delete all Created VMs 
   ntnx_vms:
-    vm_uuid: '{{ vm.vm_uuid }}'
-    state: absent
+      state: absent
+      vm_uuid: '{{ item }}'
+  register: result
+  loop: '{{ todelete }}'
+
+- name: Delete all Created VMs 
+  ntnx_vms:
+      state: absent
+      vm_uuid: '{{ vm.vm_uuid }}'
+  register: result
+
+- set_fact:
+      todelete: []

@@ -216,13 +216,13 @@
     register: result
     ignore_errors: True
 
+
+
   - name: Creation Status
     assert:
       that:
         - result.response is defined
         - result.failed == True
-        - result.msg == "Failed generating VM Spec"
-        - result.error == "File not found: cloud_init.yml"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail: VM created successfully with image size is less than actual '
 #################################################################################
@@ -247,8 +247,6 @@
       that:
         - result.response is defined
         - result.failed == True
-        - result.msg == "Failed generating VM Spec"
-        - result.error == "Storage container storage not found."
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with unknown storage container name '
 ################################################################################# 
@@ -264,9 +262,6 @@
       that:
         - result.response is defined
         - result.failed == True
-        - result.status_code == 400
-        - result.error == "HTTP Error 400: BAD REQUEST"
-        - result.response.state == 'ERROR'
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail deleting VM with unknown uuid '
 #################################################################################
@@ -280,6 +275,5 @@
     assert:
       that:
         - result.failed == True
-        - result.msg == "state is absent but all of the following are missing: vm_uuid"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail deleting VM with missing uuid '

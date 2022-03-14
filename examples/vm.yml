@@ -63,7 +63,7 @@
     ntnx_vms:
         state: present
         vm_uuid: "{{ vm_uuid }}"
-        operations: hard_poweroff
+        operation: hard_poweroff
     register: result
     ignore_errors: true
     
@@ -71,7 +71,7 @@
     ntnx_vms:
         state: present
         vm_uuid: "{{ vm_uuid }}"
-        operations: create_ova_image
+        operation: create_ova_image
         ova_name: integration_test_VMDK_ova
         ova_file_format: VMDK
         wait: true
@@ -81,7 +81,7 @@
     ntnx_vms:
         state: present
         vm_uuid: "{{ vm_uuid }}"
-        operations: clone
+        operation: clone
         networks:
           - is_connected: true
             subnet:

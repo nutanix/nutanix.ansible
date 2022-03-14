@@ -34,7 +34,7 @@ class VM(Prism):
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
             "categories": self._build_spec_categories,
-            "operations": self._build_spec_for_operation,
+            "operation": self._build_spec_for_operation,
         }
 
     def get_clone_spec(self):
@@ -49,19 +49,6 @@ class VM(Prism):
     def clone(self, spec):
         endpoint = "{0}/clone".format(self.module.params["vm_uuid"])
         resp, status = self.create(spec, endpoint)
-        return resp, status
-
-    def pause_replication(self):
-        return self._replication()
-
-    def resume_replication(self):
-        return self._replication()
-
-    def _replication(self):
-        endpoint = "{0}/{1}".format(
-            self.module.params["vm_uuid"], self.module.params["operations"]
-        )
-        resp, status = self.create(endpoint=endpoint)
         return resp, status
 
     def get_ova_image_spec(self):

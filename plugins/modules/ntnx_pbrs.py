@@ -505,9 +505,6 @@ def create_pbr(module, result):
 
 def delete_pbr(module, result):
     pbr_uuid = module.params["pbr_uuid"]
-    if not pbr_uuid:
-        result["error"] = "Missing parameter pbr_uuid in playbook"
-        module.fail_json(msg="Failed deleting pbr", **result)
 
     pbr = Pbr(module)
     resp, status = pbr.delete(pbr_uuid)
