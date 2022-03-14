@@ -51,19 +51,6 @@ class VM(Prism):
         resp, status = self.create(spec, endpoint)
         return resp, status
 
-    def pause_replication(self):
-        return self._replication()
-
-    def resume_replication(self):
-        return self._replication()
-
-    def _replication(self):
-        endpoint = "{0}/{1}".format(
-            self.module.params["vm_uuid"], self.module.params["operation"]
-        )
-        resp, status = self.create(endpoint=endpoint)
-        return resp, status
-
     def get_ova_image_spec(self):
         return deepcopy(
             {

@@ -258,8 +258,6 @@ options:
         - "on"
         - "clone"
         - "create_ova_image"
-        - "pause_replication"
-        - "resume_replication"
   ova_name:
     description:
       - to-write
@@ -889,8 +887,6 @@ def get_module_spec():
                 "on",
                 "clone",
                 "create_ova_image",
-                "pause_replication",
-                "resume_replication",
             ],
         ),
         ova_name=dict(type="str"),
@@ -1005,50 +1001,6 @@ def clone_vm(module, result):
         result["response"] = resp
 
 
-def pause_replication(module, result):
-    vm_uuid = module.params["vm_uuid"]
-
-    vm = VM(module)
-    result["vm_uuid"] = vm_uuid
-
-    resp, status = vm.pause_replication()
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed to pause replication", **result)
-
-    result["changed"] = True
-    result["response"] = resp
-    result["task_uuid"] = resp["task_uuid"]
-
-    if module.params.get("wait"):
-        wait_for_task_completion(module, result)
-        resp, tmp = vm.read(vm_uuid)
-        result["response"] = resp
-
-
-def resume_replication(module, result):
-    vm_uuid = module.params["vm_uuid"]
-
-    vm = VM(module)
-    result["vm_uuid"] = vm_uuid
-
-    resp, status = vm.resume_replication()
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed to resume replication", **result)
-
-    result["changed"] = True
-    result["response"] = resp
-    result["task_uuid"] = resp["task_uuid"]
-
-    if module.params.get("wait"):
-        wait_for_task_completion(module, result)
-        resp, tmp = vm.read(vm_uuid)
-        result["response"] = resp
-
-
 def create_ova_image(module, result):
     vm_uuid = module.params["vm_uuid"]
 
@@ -1136,10 +1088,6 @@ def run_module():
             operation = module.params.get("operation")
             if operation == "clone":
                 clone_vm(module, result)
-            elif "pause_replication" in operation:
-                pause_replication(module, result)
-            elif "resume_replication" in operation:
-                resume_replication(module, result)
             elif operation == "create_ova_image":
                 create_ova_image(module, result)
             else:
