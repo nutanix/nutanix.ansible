@@ -66,6 +66,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
+      - result.response.status.resources.power_state == 'OFF'
     fail_msg: ' Unable to hard power off the vm '
     success_msg: ' VM powerd off successfully '
 # ###########################################
@@ -82,6 +83,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
+      - result.response.status.resources.power_state == 'ON'
     fail_msg: ' Unable to power on vm '
     success_msg: ' VM powerd on successfully '
 ##########################################
