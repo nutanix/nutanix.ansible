@@ -524,3 +524,76 @@
       vm_uuid: '{{ item }}'
     register: result
     loop: '{{ todelete }}'
+
+########################### UPDATE_VM ################################
+  - name: VM with minimum requiremnts to update
+    ntnx_vms:
+      state: present
+      name: update vm
+      cluster:
+        name: "{{ cluster.name }}"
+    register: result
+    ignore_errors: true
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+        - result.vm_uuid
+      fail_msg: ' Unable to create VM with minimum requiremnts '
+      success_msg: ' VM with minimum requiremnts created successfully '
+
+  - name: Update VM
+    ntnx_vms:
+      vm_uuid: "{{ result.vm_uuid }}"
+      name: updated
+      desc: updated
+      categories:
+        AppType:
+          - Apache_Spark
+      disks:
+        - type: "DISK"
+          clone_image: 
+            name: "{{ ubuntu }}"
+          bus: "SCSI"
+          size_gb: 20
+        - type: DISK
+          size_gb: 3
+          bus: PCI
+        - type: DISK
+          size_gb: 1
+          bus: SCSI
+          storage_container:
+            uuid: "{{ storage_container.uuid }}"
+      networks:
+        - is_connected: true
+          subnet:
+            uuid: "{{ network.dhcp.uuid }}"
+        - is_connected: false
+          subnet:
+            uuid: "{{ static.uuid }}"
+          private_ip: "{{ network.static.ip }}"
+    register: result
+
+  - name: Update VM by deleting and editing a disk
+    ntnx_vms:
+      vm_uuid: "{{ result.vm_uuid }}"
+      name: updated
+      desc: updated
+      categories:
+        AppType:
+          - Apache_Spark
+      disks:
+        - type: "DISK"
+          uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+          size_gb: 30
+        - state: absent
+          uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+    register: result
+
+  - name: Update VM by deleting it
+    ntnx_vms:
+      state: absent
+      vm_uuid: "{{ result.vm_uuid }}"
+    register: result

@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_vms
-short_description: VM module which suports VM CRUD operations
+short_description: VM module which supports VM CRUD operations
 version_added: 1.0.0
-description: 'Create, Update, Delete, Power-on, Power-off Nutanix VM''s'
+description: "Create, Update, Delete, Power-on, Power-off Nutanix VM's"
 options:
   name:
     description: VM Name
@@ -80,11 +80,11 @@ options:
     suboptions:
       uuid:
         description:
-          - to-write
+          - Subnet's uuid
         type: str
       state:
         description:
-          - to-write
+          - Subnets's state to delete it
         type: str
         choices:
           - absent
@@ -122,11 +122,11 @@ options:
     suboptions:
       uuid:
         description:
-          - to-write
+          - Disk's uuid
         type: str
       state:
         description:
-          - to-write
+          - Disk's state to delete it
         type: str
         choices:
           - absent
@@ -260,11 +260,11 @@ options:
         - "create_ova_image"
   ova_name:
     description:
-      - to-write
+      - Name of the OVA
     type: str
   ova_file_format:
     description:
-      - to-write
+      - File format of disk in OVA
     type: str
     choices:
       - QCOW2

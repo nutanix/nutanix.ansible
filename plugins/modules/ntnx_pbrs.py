@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_pbrs
-short_description: pbr module which suports pbr CRUD operations
+short_description: pbr module which supports pbr CRUD operations
 version_added: 1.0.0
-description: 'Create, Update, Delete, Power-on, Power-off Nutanix pbr''s'
+description: "Create, Update, Delete Nutanix pbr's"
 options:
   priority:
     description: The policy priority number

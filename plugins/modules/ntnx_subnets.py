@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_subnets
-short_description: subnets module which suports subnet CRUD operations
+short_description: subnets module which supports subnet CRUD operations
 version_added: 1.0.0
 description: "Create, Update, Delete subnets"
 options:

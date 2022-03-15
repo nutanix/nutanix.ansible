@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_vpcs
-short_description: Virtual Private Cloud (VPC) module which suports vpc CRUD operations
+short_description: Virtual Private Cloud (VPC) module which supports vpc CRUD operations
 version_added: 1.0.0
 description: 'Create, Update, Delete vpcs'
 options:

@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_floating_ips
-short_description: floating_ips module which suports floating_ip CRUD operations
+short_description: floating_ips module which supports floating_ip CRUD operations
 version_added: 1.0.0
 description: 'Create, Update, Delete floating_ips'
 options:
