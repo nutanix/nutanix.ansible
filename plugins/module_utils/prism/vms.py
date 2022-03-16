@@ -16,6 +16,7 @@ from .projects import Project
 from .subnets import Subnet
 from ansible.module_utils.basic import _load_params
 
+
 class VM(Prism):
     def __init__(self, module):
         resource_type = "/vms"
@@ -182,7 +183,9 @@ class VM(Prism):
 
                 if network.get("state") == "absent":
                     continue
-                nic, error = self.filter_by_uuid(network["uuid"], self.params_without_defaults.get("networks", []))
+                nic, error = self.filter_by_uuid(
+                    network["uuid"], self.params_without_defaults.get("networks", [])
+                )
 
                 if error:
                     return None, error
@@ -231,7 +234,9 @@ class VM(Prism):
                 if vdisk.get("state") == "absent":
                     continue
 
-                vdisk, error = self.filter_by_uuid(vdisk["uuid"], self.params_without_defaults.get("disks", []))
+                vdisk, error = self.filter_by_uuid(
+                    vdisk["uuid"], self.params_without_defaults.get("disks", [])
+                )
 
                 if error:
                     return None, error
@@ -247,10 +252,16 @@ class VM(Prism):
             if bus:
                 disk["device_properties"]["disk_address"]["adapter_type"] = bus
                 index = device_indexes.get(bus, -1) + 1
-                existing_devise_indexes = list(map(lambda d: d["device_properties"]["disk_address"],payload["spec"]["resources"]["disk_list"]))
+                existing_devise_indexes = list(
+                    map(
+                        lambda d: d["device_properties"]["disk_address"],
+                        payload["spec"]["resources"]["disk_list"],
+                    )
+                )
                 while True:
                     if not existing_devise_indexes.count(
-                            {"adapter_type": bus, "device_index": index}):
+                        {"adapter_type": bus, "device_index": index}
+                    ):
                         device_indexes[bus] = index
                         break
                     index += 1
