@@ -8,13 +8,14 @@ import base64
 import os
 from copy import deepcopy
 
+from ansible.module_utils.basic import _load_params
+
 from .clusters import Cluster
 from .groups import get_entity_uuid
 from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
 from .subnets import Subnet
-from ansible.module_utils.basic import _load_params
 
 
 class VM(Prism):
