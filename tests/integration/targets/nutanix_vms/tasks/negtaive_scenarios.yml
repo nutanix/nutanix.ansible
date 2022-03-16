@@ -297,15 +297,17 @@
       vcpus: 2
       cores_per_vcpu: 1
       memory_gb: 1
-    register: result
+    register: vm
 
-  - name: VM with storage container
+  - name: Update vm
     ntnx_vms:
       state: present
-      vm_uuid: "{{ result.vm_uuid }}"
+      vm_uuid: "{{ vm.vm_uuid }}"
       name: VM with UEFI boot type
       timezone: GMT
-      
+    ignore_errors: true
+    register: result
+  
   - name: Updating Status
     assert:
       that:
@@ -316,6 +318,5 @@
   - name: Update VM by deleting it
     ntnx_vms:
       state: absent
-      vm_uuid: "{{ result.vm_uuid }}"
+      vm_uuid: "{{ vm.vm_uuid }}"
     register: result
-#####################################

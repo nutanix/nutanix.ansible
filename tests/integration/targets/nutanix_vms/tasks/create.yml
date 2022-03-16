@@ -586,12 +586,24 @@
           - Apache_Spark
       disks:
         - type: "DISK"
-          uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+          uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
           size_gb: 30
         - state: absent
-          uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+          uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
     register: result
-
+  
+  - name: Update VM by deleting a subnet
+    ntnx_vms:
+      vm_uuid: "{{ result.vm_uuid }}"
+      name: updated
+      desc: updated
+      categories:
+        AppType:
+          - Apache_Spark
+      networks:
+        - state: absent
+          uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+    register: result
   - name: Update VM by deleting it
     ntnx_vms:
       state: absent
