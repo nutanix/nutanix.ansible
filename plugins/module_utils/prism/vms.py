@@ -14,12 +14,13 @@ from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
 from .subnets import Subnet
-
+from ansible.module_utils.basic import _load_params
 
 class VM(Prism):
     def __init__(self, module):
         resource_type = "/vms"
         super(VM, self).__init__(module, resource_type=resource_type)
+        self.params_without_defaults = _load_params()
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -178,8 +179,13 @@ class VM(Prism):
                 if error:
                     return None, error
                 payload["spec"]["resources"]["nic_list"].remove(nic)
+
                 if network.get("state") == "absent":
                     continue
+                nic, error = self.filter_by_uuid(network["uuid"], self.params_without_defaults.get("networks", []))
+
+                if error:
+                    return None, error
             else:
                 nic = self._get_default_network_spec()
             if network.get("private_ip"):
@@ -220,9 +226,16 @@ class VM(Prism):
                 )
                 if error:
                     return None, error
+
                 payload["spec"]["resources"]["disk_list"].remove(disk)
                 if vdisk.get("state") == "absent":
                     continue
+
+                vdisk, error = self.filter_by_uuid(vdisk["uuid"], self.params_without_defaults.get("disks", []))
+
+                if error:
+                    return None, error
+
                 disk.pop("disk_size_mib")
             else:
                 disk = self._get_default_disk_spec()
@@ -230,16 +243,22 @@ class VM(Prism):
             if vdisk.get("type"):
                 disk["device_properties"]["device_type"] = vdisk["type"]
 
-            if vdisk.get("bus"):
-                if vdisk["bus"] in device_indexes:
-                    device_indexes[vdisk["bus"]] += 1
-                else:
-                    device_indexes[vdisk["bus"]] = 0
+            bus = vdisk.get("bus")
+            if bus:
+                disk["device_properties"]["disk_address"]["adapter_type"] = bus
+                index = device_indexes.get(bus, -1) + 1
+                existing_devise_indexes = list(map(lambda d: d["device_properties"]["disk_address"],payload["spec"]["resources"]["disk_list"]))
+                while True:
+                    if not existing_devise_indexes.count(
+                            {"adapter_type": bus, "device_index": index}):
+                        device_indexes[bus] = index
+                        break
+                    index += 1
 
                 disk["device_properties"]["disk_address"]["adapter_type"] = vdisk["bus"]
                 disk["device_properties"]["disk_address"][
                     "device_index"
-                ] = device_indexes[vdisk["bus"]]
+                ] = device_indexes[bus]
 
             if vdisk.get("empty_cdrom"):
                 disk.pop("data_source_reference")
