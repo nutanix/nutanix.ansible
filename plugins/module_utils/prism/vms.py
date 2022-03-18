@@ -23,6 +23,7 @@ class VM(Prism):
         resource_type = "/vms"
         super(VM, self).__init__(module, resource_type=resource_type)
         self.params_without_defaults = _load_params()
+        self.is_disk_changed = False
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -279,6 +280,8 @@ class VM(Prism):
             else:
                 if vdisk.get("size_gb"):
                     disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
+                    if disk.get("data_source_reference") and disk.get("uuid"):
+                        self.is_disk_changed = True
 
                 if vdisk.get("storage_container"):
                     disk.pop("data_source_reference")
@@ -381,6 +384,23 @@ class VM(Prism):
         except BaseException:
             error = "Entity {0} not found.".format(uuid)
             return None, error
+
+    def power_on(self, spec, uuid):
+        self._build_spec_for_operation(spec, "on")
+        resp, status = self.update(spec, uuid)
+        return resp, status
+
+    def check_special_attributes(self, spec):
+        special_attributes = ["memory_gb", "cores_per_vcpu", "vcpus"]
+
+        if (
+            set(self.module.params.keys()).intersection(set(special_attributes))
+            or self.is_disk_changed
+        ) and spec["spec"]["resources"]["power_state"] == "ON":
+            self._build_spec_for_operation(spec, "hard_poweroff")
+            return True
+
+        return False
 
 
 # Helper functions

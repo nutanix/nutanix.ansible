@@ -949,6 +949,8 @@ def update_vm(module, result):
     if module.check_mode:
         result["response"] = spec
         return
+
+    should_be_restart = vm.check_special_attributes(spec)
     resp, status = vm.update(spec, vm_uuid)
     if status["error"]:
         result["error"] = status["error"]
@@ -965,6 +967,15 @@ def update_vm(module, result):
         wait_for_task_completion(module, result)
         resp, tmp = vm.read(vm_uuid)
         result["response"] = resp
+
+    if should_be_restart:
+        spec = resp
+        spec.pop("status")
+        resp, status = vm.power_on(spec, vm_uuid)
+        if status["error"]:
+            result["error"] = status["error"]
+            result["second_response"] = resp
+            module.fail_json(msg="Failed restarting VM", **result)
 
 
 def clone_vm(module, result):
