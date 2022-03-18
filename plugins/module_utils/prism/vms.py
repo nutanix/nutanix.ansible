@@ -176,21 +176,19 @@ class VM(Prism):
         nics = []
         for network in networks:
             if network.get("uuid"):
-                nic, error = self.filter_by_uuid(
+                nic = self.filter_by_uuid(
                     network["uuid"], payload["spec"]["resources"]["nic_list"]
                 )
-                if error:
-                    return None, error
+
                 payload["spec"]["resources"]["nic_list"].remove(nic)
 
                 if network.get("state") == "absent":
                     continue
-                nic, error = self.filter_by_uuid(
+
+                network = self.filter_by_uuid(
                     network["uuid"], self.params_without_defaults.get("networks", [])
                 )
 
-                if error:
-                    return None, error
             else:
                 nic = self._get_default_network_spec()
             if network.get("private_ip"):
@@ -223,25 +221,25 @@ class VM(Prism):
     def _build_spec_disks(self, payload, vdisks):
         disks = []
         device_indexes = {}
-
+        existing_devise_indexes = list(
+            map(
+                lambda d: d["device_properties"]["disk_address"],
+                payload["spec"]["resources"]["disk_list"],
+            )
+        )
         for vdisk in vdisks:
             if vdisk.get("uuid"):
-                disk, error = self.filter_by_uuid(
+                disk = self.filter_by_uuid(
                     vdisk["uuid"], payload["spec"]["resources"]["disk_list"]
                 )
-                if error:
-                    return None, error
 
                 payload["spec"]["resources"]["disk_list"].remove(disk)
                 if vdisk.get("state") == "absent":
                     continue
 
-                vdisk, error = self.filter_by_uuid(
+                vdisk = self.filter_by_uuid(
                     vdisk["uuid"], self.params_without_defaults.get("disks", [])
                 )
-
-                if error:
-                    return None, error
 
                 disk.pop("disk_size_mib")
             else:
@@ -254,12 +252,6 @@ class VM(Prism):
             if bus:
                 disk["device_properties"]["disk_address"]["adapter_type"] = bus
                 index = device_indexes.get(bus, -1) + 1
-                existing_devise_indexes = list(
-                    map(
-                        lambda d: d["device_properties"]["disk_address"],
-                        payload["spec"]["resources"]["disk_list"],
-                    )
-                )
                 while True:
                     if not existing_devise_indexes.count(
                         {"adapter_type": bus, "device_index": index}
@@ -268,7 +260,6 @@ class VM(Prism):
                         break
                     index += 1
 
-                disk["device_properties"]["disk_address"]["adapter_type"] = vdisk["bus"]
                 disk["device_properties"]["disk_address"][
                     "device_index"
                 ] = device_indexes[bus]
@@ -380,10 +371,12 @@ class VM(Prism):
 
     def filter_by_uuid(self, uuid, items_list):
         try:
-            return next(filter(lambda d: d.get("uuid") == uuid, items_list)), None
+            return next(filter(lambda d: d.get("uuid") == uuid, items_list))
         except BaseException:
-            error = "Entity {0} not found.".format(uuid)
-            return None, error
+            self.module.fail_json(
+                msg="Failed generating VM Spec",
+                error="Entity {0} not found.".format(uuid),
+            )
 
     def power_on(self, spec, uuid):
         self._build_spec_for_operation(spec, "on")
