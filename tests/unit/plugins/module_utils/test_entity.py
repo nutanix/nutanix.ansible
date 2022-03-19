@@ -44,7 +44,7 @@ def _fetch_url(url, method, data=None, **kwargs):
         ],
     }
 
-    return response, 200
+    return response
 
 
 def exit_json(*args, **kwargs):
@@ -98,7 +98,7 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "PUT", "url": "https://None/", "data": data}
-        result  = entity.update(data)
+        result = entity.update(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
