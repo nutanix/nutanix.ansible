@@ -73,7 +73,7 @@ class TestEntity(ModuleTestCase):
     def test_create_action(self):
         data = {}
         req = {"method": "POST", "url": "https://99.99.99.99:9999/test", "data": data}
-        result, status = self.entity.create(data)
+        result = self.entity.create(data)
         self.assertEqual(result["request"], req)
 
     def test_negative_create_action(self):
@@ -82,14 +82,14 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "POST", "url": "https://None/", "data": data}
-        result, status = entity.create(data)
+        result = entity.create(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
     def test_update_action(self):
         data = {}
         req = {"method": "PUT", "url": "https://99.99.99.99:9999/test", "data": data}
-        result, status = self.entity.update(data)
+        result = self.entity.update(data)
         self.assertEqual(result["request"], req)
 
     def test_negative_update_action(self):
@@ -98,7 +98,7 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "PUT", "url": "https://None/", "data": data}
-        result, status = entity.update(data)
+        result  = entity.update(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
@@ -109,7 +109,7 @@ class TestEntity(ModuleTestCase):
             "url": "https://99.99.99.99:9999/test/list",
             "data": data,
         }
-        result, status = self.entity.list(data)
+        result = self.entity.list(data)
         self.assertEqual(result["request"], req)
 
     def test_negative_list_action(self):
@@ -118,7 +118,7 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "POST", "url": "https://None//list", "data": data}
-        result, status = entity.list(data)
+        result = entity.list(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
@@ -129,7 +129,7 @@ class TestEntity(ModuleTestCase):
             "url": "https://99.99.99.99:9999/test/{0}".format(uuid),
             "data": None,
         }
-        result, status = self.entity.read(uuid=uuid)
+        result = self.entity.read(uuid=uuid)
         self.assertEqual(result["request"], req)
 
     def test_negative_read_action(self):
@@ -138,7 +138,7 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "GET", "url": "https://None/", "data": data}
-        result, status = entity.read(data)
+        result = entity.read(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
@@ -149,7 +149,7 @@ class TestEntity(ModuleTestCase):
             "url": "https://99.99.99.99:9999/test/{0}".format(uuid),
             "data": None,
         }
-        result, status = self.entity.delete(uuid=uuid)
+        result = self.entity.delete(uuid=uuid)
         self.assertEqual(result["request"], req)
 
     def test_negative_delete_action(self):
@@ -158,7 +158,7 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="")
 
         req = {"method": "DELETE", "url": "https://None/", "data": data}
-        result, status = entity.delete(data)
+        result = entity.delete(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
