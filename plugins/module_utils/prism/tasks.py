@@ -33,16 +33,14 @@ class Task(Prism):
         state = ""
         while state != "SUCCEEDED":
             time.sleep(2)
-            response, status = self.read(uuid)
-            if status["error"]:
-                return response, status
-
+            response = self.read(uuid)
             state = response.get("status")
             if state == "FAILED":
-                status = {
-                    "error": response["error_detail"],
-                    "code": response["error_code"],
-                }
-                return response, status
+                self.module.fail_json(
+                    msg=response["error_detail"],
+                    status_code=response["error_code"],
+                    error=response["error_detail"],
+                    response=response,
+                )
 
-        return response, status
+        return response

@@ -249,7 +249,7 @@ def create_vpc(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = vpc.read(vpc_uuid)
+        resp = vpc.read(vpc_uuid)
         result["response"] = resp
 
 
