@@ -240,12 +240,7 @@ def create_vpc(module, result):
         result["response"] = spec
         return
 
-    resp, status = vpc.create(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating vpc", **result)
-
+    resp = vpc.create(spec)
     vpc_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
@@ -254,7 +249,7 @@ def create_vpc(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = vpc.read(vpc_uuid)
+        resp = vpc.read(vpc_uuid)
         result["response"] = resp
 
 
@@ -265,12 +260,7 @@ def delete_vpc(module, result):
         module.fail_json(msg="Failed deleting vpc", **result)
 
     vpc = Vpc(module)
-    resp, status = vpc.delete(vpc_uuid)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed deleting vpc", **result)
-
+    resp = vpc.delete(vpc_uuid)
     result["changed"] = True
     result["response"] = resp
     result["vpc_uuid"] = vpc_uuid
@@ -283,12 +273,8 @@ def delete_vpc(module, result):
 def wait_for_task_completion(module, result):
     task = Task(module)
     task_uuid = result["task_uuid"]
-    resp, status = task.wait_for_completion(task_uuid)
+    resp = task.wait_for_completion(task_uuid)
     result["response"] = resp
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating vpc", **result)
 
 
 def run_module():

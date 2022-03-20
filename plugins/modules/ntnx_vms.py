@@ -770,12 +770,7 @@ def create_vm(module, result):
         result["response"] = spec
         return
 
-    resp, status = vm.create(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating VM", **result)
-
+    resp = vm.create(spec)
     vm_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
@@ -784,7 +779,7 @@ def create_vm(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = vm.read(vm_uuid)
+        resp = vm.read(vm_uuid)
         result["response"] = resp
 
 
@@ -795,12 +790,7 @@ def delete_vm(module, result):
         module.fail_json(msg="Failed deleting VM", **result)
 
     vm = VM(module)
-    resp, status = vm.delete(vm_uuid)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed deleting VM", **result)
-
+    resp = vm.delete(vm_uuid)
     result["changed"] = True
     result["response"] = resp
     result["vm_uuid"] = vm_uuid
@@ -813,12 +803,8 @@ def delete_vm(module, result):
 def wait_for_task_completion(module, result):
     task = Task(module)
     task_uuid = result["task_uuid"]
-    resp, status = task.wait_for_completion(task_uuid)
+    resp = task.wait_for_completion(task_uuid)
     result["response"] = resp
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating VM", **result)
 
 
 def run_module():

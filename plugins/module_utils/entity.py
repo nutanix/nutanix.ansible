@@ -78,7 +78,7 @@ class Entity(object):
 
     def get_uuid(self, value, key="name"):
         data = {"filter": "{0}=={1}".format(key, value), "length": 1}
-        resp, status = self.list(data)
+        resp = self.list(data)
         entities = resp.get("entities") if resp else None
         if entities:
             for entity in entities:
@@ -141,9 +141,7 @@ class Entity(object):
         except ValueError:
             resp_json = None
 
-        if 199 < status_code < 300:
-            err = None
-        else:
+        if status_code >= 300:
             err = info.get("msg", "Status code != 2xx")
             self.module.fail_json(
                 msg="Failed fetching URL: {0}".format(url),
@@ -151,5 +149,12 @@ class Entity(object):
                 error=err,
                 response=resp_json,
             )
-        status = {"error": err, "code": status_code}
-        return resp_json, status
+        if not resp_json:
+            self.module.fail_json(
+                msg="Failed to convert API response to json",
+                status_code=status_code,
+                error=body,
+                response=resp_json,
+            )
+
+        return resp_json
