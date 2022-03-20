@@ -52,8 +52,8 @@ class VM(Prism):
 
     def clone(self, spec):
         endpoint = "{0}/clone".format(self.module.params["vm_uuid"])
-        resp, status = self.create(spec, endpoint)
-        return resp, status
+        resp = self.create(spec, endpoint)
+        return resp
 
     def get_ova_image_spec(self):
         return deepcopy(
@@ -65,8 +65,8 @@ class VM(Prism):
 
     def create_ova_image(self, spec):
         endpoint = "{0}/{1}".format(self.module.params["vm_uuid"], "export")
-        resp, status = self.create(spec, endpoint)
-        return resp, status
+        resp = self.create(spec, endpoint)
+        return resp
 
     def _get_default_spec(self):
         return deepcopy(
