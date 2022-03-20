@@ -485,12 +485,7 @@ def create_pbr(module, result):
         result["response"] = spec
         return
 
-    resp, status = pbr.create(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating pbr", **result)
-
+    resp = pbr.create(spec)
     pbr_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
@@ -499,7 +494,7 @@ def create_pbr(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = pbr.read(pbr_uuid)
+        resp = pbr.read(pbr_uuid)
         result["response"] = resp
 
 
@@ -507,12 +502,7 @@ def delete_pbr(module, result):
     pbr_uuid = module.params["pbr_uuid"]
 
     pbr = Pbr(module)
-    resp, status = pbr.delete(pbr_uuid)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed deleting pbr", **result)
-
+    resp = pbr.delete(pbr_uuid)
     result["changed"] = True
     result["response"] = resp
     result["pbr_uuid"] = pbr_uuid
@@ -525,12 +515,8 @@ def delete_pbr(module, result):
 def wait_for_task_completion(module, result):
     task = Task(module)
     task_uuid = result["task_uuid"]
-    resp, status = task.wait_for_completion(task_uuid)
+    resp = task.wait_for_completion(task_uuid)
     result["response"] = resp
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating pbr", **result)
 
 
 def run_module():

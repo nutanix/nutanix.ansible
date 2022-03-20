@@ -214,12 +214,7 @@ def create_floating_ip(module, result):
         result["response"] = spec
         return
 
-    resp, status = floating_ip.create(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating floating_ip", **result)
-
+    resp = floating_ip.create(spec)
     fip_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
@@ -228,7 +223,7 @@ def create_floating_ip(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = floating_ip.read(fip_uuid)
+        resp = floating_ip.read(fip_uuid)
         result["response"] = resp
 
 
@@ -236,12 +231,7 @@ def delete_floating_ip(module, result):
     fip_uuid = module.params["fip_uuid"]
 
     floating_ip = FloatingIP(module)
-    resp, status = floating_ip.delete(fip_uuid)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed deleting floating_ip", **result)
-
+    resp = floating_ip.delete(fip_uuid)
     result["changed"] = True
     result["response"] = resp
     result["fip_uuid"] = fip_uuid
@@ -254,12 +244,8 @@ def delete_floating_ip(module, result):
 def wait_for_task_completion(module, result):
     task = Task(module)
     task_uuid = result["task_uuid"]
-    resp, status = task.wait_for_completion(task_uuid)
+    resp = task.wait_for_completion(task_uuid)
     result["response"] = resp
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating floating_ip", **result)
 
 
 def run_module():

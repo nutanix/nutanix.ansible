@@ -125,7 +125,7 @@ class InventoryModule(BaseInventoryPlugin):
             self.validate_certs,
         )
         vm = vms.VM(module)
-        resp, status_code = vm.list(self.data)
+        resp = vm.list(self.data)
         keys_to_strip_from_resp = [
             "disk_list",
             "vnuma_config",

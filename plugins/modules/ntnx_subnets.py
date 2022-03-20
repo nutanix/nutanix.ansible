@@ -562,12 +562,7 @@ def create_subnet(module, result):
         result["response"] = spec
         return
 
-    resp, status = subnet.create(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating subnet", **result)
-
+    resp = subnet.create(spec)
     subnet_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
@@ -576,7 +571,7 @@ def create_subnet(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = subnet.read(subnet_uuid)
+        resp = subnet.read(subnet_uuid)
         result["response"] = resp
 
 
@@ -584,12 +579,7 @@ def delete_subnet(module, result):
     subnet_uuid = module.params["subnet_uuid"]
 
     subnet = Subnet(module)
-    resp, status = subnet.delete(subnet_uuid)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed deleting subnet", **result)
-
+    resp = subnet.delete(subnet_uuid)
     result["changed"] = True
     result["response"] = resp
     result["subnet_uuid"] = subnet_uuid
@@ -602,12 +592,8 @@ def delete_subnet(module, result):
 def wait_for_task_completion(module, result):
     task = Task(module)
     task_uuid = result["task_uuid"]
-    resp, status = task.wait_for_completion(task_uuid)
+    resp = task.wait_for_completion(task_uuid)
     result["response"] = resp
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating subnet", **result)
 
 
 def run_module():

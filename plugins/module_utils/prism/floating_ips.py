@@ -63,7 +63,7 @@ class FloatingIP(Prism):
 
     def _get_vm_nic_ref(self, uuid):
         vm = VM(self.module)
-        vm, info = vm.read(uuid)
+        vm = vm.read(uuid)
         nic_list = vm["spec"]["resources"]["nic_list"]
         private_ip = self.module.params.get("private_ip")
         if len(nic_list) > 1 and private_ip:
