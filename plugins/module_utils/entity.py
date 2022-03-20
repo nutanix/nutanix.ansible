@@ -1,6 +1,7 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 from urllib import response
 
 __metaclass__ = type
@@ -155,7 +156,7 @@ class Entity(object):
                 msg="Failed to convert API response to json",
                 status_code=status_code,
                 error=body,
-                response=resp_json
+                response=resp_json,
             )
 
         return resp_json
