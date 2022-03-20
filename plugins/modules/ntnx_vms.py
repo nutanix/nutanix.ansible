@@ -921,14 +921,11 @@ def create_vm(module, result):
 
 
 def update_vm(module, result):
+
     vm_uuid = module.params["vm_uuid"]
 
     vm = VM(module)
-    resp, status = vm.read(vm_uuid)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed updating VM", **result)
+    resp = vm.read(vm_uuid)
 
     strip_extra_attrs_from_status(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
@@ -946,11 +943,7 @@ def update_vm(module, result):
         return
 
     should_be_restart = vm.check_special_attributes(spec)
-    resp, status = vm.update(spec, vm_uuid)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed updating VM", **result)
+    resp = vm.update(spec, vm_uuid)
 
     vm_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
@@ -960,17 +953,13 @@ def update_vm(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = vm.read(vm_uuid)
+        resp = vm.read(vm_uuid)
         result["response"] = resp
 
     if should_be_restart:
         spec = resp
         spec.pop("status")
-        resp, status = vm.power_on(spec, vm_uuid)
-        if status["error"]:
-            result["error"] = status["error"]
-            result["second_response"] = resp
-            module.fail_json(msg="Failed restarting VM", **result)
+        resp = vm.power_on(spec, vm_uuid)
 
 
 def clone_vm(module, result):
@@ -990,11 +979,7 @@ def clone_vm(module, result):
         result["response"] = spec
         return
 
-    resp, status = vm.clone(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed cloning VM", **result)
+    resp = vm.clone(spec)
 
     result["changed"] = True
     result["response"] = resp
@@ -1003,7 +988,7 @@ def clone_vm(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = vm.read(vm_uuid)
+        resp = vm.read(vm_uuid)
         result["response"] = resp
 
 
@@ -1018,11 +1003,7 @@ def create_ova_image(module, result):
         result["response"] = spec
         return
 
-    resp, status = vm.create_ova_image(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating VM", **result)
+    resp = vm.create_ova_image(spec)
 
     result["changed"] = True
     result["response"] = resp
@@ -1030,7 +1011,7 @@ def create_ova_image(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = vm.read(vm_uuid)
+        resp = vm.read(vm_uuid)
         result["response"] = resp
 
 
@@ -1056,6 +1037,8 @@ def wait_for_task_completion(module, result):
     task_uuid = result["task_uuid"]
     resp = task.wait_for_completion(task_uuid)
     result["response"] = resp
+    if not result.get("vm_uuid") and resp.get("entity_reference_list"):
+        result["vm_uuid"] = resp["entity_reference_list"][0]["uuid"]
 
 
 def run_module():
