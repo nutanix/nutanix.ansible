@@ -1037,6 +1037,8 @@ def wait_for_task_completion(module, result):
     task_uuid = result["task_uuid"]
     resp = task.wait_for_completion(task_uuid)
     result["response"] = resp
+    if not result.get("vm_uuid") and resp.get("entity_reference_list"):
+        result["vm_uuid"] = resp["entity_reference_list"][0]["uuid"]
 
 
 def run_module():
