@@ -1,6 +1,6 @@
 ---
 centos: "CentOS-7-cloudinit" 
-ubuntu: "Ubuntu1404" 
+ubuntu: "Ubuntu-20.04.4" 
 storage_container:
   name: SelfServiceContainer
   uuid: a569d3d4-74b2-46a9-9441-2f716eb20eda  

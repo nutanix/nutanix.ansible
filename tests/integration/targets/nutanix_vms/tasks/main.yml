@@ -10,3 +10,4 @@
         - import_tasks: "negtaive_scenarios.yml"
         - import_tasks: "delete.yml"
         - import_tasks: "vm_operations.yml"
+        - import_tasks: "vm_update.yml"
