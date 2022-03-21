@@ -380,8 +380,8 @@ class VM(Prism):
 
     def power_on(self, spec, uuid):
         self._build_spec_for_operation(spec, "on")
-        resp, status = self.update(spec, uuid)
-        return resp, status
+        resp = self.update(spec, uuid)
+        return resp
 
     def check_special_attributes(self, spec):
         special_attributes = ["memory_gb", "cores_per_vcpu", "vcpus"]
