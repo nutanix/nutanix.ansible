@@ -58,8 +58,8 @@
         - result.response.status.state == 'COMPLETE'
         - result.vm_uuid
         - result.task_uuid
-      fail_msg: ' Unable to create VM with minimum requiremnts '
-      success_msg: ' VM with minimum requiremnts created successfully '
+      fail_msg: ' Unable to update vm '
+      success_msg: ' VM updated successfully '
     
   - name: Update VM by deleting and editing a disk
     ntnx_vms:
@@ -84,8 +84,8 @@
         - result.response.status.state == 'COMPLETE'
         - result.vm_uuid
         - result.task_uuid
-      fail_msg: ' Unable to create VM with minimum requiremnts '
-      success_msg: ' VM with minimum requiremnts created successfully '
+      fail_msg: ' Unable to update vm by deleting and editing a disk '
+      success_msg: ' VM updated successfully '
   
   - name: Update VM by deleting a subnet
     ntnx_vms:
@@ -100,12 +100,6 @@
           uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
     register: result
 
-  - name: Update VM by deleting it
-    ntnx_vms:
-      state: absent
-      vm_uuid: "{{ result.vm_uuid }}"
-    register: result
-
   - name: Update Status
     assert:
       that:
@@ -113,5 +107,21 @@
         - result.response.status.state == 'COMPLETE'
         - result.vm_uuid
         - result.task_uuid
-      fail_msg: ' Unable to create VM with minimum requiremnts '
-      success_msg: ' VM with minimum requiremnts created successfully '
+      fail_msg: ' Unable to update vm by deleting a subnet '
+      success_msg: ' VM updated successfully '
+
+  - name: Update VM by deleting it
+    ntnx_vms:
+      state: absent
+      vm_uuid: "{{ result.vm_uuid }}"
+    register: result
+    ignore_errors: true
+
+  - name: Update Status
+    assert:
+      that:
+        - result.response is defined
+        - result.vm_uuid
+        - result.task_uuid
+      fail_msg: ' Unable to update the vm by deleting it '
+      success_msg: ' VM deleted successfully '
