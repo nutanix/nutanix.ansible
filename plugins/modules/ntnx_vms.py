@@ -873,6 +873,7 @@ def get_module_spec():
             mutually_exclusive=[
                 ("storage_container", "clone_image", "empty_cdrom"),
                 ("size_gb", "empty_cdrom"),
+                ("uuid", "bus"),
             ],
         ),
         boot_config=dict(type="dict", options=boot_config_spec),
@@ -921,12 +922,9 @@ def create_vm(module, result):
 
 
 def update_vm(module, result):
-
     vm_uuid = module.params["vm_uuid"]
-
     vm = VM(module)
     resp = vm.read(vm_uuid)
-
     strip_extra_attrs_from_status(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
     spec, error = vm.get_spec(resp)
@@ -935,15 +933,45 @@ def update_vm(module, result):
         result["error"] = error
         module.fail_json(msg="Failed generating VM Spec", **result)
 
-    if spec == resp:
-        module.fail_json(msg="Nothing to change", **result)
-
     if module.check_mode:
         result["response"] = spec
         return
 
-    should_be_restart = vm.check_special_attributes(spec)
-    resp = vm.update(spec, vm_uuid)
+    if spec == resp:
+        module.exit_json(msg="Nothing to change", **result)
+
+    is_vm_on = vm.is_on(spec)
+
+    is_powered_off = False
+
+    if is_vm_on and vm.is_restart_required():
+        spec = vm.hard_power_off_and_update(spec)
+        spec.pop("status")
+        is_powered_off = True
+    else:
+        resp = vm.update(spec)
+        spec = resp
+        spec.pop("status")
+
+    if is_powered_off or (module.params["operation"] == "on" and not is_vm_on):
+        resp = vm.power_on(spec)
+    elif (
+        module.params["operation"] == "soft_shutdown"
+        and is_vm_on
+        and not is_powered_off
+    ):
+        resp = vm.soft_shutdown(spec)
+    elif (
+        module.params["operation"] == "hard_poweroff"
+        and is_vm_on
+        and not is_powered_off
+    ):
+        resp = vm.hard_power_off(spec)
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp = vm.read(vm_uuid)
+        result["response"] = resp
 
     vm_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
@@ -951,15 +979,10 @@ def update_vm(module, result):
     result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
-    if module.params.get("wait"):
-        wait_for_task_completion(module, result)
-        resp = vm.read(vm_uuid)
-        result["response"] = resp
-
-    if should_be_restart:
-        spec = resp
-        spec.pop("status")
-        resp = vm.power_on(spec, vm_uuid)
+    # if need_restart:
+    #     spec = resp
+    #     spec.pop("status")
+    #     resp = vm.power_on(spec, vm_uuid)
 
 
 def clone_vm(module, result):
