@@ -1,28 +1,48 @@
 ########################### UPDATE_VM ################################
+  - name: define delete list
+    set_fact:
+      delete: []
   - name: VM with minimum requiremnts to update
     ntnx_vms:
       state: present
       name: update vm
       cluster:
         name: "{{ cluster.name }}"
-    register: result
+      vcpus: 4
+      cores_per_vcpu: 4
+      memory_gb: 4
+    register: vm
     ignore_errors: true
 
   - name: Creation Status
     assert:
       that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-        - result.vm_uuid
-        - result.task_uuid
+        - vm.response is defined
+        - vm.response.status.state == 'COMPLETE'
+        - vm.vm_uuid
+        - vm.task_uuid
       fail_msg: ' Unable to create VM with minimum requiremnts '
       success_msg: ' VM with minimum requiremnts created successfully '
 
+  - name: VM with minimum requiremnts to update
+    ntnx_vms:
+      state: present
+      name: update vm
+      cluster:
+        name: "{{ cluster.name }}"
+      vcpus: 4
+      cores_per_vcpu: 4
+      memory_gb: 4
+    register: result
+
+  - set_fact:
+      delete: '{{ delete + [ result.vm_uuid ] }}'
+
   - name: Update VM
     ntnx_vms:
-      vm_uuid: "{{ result.vm_uuid }}"
+      vm_uuid: "{{ vm.vm_uuid }}"
       name: updated
-      desc: updated
+      desc: updated disks, subnets, memory, vcpus and cores_per_vcpu
       categories:
         AppType:
           - Apache_Spark
@@ -48,80 +68,213 @@
           subnet:
             uuid: "{{ static.uuid }}"
           private_ip: "{{ network.static.ip }}"
-    register: result
+      vcpus: 5
+      cores_per_vcpu: 5
+      memory_gb: 5
+    register: vm
     ignore_errors: true
   
   - name: Update Status
     assert:
       that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-        - result.vm_uuid
-        - result.task_uuid
+        - vm.response is defined
+        - vm.vm_uuid
+        - vm.task_uuid
       fail_msg: ' Unable to update vm '
       success_msg: ' VM updated successfully '
-    
+  
+######################################################################
+  - name: VM with minimum requiremnts to update
+    ntnx_vms:
+      state: present
+      name: update vm
+      cluster:
+        name: "{{ cluster.name }}"
+      vcpus: 4
+      cores_per_vcpu: 4
+      memory_gb: 4
+    register: result
+
+  - set_fact:
+      delete: '{{ delete + [ result.vm_uuid ] }}'
+
+  - name: Update VM by editing a subnet
+    ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      name: updated
+      desc: disconnect nic
+      categories:
+        AppType:
+          - Apache_Spark
+      networks:
+        - is_connected: true
+          uuid: "{{ vm.response.spec.resources.nic_list[1].uuid }}"
+    register: vm
+
+  - name: Update Status
+    assert:
+      that:
+        - vm.response is defined
+        - vm.response.status.state == 'COMPLETE'
+        - vm.vm_uuid
+        - vm.task_uuid
+      fail_msg: ' Unable to update vm by deleting a subnet '
+      success_msg: ' VM updated successfully '
+#################################################################
+#  - name: Update VM by editing a subnet
+#    ntnx_vms:
+#      vm_uuid: "{{ vm.vm_uuid }}"
+#      name: updated
+#      desc: change ip
+#      categories:
+#        AppType:
+#          - Apache_Spark
+#      networks:
+#        - is_connected: true
+#          private_ip: "10.30.30.79"
+#          uuid: "{{ vm.response.spec.resources.nic_list[1].uuid }}"
+#    register: vm
+#
+#  - name: Update Status
+#    assert:
+#      that:
+#        - vm.response is defined
+#        - vm.response.status.state == 'COMPLETE'
+#        - vm.vm_uuid
+#        - vm.task_uuid
+#      fail_msg: ' Unable to update vm by deleting a subnet '
+#      success_msg: ' VM updated successfully '
+################################################################
+  - name: Update VM by editing a subnet
+    ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      name: updated
+      desc: change vlan
+      categories:
+        AppType:
+          - Apache_Spark
+      networks:
+        - is_connected: false
+          subnet:
+            name: vlan_test
+          uuid: "{{ vm.response.spec.resources.nic_list[0].uuid }}"
+    register: vm
+
+  - name: Update Status
+    assert:
+      that:
+        - vm.response is defined
+        - vm.response.status.state == 'COMPLETE'
+        - vm.vm_uuid
+        - vm.task_uuid
+      fail_msg: ' Unable to update vm by deleting a subnet '
+      success_msg: ' VM updated successfully '
+##############################################################
+  - name: Update values for memory, vcpus and corespervcpu
+    ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      name: updated
+      desc: decrease memory, vcpus and cores_per_vcpu
+      vcpus: 2
+      cores_per_vcpu: 2
+      memory_gb: 2
+    register: vm
+    ignore_errors: true
+  
+  - name: Update Status
+    assert:
+      that:
+        - vm.response is defined
+        - vm.vm_uuid
+        - vm.task_uuid
+      fail_msg: ' Unable to update vm '
+      success_msg: ' VM updated successfully '
+###################################################################
+  - name: VM with minimum requiremnts to update
+    ntnx_vms:
+      state: present
+      name: update vm
+      cluster:
+        name: "{{ cluster.name }}"
+      vcpus: 4
+      cores_per_vcpu: 4
+      memory_gb: 4
+    register: result
+  - set_fact:
+      delete: '{{ delete + [ result.vm_uuid ] }}'
+
   - name: Update VM by deleting and editing a disk
     ntnx_vms:
-      vm_uuid: "{{ result.vm_uuid }}"
+      vm_uuid: "{{ vm.vm_uuid }}"
       name: updated
-      desc: updated
+      desc: updated disks
       categories:
         AppType:
           - Apache_Spark
       disks:
         - type: "DISK"
-          uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+          uuid: "{{ vm.response.spec.resources.disk_list[2].uuid }}"
           size_gb: 30
         - state: absent
-          uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
-    register: result
+          uuid: "{{ vm.response.spec.resources.disk_list[0].uuid }}"
+    register: vm
 
   - name: Update Status
     assert:
       that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-        - result.vm_uuid
-        - result.task_uuid
+        - vm.response is defined
+        - vm.response.status.state == 'COMPLETE'
+        - vm.vm_uuid
+        - vm.task_uuid
       fail_msg: ' Unable to update vm by deleting and editing a disk '
       success_msg: ' VM updated successfully '
-  
+####################################################################
+  - name: VM with minimum requiremnts to update
+    ntnx_vms:
+      state: present
+      name: update vm
+      cluster:
+        name: "{{ cluster.name }}"
+      vcpus: 4
+      cores_per_vcpu: 4
+      memory_gb: 4
+    register: result
+  - set_fact:
+      delete: '{{ delete + [ result.vm_uuid ] }}'
+#####################################################################
   - name: Update VM by deleting a subnet
     ntnx_vms:
-      vm_uuid: "{{ result.vm_uuid }}"
+      vm_uuid: "{{ vm.vm_uuid }}"
       name: updated
-      desc: updated
+      desc: delete a subnet
       categories:
         AppType:
           - Apache_Spark
       networks:
         - state: absent
-          uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
-    register: result
+          uuid: "{{ vm.response.spec.resources.nic_list[1].uuid }}"
+    register: vm
 
   - name: Update Status
     assert:
       that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-        - result.vm_uuid
-        - result.task_uuid
-      fail_msg: ' Unable to update vm by deleting a subnet '
+        - vm.response is defined
+        - vm.response.status.state == 'COMPLETE'
+        - vm.vm_uuid
+        - vm.task_uuid
+      fail_msg: ' Unable to update vm by editing a subnet '
       success_msg: ' VM updated successfully '
-
+############################################################
+  - name: Delete all Created vms 
+    ntnx_vms:
+      state: absent
+      vm_uuid: '{{ item }}'
+    register: result
+    loop: '{{ delete }}'
+############################################################
   - name: Update VM by deleting it
     ntnx_vms:
       state: absent
-      vm_uuid: "{{ result.vm_uuid }}"
+      vm_uuid: "{{ vm.vm_uuid }}"
     register: result
     ignore_errors: true
-
-  - name: Update Status
-    assert:
-      that:
-        - result.response is defined
-        - result.vm_uuid
-        - result.task_uuid
-      fail_msg: ' Unable to update the vm by deleting it '
-      success_msg: ' VM deleted successfully '
