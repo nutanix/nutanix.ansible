@@ -240,10 +240,9 @@ class VM(Prism):
 
             if vdisk.get("uuid"):
                 if vdisk.get("state") == "absent":
-                    self.remove_disk(vdisk, payload)
+                    self.remove_disk(vdisk, payload, existing_devise_indexes)
                 else:
-                    disk = self.update_disk(vdisk, payload)
-                    payload["spec"]["resources"]["disk_list"].append(disk)
+                    self.update_disk(vdisk, payload)
             else:
                 disk = self.add_disk(vdisk, device_indexes, existing_devise_indexes)
                 payload["spec"]["resources"]["disk_list"].append(disk)
@@ -348,7 +347,7 @@ class VM(Prism):
             disk["device_properties"]["device_type"] = vdisk["type"]
 
         bus = vdisk.get("bus")
-        if bus and not vdisk.get("uuid"):
+        if bus:
             if bus in ["IDE", "SATA"]:
                 self.require_vm_restart = True
             disk["device_properties"]["disk_address"]["adapter_type"] = bus
@@ -428,13 +427,13 @@ class VM(Prism):
         vdisk = self.filter_by_uuid(
             vdisk["uuid"], self.params_without_defaults.get("disks", [])
         )
-        disk = self.fill_disk_spec(vdisk, disk)
-        return disk
+        self.fill_disk_spec(vdisk, disk)
 
-    def remove_disk(self, vdisk, payload):
+    def remove_disk(self, vdisk, payload, existing_devise_indexes):
         disk = self.filter_by_uuid(
             vdisk["uuid"], payload["spec"]["resources"]["disk_list"]
         )
+        existing_devise_indexes.remove(disk["device_properties"]["disk_address"])
 
         payload["spec"]["resources"]["disk_list"].remove(disk)
 
