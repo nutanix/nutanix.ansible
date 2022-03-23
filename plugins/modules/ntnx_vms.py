@@ -945,33 +945,14 @@ def update_vm(module, result):
     is_powered_off = False
 
     if is_vm_on and vm.is_restart_required():
-        spec = vm.hard_power_off_and_update(spec)
+        resp = vm.hard_power_off_and_update(spec)
+        spec = resp.copy()
         spec.pop("status")
         is_powered_off = True
     else:
-        resp = vm.update(spec)
-        spec = resp
+        resp = vm.update(spec, vm_uuid)
+        spec = resp.copy()
         spec.pop("status")
-
-    if is_powered_off or (module.params["operation"] == "on" and not is_vm_on):
-        resp = vm.power_on(spec)
-    elif (
-        module.params["operation"] == "soft_shutdown"
-        and is_vm_on
-        and not is_powered_off
-    ):
-        resp = vm.soft_shutdown(spec)
-    elif (
-        module.params["operation"] == "hard_poweroff"
-        and is_vm_on
-        and not is_powered_off
-    ):
-        resp = vm.hard_power_off(spec)
-
-    if module.params.get("wait"):
-        wait_for_task_completion(module, result)
-        resp = vm.read(vm_uuid)
-        result["response"] = resp
 
     vm_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
@@ -979,10 +960,30 @@ def update_vm(module, result):
     result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
-    # if need_restart:
-    #     spec = resp
-    #     spec.pop("status")
-    #     resp = vm.power_on(spec, vm_uuid)
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp = vm.read(vm_uuid)
+        spec = resp.copy()
+        spec.pop("status")
+        result["response"] = resp
+
+    if is_powered_off or (module.params.get("operation") == "on" and not is_vm_on):
+        resp = vm.power_on(spec)
+    elif (
+        module.params.get("operation") == "soft_shutdown"
+        and is_vm_on
+        and not is_powered_off
+    ):
+        resp = vm.soft_shutdown(spec)
+    elif (
+        module.params.get("operation") == "hard_poweroff"
+        and is_vm_on
+        and not is_powered_off
+    ):
+        resp = vm.hard_power_off(spec)
+
+    result["response"] = resp
+
 
 
 def clone_vm(module, result):

@@ -38,7 +38,6 @@ class VM(Prism):
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
             "categories": self._build_spec_categories,
-            "operation": self._build_spec_for_operation,
         }
 
     @staticmethod
@@ -237,6 +236,7 @@ class VM(Prism):
                 payload["spec"]["resources"]["disk_list"],
             )
         )
+
         for vdisk in vdisks:
 
             if vdisk.get("uuid"):
