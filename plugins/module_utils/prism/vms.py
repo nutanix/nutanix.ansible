@@ -435,10 +435,10 @@ class VM(Prism):
         )
         existing_devise_indexes.remove(disk["device_properties"]["disk_address"])
 
-        payload["spec"]["resources"]["disk_list"].remove(disk)
-
-        if vdisk["type"] != "SCSI":
+        if disk["device_properties"]["disk_address"]["adapter_type"] != "SCSI":
             self.require_vm_restart = True
+
+        payload["spec"]["resources"]["disk_list"].remove(disk)
 
 
 # Helper functions
