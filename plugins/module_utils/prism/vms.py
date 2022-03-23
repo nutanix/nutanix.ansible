@@ -428,7 +428,7 @@ class VM(Prism):
         vdisk = self.filter_by_uuid(
             vdisk["uuid"], self.params_without_defaults.get("disks", [])
         )
-        disk = self.fill_disk_spec(vdisk, disk, device_indexes, existing_devise_indexes)
+        disk = self.fill_disk_spec(vdisk, disk)
         return disk
 
     def remove_disk(self, vdisk, payload):
