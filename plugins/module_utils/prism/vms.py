@@ -164,7 +164,7 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_vcpus(self, payload, vcpus):
-        current_vcpus = payload["spec"]["resources"]["num_sockets"]
+        current_vcpus = payload["spec"]["resources"].get("num_sockets", 0)
         self.check_and_set_require_vm_restart(current_vcpus, vcpus)
         payload["spec"]["resources"]["num_sockets"] = vcpus
         return payload, None
@@ -176,7 +176,7 @@ class VM(Prism):
 
     def _build_spec_mem(self, payload, mem_gb):
         mem_mib = mem_gb * 1024
-        current_mem_mib = payload["spec"]["resources"]["memory_size_mib"]
+        current_mem_mib = payload["spec"]["resources"].get("memory_size_mib", 0)
         self.check_and_set_require_vm_restart(current_mem_mib, mem_mib)
         payload["spec"]["resources"]["memory_size_mib"] = mem_mib
         return payload, None
