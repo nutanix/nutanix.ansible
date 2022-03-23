@@ -228,7 +228,6 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_disks(self, payload, vdisks):
-        disks = []
         device_indexes = {}
         existing_devise_indexes = list(
             map(
