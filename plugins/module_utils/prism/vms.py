@@ -38,7 +38,6 @@ class VM(Prism):
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
             "categories": self._build_spec_categories,
-            "operation": self._build_spec_for_operation,
         }
 
     @staticmethod
@@ -229,7 +228,6 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_disks(self, payload, vdisks):
-        disks = []
         device_indexes = {}
         existing_devise_indexes = list(
             map(
