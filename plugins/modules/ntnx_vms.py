@@ -987,6 +987,12 @@ def update_vm(module, result):
         resp = vm.hard_power_off(spec)
 
     result["response"] = resp
+    result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp = vm.read(vm_uuid)
+        result["response"] = resp
 
 
 def clone_vm(module, result):
