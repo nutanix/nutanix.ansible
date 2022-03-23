@@ -937,7 +937,11 @@ def update_vm(module, result):
         result["response"] = spec
         return
 
-    if spec == resp:
+    if (
+        spec == resp
+        and module.params.get("operation")
+        == resp["spec"]["resources"]["power_state"].lower()
+    ):
         module.exit_json(msg="Nothing to change", **result)
 
     is_vm_on = vm.is_on(spec)
@@ -983,7 +987,6 @@ def update_vm(module, result):
         resp = vm.hard_power_off(spec)
 
     result["response"] = resp
-
 
 
 def clone_vm(module, result):
