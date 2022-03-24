@@ -920,6 +920,8 @@ def create_vm(module, result):
         resp = vm.read(vm_uuid)
         result["response"] = resp
 
+def power_off_vm():
+    pass
 
 def update_vm(module, result):
     vm_uuid = module.params["vm_uuid"]
@@ -949,14 +951,16 @@ def update_vm(module, result):
     is_powered_off = False
 
     if is_vm_on and vm.is_restart_required():
-        resp = vm.hard_power_off_and_update(spec)
-        spec = resp.copy()
-        spec.pop("status")
+        resp = vm.hard_power_off(resp)
+        result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
+        wait_for_task_completion(module, result)
+        spec["spec"]["resources"]["power_state"] = resp["spec"]["resources"]["power_state"]
+        spec["metadata"]["entity_version"] = str(int(spec["metadata"]["entity_version"]) + 1)
         is_powered_off = True
-    else:
-        resp = vm.update(spec, vm_uuid)
-        spec = resp.copy()
-        spec.pop("status")
+
+    resp = vm.update(spec, vm_uuid)
+    spec = resp.copy()
+    spec.pop("status")
 
     vm_uuid = resp["metadata"]["uuid"]
     result["changed"] = True

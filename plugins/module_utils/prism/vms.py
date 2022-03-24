@@ -49,7 +49,7 @@ class VM(Prism):
         if error:
             return spec, error
         spec["spec"].update(spec["spec"].pop("resources", {}))
-        spec["spec"].pop("hardware_clock_timezone")
+        spec["spec"].pop("hardware_clock_timezone", None)
         spec = {"override_spec": spec["spec"]}
         return spec, None
 
@@ -255,11 +255,11 @@ class VM(Prism):
             boot_config["boot_device_order_list"] = param["boot_order"]
 
         elif "UEFI" == param["boot_type"]:
-            boot_config.pop("boot_device_order_list")
+            boot_config.pop("boot_device_order_list", None)
             boot_config["boot_type"] = "UEFI"
 
         elif "SECURE_BOOT" == param["boot_type"]:
-            boot_config.pop("boot_device_order_list")
+            boot_config.pop("boot_device_order_list", None)
             boot_config["boot_type"] = "SECURE_BOOT"
             payload["spec"]["resources"]["machine_type"] = "Q35"
         return payload, None
@@ -330,9 +330,6 @@ class VM(Prism):
         resp = self.update(payload, uuid)
         return resp
 
-    def hard_power_off_and_update(self, payload):
-        return self.hard_power_off(payload)
-
     def is_restart_required(self):
 
         if self.require_vm_restart:
@@ -340,7 +337,7 @@ class VM(Prism):
 
         return False
 
-    def fill_disk_spec(
+    def _generate_disk_spec(
         self, vdisk, disk, device_indexes=None, existing_devise_indexes=None
     ):
         if vdisk.get("type"):
@@ -364,24 +361,26 @@ class VM(Prism):
                 bus
             ]
 
-        if vdisk.get("empty_cdrom"):
-            disk.pop("data_source_reference")
-            disk.pop("storage_config")
+        if vdisk.get("empty_cdrom", None):
+            disk.pop("data_source_reference", None)
+            disk.pop("storage_config", None)
 
         else:
             if vdisk.get("size_gb"):
                 disk_size_bytes = vdisk["size_gb"] * 1024 * 1024 * 1024
-                if not vdisk.get("uuid") or disk_size_bytes > disk.get(
+                if not vdisk.get("uuid") or disk_size_bytes >= disk.get(
                     "disk_size_bytes", 0
                 ):
                     if disk.get("bus") in ["IDE", "SATA"]:
                         self.require_vm_restart = True
                     disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
+                else:
+                    self.module.fail_json(msg="Unsupported operation: Unable to decrease disk size.")
                 if disk.get("data_source_reference") and disk.get("uuid"):
                     self.require_vm_restart = True
 
             if vdisk.get("storage_container"):
-                disk.pop("data_source_reference")
+                disk.pop("data_source_reference", None)
                 uuid, error = get_entity_uuid(
                     vdisk["storage_container"],
                     self.module,
@@ -414,7 +413,7 @@ class VM(Prism):
     def add_disk(self, vdisk, device_indexes, existing_devise_indexes):
         disk = self._get_default_disk_spec()
 
-        disk = self.fill_disk_spec(vdisk, disk, device_indexes, existing_devise_indexes)
+        disk = self._generate_disk_spec(vdisk, disk, device_indexes, existing_devise_indexes)
         return disk
 
     def update_disk(self, vdisk, payload):
@@ -422,12 +421,12 @@ class VM(Prism):
             vdisk["uuid"], payload["spec"]["resources"]["disk_list"]
         )
 
-        disk.pop("disk_size_mib")
+        disk.pop("disk_size_mib", None)
 
         vdisk = self.filter_by_uuid(
             vdisk["uuid"], self.params_without_defaults.get("disks", [])
         )
-        self.fill_disk_spec(vdisk, disk)
+        self._generate_disk_spec(vdisk, disk)
 
     def remove_disk(self, vdisk, payload, existing_devise_indexes):
         disk = self.filter_by_uuid(
