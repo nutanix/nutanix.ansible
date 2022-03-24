@@ -201,7 +201,7 @@ class VM(Prism):
             else:
                 nic = self._get_default_network_spec()
             if network.get("private_ip"):
-                nic["ip_endpoint_list"].append({"ip": network["private_ip"]})
+                nic["ip_endpoint_list"] = [{"ip": network["private_ip"]}]
 
             nic["is_connected"] = network["is_connected"]
             if network.get("subnet"):
