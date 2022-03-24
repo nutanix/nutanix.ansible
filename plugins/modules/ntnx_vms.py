@@ -949,8 +949,12 @@ def update_vm(module, result):
 
     if is_vm_on and vm.is_restart_required():
         power_off_vm(vm, module, result)
-        spec["spec"]["resources"]["power_state"] = result["response"]["spec"]["resources"]["power_state"]
-        spec["metadata"]["entity_version"] = str(int(spec["metadata"]["entity_version"]) + 1)
+        spec["spec"]["resources"]["power_state"] = result["response"]["spec"][
+            "resources"
+        ]["power_state"]
+        spec["metadata"]["entity_version"] = str(
+            int(spec["metadata"]["entity_version"]) + 1
+        )
         is_powered_off = True
 
     resp = vm.update(spec, vm_uuid)
@@ -962,24 +966,21 @@ def update_vm(module, result):
     result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
-    if module.params.get("wait") or is_powered_off or is_vm_on and operation in ["soft_shutdown", "hard_poweroff"]:
+    if (
+        module.params.get("wait")
+        or is_powered_off
+        or is_vm_on
+        and operation in ["soft_shutdown", "hard_poweroff"]
+    ):
         wait_for_task_completion(module, result)
         resp = vm.read(vm_uuid)
         spec = resp.copy()
         spec.pop("status")
         result["response"] = resp
 
-    if (
-        operation == "soft_shutdown"
-        and is_vm_on
-        and not is_powered_off
-    ):
+    if operation == "soft_shutdown" and is_vm_on and not is_powered_off:
         resp = vm.soft_shutdown(spec)
-    elif (
-        operation == "hard_poweroff"
-        and is_vm_on
-        and not is_powered_off
-    ):
+    elif operation == "hard_poweroff" and is_vm_on and not is_powered_off:
         resp = vm.hard_power_off(spec)
     elif is_powered_off or (operation == "on" and not is_vm_on):
         resp = vm.power_on(spec)
