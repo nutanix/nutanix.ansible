@@ -201,7 +201,7 @@ class VM(Prism):
             else:
                 nic = self._get_default_network_spec()
             if network.get("private_ip"):
-                nic["ip_endpoint_list"].append({"ip": network["private_ip"]})
+                nic["ip_endpoint_list"] = [{"ip": network["private_ip"]}]
 
             nic["is_connected"] = network["is_connected"]
             if network.get("subnet"):
@@ -375,7 +375,10 @@ class VM(Prism):
                         self.require_vm_restart = True
                     disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
                 else:
-                    self.module.fail_json(msg="Unsupported operation: Unable to decrease disk size.")
+                    self.module.fail_json(
+                        msg="Unsupported operation: Unable to decrease disk size.",
+                        disk=disk,
+                    )
                 if disk.get("data_source_reference") and disk.get("uuid"):
                     self.require_vm_restart = True
 
@@ -413,7 +416,9 @@ class VM(Prism):
     def add_disk(self, vdisk, device_indexes, existing_devise_indexes):
         disk = self._get_default_disk_spec()
 
-        disk = self._generate_disk_spec(vdisk, disk, device_indexes, existing_devise_indexes)
+        disk = self._generate_disk_spec(
+            vdisk, disk, device_indexes, existing_devise_indexes
+        )
         return disk
 
     def update_disk(self, vdisk, payload):

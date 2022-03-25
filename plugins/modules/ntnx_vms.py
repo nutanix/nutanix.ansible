@@ -920,13 +920,14 @@ def create_vm(module, result):
         resp = vm.read(vm_uuid)
         result["response"] = resp
 
-def power_off_vm():
-    pass
 
 def update_vm(module, result):
     vm_uuid = module.params["vm_uuid"]
+    operation = module.params.get("operation")
+
     vm = VM(module)
     resp = vm.read(vm_uuid)
+    result["response"] = resp
     strip_extra_attrs_from_status(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
     spec, error = vm.get_spec(resp)
@@ -939,11 +940,7 @@ def update_vm(module, result):
         result["response"] = spec
         return
 
-    if (
-        spec == resp
-        and module.params.get("operation")
-        == resp["spec"]["resources"]["power_state"].lower()
-    ):
+    if nothing_to_change(spec, resp, operation):
         module.exit_json(msg="Nothing to change", **result)
 
     is_vm_on = vm.is_on(spec)
@@ -951,52 +948,63 @@ def update_vm(module, result):
     is_powered_off = False
 
     if is_vm_on and vm.is_restart_required():
-        resp = vm.hard_power_off(resp)
-        result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
-        wait_for_task_completion(module, result)
-        spec["spec"]["resources"]["power_state"] = resp["spec"]["resources"]["power_state"]
-        spec["metadata"]["entity_version"] = str(int(spec["metadata"]["entity_version"]) + 1)
+        power_off_vm(vm, module, result)
+        spec["spec"]["resources"]["power_state"] = result["response"]["spec"][
+            "resources"
+        ]["power_state"]
+        spec["metadata"]["entity_version"] = str(
+            int(spec["metadata"]["entity_version"]) + 1
+        )
         is_powered_off = True
 
     resp = vm.update(spec, vm_uuid)
     spec = resp.copy()
     spec.pop("status")
 
-    vm_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
     result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
-    if module.params.get("wait"):
+    if (
+        module.params.get("wait")
+        or is_powered_off
+        or is_vm_on
+        and operation in ["soft_shutdown", "hard_poweroff"]
+    ):
         wait_for_task_completion(module, result)
         resp = vm.read(vm_uuid)
         spec = resp.copy()
         spec.pop("status")
         result["response"] = resp
 
-    if is_powered_off or (module.params.get("operation") == "on" and not is_vm_on):
-        resp = vm.power_on(spec)
-    elif (
-        module.params.get("operation") == "soft_shutdown"
-        and is_vm_on
-        and not is_powered_off
-    ):
+    if operation == "soft_shutdown" and is_vm_on and not is_powered_off:
         resp = vm.soft_shutdown(spec)
-    elif (
-        module.params.get("operation") == "hard_poweroff"
-        and is_vm_on
-        and not is_powered_off
-    ):
+    elif operation == "hard_poweroff" and is_vm_on and not is_powered_off:
         resp = vm.hard_power_off(spec)
+    elif is_powered_off or (operation == "on" and not is_vm_on):
+        resp = vm.power_on(spec)
 
-    if module.params.get("operation") or is_powered_off:
+    if operation or is_powered_off:
         result["response"] = resp
         result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
         if module.params.get("wait"):
             wait_for_task_completion(module, result)
             resp = vm.read(vm_uuid)
             result["response"] = resp
+
+
+def nothing_to_change(spec, resp, operation):
+    if spec == resp and operation == resp["spec"]["resources"]["power_state"].lower():
+        return True
+    return False
+
+
+def power_off_vm(vm, module, result):
+    resp = vm.hard_power_off(result["response"])
+    result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
+    wait_for_task_completion(module, result)
+    result["response"] = resp
 
 
 def clone_vm(module, result):
@@ -1020,7 +1028,6 @@ def clone_vm(module, result):
 
     result["changed"] = True
     result["response"] = resp
-    # result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["task_uuid"]
 
     if module.params.get("wait"):
