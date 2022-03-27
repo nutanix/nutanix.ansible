@@ -510,6 +510,141 @@ EXAMPLES = r"""
         vcpus: 2
         cores_per_vcpu: 2
         memory_gb: 2
+
+  - name: update vm by  values for memory, vcpus and cores_per_vcpu, timezone
+    ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      vcpus: 1
+      cores_per_vcpu: 1
+      memory_gb: 1
+      timezone: UTC
+
+  - name: Update VM by adding all type of  disks
+    ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      disks:
+        - type: "DISK"
+          clone_image:
+            name: "{{ ubuntu }}"
+          bus: "SCSI"
+          size_gb: 20
+        - type: DISK
+          size_gb: 1
+          bus: PCI
+        - type: "DISK"
+          size_gb: 1
+          bus: "SATA"
+        - type: "DISK"
+          size_gb: 1
+          bus: "SCSI"
+        - type: DISK
+          size_gb: 1
+          bus: SCSI
+          storage_container:
+            uuid: "{{ storage_container.uuid }}"
+        - type: "DISK"
+          bus: "IDE"
+          size_gb: 1
+        - type: "CDROM"
+          bus: "IDE"
+          empty_cdrom: True
+
+  - name: Update VM by increasing  the size of the disks
+    ntnx_vms:
+      vm_uuid: "{{ result.vm_uuid }}"
+      disks:
+        - type: "DISK"
+          uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+          size_gb: 22
+        - type: DISK
+          uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+          size_gb: 2
+        - type: "DISK"
+          uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+          size_gb: 2
+        - type: "DISK"
+          size_gb: 2
+          uuid: "{{ result.response.spec.resources.disk_list[3].uuid }}"
+        - type: DISK
+          size_gb: 2
+          uuid: "{{ result.response.spec.resources.disk_list[4].uuid }}"
+        - type: "DISK"
+          uuid: "{{ result.response.spec.resources.disk_list[5].uuid }}"
+          size_gb: 1
+
+  - name: Update VM by removing all type of  disks
+    ntnx_vms:
+      vm_uuid: "{{ result.vm_uuid }}"
+      disks:
+        - state: absent
+          uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+        - state: absent
+          uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+        - state: absent
+          uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+        - state: absent
+          uuid: "{{ result.response.spec.resources.disk_list[3].uuid }}"
+        - state: absent
+          uuid: "{{ result.response.spec.resources.disk_list[4].uuid }}"
+        - state: absent
+          uuid: "{{ result.response.spec.resources.disk_list[5].uuid }}"
+        - state: absent
+          uuid: "{{ result.response.spec.resources.disk_list[6].uuid }}"
+
+  - name: Update VM by adding subnets
+    ntnx_vms:
+      vm_uuid: "{{ result.vm_uuid }}"
+      networks:
+        - is_connected: true
+          subnet:
+            uuid: "{{ network.dhcp.uuid }}"
+        - is_connected: false
+          subnet:
+            uuid: "{{ static.uuid }}"
+          private_ip: "{{ network.static.ip }}"
+
+  - name: Update VM by editing a subnet is_connected
+    ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      desc: disconnect and connects nic's
+      networks:
+        - is_connected: true
+          uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+        - is_connected: false
+          uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
+
+  - name: Update VM by change the private ip for subnet
+    ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      name: updated
+      desc: change ip
+      networks:
+        - is_connected: true
+          private_ip: "10.30.30.79"
+          uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+
+  - name: Update VM by change vlan subnet
+    ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      name: updated
+      desc: change vlan
+      categories:
+        AppType:
+          - Apache_Spark
+      networks:
+        - is_connected: false
+          subnet:
+            name: vlan1211
+          uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
+
+  - name: Update VM by deleting a subnet
+    ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      networks:
+        - state: absent
+          uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
+        - state: absent
+          uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
 """
 
 RETURN = r"""
