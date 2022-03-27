@@ -1,0 +1,200 @@
+- name: create VM with minimum requiremnts to update
+  ntnx_vms:
+    state: present
+    name: update vm
+    cluster:
+      name: "{{ cluster.name }}"
+  register: vm
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - vm.response is defined
+      - vm.response.status.state == 'COMPLETE'
+      - vm.vm_uuid
+      - vm.task_uuid
+    fail_msg: ' Unable to create VM with minimum requiremnts '
+    success_msg: ' VM with minimum requiremnts created successfully '
+
+- name: Update VM by adding all type of  disks
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        clone_image: 
+          name: "{{ ubuntu }}"
+        bus: "SCSI"
+        size_gb: 25
+      - type: DISK
+        size_gb: 3
+        bus: SCSI
+        storage_container:
+          uuid: "{{ storage_container.uuid }}"
+      - type: "CDROM"
+        bus: "IDE"
+        empty_cdrom: True
+      - type: DISK
+        size_gb: 3
+        bus: PCI
+      - type: "DISK"
+        size_gb: 3
+        bus: "SATA"
+      - type: "DISK"
+        size_gb: 3
+        bus: "SCSI"
+      - type: "DISK"
+        bus: "IDE"
+        size_gb: 3
+  register: vm
+  ignore_errors: true
+
+- name: Update VM by decreasing the size of the disk that contains the image with SCSI bus type
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[0].uuid }}" # clone image with SCSI
+        size_gb: 22
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the disk that contains the image with SCSI bus type '
+    success_msg: ' Success: returned error as expected '
+
+
+- name: Update VM by decreasing the size of the SCSI disk with storage container
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[1].uuid }}" # storage container with SCSI
+        size_gb: 1
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the SCSI disk with storage container '
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by decreasing the size of the empty ide cdrom #error
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[2].uuid }}" # ide CDROM
+        size_gb: 1
+  register: result
+  ignore_errors: true
+
+- debug:
+    var: result
+
+- name: Update VM by decreasing the size of the pci disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[3].uuid }}" # pci
+        size_gb: 1
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the pci disk'
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by decreasing the size of the sata disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[4].uuid }}" # sata
+        size_gb: 1
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the sata disk'
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by decreasing the size of the SCSI disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[5].uuid }}" # scsi
+        size_gb: 1
+  register: result
+  ignore_errors: true    
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the SCSI disk'
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by decreasing the size of the  IDE disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[6].uuid }}" # IDE
+        size_gb: 1
+  register: result
+  ignore_errors: true   
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the IDE disk'
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by change ths bus type of ide disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[6].uuid }}" # IDE
+        bus: SCSI
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' parameters are mutually exclusive: uuid|bus found in disks '
+      - result.failed == True
+    success_msg: ' Success: returned error as expected '
+    fail_msg: ' Fail: Update VM by change ths bus type of ide disk sucessfuly '
+
+- name: Delete created vm's
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    state: absent
+  ignore_errors: true
+  register: result
+
+- assert:
+    that:
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+      - result.vm_uuid
+      - result.task_uuid
+    fail_msg: 'Fail: Unable to delete created vm '
+    success_msg: 'Success: Vm deleted sucessfully'

@@ -11,3 +11,4 @@
         - import_tasks: "delete.yml"
         - import_tasks: "vm_operations.yml"
         - import_tasks: "vm_update.yml"
+        - import_tasks: "negtaive_vm_update.yml"
