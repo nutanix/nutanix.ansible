@@ -1034,6 +1034,7 @@ def get_module_spec():
 
 def create_vm(module, result):
     vm = VM(module)
+    operation = module.params.get("operation")
     spec, error = vm.get_spec()
     if error:
         result["error"] = error
@@ -1050,10 +1051,25 @@ def create_vm(module, result):
     result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
-    if module.params.get("wait"):
+    if module.params.get("wait") or operation in ["soft_shutdown", "hard_poweroff"]:
         wait_for_task_completion(module, result)
         resp = vm.read(vm_uuid)
+        spec = resp.copy()
+        spec.pop("status")
         result["response"] = resp
+
+    if operation == "soft_shutdown":
+        resp = vm.soft_shutdown(spec)
+    elif operation == "hard_poweroff":
+        resp = vm.hard_power_off(spec)
+
+    if operation:
+        result["response"] = resp
+        result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
+        if module.params.get("wait"):
+            wait_for_task_completion(module, result)
+            resp = vm.read(vm_uuid)
+            result["response"] = resp
 
 
 def update_vm(module, result):
@@ -1104,8 +1120,7 @@ def update_vm(module, result):
     if (
         module.params.get("wait")
         or is_powered_off
-        or is_vm_on
-        and operation in ["soft_shutdown", "hard_poweroff"]
+        or (is_vm_on and operation in ["soft_shutdown", "hard_poweroff"])
     ):
         wait_for_task_completion(module, result)
         resp = vm.read(vm_uuid)
