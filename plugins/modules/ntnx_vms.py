@@ -1063,7 +1063,7 @@ def create_vm(module, result):
     elif operation == "hard_poweroff":
         resp = vm.hard_power_off(spec)
 
-    if operation:
+    if operation in ["soft_shutdown", "hard_poweroff"]:
         result["response"] = resp
         result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
         if module.params.get("wait"):
