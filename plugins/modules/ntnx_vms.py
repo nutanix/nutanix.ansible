@@ -1244,6 +1244,7 @@ def run_module():
             ("state", "absent", ("vm_uuid",)),
             ("operation", "create_ova_image", ("vm_uuid", "ova_name", "ova_file_format")),
             ("operation", "clone", ("vm_uuid",)),
+            ("operation", "on", ("vm_uuid",)),
         ],
     )
     remove_param_with_none_value(module.params)
