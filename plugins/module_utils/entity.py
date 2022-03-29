@@ -30,11 +30,15 @@ class Entity(object):
         self.headers = self._build_headers(module, additional_headers)
         self.cookies = cookies
 
-    def create(self, data=None, endpoint=None, query=None, raise_error=True, timeout=30):
+    def create(
+        self, data=None, endpoint=None, query=None, raise_error=True, timeout=30
+    ):
         url = self.base_url + "/{0}".format(endpoint) if endpoint else self.base_url
         if query:
             url = self._build_url_with_query(url, query)
-        return self._fetch_url(url, method="POST", data=data, raise_error=raise_error, timeout=timeout)
+        return self._fetch_url(
+            url, method="POST", data=data, raise_error=raise_error, timeout=timeout
+        )
 
     def read(self, uuid=None, endpoint=None, query=None, raise_error=True, timeout=30):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
@@ -42,29 +46,49 @@ class Entity(object):
             url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
-        return self._fetch_url(url, method="GET", raise_error=raise_error, timeout=timeout)
+        return self._fetch_url(
+            url, method="GET", raise_error=raise_error, timeout=timeout
+        )
 
-    def update(self, data=None, uuid=None, endpoint=None, query=None, raise_error=True, timeout=30):
+    def update(
+        self,
+        data=None,
+        uuid=None,
+        endpoint=None,
+        query=None,
+        raise_error=True,
+        timeout=30,
+    ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
             url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
-        return self._fetch_url(url, method="PUT", data=data, raise_error=raise_error, timeout=timeout)
+        return self._fetch_url(
+            url, method="PUT", data=data, raise_error=raise_error, timeout=timeout
+        )
 
-    def delete(self, uuid=None, endpoint=None, query=None, raise_error=True, timeout=30):
+    def delete(
+        self, uuid=None, endpoint=None, query=None, raise_error=True, timeout=30
+    ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
             url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
-        return self._fetch_url(url, method="DELETE", raise_error=raise_error, timeout=timeout)
+        return self._fetch_url(
+            url, method="DELETE", raise_error=raise_error, timeout=timeout
+        )
 
-    def list(self, data=None, endpoint=None, use_base_url=False, raise_error=True, timeout=30):
+    def list(
+        self, data=None, endpoint=None, use_base_url=False, raise_error=True, timeout=30
+    ):
         url = self.base_url if use_base_url else self.base_url + "/list"
         if endpoint:
             url = url + "/{0}".format(endpoint)
-        return self._fetch_url(url, method="POST", data=data, raise_error=raise_error, timeout=timeout)
+        return self._fetch_url(
+            url, method="POST", data=data, raise_error=raise_error, timeout=timeout
+        )
 
     def get_spec(self):
         spec = self._get_default_spec()
