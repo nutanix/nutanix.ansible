@@ -1242,9 +1242,9 @@ def run_module():
         required_if=[
             ("vm_uuid", None, ("name",)),
             ("state", "absent", ("vm_uuid",)),
-            ("operation", "create_ova_image", ("ova_name", "ova_file_format")),
+            ("operation", "create_ova_image", ("vm_uuid", "ova_name", "ova_file_format")),
+            ("operation", "clone", ("vm_uuid",)),
         ],
-        required_by={"operation": "vm_uuid"},
     )
     remove_param_with_none_value(module.params)
     result = {
