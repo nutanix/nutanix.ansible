@@ -8,13 +8,10 @@ from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.foundation 
 
 __metaclass__ = type
 
-import base64
-import os
-from copy import deepcopy
-
 
 class EnumerateHypervisorIsos(Foundation):
     def __init__(self, module):
         resource_type = "/enumerate_hypervisor_isos"
-        super(EnumerateHypervisorIsos, self).__init__(module, resource_type=resource_type)
-       
+        super(EnumerateHypervisorIsos, self).__init__(
+            module, resource_type=resource_type
+        )

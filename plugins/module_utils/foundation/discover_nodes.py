@@ -8,22 +8,19 @@ from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.foundation 
 
 __metaclass__ = type
 
-import base64
-import os
-from copy import deepcopy
-
 
 class DiscoverNodes(Foundation):
     def __init__(self, module):
         resource_type = "/discover_nodes"
         super(DiscoverNodes, self).__init__(module, resource_type=resource_type)
-       
 
-    def discover(self, include_configured=False): 
-        resp, status_obj = self.read()
+    def discover(self, include_configured=False):
+        resp = self.read()
+        if not resp:
+            return None
         blocks = []
         for block in resp:
-            nodes = block.get("nodes",[])
+            nodes = block.get("nodes", [])
             result_nodes = []
             for n in nodes:
                 configured = n.get("configured")
@@ -32,4 +29,4 @@ class DiscoverNodes(Foundation):
             if len(result_nodes) > 0:
                 block["nodes"] = result_nodes
                 blocks.append(block)
-        return blocks, status_obj
+        return blocks

@@ -49,18 +49,9 @@ hypervisor_images:
   ]
 """
 
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.base_module import (  # noqa: E402
-    FoundationBaseModule,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.enumerate_hypervisor_isos import (  # noqa: E402
-    EnumerateHypervisorIsos,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.foundation import (  # noqa: E402
-    Foundation,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.utils import (  # noqa: E402
-    remove_param_with_none_value,
-)
+from ..module_utils.foundation.base_module import FoundationBaseModule
+from ..module_utils.foundation.enumerate_hypervisor_isos import EnumerateHypervisorIsos
+from ..module_utils.utils import remove_param_with_none_value
 
 
 def get_module_spec():
@@ -70,12 +61,12 @@ def get_module_spec():
 
 
 def list_hypervisor_images(module, result):
-  images = EnumerateHypervisorIsos(module)
-  resp, status = images.read()
-  if status["error"]:
+    images = EnumerateHypervisorIsos(module)
+    resp, status = images.read()
+    if status["error"]:
         result["error"] = status["error"]
         module.fail_json(msg="Failed list hypervisor images", **result)
-  result["hypervisor_images"] = resp
+    result["hypervisor_images"] = resp
 
 
 def run_module():
