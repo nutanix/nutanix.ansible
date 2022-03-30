@@ -31,41 +31,65 @@ class Entity(object):
         self.headers = self._build_headers(module, additional_headers)
         self.cookies = cookies
 
-    def create(self, data=None, endpoint=None, query=None, timeout=30):
+    def create(
+        self, data=None, endpoint=None, query=None, raise_error=True, timeout=30
+    ):
         url = self.base_url + "/{0}".format(endpoint) if endpoint else self.base_url
         if query:
             url = self._build_url_with_query(url, query)
-        return self._fetch_url(url, method="POST", data=data, timeout=timeout)
+        return self._fetch_url(
+            url, method="POST", data=data, raise_error=raise_error, timeout=timeout
+        )
 
-    def read(self, uuid=None, endpoint=None, query=None, timeout=30):
+    def read(self, uuid=None, endpoint=None, query=None, raise_error=True, timeout=30):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
             url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
-        return self._fetch_url(url, method="GET", timeout=timeout)
+        return self._fetch_url(
+            url, method="GET", raise_error=raise_error, timeout=timeout
+        )
 
-    def update(self, data=None, uuid=None, endpoint=None, query=None, timeout=30):
+    def update(
+        self,
+        data=None,
+        uuid=None,
+        endpoint=None,
+        query=None,
+        raise_error=True,
+        timeout=30,
+    ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
             url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
-        return self._fetch_url(url, method="PUT", data=data, timeout=timeout)
+        return self._fetch_url(
+            url, method="PUT", data=data, raise_error=raise_error, timeout=timeout
+        )
 
-    def delete(self, uuid=None, endpoint=None, query=None, timeout=30):
+    def delete(
+        self, uuid=None, endpoint=None, query=None, raise_error=True, timeout=30
+    ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
             url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
-        return self._fetch_url(url, method="DELETE", timeout=timeout)
+        return self._fetch_url(
+            url, method="DELETE", raise_error=raise_error, timeout=timeout
+        )
 
-    def list(self, data=None, endpoint=None, use_base_url=False, timeout=30):
+    def list(
+        self, data=None, endpoint=None, use_base_url=False, raise_error=True, timeout=30
+    ):
         url = self.base_url if use_base_url else self.base_url + "/list"
         if endpoint:
             url = url + "/{0}".format(endpoint)
-        return self._fetch_url(url, method="POST", data=data, timeout=timeout)
+        return self._fetch_url(
+            url, method="POST", data=data, raise_error=raise_error, timeout=timeout
+        )
 
     def get_spec(self, old_spec=None):
         spec = copy.deepcopy(old_spec) or self._get_default_spec()
@@ -77,9 +101,9 @@ class Entity(object):
                     return None, error
         return spec, None
 
-    def get_uuid(self, value, key="name"):
+    def get_uuid(self, value, key="name", raise_error=True):
         data = {"filter": "{0}=={1}".format(key, value), "length": 1}
-        resp = self.list(data)
+        resp = self.list(data, raise_error=raise_error)
         entities = resp.get("entities") if resp else None
         if entities:
             for entity in entities:
@@ -123,7 +147,7 @@ class Entity(object):
         url = url._replace(query=query_)
         return urlunparse(url)
 
-    def _fetch_url(self, url, method, data=None, timeout=30):
+    def _fetch_url(self, url, method, data=None, raise_error=True, timeout=30):
         data = self.module.jsonify(data) if data else None
         resp, info = fetch_url(
             self.module,
@@ -141,6 +165,9 @@ class Entity(object):
             resp_json = json.loads(to_text(body)) if body else None
         except ValueError:
             resp_json = None
+
+        if not raise_error:
+            return resp_json
 
         if status_code >= 300:
             err = info.get("msg", "Status code != 2xx")
