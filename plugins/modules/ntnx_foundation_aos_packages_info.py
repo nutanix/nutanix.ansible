@@ -40,7 +40,7 @@ EXAMPLES = r"""
 
 RETURN = r"""
 aos_packages:
-  description: Uploaded AOS packages 
+  description: Uploaded AOS packages
   returned: always
   type: list
   sample: [
@@ -49,33 +49,23 @@ aos_packages:
   ]
 """
 
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.base_module import (  # noqa: E402
-    FoundationBaseModule,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.enumerate_aos_packages import (  # noqa: E402
-    EnumerateAOSPackages,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.foundation import (  # noqa: E402
-    Foundation,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.utils import (  # noqa: E402
-    remove_param_with_none_value,
-)
+from ..module_utils.foundation.base_module import FoundationBaseModule
+from ..module_utils.foundation.enumerate_aos_packages import EnumerateAOSPackages
+from ..module_utils.utils import remove_param_with_none_value
 
 
 def get_module_spec():
     module_args = dict()
-
     return module_args
 
 
 def list_aos_packages(module, result):
-  packages = EnumerateAOSPackages(module)
-  resp, status = packages.list()
-  if status["error"]:
+    packages = EnumerateAOSPackages(module)
+    resp, status = packages.list()
+    if status["error"]:
         result["error"] = status["error"]
         module.fail_json(msg="Failed list AOS packages", **result)
-  result["aos_packages"] = resp
+    result["aos_packages"] = resp
 
 
 def run_module():
