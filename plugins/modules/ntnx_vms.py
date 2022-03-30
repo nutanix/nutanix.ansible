@@ -269,6 +269,11 @@ options:
     choices:
       - QCOW2
       - VMDK
+  force_power_off:
+      description:
+        - when set the vm will restart if it's necessary
+      type: bool
+      default: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_opperations
