@@ -1027,6 +1027,7 @@ def get_module_spec():
         ),
         ova_name=dict(type="str"),
         ova_file_format=dict(type="str", choices=["QCOW2", "VMDK"]),
+        force_power_off=dict(type="bool", default=False),
     )
 
     return module_args
@@ -1092,13 +1093,19 @@ def update_vm(module, result):
         return
 
     if nothing_to_change(spec, resp, operation):
-        module.exit_json(msg="Nothing to change", **result)
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change")
 
     is_vm_on = vm.is_on(spec)
 
     is_powered_off = False
 
     if is_vm_on and vm.is_restart_required():
+        if not module.params.get("force_power_off"):
+            module.fail_json(
+                "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+            )
+
         power_off_vm(vm, module, result)
         spec["spec"]["resources"]["power_state"] = result["response"]["spec"][
             "resources"
@@ -1145,7 +1152,14 @@ def update_vm(module, result):
 
 
 def nothing_to_change(spec, resp, operation):
-    if spec == resp and operation == resp["spec"]["resources"]["power_state"].lower():
+    if spec == resp and (
+        operation is None
+        or (
+            operation in ["soft_shutdown", "hard_poweroff"]
+            and resp["spec"]["resources"]["power_state"] == "OFF"
+        )
+        or operation == resp["spec"]["resources"]["power_state"].lower()
+    ):
         return True
     return False
 
@@ -1242,7 +1256,11 @@ def run_module():
         required_if=[
             ("vm_uuid", None, ("name",)),
             ("state", "absent", ("vm_uuid",)),
-            ("operation", "create_ova_image", ("vm_uuid", "ova_name", "ova_file_format")),
+            (
+                "operation",
+                "create_ova_image",
+                ("vm_uuid", "ova_name", "ova_file_format"),
+            ),
             ("operation", "clone", ("vm_uuid",)),
             ("operation", "on", ("vm_uuid",)),
         ],
