@@ -8,17 +8,12 @@ from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.foundation 
 
 __metaclass__ = type
 
-import base64
-import os
-from copy import deepcopy
-
 
 class EnumerateAOSPackages(Foundation):
     def __init__(self, module):
         resource_type = "/enumerate_nos_packages"
         super(EnumerateAOSPackages, self).__init__(module, resource_type=resource_type)
-       
 
-    def list(self): 
+    def list(self):
         resp, status_obj = self.read()
         return resp, status_obj

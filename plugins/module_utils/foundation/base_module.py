@@ -3,29 +3,27 @@
 from __future__ import absolute_import, division, print_function
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
-from ansible_collections.nutanix.ncp.plugins.module_utils.base_module import (  # noqa: E402
-    BaseModule,
-)
 
 __metaclass__ = type
 
 
-class FoundationBaseModule(BaseModule):
-    support_base_module_keys = ["nutanix_host", "nutanix_port"]
-    include_wait_key="include_wait"
-
+class FoundationBaseModule(AnsibleModule):
+    argument_spec = dict(
+        nutanix_host=dict(
+            type="str", required=True, fallback=(env_fallback, ["NUTANIX_HOST"])
+        ),
+        nutanix_port=dict(default="8000", type="str"),
+        state=dict(type="str", choices=["present", "absent"], default="present"),
+        wait=dict(type="bool", default=True),
+    )
 
     def __init__(self, **kwargs):
-        if kwargs.get(self.include_wait_key,False):
-            self.support_base_module_keys.append("wait")
-            kwargs.pop(self.include_wait_key)
-        self._remove_unsupported_attributes()
-        self.argument_spec["nutanix_port"]["default"] = "8000"
+        if kwargs.get("argument_spec"):
+            kwargs["argument_spec"].update(self.argument_spec)
+        else:
+            kwargs["argument_spec"] = self.argument_spec
+
+        if not kwargs.get("supports_check_mode"):
+            kwargs["supports_check_mode"] = True
+
         super(FoundationBaseModule, self).__init__(**kwargs)
-        
-    def _remove_unsupported_attributes(self):
-        new_arg_spec = {}
-        for k in self.argument_spec.keys():
-            if k in self.support_base_module_keys:
-                new_arg_spec[k] = self.argument_spec[k]
-        self.argument_spec = new_arg_spec

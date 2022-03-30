@@ -84,40 +84,34 @@ blocks:
   ]
 """
 
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.base_module import (  # noqa: E402
-    FoundationBaseModule,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.foundation import (  # noqa: E402
-    Foundation,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.node_discovery import (  # noqa: E402
-    NodeDiscovery,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.utils import (  # noqa: E402
-    remove_param_with_none_value,
-)
+from ..module_utils.foundation.base_module import FoundationBaseModule
+from ..module_utils.foundation.node_discovery import NodeDiscovery
+from ..module_utils.utils import remove_param_with_none_value
 
 
 def get_module_spec():
     module_args = dict(
         include_configured=dict(type="bool", required=False, default=False),
         include_network_details=dict(type="bool", required=False, default=False),
-        timeout=dict(type="int", required=False ,default=60),
+        timeout=dict(type="int", required=False, default=60),
     )
 
     return module_args
 
 
 def discover_nodes(module, result):
-  include_configured = module.params["include_configured"]
-  include_network_details = module.params.get("include_network_details") 
-  timeout=module.params.get("timeout") 
-  node_discovery = NodeDiscovery(module)
-  resp, status = node_discovery.discover(include_configured, include_network_details, timeout)
-  if status["error"]:
+    include_configured = module.params["include_configured"]
+    include_network_details = module.params.get("include_network_details")
+    timeout = module.params.get("timeout")
+    node_discovery = NodeDiscovery(module)
+    resp, status = node_discovery.discover(
+        include_configured, include_network_details, timeout
+    )
+    if status["error"]:
         result["error"] = status["error"]
         module.fail_json(msg="Failed discover nodes via foundation", **result)
-  result["blocks"] = resp["blocks"]
+    result["blocks"] = resp["blocks"]
+
 
 def run_module():
     module = FoundationBaseModule(
@@ -136,5 +130,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

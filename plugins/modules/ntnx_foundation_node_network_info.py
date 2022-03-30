@@ -53,7 +53,7 @@ nodes:
   description: Discovered network information by Foundation
   returned: always
   type: list
-  sample:   
+  sample:
     [
       {
         "cvm_gateway": "192.168.0.1",
@@ -73,38 +73,32 @@ nodes:
     ]
 """
 
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.base_module import (  # noqa: E402
-    FoundationBaseModule,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.foundation import (  # noqa: E402
-    Foundation,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.node_network_details import (  # noqa: E402
-    NodeNetworkDetails,
-)
-from ansible_collections.nutanix.ncp.plugins.module_utils.utils import (  # noqa: E402
-    remove_param_with_none_value,
-)
+from ..module_utils.foundation.base_module import FoundationBaseModule
+from ..module_utils.foundation.node_network_details import NodeNetworkDetails
+from ..module_utils.utils import remove_param_with_none_value
 
 
 def get_module_spec():
     module_args = dict(
-        nodes=dict(type="list",elements="str", required=True),
-        timeout=dict(type="",required=False)
+        nodes=dict(type="list", elements="str", required=True),
+        timeout=dict(type="", required=False),
     )
 
     return module_args
 
 
 def get_node_network_details(module, result):
-  node_network_details = NodeNetworkDetails(module)
-  nodes = module.params.get("nodes")
-  timeout = module.params.get("timeout")
-  resp, status = node_network_details.retrieve_network_info(nodes,timeout)
-  if status.get("error"):
+    node_network_details = NodeNetworkDetails(module)
+    nodes = module.params.get("nodes")
+    timeout = module.params.get("timeout")
+    resp, status = node_network_details.retrieve_network_info(nodes, timeout)
+    if status.get("error"):
         result["error"] = status["error"]
-        module.fail_json(msg="Failed to retrieve node network details via foundation", **result)
-  result["nodes"] = resp
+        module.fail_json(
+            msg="Failed to retrieve node network details via foundation", **result
+        )
+    result["nodes"] = resp
+
 
 def run_module():
     module = FoundationBaseModule(
