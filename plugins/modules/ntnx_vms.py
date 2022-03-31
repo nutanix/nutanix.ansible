@@ -941,10 +941,7 @@ task_uuid:
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
-from ..module_utils.utils import (  # noqa: E402
-    remove_param_with_none_value,
-    strip_extra_attrs_from_status,
-)
+from ..module_utils import utils
 
 
 def get_module_spec():
@@ -1073,7 +1070,14 @@ def create_vm(module, result):
         result["response"] = resp
         result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
         if module.params.get("wait"):
-            wait_for_task_completion(module, result)
+            wait_for_task_completion(module, result, False)
+            state = result["response"].get("status")
+            if state == "FAILED":
+                result["skipped"] = True
+                result[
+                    "warning"
+                ] = "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
+
             resp = vm.read(vm_uuid)
             result["response"] = resp
 
@@ -1085,7 +1089,7 @@ def update_vm(module, result):
     vm = VM(module)
     resp = vm.read(vm_uuid)
     result["response"] = resp
-    strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
     spec, error = vm.get_spec(resp)
 
@@ -1097,12 +1101,11 @@ def update_vm(module, result):
         result["response"] = spec
         return
 
-    if nothing_to_change(spec, resp, operation):
+    if utils.check_for_idempotency(spec, resp, operation=operation):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change")
 
     is_vm_on = vm.is_on(spec)
-
     is_powered_off = False
 
     if is_vm_on and vm.is_restart_required():
@@ -1112,12 +1115,8 @@ def update_vm(module, result):
             )
 
         power_off_vm(vm, module, result)
-        spec["spec"]["resources"]["power_state"] = result["response"]["spec"][
-            "resources"
-        ]["power_state"]
-        spec["metadata"]["entity_version"] = str(
-            int(spec["metadata"]["entity_version"]) + 1
-        )
+        vm.update_entity_spec_version(spec)
+        vm.set_power_state(spec, "OFF")
         is_powered_off = True
 
     resp = vm.update(spec, vm_uuid)
@@ -1151,22 +1150,16 @@ def update_vm(module, result):
         result["response"] = resp
         result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
         if module.params.get("wait"):
-            wait_for_task_completion(module, result)
+            wait_for_task_completion(module, result, False)
+            state = result["response"].get("status")
+            if state == "FAILED":
+                result["skipped"] = True
+                result[
+                    "warning"
+                ] = "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
+
             resp = vm.read(vm_uuid)
             result["response"] = resp
-
-
-def nothing_to_change(spec, resp, operation):
-    if spec == resp and (
-        operation is None
-        or (
-            operation in ["soft_shutdown", "hard_poweroff"]
-            and resp["spec"]["resources"]["power_state"] == "OFF"
-        )
-        or operation == resp["spec"]["resources"]["power_state"].lower()
-    ):
-        return True
-    return False
 
 
 def power_off_vm(vm, module, result):
@@ -1245,10 +1238,10 @@ def delete_vm(module, result):
         wait_for_task_completion(module, result)
 
 
-def wait_for_task_completion(module, result):
+def wait_for_task_completion(module, result, raise_error=True):
     task = Task(module)
     task_uuid = result["task_uuid"]
-    resp = task.wait_for_completion(task_uuid)
+    resp = task.wait_for_completion(task_uuid, raise_error=raise_error)
     result["response"] = resp
     if not result.get("vm_uuid") and resp.get("entity_reference_list"):
         result["vm_uuid"] = resp["entity_reference_list"][0]["uuid"]
@@ -1270,7 +1263,7 @@ def run_module():
             ("operation", "on", ("vm_uuid",)),
         ],
     )
-    remove_param_with_none_value(module.params)
+    utils.remove_param_with_none_value(module.params)
     result = {
         "changed": False,
         "error": None,

@@ -111,6 +111,12 @@ class Entity(object):
                     return entity["metadata"]["uuid"]
         return None
 
+    @staticmethod
+    def update_entity_spec_version(spec):
+        spec["metadata"]["entity_version"] = str(
+            int(spec["metadata"]["entity_version"]) + 1
+        )
+
     def _build_url(self, module, scheme, resource_type):
         host = module.params.get("nutanix_host")
         url = "{proto}://{host}".format(proto=scheme, host=host)

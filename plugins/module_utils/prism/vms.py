@@ -310,24 +310,24 @@ class VM(Prism):
                 error="Entity {0} not found.".format(uuid),
             )
 
-    def power_on(self, payload):
+    def power_on(self, payload, raise_error=True):
         uuid = payload["metadata"]["uuid"]
         payload["spec"]["resources"]["power_state"] = "ON"
-        resp = self.update(payload, uuid)
+        resp = self.update(payload, uuid, raise_error=raise_error)
         return resp
 
-    def soft_shutdown(self, payload):
+    def soft_shutdown(self, payload, raise_error=True):
         uuid = payload["metadata"]["uuid"]
         payload["spec"]["resources"]["power_state"] = "OFF"
         payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = "ACPI"
-        resp = self.update(payload, uuid)
+        resp = self.update(payload, uuid, raise_error=raise_error)
         return resp
 
-    def hard_power_off(self, payload):
+    def hard_power_off(self, payload, raise_error=True):
         uuid = payload["metadata"]["uuid"]
         payload["spec"]["resources"]["power_state"] = "OFF"
         payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = "HARD"
-        resp = self.update(payload, uuid)
+        resp = self.update(payload, uuid, raise_error=raise_error)
         return resp
 
     def is_restart_required(self):
@@ -368,19 +368,23 @@ class VM(Prism):
         else:
             if vdisk.get("size_gb"):
                 disk_size_bytes = vdisk["size_gb"] * 1024 * 1024 * 1024
-                if not vdisk.get("uuid") or disk_size_bytes >= disk.get(
-                    "disk_size_bytes", 0
+                if not vdisk.get("uuid") or (
+                    "disk_size_bytes" in disk
+                    and disk_size_bytes >= disk.get("disk_size_bytes", 0)
                 ):
                     if disk.get("bus") in ["IDE", "SATA"]:
                         self.require_vm_restart = True
                     disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
                 else:
+                    if disk.get("device_properties", {}).get("device_type") == "CDROM":
+                        self.module.fail_json(
+                            msg="Unsupported operation: Cannot resize empty cdrom.",
+                            disk=disk,
+                        )
                     self.module.fail_json(
                         msg="Unsupported operation: Unable to decrease disk size.",
                         disk=disk,
                     )
-                if disk.get("data_source_reference") and disk.get("uuid"):
-                    self.require_vm_restart = True
 
             if vdisk.get("storage_container"):
                 disk.pop("data_source_reference", None)
@@ -443,6 +447,10 @@ class VM(Prism):
             self.require_vm_restart = True
 
         payload["spec"]["resources"]["disk_list"].remove(disk)
+
+    @staticmethod
+    def set_power_state(spec, power_state):
+        spec["spec"]["resources"]["power_state"] = power_state
 
 
 # Helper functions
