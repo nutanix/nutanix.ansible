@@ -50,19 +50,62 @@ from ..module_utils.utils import remove_param_with_none_value
 
 def get_module_spec():
     hypervisor_options = ["kvm", "hyperv", "xen", "esx", "ahv"]
+    
+    ucsm_params = dict(
+        native_vlan=dict(type="bool", required=False),
+        keep_ucsm_settings=dict(type="bool", required=False),
+        mac_pool=dict(type="str", required=False),
+        vlan_name=dict(type="str", required=False),
+    )
+
+    vswitches = dict(
+        lacp=dict(type="str", required=False),
+        bond_mode=dict(type="str", required=False),
+        name=dict(type="str", required=False),
+        uplinks=dict(type="str", required=False),
+        mtu=dict(type="int", required=False),
+        other_config=dict(type="list", elements="str", required=False)
+    )
+
     manual_mode_node_spec = dict(
-        node_uuid=dict(type="str", required=True),
+        node_uuid=dict(type="str", required=False),
         node_position=dict(type="str", required=True, choices=["A", "B", "C", "D"]),
         hypervisor_hostname=dict(type="str", required=True),
         hypervisor_ip=dict(type="str", required=True),
         cvm_ip=dict(type="str", required=True),
+        image_now=dict(type=bool, required=True),
         ipmi_ip=dict(type="str", required=True),
         ipmi_password=dict(type="str", required=False, no_log=True),
         ipmi_user=dict(type="str", required=False),
-        image_now=dict(type=bool, required=True),
+        ipmi_netmask=dict(type="str", required=False),
+        ipmi_gateway=dict(type="str", required=False),
+        ipmi_mac=dict(type="str", required=False),          
+        ipmi_configure_now=dict(type="bool", required=False),
         node_serial=dict(type=str, required=False),
         hypervisor=dict(type="str", required=True, choice=hypervisor_options),
+        ipv6_address=dict(type="str", required=False),
+        image_delay=dict(type="int", required=False),
+        device_hint=dict(type="str", required=False),
+        cvm_gb_ram=dict(type="int", required=False),
+        bond_mode=dict(type="str", required=False),
+        rdma_passthrough=dict(type="bool", required=False),
+        cluster_id=dict(type="str", required=False),
+        ucsm_node_serial=dict(type="str", required=False),
+        node_serial=dict(type="str", required=False),
+        image_successful=dict(type="bool", required=False),
+        ipv6_interface=dict(type="str", required=False),
+        cvm_num_vcpus=dict(type="int", required=False),
+        current_network_interface=dict(type="str", required=False),
+        bond_lacp_rate=dict(type="str", required=False),
+        ucsm_managed_mode=dict(type="str", required=False),
+        current_cvm_vlan_tag=dict(type="int", required=False),
+        exlude_boot_serial=dict(type="bool", required=False),
+        mitigate_low_boot_space=dict(type="bool", required=False),
+        bond_uplinks=dict(type="list", elements="str", required=False),
+        vswitches = dict(type="list", elements="dict",options=vswitches, required=False),
+        ucsm_params = dict(type="dict", options=ucsm_params, required=False),
     )
+
     discovery_override = dict(
         hypervisor_hostname=dict(type="str", required=False),
         hypervisor_ip=dict(type="str", required=False),
@@ -106,6 +149,13 @@ def get_module_spec():
         cvm_ntp_servers=dict(type="list", elements="str", required=False),
         cvm_dns_servers=dict(type="list", elements="str", required=False),
         cluster_init_now=dict(type="bool", default=True),
+        enable_ns=dict(type="bool", required=False),
+        backplane_subnet=dict(type="str", required=False),
+        backplane_netmask=dict(type="str", required=False),
+        backplane_vlan=dict(type="str", required=False),
+        single_node_cluster=dict(type="bool", required=False),
+        hypervisor_ntp_servers=dict(type="list", required=False, elements="str"),
+        cluster_members=dict(type="list", required=True, elements="str"),
     )
 
     hypervisor_iso_spec_dict = dict(
@@ -125,6 +175,17 @@ def get_module_spec():
         api_key=dict(type="str", required=True),
     )
 
+    tests = dict(
+        run_ncc=dict(type="bool", required=False),
+        run_syscheck=dict(type="bool", required=False),
+    )
+
+    eos_metadata = dict(
+        config_id=dict(type="str", required=False),
+        account_name=dict(type="list", elements="str", required=False),
+        email=dict(type="str", required=False),
+    )
+
     module_args = dict(
         cvm_gateway=dict(type="str", required=True),
         cvm_netmask=dict(type="str", required=True),
@@ -133,7 +194,7 @@ def get_module_spec():
         hypervisor_netmask=dict(type="str", required=True),
         nos_package=dict(type="str", required=True),
         blocks=dict(type="list", required=True, options=block_spec, elements="dict"),
-        cluster=dict(type="dict", required=False, options=cluster_spec),
+        cluster=dict(type="list", elements="dict", required=False, options=cluster_spec),
         hypervisor_iso=dict(
             type="dict",
             required=False,
@@ -152,6 +213,10 @@ def get_module_spec():
         foundation_central=dict(
             type="dict", required=False, options=foundation_central
         ),
+        tests=dict(
+            type="dict", required=False, options=tests
+        ),
+        eos_metadata = dict(type="dict", required=False, options=eos_metadata),
         hypervisor_password=dict(type="str", required=False, no_log=True),
         xen_master_label=dict(type="str", required=False),
         xen_master_password=dict(type="str", required=False, no_log=True),
