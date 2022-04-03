@@ -54,6 +54,8 @@ class ImageNodes(Foundation):
             "unc_password": self._build_spec_unc_password,
             "svm_rescue_args": self._build_spec_svm_rescue_args,
             "install_script": self._build_spec_install_script,
+            "tests": self._build_spec_tests,
+            "eos_metadata": self._build_spec_eos_meta_data,
         }
 
     def _get_default_spec(self):
@@ -70,12 +72,32 @@ class ImageNodes(Foundation):
             }
         )
 
+    def _get_default_cluster_spec(self, cluster):
+        
+        default_spec = {
+            "redundancy_factor" : "",
+            "cluster_init_now" : "",
+            "enable_ns" : "",
+            "backplane_subnet" : "",
+            "backplane_netmask" : "",
+            "backplane_vlan" : "",
+        }
+        return self.get_intersection_of_spec(default_spec, cluster)
+
     def _build_spec_foundation_central(self, payload, param):
         api_key = param.get("api_key")
         fc_ip = param.get("fc_ip")
         payload["fc_settings"] = self._get_fc_spec(fc_ip, api_key)
         return payload, None
 
+    def _build_spec_tests(self, payload, param):
+        payload["tests"] = param
+        return payload, None
+
+    def _build_spec_eos_meta_data(self, payload, param):
+        payload["eos_metadata"] = param
+        return payload, None
+    
     def _build_spec_blocks(self, payload, blocks):
         _blocks = []
         for block in blocks:
@@ -91,16 +113,20 @@ class ImageNodes(Foundation):
         return payload, None
 
     def _build_spec_cluster(self, payload, param):
-        cluster = {}
-        cluster["cluster_name"] = param.get("name")
-        cluster["redundancy_factor"] = param.get("redundancy_factor")
-        cluster["timezone"] = param.get("timezone")
-        cluster["cluster_external_ip"] = param.get("cvm_vip")
-        cluster["cluster_init_now"] = param.get("cluster_init_now")
-        cluster["cvm_ntp_servers"] = self._list2str(param.get("cvm_ntp_servers"))
-        cluster["cvm_dns_servers"] = self._list2str(param.get("cvm_dns_servers"))
-        cluster["cluster_members"] = self._get_cluster_members(payload["blocks"])
-        payload["clusters"] = [cluster]
+        clusters = []
+        for cluster in param:   
+            cluster_spec = self._get_default_cluster_spec(cluster)
+            cluster_spec["cluster_name"] = param.get("name")
+            cluster_spec["cluster_external_ip"] = param.get("cvm_vip")
+            cluster_spec["cvm_ntp_servers"] = self._list2str(param.get("cvm_ntp_servers"))
+            cluster_spec["cvm_dns_servers"] = self._list2str(param.get("cvm_dns_servers"))
+            cluster_spec["cluster_members"] = param.get("cluster_members")
+
+            if len(cluster_spec["cluster_members"])==1 :
+                cluster_spec["single_node_cluster"] = True
+
+            clusters.append(cluster_spec)
+        payload["clusters"] = clusters
         return payload, None
 
     def _build_spec_hypervisor_iso(self, payload, value):
@@ -110,10 +136,11 @@ class ImageNodes(Foundation):
             hi_val = value[hi]
             hi_name = self._ahv2kvm(hi_name)
             hypervisor_iso[hi_name] = {}
-            if "checksum" in hi_val:
-                hypervisor_iso[hi_name]["checksum"] = hi_val.get("checksum")
-            if "filename" in hi_val:
-                hypervisor_iso[hi_name]["filename"] = hi_val.get("filename")
+            if "checksum" not in hi_val or "filename" not in hi_val:
+                return None, "checksum and filename are required parameter for hypervisor iso" 
+           
+            hypervisor_iso[hi_name]["checksum"] = hi_val.get("checksum")
+            hypervisor_iso[hi_name]["filename"] = hi_val.get("filename")
         payload["hypervisor_iso"] = hypervisor_iso
         return payload, None
 
@@ -292,6 +319,12 @@ class ImageNodes(Foundation):
                 if discovery_override:
                     spec.update(discovery_override)
 
+                spec["image_now"] = _node["image_now"]
+                if _node.get["ipmi_user"]:
+                    spec["ipmi_user"] = _node["ipmi_user"]
+                if _node.get["ipmi_password"]:
+                    spec["ipmi_password"] = _node["ipmi_password"]
+
             _nodes.append(spec)
 
         return _nodes, None
@@ -299,20 +332,40 @@ class ImageNodes(Foundation):
     def _get_default_node_spec(self, node):
         spec = {}
         default_spec = {
-            "node_uuid": "",
-            "node_position": "",
-            "node_serial": "",
-            "hypervisor": "",
-            "hypervisor_hostname": "",
-            "hypervisor_ip": "",
-            "ipmi_ip": "",
-            "ipmi_user": "",
-            "ipmi_password": "",
-            "image_now": "",
-            "cvm_ip": "",
-            "cvm_ram_gb": "",
-            "cvm_vcpus": "",
-            "cvm_vlan_tag": "",
+            "node_uuid" : "",
+            "node_position" : "",
+            "hypervisor_hostname" : "",
+            "hypervisor_ip" : "",
+            "cvm_ip" : "",
+            "image_now" : True, 
+            "ipmi_ip" : "",
+            "ipmi_password" : "",
+            "ipmi_user" : "",
+            "ipmi_netmask" : "",
+            "ipmi_gateway" : "",
+            "ipmi_mac" : "",          
+            "ipmi_configure_now" : False,
+            "node_serial" : "",
+            "hypervisor" : "",
+            "ipv6_address" : "",
+            "image_delay" : None,
+            "device_hint" : "",
+            "cvm_gb_ram" : None,
+            "bond_mode" : "",
+            "rdma_passthrough" : False,
+            "cluster_id" : "",
+            "ucsm_node_serial" : "",
+            "ipv6_interface" : "",
+            "cvm_num_vcpus" : None,
+            "current_network_interface" : "",
+            "bond_lacp_rate" : "",
+            "ucsm_managed_mode" : "",
+            "current_cvm_vlan_tag" : None,
+            "exlude_boot_serial" : False,
+            "mitigate_low_boot_space" : False,
+            "bond_uplinks" : [],
+            "vswitches" : [],
+            "ucsm_params" : None,
         }
         for k in default_spec:
             v = node.get(k)

@@ -73,7 +73,7 @@ def get_module_spec():
         hypervisor_hostname=dict(type="str", required=True),
         hypervisor_ip=dict(type="str", required=True),
         cvm_ip=dict(type="str", required=True),
-        image_now=dict(type=bool, required=True),
+        image_now=dict(type=bool, required=False, default=True),
         ipmi_ip=dict(type="str", required=True),
         ipmi_password=dict(type="str", required=False, no_log=True),
         ipmi_user=dict(type="str", required=False),
@@ -91,7 +91,6 @@ def get_module_spec():
         rdma_passthrough=dict(type="bool", required=False),
         cluster_id=dict(type="str", required=False),
         ucsm_node_serial=dict(type="str", required=False),
-        node_serial=dict(type="str", required=False),
         image_successful=dict(type="bool", required=False),
         ipv6_interface=dict(type="str", required=False),
         cvm_num_vcpus=dict(type="int", required=False),
@@ -112,10 +111,35 @@ def get_module_spec():
         cvm_ip=dict(type="str", required=False),
         ipmi_ip=dict(type="str", required=False),
         hypervisor=dict(type="str", required=False, choice=hypervisor_options),
+        node_position=dict(type="str", required=False),
+        node_uuid=dict(type="str", required=False),
+        ipmi_netmask=dict(type="str", required=False),
+        ipmi_gateway=dict(type="str", required=False),
+        hypervisor=dict(type="str", required=True, choice=hypervisor_options),
+        ipv6_address=dict(type="str", required=False),
+        image_delay=dict(type="int", required=False),
+        device_hint=dict(type="str", required=False),
+        cvm_gb_ram=dict(type="int", required=False),
+        bond_mode=dict(type="str", required=False),
+        rdma_passthrough=dict(type="bool", required=False),
+        cluster_id=dict(type="str", required=False),
+        ucsm_node_serial=dict(type="str", required=False),
+        ipv6_interface=dict(type="str", required=False),
+        cvm_num_vcpus=dict(type="int", required=False),
+        current_network_interface=dict(type="str", required=False),
+        bond_lacp_rate=dict(type="str", required=False),
+        ucsm_managed_mode=dict(type="str", required=False),
+        current_cvm_vlan_tag=dict(type="int", required=False),
+        exlude_boot_serial=dict(type="bool", required=False),
+        mitigate_low_boot_space=dict(type="bool", required=False),
+        bond_uplinks=dict(type="list", elements="str", required=False),
+        vswitches = dict(type="list", elements="dict",options=vswitches, required=False),
+        ucsm_params = dict(type="dict", options=ucsm_params, required=False),
     )
+    
     discovery_mode_node_spec = dict(
         node_serial=dict(type="str", required=True),
-        image_now=dict(type="bool", required=True),
+        image_now=dict(type="bool", required=False, default=True),
         discovery_override=dict(
             type="dict", required=False, options=discovery_override
         ),
@@ -153,14 +177,13 @@ def get_module_spec():
         backplane_subnet=dict(type="str", required=False),
         backplane_netmask=dict(type="str", required=False),
         backplane_vlan=dict(type="str", required=False),
-        single_node_cluster=dict(type="bool", required=False),
         hypervisor_ntp_servers=dict(type="list", required=False, elements="str"),
         cluster_members=dict(type="list", required=True, elements="str"),
     )
 
     hypervisor_iso_spec_dict = dict(
         filename=dict(type="str", required=True),
-        checksum=dict(type="str", required=False),
+        checksum=dict(type="str", required=True),
     )
     hypervisor_iso_spec = dict(
         kvm=dict(type="dict", required=False, options=hypervisor_iso_spec_dict),
@@ -176,8 +199,8 @@ def get_module_spec():
     )
 
     tests = dict(
-        run_ncc=dict(type="bool", required=False),
-        run_syscheck=dict(type="bool", required=False),
+        run_ncc=dict(type="bool", required=False, default=False),
+        run_syscheck=dict(type="bool", required=False, default=False),
     )
 
     eos_metadata = dict(

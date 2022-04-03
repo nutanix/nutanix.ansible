@@ -245,3 +245,11 @@ class Entity(object):
             )
 
         return resp_json
+
+    def get_intersection_of_spec(self, spec1, spec2):
+        spec = {}
+        for k in spec1:
+            v = spec2.get(k)
+            if v:
+                spec[k] = v
+        return spec
