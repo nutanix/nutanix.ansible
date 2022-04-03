@@ -45,6 +45,25 @@
       - vm.task_uuid
     fail_msg: ' Unable to create VM with minimum requiremnts '
     success_msg: ' VM with minimum requiremnts created successfully '
+
+- name: update vm without change any value
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    vcpus: 4
+    cores_per_vcpu: 4 
+    memory_gb: 4
+  register: result
+  ignore_errors: true
+
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == false
+       - result.changed == false
+       - result.msg == 'Nothing to change'
+    fail_msg: 'Fail : VM updated successfully with same current values '
+    success_msg: ' Success: returned error as expected '
 ###############################################################
 - debug:
     msg: Start negative update scenarios tests for memory vcpus cores_per_vcpu
@@ -140,14 +159,20 @@
   ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
-      - type: "DISK"
+      - type: "CDROM"
         uuid: "{{ vm.response.spec.resources.disk_list[2].uuid }}" # ide CDROM
         size_gb: 1
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
+- name: Creation Status
+  assert:
+    that:
+      - result.msg ==  'Unsupported operation: Cannot resize empty cdrom.'
+      - result.changed == false
+      - result.failed == true
+    fail_msg: ' Fail: change the size of the empty CDROM'
+    success_msg: ' Success: returned error as expected '
 
 - name: Update VM by decreasing the size of the pci disk
   ntnx_vms:

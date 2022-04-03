@@ -327,66 +327,66 @@
     fail_msg: ' Fail cloned vm with unknown network name'
     success_msg: ' Returned error as expected'
 ###############################
-- name: VM with minimum requiremnts and soft_shutdown 
-  ntnx_vms:
-      state: present
-      name: integration_test_opperations_vm
-      operation: soft_shutdown
-      cluster:
-        name: "{{ cluster.name }}"
-      disks:
-        - type: "DISK"
-          clone_image: 
-            name: "{{ centos }}"
-          bus: "SCSI"
-          size_gb: 20
-  register: result
-  ignore_errors: true
+# - name: VM with minimum requiremnts and soft_shutdown 
+#   ntnx_vms:
+#       state: present
+#       name: integration_test_opperations_vm
+#       operation: soft_shutdown
+#       cluster:
+#         name: "{{ cluster.name }}"
+#       disks:
+#         - type: "DISK"
+#           clone_image: 
+#             name: "{{ centos }}"
+#           bus: "SCSI"
+#           size_gb: 20
+#   register: result
+#   ignore_errors: true
 
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-      - result.response.status.resources.power_state == 'OFF'
-      - result.response.status.resources.power_state_mechanism.mechanism == 'ACPI'
-    fail_msg: ' Unable to create VM with minimum requiremnts and soft_shutdown '
-    success_msg: ' VM with minimum requiremnts created successfully and soft_shutdown '
+# - name: Creation Status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.response.status.state == 'COMPLETE'
+#       - result.response.status.resources.power_state == 'OFF'
+#       - result.response.status.resources.power_state_mechanism.mechanism == 'ACPI'
+#     fail_msg: ' Unable to create VM with minimum requiremnts and soft_shutdown '
+#     success_msg: ' VM with minimum requiremnts created successfully and soft_shutdown '
 
-- set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+# - set_fact:
+#       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
-- name: VM with minimum requiremnts and soft_shutdown without wait
-  ntnx_vms:
-      state: present
-      name: integration_test_opperations_vm
-      operation: soft_shutdown
-      cluster:
-        name: "{{ cluster.name }}"
-      disks:
-        - type: "DISK"
-          clone_image: 
-            name: "{{ centos }}"
-          bus: "SCSI"
-          size_gb: 20
-      wait: false
-  register: result
-  ignore_errors: true
+# - name: VM with minimum requiremnts and soft_shutdown without wait
+#   ntnx_vms:
+#       state: present
+#       name: integration_test_opperations_vm
+#       operation: soft_shutdown
+#       cluster:
+#         name: "{{ cluster.name }}"
+#       disks:
+#         - type: "DISK"
+#           clone_image: 
+#             name: "{{ centos }}"
+#           bus: "SCSI"
+#           size_gb: 20
+#       wait: false
+#   register: result
+#   ignore_errors: true
 
 
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE' or result.response.status.state == 'PENDING'
-      - result.vm_uuid
-      - result.task_uuid
-    fail_msg: ' Unable to create VM with minimum requiremnts and soft_shutdown without wait '
-    success_msg: ' VM with minimum requiremnts created successfully and soft_shutdown without wait '
+# - name: Creation Status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.response.status.state == 'COMPLETE' or result.response.status.state == 'PENDING'
+#       - result.vm_uuid
+#       - result.task_uuid
+#     fail_msg: ' Unable to create VM with minimum requiremnts and soft_shutdown without wait '
+#     success_msg: ' VM with minimum requiremnts created successfully and soft_shutdown without wait '
 
-- set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-  when: result.response.status.state == 'COMPLETE'
+# - set_fact:
+#       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+#   when: result.response.status.state == 'COMPLETE'
 
 - name: Create VM with minimum requiremnts with hard_poweroff opperation
   ntnx_vms:
@@ -436,18 +436,36 @@
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 ###############################
+
+- name: create VM with wrong opperation name
+  ntnx_vms:
+    state: present
+    name: wrong_opperation_name_vm
+    operation: wrong_opperation_name
+    cluster:
+      name: "{{ cluster.name }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "value of operation must be one of: soft_shutdown, hard_poweroff, on, clone, create_ova_image, got':' wrong_opperation_name"
+    fail_msg: ' Fail: Create vm with wrong opperation name'
+    success_msg: ' Success: Returned error as expected '
+###############################
 - name: Delete all Created VMs 
   ntnx_vms:
       state: absent
       vm_uuid: '{{ item }}'
-  register: result
   loop: '{{ todelete }}'
 
 - name: Delete all Created VMs 
   ntnx_vms:
       state: absent
       vm_uuid: '{{ vm.vm_uuid }}'
-  register: result
 
 - set_fact:
       todelete: []

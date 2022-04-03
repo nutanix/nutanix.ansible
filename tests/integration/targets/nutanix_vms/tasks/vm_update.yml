@@ -85,87 +85,85 @@
 ####################################################################
 - debug:
     msg: Start update tests for disks
-
-
 ##### CRUD opperation for SCSI disks
-# - name: Update VM by adding  SCSI disks
-#   ntnx_vms:
-#     vm_uuid: "{{ result.vm_uuid }}"
-#     disks:
-#       - type: "DISK"
-#         clone_image: 
-#           name: "{{ ubuntu }}"
-#         bus: "SCSI"
-#         size_gb: 20
-#       - type: "DISK"
-#         size_gb: 1
-#         bus: "SCSI"
-#       - type: DISK
-#         size_gb: 1
-#         bus: SCSI
-#         storage_container:
-#           uuid: "{{ storage_container.uuid }}"
-#   register: result
-#   ignore_errors: true
+- name: Update VM by adding  SCSI disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        clone_image: 
+          name: "{{ ubuntu }}"
+        bus: "SCSI"
+        size_gb: 20
+      - type: "DISK"
+        size_gb: 1
+        bus: "SCSI"
+      - type: DISK
+        size_gb: 1
+        bus: SCSI
+        storage_container:
+          uuid: "{{ storage_container.uuid }}"
+  register: result
+  ignore_errors: true
 
-# - name: Update Status
-#   assert:
-#     that:
-#       - result.response is defined
-#       - result.vm_uuid
-#       - result.task_uuid
-#       - result.response.status.state == "COMPLETE"
-#     fail_msg: ' Unable to update vm by adding SCSI  disks '
-#     success_msg: ' VM updated successfully by adding SCSI    disks '
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by adding SCSI  disks '
+    success_msg: ' VM updated successfully by adding SCSI    disks '
 
-# - name: Update VM by increasing the size of the SCSI disks
-#   ntnx_vms:
-#     vm_uuid: "{{ result.vm_uuid }}"
-#     disks:
-#       - type: "DISK"
-#         uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
-#         size_gb: 22
-#       - type: DISK
-#         uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
-#         size_gb: 2
-#       - type: "DISK"
-#         uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
-#         size_gb: 2
-#   register: result
-#   ignore_errors: true
+- name: Update VM by increasing the size of the SCSI disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+        size_gb: 22
+      - type: DISK
+        uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+        size_gb: 2
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+        size_gb: 2
+  register: result
+  ignore_errors: true
 
-# - name: Update Status
-#   assert:
-#     that:
-#       - result.response is defined
-#       - result.vm_uuid
-#       - result.task_uuid
-#       - result.response.status.state == "COMPLETE"
-#     fail_msg: ' Unable to update vm by increasing the size of the SCSI  disks  '
-#     success_msg: ' VM updated successfully by increasing the size of the SCSI  disks '
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by increasing the size of the SCSI  disks  '
+    success_msg: ' VM updated successfully by increasing the size of the SCSI  disks '
 
-# - name: Update VM by removing SCSI disks
-#   ntnx_vms:
-#     vm_uuid: "{{ result.vm_uuid }}"
-#     disks:
-#       - state: absent
-#         uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
-#       - state: absent
-#         uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
-#       - state: absent
-#         uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
-#   register: result
-#   ignore_errors: true
+- name: Update VM by removing SCSI disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+  register: result
+  ignore_errors: true
 
-# - name: Update Status
-#   assert:
-#     that:
-#       - result.response is defined
-#       - result.vm_uuid
-#       - result.task_uuid
-#       - result.response.status.state == "COMPLETE"
-#     fail_msg: ' Unable to update vm by removing SCSI disks '
-#     success_msg: ' VM updated successfully by removing SCSI disks '
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by removing SCSI disks '
+    success_msg: ' VM updated successfully by removing SCSI disks '
 #######
 ##### CRUD opperation for PCI disks
 - name: Update VM by adding  PCI disks
