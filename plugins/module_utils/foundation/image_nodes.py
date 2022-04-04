@@ -119,9 +119,10 @@ class ImageNodes(Foundation):
             cluster_spec["cluster_name"] = param.get("name")
             cluster_spec["cluster_external_ip"] = param.get("cvm_vip")
             cluster_spec["cvm_ntp_servers"] = self._list2str(param.get("cvm_ntp_servers"))
+            cluster_spec["hypervisor_ntp_servers"] = self._list2str(param.get("hypervisor_ntp_servers"))
             cluster_spec["cvm_dns_servers"] = self._list2str(param.get("cvm_dns_servers"))
             cluster_spec["cluster_members"] = param.get("cluster_members")
-
+            
             if len(cluster_spec["cluster_members"])==1 :
                 cluster_spec["single_node_cluster"] = True
 
@@ -293,6 +294,25 @@ class ImageNodes(Foundation):
             raise Exception("unable to extract CVM IP from node {}", node)
         return cvm_ip
 
+    def _verify_discovered_nodes_imaging_spec(self, node_spec):
+        # required params check for discovered nodes
+        required_params = ["hypervisor_hostname","hypervisor_ip", "cvm_ip", "ipmi_ip"]
+
+        # discovery os based nodes have "pheonix" value for hypervisor and its not valid hypervisor for imaging
+        if node_spec.get("hypervisor", None) == "pheonix" :
+            #return error
+            return "Please provide correct hypervisor in discovery_override"
+
+        for param in required_params:
+            if node_spec.get(param):
+                pass
+            else:
+                # return error
+                return "{} value didn't retrieved while discovery, please provide it in discovery_override".format(param)
+
+        return None
+
+
     def _get_nodes(self, nodes):
         _nodes = []
         for node in nodes:
@@ -310,20 +330,20 @@ class ImageNodes(Foundation):
                     return None, error
 
                 node_serial = _node.get("node_serial")
-                _node = self._find_node_by_serial(node_serial, blocks["blocks"])
-                if not _node:
+                _node_network_details = self._find_node_by_serial(node_serial, blocks["blocks"])
+                if not _node_network_details:
                     error = "Failed to discover node with serial {}".format(node_serial)
                     return None, error
 
-                spec = self._get_default_node_spec(_node)
+                _node.update(_node_network_details)
                 if discovery_override:
-                    spec.update(discovery_override)
+                    _node.update(discovery_override)
+                spec = self._get_default_node_spec(_node)
 
-                spec["image_now"] = _node["image_now"]
-                if _node.get["ipmi_user"]:
-                    spec["ipmi_user"] = _node["ipmi_user"]
-                if _node.get["ipmi_password"]:
-                    spec["ipmi_password"] = _node["ipmi_password"]
+                # check discovered nodes imaging params if present or not
+                err = self._verify_discovered_nodes_imaging_spec(spec)
+                if err:
+                    return None, err
 
             _nodes.append(spec)
 
@@ -332,44 +352,46 @@ class ImageNodes(Foundation):
     def _get_default_node_spec(self, node):
         spec = {}
         default_spec = {
-            "node_uuid" : "",
-            "node_position" : "",
-            "hypervisor_hostname" : "",
-            "hypervisor_ip" : "",
-            "cvm_ip" : "",
-            "image_now" : True, 
-            "ipmi_ip" : "",
-            "ipmi_password" : "",
-            "ipmi_user" : "",
-            "ipmi_netmask" : "",
-            "ipmi_gateway" : "",
-            "ipmi_mac" : "",          
-            "ipmi_configure_now" : False,
-            "node_serial" : "",
-            "hypervisor" : "",
-            "ipv6_address" : "",
-            "image_delay" : None,
-            "device_hint" : "",
+            "node_uuid" : None,
+            "node_position" : None,
+            "hypervisor_hostname" : None,
+            "hypervisor" : None,
+            "hypervisor_ip" : None,
+            "cvm_ip" : None,
             "cvm_gb_ram" : None,
-            "bond_mode" : "",
-            "rdma_passthrough" : False,
-            "cluster_id" : "",
-            "ucsm_node_serial" : "",
-            "ipv6_interface" : "",
             "cvm_num_vcpus" : None,
-            "current_network_interface" : "",
-            "bond_lacp_rate" : "",
-            "ucsm_managed_mode" : "",
+            "image_now" : True, 
+            "ipmi_ip" : None,
+            "ipmi_password" : None,
+            "ipmi_user" : None,
+            "ipmi_netmask" : None,
+            "ipmi_gateway" : None,
+            "ipmi_mac" : None,         
+            "ipmi_configure_now" : False,
+            "node_serial" : None,
+            "ipv6_address" : None,
+            "ipv6_interface" : None,
+            "current_network_interface" : None,
             "current_cvm_vlan_tag" : None,
+            "image_delay" : None,
+            "device_hint" : None,
+            "bond_mode" : None,
+            "bond_lacp_rate" : None,
+            "rdma_passthrough" : False,
+            "cluster_id" : None,
+            "ucsm_node_serial" : None,
+            "ucsm_managed_mode" : None,
+            "ucsm_params" : None,
             "exlude_boot_serial" : False,
             "mitigate_low_boot_space" : False,
             "bond_uplinks" : [],
             "vswitches" : [],
-            "ucsm_params" : None,
         }
         for k in default_spec:
             v = node.get(k)
-            if v:
+
+            # Don't skip current_cvm_vlan_tag==0
+            if v or (k == "current_cvm_vlan_tag" and v == 0):
                 if k == "hypervisor":
                     v = self._ahv2kvm(v)
                 spec[k] = v
