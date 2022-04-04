@@ -304,9 +304,10 @@ class ImageNodes(Foundation):
         required_params = ["hypervisor_hostname","hypervisor_ip", "cvm_ip", "ipmi_ip"]
 
         # discovery os based nodes have "pheonix" value for hypervisor and its not valid hypervisor for imaging
-        if node_spec.get("hypervisor", None) == "pheonix" :
+        hypervisor = node_spec.get("hypervisor")
+        if (hypervisor is None) or (hypervisor == "pheonix") :
             #return error
-            return "Please provide correct hypervisor in discovery_override"
+            return "Please provide valid hypervisor in discovery_override"
 
         for param in required_params:
             if node_spec.get(param):
