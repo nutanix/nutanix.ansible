@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_hypervisor_images_info
 short_description: Nutanix module which returns the hypervisor images uploaded to Foundation
-version_added: 1.0.0
+version_added: 1.1.0
 description: 'List AOS packages uploaded to Foundation'
 options:
   nutanix_host:

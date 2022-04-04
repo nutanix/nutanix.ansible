@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_node_network_info
 short_description: Nutanix module which returns node network information discovered by Foundation
-version_added: 1.0.0
+version_added: 1.1.0
 description: 'Discover nodes network information via Foundation'
 options:
   nutanix_host:
