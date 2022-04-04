@@ -11,12 +11,19 @@ from .node_network_details import NodeNetworkDetails
 
 
 class NodeDiscovery:
+
+    discovered_nodes = None
+
     def __init__(self, module):
         self.module = module
 
     def discover(
-        self, include_configured=False, include_network_details=False, timeout=60
+        self, include_configured=False, include_network_details=False, new_discovery=False, timeout=60
     ):
+
+        if self.discovered_nodes and not new_discovery:
+            return self.discovered_nodes
+
         nodes = DiscoverNodes(self.module)
         blocks = nodes.discover(include_configured)
         if not blocks:
@@ -26,7 +33,12 @@ class NodeDiscovery:
             blocks, error = self._add_network_details(blocks, timeout)
             if not blocks:
                 return None, error
-        return {"blocks": blocks}, None
+
+        # cache data for multiple calls
+        self.discovered_nodes = {
+            "blocks": blocks
+        }
+        return self.discovered_nodes, None
 
     def _add_network_details(self, blocks, timeout):
         ipv6_addresses = self._get_ipv6_address(blocks)

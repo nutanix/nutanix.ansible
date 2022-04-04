@@ -13,7 +13,7 @@ class DiscoverNodes(Foundation):
         super(DiscoverNodes, self).__init__(module, resource_type=resource_type)
 
     def discover(self, include_configured=False):
-        resp = self.read()
+        resp, _ = self.read()
         if not resp:
             return None
         blocks = []

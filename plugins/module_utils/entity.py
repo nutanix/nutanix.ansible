@@ -247,6 +247,10 @@ class Entity(object):
         return resp_json
 
     def get_intersection_of_spec(self, spec1, spec2):
+        """
+        This routine return intersection of two specs(dict) as per 
+        keys in first level of dictionary.
+        """
         spec = {}
         for k in spec1:
             v = spec2.get(k)

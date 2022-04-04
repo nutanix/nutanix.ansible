@@ -166,8 +166,8 @@ def get_module_spec():
     )
     cluster_spec = dict(
         name=dict(type="str", required=False),
-        redundancy_factor=dict(type="int", required=True, choices=[2, 3]),
-        timezone=dict(type="str", required=True),
+        redundancy_factor=dict(type="int", required=True),
+        timezone=dict(type="str", required=False),
         hypervisor_ntp_servers=dict(type="list", required=False, elements="str"),
         cluster_members=dict(type="list", required=True, elements="str"),
         cvm_vip=dict(type="str", required=False),
@@ -216,7 +216,7 @@ def get_module_spec():
         hypervisor_netmask=dict(type="str", required=True),
         nos_package=dict(type="str", required=True),
         blocks=dict(type="list", required=True, options=block_spec, elements="dict"),
-        cluster=dict(type="list", elements="dict", required=False, options=cluster_spec),
+        clusters=dict(type="list", elements="dict", required=False, options=cluster_spec),
         hypervisor_iso=dict(
             type="dict",
             required=False,
