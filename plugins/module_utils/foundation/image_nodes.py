@@ -18,7 +18,7 @@ class ImageNodes(Foundation):
         self._ahv_hypervisor_conversion(module)
         self.build_spec_methods = {
             "blocks": self._build_spec_blocks,
-            "cluster": self._build_spec_cluster,
+            "clusters": self._build_spec_cluster,
             "nos_package": self._build_spec_nos_package,
             "cvm_gateway": self._build_spec_cvm_gateway,
             "cvm_netmask": self._build_spec_cvm_netmask,
@@ -116,12 +116,17 @@ class ImageNodes(Foundation):
         clusters = []
         for cluster in param:   
             cluster_spec = self._get_default_cluster_spec(cluster)
-            cluster_spec["cluster_name"] = param.get("name")
-            cluster_spec["cluster_external_ip"] = param.get("cvm_vip")
-            cluster_spec["cvm_ntp_servers"] = self._list2str(param.get("cvm_ntp_servers"))
-            cluster_spec["hypervisor_ntp_servers"] = self._list2str(param.get("hypervisor_ntp_servers"))
-            cluster_spec["cvm_dns_servers"] = self._list2str(param.get("cvm_dns_servers"))
-            cluster_spec["cluster_members"] = param.get("cluster_members")
+            cluster_spec["cluster_name"] = cluster.get("name")
+            cluster_spec["cluster_external_ip"] = cluster.get("cvm_vip", None)
+
+            if cluster_spec.get("cvm_ntp_servers"):
+                cluster_spec["cvm_ntp_servers"] = self._list2str(cluster.get("cvm_ntp_servers"))
+            if cluster_spec.get("cvm_dns_servers"):
+                cluster_spec["cvm_dns_servers"] = self._list2str(cluster.get("cvm_dns_servers"))
+            if cluster_spec.get("hypervisor_ntp_servers"):
+                cluster_spec["hypervisor_ntp_servers"] = self._list2str(cluster.get("hypervisor_ntp_servers"))
+
+            cluster_spec["cluster_members"] = cluster.get("cluster_members")
             
             if len(cluster_spec["cluster_members"])==1 :
                 cluster_spec["single_node_cluster"] = True
