@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_foundation
 short_description: Nutanix module to foundation nodes
-version_added: 1.0.0
+version_added: 1.1.0
 description: 'Foundation nodes'
 options:
   nutanix_host:

@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_discover_nodes_info
 short_description: Nutanix module which returns nodes discovered by Foundation
-version_added: 1.0.0
+version_added: 1.1.0
 description: 'Discover nodes eligible for Foundation'
 options:
   nutanix_host:
