@@ -56,7 +56,8 @@ from ..module_utils.utils import remove_param_with_none_value
 def get_module_spec():
     module_args = dict(
         filename=dict(type="str", required=True),
-        installer_type=dict(type="str", required=True),
+        installer_type=dict(type="str", required=True, choices=["kvm", "esx", "hyperv", "xen", "nos"]),
+        source=dict(type="str", required=False),
     )
 
     return module_args
@@ -66,16 +67,34 @@ def upload_image(module, result):
     image = Image(module)
     fname = module.params["filename"]
     itype = module.params["installer_type"]
+    source = module.params["source"]
     timeout = module.params["timeout"]
-    resp = image.upload(fname, itype, timeout=timeout)
+    resp = image.upload(fname, itype, source, timeout=timeout)
     result["changed"] = True
     result["response"] = resp
+
+def delete_image(module, result):
+    image = Image(module, delete_image=True)
+    fname = module.params["filename"]
+    itype = module.params["installer_type"]
+    resp, status = image.delete(fname, itype)
+    if status["error"]:
+      result["error"] = status["error"]
+      result["response"] = resp
+      module.fail_json(msg="Failed deleteing the image", **result)
+
+    result["changed"] = True
+    result["response"] = resp
+
 
 
 def run_module():
     module = FoundationBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
+        required_if=[
+            ("state", "present", ("source",)),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {
@@ -83,7 +102,12 @@ def run_module():
         "error": None,
         "response": None,
     }
-    upload_image(module, result)
+    state = module.params["state"]
+    if state == "present" :
+      upload_image(module, result)
+    elif state == "absent" :
+      delete_image(module, result)
+    
     module.exit_json(**result)
 
 
