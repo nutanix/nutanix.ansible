@@ -16,4 +16,5 @@ def remove_param_with_none_value(d):
             for e in v:
                 if isinstance(e, dict):
                     remove_param_with_none_value(e)
-                break
+                else:
+                    break

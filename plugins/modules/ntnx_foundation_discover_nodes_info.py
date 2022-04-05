@@ -103,11 +103,11 @@ def discover_nodes(module, result):
     include_network_details = module.params.get("include_network_details")
     timeout = module.params.get("timeout")
     node_discovery = NodeDiscovery(module)
-    resp, status = node_discovery.discover(
+    resp, err = node_discovery.discover(
         include_configured, include_network_details, timeout=timeout
     )
-    if status["error"]:
-        result["error"] = status["error"]
+    if err:
+        result["error"] = err
         module.fail_json(msg="Failed discover nodes via foundation", **result)
     result["blocks"] = resp["blocks"]
 

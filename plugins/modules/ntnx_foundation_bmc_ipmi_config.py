@@ -101,11 +101,11 @@ def get_module_spec():
     node_spec = dict(
         ipmi_mac=dict(type="str", required=True),
         ipmi_ip=dict(type="str", required=True),
-        ipmi_configure_now=dict(type="bool", required=True, default=True),
+        ipmi_configure_now=dict(type="bool", required=False, default=True),
     )
 
     block_spec = dict(
-        block_id=dict(type="str", required=True),
+        block_id=dict(type="str", required=False),
         nodes=dict(type="list", required=True, options=node_spec, elements="dict"),
     )
 
@@ -114,7 +114,8 @@ def get_module_spec():
         ipmi_netmask=dict(type="str", required=True),
         blocks=dict(type="list", required=True, options=block_spec, elements="dict"),
         ipmi_gateway=dict(type="str", required=True),
-        ipmi_password=dict(type="str", required=True),
+        ipmi_password=dict(type="str", required=True, no_log=True),
+        timeout=dict(type="str", required=False)
     )
 
     return module_args
@@ -131,7 +132,18 @@ def configure_ipmi(module, result):
         result["response"] = spec
         return
 
-    resp = bmc.configure_ipmi(spec)
+    timeout = module.params["timeout"]
+
+    if timeout <= 60:
+      timeout = 120
+
+    resp, status = bmc.configure_ipmi(spec, timeout)
+
+    if status["error"]:
+        result["error"] = status["error"]
+        result["response"] = resp
+        module.fail_json(msg="Failed configuring ipmi", **result)
+
     result["changed"] = True
     result["response"] = resp
 
