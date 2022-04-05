@@ -257,6 +257,7 @@ def get_module_spec():
         unc_password=dict(type="str", required=False, no_log=True),
         svm_rescue_args=dict(type="list", elements="str", required=False),
         install_script=dict(type="str", required=False),
+        timeout=dict(type="int", required=False, default=3600)
     )
 
     return module_args
