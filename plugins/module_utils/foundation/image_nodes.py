@@ -82,7 +82,7 @@ class ImageNodes(Foundation):
             "backplane_netmask" : "",
             "backplane_vlan" : "",
         }
-        return self.get_intersection_of_spec(default_spec, cluster)
+        return self.unify_spec(default_spec, cluster)
 
     def _build_spec_foundation_central(self, payload, param):
         api_key = param.get("api_key")
@@ -142,9 +142,6 @@ class ImageNodes(Foundation):
             hi_val = value[hi]
             hi_name = self._ahv2kvm(hi_name)
             hypervisor_iso[hi_name] = {}
-            if "checksum" not in hi_val or "filename" not in hi_val:
-                return None, "checksum and filename are required parameter for hypervisor iso" 
-           
             hypervisor_iso[hi_name]["checksum"] = hi_val.get("checksum")
             hypervisor_iso[hi_name]["filename"] = hi_val.get("filename")
         payload["hypervisor_iso"] = hypervisor_iso
@@ -307,15 +304,17 @@ class ImageNodes(Foundation):
         hypervisor = node_spec.get("hypervisor")
         if (hypervisor is None) or (hypervisor == "pheonix") :
             #return error
-            return "Please provide valid hypervisor in discovery_override"
+            return "Invalid hypervisor: {}. Valid hypervisor types are kvm ,hyperv, xen ,esx or ahv".format(hypervisor)
 
+        missing_params = []
         for param in required_params:
             if node_spec.get(param):
                 pass
             else:
-                # return error
-                return "{} value didn't retrieved while discovery, please provide it in discovery_override".format(param)
+                missing_params.append(param)
 
+        if len(missing_params)>0:
+            return "Missing params : {} for node with serial :{}, please provide it in discovery_override".format(",".join(missing_params))
         return None
 
 

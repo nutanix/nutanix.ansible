@@ -203,7 +203,7 @@ class Entity(object):
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
         if self.headers["Content-Type"] == "application/json" :
             data = self.module.jsonify(data) if data else None
-
+            
         resp, info = fetch_url(
             self.module,
             url,
@@ -246,7 +246,7 @@ class Entity(object):
 
         return resp_json
 
-    def get_intersection_of_spec(self, spec1, spec2):
+    def unify_spec(self, spec1, spec2):
         """
         This routine return intersection of two specs(dict) as per 
         keys in first level of dictionary.
