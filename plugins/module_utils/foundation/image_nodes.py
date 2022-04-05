@@ -314,7 +314,7 @@ class ImageNodes(Foundation):
                 missing_params.append(param)
 
         if len(missing_params)>0:
-            return "Missing params : {} for node with serial :{}, please provide it in discovery_override".format(",".join(missing_params))
+            return "Missing params : {} for node with serial :{}, please provide it in discovery_override".format((",".join(missing_params)), node_spec.node_serial)
         return None
 
 
