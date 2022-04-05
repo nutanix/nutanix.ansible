@@ -24,7 +24,7 @@ class Progress(Foundation):
     def wait_for_completion(self, uuid):
         state = ""
         delay = 30
-        timeout = time.time() + self.module.params["timeout"]
+        end_time = time.time() + (max(3600, self.module.params["timeout"]))
         while state != "COMPLETED":
             response, status = self.get(uuid)
             if status["error"]:
@@ -38,7 +38,7 @@ class Progress(Foundation):
                 state = "COMPLETED"
             else:
                 state = "PENDING"
-                if time.time() + delay > timeout:
+                if time.time() > end_time:
                     status["error"] = "Imaging nodes progress polling timedout. Check UI for current progress."
                     return None, status
                 time.sleep(delay)

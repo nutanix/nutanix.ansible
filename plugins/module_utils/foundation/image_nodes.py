@@ -314,7 +314,7 @@ class ImageNodes(Foundation):
                 missing_params.append(param)
 
         if len(missing_params)>0:
-            return "Missing params : {} for node with serial :{}, please provide it in discovery_override".format((",".join(missing_params)), node_spec.node_serial)
+            return "Missing params : {}, please provide it in discovery_override".format(",".join(missing_params))
         return None
 
 
@@ -329,7 +329,8 @@ class ImageNodes(Foundation):
                 _node = node.get("discovery_mode")
                 discovery_override = _node.get("discovery_override", {})
                 blocks, error = self.node_discovery.discover(
-                    include_network_details=True
+                    include_network_details=True,
+                    timeout = 120
                 )
                 if not blocks:
                     return None, error

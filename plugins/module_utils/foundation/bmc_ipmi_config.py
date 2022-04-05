@@ -18,10 +18,10 @@ class BMC(Foundation):
             "ipmi_password": self._build_spec_ipmi_password,
         }
 
-    def configure_ipmi(self, spec):
-        return self.create(spec)
+    def configure_ipmi(self, spec, timeout=120):
+        return self.create(spec, timeout=timeout)
 
-    def _get_default_spec():
+    def _get_default_spec(self):
         return deepcopy(
             {
                 "ipmi_user": None,
