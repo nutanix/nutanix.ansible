@@ -93,7 +93,6 @@ def get_module_spec():
     module_args = dict(
         include_configured=dict(type="bool", required=False, default=False),
         include_network_details=dict(type="bool", required=False, default=False),
-        timeout=dict(type="int", required=False, default=60),
     )
 
     return module_args
