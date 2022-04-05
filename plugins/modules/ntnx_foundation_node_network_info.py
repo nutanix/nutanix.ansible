@@ -81,7 +81,6 @@ from ..module_utils.utils import remove_param_with_none_value
 def get_module_spec():
     module_args = dict(
         nodes=dict(type="list", elements="str", required=True),
-        timeout=dict(type="", required=False),
     )
 
     return module_args

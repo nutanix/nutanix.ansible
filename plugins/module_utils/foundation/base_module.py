@@ -14,6 +14,7 @@ class FoundationBaseModule(AnsibleModule):
         ),
         nutanix_port=dict(default="8000", type="str"),
         state=dict(type="str", choices=["present", "absent"], default="present"),
+        timeout=dict(type="int", required=False, default=60),
         wait=dict(type="bool", default=True),
     )
 
