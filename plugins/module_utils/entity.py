@@ -123,7 +123,11 @@ class Entity(object):
         return urlunparse(url)
 
     def _fetch_url(self, url, method, data=None, timeout=30):
-        data = self.module.jsonify(data) if data else None
+
+        # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
+        if self.headers["Content-Type"] == "application/json" :
+            data = self.module.jsonify(data) if data else None
+
         resp, info = fetch_url(
             self.module,
             url,
