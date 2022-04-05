@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_vms
-short_description: VM module which supports VM CRUD operations
+short_description: VM module which supports VM CRUD states
 version_added: 1.0.0
 description: "Create, Update, Delete, Power-on, Power-off Nutanix VM's"
 options:
@@ -938,7 +938,7 @@ task_uuid:
 """
 
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.prism.vm_base_module import VMBaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
 from ..module_utils import utils
@@ -948,16 +948,6 @@ def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
 
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-
-    network_spec = dict(
-        uuid=dict(type="str"),
-        state=dict(type="str", choices=["absent"]),
-        subnet=dict(
-            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
-        ),
-        private_ip=dict(type="str", required=False),
-        is_connected=dict(type="bool", default=True),
-    )
 
     disk_spec = dict(
         type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
@@ -974,35 +964,15 @@ def get_module_spec():
         empty_cdrom=dict(type="bool"),
     )
 
-    boot_config_spec = dict(
-        boot_type=dict(
-            type="str", choices=["LEGACY", "UEFI", "SECURE_BOOT"], default="LEGACY"
-        ),
-        boot_order=dict(
-            type="list", elements="str", default=["CDROM", "DISK", "NETWORK"]
-        ),
-    )
-
-    gc_spec = dict(
-        type=dict(type="str", choices=["cloud_init", "sysprep"], required=True),
-        script_path=dict(type="path", required=True),
-        is_overridable=dict(type="bool", default=False),
-    )
-
     module_args = dict(
-        name=dict(type="str", required=False),
-        vm_uuid=dict(type="str"),
-        desc=dict(type="str"),
-        project=dict(
-            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
-        ),
-        cluster=dict(
-            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
-        ),
-        vcpus=dict(type="int"),
-        cores_per_vcpu=dict(type="int"),
-        memory_gb=dict(type="int"),
-        networks=dict(type="list", elements="dict", options=network_spec),
+        state=dict(type="str",
+                   choices=["present",
+                            "absent",
+                            "power_on",
+                            "power_off",
+                            "soft_shutdown",
+                            "hard_poweroff"],
+                   default="present"),
         disks=dict(
             type="list",
             elements="dict",
@@ -1013,11 +983,6 @@ def get_module_spec():
                 ("uuid", "bus"),
             ],
         ),
-        boot_config=dict(type="dict", options=boot_config_spec),
-        guest_customization=dict(type="dict", options=gc_spec),
-        timezone=dict(type="str", default="UTC"),
-        categories=dict(type="dict"),
-        force_power_off=dict(type="bool", default=False),
     )
 
     return module_args
@@ -1025,7 +990,7 @@ def get_module_spec():
 
 def create_vm(module, result):
     vm = VM(module)
-    operation = module.params.get("operation")
+    state = module.params.get("state")
     spec, error = vm.get_spec()
     if error:
         result["error"] = error
@@ -1042,19 +1007,19 @@ def create_vm(module, result):
     result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
-    if module.params.get("wait") or operation in ["soft_shutdown", "hard_poweroff"]:
+    if module.params.get("wait") or state in ["soft_shutdown", "hard_poweroff"]:
         wait_for_task_completion(module, result)
         resp = vm.read(vm_uuid)
         spec = resp.copy()
         spec.pop("status")
         result["response"] = resp
 
-    if operation == "soft_shutdown":
+    if state == "soft_shutdown":
         resp = vm.soft_shutdown(spec)
-    elif operation == "hard_poweroff":
+    elif state == "hard_poweroff":
         resp = vm.hard_power_off(spec)
 
-    if operation in ["soft_shutdown", "hard_poweroff"]:
+    if state in ["soft_shutdown", "hard_poweroff"]:
         result["response"] = resp
         result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
         if module.params.get("wait"):
@@ -1064,7 +1029,7 @@ def create_vm(module, result):
                 # result["skipped"] = True
                 result[
                     "warning"
-                ] = "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
+                ] = "VM 'soft_shutdown' state failed, use 'hard_poweroff' instead"
 
             resp = vm.read(vm_uuid)
             result["response"] = resp
@@ -1072,7 +1037,7 @@ def create_vm(module, result):
 
 def update_vm(module, result):
     vm_uuid = module.params["vm_uuid"]
-    operation = module.params.get("operation")
+    state = module.params.get("state")
 
     vm = VM(module)
     resp = vm.read(vm_uuid)
@@ -1089,7 +1054,7 @@ def update_vm(module, result):
         result["response"] = spec
         return
 
-    if utils.check_for_idempotency(spec, resp, operation=operation):
+    if utils.check_for_idempotency(spec, resp, state=state):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change")
 
@@ -1119,7 +1084,7 @@ def update_vm(module, result):
     if (
         module.params.get("wait")
         or is_powered_off
-        or (is_vm_on and operation in ["soft_shutdown", "hard_poweroff"])
+        or (is_vm_on and state in ["soft_shutdown", "hard_poweroff"])
     ):
         wait_for_task_completion(module, result)
         resp = vm.read(vm_uuid)
@@ -1127,14 +1092,14 @@ def update_vm(module, result):
         spec.pop("status")
         result["response"] = resp
 
-    if operation == "soft_shutdown" and is_vm_on and not is_powered_off:
+    if state == "soft_shutdown" and is_vm_on and not is_powered_off:
         resp = vm.soft_shutdown(spec)
-    elif operation == "hard_poweroff" and is_vm_on and not is_powered_off:
+    elif state == "hard_poweroff" and is_vm_on and not is_powered_off:
         resp = vm.hard_power_off(spec)
-    elif is_powered_off or (operation == "on" and not is_vm_on):
+    elif is_powered_off or (state == "on" and not is_vm_on):
         resp = vm.power_on(spec)
 
-    if operation or is_powered_off:
+    if state or is_powered_off:
         result["response"] = resp
         result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
         if module.params.get("wait"):
@@ -1144,69 +1109,25 @@ def update_vm(module, result):
                 result["skipped"] = True
                 result[
                     "warning"
-                ] = "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
+                ] = "VM 'soft_shutdown' state failed, use 'hard_poweroff' instead"
 
             resp = vm.read(vm_uuid)
             result["response"] = resp
 
 
-def power_off_vm(vm, module, result):
+def power_off_vm(module, result):
+    vm_uuid = module.params["vm_uuid"]
+
+    vm = VM(module)
+    resp = vm.read(vm_uuid)
+    result["response"] = resp
+    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    resp["spec"] = resp.pop("status")
+
     resp = vm.hard_power_off(result["response"])
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
     wait_for_task_completion(module, result)
     result["response"] = resp
-
-
-def clone_vm(module, result):
-    vm_uuid = module.params["vm_uuid"]
-    if module.params.get("disks"):
-        result["error"] = "Disks cannot be changed during a clone operation"
-        module.fail_json(msg="Failed cloning VM", **result)
-
-    vm = VM(module)
-
-    spec, error = vm.get_clone_spec()
-    if error:
-        result["error"] = error
-        module.fail_json(msg="Failed generating VM Spec", **result)
-
-    if module.check_mode:
-        result["response"] = spec
-        return
-
-    resp = vm.clone(spec)
-
-    result["changed"] = True
-    result["response"] = resp
-    result["task_uuid"] = resp["task_uuid"]
-
-    if module.params.get("wait"):
-        wait_for_task_completion(module, result)
-        resp = vm.read(vm_uuid)
-        result["response"] = resp
-
-
-def create_ova_image(module, result):
-    vm_uuid = module.params["vm_uuid"]
-
-    vm = VM(module)
-    spec = vm.get_ova_image_spec()
-    result["vm_uuid"] = vm_uuid
-
-    if module.check_mode:
-        result["response"] = spec
-        return
-
-    resp = vm.create_ova_image(spec)
-
-    result["changed"] = True
-    result["response"] = resp
-    result["task_uuid"] = resp["task_uuid"]
-
-    if module.params.get("wait"):
-        wait_for_task_completion(module, result)
-        resp = vm.read(vm_uuid)
-        result["response"] = resp
 
 
 def delete_vm(module, result):
@@ -1236,7 +1157,7 @@ def wait_for_task_completion(module, result, raise_error=True):
 
 
 def run_module():
-    module = BaseModule(
+    module = VMBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
@@ -1258,6 +1179,12 @@ def run_module():
             update_vm(module, result)
         else:
             create_vm(module, result)
+    elif state == "power_on":
+        pass
+    elif state == "soft_shutdown":
+        pass
+    elif state in ["power_on", "hard_poweroff"]:
+        power_off_vm(module, result)
     elif state == "absent":
         delete_vm(module, result)
 
