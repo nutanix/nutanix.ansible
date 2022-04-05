@@ -22,14 +22,15 @@ class BMC(Foundation):
         return self.create(spec)
 
     def _get_default_spec():
-        return deepcopy ({
-             "ipmi_user": None,
-             "ipmi_netmask": None,
-             "blocks": None,
-             "ipmi_gateway": None,
-             "ipmi_password": None,
-
-        })
+        return deepcopy(
+            {
+                "ipmi_user": None,
+                "ipmi_netmask": None,
+                "blocks": None,
+                "ipmi_gateway": None,
+                "ipmi_password": None,
+            }
+        )
 
     def _build_spec_ipmi_user(self, payload, username):
         payload["ipmi_user"] = username
