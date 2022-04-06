@@ -1,6 +1,7 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+from socket import timeout
 
 __metaclass__ = type
 
@@ -24,11 +25,11 @@ class Progress(Foundation):
     def wait_for_completion(self, uuid):
         state = ""
         delay = 30
-        end_time = time.time() + (max(3600, self.module.params["timeout"]))
+        timeout = time.time() + (max(3600, self.module.params["timeout"]))
         while state != "COMPLETED":
-            response, status = self.get(uuid)
-            if status["error"]:
-                return response, status
+            response = self.get(uuid)
+            if not response:
+                return None, "Failed to get progress of node imaging process"
             stopped = response.get("imaging_stopped", False)
             aggregate_percent_complete = response.get("aggregate_percent_complete", -1)
             if stopped:
@@ -38,19 +39,17 @@ class Progress(Foundation):
                 state = "COMPLETED"
             else:
                 state = "PENDING"
-                if time.time() > end_time:
-                    status["error"] = "Imaging nodes progress polling timedout. Check UI for current progress."
-                    return None, status
+                if time.time() > timeout:
+                    return None, "Imaging nodes progress polling timedout. Check UI for current progress."
                 time.sleep(delay)
-        return response, status
+        return response, None
 
     def _get_progress_error_status(self, progress):
-        return {
-            "error": "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
-                self._get_progress_messages(progress, "clusters", "cluster_name"),
-                self._get_progress_messages(progress, "nodes", "cvm_ip"),
-            )
-        }
+        return "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
+            self._get_progress_messages(progress, "clusters", "cluster_name"),
+            self._get_progress_messages(progress, "nodes", "cvm_ip"),
+        )
+        
 
     def _get_progress_messages(self, progress, entity_type, entity_name):
         res = ""

@@ -43,7 +43,7 @@ class NodeDiscovery:
     def _add_network_details(self, blocks, timeout):
         ipv6_addresses = self._get_ipv6_address(blocks)
         node_network_details = NodeNetworkDetails(self.module)
-        nodes, _ = node_network_details.retrieve(ipv6_addresses, timeout)
+        nodes = node_network_details.retrieve(ipv6_addresses, timeout)
         if not nodes:
             error = "Failed to retrieve node network details"
             return None, error

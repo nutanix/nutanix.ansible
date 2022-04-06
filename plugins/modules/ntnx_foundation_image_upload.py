@@ -77,11 +77,7 @@ def delete_image(module, result):
     image = Image(module, delete_image=True)
     fname = module.params["filename"]
     itype = module.params["installer_type"]
-    resp, status = image.delete(fname, itype)
-    if status["error"]:
-      result["error"] = status["error"]
-      result["response"] = resp
-      module.fail_json(msg="Failed deleteing the image", **result)
+    resp = image.delete(fname, itype)
 
     result["changed"] = True
     result["response"] = resp
