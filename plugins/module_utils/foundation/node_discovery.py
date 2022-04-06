@@ -18,7 +18,11 @@ class NodeDiscovery:
         self.module = module
 
     def discover(
-        self, include_configured=False, include_network_details=False, new_discovery=False, timeout=60
+        self,
+        include_configured=False,
+        include_network_details=False,
+        new_discovery=False,
+        timeout=60,
     ):
 
         if self.discovered_nodes and not new_discovery:
@@ -35,9 +39,7 @@ class NodeDiscovery:
                 return None, error
 
         # cache data for multiple calls
-        self.discovered_nodes = {
-            "blocks": blocks
-        }
+        self.discovered_nodes = {"blocks": blocks}
         return self.discovered_nodes, None
 
     def _add_network_details(self, blocks, timeout):

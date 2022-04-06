@@ -56,7 +56,9 @@ from ..module_utils.utils import remove_param_with_none_value
 def get_module_spec():
     module_args = dict(
         filename=dict(type="str", required=True),
-        installer_type=dict(type="str", required=True, choices=["kvm", "esx", "hyperv", "xen", "nos"]),
+        installer_type=dict(
+            type="str", required=True, choices=["kvm", "esx", "hyperv", "xen", "nos"]
+        ),
         source=dict(type="str", required=False),
     )
 
@@ -73,6 +75,7 @@ def upload_image(module, result):
     result["changed"] = True
     result["response"] = resp
 
+
 def delete_image(module, result):
     image = Image(module, delete_image=True)
     fname = module.params["filename"]
@@ -81,7 +84,6 @@ def delete_image(module, result):
 
     result["changed"] = True
     result["response"] = resp
-
 
 
 def run_module():
@@ -99,11 +101,11 @@ def run_module():
         "response": None,
     }
     state = module.params["state"]
-    if state == "present" :
-      upload_image(module, result)
-    elif state == "absent" :
-      delete_image(module, result)
-    
+    if state == "present":
+        upload_image(module, result)
+    elif state == "absent":
+        delete_image(module, result)
+
     module.exit_json(**result)
 
 

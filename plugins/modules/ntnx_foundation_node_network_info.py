@@ -92,8 +92,8 @@ def get_node_network_details(module, result):
     timeout = module.params.get("timeout")
     resp = node_network_details.retrieve(nodes, timeout)
     if not resp:
-      result["error"] = "Faied to retrieve node network details"
-      module.fail_json(
+        result["error"] = "Faied to retrieve node network details"
+        module.fail_json(
             msg="Failed to retrieve node network details via foundation", **result
         )
     result["nodes"] = resp

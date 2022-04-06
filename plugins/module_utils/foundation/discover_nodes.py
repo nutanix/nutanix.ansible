@@ -13,7 +13,7 @@ class DiscoverNodes(Foundation):
         super(DiscoverNodes, self).__init__(module, resource_type=resource_type)
 
     def discover(self, include_configured=False):
-        resp, _ = self.read()
+        resp = self.read()
         if not resp:
             return None
         blocks = []
@@ -24,12 +24,12 @@ class DiscoverNodes(Foundation):
                 configured = n.get("configured")
                 if include_configured or (type(configured) == bool and not configured):
 
-                    #handle datatype corner cases for cluster_id & current_cvm_vlan_tag 
+                    # handle datatype corner cases for cluster_id & current_cvm_vlan_tag
                     if n.get("cluster_id"):
                         n["cluster_id"] = str(n["cluster_id"])
                     if n.get("current_cvm_vlan_tag"):
                         n["current_cvm_vlan_tag"] = int(n["current_cvm_vlan_tag"])
-                        
+
                     result_nodes.append(n)
             if len(result_nodes) > 0:
                 block["nodes"] = result_nodes

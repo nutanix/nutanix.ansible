@@ -19,8 +19,8 @@ class Progress(Foundation):
 
     def get(self, uuid):
         query = {"session_id": uuid}
-        resp, status = self.read(query=query)
-        return resp, status
+        resp = self.read(query=query)
+        return resp
 
     def wait_for_completion(self, uuid):
         state = ""
@@ -28,8 +28,6 @@ class Progress(Foundation):
         timeout = time.time() + (max(3600, self.module.params["timeout"]))
         while state != "COMPLETED":
             response = self.get(uuid)
-            if not response:
-                return None, "Failed to get progress of node imaging process"
             stopped = response.get("imaging_stopped", False)
             aggregate_percent_complete = response.get("aggregate_percent_complete", -1)
             if stopped:
@@ -40,7 +38,10 @@ class Progress(Foundation):
             else:
                 state = "PENDING"
                 if time.time() > timeout:
-                    return None, "Imaging nodes progress polling timedout. Check UI for current progress."
+                    return (
+                        None,
+                        "Failed to poll on image node progress. Reason: Timeout",
+                    )
                 time.sleep(delay)
         return response, None
 
@@ -49,7 +50,6 @@ class Progress(Foundation):
             self._get_progress_messages(progress, "clusters", "cluster_name"),
             self._get_progress_messages(progress, "nodes", "cvm_ip"),
         )
-        
 
     def _get_progress_messages(self, progress, entity_type, entity_name):
         res = ""

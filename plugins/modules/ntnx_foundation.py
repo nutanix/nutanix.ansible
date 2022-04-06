@@ -50,7 +50,7 @@ from ..module_utils.utils import remove_param_with_none_value
 
 def get_module_spec():
     hypervisor_options = ["kvm", "hyperv", "xen", "esx", "ahv"]
-    
+
     ucsm_params = dict(
         native_vlan=dict(type="bool", required=False),
         keep_ucsm_settings=dict(type="bool", required=False),
@@ -64,7 +64,7 @@ def get_module_spec():
         name=dict(type="str", required=False),
         uplinks=dict(type="str", required=False),
         mtu=dict(type="int", required=False),
-        other_config=dict(type="list", elements="str", required=False)
+        other_config=dict(type="list", elements="str", required=False),
     )
 
     manual_mode_node_spec = dict(
@@ -85,7 +85,7 @@ def get_module_spec():
         ipmi_user=dict(type="str", required=False),
         ipmi_netmask=dict(type="str", required=False),
         ipmi_gateway=dict(type="str", required=False),
-        ipmi_mac=dict(type="str", required=False),          
+        ipmi_mac=dict(type="str", required=False),
         ipmi_configure_now=dict(type="bool", required=False),
         ipv6_address=dict(type="str", required=False),
         device_hint=dict(type="str", required=False, choices=["vm_installer"]),
@@ -101,8 +101,8 @@ def get_module_spec():
         ucsm_managed_mode=dict(type="str", required=False),
         exlude_boot_serial=dict(type="bool", required=False),
         mitigate_low_boot_space=dict(type="bool", required=False),
-        vswitches = dict(type="list", elements="dict",options=vswitches, required=False),
-        ucsm_params = dict(type="dict", options=ucsm_params, required=False),
+        vswitches=dict(type="list", elements="dict", options=vswitches, required=False),
+        ucsm_params=dict(type="dict", options=ucsm_params, required=False),
     )
 
     discovery_override = dict(
@@ -120,7 +120,7 @@ def get_module_spec():
         current_cvm_vlan_tag=dict(type="int", required=False),
         cluster_id=dict(type="str", required=False),
     )
-    
+
     discovery_mode_node_spec = dict(
         node_serial=dict(type="str", required=True),
         image_now=dict(type="bool", required=False, default=True),
@@ -142,8 +142,8 @@ def get_module_spec():
         exlude_boot_serial=dict(type="bool", required=False),
         mitigate_low_boot_space=dict(type="bool", required=False),
         bond_uplinks=dict(type="list", elements="str", required=False),
-        vswitches = dict(type="list", elements="dict",options=vswitches, required=False),
-        ucsm_params = dict(type="dict", options=ucsm_params, required=False),
+        vswitches=dict(type="list", elements="dict", options=vswitches, required=False),
+        ucsm_params=dict(type="dict", options=ucsm_params, required=False),
     )
 
     node_mode_constraints = [("manual_mode", "discovery_mode")]
@@ -216,7 +216,9 @@ def get_module_spec():
         hypervisor_netmask=dict(type="str", required=True),
         nos_package=dict(type="str", required=True),
         blocks=dict(type="list", required=True, options=block_spec, elements="dict"),
-        clusters=dict(type="list", elements="dict", required=False, options=cluster_spec),
+        clusters=dict(
+            type="list", elements="dict", required=False, options=cluster_spec
+        ),
         hypervisor_iso=dict(
             type="dict",
             required=False,
@@ -235,10 +237,8 @@ def get_module_spec():
         foundation_central=dict(
             type="dict", required=False, options=foundation_central
         ),
-        tests=dict(
-            type="dict", required=False, options=tests
-        ),
-        eos_metadata = dict(type="dict", required=False, options=eos_metadata),
+        tests=dict(type="dict", required=False, options=tests),
+        eos_metadata=dict(type="dict", required=False, options=eos_metadata),
         hypervisor_password=dict(type="str", required=False, no_log=True),
         xen_master_label=dict(type="str", required=False),
         xen_master_password=dict(type="str", required=False, no_log=True),
@@ -257,7 +257,7 @@ def get_module_spec():
         unc_password=dict(type="str", required=False, no_log=True),
         svm_rescue_args=dict(type="list", elements="str", required=False),
         install_script=dict(type="str", required=False),
-        timeout=dict(type="int", required=False, default=3600)
+        timeout=dict(type="int", required=False, default=3600),
     )
 
     return module_args
@@ -274,11 +274,7 @@ def image_nodes(module, result):
         result["response"] = spec
         return
 
-    resp, status = image_nodes.create(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed to image nodes", **result)
+    resp = image_nodes.create(spec)
 
     session_id = resp.get("session_id")
     if not session_id:
