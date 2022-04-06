@@ -258,17 +258,6 @@ options:
         - "on"
         - "clone"
         - "create_ova_image"
-  ova_name:
-    description:
-      - Name of the OVA
-    type: str
-  ova_file_format:
-    description:
-      - File format of disk in OVA
-    type: str
-    choices:
-      - QCOW2
-      - VMDK
   force_power_off:
       description:
         - when set the vm will restart if it's necessary

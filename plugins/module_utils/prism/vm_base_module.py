@@ -2,7 +2,7 @@
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
 from __future__ import absolute_import, division, print_function
 
-from .module_utils.base_module import BaseModule
+from ..base_module import BaseModule
 
 __metaclass__ = type
 
@@ -70,4 +70,4 @@ class VMBaseModule(BaseModule):
         if not kwargs.get("supports_check_mode"):
             kwargs["supports_check_mode"] = True
 
-        super(BaseModule, self).__init__(**kwargs)
+        super(VMBaseModule, self).__init__(**kwargs)
