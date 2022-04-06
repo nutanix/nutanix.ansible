@@ -39,7 +39,7 @@ class VMBaseModule(BaseModule):
         is_overridable=dict(type="bool", default=False),
     )
 
-    argument_spec = dict(
+    vm_argument_spec = dict(
         name=dict(type="str", required=False),
         vm_uuid=dict(type="str"),
         desc=dict(type="str"),
@@ -62,10 +62,8 @@ class VMBaseModule(BaseModule):
 
     def __init__(self, **kwargs):
         if kwargs.get("argument_spec"):
-            self.argument_spec.update(kwargs["argument_spec"])
-            kwargs["argument_spec"] = self.argument_spec
-        else:
-            kwargs["argument_spec"] = self.argument_spec
+            self.vm_argument_spec.update(kwargs["argument_spec"])
+        kwargs["argument_spec"] = self.vm_argument_spec
 
         if not kwargs.get("supports_check_mode"):
             kwargs["supports_check_mode"] = True
