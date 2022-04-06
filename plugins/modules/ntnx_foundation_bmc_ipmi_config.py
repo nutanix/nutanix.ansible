@@ -27,12 +27,12 @@ options:
     required: false
   ipmi_user:
     description:
-      - ipmi username to be set
+      - ipmi username of given nodes
     type: str
     required: true
   ipmi_netmask:
     description:
-      - ipmi netmask to be set
+      - ipmi netmask of given nodes
     type: str
     required: true
   blocks:
@@ -46,7 +46,7 @@ options:
           description:
             - block id
           type: str
-            required: true
+            required: false
         nodes:
           description:
             - list of nodes
@@ -67,17 +67,17 @@ options:
               default: true
             ipmi_ip:
               description:
-                - ipmi ip address
+                - ipmi ip address to be set
               type: str
               required: true
   ipmi_gateway:
     description:
-      - ipmi gateway to be set
+      - ipmi gateway of given nodes
     type: str
     required: true
   ipmi_password:
     description:
-      - ipmi password to be set
+      - ipmi password of given nodes
     type: str
     required: true
 author:
@@ -115,7 +115,7 @@ def get_module_spec():
         blocks=dict(type="list", required=True, options=block_spec, elements="dict"),
         ipmi_gateway=dict(type="str", required=True),
         ipmi_password=dict(type="str", required=True, no_log=True),
-        timeout=dict(type="str", required=False)
+        timeout=dict(type="str", required=False),
     )
 
     return module_args
@@ -135,7 +135,7 @@ def configure_ipmi(module, result):
     timeout = module.params["timeout"]
 
     if timeout <= 60:
-      timeout = 120
+        timeout = 120
 
     resp = bmc.configure_ipmi(spec, timeout)
 
