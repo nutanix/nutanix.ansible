@@ -34,7 +34,7 @@ class Image(Foundation):
 
     def delete(self, filename, installer_type):
         data = "installer_type={}&filename={}".format(installer_type, filename)
-        return self.create(data=data)
+        return self.create(data=data, no_response=True)
 
     def _get_default_spec():
         raise NotImplementedError
