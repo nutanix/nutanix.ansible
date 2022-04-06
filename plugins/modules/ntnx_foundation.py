@@ -295,10 +295,10 @@ def image_nodes(module, result):
 def wait_image_completion(module, result):
     progress = Progress(module)
     session_id = result["session_id"]
-    resp, status = progress.wait_for_completion(session_id)
+    resp, err = progress.wait_for_completion(session_id)
     result["response"] = resp
-    if status["error"]:
-        result["error"] = status["error"]
+    if err:
+        result["error"] = err
         result["response"] = resp
         module.fail_json(msg="Failed to image nodes", **result)
 

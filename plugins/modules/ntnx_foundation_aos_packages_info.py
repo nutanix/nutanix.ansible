@@ -61,10 +61,7 @@ def get_module_spec():
 
 def list_aos_packages(module, result):
     packages = EnumerateAOSPackages(module)
-    resp, status = packages.list()
-    if status["error"]:
-        result["error"] = status["error"]
-        module.fail_json(msg="Failed list AOS packages", **result)
+    resp = packages.list()
     result["aos_packages"] = resp
 
 

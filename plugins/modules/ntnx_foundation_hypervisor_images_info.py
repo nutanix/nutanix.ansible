@@ -62,10 +62,7 @@ def get_module_spec():
 
 def list_hypervisor_images(module, result):
     images = EnumerateHypervisorIsos(module)
-    resp, status = images.read()
-    if status["error"]:
-        result["error"] = status["error"]
-        module.fail_json(msg="Failed list hypervisor images", **result)
+    resp = images.read()
     result["hypervisor_images"] = resp
 
 

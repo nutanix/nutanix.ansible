@@ -137,12 +137,7 @@ def configure_ipmi(module, result):
     if timeout <= 60:
       timeout = 120
 
-    resp, status = bmc.configure_ipmi(spec, timeout)
-
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed configuring ipmi", **result)
+    resp = bmc.configure_ipmi(spec, timeout)
 
     result["changed"] = True
     result["response"] = resp

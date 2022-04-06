@@ -15,5 +15,5 @@ class EnumerateAOSPackages(Foundation):
         super(EnumerateAOSPackages, self).__init__(module, resource_type=resource_type)
 
     def list(self):
-        resp, status_obj = self.read()
-        return resp, status_obj
+        resp = self.read()
+        return resp
