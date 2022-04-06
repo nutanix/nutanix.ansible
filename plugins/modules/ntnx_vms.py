@@ -954,14 +954,18 @@ def get_module_spec():
     )
 
     module_args = dict(
-        state=dict(type="str",
-                   choices=["present",
-                            "absent",
-                            "power_on",
-                            "power_off",
-                            "soft_shutdown",
-                            "hard_poweroff"],
-                   default="present"),
+        state=dict(
+            type="str",
+            choices=[
+                "present",
+                "absent",
+                "power_on",
+                "power_off",
+                "soft_shutdown",
+                "hard_poweroff",
+            ],
+            default="present",
+        ),
         disks=dict(
             type="list",
             elements="dict",
@@ -996,7 +1000,11 @@ def create_vm(module, result):
     result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
-    if module.params.get("wait") or state in ["soft_shutdown", "hard_poweroff"]:
+    if module.params.get("wait") or state in [
+        "soft_shutdown",
+        "hard_poweroff",
+        "power_off",
+    ]:
         wait_for_task_completion(module, result)
         resp = vm.read(vm_uuid)
         spec = resp.copy()
@@ -1005,17 +1013,16 @@ def create_vm(module, result):
 
     if state == "soft_shutdown":
         resp = vm.soft_shutdown(spec)
-    elif state == "hard_poweroff":
+    elif state in ["hard_poweroff", "power_off"]:
         resp = vm.hard_power_off(spec)
 
-    if state in ["soft_shutdown", "hard_poweroff"]:
+    if state in ["soft_shutdown", "hard_poweroff", "power_off"]:
         result["response"] = resp
         result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
         if module.params.get("wait"):
             wait_for_task_completion(module, result, False)
             state = result["response"].get("status")
             if state == "FAILED":
-                # result["skipped"] = True
                 result[
                     "warning"
                 ] = "VM 'soft_shutdown' state failed, use 'hard_poweroff' instead"
@@ -1073,7 +1080,7 @@ def update_vm(module, result):
     if (
         module.params.get("wait")
         or is_powered_off
-        or (is_vm_on and state in ["soft_shutdown", "hard_poweroff"])
+        or (is_vm_on and state in ["soft_shutdown", "hard_poweroff", "power_off"])
     ):
         wait_for_task_completion(module, result)
         resp = vm.read(vm_uuid)
@@ -1083,9 +1090,9 @@ def update_vm(module, result):
 
     if state == "soft_shutdown" and is_vm_on and not is_powered_off:
         resp = vm.soft_shutdown(spec)
-    elif state == "hard_poweroff" and is_vm_on and not is_powered_off:
+    elif state in ["hard_poweroff", "power_off"] and is_vm_on and not is_powered_off:
         resp = vm.hard_power_off(spec)
-    elif is_powered_off or (state == "on" and not is_vm_on):
+    elif is_powered_off or (state == "power_on" and not is_vm_on):
         resp = vm.power_on(spec)
 
     if state or is_powered_off:
@@ -1093,26 +1100,17 @@ def update_vm(module, result):
         result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
         if module.params.get("wait"):
             wait_for_task_completion(module, result, False)
-            state = result["response"].get("status")
-            if state == "FAILED":
-                result["skipped"] = True
+            response_state = result["response"].get("status")
+            if response_state == "FAILED":
                 result[
                     "warning"
-                ] = "VM 'soft_shutdown' state failed, use 'hard_poweroff' instead"
+                ] = "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
 
             resp = vm.read(vm_uuid)
             result["response"] = resp
 
 
-def power_off_vm(module, result):
-    vm_uuid = module.params["vm_uuid"]
-
-    vm = VM(module)
-    resp = vm.read(vm_uuid)
-    result["response"] = resp
-    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
-    resp["spec"] = resp.pop("status")
-
+def power_off_vm(vm, module, result):
     resp = vm.hard_power_off(result["response"])
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
     wait_for_task_completion(module, result)
@@ -1149,10 +1147,7 @@ def run_module():
     module = VMBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[
-            ("vm_uuid", None, ("name",)),
-            ("state", "absent", ("vm_uuid",)),
-        ],
+        required_if=[("vm_uuid", None, ("name",)), ("state", "absent", ("vm_uuid",))],
     )
     utils.remove_param_with_none_value(module.params)
     result = {
@@ -1163,19 +1158,13 @@ def run_module():
         "task_uuid": None,
     }
     state = module.params["state"]
-    if state == "present":
-        if module.params.get("vm_uuid"):
-            update_vm(module, result)
-        else:
-            create_vm(module, result)
-    elif state == "power_on":
-        pass
-    elif state == "soft_shutdown":
-        pass
-    elif state in ["power_on", "hard_poweroff"]:
-        power_off_vm(module, result)
-    elif state == "absent":
+
+    if state == "absent":
         delete_vm(module, result)
+    elif module.params.get("vm_uuid"):
+        update_vm(module, result)
+    else:
+        create_vm(module, result)
 
     module.exit_json(**result)
 

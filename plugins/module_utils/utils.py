@@ -34,15 +34,16 @@ def strip_extra_attrs_from_status(status, spec):
 
 
 def check_for_idempotency(spec, resp, **kwargs):
-    operation = kwargs.get("operation")
+    state = kwargs.get("state")
     if spec == resp:
         if (
-            operation is None
+            state is None
             or (
-                operation in ["soft_shutdown", "hard_poweroff"]
+                state in ["soft_shutdown", "hard_poweroff", "power_off"]
                 and resp["spec"]["resources"]["power_state"] == "OFF"
             )
-            or operation == resp["spec"]["resources"]["power_state"].lower()
+            or state == "power_on"
+            and resp["spec"]["resources"]["power_state"] == "ON"
         ):
             return True
     return False

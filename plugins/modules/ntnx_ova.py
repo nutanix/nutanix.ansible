@@ -95,10 +95,7 @@ def wait_for_task_completion(module, result, raise_error=True):
 
 
 def run_module():
-    module = BaseModule(
-        argument_spec=get_module_spec(),
-        supports_check_mode=True,
-    )
+    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
     result = {
         "changed": False,
         "error": None,

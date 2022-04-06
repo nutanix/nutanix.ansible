@@ -61,8 +61,8 @@ class VM(Prism):
     def get_ova_image_spec(self):
         return deepcopy(
             {
-                "name": self.module.params["ova_name"],
-                "disk_file_format": self.module.params["ova_file_format"],
+                "name": self.module.params["name"],
+                "disk_file_format": self.module.params["file_format"],
             }
         )
 
