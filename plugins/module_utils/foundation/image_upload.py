@@ -24,7 +24,7 @@ class Image(Foundation):
             module, resource_type=resource_type, additional_headers=additional_headers
         )
 
-    def upload_image(self, filename, installer_type, source, timeout=600):  
+    def upload_image(self, filename, installer_type, source, timeout=600):
         query = {"filename": filename, "installer_type": installer_type}
         return self.upload(source=source, query=query, timeout=timeout)
 

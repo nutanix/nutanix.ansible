@@ -15,6 +15,7 @@ from ansible.module_utils.urls import fetch_url
 
 __metaclass__ = type
 
+
 class Entity(object):
     def __init__(
         self,
@@ -105,7 +106,7 @@ class Entity(object):
         raise_error=True,
         no_response=False,
         timeout=30,
-    ): 
+    ):
         url = self.base_url + "/{0}".format(endpoint) if endpoint else self.base_url
         if endpoint:
             url = url + "/{0}".format(endpoint)
@@ -270,7 +271,9 @@ class Entity(object):
         return resp_json
 
     # upload file in chunks to the given url
-    def _upload_file(self, url, source, method, raise_error=True, no_response=False, timeout=30):
+    def _upload_file(
+        self, url, source, method, raise_error=True, no_response=False, timeout=30
+    ):
 
         resp, info = fetch_url(
             self.module,
@@ -335,7 +338,7 @@ class CreateChunks(object):
         self.total_size = os.path.getsize(filename)
 
     def __iter__(self):
-        with open(self.filename, 'rb') as file:
+        with open(self.filename, "rb") as file:
             while True:
                 data = file.read(self.chunk_size)
                 if not data:
@@ -345,14 +348,17 @@ class CreateChunks(object):
     def __len__(self):
         return self.total_size
 
+
 # to iterate over chunks of file
 class FileChunksIterator(object):
-    def __init__(self, filename, chunk_size=1<<13):
+    def __init__(self, filename, chunk_size=1 << 13):
         iterable = CreateChunks(filename, chunk_size)
         self.iterator = iter(iterable)
         self.length = len(iterable)
+
     # request lib checks for read func in iterable object
     def read(self, size=None):
-        return next(self.iterator, b'')
+        return next(self.iterator, b"")
+
     def __len__(self):
         return self.length
