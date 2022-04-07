@@ -35,5 +35,5 @@ class Image(Foundation):
         data = "installer_type={}&filename={}".format(installer_type, filename)
         return self.create(data=data, no_response=True)
 
-    def _get_default_spec():
+    def _get_default_spec(self):
         raise NotImplementedError
