@@ -77,6 +77,7 @@ nodes:
     ]
 """
 
+
 def get_module_spec():
     module_args = dict(
         nodes=dict(type="list", elements="str", required=True),

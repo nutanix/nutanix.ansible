@@ -4,6 +4,7 @@ from ..entity import Entity
 
 __metaclass__ = type
 
+
 class Foundation(Entity):
     __BASEURL__ = "/foundation"
 

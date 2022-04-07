@@ -96,6 +96,7 @@ RETURN = r"""
 
 """
 
+
 def get_module_spec():
     node_spec = dict(
         ipmi_mac=dict(type="str", required=True),

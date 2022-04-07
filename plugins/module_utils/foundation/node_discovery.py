@@ -7,6 +7,7 @@ from .node_network_details import NodeNetworkDetails
 
 __metaclass__ = type
 
+
 class NodeDiscovery:
 
     discovered_nodes = None

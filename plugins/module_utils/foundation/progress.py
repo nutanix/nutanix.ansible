@@ -9,6 +9,7 @@ from ansible_collections.nutanix.ncp.plugins.module_utils.foundation.foundation 
 
 __metaclass__ = type
 
+
 class Progress(Foundation):
     def __init__(self, module):
         resource_type = "/progress"

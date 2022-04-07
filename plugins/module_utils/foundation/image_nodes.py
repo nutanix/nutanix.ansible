@@ -8,6 +8,7 @@ from .node_discovery import NodeDiscovery
 
 __metaclass__ = type
 
+
 class ImageNodes(Foundation):
     def __init__(self, module):
         resource_type = "/image_nodes"

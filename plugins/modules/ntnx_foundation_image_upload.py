@@ -54,6 +54,7 @@ RETURN = r"""
 
 """
 
+
 def get_module_spec():
     module_args = dict(
         filename=dict(type="str", required=True),

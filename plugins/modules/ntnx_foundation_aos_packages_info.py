@@ -53,6 +53,7 @@ aos_packages:
   ]
 """
 
+
 def get_module_spec():
     module_args = dict()
     return module_args

@@ -88,6 +88,7 @@ blocks:
   ]
 """
 
+
 def get_module_spec():
     module_args = dict(
         include_configured=dict(type="bool", required=False, default=False),

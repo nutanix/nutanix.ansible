@@ -47,6 +47,7 @@ RETURN = r"""
 
 """
 
+
 def get_module_spec():
     hypervisor_options = ["kvm", "hyperv", "xen", "esx", "ahv"]
 

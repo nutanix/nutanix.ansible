@@ -53,6 +53,7 @@ hypervisor_images:
   ]
 """
 
+
 def get_module_spec():
     module_args = dict()
 
