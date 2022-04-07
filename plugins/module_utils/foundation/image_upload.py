@@ -24,14 +24,11 @@ class Image(Foundation):
             module, resource_type=resource_type, additional_headers=additional_headers
         )
 
-    def upload(self, filename, installer_type, source, timeout=600):
-        # read file
-        with open(source, "rb") as f:
-            data = f.read()
-        query = {"filename": filename, "installer_type": installer_type}
-        return self.create(data=data, query=query, timeout=timeout)
+    def upload_image(self, filename, installer_type, source, timeout=600):  
+        params = {"filename": filename, "installer_type": installer_type}
+        return self.upload(source=source, params=params, timeout=timeout)
 
-    def delete(self, filename, installer_type):
+    def delete_image(self, filename, installer_type):
         data = "installer_type={}&filename={}".format(installer_type, filename)
         return self.create(data=data, no_response=True)
 

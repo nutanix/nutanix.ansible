@@ -73,7 +73,7 @@ def upload_image(module, result):
     itype = module.params["installer_type"]
     source = module.params["source"]
     timeout = module.params["timeout"]
-    resp = image.upload(fname, itype, source, timeout=timeout)
+    resp = image.upload_image(fname, itype, source, timeout=timeout)
     result["changed"] = True
     result["response"] = resp
 
@@ -82,7 +82,7 @@ def delete_image(module, result):
     image = Image(module, delete_image=True)
     fname = module.params["filename"]
     itype = module.params["installer_type"]
-    resp = image.delete(fname, itype)
+    resp = image.delete_image(fname, itype)
 
     result["changed"] = True
     result["response"] = resp
