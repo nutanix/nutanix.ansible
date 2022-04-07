@@ -306,7 +306,7 @@ class ImageNodes(Foundation):
 
         # discovery os based nodes have "pheonix" value for hypervisor and its not valid hypervisor for imaging
         hypervisor = node_spec.get("hypervisor")
-        if (hypervisor is None) or (hypervisor == "pheonix"):
+        if (hypervisor is None) or (hypervisor == "phoenix"):
             # return error
             return "Invalid hypervisor: {}. Valid hypervisor types are kvm ,hyperv, xen ,esx or ahv".format(
                 hypervisor
