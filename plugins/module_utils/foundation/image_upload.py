@@ -25,8 +25,8 @@ class Image(Foundation):
         )
 
     def upload_image(self, filename, installer_type, source, timeout=600):  
-        params = {"filename": filename, "installer_type": installer_type}
-        return self.upload(source=source, params=params, timeout=timeout)
+        query = {"filename": filename, "installer_type": installer_type}
+        return self.upload(source=source, query=query, timeout=timeout)
 
     def delete_image(self, filename, installer_type):
         data = "installer_type={}&filename={}".format(installer_type, filename)

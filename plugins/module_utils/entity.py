@@ -101,7 +101,6 @@ class Entity(object):
     def upload(
         self,
         source,
-        params=None,
         endpoint=None,
         query=None,
         raise_error=True,
@@ -109,12 +108,10 @@ class Entity(object):
         timeout=30,
     ): 
         url = self.base_url + "/{0}".format(endpoint) if endpoint else self.base_url
-        if query:
-            url = self._build_url_with_query(url, query)
         return self._upload_file(
             url,
             source,
-            params = params,
+            query = query,
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
@@ -270,9 +267,9 @@ class Entity(object):
         return resp_json
 
     # upload file in chunks to the given url
-    def _upload_file(self, url, source, params, raise_error=True, no_response=False, timeout=30):
+    def _upload_file(self, url, source, query=None, raise_error=True, no_response=False, timeout=30):
  
-        resp = requests.post(url, params=params, data=FileChunksIterator(source), headers=self.headers, timeout=timeout)
+        resp = requests.post(url, params=query, data=FileChunksIterator(source), headers=self.headers, timeout=timeout)
         status_code = resp.status_code
 
         try:
