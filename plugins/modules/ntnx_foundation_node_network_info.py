@@ -5,6 +5,10 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+from ..module_utils.foundation.base_module import FoundationBaseModule
+from ..module_utils.foundation.node_network_details import NodeNetworkDetails
+from ..module_utils.utils import remove_param_with_none_value
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -72,11 +76,6 @@ nodes:
       }
     ]
 """
-
-from ..module_utils.foundation.base_module import FoundationBaseModule
-from ..module_utils.foundation.node_network_details import NodeNetworkDetails
-from ..module_utils.utils import remove_param_with_none_value
-
 
 def get_module_spec():
     module_args = dict(

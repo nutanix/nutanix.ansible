@@ -5,6 +5,11 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+from ..module_utils.foundation.base_module import FoundationBaseModule
+from ..module_utils.foundation.image_nodes import ImageNodes
+from ..module_utils.foundation.progress import Progress
+from ..module_utils.utils import remove_param_with_none_value
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -41,12 +46,6 @@ EXAMPLES = r"""
 RETURN = r"""
 
 """
-
-from ..module_utils.foundation.base_module import FoundationBaseModule
-from ..module_utils.foundation.image_nodes import ImageNodes
-from ..module_utils.foundation.progress import Progress
-from ..module_utils.utils import remove_param_with_none_value
-
 
 def get_module_spec():
     hypervisor_options = ["kvm", "hyperv", "xen", "esx", "ahv"]
