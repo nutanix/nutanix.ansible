@@ -2,7 +2,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 from base64 import b64encode
-import requests
 import os
 import json
 
@@ -108,10 +107,14 @@ class Entity(object):
         timeout=30,
     ): 
         url = self.base_url + "/{0}".format(endpoint) if endpoint else self.base_url
+        if endpoint:
+            url = url + "/{0}".format(endpoint)
+        if query:
+            url = self._build_url_with_query(url, query)
         return self._upload_file(
             url,
             source,
-            query = query,
+            method="POST",
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
@@ -267,21 +270,30 @@ class Entity(object):
         return resp_json
 
     # upload file in chunks to the given url
-    def _upload_file(self, url, source, query=None, raise_error=True, no_response=False, timeout=30):
- 
-        resp = requests.post(url, params=query, data=FileChunksIterator(source), headers=self.headers, timeout=timeout)
-        status_code = resp.status_code
+    def _upload_file(self, url, source, method, raise_error=True, no_response=False, timeout=30):
 
+        resp, info = fetch_url(
+            self.module,
+            url,
+            data=FileChunksIterator(source),
+            method=method,
+            headers=self.headers,
+            cookies=self.cookies,
+            timeout=timeout,
+        )
+
+        status_code = info.get("status")
+        body = resp.read() if resp else info.get("body")
         try:
-            resp_json = resp.json() if resp else None
+            resp_json = json.loads(to_text(body)) if body else None
         except ValueError:
             resp_json = None
 
         if not raise_error:
             return resp_json
 
-        if status_code >= 300 and resp_json:
-            err = resp_json.get("message", "Status code != 2xx")
+        if status_code >= 300:
+            err = info.get("msg", "Status code != 2xx")
             self.module.fail_json(
                 msg="Failed fetching URL: {0}".format(url),
                 status_code=status_code,
@@ -296,7 +308,7 @@ class Entity(object):
             self.module.fail_json(
                 msg="Failed to convert API response to json",
                 status_code=status_code,
-                error=resp,
+                error=body,
                 response=resp_json,
             )
 
