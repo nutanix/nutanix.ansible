@@ -135,7 +135,7 @@ options:
                             current_cvm_vlan_tag:
                                 description:
                                 - current cvm vlan tag
-                                type: str
+                                type: int
                                 required: false
                             image_now:
                                 description:
@@ -143,11 +143,6 @@ options:
                                 type: str
                                 required: false
                                 default: true
-                            current_cvm_vlan_tag:
-                                description:
-                                - current cvm vlan tag
-                                type: str
-                                required: false
                             image_delay:
                                 description:
                                 - Imaging delay
@@ -410,7 +405,7 @@ options:
                                         description:
                                         - current cvm vlan tag
                                         - required for certain case like dos based nodes
-                                        type: str
+                                        type: int
                                         required: false
                                     ipmi_ip:
                                         description:
