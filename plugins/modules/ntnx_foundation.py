@@ -995,7 +995,7 @@ EXAMPLES = r"""
 
       clusters:
         - name : "superman"
-          redundancy_factor: 3
+          redundancy_factor: 2
           cluster_members:
             - "10.xx.xx.xx"
             - "10.xx.xx.xx"
