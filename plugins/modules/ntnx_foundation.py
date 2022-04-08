@@ -15,9 +15,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_image_nodes
-short_description: Nutanix module to foundation nodes
+short_description: Nutanix module to image nodes and optionally create clusters
 version_added: 1.1.0
-description: 'Foundation nodes'
+description: 'Nutanix module to image nodes and optionally create clusters'
 options:
     nutanix_host:
         description:
@@ -224,7 +224,6 @@ options:
                                 description:
                                 - passthru RDMA nic to CVM if possible, default to false
                                 type: bool
-                                default: False
                                 required: false
                             bond_mode:
                                 description:
@@ -469,7 +468,6 @@ options:
                                 description:
                                 - passthru RDMA nic to CVM if possible, default to false
                                 type: bool
-                                default: False
                                 required: false
                             bond_mode:
                                 description:
@@ -660,8 +658,8 @@ options:
         - Hypervisor ISO.
         type: dict
         required: false
-        suboptions: 
-            kvm: 
+        suboptions:
+            kvm:
                 description: kvm hypervisor details
                 type: dict
                 required: false
@@ -674,7 +672,7 @@ options:
                         description: checksum of the hypervisor file
                         type: str
                         required: true
-            esx: 
+            esx:
                 description: esx hypervisor details
                 type: dict
                 required: false
@@ -687,7 +685,7 @@ options:
                         description: checksum of the hypervisor file
                         type: str
                         required: true
-            hyperv: 
+            hyperv:
                 description: hyperv hypervisor details
                 type: dict
                 required: false
@@ -700,7 +698,7 @@ options:
                         description: checksum of the hypervisor file
                         type: str
                         required: true
-            xen: 
+            xen:
                 description: xen hypervisor details
                 type: dict
                 required: false
@@ -713,7 +711,7 @@ options:
                         description: checksum of the hypervisor file
                         type: str
                         required: true
-            ahv: 
+            ahv:
                 description: ahv hypervisor details
                 type: dict
                 required: false
@@ -786,7 +784,7 @@ options:
 
     ipmi_gateway:
         description:
-        - default IPMI gateway 
+        - default IPMI gateway
         type: str
         required: false
     ipmi_gateway:
@@ -796,12 +794,12 @@ options:
         required: false
     default_ipmi_user:
         description:
-        - default ipmi username, required either at node leve or here incase of ipmi based imaging 
+        - default ipmi username, required either at node leve or here incase of ipmi based imaging
         type: str
         required: false
     default_ipmi_password:
         description:
-        - default ipmi password, required either at node leve or here incase of ipmi based imaging 
+        - default ipmi password, required either at node leve or here incase of ipmi based imaging
         type: str
         required: false
     skip_hypervisor:
@@ -814,7 +812,7 @@ options:
         description:
         - passthru RDMA nic to CVM if possible, default to false
         type: bool
-        default: False
+        default: false
         required: false
     bond_mode:
         description:
@@ -964,7 +962,7 @@ EXAMPLES = r"""
         - block_id: "<block_id>"
           nodes:
             // manually added node / baremetal
-            - manual_mode : 
+            - manual_mode :
                 current_cvm_vlan_tag: xx
                 cvm_gb_ram: 50
                 ipmi_password: "password"
