@@ -31,3 +31,19 @@ def strip_extra_attrs_from_status(status, spec):
                 except IndexError:
                     status[k] = spec[k]
                     break
+
+
+def check_for_idempotency(spec, resp, **kwargs):
+    state = kwargs.get("state")
+    if spec == resp:
+        if (
+            state is None
+            or (
+                state in ["soft_shutdown", "hard_poweroff", "power_off"]
+                and resp["spec"]["resources"]["power_state"] == "OFF"
+            )
+            or state == "power_on"
+            and resp["spec"]["resources"]["power_state"] == "ON"
+        ):
+            return True
+    return False

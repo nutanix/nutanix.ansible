@@ -151,14 +151,14 @@
           bus: "SCSI"
     register: result
     ignore_errors: True
-    
+
   - name: Creation Status
     assert:
       that:
         - result.response is defined
         - result.failed == True
-        - result.msg == "Failed generating VM Spec"
-        - result.error == "Image centos-7-cloudinit not found."
+        - result.response.state == 'ERROR'
+        - result.status_code == 422
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with not existed image '
 ########################################################################################
@@ -277,46 +277,3 @@
         - result.failed == True
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail deleting VM with missing uuid '
-########################### UPDATE_VM ###########################################
-  - name: VM with storage container
-    ntnx_vms:
-      state: present
-      name: VM with UEFI boot type 
-      timezone: GMT
-      cluster:
-        name: "{{ cluster.name }}"
-      categories:
-        AppType:
-          - Apache_Spark
-      disks:
-        - type: DISK
-          size_gb: 1
-          bus: SCSI
-          storage_container:
-            uuid: "{{ storage_container.uuid }}"
-      vcpus: 2
-      cores_per_vcpu: 1
-      memory_gb: 1
-    register: vm
-
-  - name: Update vm
-    ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      name: VM with UEFI boot type
-      timezone: GMT
-    ignore_errors: true
-    register: result
-  
-  - name: Updating Status
-    assert:
-      that:
-        - result.failed == True
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail editing VM '
-      
-  - name: Update VM by deleting it
-    ntnx_vms:
-      state: absent
-      vm_uuid: "{{ vm.vm_uuid }}"
-    register: result

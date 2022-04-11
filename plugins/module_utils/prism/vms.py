@@ -23,7 +23,7 @@ class VM(Prism):
         resource_type = "/vms"
         super(VM, self).__init__(module, resource_type=resource_type)
         self.params_without_defaults = _load_params()
-        self.is_disk_changed = False
+        self.require_vm_restart = False
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -38,15 +38,18 @@ class VM(Prism):
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
             "categories": self._build_spec_categories,
-            "operation": self._build_spec_for_operation,
         }
+
+    @staticmethod
+    def is_on(payload):
+        return True if payload["spec"]["resources"]["power_state"] == "ON" else False
 
     def get_clone_spec(self):
         spec, error = self.get_spec({"spec": {"resources": {}}})
         if error:
             return spec, error
         spec["spec"].update(spec["spec"].pop("resources", {}))
-        spec["spec"].pop("hardware_clock_timezone")
+        spec["spec"].pop("hardware_clock_timezone", None)
         spec = {"override_spec": spec["spec"]}
         return spec, None
 
@@ -58,8 +61,8 @@ class VM(Prism):
     def get_ova_image_spec(self):
         return deepcopy(
             {
-                "name": self.module.params["ova_name"],
-                "disk_file_format": self.module.params["ova_file_format"],
+                "name": self.module.params["name"],
+                "disk_file_format": self.module.params["file_format"],
             }
         )
 
@@ -160,16 +163,22 @@ class VM(Prism):
         payload["spec"]["cluster_reference"]["uuid"] = uuid
         return payload, None
 
-    def _build_spec_vcpus(self, payload, value):
-        payload["spec"]["resources"]["num_sockets"] = value
+    def _build_spec_vcpus(self, payload, vcpus):
+        current_vcpus = payload["spec"]["resources"].get("num_sockets", 0)
+        self.check_and_set_require_vm_restart(current_vcpus, vcpus)
+        payload["spec"]["resources"]["num_sockets"] = vcpus
         return payload, None
 
-    def _build_spec_cores(self, payload, value):
-        payload["spec"]["resources"]["num_vcpus_per_socket"] = value
+    def _build_spec_cores(self, payload, cores):
+        self.require_vm_restart = True
+        payload["spec"]["resources"]["num_vcpus_per_socket"] = cores
         return payload, None
 
-    def _build_spec_mem(self, payload, value):
-        payload["spec"]["resources"]["memory_size_mib"] = value * 1024
+    def _build_spec_mem(self, payload, mem_gb):
+        mem_mib = mem_gb * 1024
+        current_mem_mib = payload["spec"]["resources"].get("memory_size_mib", 0)
+        self.check_and_set_require_vm_restart(current_mem_mib, mem_mib)
+        payload["spec"]["resources"]["memory_size_mib"] = mem_mib
         return payload, None
 
     def _build_spec_networks(self, payload, networks):
@@ -192,7 +201,7 @@ class VM(Prism):
             else:
                 nic = self._get_default_network_spec()
             if network.get("private_ip"):
-                nic["ip_endpoint_list"].append({"ip": network["private_ip"]})
+                nic["ip_endpoint_list"] = [{"ip": network["private_ip"]}]
 
             nic["is_connected"] = network["is_connected"]
             if network.get("subnet"):
@@ -219,7 +228,6 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_disks(self, payload, vdisks):
-        disks = []
         device_indexes = {}
         existing_devise_indexes = list(
             map(
@@ -227,86 +235,17 @@ class VM(Prism):
                 payload["spec"]["resources"]["disk_list"],
             )
         )
+
         for vdisk in vdisks:
+
             if vdisk.get("uuid"):
-                disk = self.filter_by_uuid(
-                    vdisk["uuid"], payload["spec"]["resources"]["disk_list"]
-                )
-
-                payload["spec"]["resources"]["disk_list"].remove(disk)
                 if vdisk.get("state") == "absent":
-                    continue
-
-                vdisk = self.filter_by_uuid(
-                    vdisk["uuid"], self.params_without_defaults.get("disks", [])
-                )
-
-                disk.pop("disk_size_mib")
+                    self.remove_disk(vdisk, payload, existing_devise_indexes)
+                else:
+                    self.update_disk(vdisk, payload)
             else:
-                disk = self._get_default_disk_spec()
-
-            if vdisk.get("type"):
-                disk["device_properties"]["device_type"] = vdisk["type"]
-
-            bus = vdisk.get("bus")
-            if bus:
-                disk["device_properties"]["disk_address"]["adapter_type"] = bus
-                index = device_indexes.get(bus, -1) + 1
-                while True:
-                    if not existing_devise_indexes.count(
-                        {"adapter_type": bus, "device_index": index}
-                    ):
-                        device_indexes[bus] = index
-                        break
-                    index += 1
-
-                disk["device_properties"]["disk_address"][
-                    "device_index"
-                ] = device_indexes[bus]
-
-            if vdisk.get("empty_cdrom"):
-                disk.pop("data_source_reference")
-                disk.pop("storage_config")
-
-            else:
-                if vdisk.get("size_gb"):
-                    disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
-                    if disk.get("data_source_reference") and disk.get("uuid"):
-                        self.is_disk_changed = True
-
-                if vdisk.get("storage_container"):
-                    disk.pop("data_source_reference")
-                    uuid, error = get_entity_uuid(
-                        vdisk["storage_container"],
-                        self.module,
-                        key="container_name",
-                        entity_type="storage_container",
-                    )
-                    if error:
-                        return None, error
-
-                    disk["storage_config"]["storage_container_reference"]["uuid"] = uuid
-
-                elif vdisk.get("clone_image"):
-                    uuid, error = get_image_uuid(vdisk["clone_image"], self.module)
-                    if error:
-                        return None, error
-
-                    disk["data_source_reference"]["uuid"] = uuid
-
-            if (
-                not disk.get("storage_config", {})
-                .get("storage_container_reference", {})
-                .get("uuid")
-            ):
-                disk.pop("storage_config", None)
-
-            if not disk.get("data_source_reference", {}).get("uuid"):
-                disk.pop("data_source_reference", None)
-
-            disks.append(disk)
-
-        payload["spec"]["resources"]["disk_list"] += disks
+                disk = self.add_disk(vdisk, device_indexes, existing_devise_indexes)
+                payload["spec"]["resources"]["disk_list"].append(disk)
 
         return payload, None
 
@@ -316,11 +255,11 @@ class VM(Prism):
             boot_config["boot_device_order_list"] = param["boot_order"]
 
         elif "UEFI" == param["boot_type"]:
-            boot_config.pop("boot_device_order_list")
+            boot_config.pop("boot_device_order_list", None)
             boot_config["boot_type"] = "UEFI"
 
         elif "SECURE_BOOT" == param["boot_type"]:
-            boot_config.pop("boot_device_order_list")
+            boot_config.pop("boot_device_order_list", None)
             boot_config["boot_type"] = "SECURE_BOOT"
             payload["spec"]["resources"]["machine_type"] = "Q35"
         return payload, None
@@ -358,16 +297,9 @@ class VM(Prism):
         payload["metadata"]["use_categories_mapping"] = True
         return payload, None
 
-    def _build_spec_for_operation(self, payload, value):
-        if value in ["soft_shutdown", "hard_poweroff"]:
-            payload["spec"]["resources"]["power_state"] = "OFF"
-            payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = (
-                "HARD" if value == "hard_poweroff" else "ACPI"
-            )
-        elif value == "on":
-            payload["spec"]["resources"]["power_state"] = "ON"
-
-        return payload, None
+    def check_and_set_require_vm_restart(self, current_value, new_value):
+        if new_value < current_value:
+            self.require_vm_restart = True
 
     def filter_by_uuid(self, uuid, items_list):
         try:
@@ -378,22 +310,147 @@ class VM(Prism):
                 error="Entity {0} not found.".format(uuid),
             )
 
-    def power_on(self, spec, uuid):
-        self._build_spec_for_operation(spec, "on")
-        resp = self.update(spec, uuid)
+    def power_on(self, payload, raise_error=True):
+        uuid = payload["metadata"]["uuid"]
+        payload["spec"]["resources"]["power_state"] = "ON"
+        resp = self.update(payload, uuid, raise_error=raise_error)
         return resp
 
-    def check_special_attributes(self, spec):
-        special_attributes = ["memory_gb", "cores_per_vcpu", "vcpus"]
+    def soft_shutdown(self, payload, raise_error=True):
+        uuid = payload["metadata"]["uuid"]
+        payload["spec"]["resources"]["power_state"] = "OFF"
+        payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = "ACPI"
+        resp = self.update(payload, uuid, raise_error=raise_error)
+        return resp
 
-        if (
-            set(self.module.params.keys()).intersection(set(special_attributes))
-            or self.is_disk_changed
-        ) and spec["spec"]["resources"]["power_state"] == "ON":
-            self._build_spec_for_operation(spec, "hard_poweroff")
+    def hard_power_off(self, payload, raise_error=True):
+        uuid = payload["metadata"]["uuid"]
+        payload["spec"]["resources"]["power_state"] = "OFF"
+        payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = "HARD"
+        resp = self.update(payload, uuid, raise_error=raise_error)
+        return resp
+
+    def is_restart_required(self):
+
+        if self.require_vm_restart:
             return True
 
         return False
+
+    def _generate_disk_spec(
+        self, vdisk, disk, device_indexes=None, existing_devise_indexes=None
+    ):
+        if vdisk.get("type"):
+            disk["device_properties"]["device_type"] = vdisk["type"]
+
+        bus = vdisk.get("bus")
+        if bus:
+            if bus in ["IDE", "SATA"]:
+                self.require_vm_restart = True
+            disk["device_properties"]["disk_address"]["adapter_type"] = bus
+            index = device_indexes.get(bus, -1) + 1
+            while True:
+                if not existing_devise_indexes.count(
+                    {"adapter_type": bus, "device_index": index}
+                ):
+                    device_indexes[bus] = index
+                    break
+                index += 1
+
+            disk["device_properties"]["disk_address"]["device_index"] = device_indexes[
+                bus
+            ]
+
+        if vdisk.get("empty_cdrom", None):
+            disk.pop("data_source_reference", None)
+            disk.pop("storage_config", None)
+
+        else:
+            if vdisk.get("size_gb"):
+                disk_size_bytes = vdisk["size_gb"] * 1024 * 1024 * 1024
+                if not vdisk.get("uuid") or (
+                    "disk_size_bytes" in disk
+                    and disk_size_bytes >= disk.get("disk_size_bytes", 0)
+                ):
+                    if disk.get("bus") in ["IDE", "SATA"]:
+                        self.require_vm_restart = True
+                    disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
+                else:
+                    if disk.get("device_properties", {}).get("device_type") == "CDROM":
+                        self.module.fail_json(
+                            msg="Unsupported operation: Cannot resize empty cdrom.",
+                            disk=disk,
+                        )
+                    self.module.fail_json(
+                        msg="Unsupported operation: Unable to decrease disk size.",
+                        disk=disk,
+                    )
+
+            if vdisk.get("storage_container"):
+                disk.pop("data_source_reference", None)
+                uuid, error = get_entity_uuid(
+                    vdisk["storage_container"],
+                    self.module,
+                    key="container_name",
+                    entity_type="storage_container",
+                )
+                if error:
+                    return None, error
+
+                disk["storage_config"]["storage_container_reference"]["uuid"] = uuid
+
+            elif vdisk.get("clone_image"):
+                uuid, error = get_image_uuid(vdisk["clone_image"], self.module)
+                if error:
+                    return None, error
+
+                disk["data_source_reference"]["uuid"] = uuid
+
+        if (
+            not disk.get("storage_config", {})
+            .get("storage_container_reference", {})
+            .get("uuid")
+        ):
+            disk.pop("storage_config", None)
+
+        if not disk.get("data_source_reference", {}).get("uuid"):
+            disk.pop("data_source_reference", None)
+        return disk
+
+    def add_disk(self, vdisk, device_indexes, existing_devise_indexes):
+        disk = self._get_default_disk_spec()
+
+        disk = self._generate_disk_spec(
+            vdisk, disk, device_indexes, existing_devise_indexes
+        )
+        return disk
+
+    def update_disk(self, vdisk, payload):
+        disk = self.filter_by_uuid(
+            vdisk["uuid"], payload["spec"]["resources"]["disk_list"]
+        )
+
+        disk.pop("disk_size_mib", None)
+
+        vdisk = self.filter_by_uuid(
+            vdisk["uuid"], self.params_without_defaults.get("disks", [])
+        )
+        self._generate_disk_spec(vdisk, disk)
+
+    def remove_disk(self, vdisk, payload, existing_devise_indexes):
+        disk = self.filter_by_uuid(
+            vdisk["uuid"], payload["spec"]["resources"]["disk_list"]
+        )
+        existing_devise_indexes.remove(disk["device_properties"]["disk_address"])
+
+        if disk["device_properties"]["disk_address"]["adapter_type"] != "SCSI":
+            self.require_vm_restart = True
+
+        payload["spec"]["resources"]["disk_list"].remove(disk)
+
+    @staticmethod
+    def set_power_state(spec, power_state):
+        spec["spec"]["resources"]["power_state"] = power_state
 
 
 # Helper functions
