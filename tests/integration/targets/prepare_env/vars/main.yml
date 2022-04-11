@@ -1,16 +1,16 @@
-ip: 10.44.76.88
+ip: 10.44.77.68
 username: admin
 password: Nutanix.123
 validate_certs: False
 todelete: []
 
 cluster:
-  name:  auto_cluster_prod_1a642ea0a5c3
-  uuid: 0005d734-09d4-0462-185b-ac1f6b6f97e2 
+  name:  auto_cluster_prod_4f4433c72b64
+  uuid: 0005dc0f-13a7-62e0-185b-ac1f6b6f97e2
 
 virtual_switch:
   name: vs0
-  uuid: 91639374-c0b9-48c3-bfc1-f9c89343b3e7
+  uuid: 070d3832-6f28-4cf2-ae29-5514f30ac520
 
 external_nat_subnets:
   name: integration_test_Ext-Nat
