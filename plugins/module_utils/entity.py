@@ -2,18 +2,19 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-__metaclass__ = type
-
 import json
+import os
 from base64 import b64encode
-
-from ansible.module_utils._text import to_text
-from ansible.module_utils.urls import fetch_url
 
 try:
     from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 except ImportError:
     from urlparse import urlparse  # python2
+
+from ansible.module_utils._text import to_text
+from ansible.module_utils.urls import fetch_url
+
+__metaclass__ = type
 
 
 class Entity(object):
@@ -92,6 +93,30 @@ class Entity(object):
             url,
             method="PUT",
             data=data,
+            raise_error=raise_error,
+            no_response=no_response,
+            timeout=timeout,
+        )
+
+    # source is the file path of resource where ansible yaml runs
+    def upload(
+        self,
+        source,
+        endpoint=None,
+        query=None,
+        raise_error=True,
+        no_response=False,
+        timeout=30,
+    ):
+        url = self.base_url + "/{0}".format(endpoint) if endpoint else self.base_url
+        if endpoint:
+            url = url + "/{0}".format(endpoint)
+        if query:
+            url = self._build_url_with_query(url, query)
+        return self._upload_file(
+            url,
+            source,
+            method="POST",
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
@@ -199,7 +224,11 @@ class Entity(object):
     def _fetch_url(
         self, url, method, data=None, raise_error=True, no_response=False, timeout=30
     ):
-        data = self.module.jsonify(data) if data else None
+
+        # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
+        if self.headers["Content-Type"] == "application/json":
+            data = self.module.jsonify(data) if data else None
+
         resp, info = fetch_url(
             self.module,
             url,
@@ -241,3 +270,96 @@ class Entity(object):
             )
 
         return resp_json
+
+    # upload file in chunks to the given url
+    def _upload_file(
+        self, url, source, method, raise_error=True, no_response=False, timeout=30
+    ):
+
+        resp, info = fetch_url(
+            self.module,
+            url,
+            data=FileChunksIterator(source),
+            method=method,
+            headers=self.headers,
+            cookies=self.cookies,
+            timeout=timeout,
+        )
+
+        status_code = info.get("status")
+        body = resp.read() if resp else info.get("body")
+        try:
+            resp_json = json.loads(to_text(body)) if body else None
+        except ValueError:
+            resp_json = None
+
+        if not raise_error:
+            return resp_json
+
+        if status_code >= 300:
+            err = info.get("msg", "Status code != 2xx")
+            self.module.fail_json(
+                msg="Failed fetching URL: {0}".format(url),
+                status_code=status_code,
+                error=err,
+                response=resp_json,
+            )
+
+        if no_response:
+            return {"status_code": status_code}
+
+        if not resp_json:
+            self.module.fail_json(
+                msg="Failed to convert API response to json",
+                status_code=status_code,
+                error=body,
+                response=resp_json,
+            )
+
+        return resp_json
+
+    def unify_spec(self, spec1, spec2):
+        """
+        This routine return intersection of two specs(dict) as per
+        keys in first level of dictionary.
+        """
+        spec = {}
+        for k in spec1:
+            v = spec2.get(k)
+            if v:
+                spec[k] = v
+        return spec
+
+
+# Read files in chunks and yeild it
+class CreateChunks(object):
+    def __init__(self, filename, chunk_size=1 << 13):
+        self.filename = filename
+        self.chunk_size = chunk_size
+        self.total_size = os.path.getsize(filename)
+
+    def __iter__(self):
+        with open(self.filename, "rb") as file:
+            while True:
+                data = file.read(self.chunk_size)
+                if not data:
+                    break
+                yield data
+
+    def __len__(self):
+        return self.total_size
+
+
+# to iterate over chunks of file
+class FileChunksIterator(object):
+    def __init__(self, filename, chunk_size=1 << 13):
+        iterable = CreateChunks(filename, chunk_size)
+        self.iterator = iter(iterable)
+        self.length = len(iterable)
+
+    # request lib checks for read func in iterable object
+    def read(self, size=None):
+        return next(self.iterator, b"")
+
+    def __len__(self):
+        return self.length
