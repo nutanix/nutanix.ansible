@@ -35,7 +35,7 @@ options:
       - mandatory incase of upload i.e. state=present
     type: str
     required: false
-    description: 
+    description:
   file_name:
     description:
       - Name of installer file that will be uploaded to foundation vm
