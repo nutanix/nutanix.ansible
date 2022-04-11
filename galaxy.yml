@@ -1,6 +1,6 @@
 namespace: "nutanix"
 name: "ncp"
-version: "1.0.2"
+version: "1.2.0"
 readme: "README.md"
 authors:
   - "Balu George (@balugeorge)"
