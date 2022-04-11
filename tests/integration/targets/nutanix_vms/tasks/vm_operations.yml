@@ -55,9 +55,8 @@
 ###########################################
 - name: hard power off the vm
   ntnx_vms:
-      state: present
       vm_uuid: "{{ vm.vm_uuid }}"
-      operation: hard_poweroff
+      state: hard_poweroff
   register: result
   ignore_errors: true
 
@@ -72,9 +71,8 @@
 # ###########################################
 - name: power on the vm
   ntnx_vms:
-      state: present
+      state: power_on
       vm_uuid: "{{ vm.vm_uuid }}"
-      operation: on
   register: result
   ignore_errors: true
 
@@ -89,9 +87,8 @@
 ##########################################
 - name: power on the vm while it's on
   ntnx_vms:
-      state: present
+      state: power_on
       vm_uuid: "{{ vm.vm_uuid }}"
-      operation: on
   register: result
   ignore_errors: true
 
@@ -102,80 +99,10 @@
     success_msg: ' Success: returned msg as expected '
     fail_msg: ' Fail '
 ##########################################
-
-- name: clone vm while it's on and add network and memort
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: clone
-      wait: true
-      vcpus: 2
-      cores_per_vcpu: 2
-      memory_gb: 2
-      networks:
-        - is_connected: true
-          subnet:
-            name: "{{ network.dhcp.name }}"
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to clone vm while it is on '
-    success_msg: ' VM cloned  successfully '
-
-- set_fact:
-      todelete: '{{ todelete + [  result.vm_uuid ] }}'
-###########################################
-- name: create_ova_image  while vm it's on
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: create_ova_image
-      ova_name: integration_test_VMDK_ova
-      ova_file_format: VMDK
-      wait: true
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to create VMDK ova_image while vm is on '
-    success_msg: ' create VMDK ova_image successfully '
-###########################################
-- name: create_ova_image  while vm it's on with check mode
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: create_ova_image
-      ova_name: integration_test_VMDK_ova
-      ova_file_format: VMDK
-      wait: true
-  register: result
-  ignore_errors: true
-  check_mode: yes
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.task_uuid != ""
-    success_msg: ' Success: returned  as expected '
-    fail_msg: ' Fail '
-###########################################
 - name: soft shut down the vm
   ntnx_vms:
-      state: present
+      state: soft_shutdown
       vm_uuid: "{{ vm.vm_uuid }}"
-      operation: soft_shutdown
       wait: true
   register: result
   ignore_errors: true
@@ -188,144 +115,6 @@
     fail_msg: ' Unable to soft soft_shutdown   the vm '
     success_msg: ' VM soft_shutdown  successfully '
 ###########################################
-- name: clone vm while it's off
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: clone
-      wait: true
-      networks:
-        - is_connected: true
-          subnet:
-            name: "{{ network.dhcp.name }}"
-  register: result
-  ignore_errors: true
-  
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to clone vm while it is off '
-    success_msg: ' VM cloned  successfully '
-
-- set_fact:
-      todelete: '{{ todelete + [  result.vm_uuid ] }}'
-###########################################
-- name: clone vm while it's off with check mode
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: clone
-      wait: true
-      networks:
-        - is_connected: true
-          subnet:
-            name: "{{ network.dhcp.name }}"
-  register: result
-  ignore_errors: true
-  check_mode: yes
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.task_uuid != ""
-    success_msg: ' Success: returned  as expected '
-    fail_msg: ' Fail '
-###########################################
-- name: create QCOW2 ova_image  while vm it's off
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: create_ova_image
-      ova_name: integration_test_QCOW2_ova
-      ova_file_format: QCOW2
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to create QCOW2 ova_image while vm is off '
-    success_msg: ' create QCOW2 ova_image successfully '
-###########################################
-- name: clone vm while it's off and add network and script 
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: clone
-      networks:
-        - is_connected: true
-          subnet:
-            name: "{{ network.dhcp.name }}"
-      guest_customization:
-        type: "cloud_init"
-        script_path: "./cloud_init.yml"
-        is_overridable: True
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to clone vm while it is off '
-    success_msg: ' VM cloned  successfully '
-
-- set_fact:
-      todelete: '{{ todelete + [  result.vm_uuid ] }}'
-###########################################
-
-- name: try clone vm with disk 
-  ntnx_vms:
-      state: present
-      operation: clone
-      vm_uuid: "{{vm.vm_uuid}}"
-      disks:
-        - type: DISK
-          size_gb: 5
-          bus: SCSI
-      wait: true
-      vcpus: 2
-      cores_per_vcpu: 2
-      memory_gb: 2
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.error == "Disks cannot be changed during a clone operation"
-    success_msg: ' Success: returned error as expected '
-    fail_msg: ' Fail '
-###############################
-- name: clone vm with undefined network name
-  ntnx_vms:
-      state: present
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: clone
-      wait: true
-      networks:
-        - is_connected: true
-          subnet:
-            name: wrong network name
-  register: result
-  ignore_errors: true
-
-- name: Creation Status
-  assert:
-    that:
-      - result.msg == "Failed generating VM Spec"
-      - result.failed == true
-      - result.task_uuid != ""
-    fail_msg: ' Fail cloned vm with unknown network name'
-    success_msg: ' Returned error as expected'
 ###############################
 # - name: VM with minimum requiremnts and soft_shutdown 
 #   ntnx_vms:
@@ -390,9 +179,8 @@
 
 - name: Create VM with minimum requiremnts with hard_poweroff opperation
   ntnx_vms:
-      state: present
+      state: hard_poweroff
       name: integration_test_opperations_vm
-      operation: hard_poweroff
       cluster:
         name: "{{ cluster.name }}"
   register: result
@@ -413,9 +201,8 @@
 
 - name: Create VM with minimum requiremnts with hard_poweroff opperation without wait
   ntnx_vms:
-      state: present
+      state: hard_poweroff
       name: integration_test_opperations_vm_111
-      operation: hard_poweroff
       cluster:
         name: "{{ cluster.name }}"
       wait: false
@@ -437,24 +224,24 @@
   when: result.response.status.state == 'COMPLETE'
 ###############################
 
-- name: create VM with wrong opperation name
-  ntnx_vms:
-    state: present
-    name: wrong_opperation_name_vm
-    operation: wrong_opperation_name
-    cluster:
-      name: "{{ cluster.name }}"
-  register: result
-  ignore_errors: true
+# - name: create VM with wrong opperation name
+#   ntnx_vms:
+#     state: present
+#     name: wrong_opperation_name_vm
+#     operation: wrong_opperation_name
+#     cluster:
+#       name: "{{ cluster.name }}"
+#   register: result
+#   ignore_errors: true
 
-- name: Creation Status
-  assert:
-    that:
-      - result.changed == false
-      - result.failed == true
-      - result.msg == "value of operation must be one of: soft_shutdown, hard_poweroff, on, clone, create_ova_image, got':' wrong_opperation_name"
-    fail_msg: ' Fail: Create vm with wrong opperation name'
-    success_msg: ' Success: Returned error as expected '
+# - name: Creation Status
+#   assert:
+#     that:
+#       - result.changed == false
+#       - result.failed == true
+#       - result.msg == "value of operation must be one of: soft_shutdown, hard_poweroff, on, clone, create_ova_image, got':' wrong_opperation_name"
+#     fail_msg: ' Fail: Create vm with wrong opperation name'
+#     success_msg: ' Success: Returned error as expected '
 ###############################
 - name: Delete all Created VMs 
   ntnx_vms:

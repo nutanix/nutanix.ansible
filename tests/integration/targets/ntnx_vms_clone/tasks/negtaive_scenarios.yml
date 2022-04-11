@@ -1,0 +1,21 @@
+  - debug:
+      msg: "Started Negative Creation Cases"
+
+# - name: clone vm with undefined network name
+#   ntnx_vms_clone:
+#       vm_uuid: "{{ vm.vm_uuid }}"
+#       networks:
+#         - is_connected: true
+#           subnet:
+#             name: wrong network name
+#   register: result
+#   ignore_errors: true
+
+# - name: Creation Status
+#   assert:
+#     that:
+#       - result.msg == "Failed generating VM Spec"
+#       - result.failed == true
+#       - result.task_uuid != ""
+#     fail_msg: ' Fail :Fail cloned vm with unknown network name'
+#     success_msg: 'Succes: Returned error as expected'
