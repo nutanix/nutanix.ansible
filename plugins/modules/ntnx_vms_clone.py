@@ -72,7 +72,7 @@ RETURN = r"""
 """
 
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.prism.vm_base_module import VMBaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
 from ..module_utils import utils
@@ -114,7 +114,7 @@ def wait_for_task_completion(module, result, raise_error=True):
 
 
 def run_module():
-    module = BaseModule(supports_check_mode=True)
+    module = VMBaseModule(supports_check_mode=True)
     utils.remove_param_with_none_value(module.params)
     result = {
         "changed": False,
