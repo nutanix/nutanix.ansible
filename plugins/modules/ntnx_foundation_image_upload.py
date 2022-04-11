@@ -14,9 +14,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_image_upload
-short_description: Nutanix module which uploads hypervisor or AOS image to foundation.
+short_description: Nutanix module which uploads hypervisor or AOS image to foundation vm.
 version_added: 1.1.0
-description: Uploads hypervisor or AOS image to foundation.
+description: Uploads hypervisor or AOS image to foundation vm.
 options:
   nutanix_host:
     description:
@@ -29,9 +29,16 @@ options:
     type: str
     default: 8000
     required: false
+  source:
+    description:
+      - local full path of installer file where the ansible playbook runs
+      - mandatory incase of upload i.e. state=present
+    type: str
+    required: false
+    description: 
   file_name:
     description:
-      - Name of installer file
+      - Name of installer file that will be uploaded to foundation vm
     type: str
     required: true
   installer_type:
