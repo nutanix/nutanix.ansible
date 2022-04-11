@@ -85,6 +85,13 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_subnets | Create or delete a Subnet. |
 | ntnx_floating_ips | Create or delete a Floating Ip. |
 | ntnx_pbrs | Create or delete a PBR. |
+| ntnx_foundation | Image nodes and create new cluster. |
+| ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
+| ntnx_foundation_aos_packages_info | List the AOS packages uploaded to Foundation. |
+| ntnx_foundation_discover_nodes_info | List the nodes discovered by Foundation. |
+| ntnx_foundation_hypervisor_images_info | List the hypervisor images uploaded to Foundation. |
+| ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |
+| ntnx_foundation_node_network_info | Get node network information discovered by Foundation. |
 
 ## Inventory Plugins
 
