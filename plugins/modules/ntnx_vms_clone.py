@@ -58,7 +58,7 @@ EXAMPLES = r"""
           subnet:
             uuid: "{{ static.uuid }}"
 
-- name: clone vm  with script 
+- name: clone vm  with script
   ntnx_vms_clone:
       vm_uuid: "{{ vm.vm_uuid }}"
       guest_customization:
@@ -72,10 +72,11 @@ RETURN = r"""
 """
 
 
+from ..module_utils import utils  # noqa: E402
 from ..module_utils.prism.vm_base_module import VMBaseModule  # noqa: E402
+from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
-from ..module_utils import utils
 
 
 def clone_vm(module, result):
