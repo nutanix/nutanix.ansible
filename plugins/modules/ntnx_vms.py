@@ -789,6 +789,7 @@ def get_module_spec():
             ],
             default="present",
         ),
+        desc=dict(type="str"),
         disks=dict(
             type="list",
             elements="dict",

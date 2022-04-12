@@ -42,7 +42,6 @@ class VMBaseModule(BaseModule):
     vm_argument_spec = dict(
         name=dict(type="str", required=False),
         vm_uuid=dict(type="str"),
-        desc=dict(type="str"),
         project=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
