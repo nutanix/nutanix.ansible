@@ -12,12 +12,16 @@ class Groups(Prism):
         resource_type = "/groups"
         super(Groups, self).__init__(module, resource_type=resource_type)
 
-    def get_uuid(self, value, key="name", entity_type="", raise_error=True, no_response=False):
+    def get_uuid(
+        self, value, key="name", entity_type="", raise_error=True, no_response=False
+    ):
         data = {
             "entity_type": entity_type,
             "filter_criteria": "{0}=={1}".format(key, value),
         }
-        resp = self.list(data, use_base_url=True, raise_error=raise_error, no_response=no_response)
+        resp = self.list(
+            data, use_base_url=True, raise_error=raise_error, no_response=no_response
+        )
         if resp.get("group_results"):
             return resp["group_results"][0]["entity_results"][0]["entity_id"]
         return None
