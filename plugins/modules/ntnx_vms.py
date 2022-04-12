@@ -912,14 +912,18 @@ def update_vm(module, result):
         spec.pop("status")
         result["response"] = resp
 
+    wait = False
     if state == "soft_shutdown" and is_vm_on and not is_powered_off:
         resp = vm.soft_shutdown(spec)
+        wait = True
     elif state in ["hard_poweroff", "power_off"] and is_vm_on and not is_powered_off:
         resp = vm.hard_power_off(spec)
+        wait = True
     elif is_powered_off or (state == "power_on" and not is_vm_on):
         resp = vm.power_on(spec)
+        wait = True
 
-    if state or is_powered_off:
+    if wait:
         result["response"] = resp
         result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
         if module.params.get("wait"):
