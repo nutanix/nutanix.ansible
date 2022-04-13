@@ -1,6 +1,6 @@
-ip: 10.44.77.68
-username: admin
-password: Nutanix.123
+ip:  "{{ lookup('env', 'NUTANIX_HOST') }}"
+username:  "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
 validate_certs: False
 todelete: []
 
