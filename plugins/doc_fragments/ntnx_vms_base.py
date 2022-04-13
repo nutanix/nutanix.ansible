@@ -111,10 +111,6 @@ options:
       - Memory size in GB
     required: false
     type: int
-  desc:
-    description: A description for VM.
-    required: false
-    type: str
   project:
     description: Name or UUID of the project
     required: false

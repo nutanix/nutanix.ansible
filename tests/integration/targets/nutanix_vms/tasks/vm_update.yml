@@ -439,7 +439,7 @@
     networks:
       - is_connected: false
         subnet:
-          name: vlan1211
+          name: vlan.800
         uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
   register: result
   ignore_errors: true

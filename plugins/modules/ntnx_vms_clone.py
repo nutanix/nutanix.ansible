@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_vms_clone
 short_description: VM module which supports VM clone operations
-version_added: 1.0.2
+version_added: 1.2.0
 description: "This creates a new vm by cloning the current vm "
 
 extends_documentation_fragment:

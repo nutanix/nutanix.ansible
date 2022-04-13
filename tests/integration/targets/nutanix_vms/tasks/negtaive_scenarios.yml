@@ -205,7 +205,7 @@
           size_gb: 2 #must be 20
           bus: "SATA"
           clone_image:
-            name: "{{ ubuntu }}"
+            name: "{{ centos }}"
       vcpus: 1
       cores_per_vcpu: 1
       memory_gb: 1

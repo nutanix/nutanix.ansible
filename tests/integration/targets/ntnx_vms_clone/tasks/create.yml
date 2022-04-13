@@ -1,6 +1,17 @@
 - debug:
     msg: Start testing VM clone
 
+- name: Create Cloud-init Script file
+  copy:
+    dest: "init_cloud.yml"
+    content: |
+        #cloud-config
+        chpasswd:
+          list: |
+            root:Nutanix.123
+            expire: False
+        fqdn: myNutanixVM
+
 - name: VM with minimum requiremnts to clone
   ntnx_vms:
       state: present
@@ -32,7 +43,6 @@
       cores_per_vcpu: 2
       memory_gb: 2
       name: cloned vm
-      desc: cloned vm
       timezone: GMT
       force_power_off: true
   register: result
@@ -53,9 +63,6 @@
   ntnx_vms_clone:
       vm_uuid: "{{ vm.vm_uuid }}"
       networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
         - is_connected: true
           subnet:
             uuid: "{{ static.uuid }}"
@@ -99,7 +106,7 @@
       vm_uuid: "{{ vm.vm_uuid }}"
       guest_customization:
         type: "cloud_init"
-        script_path: "./cloud_init.yml"
+        script_path: "./init_cloud.yml"
         is_overridable: True
   register: result
   ignore_errors: true

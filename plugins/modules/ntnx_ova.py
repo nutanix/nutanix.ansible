@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ova
 short_description: VM module which supports ova creation
-version_added: 1.0.2
+version_added: 1.2.0
 description: "Creates an ova entity"
 options:
   vm_uuid:

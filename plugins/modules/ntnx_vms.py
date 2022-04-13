@@ -14,6 +14,35 @@ short_description: VM module which supports VM CRUD states
 version_added: 1.0.0
 description: "Create, Update, Delete, Power-on, Power-off Nutanix VM's"
 options:
+  state:
+    description:
+      - Specify state
+      - If C(state) is set to C(present) then the opperation will be  create the item
+      - >-
+        If C(state) is set to C(absent) and if the item exists, then
+        item is removed.
+      - If C(state) is set to C(power_on) then the opperation will be  power on the VM
+      - If C(state) is set to C(power_off) then the opperation will be  power off the VM
+      - If C(state) is set to C(soft_shutdown) then the opperation will be  soft shutdown  the VM
+      - If C(state) is set to C(hard_poweroff) then the opperation will be  hard poweroff  the VM
+    choices:
+      - present
+      - absent
+      - power_on
+      - power_off
+      - soft_shutdown
+      - hard_poweroff
+    type: str
+    default: present
+  wait:
+    description: Wait for the  CRUD operation to complete.
+    type: bool
+    required: false
+    default: True
+  desc:
+    description: A description for VM.
+    required: false
+    type: str
   disks:
     description:
       - List of disks attached to the VM
@@ -88,7 +117,6 @@ options:
           - Mutually exclusive with C(clone_image) and C(storage_container)
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_opperations
       - nutanix.ncp.ntnx_vms_base
 author:
  - Prem Karat (@premkarat)
