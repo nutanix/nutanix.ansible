@@ -36,6 +36,9 @@ jobs:
       - name: Run Integration test cases
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          export NUTANIX_HOST = ${{ secrets.PC_IP }}
+          export NUTANIX_PASSWORD = ${{ secrets.PC_PASSWORD }}
+          export NUTANIX_USERNAME = ${{ secrets.PC_USERNAME }}
           ansible-playbook tests/integration/targets/prepare_env/tasks/prepare_env.yml
           ansible-test integration --python ${{ matrix.python-version }} --coverage -v
           ansible-test coverage report > coverage.txt
