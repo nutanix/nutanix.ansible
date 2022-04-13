@@ -11,16 +11,10 @@
     ntnx_vms:
       vm_uuid: '{{vm.uuid }}'
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       validate_certs: False
   - name: Delete overlay
     ntnx_subnets:
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       validate_certs: false
       subnet_uuid: "{{item }}"
     loop:
@@ -28,17 +22,11 @@
   - name: Delete vpc
     ntnx_vpcs:
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       validate_certs: False
       vpc_uuid: "{{ vpc.uuid }}"
   - name: Delete subnets
     ntnx_subnets:
       state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       validate_certs: false
       subnet_uuid: "{{item }}"
     loop:
