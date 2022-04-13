@@ -11,10 +11,7 @@
   - name: create external subnet with NAT
     ntnx_subnets:
       state: present
-      nutanix_host: "{{ ip }}"
       validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: "{{external_nat_subnets.name}}"
       external_subnet:
         vlan_id: "{{external_nat_subnets.vlan_id}}"
@@ -43,9 +40,6 @@
       validate_certs: False
       state: present
       wait: true
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: "{{vpc_name}}"
       external_subnets:
         - subnet_uuid: "{{ result.subnet_uuid }}"
@@ -63,11 +57,8 @@
   - name: create vlan subnet with IPAM
     ntnx_subnets:
       state: present
-      nutanix_host: "{{ ip }}"
       wait: true
       validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: "{{static_subnet_name}}"
       vlan_subnet:
         vlan_id: 373
@@ -97,10 +88,7 @@
   - name:  create overlay Subnet with minimum requirements
     ntnx_subnets:
       state: present
-      nutanix_host: "{{ ip }}"
       validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       name: "{{overlay_subnet.name}}"
       overlay_subnet:
         vpc:
@@ -124,9 +112,6 @@
   - name: create VM with overlay subnet
     ntnx_vms:
       state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
       validate_certs: False
       name: "{{vm_name}}"
       cluster:
