@@ -1,6 +1,3 @@
-ip: 10.44.77.68
-username: admin
-password: Nutanix.123
 validate_certs: False
 todelete: []
 
