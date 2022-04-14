@@ -825,13 +825,12 @@ def create_vm(module, result):
         if module.params.get("wait"):
             wait_for_task_completion(module, result, False)
             state = result["response"].get("status")
-            if state == "FAILED":
-                result[
-                    "warning"
-                ] = "VM 'soft_shutdown' state failed, use 'hard_poweroff' instead"
-
             resp = vm.read(vm_uuid)
             result["response"] = resp
+            if state == "FAILED":
+                error = "VM 'soft_shutdown' state failed, use 'hard_poweroff' instead"
+                result["error"] = error
+                module.fail_json(msg=error, **result)
 
 
 def update_vm(module, result):
