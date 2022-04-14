@@ -99,21 +99,21 @@
     success_msg: ' Success: returned msg as expected '
     fail_msg: ' Fail '
 ##########################################
-- name: soft shut down the vm
-  ntnx_vms:
-      state: soft_shutdown
-      vm_uuid: "{{ vm.vm_uuid }}"
-      wait: true
-  register: result
-  ignore_errors: true
+# - name: soft shut down the vm
+#   ntnx_vms:
+#       state: soft_shutdown
+#       vm_uuid: "{{ vm.vm_uuid }}"
+#       wait: true
+#   register: result
+#   ignore_errors: true
 
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to soft soft_shutdown   the vm '
-    success_msg: ' VM soft_shutdown  successfully '
+# - name: Creation Status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.response.status.state == 'COMPLETE'
+#     fail_msg: ' Unable to soft soft_shutdown   the vm '
+#     success_msg: ' VM soft_shutdown  successfully '
 ###########################################
 ###############################
 # - name: VM with minimum requiremnts and soft_shutdown 
