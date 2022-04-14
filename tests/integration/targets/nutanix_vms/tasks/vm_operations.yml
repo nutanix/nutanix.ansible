@@ -12,7 +12,7 @@
       disks:
         - type: "DISK"
           clone_image: 
-            name: "{{ centos }}"
+            name: "{{ ubuntu }}"
           bus: "SCSI"
           size_gb: 20
   register: vm
@@ -115,10 +115,12 @@
     fail_msg: ' Unable to soft soft_shutdown   the vm '
     success_msg: ' VM soft_shutdown  successfully '
 ###########################################
+###############################
 # - name: VM with minimum requiremnts and soft_shutdown 
 #   ntnx_vms:
+#       state: present
 #       name: integration_test_opperations_vm
-#       state: soft_shutdown
+#       operation: soft_shutdown
 #       cluster:
 #         name: "{{ cluster.name }}"
 #       disks:
@@ -126,7 +128,7 @@
 #           clone_image: 
 #             name: "{{ centos }}"
 #           bus: "SCSI"
-#           size_gb: 25
+#           size_gb: 20
 #   register: result
 #   ignore_errors: true
 
@@ -142,7 +144,6 @@
 
 # - set_fact:
 #       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-
 
 - name: Create VM with minimum requiremnts with hard_poweroff opperation
   ntnx_vms:
@@ -166,27 +167,29 @@
 - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
-- name: Create VM with minimum requiremnts with poweroff opperation
+- name: Create VM with minimum requiremnts with hard_poweroff opperation without wait
   ntnx_vms:
-      state: power_off
-      name: integration_test_opperations_vm
+      state: hard_poweroff
+      name: integration_test_opperations_vm_111
       cluster:
         name: "{{ cluster.name }}"
+      wait: false
   register: result
   ignore_errors: true
-
+ 
 - name: Creation Status
   assert:
     that:
       - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-      - result.response.status.resources.power_state == 'OFF'
-      - result.response.status.resources.power_state_mechanism.mechanism == 'HARD'
-    fail_msg: ' Unable to create VM with minimum requiremnts with power_off opperation '
-    success_msg: ' VM with minimum requiremnts and power_off state created successfully '
+      - result.response.status.state == 'COMPLETE' or result.response.status.state == 'PENDING'
+      - result.vm_uuid
+      - result.task_uuid
+    fail_msg: ' Unable to create VM with minimum requiremnts with hard_poweroff opperation '
+    success_msg: ' VM with minimum requiremnts and hard_poweroff state created successfully '
 
 - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 
 - name: Delete all Created VMs 
   ntnx_vms:

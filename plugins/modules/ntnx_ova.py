@@ -74,7 +74,7 @@ api_version:
   type: str
   sample: "3.1"
 metadata:
-  description: The PBR metadata
+  description: The ova metadata
   returned: always
   type: dict
   sample: {
@@ -206,7 +206,7 @@ vm_uuid:
   type: str
   sample: "64c5a93d-7cd4-45f9-81e9-e0b08d35077a"
 task_uuid:
-  description: The task uuid for the ove creation
+  description: The task uuid for the ova creation
   returned: always
   type: str
   sample: "f83bbb29-3ca8-42c2-b29b-4fca4a7a25c3"

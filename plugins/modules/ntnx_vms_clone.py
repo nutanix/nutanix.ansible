@@ -32,8 +32,6 @@ EXAMPLES = r"""
         - is_connected: false
           subnet:
             name: "{{ network.dhcp.name }}"
-  register: result
-  ignore_errors: true
   check_mode: yes
 
 - name: clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
@@ -65,12 +63,203 @@ EXAMPLES = r"""
         type: "cloud_init"
         script_path: "./cloud_init.yml"
         is_overridable: True
-  register: result
 """
 
 RETURN = r"""
-"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The vm kind metadata
+  returned: always
+  type: dict
+  sample: {
+"categories": {},
+"categories_mapping": {},
+"creation_time": "2022-04-13T08:14:05Z",
+"entity_version": "2",
+"kind": "vm",
+"last_update_time": "2022-04-13T08:14:05Z",
+"owner_reference": {
+    "kind": "user",
+    "name": "admin",
+    "uuid": "00000000-0000-0000-0000-000000000000"
+},
+"project_reference": {
+    "kind": "project",
+    "name": "default",
+    "uuid": "37e22e5c-a914-4213-83e5-105123b8b5cf"
+},
+"spec_version": 0,
+"uuid": "47ff23df-5a63-4800-810c-7f4e18efc14b"
+}
+spec:
+  description: An intentful representation of a vm spec
+  returned: always
+  type: dict
+  sample: {
 
+                "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_4f4433c72b64",
+                    "uuid": "0005dc0f-13a7-62e0-185b-ac1f6b6f97e2"
+                },
+                "name": "integration_test_clone_vm",
+                "resources": {
+                    "boot_config": {
+                        "boot_device_order_list": [
+                            "CDROM",
+                            "DISK",
+                            "NETWORK"
+                        ],
+                        "boot_type": "LEGACY"
+                    },
+                    "disk_list": [
+                        {
+                            "data_source_reference": {
+                                "kind": "image",
+                                "uuid": "7cb304dd-9ccf-4295-a516-3b922964df08"
+                            },
+                            "device_properties": {
+                                "device_type": "DISK",
+                                "disk_address": {
+                                    "adapter_type": "SCSI",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 21474836480,
+                            "disk_size_mib": 20480,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "d53867d9-81ef-43a4-b157-15cf7602426e"
+                                }
+                            },
+                            "uuid": "ea16feb9-4a40-48fc-a929-4b362767d2d8"
+                        }
+                    ],
+                    "gpu_list": [],
+                    "hardware_clock_timezone": "UTC",
+                    "is_agent_vm": false,
+                    "machine_type": "PC",
+                    "memory_size_mib": 4096,
+                    "nic_list": [],
+                    "num_sockets": 1,
+                    "num_threads_per_core": 1,
+                    "num_vcpus_per_socket": 1,
+                    "power_state": "ON",
+                    "power_state_mechanism": {
+                        "guest_transition_config": {
+                            "enable_script_exec": false,
+                            "should_fail_on_script_failure": false
+                        },
+                        "mechanism": "HARD"
+                    },
+                    "serial_port_list": [],
+                    "vga_console_enabled": true,
+                    "vnuma_config": {
+                        "num_vnuma_nodes": 0
+                    }
+                }
+
+            }
+status:
+  description: An intentful representation of a vm status
+  returned: always
+  type: dict
+  sample: {
+                    "cluster_reference": {
+                    "kind": "cluster",
+                    "name": "auto_cluster_prod_4f4433c72b64",
+                    "uuid": "0005dc0f-13a7-62e0-185b-ac1f6b6f97e2"
+                },
+                "execution_context": {
+                    "task_uuid": [
+                        "053f487c-ebc9-4e96-84e4-ec40b3dd043d"
+                    ]
+                },
+                "name": "integration_test_clone_vm",
+                "resources": {
+                    "boot_config": {
+                        "boot_device_order_list": [
+                            "CDROM",
+                            "DISK",
+                            "NETWORK"
+                        ],
+                        "boot_type": "LEGACY"
+                    },
+                    "disk_list": [
+                        {
+                            "data_source_reference": {
+                                "kind": "image",
+                                "uuid": "7cb304dd-9ccf-4295-a516-3b922964df08"
+                            },
+                            "device_properties": {
+                                "device_type": "DISK",
+                                "disk_address": {
+                                    "adapter_type": "SCSI",
+                                    "device_index": 0
+                                }
+                            },
+                            "disk_size_bytes": 21474836480,
+                            "disk_size_mib": 20480,
+                            "is_migration_in_progress": false,
+                            "storage_config": {
+                                "storage_container_reference": {
+                                    "kind": "storage_container",
+                                    "name": "SelfServiceContainer",
+                                    "uuid": "d53867d9-81ef-43a4-b157-15cf7602426e"
+                                }
+                            },
+                            "uuid": "ea16feb9-4a40-48fc-a929-4b362767d2d8"
+                        }
+                    ],
+                    "gpu_list": [],
+                    "hardware_clock_timezone": "UTC",
+                    "host_reference": {
+                        "kind": "host",
+                        "name": "10.46.136.28",
+                        "uuid": "c91be067-9885-4cbb-92cc-876242c0c396"
+                    },
+                    "hypervisor_type": "AHV",
+                    "is_agent_vm": false,
+                    "machine_type": "PC",
+                    "memory_size_mib": 4096,
+                    "nic_list": [],
+                    "num_sockets": 1,
+                    "num_threads_per_core": 1,
+                    "num_vcpus_per_socket": 1,
+                    "power_state": "ON",
+                    "power_state_mechanism": {
+                        "guest_transition_config": {
+                            "enable_script_exec": false,
+                            "should_fail_on_script_failure": false
+                        },
+                        "mechanism": "HARD"
+                    },
+                    "protection_type": "UNPROTECTED",
+                    "serial_port_list": [],
+                    "vga_console_enabled": true,
+                    "vnuma_config": {
+                        "num_vnuma_nodes": 0
+                    }
+                },
+                "state": "COMPLETE"
+            }
+vm_uuid:
+  description: The cloned vm uuid
+  returned: always
+  type: str
+  sample: "2b011db0-4d44-43e3-828a-d0a32dab340c"
+task_uuid:
+  description: The task uuid for the clone
+  returned: always
+  type: str
+  sample: "82c5c1d3-eb6a-406a-8f58-306028099d21"
+"""
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.prism.vm_base_module import VMBaseModule  # noqa: E402

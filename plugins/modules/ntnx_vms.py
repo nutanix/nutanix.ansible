@@ -277,85 +277,6 @@ EXAMPLES = r"""
       validate_certs: False
       vm_uuid: '{{ vm_uuid }}'
 
-  - name: hard power off the vm
-    ntnx_vms:
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: hard_poweroff
-
-  - name: power on the vm
-    ntnx_vms:
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: on
-
-  - name: soft shut down the vm
-    ntnx_vms:
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      vm_uuid: "{{ vm.vm_uuid }}"
-      operation: soft_shutdown
-      wait: true
-
-  - name: create VMDK ova_image
-    ntnx_vms:
-        state: present
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: False
-        vm_uuid: "{{ vm.vm_uuid }}"
-        operation: create_ova_image
-        ova_name: ova_image_name
-        ova_file_format: VMDK
-        wait: true
-
-  - name: create QCOW2 ova_image
-    ntnx_vms:
-        state: present
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: False
-        vm_uuid: "{{ vm.vm_uuid }}"
-        operation: create_ova_image
-        ova_name: ova_image_name
-        ova_file_format: QCOW2
-        wait: true
-
-  - name: clone vm while it's off and add network and script
-    ntnx_vms:
-        state: present
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: False
-        vm_uuid: "{{ vm.vm_uuid }}"
-        operation: clone
-        wait: true
-        networks:
-          - is_connected: true
-            subnet:
-              uuid: "{{ network.dhcp.uuid }}"
-        guest_customization:
-          type: "cloud_init"
-          script_path: "./cloud_init.yml"
-          is_overridable: True
-        vcpus: 2
-        cores_per_vcpu: 2
-        memory_gb: 2
-
   - name: update vm by  values for memory, vcpus and cores_per_vcpu, timezone
     ntnx_vms:
       vm_uuid: "{{ vm.vm_uuid }}"
@@ -490,6 +411,36 @@ EXAMPLES = r"""
           uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
         - state: absent
           uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+
+  - name: hard power off the vm
+    ntnx_vms:
+        vm_uuid: "{{ vm.vm_uuid }}"
+        state: hard_poweroff
+    register: result
+    ignore_errors: true
+  - name: power on the vm
+    ntnx_vms:
+        state: power_on
+        vm_uuid: "{{ vm.vm_uuid }}"
+
+  - name: soft shut down the vm
+    ntnx_vms:
+        state: soft_shutdown
+        vm_uuid: "{{ vm.vm_uuid }}"
+
+  - name: Create VM with minimum requiremnts with hard_poweroff opperation
+    ntnx_vms:
+        state: hard_poweroff
+        name: integration_test_opperations_vm
+        cluster:
+          name: "{{ cluster.name }}"
+
+  - name: Create VM with minimum requiremnts with poweroff opperation
+    ntnx_vms:
+        state: power_off
+        name: integration_test_opperations_vm
+        cluster:
+          name: "{{ cluster.name }}"
 """
 
 RETURN = r"""
