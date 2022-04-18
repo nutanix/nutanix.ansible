@@ -291,14 +291,14 @@ class ImageNodes(Foundation):
         cluster_members = []
         for b in blocks:
             nodes = b.get("nodes")
-            block_members = list(map(lambda e: self._get_cvm_ip(e), nodes))
+            block_members = list(map(self._get_cvm_ip(nodes)))
             cluster_members = cluster_members + block_members
         return cluster_members
 
     def _get_cvm_ip(self, node):
         cvm_ip = node.get("cvm_ip", node.get("svm_ip"))
         if not cvm_ip:
-            raise Exception("unable to extract CVM IP from node {}", node)
+            raise Exception("unable to extract CVM IP from node {0}".format(node))
         return cvm_ip
 
     def _verify_discovered_nodes_imaging_spec(self, node_spec):
@@ -309,7 +309,7 @@ class ImageNodes(Foundation):
         hypervisor = node_spec.get("hypervisor")
         if (hypervisor is None) or (hypervisor == "phoenix"):
             # return error
-            return "Invalid hypervisor: {}. Valid hypervisor types are kvm ,hyperv, xen ,esx or ahv".format(
+            return "Invalid hypervisor: {0}. Valid hypervisor types are kvm ,hyperv, xen ,esx or ahv".format(
                 hypervisor
             )
 
@@ -322,7 +322,7 @@ class ImageNodes(Foundation):
 
         if len(missing_params) > 0:
             return (
-                "Missing params : {}, please provide it in discovery_override".format(
+                "Missing params : {0}, please provide it in discovery_override".format(
                     ",".join(missing_params)
                 )
             )
@@ -349,7 +349,9 @@ class ImageNodes(Foundation):
                     node_serial, blocks["blocks"]
                 )
                 if not _node_network_details:
-                    error = "Failed to discover node with serial {}".format(node_serial)
+                    error = "Failed to discover node with serial {0}".format(
+                        node_serial
+                    )
                     return None, error
 
                 _node.update(_node_network_details)

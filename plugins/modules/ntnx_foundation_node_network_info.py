@@ -5,10 +5,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from ..module_utils.foundation.base_module import FoundationBaseModule
-from ..module_utils.foundation.node_network_details import NodeNetworkDetails
-from ..module_utils.utils import remove_param_with_none_value
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -18,26 +14,18 @@ short_description: Nutanix module which returns node network information discove
 version_added: 1.1.0
 description: 'Discover nodes network information via Foundation'
 options:
-  nutanix_host:
-    description:
-      - Foundation VM hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: 8000
-    required: false
   nodes:
     description: IPv6 addresses for nodes that require network discovery
     type: list
     required: true
+    elements: str
+extends_documentation_fragment:
+      - nutanix.ncp.FoundationBaseModule
+      - nutanix.ncp.ntnx_opperations
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
- - Dina AbuHijleh (@dina-abuhijleh)
 """
 
 EXAMPLES = r"""
@@ -76,6 +64,11 @@ nodes:
       }
     ]
 """
+from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.foundation.node_network_details import (  # noqa: E402
+    NodeNetworkDetails,
+)
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
