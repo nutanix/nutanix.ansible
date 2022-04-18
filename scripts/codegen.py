@@ -107,12 +107,7 @@ def create_INAME(module, result):
         result["response"] = spec
         return
 
-    resp, status = INAME.create(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating INAME", **result)
-
+    resp = INAME.create(spec)
     INAME_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
@@ -121,7 +116,7 @@ def create_INAME(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = INAME.read(INAME_uuid)
+        resp = INAME.read(INAME_uuid)
         result["response"] = resp
 
 
@@ -132,12 +127,7 @@ def delete_INAME(module, result):
         module.fail_json(msg="Failed deleting INAME", **result)
 
     INAME = CNAME(module)
-    resp, status = INAME.delete(INAME_uuid)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed deleting INAME", **result)
-
+    resp = INAME.delete(INAME_uuid)
     result["changed"] = True
     result["response"] = resp
     result["INAME_uuid"] = INAME_uuid
@@ -150,12 +140,8 @@ def delete_INAME(module, result):
 def wait_for_task_completion(module, result):
     task = Task(module)
     task_uuid = result["task_uuid"]
-    resp, status = task.wait_for_completion(task_uuid)
+    resp = task.wait_for_completion(task_uuid)
     result["response"] = resp
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating INAME", **result)
 
 
 def run_module():

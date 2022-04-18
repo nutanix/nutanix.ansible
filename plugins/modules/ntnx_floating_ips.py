@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_floating_ips
-short_description: floating_ips module which suports floating_ip CRUD operations
+short_description: floating_ips module which supports floating_ip CRUD operations
 version_added: 1.0.0
 description: 'Create, Update, Delete floating_ips'
 options:
@@ -214,12 +214,7 @@ def create_floating_ip(module, result):
         result["response"] = spec
         return
 
-    resp, status = floating_ip.create(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating floating_ip", **result)
-
+    resp = floating_ip.create(spec)
     fip_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
@@ -228,23 +223,15 @@ def create_floating_ip(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp, tmp = floating_ip.read(fip_uuid)
+        resp = floating_ip.read(fip_uuid)
         result["response"] = resp
 
 
 def delete_floating_ip(module, result):
     fip_uuid = module.params["fip_uuid"]
-    if not fip_uuid:
-        result["error"] = "Missing parameter fip_uuid in playbook"
-        module.fail_json(msg="Failed deleting floating_ip", **result)
 
     floating_ip = FloatingIP(module)
-    resp, status = floating_ip.delete(fip_uuid)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed deleting floating_ip", **result)
-
+    resp = floating_ip.delete(fip_uuid)
     result["changed"] = True
     result["response"] = resp
     result["fip_uuid"] = fip_uuid
@@ -257,12 +244,8 @@ def delete_floating_ip(module, result):
 def wait_for_task_completion(module, result):
     task = Task(module)
     task_uuid = result["task_uuid"]
-    resp, status = task.wait_for_completion(task_uuid)
+    resp = task.wait_for_completion(task_uuid)
     result["response"] = resp
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed creating floating_ip", **result)
 
 
 def run_module():

@@ -1,0 +1,386 @@
+- name: create VM with minimum requiremnts to update
+  ntnx_vms:
+    state: present
+    name: update vm
+    cluster:
+      name: "{{ cluster.name }}"
+    vcpus: 4
+    cores_per_vcpu: 4 
+    memory_gb: 4
+    disks:
+      - type: "DISK"
+        clone_image: 
+          name: "{{ ubuntu }}"
+        bus: "SCSI"
+        size_gb: 25
+      - type: DISK
+        size_gb: 3
+        bus: SCSI
+        storage_container:
+          uuid: "{{ storage_container.uuid }}"
+      - type: "CDROM"
+        bus: "IDE"
+        empty_cdrom: True
+      - type: DISK
+        size_gb: 3
+        bus: PCI
+      - type: "DISK"
+        size_gb: 3
+        bus: "SATA"
+      - type: "DISK"
+        size_gb: 3
+        bus: "SCSI"
+      - type: "DISK"
+        bus: "IDE"
+        size_gb: 3
+  register: vm
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - vm.response is defined
+      - vm.response.status.state == 'COMPLETE'
+      - vm.vm_uuid
+      - vm.task_uuid
+    fail_msg: ' Unable to create VM with minimum requiremnts '
+    success_msg: ' VM with minimum requiremnts created successfully '
+
+- name: update vm without change any value
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    vcpus: 4
+    cores_per_vcpu: 4 
+    memory_gb: 4
+  register: result
+  ignore_errors: true
+
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == false
+       - result.changed == false
+       - result.msg == 'Nothing to change'
+    fail_msg: 'Fail : VM updated successfully with same current values '
+    success_msg: ' Success: returned error as expected '
+###############################################################
+- debug:
+    msg: Start negative update scenarios tests for memory vcpus cores_per_vcpu
+
+- name: decrease values for vcpus  without force_power_off and vm is on
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    vcpus: 3
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == True
+       - result.changed == false
+       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+    fail_msg: 'Fail : decrease the value for  vcpus while while vm is on '
+    success_msg: ' Success: returned error as expected '
+
+- name: decrease values for memory_gb  without force_power_off and vm is on
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    memory_gb: 3
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == True
+       - result.changed == false
+       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+    fail_msg: 'Fail : decrease the value for  memory_gb while while vm is on '
+    success_msg: ' Success: returned error as expected '
+
+- name: decrease values for cores_per_vcpu  without force_power_off and vm is on
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    cores_per_vcpu: 3
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == True
+       - result.changed == false
+       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+    fail_msg: 'Fail : decrease the value for  cores_per_vcpu while while vm is on '
+    success_msg: ' Success: returned error as expected '
+###############################################################
+- debug:
+    msg: Start negative update scenarios tests for disks
+
+############ negative test : Decrase size
+- name: Update VM by decreasing the size of the disk that contains the image with SCSI bus type
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[0].uuid }}" # clone image with SCSI
+        size_gb: 22
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the disk that contains the image with SCSI bus type '
+    success_msg: ' Success: returned error as expected '
+
+
+- name: Update VM by decreasing the size of the SCSI disk with storage container
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[1].uuid }}" # storage container with SCSI
+        size_gb: 1
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the SCSI disk with storage container '
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by decreasing the size of the empty ide cdrom #error
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "CDROM"
+        uuid: "{{ vm.response.spec.resources.disk_list[2].uuid }}" # ide CDROM
+        size_gb: 1
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg ==  'Unsupported operation: Cannot resize empty cdrom.'
+      - result.changed == false
+      - result.failed == true
+    fail_msg: ' Fail: change the size of the empty CDROM'
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by decreasing the size of the pci disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[3].uuid }}" # pci
+        size_gb: 1
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the pci disk'
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by decreasing the size of the sata disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[4].uuid }}" # sata
+        size_gb: 1
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the sata disk'
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by decreasing the size of the SCSI disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[5].uuid }}" # scsi
+        size_gb: 1
+  register: result
+  ignore_errors: true    
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the SCSI disk'
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by decreasing the size of the  IDE disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[6].uuid }}" # IDE
+        size_gb: 1
+  register: result
+  ignore_errors: true   
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' Unsupported operation: Unable to decrease disk size.'
+    fail_msg: ' Fail: decreasing the size of the IDE disk'
+    success_msg: ' Success: returned error as expected '
+################  
+- name: Update VM by change ths bus type of ide disk
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ vm.response.spec.resources.disk_list[6].uuid }}" # IDE
+        bus: SCSI
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == ' parameters are mutually exclusive: uuid|bus found in disks '
+      - result.failed == True
+    success_msg: ' Success: returned error as expected '
+    fail_msg: ' Fail: Update VM by change ths bus type of ide disk sucessfuly '
+############
+- name: Update VM by adding  IDE disk while vm is on
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: DISK
+        size_gb: 1
+        bus: IDE
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == True
+       - result.changed == false
+       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+    fail_msg: 'Fail : update vm by add ide disk while vm is on  '
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by adding  SATA disk while vm is on
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: DISK
+        size_gb: 1
+        bus: SATA
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == True
+       - result.changed == false
+       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+    fail_msg: 'Fail : update vm by add SATA disk while vm is on  '
+    success_msg: ' Success: returned error as expected '
+#############
+- name: Update VM by removing IDE disks while vm is on 
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ vm.response.spec.resources.disk_list[2].uuid }}"
+  register: result
+  ignore_errors: true
+- name: Update Status
+  assert:
+    that:
+       - result.failed == True
+       - result.changed == false
+       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+    fail_msg: 'Fail : update vm by by removing IDE disks while vm is on   '
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by removing IDE disks while vm is on 
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ vm.response.spec.resources.disk_list[6].uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == True
+       - result.changed == false
+       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+    fail_msg: 'Fail : update vm by by removing IDE disks while vm is on   '
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by removing PCI disks while vm is on 
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ vm.response.spec.resources.disk_list[3].uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == True
+       - result.changed == false
+       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+    fail_msg: 'Fail : update vm by by removing PCI disks while vm is on   '
+    success_msg: ' Success: returned error as expected '
+
+- name: Update VM by removing SATA disks while vm is on 
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ vm.response.spec.resources.disk_list[4].uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+       - result.failed == True
+       - result.changed == false
+       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+    fail_msg: 'Fail : update vm by by removing SATA disks while vm is on   '
+    success_msg: ' Success: returned error as expected '
+###########################################################
+- name: Delete created vm's
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    state: absent
+  ignore_errors: true
+  register: result
+
+- assert:
+    that:
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+      - result.vm_uuid
+      - result.task_uuid
+    fail_msg: 'Fail: Unable to delete created vm '
+    success_msg: 'Success: Vm deleted sucessfully'

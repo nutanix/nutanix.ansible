@@ -34,10 +34,10 @@ class BaseModule(AnsibleModule):
     )
 
     def __init__(self, **kwargs):
+        argument_spec = self.argument_spec.copy()
         if kwargs.get("argument_spec"):
-            kwargs["argument_spec"].update(self.argument_spec)
-        else:
-            kwargs["argument_spec"] = self.argument_spec
+            argument_spec.update(kwargs["argument_spec"])
+        kwargs["argument_spec"] = argument_spec
 
         if not kwargs.get("supports_check_mode"):
             kwargs["supports_check_mode"] = True

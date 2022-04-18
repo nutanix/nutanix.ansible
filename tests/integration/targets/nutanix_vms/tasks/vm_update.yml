@@ -1,0 +1,493 @@
+# ########################### UPDATE_VM ################################
+
+- name: create VM with minimum requiremnts to update
+  ntnx_vms:
+    state: present
+    name: update vm
+    cluster:
+      name: "{{ cluster.name }}"
+    vcpus: 5
+    cores_per_vcpu: 5 
+    memory_gb: 5
+    timezone: GMT
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.vm_uuid
+      - result.task_uuid
+    fail_msg: ' Unable to create VM with minimum requiremnts '
+    success_msg: ' VM with minimum requiremnts created successfully '
+####################################################################
+- debug:
+    msg: Start update tests for memory vcpus cores_per_vcpu 
+
+- name: decrease values for memory, vcpus and corespervcpu with force_power_off
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    vcpus: 2
+    cores_per_vcpu: 2
+    memory_gb: 2
+    force_power_off: true
+    timezone: UTC
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by decrease the values for memory, vcpus and corespervcpu with force_power_off '
+    success_msg: ' VM updated successfully by decrease the values for memory, vcpus and corespervcpu with force_power_off '
+
+- name: increase values for memory, vcpus and corespervcpu
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    vcpus: 4
+    memory_gb: 4
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by increase values for memory, vcpus '
+    success_msg: ' VM updated successfully by increase values for memory, vcpus  '
+
+- name: increase values for corespervcpu with force_power_off
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    cores_per_vcpu: 4
+    force_power_off: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by increase values for  corespervcpu with force_power_off'
+    success_msg: ' VM updated successfully by increase values for  corespervcpu with force_power_off '
+####################################################################
+- debug:
+    msg: Start update tests for disks
+##### CRUD opperation for SCSI disks
+- name: Update VM by adding  SCSI disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        clone_image: 
+          name: "{{ ubuntu }}"
+        bus: "SCSI"
+        size_gb: 20
+      - type: "DISK"
+        size_gb: 1
+        bus: "SCSI"
+      - type: DISK
+        size_gb: 1
+        bus: SCSI
+        storage_container:
+          uuid: "{{ storage_container.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by adding SCSI  disks '
+    success_msg: ' VM updated successfully by adding SCSI    disks '
+
+- name: Update VM by increasing the size of the SCSI disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+        size_gb: 22
+      - type: DISK
+        uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+        size_gb: 2
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+        size_gb: 2
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by increasing the size of the SCSI  disks  '
+    success_msg: ' VM updated successfully by increasing the size of the SCSI  disks '
+
+- name: Update VM by removing SCSI disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by removing SCSI disks '
+    success_msg: ' VM updated successfully by removing SCSI disks '
+#######
+##### CRUD opperation for PCI disks
+- name: Update VM by adding  PCI disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: DISK
+        size_gb: 1
+        bus: PCI
+  register: result
+  ignore_errors: true
+  
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by adding PCI  disks '
+    success_msg: ' VM updated successfully by adding PCI  disks '
+
+- name: Update VM by increasing the size of the PCI disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+        size_gb: 2
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by increasing the size of the PCI  disks  '
+    success_msg: ' VM updated successfully by increasing the size of the PCI  disks '
+
+- name: Update VM by removing PCI disks with force_power_off
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+    force_power_off: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by removing PCI disks with force_power_off '
+    success_msg: ' VM updated successfully by removing PCI disks with force_power_off '
+##### CRUD opperation for IDE disks
+- name: Update VM by adding  IDE disks with force_power_off
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        bus: "IDE"
+        size_gb: 1
+      - type: "CDROM"
+        bus: "IDE"
+        empty_cdrom: True
+    force_power_off: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by adding IDE  disks with force_power_off '
+    success_msg: ' VM updated successfully by adding IDE disks with force_power_off '
+
+- name: Update VM by increasing the size of the IDE disks with force_power_off
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+        size_gb: 2
+    force_power_off: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by increasing the size of the IDE  disks with force_power_off '
+    success_msg: ' VM updated successfully by increasing the size of the IDE  disks with force_power_off '
+
+- name: Update VM by removing IDE disks with force_power_off
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+    force_power_off: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by removing IDE disks with force_power_off'
+    success_msg: ' VM updated successfully by removing IDE disks with force_power_off'
+#######
+##### CRUD opperation for SATA disks
+- name: Update VM by adding  SATA disks with force_power_off
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        size_gb: 1
+        bus: "SATA"
+    force_power_off: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by adding SATA  disks with force_power_off'
+    success_msg: ' VM updated successfully by adding SATA    disks with force_power_off'
+
+- name: Update VM by increasing the size of the SATA disks with force_power_off
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+        size_gb: 2
+    force_power_off: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by increasing the size of the SATA  disks with force_power_off '
+    success_msg: ' VM updated successfully by increasing the size of the SATA  disks with force_power_off'
+
+- name: Update VM by removing SATA disks with force_power_off
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+    force_power_off: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by removing SATA disks with force_power_off'
+    success_msg: ' VM updated successfully by removing SATA disks with force_power_off '
+
+# ####################################################################
+- debug:
+    msg: Start update tests for network
+
+- name: Update VM by adding subnets
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    networks:
+      - is_connected: true
+        subnet:
+          uuid: "{{ network.dhcp.uuid }}"
+      - is_connected: false
+        subnet:
+          uuid: "{{ static.uuid }}"
+        private_ip: "{{ network.static.ip }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by adding subnets '
+    success_msg: ' VM updated successfully by adding subnets'
+
+- name: Update VM by editing a subnet is_connected
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    desc: disconnect and connects nic's
+    networks:
+      - is_connected: true
+        uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+      - is_connected: false
+        uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+    fail_msg: ' Unable to update vm by editing a subnet '
+    success_msg: ' VM updated successfully by editing a subnet '
+
+- name: Update VM by change the private ip for subnet
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    name: updated
+    desc: change ip
+    networks:
+      - is_connected: true
+        private_ip: "10.30.30.79"
+        uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.vm_uuid
+      - result.task_uuid
+    fail_msg: ' Unable to update vm by editing private_ip for subnet '
+    success_msg: ' VM updated successfully by editing private_ip for subnet'
+
+- name: Update VM by change vlan subnet
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    name: updated
+    desc: change vlan
+    categories:
+      AppType:
+        - Apache_Spark
+    networks:
+      - is_connected: false
+        subnet:
+          name: vlan.800
+        uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.vm_uuid
+      - result.task_uuid
+    fail_msg: ' Unable to update vm by editing a subnet vlan '
+    success_msg: ' VM updated successfully by editing a subnet vlan ' 
+
+- name: Update VM by deleting a subnet
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    networks:
+      - state: absent
+        uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.vm_uuid
+      - result.task_uuid
+    fail_msg: ' Unable to update vm by deleting a subnet '
+    success_msg: ' VM updated successfully by deleting a subnet ' 
+# ####################################################################
+
+- name: Update VM by deleting it
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ result.vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- assert:
+    that:
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+      - result.vm_uuid
+      - result.task_uuid
+    fail_msg: 'Fail: Unable to delete created vm '
+    success_msg: 'Success: Vm deleted sucessfully' 

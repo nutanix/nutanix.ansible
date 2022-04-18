@@ -29,7 +29,7 @@
     assert:
       that:
         - result.failed==True
-        - result.msg=="Failed creating vpc"
+        - result.status_code=="500"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VPC created successfully with unknown subnet name '
 #######################################################
@@ -49,7 +49,7 @@
     assert:
       that:
         - result.failed==True
-        - result.msg=="Failed creating vpc"
+        - result.status_code=="500"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VPC created successfully with unknown subnet name '
 #######################################################
