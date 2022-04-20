@@ -1,10 +1,7 @@
 
-from ast import Module
-from email.policy import default
-from logging import log
-import modulefinder
+
 from socket import timeout
-from turtle import delay
+import time
 from ..module_utils.fc.imaged_clusters import ImagedClusters
 from ..module_utils.base_module import BaseModule
 from ..module_utils.fc.imaged_nodes import ImagedNodes
@@ -71,34 +68,98 @@ def imageNodes(module, result):
         result["error"] = error
         module.fail_json(msg="Failed generating Image Nodes Spec", **result)
     
-    node_available = check_node_available(module, spec["nodes_list"])
-    # resp = imaging.create(spec)
-    # result["imaged_cluster_uuid"] = resp["imaged_cluster_uuid"]
+    check_node_available(module, spec["nodes_list"], result)
 
-    # wait_till_completion(module, result)
+    resp = imaging.create(spec)
+    result["imaged_cluster_uuid"] = resp["imaged_cluster_uuid"]
+
+    wait_till_completion(module, result)
 
 
-def check_node_available(module, nodes):
-    res = {}
-    ou = []
+def check_node_available(module, nodes, result):
     av = ImagedNodes(module)
     for i in nodes:
         node_detail = av.read(i["imaged_node_uuid"])
-        # node_state = node_detail["node_state"]
-        ou.append(node_detail["node_state"])
-    res["ress"] = ou
-    module.exit_json(**res)
+        node_state = node_detail["node_state"]
+        if node_state != "STATE_AVAILABLE":
+            avial, err = wait_till_node_available(module, i["imaged_node_uuid"], node_state)
+            if err:
+                result["error"] = err
+                result["response"] = avial
+                module.fail_json(msg="Failed to image nodes", **result)
+
+    
+
+def wait_till_node_available(module, node_uuid, node_state):
+    timeout = time.time() + 1800
+    delay = 60
+    img = ImagedNodes(module)
+    while node_state!= "STATE_AVAILABLE" :
+        node_detail = img.read(node_uuid)
+        new_node_state = node_detail["node_state"]
+        if new_node_state != "STATE_AVAILABLE":
+            if time.time() > timeout:
+                return (
+                    None,
+                    "Timeout. Node is in {}\n".format(new_node_state)
+                )
+            time.sleep(delay)
+        else:
+            node_state = new_node_state
         
+    return node_state, None
+
+
 
 def wait_till_completion(module, result):
-    progress = ImagedClusters(module)
     imaged_cluster_uuid = result["imaged_cluster_uuid"]
-    resp, err = progress.wait_for_completion(imaged_cluster_uuid)
+    resp, err = wait_for_completion(module, imaged_cluster_uuid)
     result["response"] = resp
     if err:
         result["error"] = err
         result["response"] = resp
         module.fail_json(msg="Failed to image nodes", **result)
+
+def wait_for_completion(module, uuid):
+    state = ""
+    delay = 30
+    timeout = time.time() + 3600
+    time.sleep(15*60)
+    progress= ImagedClusters(module)
+    while state != "COMPLETED":
+        response = progress.get(uuid)
+        stopped = response["cluster_status"]["imaging_stopped"]
+        aggregate_percent_complete = response["cluster_status"]["aggregate_percent_complete"]
+        if stopped:
+            if aggregate_percent_complete < 100:
+                status = _get_progress_error_status(response)
+                return response, status
+            state = "COMPLETED"
+        else:
+            state = "PENDING"
+            if time.time() > timeout:
+                return (
+                    None,
+                    "Failed to poll on image node progress. Reason: Timeout",
+                )
+            time.sleep(delay)
+    return response, None
+
+def _get_progress_error_status(progress):
+    return "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
+        _get_progress_messages(progress, "cluster_progress_details", "cluster_name"),
+        _get_progress_messages(progress, "node_progress_details", "cvm_ip"),
+    )
+
+def _get_progress_messages(progress, entity_type, entity_name):
+    res = ""
+    clusters = progress.get(entity_type)
+    if clusters:
+        for c in clusters:
+            res += "cluster: {}\n".format(c.get(entity_name))
+            res += "messages:\n{}\n".join(c.get("message_list", []))
+    return res
+
 
 def run_module():
     module = BaseModule(

@@ -1,5 +1,4 @@
 from copy import deepcopy
-import time
 from .fc import FoundationCentral
 
 __metaclass__ = type
@@ -151,44 +150,5 @@ class ImagedClusters(FoundationCentral):
 
 
     def get(self, uuid):
-        query = {"imaged_cluster_uuid": uuid}
-        resp = self.read(query=query)
+        resp = self.read(uuid)
         return resp
-
-    def wait_for_completion(self, uuid):
-        state = ""
-        delay = 30
-        timeout = time.time() + 3600
-        while state != "COMPLETED":
-            response = self.get(uuid)
-            stopped = response.get("imaging_stopped", False)
-            aggregate_percent_complete = response.get("aggregate_percent_complete", -1)
-            if stopped:
-                if aggregate_percent_complete < 100:
-                    status = self._get_progress_error_status(response)
-                    return response, status
-                state = "COMPLETED"
-            else:
-                state = "PENDING"
-                if time.time() > timeout:
-                    return (
-                        None,
-                        "Failed to poll on image node progress. Reason: Timeout",
-                    )
-                time.sleep(delay)
-        return response, None
-
-    def _get_progress_error_status(self, progress):
-        return "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
-            self._get_progress_messages(progress, "clusters", "cluster_name"),
-            self._get_progress_messages(progress, "nodes", "cvm_ip"),
-        )
-
-    def _get_progress_messages(self, progress, entity_type, entity_name):
-        res = ""
-        clusters = progress.get(entity_type)
-        if clusters:
-            for c in clusters:
-                res += "cluster: {}\n".format(c.get(entity_name))
-                res += "messages:\n{}\n".join(c.get("messages", []))
-        return res

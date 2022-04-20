@@ -32,7 +32,6 @@ def list_imaged_nodes(module, result):
         resp = list_imaged_nodes.read(imaged_node_uuid)
         result["imaged_node_details"] = resp
     else:
-        # print(filter_spec)
         resp = list_imaged_nodes.list(filter_spec)
         result["imaged_nodes_list"] = resp
         
