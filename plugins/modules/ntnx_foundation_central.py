@@ -123,7 +123,7 @@ def wait_till_completion(module, result):
 def wait_for_completion(module, uuid):
     state = ""
     delay = 30
-    timeout = time.time() + 3600
+    timeout = time.time() + (2*60*60)
     time.sleep(15*60)
     progress= ImagedClusters(module)
     while state != "COMPLETED":

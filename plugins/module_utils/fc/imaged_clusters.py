@@ -1,4 +1,5 @@
 from copy import deepcopy
+from curses import noecho
 from .fc import FoundationCentral
 
 __metaclass__ = type
@@ -26,7 +27,17 @@ class ImagedClusters(FoundationCentral):
         
     def _get_default_spec(self):
         return deepcopy({
-
+            "cluster_external_ip": None,
+            "common_network_settings" : None,
+            "hypervisor_iso_details": None,
+            "storage_node_count": None,
+            "redundancy_factor": None,
+            "cluster_name": None,
+            "aos_package_url": None,
+            "cluster_size": None,
+            "aos_package_sha256sum": None,
+            "timezone": None,
+            "nodes_list" : []
         })
     
     def _build_spec_cluster_exip(self, payload, value):
