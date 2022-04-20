@@ -1,8 +1,85 @@
 from operator import mod
+from posixpath import split
 from ..module_utils.fc.api_keys import ApiKeys
 from ..module_utils.base_module import BaseModule
 
 from ..module_utils.utils import remove_param_with_none_value
+
+__metaclass__ = type
+
+DOCUMENTATION = r"""
+---
+module: ntnx_foundation_central_api_keys_info
+short_description: Nutanix module which returns the api key 
+version_added: 1.1.0
+description: 'List all the api keys created in Foundation Central.'
+options:
+  nutanix_host:
+    description:
+      - Foundation VM hostname or IP address
+    type: str
+    required: true
+  nutanix_port:
+    description:
+      - PC port
+    type: str
+    default: 8000
+    required: false
+  key_uuid:
+    description: Return the API Key given it's uuid
+    type: str
+    required: false
+    default: None
+  alias:
+    description: Return the API Key given it's alias 
+    type: str
+    required: false
+    default: None
+author:
+ - Abhishek Chaudhary (@abhimutant)
+"""
+
+EXAMPLES = r"""
+  - name: Get API key with alias filter
+    ntnx_foundation_central_api_keys_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      alias: "test"
+
+  - name: Get API key with key_uuid filter
+    ntnx_foundation_central_api_keys_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      key_uuid : "{{ uuid of key }}"
+
+  - name: List all the API key within FC
+    ntnx_foundation_central_api_keys_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+"""
+
+RETURN = r"""
+API_key:
+  description: returned API with alias as a filter
+  returned: if correct alias is given
+  type: list
+  api_key": [
+            {
+                "alias": "test,
+                "api_key": "{{ api_key}}",
+                "created_timestamp": "2022-04-18T00:41:45.000-07:00",
+                "current_time": "2022-04-18T04:45:35.000-07:00",
+                "key_uuid": "{{ uuid }}"
+            }
+        ],
+"""
+
 
 def get_module_spec():
     module_args = dict(
@@ -19,17 +96,16 @@ def list_api_keys(module, result):
     if key_uuid:
         resp = list_api.read(key_uuid)
         result["api_keys"] = resp
-    elif alias:
+    else:
         spec = {
             "length": 0,
             "offset": 0 
         }
         resp = list_api.list(spec)
-        
-        for i in resp:
-            print(i[0]["alias"])
-
-        result["list_api_keys"]= resp
+        if alias:
+            result["api_key"] = [x for x in resp["api_keys"] if x["alias"]==alias]
+        else:
+            result["list_api_keys"]= resp
         
 
 

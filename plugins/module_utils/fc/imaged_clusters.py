@@ -1,0 +1,194 @@
+from copy import deepcopy
+import time
+from .fc import FoundationCentral
+
+__metaclass__ = type
+
+
+class ImagedClusters(FoundationCentral):
+    def __init__(self, module):
+        resource_type = "/imaged_clusters"
+        super(ImagedClusters, self).__init__(
+                module, resource_type=resource_type
+            )
+        self.build_spec_methods = {
+            "cluster_external_ip": self._build_spec_cluster_exip,
+            "common_network_settings": self._build_spec_common_network_settings,
+            "hypervisor_iso_details": self._build_spec_hypervisor_iso_details,
+            "storage_node_count" : self._build_spec_storage_node_count,
+            "redundancy_factor": self._build_spec_redundancy_factor,
+            "cluster_name" : self._build_spec_cluster_name,
+            "aos_package_url": self._build_spec_aos_package_url,
+            "cluster_size": self._build_spec_cluster_size,
+            "aos_package_sha256sum": self._build_spec_aos_package_sha256sum,
+            "timezone": self._build_spec_timezone,
+            "nodes_list": self._build_spec_nodes_list
+        }
+        
+    def _get_default_spec(self):
+        return deepcopy({
+
+        })
+    
+    def _build_spec_cluster_exip(self, payload, value):
+        payload["cluster_external_ip"] = value
+
+        return payload, None
+
+    def _build_spec_storage_node_count(self, payload, value):
+        payload["storage_node_count"] = value
+        return payload, None
+    
+    def _build_spec_redundancy_factor(self, payload, value):
+        payload["redundancy_factor"] = value
+        return payload, None
+
+    def _build_spec_cluster_name(self, payload, value):
+        payload["cluster_name"] = value
+        return payload, None
+
+    def _build_spec_aos_package_url(self, payload, value):
+        payload["aos_package_url"] = value
+        return payload, None
+    
+    def _build_spec_cluster_size(self, payload, value):
+        payload["cluster_size"] = value
+        return payload, None
+
+    def _build_spec_aos_package_sha256sum(self, payload, value):
+        payload["aos_package_sha256sum"] = value
+        return payload, None
+
+    def _build_spec_timezone(self, payload, value):
+        payload["timezone"] = value
+        return payload, None
+
+    def _get_default_network_settings(self, cnsettings):
+        spec= {}
+        default_spec= {
+            "cvm_dns_servers": [],
+            "hypervisor_dns_servers" : [],
+            "cvm_ntp_servers": [],
+            "hypervisor_ntp_servers":[]
+        }
+
+        for k in default_spec:
+            v = cnsettings.get(k)
+            if v:
+                spec[k]= v
+        return spec
+
+    def _build_spec_common_network_settings(self, payload, nsettings):
+        net = self._get_default_network_settings(nsettings)
+        payload["common_network_settings"] = net
+        return payload, None
+
+    def _get_default_hypervisor_iso_details():
+        return deepcopy({
+            "hyperv_sku": None,
+            "url": None,
+            "hyperv_product_key": None,
+            "sha256sum": None
+        })
+
+    def _build_spec_hypervisor_iso_details(self, payload, value):
+        hiso = self._get_default_hypervisor_iso_details()
+
+        if value.get("hyperv_sku"):
+            hiso["hyperv_sku"] = value["hyperv_sku"]
+
+        if value.get("url"):
+            hiso["url"] = value["url"]
+
+        if value.get("hyperv_product_key"):
+            hiso["hyperv_product_key"] = value["hyperv_product_key"]
+
+        if value.get("sha256sum"):
+            hiso["sha256sum"] = value["sha256sum"]
+
+        payload["hypervisor_iso_details"] = hiso
+        
+    def _get_default_nodes_spec(self, node):
+        spec = {}
+        default_spec = {
+            "cvm_gateway": None,
+            "ipmi_netmask": None,
+            "rdma_passthrough": False,
+            "imaged_node_uuid": None,
+            "cvm_vlan_id": None,
+            "hypervisor_type": None,
+            "image_now": True,
+            "hypervisor_hostname": None,
+            "hypervisor_netmask": None,
+            "cvm_netmask": None,
+            "ipmi_ip": None,
+            "hypervisor_gateway": None,
+            "hardware_attributes_override": None,
+            "cvm_ram_gb": None,
+            "cvm_ip": None,
+            "hypervisor_ip": None,
+            "use_existing_network_settings":False,
+            "ipmi_gateway": None
+        }
+
+        for k in default_spec:
+            v = node.get(k)
+            if v:
+                spec[k]= v 
+
+        return spec
+
+    def _build_spec_nodes_list(self, payload, nodes):
+        nodes_list = []
+
+        for node in nodes:
+            n = self._get_default_nodes_spec(node)
+            nodes_list.append(n)
+
+        payload["nodes_list"] = nodes_list
+
+        return payload, None
+
+
+    def get(self, uuid):
+        query = {"imaged_cluster_uuid": uuid}
+        resp = self.read(query=query)
+        return resp
+
+    def wait_for_completion(self, uuid):
+        state = ""
+        delay = 30
+        timeout = time.time() + 3600
+        while state != "COMPLETED":
+            response = self.get(uuid)
+            stopped = response.get("imaging_stopped", False)
+            aggregate_percent_complete = response.get("aggregate_percent_complete", -1)
+            if stopped:
+                if aggregate_percent_complete < 100:
+                    status = self._get_progress_error_status(response)
+                    return response, status
+                state = "COMPLETED"
+            else:
+                state = "PENDING"
+                if time.time() > timeout:
+                    return (
+                        None,
+                        "Failed to poll on image node progress. Reason: Timeout",
+                    )
+                time.sleep(delay)
+        return response, None
+
+    def _get_progress_error_status(self, progress):
+        return "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
+            self._get_progress_messages(progress, "clusters", "cluster_name"),
+            self._get_progress_messages(progress, "nodes", "cvm_ip"),
+        )
+
+    def _get_progress_messages(self, progress, entity_type, entity_name):
+        res = ""
+        clusters = progress.get(entity_type)
+        if clusters:
+            for c in clusters:
+                res += "cluster: {}\n".format(c.get(entity_name))
+                res += "messages:\n{}\n".join(c.get("messages", []))
+        return res
