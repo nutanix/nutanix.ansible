@@ -147,17 +147,26 @@ def wait_for_completion(module, uuid):
 
 def _get_progress_error_status(progress):
     return "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
-        _get_progress_messages(progress, "cluster_progress_details", "cluster_name"),
-        _get_progress_messages(progress, "node_progress_details", "cvm_ip"),
+        _get_cluster_progress_messages(progress, "cluster_progress_details", "cluster_name"),
+        _get_node_progress_messages(progress, "node_progress_details", "imaged_node_uuid"),
     )
 
-def _get_progress_messages(progress, entity_type, entity_name):
+def _get_cluster_progress_messages(progress, entity_type, entity_name):
     res = ""
-    clusters = progress.get(entity_type)
-    if clusters:
-        for c in clusters:
-            res += "cluster: {}\n".format(c.get(entity_name))
-            res += "messages:\n{}\n".join(c.get("message_list", []))
+    cluster = progress["cluster_status"][entity_type]
+    if cluster.get(entity_name):
+        res += "cluster_name: {}\n".format(cluster[entity_name])
+    res += "status:\n{}\n".format(cluster["status"])
+
+    return res
+
+def _get_node_progress_messages(progress, entity_type, entity_name):
+    res = ""
+    nodes = progress["cluster_status"][entity_type]
+    if nodes:
+        for c in nodes:
+            res += "node_uuid: {}\n".format(c[entity_name])
+            res += "status:\n{}\n".format(c["status"])
     return res
 
 
