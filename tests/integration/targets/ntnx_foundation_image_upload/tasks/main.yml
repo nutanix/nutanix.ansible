@@ -1,0 +1,6 @@
+---
+- module_defaults:
+    nutanix.ncp.ntnx_foundation_image_upload:
+        nutanix_host: "{{ foundation_host }}"
+  block:
+        - import_tasks: "upload.yml"

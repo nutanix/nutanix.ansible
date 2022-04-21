@@ -1,0 +1,71 @@
+---
+- debug:
+    msg: start testing ntnx_foundation_image_upload
+
+- name: Image upload with esx installer_type
+  ntnx_foundation_image_upload:
+    state: present
+    source: "/home/alaa-bish/temp.tar.gz"
+    filename: "temptar_dont_use.iso"
+    installer_type: esx
+    timeout: 3600
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==true
+    fail_msg: " Fail : unable upload image  with esx installer_type "
+    success_msg: "Succes: upload image  with esx installer_type successfully "
+
+- name: Delete Image with esx installer_type
+  ntnx_foundation_image_upload:
+    state: absent
+    filename: "temptar_dont_use.iso"
+    installer_type: esx
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response.status_code == 200
+      - result.failed==false
+      - result.changed==true
+    fail_msg: " Fail : unable to delete image  with esx installer_type "
+    success_msg: "Succes: image  with esx installer_type deleted successfully "
+
+- name: Image upload with kvm installer_type
+  ntnx_foundation_image_upload:
+    state: present
+    source: "/home/alaa-bish/temp.tar.gz"
+    filename: "temptar_dont_use.iso"
+    installer_type: kvm
+    timeout: 3600
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==true
+    fail_msg: " Fail : unable upload image  with kvm installer_type "
+    success_msg: "Succes: upload image  with kvm installer_type successfully "
+
+- name: Delete Image with kvm installer_type
+  ntnx_foundation_image_upload:
+    state: absent
+    filename: "temptar_dont_use.iso"
+    installer_type: kvm
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response.status_code == 200
+      - result.failed==false
+      - result.changed==true
+    fail_msg: " Fail : unable to delete image  with kvm installer_type "
+    success_msg: "Succes: image  with kvm installer_type deleted successfully "
