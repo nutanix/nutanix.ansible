@@ -1,6 +1,4 @@
 
-
-from socket import timeout
 import time
 from ..module_utils.fc.imaged_clusters import ImagedClusters
 from ..module_utils.base_module import BaseModule
@@ -49,13 +47,14 @@ def get_module_spec():
         storage_node_count = dict(type="int", default=None),
         redundancy_factor = dict(type="int", Required=True, default=2),
         cluster_name = dict(type="str", Required=True),
-        aos_package_url = dict(type="str"),
+        aos_package_url = dict(type="str", Required=True),
         cluster_size = dict(type="int", default=None),
         aos_package_sha256sum= dict(type="str", default=None),
         timezone= dict(type="str",default=None),
         common_network_settings = dict(type="dict", Required=True, options=common_network_setting_spec_dict),
         hypervisor_iso_details = dict(type="dict", options=hypervisor_iso_details_spec_dict),
-        nodes_list = dict(type="list", elements="dict", Required=True, options=nodes_list_spec_dict)
+        nodes_list = dict(type="list", elements="dict", Required=True, options=nodes_list_spec_dict),
+        skip_cluster_creation = dict(type="bool", default=False)
     )
 
     return module_args
@@ -86,7 +85,7 @@ def check_node_available(module, nodes, result):
             if err:
                 result["error"] = err
                 result["response"] = avial
-                module.fail_json(msg="Failed to image nodes", **result)
+                module.fail_json(msg="Nodes not available or may be part of other cluster", **result)
 
     
 

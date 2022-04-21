@@ -12,7 +12,7 @@ def get_module_spec():
         imaged_node_uuid = dict(type="str"),
         filter_spec = dict(
             type = "dict",
-            length=dict(type="int", default=0),
+            length=dict(type="int", default=10),
             offset=dict(type="int", default=0),
             filters=dict(
                 node_state = dict(type="str", choices=["STATE_AVAILABLE", "STATE_UNAVAILABLE", "STATE_DISCOVERING"],
@@ -33,6 +33,12 @@ def list_imaged_nodes(module, result):
         result["imaged_node_details"] = resp
     else:
         resp = list_imaged_nodes.list(filter_spec)
+        offset = filter_spec.get("offset") if filter_spec.get("offset") else 0
+        length = (filter_spec.get("length") if filter_spec.get("length") else 10) + offset
+        total_matches = resp["metadata"]["length"]
+        if length>total_matches:
+            length = total_matches
+        resp["imaged_nodes"] = resp["imaged_nodes"][offset:length]
         result["imaged_nodes_list"] = resp
         
 

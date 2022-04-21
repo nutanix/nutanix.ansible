@@ -22,21 +22,17 @@ class ImagedClusters(FoundationCentral):
             "cluster_size": self._build_spec_cluster_size,
             "aos_package_sha256sum": self._build_spec_aos_package_sha256sum,
             "timezone": self._build_spec_timezone,
-            "nodes_list": self._build_spec_nodes_list
+            "nodes_list": self._build_spec_nodes_list,
+            "skip_cluster_creation": self._build_spec_skip_cluster_creation,
         }
         
     def _get_default_spec(self):
         return deepcopy({
-            "cluster_external_ip": None,
-            "common_network_settings" : None,
-            "hypervisor_iso_details": None,
-            "storage_node_count": None,
-            "redundancy_factor": None,
-            "cluster_name": None,
+            "cluster_external_ip": "",
+            "common_network_settings" : {},
+            "redundancy_factor": 2,
+            "cluster_name": "",
             "aos_package_url": None,
-            "cluster_size": None,
-            "aos_package_sha256sum": None,
-            "timezone": None,
             "nodes_list" : []
         })
     
@@ -71,6 +67,10 @@ class ImagedClusters(FoundationCentral):
 
     def _build_spec_timezone(self, payload, value):
         payload["timezone"] = value
+        return payload, None
+
+    def _build_spec_skip_cluster_creation(self, payload, value):
+        payload["skip_cluster_creation"] = value
         return payload, None
 
     def _get_default_network_settings(self, cnsettings):
