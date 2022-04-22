@@ -1,5 +1,3 @@
-
-from http.client import IncompleteRead
 from ..module_utils.fc.imaged_clusters import  ImagedClusters
 from ..module_utils.base_module import BaseModule
 from ..module_utils.utils import remove_param_with_none_value

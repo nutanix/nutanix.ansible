@@ -1,4 +1,3 @@
-
 import time
 from ..module_utils.fc.imaged_clusters import ImagedClusters
 from ..module_utils.base_module import BaseModule
@@ -54,7 +53,8 @@ def get_module_spec():
         common_network_settings = dict(type="dict", Required=True, options=common_network_setting_spec_dict),
         hypervisor_iso_details = dict(type="dict", options=hypervisor_iso_details_spec_dict),
         nodes_list = dict(type="list", elements="dict", Required=True, options=nodes_list_spec_dict),
-        skip_cluster_creation = dict(type="bool", default=False)
+        skip_cluster_creation = dict(type="bool", default=False),
+        imaged_cluster_uuid = dict(type="str")
     )
 
     return module_args
@@ -169,15 +169,31 @@ def _get_node_progress_messages(progress, entity_type, entity_name):
             res += "status:\n{}\n".format(c["status"])
     return res
 
+def deleteCluster(module, result):
+    cluster_uuid = module.params.get('imaged_cluster_uuid')
+    cluster = ImagedClusters(module)
+
+    resp = cluster.delete(cluster_uuid, no_response=True)
+    result["status_code"] = resp
+    result["imaged_cluster_uuid"] = cluster_uuid
+
 
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=False,
+        supports_check_mode=True,
+         required_if=[
+            ("state", "present", ("cluster_name",)),
+            ("state", "absent", ("imaged_cluster_uuid",)),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {}
-    imageNodes(module, result)
+    state = module.params["state"]
+    if state == "present":
+        imageNodes(module, result)
+    elif state == "absent":
+        deleteCluster(module, result)
     module.exit_json(**result)
 
 

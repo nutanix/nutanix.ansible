@@ -1,5 +1,3 @@
-from operator import mod
-from posixpath import split
 from ..module_utils.fc.api_keys import ApiKeys
 from ..module_utils.base_module import BaseModule
 
@@ -84,7 +82,9 @@ API_key:
 def get_module_spec():
     module_args = dict(
         key_uuid = dict(type=str),
-        alias = dict(type=str)
+        alias = dict(type=str),
+        length = dict(type="int", default=10),
+        offset = dict(type="int", default=0)
 
     )
     return module_args
@@ -97,17 +97,25 @@ def list_api_keys(module, result):
         resp = list_api.read(key_uuid)
         result["api_keys"] = resp
     else:
-        spec = {
-            "length": 0,
-            "offset": 0 
-        }
+        spec, error = list_api.get_spec()
+        if error:
+          result["error"] = error
+          module.fail_json(msg="Failed generating API keys Spec", **result)
+
         resp = list_api.list(spec)
         if alias:
-            result["api_key"] = [x for x in resp["api_keys"] if x["alias"]==alias]
+          result["api_key"] = [x for x in resp["api_keys"] if x["alias"]==alias]
         else:
-            result["list_api_keys"]= resp
-        
+          offset = module.params.get("offset")
+          length  = module.params.get("length") + offset
+          total_matches = resp["metadata"]["length"]
 
+          if length>total_matches:
+            length = total_matches
+
+          resp["api_keys"] = resp["api_keys"][offset:length]
+          result["list_api_keys"]= resp
+      
 
 def run_module():
     module = BaseModule(

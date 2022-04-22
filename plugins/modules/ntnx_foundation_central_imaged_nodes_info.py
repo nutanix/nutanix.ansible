@@ -1,6 +1,3 @@
-from email.policy import default
-
-from requests import options
 from ..module_utils.fc.imaged_nodes import ImagedNodes
 from ..module_utils.base_module import BaseModule
 
