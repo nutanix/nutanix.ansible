@@ -9,7 +9,10 @@ __metaclass__ = type
 
 class BaseInfoModule(BaseModule):
     info_argument_spec = dict(
-        offset=dict(type="int"), length=dict(type="int"), filter=dict(type="str")
+        offset=dict(type="int"),
+        length=dict(type="int"),
+        filter=dict(type="dict"),
+        custom_filter=dict(type="dict"),
     )
 
     def __init__(self, **kwargs):
@@ -18,7 +21,3 @@ class BaseInfoModule(BaseModule):
         self.argument_spec.pop("wait")
         self.argument_spec.update(self.info_argument_spec)
         super(BaseInfoModule, self).__init__(**kwargs)
-
-    @staticmethod
-    def parse_options(filters):
-        return ",".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))

@@ -7,6 +7,7 @@ __metaclass__ = type
 import copy
 import json
 from base64 import b64encode
+from ..module_utils import utils
 
 from ansible.module_utils._text import to_text
 from ansible.module_utils.urls import fetch_url
@@ -132,14 +133,30 @@ class Entity(object):
         url = self.base_url if use_base_url else self.base_url + "/list"
         if endpoint:
             url = url + "/{0}".format(endpoint)
-        return self._fetch_url(
-            url,
-            method="POST",
-            data=data,
-            raise_error=raise_error,
-            no_response=no_response,
-            timeout=timeout,
-        )
+        entities_list = []
+        while True:
+            resp = self._fetch_url(
+                url,
+                method="POST",
+                data=data,
+                raise_error=raise_error,
+                no_response=no_response,
+                timeout=timeout,
+            )
+            entities_list.extend(resp["entities"])
+            entities_count = len(entities_list)
+            data["offset"] = entities_count
+            if entities_count != 250:
+                break
+        custom_filters = self.module.params.get("custom_filter")
+        if custom_filters:
+            entities_list = self.filter_entities(entities_list, custom_filters)
+            entities_count = len(entities_list)
+
+        resp["entities"] = entities_list
+        resp["metadata"]["length"] = entities_count
+        resp["metadata"]["total_matches"] = entities_count
+        return resp
 
     def get_spec(self, old_spec=None):
         spec = copy.deepcopy(old_spec) or self._get_default_spec()
@@ -183,8 +200,12 @@ class Entity(object):
                 spec[key] = params[key]
             else:
                 spec.pop(key)
-        if spec.get("name") and spec.get("kind") == "vm":
-            spec["vm_name"] = spec.pop("name")
+
+        if params.get("filter", {}).get("name") and params.get("kind") == "vm":
+            spec["filter"]["vm_name"] = spec["filter"].pop("name")
+
+        spec["filter"] = self.parse_filters(params.get("filter", {}))
+
         return spec, None
 
     def _build_url(self, module, scheme, resource_type):
@@ -268,3 +289,15 @@ class Entity(object):
             )
 
         return resp_json
+
+    @staticmethod
+    def parse_filters(filters):
+        return ",".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
+
+    @staticmethod
+    def filter_entities(entities, custom_filters):
+        filtered_entities = []
+        for entity in entities:
+            if utils.intersection(entity, custom_filters):
+                filtered_entities.append(entity)
+        return filtered_entities

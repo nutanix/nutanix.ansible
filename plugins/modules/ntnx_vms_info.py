@@ -250,7 +250,6 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
-
     module_args = dict(
         kind=dict(type="str", default="vm"),
         sort_order=dict(type="str"),
@@ -258,6 +257,14 @@ def get_module_spec():
     )
 
     return module_args
+
+
+def get_vm(module, result):
+    vm = VM(module)
+    vm_uuid = module.params.get("uuid")
+    resp = vm.read(vm_uuid)
+
+    result["response"] = resp
 
 
 def list_vm(module, result):
@@ -268,11 +275,7 @@ def list_vm(module, result):
         result["response"] = spec
         return
 
-    resp, status = vm.list(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed to get information", **result)
+    resp = vm.list(spec)
 
     result["response"] = resp
 
@@ -284,14 +287,11 @@ def run_module():
         required_together=[("sort_order", "sort_attribute")],
     )
     remove_param_with_none_value(module.params)
-    result = {
-        "changed": False,
-        "error": None,
-        "response": None,
-        "vm_uuid": None,
-        "task_uuid": None,
-    }
-    list_vm(module, result)
+    result = {"changed": False, "error": None, "response": None}
+    if module.params.get("vm_uuid"):
+        get_vm(module, result)
+    else:
+        list_vm(module, result)
 
     module.exit_json(**result)
 
