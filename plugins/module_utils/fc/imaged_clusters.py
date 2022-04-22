@@ -24,6 +24,9 @@ class ImagedClusters(FoundationCentral):
             "timezone": self._build_spec_timezone,
             "nodes_list": self._build_spec_nodes_list,
             "skip_cluster_creation": self._build_spec_skip_cluster_creation,
+            "length": self._build_spec_length,
+            "offset": self._build_spec_offset,
+            "filters": self._build_spec_filters 
         }
         
     def _get_default_spec(self):
@@ -93,30 +96,24 @@ class ImagedClusters(FoundationCentral):
         payload["common_network_settings"] = net
         return payload, None
 
-    def _get_default_hypervisor_iso_details():
-        return deepcopy({
+    def _get_default_hypervisor_iso_details(self, isodetails):
+        spec= {}
+        default_spec= {
             "hyperv_sku": None,
             "url": None,
             "hyperv_product_key": None,
             "sha256sum": None
-        })
+        }
+        for k in default_spec:
+            v = isodetails.get(k)
+            if v:
+                spec[k] = v
+        return spec
 
     def _build_spec_hypervisor_iso_details(self, payload, value):
-        hiso = self._get_default_hypervisor_iso_details()
-
-        if value.get("hyperv_sku"):
-            hiso["hyperv_sku"] = value["hyperv_sku"]
-
-        if value.get("url"):
-            hiso["url"] = value["url"]
-
-        if value.get("hyperv_product_key"):
-            hiso["hyperv_product_key"] = value["hyperv_product_key"]
-
-        if value.get("sha256sum"):
-            hiso["sha256sum"] = value["sha256sum"]
-
+        hiso = self._get_default_hypervisor_iso_details(value)
         payload["hypervisor_iso_details"] = hiso
+        return payload, None
         
     def _get_default_nodes_spec(self, node):
         spec = {}
@@ -163,3 +160,15 @@ class ImagedClusters(FoundationCentral):
     def get(self, uuid):
         resp = self.read(uuid)
         return resp
+
+    def _build_spec_length(self, payload, value):
+        payload["length"] = value
+        return payload,None
+
+    def _build_spec_offset(self, payload, value):
+        payload["offset"] = value
+        return payload,None
+
+    def _build_spec_filters(self, payload, value):
+        payload["filters"] = value
+        return payload, None 

@@ -7,13 +7,11 @@ from ..module_utils.utils import remove_param_with_none_value
 def get_module_spec():
     module_args = dict(
         imaged_cluster_uuid = dict(type="str"),
-        filter_spec = dict(
-            type = "dict",
-            length=dict(type="int", default=10),
-            offset=dict(type="int", default=0),
-            filters=dict(
-                archived = dict(type="bool", default=False)
-            )
+        length=dict(type="int", default=10),
+        offset=dict(type="int", default=0),
+        filters=dict(
+            type="dict",
+            archived = dict(type="bool", default=False)
         )
     )
 
@@ -21,18 +19,26 @@ def get_module_spec():
 
 def list_clusters_nodes(module, result):
     imaged_cluster_uuid = module.params.get("imaged_cluster_uuid")
-    filter_spec = module.params.get("filter_spec")
     list_imaged_clusters = ImagedClusters(module)
+    
     if imaged_cluster_uuid:
         resp = list_imaged_clusters.read(imaged_cluster_uuid)
         result["imaged_clusters"] = resp
     else:
-        resp = list_imaged_clusters.list(filter_spec)
-        offset = filter_spec.get("offset") if filter_spec.get("offset") else 0
-        length = (filter_spec.get("length") if filter_spec.get("length") else 10) + offset
+        spec, error = list_imaged_clusters.get_spec()
+        if error:
+            result["error"] = error
+            module.fail_json(msg="Failed generating Image Clusters Spec", **result)
+
+        resp = list_imaged_clusters.list(spec)
+
+        offset = module.params.get("offset") 
+        length = module.params.get("length") + offset
         total_matches = resp["metadata"]["length"]
+
         if length>total_matches:
             length = total_matches
+
         resp["imaged_clusters"] = resp["imaged_clusters"][offset:length]
         result["list_imaged_clusters"] = resp
 

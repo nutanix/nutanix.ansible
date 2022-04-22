@@ -66,7 +66,7 @@ def imageNodes(module, result):
     if error:
         result["error"] = error
         module.fail_json(msg="Failed generating Image Nodes Spec", **result)
-    
+        
     check_node_available(module, spec["nodes_list"], result)
 
     resp = imaging.create(spec)
@@ -155,7 +155,8 @@ def _get_cluster_progress_messages(progress, entity_type, entity_name):
     cluster = progress["cluster_status"][entity_type]
     if cluster.get(entity_name):
         res += "cluster_name: {}\n".format(cluster[entity_name])
-    res += "status:\n{}\n".format(cluster["status"])
+    if cluster.get("status"):
+        res += "status:\n{}\n".format(cluster["status"])
 
     return res
 
