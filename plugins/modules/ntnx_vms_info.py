@@ -251,6 +251,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 def get_module_spec():
     module_args = dict(
+        vm_uuid=dict(type="str"),
         kind=dict(type="str", default="vm"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
@@ -261,7 +262,7 @@ def get_module_spec():
 
 def get_vm(module, result):
     vm = VM(module)
-    vm_uuid = module.params.get("uuid")
+    vm_uuid = module.params.get("vm_uuid")
     resp = vm.read(vm_uuid)
 
     result["response"] = resp

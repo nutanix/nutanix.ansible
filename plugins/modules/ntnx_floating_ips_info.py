@@ -129,12 +129,21 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
+        fip_uuid=dict(type="str"),
         kind=dict(type="str", default="floating_ip"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
     )
 
     return module_args
+
+
+def get_fip(module, result):
+    floating_ip = FloatingIP(module)
+    floating_ip_uuid = module.params.get("fip_uuid")
+    resp = floating_ip.read(floating_ip_uuid)
+
+    result["response"] = resp
 
 
 def list_fip(module, result):
@@ -145,11 +154,7 @@ def list_fip(module, result):
         result["response"] = spec
         return
 
-    resp, status = floating_ip.list(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed to get information", **result)
+    resp = floating_ip.list(spec)
 
     result["response"] = resp
 
@@ -165,11 +170,11 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
-        "fip_uuid": None,
-        "task_uuid": None,
     }
-    list_fip(module, result)
-
+    if module.params.get("fip_uuid"):
+        get_fip(module, result)
+    else:
+        list_fip(module, result)
     module.exit_json(**result)
 
 

@@ -298,6 +298,6 @@ class Entity(object):
     def filter_entities(entities, custom_filters):
         filtered_entities = []
         for entity in entities:
-            if utils.intersection(entity, custom_filters):
+            if utils.intersection(entity, custom_filters.copy()):
                 filtered_entities.append(entity)
         return filtered_entities

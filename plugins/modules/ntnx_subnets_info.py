@@ -187,12 +187,21 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
+        subnet_uuid=dict(type="str"),
         kind=dict(type="str", default="subnet"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
     )
 
     return module_args
+
+
+def get_subnet(module, result):
+    subnet = Subnet(module)
+    subnet_uuid = module.params.get("subnet_uuid")
+    resp = subnet.read(subnet_uuid)
+
+    result["response"] = resp
 
 
 def list_subnet(module, result):
@@ -203,11 +212,7 @@ def list_subnet(module, result):
         result["response"] = spec
         return
 
-    resp, status = subnet.list(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed to get information", **result)
+    resp = subnet.list(spec)
 
     result["response"] = resp
 
@@ -222,11 +227,12 @@ def run_module():
     result = {
         "changed": False,
         "error": None,
-        "response": None,
-        "subnet_uuid": None,
-        "task_uuid": None,
+        "response": None
     }
-    list_subnet(module, result)
+    if module.params.get("subnet_uuid"):
+        get_subnet(module, result)
+    else:
+        list_subnet(module, result)
 
     module.exit_json(**result)
 

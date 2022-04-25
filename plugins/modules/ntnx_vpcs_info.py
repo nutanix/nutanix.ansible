@@ -151,12 +151,21 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
+        vpc_uuid=dict(type="str"),
         kind=dict(type="str", default="vpc"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
     )
 
     return module_args
+
+
+def get_vm(module, result):
+    vpc = Vpc(module)
+    vpc_uuid = module.params.get("vm_uuid")
+    resp = vpc.read(vpc_uuid)
+
+    result["response"] = resp
 
 
 def list_vpc(module, result):
@@ -167,11 +176,7 @@ def list_vpc(module, result):
         result["response"] = spec
         return
 
-    resp, status = vpc.list(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed to get information", **result)
+    resp = vpc.list(spec)
 
     result["response"] = resp
 
@@ -190,8 +195,10 @@ def run_module():
         "vpc_uuid": None,
         "task_uuid": None,
     }
-    list_vpc(module, result)
-
+    if module.params.get("vm_uuid"):
+        get_vpc(module, result)
+    else:
+        list_vpc(module, result)
     module.exit_json(**result)
 
 

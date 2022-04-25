@@ -152,12 +152,21 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
+        pbr_uuid=dict(type="str"),
         kind=dict(type="str", default="routing_policy"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
     )
 
     return module_args
+
+
+def get_pbr(module, result):
+    pbr = Pbr(module)
+    pbr_uuid = module.params.get("pbr_uuid")
+    resp = pbr.read(pbr_uuid)
+
+    result["response"] = resp
 
 
 def list_pbr(module, result):
@@ -168,11 +177,7 @@ def list_pbr(module, result):
         result["response"] = spec
         return
 
-    resp, status = pbr.list(spec)
-    if status["error"]:
-        result["error"] = status["error"]
-        result["response"] = resp
-        module.fail_json(msg="Failed to get information", **result)
+    resp = pbr.list(spec)
 
     result["response"] = resp
 
@@ -191,8 +196,10 @@ def run_module():
         "pbr_uuid": None,
         "task_uuid": None,
     }
-    list_pbr(module, result)
-
+    if module.params.get("pbr_uuid"):
+        get_pbr(module, result)
+    else:
+        list_pbr(module, result)
     module.exit_json(**result)
 
 
