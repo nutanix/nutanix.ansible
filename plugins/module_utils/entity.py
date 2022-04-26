@@ -156,12 +156,7 @@ class Entity(object):
             entities_list = self.filter_entities(entities_list, custom_filters)
             entities_count = len(entities_list)
 
-        resp["entities"] = entities_list
-        resp["metadata"]["length"] = entities_count
-        resp["metadata"]["total_matches"] = entities_count
-        return resp
-
-        resp["entities"] = entities_list
+        resp[self.entity_type] = entities_list
         resp["metadata"]["length"] = entities_count
         resp["metadata"]["total_matches"] = entities_count
         return resp
