@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 import json
 import os
 from base64 import b64encode
+
 from ..module_utils import utils
 
 try:
