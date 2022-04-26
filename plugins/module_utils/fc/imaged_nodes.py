@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-from .fc import FoundationCentral
 from copy import deepcopy
+
+from .fc import FoundationCentral
+
 
 __metaclass__ = type
 

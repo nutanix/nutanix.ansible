@@ -1,6 +1,7 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 from http.client import IncompleteRead
 
 __metaclass__ = type
@@ -9,8 +10,10 @@ import copy
 import json
 import os
 from base64 import b64encode
+
 from ansible.module_utils._text import to_text
 from ansible.module_utils.urls import fetch_url
+
 from ..module_utils import utils
 
 try:
