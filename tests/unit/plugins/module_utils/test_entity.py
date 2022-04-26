@@ -42,6 +42,7 @@ def _fetch_url(url, method, data=None, **kwargs):
         "entities": [
             {"spec": {"name": "test_name"}, "metadata": {"uuid": "test_uuid"}}
         ],
+        "metadata": {},
     }
 
     return response
