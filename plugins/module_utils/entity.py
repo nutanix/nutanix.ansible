@@ -19,6 +19,9 @@ except ImportError:
 
 
 class Entity(object):
+    entities_limitation = 250
+    entity_type = "entities"
+
     def __init__(
         self,
         module,
@@ -146,12 +149,17 @@ class Entity(object):
             entities_list.extend(resp["entities"])
             entities_count = len(entities_list)
             data["offset"] = entities_count
-            if entities_count != 250:
+            if entities_count != self.entities_limitation:
                 break
         custom_filters = self.module.params.get("custom_filter")
         if custom_filters:
             entities_list = self.filter_entities(entities_list, custom_filters)
             entities_count = len(entities_list)
+
+        resp["entities"] = entities_list
+        resp["metadata"]["length"] = entities_count
+        resp["metadata"]["total_matches"] = entities_count
+        return resp
 
         resp["entities"] = entities_list
         resp["metadata"]["length"] = entities_count
@@ -247,7 +255,11 @@ class Entity(object):
     def _fetch_url(
         self, url, method, data=None, raise_error=True, no_response=False, timeout=30
     ):
-        data = self.module.jsonify(data) if data else None
+
+        # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
+        if self.headers["Content-Type"] == "application/json":
+            data = self.module.jsonify(data) if data else None
+
         resp, info = fetch_url(
             self.module,
             url,
@@ -290,6 +302,65 @@ class Entity(object):
 
         return resp_json
 
+    # upload file in chunks to the given url
+    def _upload_file(
+        self, url, source, method, raise_error=True, no_response=False, timeout=30
+    ):
+
+        resp, info = fetch_url(
+            self.module,
+            url,
+            data=FileChunksIterator(source),
+            method=method,
+            headers=self.headers,
+            cookies=self.cookies,
+            timeout=timeout,
+        )
+
+        status_code = info.get("status")
+        body = resp.read() if resp else info.get("body")
+        try:
+            resp_json = json.loads(to_text(body)) if body else None
+        except ValueError:
+            resp_json = None
+
+        if not raise_error:
+            return resp_json
+
+        if status_code >= 300:
+            err = info.get("msg", "Status code != 2xx")
+            self.module.fail_json(
+                msg="Failed fetching URL: {0}".format(url),
+                status_code=status_code,
+                error=err,
+                response=resp_json,
+            )
+
+        if no_response:
+            return {"status_code": status_code}
+
+        if not resp_json:
+            self.module.fail_json(
+                msg="Failed to convert API response to json",
+                status_code=status_code,
+                error=body,
+                response=resp_json,
+            )
+
+        return resp_json
+
+    def unify_spec(self, spec1, spec2):
+        """
+        This routine return intersection of two specs(dict) as per
+        keys in first level of dictionary.
+        """
+        spec = {}
+        for k in spec1:
+            v = spec2.get(k)
+            if v:
+                spec[k] = v
+        return spec
+
     @staticmethod
     def parse_filters(filters):
         return ",".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
@@ -301,3 +372,37 @@ class Entity(object):
             if utils.intersection(entity, custom_filters.copy()):
                 filtered_entities.append(entity)
         return filtered_entities
+
+
+# Read files in chunks and yeild it
+class CreateChunks(object):
+    def __init__(self, filename, chunk_size=1 << 13):
+        self.filename = filename
+        self.chunk_size = chunk_size
+        self.total_size = os.path.getsize(filename)
+
+    def __iter__(self):
+        with open(self.filename, "rb") as file:
+            while True:
+                data = file.read(self.chunk_size)
+                if not data:
+                    break
+                yield data
+
+    def __len__(self):
+        return self.total_size
+
+
+# to iterate over chunks of file
+class FileChunksIterator(object):
+    def __init__(self, filename, chunk_size=1 << 13):
+        iterable = CreateChunks(filename, chunk_size)
+        self.iterator = iter(iterable)
+        self.length = len(iterable)
+
+    # request lib checks for read func in iterable object
+    def read(self, size=None):
+        return next(self.iterator, b"")
+
+    def __len__(self):
+        return self.length

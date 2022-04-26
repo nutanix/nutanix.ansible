@@ -1,3 +1,16 @@
+## v1.1.0-beta.1 (11 Apr 2022)
+
+**Features**
+
+- Ansible module for Foundation
+- Ansible module for BMC IPMI Configuration
+- Ansible info module for AOS Packages
+- Ansible info module for Discovery Nodes
+- Ansible info module for Hypervisor images
+- Ansible module for image upload
+- Ansible info module for node network
+
+
 ## v1.0.0 (2nd Mar 2022)
 
 **Improvements**
