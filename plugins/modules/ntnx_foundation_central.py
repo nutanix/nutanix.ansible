@@ -430,41 +430,41 @@ from ..module_utils.base_module import BaseModule
 from ..module_utils.fc.imaged_nodes import ImagedNode
 from ..module_utils.utils import remove_param_with_none_value
 
+
 def get_module_spec():
     common_network_setting_spec_dict = dict(
-        cvm_dns_servers = dict(type="list"),
-        hypervisor_dns_servers = dict(type="list"),
-        cvm_ntp_servers= dict(type="list", Required=True),
-        hypervisor_ntp_servers= dict(type="list", Required=True)
+        cvm_dns_servers=dict(type="list"),
+        hypervisor_dns_servers=dict(type="list"),
+        cvm_ntp_servers=dict(type="list", Required=True),
+        hypervisor_ntp_servers=dict(type="list", Required=True),
     )
 
     hypervisor_iso_details_spec_dict = dict(
-        hyperv_sku = dict(type="str", default=None),
-        url = dict(type="str", Required=True),
-        hyperv_product_key = dict(type="str", default=None),
-        sha256sum= dict(type="str", default=None)
+        hyperv_sku=dict(type="str", default=None),
+        url=dict(type="str", Required=True),
+        hyperv_product_key=dict(type="str", default=None),
+        sha256sum=dict(type="str", default=None),
     )
 
     manual_node_spec_dict = dict(
-        cvm_gateway = dict(type="str", Required=True),
-        ipmi_netmask = dict(type="str", Required=True),
-        rdma_passthrough = dict(type="bool", Default=False),
-        imaged_node_uuid = dict(type="str", Required=True),
-        cvm_vlan_id= dict(type="int", default=None),
-        hypervisor_type = dict(type="str", Required=True, choice="[kvm, esx, hyperv]"),
-        image_now = dict(type="bool", default=True),
-        hypervisor_hostname = dict(type="str", Required=True),
-        hypervisor_netmask = dict(type="str", Required=True),
-        cvm_netmask = dict(type="str", Required=True),
-        ipmi_ip = dict(type="str", Required=True),
-        hypervisor_gateway = dict(type="str", Required=True),
-        hardware_attributes_override = dict(type="dict", default=None),
-        cvm_ram_gb = dict(type="int", default=None),
-        cvm_ip = dict(type="str", Required=True),
-        hypervisor_ip = dict(type="str", Required=True),
-        use_existing_network_settings = dict(type="bool", default=False),
-        ipmi_gateway =dict(type="str", Required=True)
-
+        cvm_gateway=dict(type="str", Required=True),
+        ipmi_netmask=dict(type="str", Required=True),
+        rdma_passthrough=dict(type="bool", Default=False),
+        imaged_node_uuid=dict(type="str", Required=True),
+        cvm_vlan_id=dict(type="int", default=None),
+        hypervisor_type=dict(type="str", Required=True, choice="[kvm, esx, hyperv]"),
+        image_now=dict(type="bool", default=True),
+        hypervisor_hostname=dict(type="str", Required=True),
+        hypervisor_netmask=dict(type="str", Required=True),
+        cvm_netmask=dict(type="str", Required=True),
+        ipmi_ip=dict(type="str", Required=True),
+        hypervisor_gateway=dict(type="str", Required=True),
+        hardware_attributes_override=dict(type="dict", default=None),
+        cvm_ram_gb=dict(type="int", default=None),
+        cvm_ip=dict(type="str", Required=True),
+        hypervisor_ip=dict(type="str", Required=True),
+        use_existing_network_settings=dict(type="bool", default=False),
+        ipmi_gateway=dict(type="str", Required=True),
     )
 
     discovery_override = dict(
@@ -475,16 +475,16 @@ def get_module_spec():
         imaged_node_uuid=dict(type="str", required=False),
         ipmi_netmask=dict(type="str", required=False),
         ipmi_gateway=dict(type="str", required=False),
-        hardware_attributes_override = dict(type="dict", default=None),
+        hardware_attributes_override=dict(type="dict", default=None),
     )
 
     node_mode_constraints = [("manual_mode", "discovery_mode")]
 
     discovery_mode_spec_dict = dict(
-        node_serial = dict(type="str", Required=True),
+        node_serial=dict(type="str", Required=True),
         discovery_override=dict(
             type="dict", required=False, options=discovery_override
-        )
+        ),
     )
     node_modes = dict(
         manual_mode=dict(type="dict", options=manual_node_spec_dict),
@@ -492,22 +492,21 @@ def get_module_spec():
     )
 
     module_args = dict(
-        cluster_external_ip = dict(type="str", default=None),
-        storage_node_count = dict(type="int", default=None),
-        redundancy_factor = dict(type="int", Required=True),
-        cluster_name = dict(type="str", default="test"),
-        aos_package_url = dict(type="str", Required=True),
-        cluster_size = dict(type="int", default=None),
-        aos_package_sha256sum= dict(type="str", default=None),
-        timezone= dict(type="str",default=None),
-        common_network_settings = dict(
-            type="dict", 
-            Required=True, 
-            options=common_network_setting_spec_dict),
-        hypervisor_iso_details = dict(
-            type="dict", 
-            options=hypervisor_iso_details_spec_dict),
-        nodes_list = dict(
+        cluster_external_ip=dict(type="str", default=None),
+        storage_node_count=dict(type="int", default=None),
+        redundancy_factor=dict(type="int", Required=True),
+        cluster_name=dict(type="str", default="test"),
+        aos_package_url=dict(type="str", Required=True),
+        cluster_size=dict(type="int", default=None),
+        aos_package_sha256sum=dict(type="str", default=None),
+        timezone=dict(type="str", default=None),
+        common_network_settings=dict(
+            type="dict", Required=True, options=common_network_setting_spec_dict
+        ),
+        hypervisor_iso_details=dict(
+            type="dict", options=hypervisor_iso_details_spec_dict
+        ),
+        nodes_list=dict(
             type="list",
             required=True,
             elements="dict",
@@ -515,8 +514,8 @@ def get_module_spec():
             mutually_exclusive=node_mode_constraints,
             required_one_of=node_mode_constraints,
         ),
-        skip_cluster_creation = dict(type="bool", default=False),
-        imaged_cluster_uuid = dict(type="str")
+        skip_cluster_creation=dict(type="bool", default=False),
+        imaged_cluster_uuid=dict(type="str"),
     )
 
     return module_args
@@ -532,7 +531,7 @@ def imageNodes(module, result):
     if module.check_mode:
         result["response"] = spec
         return
-        
+
     check_node_available(module, spec["nodes_list"], result)
 
     resp = imaging.create(spec)
@@ -547,33 +546,32 @@ def check_node_available(module, nodes, result):
         node_detail = av.read(node["imaged_node_uuid"])
         node_state = node_detail["node_state"]
         if node_state != "STATE_AVAILABLE":
-            avial, err = wait_till_node_available(module, node["imaged_node_uuid"], node_state)
+            avial, err = wait_till_node_available(
+                module, node["imaged_node_uuid"], node_state
+            )
             if err:
                 result["error"] = err
                 result["response"] = avial
-                module.fail_json(msg="Nodes not available or may be part of other cluster", **result)
+                module.fail_json(
+                    msg="Nodes not available or may be part of other cluster", **result
+                )
 
-    
 
 def wait_till_node_available(module, node_uuid, node_state):
     timeout = time.time() + 1800
     delay = 60
     img = ImagedNode(module)
-    while node_state!= "STATE_AVAILABLE" :
+    while node_state != "STATE_AVAILABLE":
         node_detail = img.read(node_uuid)
         new_node_state = node_detail["node_state"]
         if new_node_state != "STATE_AVAILABLE":
             if time.time() > timeout:
-                return (
-                    None,
-                    "Timeout. Node is in {}\n".format(new_node_state)
-                )
+                return (None, "Timeout. Node is in {}\n".format(new_node_state))
             time.sleep(delay)
         else:
             node_state = new_node_state
-        
-    return node_state, None
 
+    return node_state, None
 
 
 def wait_till_imaging(module, result):
@@ -584,18 +582,21 @@ def wait_till_imaging(module, result):
         result["error"] = err
         result["response"] = resp
         module.fail_json(msg="Failed to image nodes", **result)
-    result["changed"]= True
+    result["changed"] = True
+
 
 def wait_for_completion(module, uuid):
     state = ""
     delay = 30
-    timeout = time.time() + (2*60*60)
-    time.sleep(15*60)
-    progress= ImagedCluster(module)
+    timeout = time.time() + (2 * 60 * 60)
+    time.sleep(15 * 60)
+    progress = ImagedCluster(module)
     while state != "COMPLETED":
         response = progress.read(uuid)
         stopped = response["cluster_status"]["imaging_stopped"]
-        aggregate_percent_complete = response["cluster_status"]["aggregate_percent_complete"]
+        aggregate_percent_complete = response["cluster_status"][
+            "aggregate_percent_complete"
+        ]
         if stopped:
             if aggregate_percent_complete < 100:
                 status = _get_progress_error_status(response)
@@ -611,11 +612,17 @@ def wait_for_completion(module, uuid):
             time.sleep(delay)
     return response, None
 
+
 def _get_progress_error_status(progress):
     return "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
-        _get_cluster_progress_messages(progress, "cluster_progress_details", "cluster_name"),
-        _get_node_progress_messages(progress, "node_progress_details", "imaged_node_uuid"),
+        _get_cluster_progress_messages(
+            progress, "cluster_progress_details", "cluster_name"
+        ),
+        _get_node_progress_messages(
+            progress, "node_progress_details", "imaged_node_uuid"
+        ),
     )
+
 
 def _get_cluster_progress_messages(progress, entity_type, entity_name):
     res = ""
@@ -627,6 +634,7 @@ def _get_cluster_progress_messages(progress, entity_type, entity_name):
 
     return res
 
+
 def _get_node_progress_messages(progress, entity_type, entity_name):
     res = ""
     nodes = progress["cluster_status"][entity_type]
@@ -636,8 +644,9 @@ def _get_node_progress_messages(progress, entity_type, entity_name):
             res += "status:\n{}\n".format(c["status"])
     return res
 
+
 def deleteCluster(module, result):
-    cluster_uuid = module.params.get('imaged_cluster_uuid')
+    cluster_uuid = module.params.get("imaged_cluster_uuid")
     cluster = ImagedCluster(module)
 
     resp = cluster.delete(cluster_uuid, no_response=True)
@@ -650,7 +659,7 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-         required_if=[
+        required_if=[
             ("state", "present", ("nodes_list",)),
             ("state", "absent", ("imaged_cluster_uuid",)),
         ],
@@ -660,7 +669,7 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
-        "imaged_cluster_uuid":None,
+        "imaged_cluster_uuid": None,
     }
     state = module.params["state"]
     if state == "present":
@@ -672,6 +681,7 @@ def run_module():
 
 def main():
     run_module()
+
 
 if __name__ == "__main__":
     main()

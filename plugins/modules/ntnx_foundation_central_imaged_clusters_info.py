@@ -17,7 +17,7 @@ options:
     default: 8000
     required: false
   imaged_cluster_uuid:
-    description: 
+    description:
       - Return the cluster details given it's uuid
     type: str
     required: false
@@ -246,26 +246,25 @@ Imaged_Clusters_list
 
 """
 
-from ..module_utils.fc.imaged_clusters import  ImagedCluster
+from ..module_utils.fc.imaged_clusters import ImagedCluster
 from ..module_utils.base_module import BaseModule
 from ..module_utils.utils import remove_param_with_none_value
 
+
 def get_module_spec():
     module_args = dict(
-        imaged_cluster_uuid = dict(type="str"),
-        filters=dict(
-            type="dict",
-            archived = dict(type="bool", default=False)
-        ),
-        custom_filter=dict(type="dict")
+        imaged_cluster_uuid=dict(type="str"),
+        filters=dict(type="dict", archived=dict(type="bool", default=False)),
+        custom_filter=dict(type="dict"),
     )
 
     return module_args
 
+
 def list_clusters_nodes(module, result):
     imaged_cluster_uuid = module.params.get("imaged_cluster_uuid")
     list_imaged_clusters = ImagedCluster(module)
-    
+
     if imaged_cluster_uuid:
         result["response"] = list_imaged_clusters.read(imaged_cluster_uuid)
     else:
@@ -275,8 +274,8 @@ def list_clusters_nodes(module, result):
             module.fail_json(msg="Failed generating Image Clusters Spec", **result)
 
         if module.check_mode:
-          result["response"] = spec
-          return
+            result["response"] = spec
+            return
 
         resp = list_imaged_clusters.list(spec)
         result["response"] = resp
@@ -298,9 +297,9 @@ def run_module():
     module.exit_json(**result)
 
 
-
 def main():
     run_module()
+
 
 if __name__ == "__main__":
     main()

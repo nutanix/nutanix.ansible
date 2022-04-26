@@ -78,16 +78,16 @@ from ..module_utils.utils import remove_param_with_none_value
 
 __metaclass__ = type
 
+
 def get_module_spec():
     module_args = dict(
-        key_uuid = dict(type=str),
-        alias = dict(type=str),
-        custom_filter= dict(type="dict")
+        key_uuid=dict(type=str), alias=dict(type=str), custom_filter=dict(type="dict")
     )
     return module_args
 
+
 def list_api_keys(module, result):
-    key_uuid= module.params.get("key_uuid")
+    key_uuid = module.params.get("key_uuid")
     alias = module.params.get("alias")
     api_keys = ApiKey(module)
     if key_uuid:
@@ -95,21 +95,21 @@ def list_api_keys(module, result):
     else:
         spec, error = api_keys.get_spec()
         if error:
-          result["error"] = error
-          module.fail_json(msg="Failed generating API keys Spec", **result)
+            result["error"] = error
+            module.fail_json(msg="Failed generating API keys Spec", **result)
 
         if module.check_mode:
-          result["response"] = spec
-          return
+            result["response"] = spec
+            return
 
         resp = api_keys.list(spec)
         if alias:
-          result["response"] = [x for x in resp["api_keys"] if x["alias"]==alias]
+            result["response"] = [x for x in resp["api_keys"] if x["alias"] == alias]
         else:
-          result["response"]= resp
-      
+            result["response"] = resp
+
     result["changed"] = True
-      
+
 
 def run_module():
     module = BaseModule(
@@ -118,9 +118,9 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {
-      "changed": False,
-      "error": None,
-      "response": None,
+        "changed": False,
+        "error": None,
+        "response": None,
     }
     list_api_keys(module, result)
     module.exit_json(**result)

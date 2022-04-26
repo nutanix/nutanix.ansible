@@ -57,10 +57,9 @@ from ..module_utils.base_module import BaseModule
 
 from ..module_utils.utils import remove_param_with_none_value
 
+
 def get_module_spec():
-    module_args = dict(
-        alias = dict(type=str)
-    )
+    module_args = dict(alias=dict(type=str))
     return module_args
 
 
@@ -68,12 +67,12 @@ def create(module, result):
     key = ApiKey(module)
     spec, error = key.get_spec()
     if error:
-      result["error"] = error
-      module.fail_json(msg="Failed generating api_key Spec", **result)
+        result["error"] = error
+        module.fail_json(msg="Failed generating api_key Spec", **result)
 
     if module.check_mode:
-      result["response"] = spec
-      return
+        result["response"] = spec
+        return
 
     result["response"] = key.create(spec)
     result["changed"] = True
@@ -86,9 +85,9 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {
-      "changed": False,
-      "error": None,
-      "response": None,
+        "changed": False,
+        "error": None,
+        "response": None,
     }
     create(module, result)
     module.exit_json(**result)

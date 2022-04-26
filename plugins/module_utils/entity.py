@@ -270,7 +270,7 @@ class Entity(object):
             except ValueError:
                 resp_json = None
             except IncompleteRead:
-                    continue
+                continue
 
             if not raise_error:
                 return resp_json

@@ -17,7 +17,7 @@ options:
     default: 8000
     required: false
   imaged_node_uuid:
-    description: 
+    description:
       - Return the node details given it's uuid
     type: str
     required: false
@@ -143,15 +143,24 @@ from ..module_utils.fc.imaged_nodes import ImagedNode
 from ..module_utils.base_module import BaseModule
 from ..module_utils.utils import remove_param_with_none_value
 
+
 def get_module_spec():
     module_args = dict(
-        imaged_node_uuid = dict(type="str"),
+        imaged_node_uuid=dict(type="str"),
         filters=dict(
             type="dict",
-            node_state = dict(type="str", choices=["STATE_AVAILABLE", "STATE_UNAVAILABLE", "STATE_DISCOVERING", "STATE_IMAGING"],
-            default = None)
+            node_state=dict(
+                type="str",
+                choices=[
+                    "STATE_AVAILABLE",
+                    "STATE_UNAVAILABLE",
+                    "STATE_DISCOVERING",
+                    "STATE_IMAGING",
+                ],
+                default=None,
+            ),
         ),
-        custom_filter=dict(type="dict")
+        custom_filter=dict(type="dict"),
     )
 
     return module_args
@@ -160,24 +169,25 @@ def get_module_spec():
 def list_imaged_nodes(module, result):
     imaged_node_uuid = module.params.get("imaged_node_uuid")
     list_imaged_nodes = ImagedNode(module)
-    
+
     if imaged_node_uuid:
         result["imaged_node_details"] = list_imaged_nodes.read(imaged_node_uuid)
     else:
         spec, error = list_imaged_nodes.get_spec()
         if error:
-          result["error"] = error
-          module.fail_json(msg="Failed generating Image Nodes Spec", **result)
+            result["error"] = error
+            module.fail_json(msg="Failed generating Image Nodes Spec", **result)
 
         if module.check_mode:
-          result["response"] = spec
-          return
+            result["response"] = spec
+            return
 
         resp = list_imaged_nodes.list(spec)
         result["imaged_node_details"] = resp
 
     result["changed"] = True
-        
+
+
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
@@ -192,8 +202,10 @@ def run_module():
     list_imaged_nodes(module, result)
     module.exit_json(**result)
 
+
 def main():
     run_module()
+
 
 if __name__ == "__main__":
     main()
