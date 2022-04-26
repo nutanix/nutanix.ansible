@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central_imaged_nodes_info
@@ -139,8 +141,6 @@ Imaged_Node_List
 
 """
 
-from __future__ import absolute_import, division, print_function
-
 from ..module_utils.base_module import BaseModule
 from ..module_utils.fc.imaged_nodes import ImagedNode
 from ..module_utils.utils import remove_param_with_none_value
@@ -173,7 +173,7 @@ def list_imaged_nodes(module, result):
     list_imaged_nodes = ImagedNode(module)
 
     if imaged_node_uuid:
-        result["imaged_node_details"] = list_imaged_nodes.read(imaged_node_uuid)
+        result["response"] = list_imaged_nodes.read(imaged_node_uuid)
     else:
         spec, error = list_imaged_nodes.get_spec()
         if error:
@@ -185,7 +185,7 @@ def list_imaged_nodes(module, result):
             return
 
         resp = list_imaged_nodes.list(spec)
-        result["imaged_node_details"] = resp
+        result["response"] = resp
 
     result["changed"] = True
 

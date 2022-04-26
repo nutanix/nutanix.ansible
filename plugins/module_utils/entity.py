@@ -174,6 +174,8 @@ class Entity(object):
                 no_response=no_response,
                 timeout=timeout,
             )
+            if not resp.get(self.entity_type):
+                return resp
             entities_list.extend(resp[self.entity_type])
             entities_count = len(entities_list)
             data["offset"] = entities_count

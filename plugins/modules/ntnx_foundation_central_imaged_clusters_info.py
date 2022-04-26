@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central_imaged_clusters_info
@@ -245,8 +247,6 @@ Imaged_Clusters_list
     }
 
 """
-
-from __future__ import absolute_import, division, print_function
 
 from ..module_utils.base_module import BaseModule
 from ..module_utils.fc.imaged_clusters import ImagedCluster

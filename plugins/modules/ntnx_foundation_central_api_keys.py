@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central_api_keys
@@ -51,7 +53,6 @@ API_key:
             }
         ],
 """
-from __future__ import absolute_import, division, print_function
 
 from ..module_utils.base_module import BaseModule
 from ..module_utils.fc.api_keys import ApiKey

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central
@@ -423,8 +425,6 @@ Sample Response For only Imaging.
 }
 
 """
-
-from __future__ import absolute_import, division, print_function
 
 import time
 
