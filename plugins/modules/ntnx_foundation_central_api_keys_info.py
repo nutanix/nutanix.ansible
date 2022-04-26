@@ -1,7 +1,7 @@
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central_api_keys_info
-short_description: Nutanix module which returns the api key 
+short_description: Nutanix module which returns the api key
 version_added: 1.1.0
 description: 'List all the api keys created in Foundation Central.'
 options:
@@ -22,7 +22,7 @@ options:
     required: false
     default: None
   alias:
-    description: Return the API Key given it's alias 
+  description: Return the API Key given it's alias
     type: str
     required: false
     default: None
@@ -71,9 +71,9 @@ API_key:
         ],
 """
 
-from ..module_utils.fc.api_keys import ApiKey
+from __future__ import absolute_import, division, print_function
 from ..module_utils.base_module import BaseModule
-
+from ..module_utils.fc.api_keys import ApiKey
 from ..module_utils.utils import remove_param_with_none_value
 
 __metaclass__ = type
