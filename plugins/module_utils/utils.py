@@ -18,3 +18,19 @@ def remove_param_with_none_value(d):
                     remove_param_with_none_value(e)
                 else:
                     break
+
+
+def intersection(first_obj, second_obj):
+    if isinstance(first_obj, dict):
+        for key, value in first_obj.items():
+            if key in second_obj and second_obj[key] == value:
+                return True
+            if isinstance(value, (dict, list)):
+                if intersection(value, second_obj):
+                    return True
+
+    elif isinstance(first_obj, list):
+        for item in first_obj:
+            if intersection(item, second_obj):
+                return True
+    return False
