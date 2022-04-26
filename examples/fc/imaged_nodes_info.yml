@@ -1,0 +1,40 @@
+---
+- name: Imaged Nodes Playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+
+  tasks:
+  - name: Imaged-Node details with imaged_node_uuid
+    ntnx_foundation_central_imaged_nodes_info:
+      nutanix_host: "{{ pc }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      imaged_node_uuid: "<node-uuid>"
+    register: output
+
+  - name: Imaged-Node details with filters
+    ntnx_foundation_central_imaged_nodes_info:
+      nutanix_host: "{{ pc }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      filters:
+        node_state: "STATE_IMAGING"
+    register: output
+
+  - name: Imaged-Node details with custom filter
+    ntnx_foundation_central_imaged_nodes_info:
+      nutanix_host: "{{ pc }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      custom_filter:
+        model: "<node-model>"
+    register: output
+
+  - name: details of imaged node 
+    debug:
+      msg: '{{ output }}'
