@@ -2,21 +2,22 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+__metaclass__ = type
+
+import copy
 import json
 import os
 from base64 import b64encode
 
 from ..module_utils import utils
 
+from ansible.module_utils._text import to_text
+from ansible.module_utils.urls import fetch_url
+
 try:
     from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 except ImportError:
     from urlparse import urlparse  # python2
-
-from ansible.module_utils._text import to_text
-from ansible.module_utils.urls import fetch_url
-
-__metaclass__ = type
 
 
 class Entity(object):
@@ -181,13 +182,13 @@ class Entity(object):
             entities_list = self.filter_entities(entities_list, custom_filters)
             entities_count = len(entities_list)
 
-        resp["entities"] = entities_list
+        resp[self.entity_type] = entities_list
         resp["metadata"]["length"] = entities_count
         resp["metadata"]["total_matches"] = entities_count
         return resp
 
-    def get_spec(self):
-        spec = self._get_default_spec()
+    def get_spec(self, old_spec=None):
+        spec = copy.deepcopy(old_spec) or self._get_default_spec()
         for ansible_param, ansible_config in self.module.params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
             if build_spec_method and ansible_config:
@@ -352,10 +353,14 @@ class Entity(object):
         return spec
 
     @staticmethod
+    def parse_filters(filters):
+        return ",".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
+
+    @staticmethod
     def filter_entities(entities, custom_filters):
         filtered_entities = []
         for entity in entities:
-            if utils.intersection(entity, custom_filters):
+            if utils.intersection(entity, custom_filters.copy()):
                 filtered_entities.append(entity)
         return filtered_entities
 
