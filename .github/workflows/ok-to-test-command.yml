@@ -39,6 +39,8 @@ jobs:
           export NUTANIX_HOST=${{ secrets.PC_IP }}
           export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
           export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
+          wget -P /home/${USER}/ ${{ secrets.NOS_PACKAGE }}
+          wget -P tests/integration/targets/prepare_foundation_env/vars/ ${{ secrets.FOUNDATION_VAR }}
           ansible-playbook tests/integration/targets/prepare_env/tasks/prepare_env.yml
           ansible-test integration --python ${{ matrix.python-version }} --coverage -v
           ansible-test coverage report > coverage.txt
