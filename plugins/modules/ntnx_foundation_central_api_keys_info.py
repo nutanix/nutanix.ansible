@@ -1,10 +1,3 @@
-from ..module_utils.fc.api_keys import ApiKeys
-from ..module_utils.base_module import BaseModule
-
-from ..module_utils.utils import remove_param_with_none_value
-
-__metaclass__ = type
-
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central_api_keys_info
@@ -78,52 +71,57 @@ API_key:
         ],
 """
 
+from ..module_utils.fc.api_keys import ApiKey
+from ..module_utils.base_module import BaseModule
+
+from ..module_utils.utils import remove_param_with_none_value
+
+__metaclass__ = type
 
 def get_module_spec():
     module_args = dict(
         key_uuid = dict(type=str),
         alias = dict(type=str),
-        length = dict(type="int", default=10),
-        offset = dict(type="int", default=0)
-
+        custom_filter= dict(type="dict")
     )
     return module_args
 
 def list_api_keys(module, result):
     key_uuid= module.params.get("key_uuid")
     alias = module.params.get("alias")
-    list_api = ApiKeys(module)
+    api_keys = ApiKey(module)
     if key_uuid:
-        resp = list_api.read(key_uuid)
-        result["api_keys"] = resp
+        result["response"] = api_keys.read(key_uuid)
     else:
-        spec, error = list_api.get_spec()
+        spec, error = api_keys.get_spec()
         if error:
           result["error"] = error
           module.fail_json(msg="Failed generating API keys Spec", **result)
 
-        resp = list_api.list(spec)
+        if module.check_mode:
+          result["response"] = spec
+          return
+
+        resp = api_keys.list(spec)
         if alias:
-          result["api_key"] = [x for x in resp["api_keys"] if x["alias"]==alias]
+          result["response"] = [x for x in resp["api_keys"] if x["alias"]==alias]
         else:
-          offset = module.params.get("offset")
-          length  = module.params.get("length") + offset
-          total_matches = resp["metadata"]["length"]
-
-          if length>total_matches:
-            length = total_matches
-
-          resp["api_keys"] = resp["api_keys"][offset:length]
-          result["list_api_keys"]= resp
+          result["response"]= resp
+      
+    result["changed"] = True
       
 
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+      "changed": False,
+      "error": None,
+      "response": None,
+    }
     list_api_keys(module, result)
     module.exit_json(**result)
 

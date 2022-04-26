@@ -1,11 +1,3 @@
-#from __future__ import absolute_import, division, print_function
-
-from ..module_utils.fc.api_keys import ApiKeys
-from ..module_utils.base_module import BaseModule
-
-from ..module_utils.utils import remove_param_with_none_value
-
-
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central_api_keys
@@ -60,6 +52,11 @@ API_key:
         ],
 """
 
+from ..module_utils.fc.api_keys import ApiKey
+from ..module_utils.base_module import BaseModule
+
+from ..module_utils.utils import remove_param_with_none_value
+
 def get_module_spec():
     module_args = dict(
         alias = dict(type=str)
@@ -68,23 +65,31 @@ def get_module_spec():
 
 
 def create(module, result):
-    key = ApiKeys(module)
+    key = ApiKey(module)
     spec, error = key.get_spec()
     if error:
-        result["error"] = error
-        module.fail_json(msg="Failed generating api_key Spec", **result)
+      result["error"] = error
+      module.fail_json(msg="Failed generating api_key Spec", **result)
 
-    resp = key.create(spec)
-    result["api_key"] = resp
+    if module.check_mode:
+      result["response"] = spec
+      return
+
+    result["response"] = key.create(spec)
+    result["changed"] = True
 
 
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+      "changed": False,
+      "error": None,
+      "response": None,
+    }
     create(module, result)
     module.exit_json(**result)
 

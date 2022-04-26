@@ -1,0 +1,20 @@
+---
+- name: API Keys Playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+
+  tasks:
+  - name: Create a new API Key
+    ntnx_foundation_central_api_keys:
+      nutanix_host: "{{ pc }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      alias: "test-alias"
+    register: output
+    
+  - name: output of api_key
+    debug:
+      msg: '{{ output }}'

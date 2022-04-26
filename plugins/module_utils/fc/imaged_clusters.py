@@ -1,14 +1,16 @@
 from copy import deepcopy
-from curses import noecho
+from .imaged_nodes import ImagedNode
 from .fc import FoundationCentral
 
 __metaclass__ = type
 
 
-class ImagedClusters(FoundationCentral):
+class ImagedCluster(FoundationCentral):
+    entity_type= "imaged_clusters"
     def __init__(self, module):
         resource_type = "/imaged_clusters"
-        super(ImagedClusters, self).__init__(
+        self.ImgNodes= ImagedNode(module)
+        super(ImagedCluster, self).__init__(
                 module, resource_type=resource_type
             )
         self.build_spec_methods = {
@@ -24,8 +26,6 @@ class ImagedClusters(FoundationCentral):
             "timezone": self._build_spec_timezone,
             "nodes_list": self._build_spec_nodes_list,
             "skip_cluster_creation": self._build_spec_skip_cluster_creation,
-            "length": self._build_spec_length,
-            "offset": self._build_spec_offset,
             "filters": self._build_spec_filters 
         }
         
@@ -76,25 +76,44 @@ class ImagedClusters(FoundationCentral):
         payload["skip_cluster_creation"] = value
         return payload, None
 
-    def _get_default_network_settings(self, cnsettings):
-        spec= {}
-        default_spec= {
-            "cvm_dns_servers": [],
-            "hypervisor_dns_servers" : [],
-            "cvm_ntp_servers": [],
-            "hypervisor_ntp_servers":[]
-        }
-
-        for k in default_spec:
-            v = cnsettings.get(k)
-            if v:
-                spec[k]= v
-        return spec
-
     def _build_spec_common_network_settings(self, payload, nsettings):
         net = self._get_default_network_settings(nsettings)
         payload["common_network_settings"] = net
         return payload, None
+
+    def _build_spec_hypervisor_iso_details(self, payload, value):
+        hiso = self._get_default_hypervisor_iso_details(value)
+        payload["hypervisor_iso_details"] = hiso
+        return payload, None
+        
+
+    def _build_spec_nodes_list(self, payload, nodes):
+        nodes_list = []
+
+        for node in nodes:
+            if node.get("manual_mode"):
+                _node = node.get("manual_mode")
+                spec = self._get_default_nodes_spec(_node)
+
+            elif node.get("discovery_mode"):
+                _node = node.get("discovery_mode")
+                node_serial = _node.get("node_serial")
+                node_details, error = self.ImgNodes.node_details_by_node_serial(node_serial)
+                if not node_details:
+                    return None, error
+                discovery_override = _node.get("discovery_override", {})
+                if discovery_override:
+                    node_details.update(discovery_override)
+                spec= self._get_default_nodes_spec(node_details)
+
+            nodes_list.append(spec)
+        payload["nodes_list"] = nodes_list
+
+        return payload, None
+
+    def _build_spec_filters(self, payload, value):
+        payload["filters"] = value
+        return payload, None 
 
     def _get_default_hypervisor_iso_details(self, isodetails):
         spec= {}
@@ -110,11 +129,21 @@ class ImagedClusters(FoundationCentral):
                 spec[k] = v
         return spec
 
-    def _build_spec_hypervisor_iso_details(self, payload, value):
-        hiso = self._get_default_hypervisor_iso_details(value)
-        payload["hypervisor_iso_details"] = hiso
-        return payload, None
-        
+    def _get_default_network_settings(self, cnsettings):
+        spec= {}
+        default_spec= {
+            "cvm_dns_servers": [],
+            "hypervisor_dns_servers" : [],
+            "cvm_ntp_servers": [],
+            "hypervisor_ntp_servers":[]
+        }
+
+        for k in default_spec:
+            v = cnsettings.get(k)
+            if v:
+                spec[k]= v
+        return spec
+
     def _get_default_nodes_spec(self, node):
         spec = {}
         default_spec = {
@@ -130,7 +159,7 @@ class ImagedClusters(FoundationCentral):
             "cvm_netmask": None,
             "ipmi_ip": None,
             "hypervisor_gateway": None,
-            "hardware_attributes_override": None,
+            "hardware_attributes_override": {},
             "cvm_ram_gb": None,
             "cvm_ip": None,
             "hypervisor_ip": None,
@@ -139,36 +168,8 @@ class ImagedClusters(FoundationCentral):
         }
 
         for k in default_spec:
-            v = node.get(k)
-            if v:
-                spec[k]= v 
-
+            if k in node:
+                v= node.get(k)
+                if v:
+                    spec[k]= v
         return spec
-
-    def _build_spec_nodes_list(self, payload, nodes):
-        nodes_list = []
-
-        for node in nodes:
-            n = self._get_default_nodes_spec(node)
-            nodes_list.append(n)
-
-        payload["nodes_list"] = nodes_list
-
-        return payload, None
-
-
-    def get(self, uuid):
-        resp = self.read(uuid)
-        return resp
-
-    def _build_spec_length(self, payload, value):
-        payload["length"] = value
-        return payload,None
-
-    def _build_spec_offset(self, payload, value):
-        payload["offset"] = value
-        return payload,None
-
-    def _build_spec_filters(self, payload, value):
-        payload["filters"] = value
-        return payload, None 
