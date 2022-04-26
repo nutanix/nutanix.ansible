@@ -146,7 +146,7 @@ class Entity(object):
                 no_response=no_response,
                 timeout=timeout,
             )
-            entities_list.extend(resp["entities"])
+            entities_list.extend(resp[self.entity_type])
             entities_count = len(entities_list)
             data["offset"] = entities_count
             if entities_count != self.entities_limitation:
