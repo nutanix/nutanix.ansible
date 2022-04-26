@@ -347,6 +347,14 @@ class Entity(object):
                 spec[k] = v
         return spec
 
+    @staticmethod
+    def filter_entities(entities, custom_filters):
+        filtered_entities = []
+        for entity in entities:
+            if utils.intersection(entity, custom_filters):
+                filtered_entities.append(entity)
+        return filtered_entities
+
 
 # Read files in chunks and yeild it
 class CreateChunks(object):
@@ -380,15 +388,3 @@ class FileChunksIterator(object):
 
     def __len__(self):
         return self.length
-
-    @staticmethod
-    def parse_filters(filters):
-        return ",".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
-
-    @staticmethod
-    def filter_entities(entities, custom_filters):
-        filtered_entities = []
-        for entity in entities:
-            if utils.intersection(entity, custom_filters):
-                filtered_entities.append(entity)
-        return filtered_entities
