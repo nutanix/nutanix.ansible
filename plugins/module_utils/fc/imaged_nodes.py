@@ -4,7 +4,6 @@ from copy import deepcopy
 
 from .fc import FoundationCentral
 
-
 __metaclass__ = type
 
 
