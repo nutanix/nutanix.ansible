@@ -20,6 +20,9 @@ __metaclass__ = type
 
 
 class Entity(object):
+    entities_limitation = 250
+    entity_type = "entities"
+
     def __init__(
         self,
         module,
@@ -171,7 +174,7 @@ class Entity(object):
             entities_list.extend(resp["entities"])
             entities_count = len(entities_list)
             data["offset"] = entities_count
-            if entities_count != 250:
+            if entities_count != self.entities_limitation:
                 break
         custom_filters = self.module.params.get("custom_filter")
         if custom_filters:
