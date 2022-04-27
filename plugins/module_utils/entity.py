@@ -2,6 +2,8 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+from http.client import IncompleteRead
+
 __metaclass__ = type
 
 import copy
@@ -9,10 +11,10 @@ import json
 import os
 from base64 import b64encode
 
-from ..module_utils import utils
-
 from ansible.module_utils._text import to_text
 from ansible.module_utils.urls import fetch_url
+
+from ..module_utils import utils
 
 try:
     from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -172,6 +174,8 @@ class Entity(object):
                 no_response=no_response,
                 timeout=timeout,
             )
+            if not resp.get(self.entity_type):
+                return resp
             entities_list.extend(resp[self.entity_type])
             entities_count = len(entities_list)
             data["offset"] = entities_count
@@ -263,35 +267,38 @@ class Entity(object):
 
         status_code = info.get("status")
         body = resp.read() if resp else info.get("body")
-        try:
-            resp_json = json.loads(to_text(body)) if body else None
-        except ValueError:
-            resp_json = None
+        while True:
+            try:
+                resp_json = json.loads(to_text(body)) if body else None
+            except ValueError:
+                resp_json = None
+            except IncompleteRead:
+                continue
 
-        if not raise_error:
+            if not raise_error:
+                return resp_json
+
+            if status_code >= 300:
+                err = info.get("msg", "Status code != 2xx")
+                self.module.fail_json(
+                    msg="Failed fetching URL: {0}".format(url),
+                    status_code=status_code,
+                    error=err,
+                    response=resp_json,
+                )
+
+            if no_response:
+                return {"status_code": status_code}
+
+            if not resp_json:
+                self.module.fail_json(
+                    msg="Failed to convert API response to json",
+                    status_code=status_code,
+                    error=body,
+                    response=resp_json,
+                )
+
             return resp_json
-
-        if status_code >= 300:
-            err = info.get("msg", "Status code != 2xx")
-            self.module.fail_json(
-                msg="Failed fetching URL: {0}".format(url),
-                status_code=status_code,
-                error=err,
-                response=resp_json,
-            )
-
-        if no_response:
-            return {"status_code": status_code}
-
-        if not resp_json:
-            self.module.fail_json(
-                msg="Failed to convert API response to json",
-                status_code=status_code,
-                error=body,
-                response=resp_json,
-            )
-
-        return resp_json
 
     # upload file in chunks to the given url
     def _upload_file(
