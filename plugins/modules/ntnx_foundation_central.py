@@ -1,4 +1,11 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2021, Prem Karat
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
@@ -7,129 +14,111 @@ short_description: Nutanix module to imaged Nodes and optionally create cluster
 version_added: 1.1.0
 description: 'Nutanix module to imaged Nodes and optionally create cluster'
 options:
-  nutanix_host:
+  imaged_cluster_uuid:
     description:
-      - Foundation VM hostname or IP address
+      - Cluster external IP
     type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: 8000
-    required: false
   cluster_external_ip:
     description:
       - Cluster external IP
     type: str
     required: false
-    default: None
   storage_node_count:
     description:
       - Number of storage only nodes in the cluster. AHV iso for storage node will be taken from aos package.
     type: int
     required: false
-    default: None
   redundancy_factor:
     description:
       - Redundancy factor of the cluster.
     type: int
     required: true
-    default: 2
   cluster_name:
     description:
       - Name of the cluster.
     type: str
-    required: true
-    default: None
+    default: test
   aos_package_url:
     description:
-      - URL to download AOS package. Required only if imaging is needed.
+      - URL to download AOS package. required only if imaging is needed.
     type: str
     required: true
-    default: None
-  cluster_size:
-    description:
-      - Number of nodes in the cluster.
-    type: int
-    required: false
-    default: None
   aos_package_sha256sum:
     description:
       - Sha256sum of AOS package.
     type: str
     required: false
-    default: None
   timezone:
     description:
       - Timezone to be set on the cluster.
     type: str
     required: false
-    default: None
   skip_cluster_creation:
     description:
     - skip cluster creation. Only imaging needed.
     type: bool
-    required: false
-    default: None
+    default: false
   cluster_size:
     description:
       - Number of nodes in the cluster.
     type: int
     required: false
-    default: None
   common_network_settings:
     description:
       - Common network settings across the nodes in the cluster.
     type: dict
     required: true
     suboptions:
-        - cvm_dns_servers:
-            - description:
+         cvm_dns_servers:
+             description:
                 - List of dns servers for the cvms in the cluster.
-            - type: list
-            - required: false
-        - hypervisor_dns_servers:
-            - description:
+             type: list
+             required: false
+             elements: str
+         hypervisor_dns_servers:
+             description:
                 - List of dns servers for the hypervisors in the cluster.
-            - type: list
-            - required: false
-        - cvm_ntp_servers:
-            - description:
+             type: list
+             required: false
+             elements: str
+         cvm_ntp_servers:
+             description:
                 - List of ntp servers for the cvms in the cluster.
-            - type: list
-            - required: true
-        - hypervisor_ntp_servers:
-            - description:
+             type: list
+             elements: str
+             required: true
+         hypervisor_ntp_servers:
+             description:
                 - List of ntp servers for the hypervisors in the cluster.
-            - type: list
-            - required: true
+             type: list
+             elements: str
+             required: true
   hypervisor_iso_details:
     description:
       - Details of the hypervisor iso.
     type: dict
     required: false
     suboptions:
-        - hyperv_sku:
-            - description:
+         hyperv_sku:
+             description:
                 - SKU of hyperv to be installed if hypervisor_type is hyperv.
-            - type: str
-            - required: false
-        - url:
-            - description:
-                - URL to download hypervisor iso. Required only if imaging is needed.
-            - type: str
-            - required: true
-        - hyperv_product_key:
-            - description:
-                - Product key for hyperv isos. Required only if the hypervisor type is hyperv and product key is mandatory.
-            - type: str
-            - required: false
-        - sha256sum:
-            - description:
+             type: str
+             required: false
+         url:
+             description:
+                - URL to download hypervisor iso. required only if imaging is needed.
+             type: str
+             required: true
+         hyperv_product_key:
+             description:
+                - Product key for hyperv isos. required only if the hypervisor type is hyperv and product key is mandatory.
+             type: str
+             required: false
+         sha256sum:
+             description:
                 - sha256sum of the hypervisor iso
-            - type: str
-            - required: false
+             type: str
+             required: false
   nodes_list:
     description:
       - List of details of nodes out of which the cluster needs to be created.
@@ -137,103 +126,170 @@ options:
     elements : dict
     required: true
     suboptions:
-        - cvm_gateway:
+        discovery_mode:
+                        description:
+                            - write
+                        type: dict
+                        suboptions:
+                            node_serial:
+                                description:
+                                    - write
+                                type: str
+                                required: true
+                            discovery_override:
+                                description:
+                                    - write
+                                type: dict
+                                required: false
+                                suboptions:
+                                    hypervisor_hostname:
+                                        description:
+                                            - Name to be set for the hypervisor host.
+                                        type: str
+                                        required: false
+                                    hypervisor_ip:
+                                        description:
+                                            - write
+                                        type: str
+                                        required: false
+                                    cvm_ip:
+                                        description:
+                                            - IP address to be set for the cvm on the node.
+                                        type: str
+                                        required: false
+                                    ipmi_ip:
+                                        description:
+                                            - IP address to be set for the ipmi of the node.
+                                        type: str
+                                        required: false
+                                    imaged_node_uuid:
+                                        description:
+                                            - UUID of the node.
+                                        type: str
+                                        required: false
+                                    ipmi_netmask:
+                                        description:
+                                            - Netmask of the ipmi.
+                                        type: str
+                                        required: false
+                                    ipmi_gateway:
+                                        description:
+                                            - Gateway of the ipmi.
+                                        type: str
+                                    hardware_attributes_override:
+                                        description:
+                                            - Hardware attributes override json for the node.
+                                        type: dict
+        manual_mode:
             description:
-                - Gateway of the cvm.
-            type: str
-            required: true
-        - ipmi_netmask:
-            description:
-                - Netmask of the ipmi.
-            type: str
-            required: true
-        - rdma_passthrough:
-            description:
-                - Passthrough RDMA nic to CVM if possible, default to false.
-            type: bool
-            required: false
-            default: false
-        - imaged_node_uuid:
-            description:
-                - UUID of the node.
-            type: str
-            required: true
-        - cvm_vlan_id:
-            description:
-                - Vlan tag of the cvm, if the cvm is on a vlan.
-            type: int
-            required: false
-            default: None
-        - hypervisor_type:
-            description:
-                - Type of hypervisor to be installed.
-            type: str
-            required: true
-            choices:
-                - kvm
-                - esx
-                - hyperv
-        - image_now:
-            description:
-                - True, if the node should be imaged, False, otherwise.
-            type: str
-            required: false
-            default: true
-        - hypervisor_hostname:
-            description:
-                - Name to be set for the hypervisor host.
-            type: str
-            required: true
-        - hypervisor_netmask:
-            description:
-                - Netmask of the hypervisor.
-            type: str
-            required: true
-        - cvm_netmask:
-            description:
-                - Netmask of the cvm.
-            type: str
-            required: true
-        - ipmi_ip:
-            description:
-                - IP address to be set for the ipmi of the node.
-            type: str
-            required: true
-        - hypervisor_gateway:
-            description:
-                - Gateway of the hypervisor.
-            type: str
-            required: true
-        - hardware_attributes_override:
-            description:
-                - Hardware attributes override json for the node.
+                    - write
             type: dict
-            elements: dict
-            required: false
-        - cvm_ram_gb:
-            description:
-                - Amount of memory to be assigned for the cvm.
-            type: int
-            required: false
-        - cvm_ip:
-            description:
-                - IP address to be set for the cvm on the node.
-            type: str
-            required: true
-        - use_existing_network_settings:
-            description:
-                - Decides whether to use the existing network settings for the node. If True, the existing network settings of the node will be used during cluster creation.
-                 If False, then client must provide new network settings. If all nodes are booted in phoenix, this field is, by default, considered to be False.
-            type: bool
-            required: false
-            default: false
-        - ipmi_gateway:
-            description:
-                - Gateway of the ipmi.
-            type: str
-            required: true
-
+            suboptions:
+                hypervisor_ip:
+                    description:
+                        - write
+                    type: str
+                    required: true
+                cvm_gateway:
+                    description:
+                        - Gateway of the cvm.
+                    type: str
+                    required: true
+                ipmi_netmask:
+                    description:
+                        - Netmask of the ipmi.
+                    type: str
+                    required: true
+                rdma_passthrough:
+                    description:
+                        - Passthrough RDMA nic to CVM if possible, default to false.
+                    type: bool
+                    required: false
+                    default: false
+                imaged_node_uuid:
+                    description:
+                        - UUID of the node.
+                    type: str
+                    required: true
+                cvm_vlan_id:
+                    description:
+                        - Vlan tag of the cvm, if the cvm is on a vlan.
+                    type: int
+                    required: false
+                hypervisor_type:
+                    description:
+                        - Type of hypervisor to be installed.
+                    type: str
+                    required: true
+                    choices:
+                        - kvm
+                        - esx
+                        - hyperv
+                image_now:
+                    description:
+                        - True, if the node should be imaged, False, otherwise.
+                    type: bool
+                    required: false
+                    default: true
+                hypervisor_hostname:
+                    description:
+                        - Name to be set for the hypervisor host.
+                    type: str
+                    required: true
+                hypervisor_netmask:
+                    description:
+                        - Netmask of the hypervisor.
+                    type: str
+                    required: true
+                cvm_netmask:
+                    description:
+                        - Netmask of the cvm.
+                    type: str
+                    required: true
+                ipmi_ip:
+                    description:
+                        - IP address to be set for the ipmi of the node.
+                    type: str
+                    required: true
+                hypervisor_gateway:
+                    description:
+                        - Gateway of the hypervisor.
+                    type: str
+                    required: true
+                hardware_attributes_override:
+                    description:
+                        - Hardware attributes override json for the node.
+                    type: dict
+                cvm_ram_gb:
+                    description:
+                        - Amount of memory to be assigned for the cvm.
+                    type: int
+                    required: false
+                cvm_ip:
+                    description:
+                        - IP address to be set for the cvm on the node.
+                    type: str
+                    required: true
+                use_existing_network_settings:
+                    description:
+                        - Decides whether to use the existing network settings for the node. If True, the existing network settings of the node will
+                          be used during cluster creation. If False, then client must provide new network settings. If all nodes are booted in phoenix,
+                          this field is, by default, considered to be False.
+                    type: bool
+                    required: false
+                    default: false
+                ipmi_gateway:
+                    description:
+                        - Gateway of the ipmi.
+                    type: str
+                    required: true
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_opperations
 author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
  - Abhishek Chaudhary (@abhimutant)
 """
 
@@ -247,7 +303,7 @@ EXAMPLES = r"""
       validate_certs: false
       cluster_name: "test-cls"
       common_network_settings:
-        cvm_dns_servers:s
+        cvm_dns_servers:
           - xx.xx.xx.xx
         hypervisor_dns_servers:
           - xx.xx.xx.xx
@@ -256,7 +312,7 @@ EXAMPLES = r"""
         hypervisor_ntp_servers:
           - xx.x.x.xx
       nodes_list:
-      // manual based nodes
+      # manual based nodes
         - manual_mode:
             cvm_gateway: "10.xx.xx.xx"
             cvm_netmask: "xx.xx.xx.xx"
@@ -287,7 +343,7 @@ EXAMPLES = r"""
             ipmi_ip: "10.x.xx.xx"
             image_now: true
             hypervisor_type: "kvm"
-        // discovery nodes based on node serial
+        # discovery nodes based on node serial
         - discovery_mode:
             node_serial: "<node-serial>"
         - discovery_mode:
@@ -302,172 +358,174 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-Sample Response For only Imaging.
-  description: Sample response when only Imaging is done.
-  returned: true
-  type: list
-  "response": {
-        "archived": false,
-        "cluster_external_ip": "",
-        "cluster_name": "test-cls",
-        "cluster_size": 0,
-        "cluster_status": {
-            "aggregate_percent_complete": 100,
-            "cluster_creation_started": true,
-            "cluster_progress_details": {
-                "message_list": null
-            },
-            "current_foundation_ip": "10.x.xx.xx,
-            "foundation_session_id": "<session-id>",
-            "imaging_stopped": true,
-            "intent_picked_up": true,
-            "node_progress_details": [
-                {
-                    "imaged_node_uuid": "<node-uuid-1>",
-                    "imaging_stopped": true,
-                    "intent_picked_up": true,
-                    "message_list": [],
-                    "percent_complete": 100,
-                    "status": "All operations completed successfully"
-                },
-                {
-                    "imaged_node_uuid": "<node-uuid-2>",
-                    "imaging_stopped": true,
-                    "intent_picked_up": true,
-                    "message_list": [],
-                    "percent_complete": 100,
-                    "status": "All operations completed successfully"
-                }
-            ]
-        },
-        "common_network_settings": {
-            "cvm_dns_servers": [
-                "10.x.xx.xx"
-            ],
-            "cvm_ntp_servers": [
-                ""
-            ],
-            "hypervisor_dns_servers": [
-                "10.x.xx.xx"
-            ],
-            "hypervisor_ntp_servers": [
-                ""
-            ]
-        },
-        "created_timestamp": "2022-04-26T03:25:02.000-07:00",
-        "current_time": "2022-04-26T03:40:03.000-07:00",
-        "destroyed": false,
-        "foundation_init_config": {
-            "blocks": [
-                {
-                    "block_id": "<block-id>",
-                    "nodes": [
-                        {
-                            "cvm_ip": "10.x.xx.xx",
-                            "fc_imaged_node_uuid": "<imaged-node-uuid>",
-                            "hypervisor": "kvm",
-                            "hypervisor_hostname": "HOST-1",
-                            "hypervisor_ip": "10.x.xx.xx",
-                            "image_now": false,
-                            "ipmi_ip": "10.x.xx.xx",
-                            "ipv6_address": "<node-ipv6-address>",
-                            "node_position": "D",
-                            "node_serial": "<node-serial>"
-                        },
-                        {
-                            "cvm_ip": "10.x.xx.xx",
-                            "fc_imaged_node_uuid": "<imaged-node-uuid>",
-                            "hypervisor": "kvm",
-                            "hypervisor_hostname": "HOST-2",
-                            "hypervisor_ip": "10.x.xx.xx",
-                            "image_now": false,
-                            "ipmi_ip": "10.x.xx.xx",
-                            "ipv6_address": "<node-ipv6-address>",
-                            "node_position": "E",
-                            "node_serial": "<node-serial>"
-                        }
-                    ]
-                }
-            ],
-            "clusters": [],
-            "cvm_gateway": "10.x.xx.xx",
-            "cvm_netmask": "xx.xx.xx.xx",
-            "dns_servers": "10.x.xx.xx",
-            "hyperv_product_key": "",
-            "hyperv_sku": "",
-            "hypervisor_gateway": "10.x.xx.xx",
-            "hypervisor_iso_url": {
-                "hypervisor_type": "",
-                "sha256sum": "",
-                "url": ""
-            },
-            "hypervisor_isos": null,
-            "hypervisor_netmask": "xx.xx.xx.xx",
-            "ipmi_gateway": "10.x.xx.xx",
-            "ipmi_netmask": "10.x.xx.xx",
-            "nos_package_url": {
-                "sha256sum": "",
-                "url": "<url>"
-            }
-        },
-        "foundation_init_node_uuid": "<foundation-uuid>",
-        "imaged_cluster_uuid": "<imaged-cluster-uuid>",
-        "imaged_node_uuid_list": [
-            "<node-uuid-1>",
-            "<node-uuid-2>"
-        ],
-        "redundancy_factor": 2,
-        "skip_cluster_creation": true,
-        "storage_node_count": 0,
-        "updated_timestamp": "2022-04-26T03:36:02.000-07:00",
-        "workflow_type": "FOUNDATION_WORKFLOW"
-    }
-}
+# respone:
+#   description: Sample response when only Imaging is done.
+#   returned: true
+#   type: list
+#   "response": {
+#         "archived": false,
+#         "cluster_external_ip": "",
+#         "cluster_name": "test-cls",
+#         "cluster_size": 0,
+#         "cluster_status": {
+#             "aggregate_percent_complete": 100,
+#             "cluster_creation_started": true,
+#             "cluster_progress_details": {
+#                 "message_list": null
+#             },
+#             "current_foundation_ip": "10.x.xx.xx,
+#             "foundation_session_id": "<session-id>",
+#             "imaging_stopped": true,
+#             "intent_picked_up": true,
+#             "node_progress_details": [
+#                 {
+#                     "imaged_node_uuid": "<node-uuid-1>",
+#                     "imaging_stopped": true,
+#                     "intent_picked_up": true,
+#                     "message_list": [],
+#                     "percent_complete": 100,
+#                     "status": "All operations completed successfully"
+#                 },
+#                 {
+#                     "imaged_node_uuid": "<node-uuid-2>",
+#                     "imaging_stopped": true,
+#                     "intent_picked_up": true,
+#                     "message_list": [],
+#                     "percent_complete": 100,
+#                     "status": "All operations completed successfully"
+#                 }
+#             ]
+#         },
+#         "common_network_settings": {
+#             "cvm_dns_servers": [
+#                 "10.x.xx.xx"
+#             ],
+#             "cvm_ntp_servers": [
+#                 ""
+#             ],
+#             "hypervisor_dns_servers": [
+#                 "10.x.xx.xx"
+#             ],
+#             "hypervisor_ntp_servers": [
+#                 ""
+#             ]
+#         },
+#         "created_timestamp": "2022-04-26T03:25:02.000-07:00",
+#         "current_time": "2022-04-26T03:40:03.000-07:00",
+#         "destroyed": false,
+#         "foundation_init_config": {
+#             "blocks": [
+#                 {
+#                     "block_id": "<block-id>",
+#                     "nodes": [
+#                         {
+#                             "cvm_ip": "10.x.xx.xx",
+#                             "fc_imaged_node_uuid": "<imaged-node-uuid>",
+#                             "hypervisor": "kvm",
+#                             "hypervisor_hostname": "HOST-1",
+#                             "hypervisor_ip": "10.x.xx.xx",
+#                             "image_now": false,
+#                             "ipmi_ip": "10.x.xx.xx",
+#                             "ipv6_address": "<node-ipv6-address>",
+#                             "node_position": "D",
+#                             "node_serial": "<node-serial>"
+#                         },
+#                         {
+#                             "cvm_ip": "10.x.xx.xx",
+#                             "fc_imaged_node_uuid": "<imaged-node-uuid>",
+#                             "hypervisor": "kvm",
+#                             "hypervisor_hostname": "HOST-2",
+#                             "hypervisor_ip": "10.x.xx.xx",
+#                             "image_now": false,
+#                             "ipmi_ip": "10.x.xx.xx",
+#                             "ipv6_address": "<node-ipv6-address>",
+#                             "node_position": "E",
+#                             "node_serial": "<node-serial>"
+#                         }
+#                     ]
+#                 }
+#             ],
+#             "clusters": [],
+#             "cvm_gateway": "10.x.xx.xx",
+#             "cvm_netmask": "xx.xx.xx.xx",
+#             "dns_servers": "10.x.xx.xx",
+#             "hyperv_product_key": "",
+#             "hyperv_sku": "",
+#             "hypervisor_gateway": "10.x.xx.xx",
+#             "hypervisor_iso_url": {
+#                 "hypervisor_type": "",
+#                 "sha256sum": "",
+#                 "url": ""
+#             },
+#             "hypervisor_isos": null,
+#             "hypervisor_netmask": "xx.xx.xx.xx",
+#             "ipmi_gateway": "10.x.xx.xx",
+#             "ipmi_netmask": "10.x.xx.xx",
+#             "nos_package_url": {
+#                 "sha256sum": "",
+#                 "url": "<url>"
+#             }
+#         },
+#         "foundation_init_node_uuid": "<foundation-uuid>",
+#         "imaged_cluster_uuid": "<imaged-cluster-uuid>",
+#         "imaged_node_uuid_list": [
+#             "<node-uuid-1>",
+#             "<node-uuid-2>"
+#         ],
+#         "redundancy_factor": 2,
+#         "skip_cluster_creation": true,
+#         "storage_node_count": 0,
+#         "updated_timestamp": "2022-04-26T03:36:02.000-07:00",
+#         "workflow_type": "FOUNDATION_WORKFLOW"
+#     }
+# }
 
 """
 
-import time
+import time  # noqa: E402
 
-from ..module_utils.base_module import BaseModule
-from ..module_utils.fc.imaged_clusters import ImagedCluster
-from ..module_utils.fc.imaged_nodes import ImagedNode
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.fc.imaged_clusters import ImagedCluster  # noqa: E402
+from ..module_utils.fc.imaged_nodes import ImagedNode  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
     common_network_setting_spec_dict = dict(
-        cvm_dns_servers=dict(type="list"),
-        hypervisor_dns_servers=dict(type="list"),
-        cvm_ntp_servers=dict(type="list", Required=True),
-        hypervisor_ntp_servers=dict(type="list", Required=True),
+        cvm_dns_servers=dict(type="list", elements="str"),
+        hypervisor_dns_servers=dict(type="list", elements="str"),
+        cvm_ntp_servers=dict(type="list", required=True, elements="str"),
+        hypervisor_ntp_servers=dict(type="list", required=True, elements="str"),
     )
 
     hypervisor_iso_details_spec_dict = dict(
         hyperv_sku=dict(type="str", default=None),
-        url=dict(type="str", Required=True),
-        hyperv_product_key=dict(type="str", default=None),
+        url=dict(type="str", required=True),
+        hyperv_product_key=dict(type="str", default=None, no_log=True),
         sha256sum=dict(type="str", default=None),
     )
 
     manual_node_spec_dict = dict(
-        cvm_gateway=dict(type="str", Required=True),
-        ipmi_netmask=dict(type="str", Required=True),
-        rdma_passthrough=dict(type="bool", Default=False),
-        imaged_node_uuid=dict(type="str", Required=True),
+        cvm_gateway=dict(type="str", required=True),
+        ipmi_netmask=dict(type="str", required=True),
+        rdma_passthrough=dict(type="bool", default=False),
+        imaged_node_uuid=dict(type="str", required=True),
         cvm_vlan_id=dict(type="int", default=None),
-        hypervisor_type=dict(type="str", Required=True, choice="[kvm, esx, hyperv]"),
+        hypervisor_type=dict(
+            type="str", required=True, choices=["kvm", "esx", "hyperv"]
+        ),
         image_now=dict(type="bool", default=True),
-        hypervisor_hostname=dict(type="str", Required=True),
-        hypervisor_netmask=dict(type="str", Required=True),
-        cvm_netmask=dict(type="str", Required=True),
-        ipmi_ip=dict(type="str", Required=True),
-        hypervisor_gateway=dict(type="str", Required=True),
+        hypervisor_hostname=dict(type="str", required=True),
+        hypervisor_netmask=dict(type="str", required=True),
+        cvm_netmask=dict(type="str", required=True),
+        ipmi_ip=dict(type="str", required=True),
+        hypervisor_gateway=dict(type="str", required=True),
         hardware_attributes_override=dict(type="dict", default=None),
         cvm_ram_gb=dict(type="int", default=None),
-        cvm_ip=dict(type="str", Required=True),
-        hypervisor_ip=dict(type="str", Required=True),
+        cvm_ip=dict(type="str", required=True),
+        hypervisor_ip=dict(type="str", required=True),
         use_existing_network_settings=dict(type="bool", default=False),
-        ipmi_gateway=dict(type="str", Required=True),
+        ipmi_gateway=dict(type="str", required=True),
     )
 
     discovery_override = dict(
@@ -484,7 +542,7 @@ def get_module_spec():
     node_mode_constraints = [("manual_mode", "discovery_mode")]
 
     discovery_mode_spec_dict = dict(
-        node_serial=dict(type="str", Required=True),
+        node_serial=dict(type="str", required=True),
         discovery_override=dict(
             type="dict", required=False, options=discovery_override
         ),
@@ -497,14 +555,14 @@ def get_module_spec():
     module_args = dict(
         cluster_external_ip=dict(type="str", default=None),
         storage_node_count=dict(type="int", default=None),
-        redundancy_factor=dict(type="int", Required=True),
+        redundancy_factor=dict(type="int", required=True),
         cluster_name=dict(type="str", default="test"),
-        aos_package_url=dict(type="str", Required=True),
+        aos_package_url=dict(type="str", required=True),
         cluster_size=dict(type="int", default=None),
         aos_package_sha256sum=dict(type="str", default=None),
         timezone=dict(type="str", default=None),
         common_network_settings=dict(
-            type="dict", Required=True, options=common_network_setting_spec_dict
+            type="dict", required=True, options=common_network_setting_spec_dict
         ),
         hypervisor_iso_details=dict(
             type="dict", options=hypervisor_iso_details_spec_dict
@@ -569,7 +627,7 @@ def wait_till_node_available(module, node_uuid, node_state):
         new_node_state = node_detail["node_state"]
         if new_node_state != "STATE_AVAILABLE":
             if time.time() > timeout:
-                return (None, "Timeout. Node is in {}\n".format(new_node_state))
+                return (None, "Timeout. Node is in {0}\n".format(new_node_state))
             time.sleep(delay)
         else:
             node_state = new_node_state
@@ -617,7 +675,7 @@ def wait_for_completion(module, uuid):
 
 
 def _get_progress_error_status(progress):
-    return "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
+    return "Imaging stopped before completion.\nClusters: {0}\nNodes: {1}".format(
         _get_cluster_progress_messages(
             progress, "cluster_progress_details", "cluster_name"
         ),
@@ -631,9 +689,9 @@ def _get_cluster_progress_messages(progress, entity_type, entity_name):
     res = ""
     cluster = progress["cluster_status"][entity_type]
     if cluster.get(entity_name):
-        res += "cluster_name: {}\n".format(cluster[entity_name])
+        res += "cluster_name: {0}\n".format(cluster[entity_name])
     if cluster.get("status"):
-        res += "status:\n{}\n".format(cluster["status"])
+        res += "status:\n{0}\n".format(cluster["status"])
 
     return res
 
@@ -643,8 +701,8 @@ def _get_node_progress_messages(progress, entity_type, entity_name):
     nodes = progress["cluster_status"][entity_type]
     if nodes:
         for c in nodes:
-            res += "node_uuid: {}\n".format(c[entity_name])
-            res += "status:\n{}\n".format(c["status"])
+            res += "node_uuid: {0}\n".format(c[entity_name])
+            res += "status:\n{0}\n".format(c["status"])
     return res
 
 
