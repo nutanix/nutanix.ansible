@@ -57,7 +57,7 @@ options:
 
 author:
  - Abhishek Chaudhary (@abhimutant)
-""" #noqa: 501
+"""
 
 EXAMPLES = r"""
   - name: Get node details using uuid
@@ -78,7 +78,7 @@ EXAMPLES = r"""
         node_state: STATE_AVAILABLE
       length: 5
       offset: 1
-""" #noqa: 501
+"""
 
 RETURN = r"""
 Imaged_Node_List
@@ -139,13 +139,14 @@ Imaged_Node_List
         }
     }
 
-""" #noqa: 501
+"""
 
-from ..module_utils.base_module import BaseModule
-from ..module_utils.fc.imaged_nodes import ImagedNode
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.fc.imaged_nodes import ImagedNode  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 __metaclass__ = type
+
 
 def get_module_spec():
     module_args = dict(

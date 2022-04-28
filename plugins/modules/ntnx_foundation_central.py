@@ -222,9 +222,9 @@ options:
             required: true
         - use_existing_network_settings:
             description:
-                - Decides whether to use the existing network settings for the node. 
-                If True, the existing network settings of the node will be used during cluster creation.
-                If False, then client must provide new network settings. If all nodes are booted in phoenix, this field is, by default, considered to be False.
+              - Decides whether to use the existing network settings for the node.
+              If True, the existing network settings of the node will be used during cluster creation.
+              If False, then client must provide new network settings. If all nodes are booted in phoenix, this field is, by default, considered to be False.
             type: bool
             required: false
             default: false
@@ -236,7 +236,7 @@ options:
 
 author:
  - Abhishek Chaudhary (@abhimutant)
-"""  #noqa: 501
+"""
 
 EXAMPLES = r"""
   - name: image nodes and create cluster
@@ -300,7 +300,7 @@ EXAMPLES = r"""
       redundancy_factor: 2
       skip_cluster_creation: true
       aos_package_url: "<aos_package_url>"
-""" #noqa: 501
+"""
 
 RETURN = r"""
 Sample Response For only Imaging.
@@ -425,16 +425,17 @@ Sample Response For only Imaging.
     }
 }
 
-""" #noqa: 501
+"""
 
-import time
+import time  # noqa: E402
 
-from ..module_utils.base_module import BaseModule
-from ..module_utils.fc.imaged_clusters import ImagedCluster
-from ..module_utils.fc.imaged_nodes import ImagedNode
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.fc.imaged_clusters import ImagedCluster  # noqa: E402
+from ..module_utils.fc.imaged_nodes import ImagedNode  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 __metaclass__ = type
+
 
 def get_module_spec():
     common_network_setting_spec_dict = dict(

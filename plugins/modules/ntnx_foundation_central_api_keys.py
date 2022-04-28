@@ -26,7 +26,7 @@ options:
 
 author:
  - Abhishek Chaudhary (@abhimutant)
-""" #noqa: 501
+"""
 
 EXAMPLES = r"""
   - name: Create API key
@@ -36,7 +36,7 @@ EXAMPLES = r"""
       nutanix_password: "{{ password }}"
       validate_certs: False
       alias: "test"
-""" #noqa: 501
+"""
 
 RETURN = r"""
 API_key:
@@ -52,13 +52,14 @@ API_key:
                 "key_uuid": "{{ uuid }}"
             }
         ],
-""" #noqa: 501
+"""
 
-from ..module_utils.base_module import BaseModule
-from ..module_utils.fc.api_keys import ApiKey
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.fc.api_keys import ApiKey  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 __metaclass__ = type
+
 
 def get_module_spec():
     module_args = dict(alias=dict(type=str))
