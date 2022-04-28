@@ -222,8 +222,9 @@ options:
             required: true
         - use_existing_network_settings:
             description:
-                - Decides whether to use the existing network settings for the node. If True, the existing network settings of the node will be used during cluster creation.
-                 If False, then client must provide new network settings. If all nodes are booted in phoenix, this field is, by default, considered to be False.
+                - Decides whether to use the existing network settings for the node. 
+                If True, the existing network settings of the node will be used during cluster creation.
+                If False, then client must provide new network settings. If all nodes are booted in phoenix, this field is, by default, considered to be False.
             type: bool
             required: false
             default: false
@@ -235,7 +236,7 @@ options:
 
 author:
  - Abhishek Chaudhary (@abhimutant)
-"""
+"""  #noqa: 501
 
 EXAMPLES = r"""
   - name: image nodes and create cluster
@@ -299,7 +300,7 @@ EXAMPLES = r"""
       redundancy_factor: 2
       skip_cluster_creation: true
       aos_package_url: "<aos_package_url>"
-"""
+""" #noqa: 501
 
 RETURN = r"""
 Sample Response For only Imaging.
@@ -424,7 +425,7 @@ Sample Response For only Imaging.
     }
 }
 
-"""
+""" #noqa: 501
 
 import time
 
@@ -433,6 +434,7 @@ from ..module_utils.fc.imaged_clusters import ImagedCluster
 from ..module_utils.fc.imaged_nodes import ImagedNode
 from ..module_utils.utils import remove_param_with_none_value
 
+__metaclass__ = type
 
 def get_module_spec():
     common_network_setting_spec_dict = dict(
@@ -569,7 +571,7 @@ def wait_till_node_available(module, node_uuid, node_state):
         new_node_state = node_detail["node_state"]
         if new_node_state != "STATE_AVAILABLE":
             if time.time() > timeout:
-                return (None, "Timeout. Node is in {}\n".format(new_node_state))
+                return (None, "Timeout. Node is in {0}\n".format(new_node_state))
             time.sleep(delay)
         else:
             node_state = new_node_state
@@ -617,7 +619,7 @@ def wait_for_completion(module, uuid):
 
 
 def _get_progress_error_status(progress):
-    return "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
+    return "Imaging stopped before completion.\nClusters: {0}\nNodes: {1}".format(
         _get_cluster_progress_messages(
             progress, "cluster_progress_details", "cluster_name"
         ),
@@ -631,9 +633,9 @@ def _get_cluster_progress_messages(progress, entity_type, entity_name):
     res = ""
     cluster = progress["cluster_status"][entity_type]
     if cluster.get(entity_name):
-        res += "cluster_name: {}\n".format(cluster[entity_name])
+        res += "cluster_name: {0}\n".format(cluster[entity_name])
     if cluster.get("status"):
-        res += "status:\n{}\n".format(cluster["status"])
+        res += "status:\n{0}\n".format(cluster["status"])
 
     return res
 
@@ -643,8 +645,8 @@ def _get_node_progress_messages(progress, entity_type, entity_name):
     nodes = progress["cluster_status"][entity_type]
     if nodes:
         for c in nodes:
-            res += "node_uuid: {}\n".format(c[entity_name])
-            res += "status:\n{}\n".format(c["status"])
+            res += "node_uuid: {0}\n".format(c[entity_name])
+            res += "status:\n{0}\n".format(c["status"])
     return res
 
 

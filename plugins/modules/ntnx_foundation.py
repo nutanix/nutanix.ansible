@@ -274,7 +274,8 @@ options:
                                 required: false
                             vswitches:
                                 description:
-                                - vswitch configuration. Foundation will auto-calculate this in most cases. Provide it only if you want to override foundation's defaults.
+                                - vswitch configuration. Foundation will auto-calculate this in most cases.
+                                  Provide it only if you want to override foundation's defaults.
                                 type: list
                                 elements: dict
                                 required: false
@@ -508,7 +509,8 @@ options:
                                 required: false
                             vswitches:
                                 description:
-                                - vswitch configuration. Foundation will auto-calculate this in most cases. Provide it only if you want to override foundation's defaults.
+                                - vswitch configuration. Foundation will auto-calculate this in most cases.
+                                  Provide it only if you want to override foundation's defaults.
                                 type: list
                                 elements: dict
                                 required: false

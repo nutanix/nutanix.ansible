@@ -30,7 +30,7 @@ options:
     default: None
 author:
  - Abhishek Chaudhary (@abhimutant)
-"""
+""" #noqa: 501
 
 EXAMPLES = r"""
   - name: Get API key with alias filter
@@ -55,7 +55,7 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-"""
+""" #noqa: 501
 
 RETURN = r"""
 API_key:
@@ -71,7 +71,7 @@ API_key:
                 "key_uuid": "{{ uuid }}"
             }
         ],
-"""
+""" #noqa: 501
 
 from ..module_utils.base_module import BaseModule
 from ..module_utils.fc.api_keys import ApiKey

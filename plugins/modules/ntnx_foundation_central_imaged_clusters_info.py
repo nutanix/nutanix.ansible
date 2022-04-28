@@ -52,7 +52,7 @@ options:
 
 author:
  - Abhishek Chaudhary (@abhimutant)
-"""
+""" #noqa: 501
 
 EXAMPLES = r"""
   - name: Get cluster details using uuid
@@ -73,7 +73,7 @@ EXAMPLES = r"""
         archived: false
       length: 5
       offset: 1
-"""
+""" #noqa: 501
 
 RETURN = r"""
 Imaged_Clusters_list
@@ -246,12 +246,13 @@ Imaged_Clusters_list
         }
     }
 
-"""
+""" #noqa: 501
 
 from ..module_utils.base_module import BaseModule
 from ..module_utils.fc.imaged_clusters import ImagedCluster
 from ..module_utils.utils import remove_param_with_none_value
 
+__metaclass__ = type
 
 def get_module_spec():
     module_args = dict(
