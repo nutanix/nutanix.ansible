@@ -179,7 +179,7 @@ class Entity(object):
             entities_list.extend(resp[self.entity_type])
             entities_count = len(entities_list)
             data["offset"] = entities_count
-            if entities_count != self.entities_limitation:
+            if len(resp[self.entity_type]) != self.entities_limitation:
                 break
         custom_filters = self.module.params.get("custom_filter")
         if custom_filters:
