@@ -5,8 +5,8 @@
 - name: Image upload with esx installer_type
   ntnx_foundation_image_upload:
     state: present
-    source: "/home/alaa-bish/temp.tar.gz"
-    filename: "temptar_dont_use.iso"
+    source: "~/nutanix_installer_package_pc-release-fraser-6.1-stable-25ea31cbe83c3350e9d5b855ebbdd9889393110c-x86_64.tar.gz"
+    filename: "dont_use10_nutanix_installer_package-release-master-f4d938014320ce2ea7e25918bc0d4c1457bb255c-x86_64.tar.gz"
     installer_type: esx
     timeout: 3600
   register: result
@@ -23,7 +23,7 @@
 - name: Delete Image with esx installer_type
   ntnx_foundation_image_upload:
     state: absent
-    filename: "temptar_dont_use.iso"
+    filename: "dont_use10_nutanix_installer_package-release-master-f4d938014320ce2ea7e25918bc0d4c1457bb255c-x86_64.tar.gz"
     installer_type: esx
   register: result
 
@@ -39,8 +39,8 @@
 - name: Image upload with kvm installer_type
   ntnx_foundation_image_upload:
     state: present
-    source: "/home/alaa-bish/temp.tar.gz"
-    filename: "temptar_dont_use.iso"
+    source: "~/nutanix_installer_package_pc-release-fraser-6.1-stable-25ea31cbe83c3350e9d5b855ebbdd9889393110c-x86_64.tar.gz"
+    filename:  "dont_use10_nutanix_installer_package-release-master-f4d938014320ce2ea7e25918bc0d4c1457bb255c-x86_64.tar.gz"
     installer_type: kvm
     timeout: 3600
   register: result
@@ -57,7 +57,7 @@
 - name: Delete Image with kvm installer_type
   ntnx_foundation_image_upload:
     state: absent
-    filename: "temptar_dont_use.iso"
+    filename: "dont_use10_nutanix_installer_package-release-master-f4d938014320ce2ea7e25918bc0d4c1457bb255c-x86_64.tar.gz"
     installer_type: kvm
   register: result
 
