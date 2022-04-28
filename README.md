@@ -87,11 +87,16 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_foundation | Image nodes and create new cluster. |
 | ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
+| ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |
 | ntnx_foundation_aos_packages_info | List the AOS packages uploaded to Foundation. |
 | ntnx_foundation_discover_nodes_info | List the nodes discovered by Foundation. |
 | ntnx_foundation_hypervisor_images_info | List the hypervisor images uploaded to Foundation. |
-| ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |
 | ntnx_foundation_node_network_info | Get node network information discovered by Foundation. |
+| ntnx_foundation_central | Create a cluster out of nodes registered with Foundation Central. |
+| ntnx_foundation_central_api_keys | Create a new api key which will be used by remote nodes to authenticate with Foundation Central. |
+| ntnx_foundation_central_api_keys_info | List all the api keys created in Foundation Central. |
+| ntnx_foundation_central_imaged_clusters_info | List all the clusters created using Foundation Central. |
+| ntnx_foundation_central_imaged_nodes_info | List all the nodes registered with Foundation Central. |
 
 ## Inventory Plugins
 

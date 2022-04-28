@@ -1,3 +1,13 @@
+## v1.1.0-beta.2 (28 Apr 2022)
+
+**Features**
+
+- Ansible module for Foundation Central
+- Ansible module for API Keys to authenticate with FC
+- Ansible info module for API Keys
+- Ansible info module for Imaged Clusters
+- Ansible info module for Imaged Nodes
+
 ## v1.1.0-beta.1 (11 Apr 2022)
 
 **Features**
