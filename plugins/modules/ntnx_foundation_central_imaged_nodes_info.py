@@ -19,37 +19,30 @@ options:
       - Return the node details given it's uuid
     type: str
     required: false
-    default: None
-  length:
-    description:
-      - Return the list of imaged nodes upto the length or by default 10.
-    type: int
-    required: false
-    default: 10
-  offset:
-    description:
-      - Returns the list of imaged nodes starting with offset index.
-    type: int
-    required: false
-    default: 0
   filters:
     description:
       - Returns the list of imaged nodes based on node state
     type: dict
     required: false
     suboptions:
-        node_state:
-            description:
-              - Returns the nodes list given its node state
-            type: str
-            choices:
-                - STATE_AVAILABLE
-                - STATE_UNAVAILABLE
-                - STATE_DISCOVERING
-                - STATE_IMAGING
-            required: false
-            default: false
-    default: None
+      node_state:
+        description:
+          - Returns the nodes list given its node state
+        type: str
+        choices:
+          - STATE_AVAILABLE
+          - STATE_UNAVAILABLE
+          - STATE_DISCOVERING
+          - STATE_IMAGING
+        required: false
+        default: None
+  custom_filter:
+    description:
+      - Return the list of matching values
+    type: dict
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_opperations
 
 author:
  - Abhishek Chaudhary (@abhimutant)
@@ -77,64 +70,58 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-Imaged_Node_List
-  description: Imaged Node list within Foundation Central
-  return:  true
-  type: list
-  "imaged_nodes": [
-            {
-                "aos_version": "6.1",
-                "api_key_uuid": "<api-key-uuid>",
-                "available": false,
-                "block_serial": "<block_serial>",
-                "created_timestamp": "2021-12-05T22:59:02.000-08:00",
-                "current_time": "2022-04-25T11:58:51.000-07:00",
-                "cvm_gateway": "10.x.xx.xx",
-                "cvm_ip": "10.x.xx.xx",
-                "cvm_ipv6": "<ipv6>",
-                "cvm_netmask": "xx.xx.xx.xx",
-                "cvm_up": true,
-                "cvm_uuid": "<cvm-uuid>",
-                "cvm_vlan_id": 0,
-                "foundation_version": "5.1",
-                "hardware_attributes": {
-                    "default_workload": "vdi",
-                    "is_xpress_node": true,
-                    "lcm_family": "<lcm-family>",
-                    "maybe_1GbE_only": true,
-                    "robo_mixed_hypervisor": true
-                },
-                "hypervisor_gateway": "10.x.xx.xx",
-                "hypervisor_hostname": "KENOBI8-1",
-                "hypervisor_ip": "10.x.xx.xx",
-                "hypervisor_netmask": "xx.xx.xx.xx",
-                "hypervisor_type": "kvm",
-                "hypervisor_version": "<hypervisor-version>",
-                "imaged_cluster_uuid": "<imaged-cluster-uuid>",
-                "imaged_node_uuid": "<imaged-node-uuid>",
-                "ipmi_gateway": "10.x.xx.xx",
-                "ipmi_ip": "10.x.xx.xx",
-                "ipmi_netmask": "xx.xx.xx.xx",
-                "ipv6_interface": "eth0",
-                "latest_hb_ts_list": [],
-                "model": "<model>",
-                "node_position": "A",
-                "node_serial": "<node-serial>",
-                "node_state": "STATE_UNAVAILABLE",
-                "node_type": "on-prem",
-                "object_version": 26,
-                "supported_features": [
-                    "API_KEY_DELETION",
-                    "AHV_ISO_URL"
-                ]
-            }
-        ],
-        "metadata": {
-            "length": 1,
-            "total_matches": 1
-        }
-    }
-
+"imaged_nodes": [
+  {
+    "aos_version": "6.1",
+    "api_key_uuid": "<api-key-uuid>",
+    "available": false,
+    "block_serial": "<block_serial>",
+    "created_timestamp": "2021-12-05T22:59:02.000-08:00",
+    "current_time": "2022-04-25T11:58:51.000-07:00",
+    "cvm_gateway": "10.x.xx.xx",
+    "cvm_ip": "10.x.xx.xx",
+    "cvm_ipv6": "<ipv6>",
+    "cvm_netmask": "xx.xx.xx.xx",
+    "cvm_up": true,
+    "cvm_uuid": "<cvm-uuid>",
+    "cvm_vlan_id": 0,
+    "foundation_version": "5.1",
+    "hardware_attributes": {
+      "default_workload": "vdi",
+      "is_xpress_node": true,
+      "lcm_family": "<lcm-family>",
+      "maybe_1GbE_only": true,
+      "robo_mixed_hypervisor": true
+    },
+    "hypervisor_gateway": "10.x.xx.xx",
+    "hypervisor_hostname": "KENOBI8-1",
+    "hypervisor_ip": "10.x.xx.xx",
+    "hypervisor_netmask": "xx.xx.xx.xx",
+    "hypervisor_type": "kvm",
+    "hypervisor_version": "<hypervisor-version>",
+    "imaged_cluster_uuid": "<imaged-cluster-uuid>",
+    "imaged_node_uuid": "<imaged-node-uuid>",
+    "ipmi_gateway": "10.x.xx.xx",
+    "ipmi_ip": "10.x.xx.xx",
+    "ipmi_netmask": "xx.xx.xx.xx",
+    "ipv6_interface": "eth0",
+    "latest_hb_ts_list": [],
+    "model": "<model>",
+    "node_position": "A",
+    "node_serial": "<node-serial>",
+    "node_state": "STATE_UNAVAILABLE",
+    "node_type": "on-prem",
+    "object_version": 26,
+    "supported_features": [
+      "API_KEY_DELETION",
+      "AHV_ISO_URL"
+    ]
+  }
+],
+"metadata": {
+    "length": 1,
+    "total_matches": 1
+}
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

@@ -15,15 +15,21 @@ version_added: 1.1.0
 description: 'List all the api keys created in Foundation Central.'
 options:
   key_uuid:
-    description: Return the API Key given it's uuid
+    description: 
+      - Return the API Key given it's uuid
     type: str
-    required: false
-    default: None
   alias:
-  description: Return the API Key given it's alias
+    description: 
+      - Return the API Key given it's alias
     type: str
-    required: false
-    default: None
+  custom_filter:
+    description:
+      - Return the list of matching values
+    type: dict
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_opperations
+
 author:
  - Abhishek Chaudhary (@abhimutant)
 """
@@ -54,19 +60,15 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-API_key:
-  description: returned API with alias as a filter
-  returned: if correct alias is given
-  type: list
-  api_key": [
-            {
-                "alias": "test,
-                "api_key": "{{ api_key}}",
-                "created_timestamp": "2022-04-18T00:41:45.000-07:00",
-                "current_time": "2022-04-18T04:45:35.000-07:00",
-                "key_uuid": "{{ uuid }}"
-            }
-        ],
+api_key": [
+  {
+    "alias": "test,
+    "api_key": "{{ api_key}}",
+    "created_timestamp": "2022-04-18T00:41:45.000-07:00",
+    "current_time": "2022-04-18T04:45:35.000-07:00",
+    "key_uuid": "{{ uuid }}"
+  }
+]
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

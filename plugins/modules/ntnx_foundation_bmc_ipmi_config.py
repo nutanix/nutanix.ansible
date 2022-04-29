@@ -3,11 +3,8 @@
 
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
-from __future__ import absolute_import, division, print_function
 
-from ..module_utils.foundation.base_module import FoundationBaseModule
-from ..module_utils.foundation.bmc_ipmi_config import BMC
-from ..module_utils.utils import remove_param_with_none_value
+from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
@@ -84,6 +81,9 @@ options:
       - ipmi password of given nodes
     type: str
     required: true
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_opperations
 author:
  - Prem Karat (@premkarat)
 """
@@ -95,6 +95,11 @@ EXAMPLES = r"""
 RETURN = r"""
 
 """
+
+
+from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.foundation.bmc_ipmi_config import BMC  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
