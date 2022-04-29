@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
+__metaclass__ = type
+
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central_imaged_nodes_info
@@ -144,8 +146,6 @@ Imaged_Node_List
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.fc.imaged_nodes import ImagedNode  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-
-__metaclass__ = type
 
 
 def get_module_spec():
