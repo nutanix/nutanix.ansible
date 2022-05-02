@@ -160,7 +160,7 @@ def get_module_spec():
     return module_args
 
 
-def get_vm(module, result):
+def get_vpc(module, result):
     vpc = Vpc(module)
     vpc_uuid = module.params.get("vm_uuid")
     resp = vpc.read(vpc_uuid)
@@ -188,13 +188,7 @@ def run_module():
         required_together=[("sort_order", "sort_attribute")],
     )
     remove_param_with_none_value(module.params)
-    result = {
-        "changed": False,
-        "error": None,
-        "response": None,
-        "vpc_uuid": None,
-        "task_uuid": None,
-    }
+    result = {"changed": False, "error": None, "response": None}
     if module.params.get("vm_uuid"):
         get_vpc(module, result)
     else:

@@ -189,13 +189,7 @@ def run_module():
         required_together=[("sort_order", "sort_attribute")],
     )
     remove_param_with_none_value(module.params)
-    result = {
-        "changed": False,
-        "error": None,
-        "response": None,
-        "pbr_uuid": None,
-        "task_uuid": None,
-    }
+    result = {"changed": False, "error": None, "response": None}
     if module.params.get("pbr_uuid"):
         get_pbr(module, result)
     else:
