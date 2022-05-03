@@ -78,6 +78,7 @@ from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: 
 from ..module_utils.foundation.node_network_details import NodeNetworkDetails  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
+
 def get_module_spec():
     module_args = dict(
         nodes=dict(type="list", elements="str", required=True),

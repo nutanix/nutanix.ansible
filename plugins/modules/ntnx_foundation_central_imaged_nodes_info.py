@@ -34,15 +34,13 @@ options:
           - STATE_UNAVAILABLE
           - STATE_DISCOVERING
           - STATE_IMAGING
-        required: false
-        default: None
   custom_filter:
     description:
       - Return the list of matching values
     type: dict
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_opperations
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_opperations
 
 author:
  - Abhishek Chaudhary (@abhimutant)
@@ -70,7 +68,7 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-"imaged_nodes": [
+imaged_nodes: [
   {
     "aos_version": "6.1",
     "api_key_uuid": "<api-key-uuid>",
@@ -118,7 +116,7 @@ RETURN = r"""
     ]
   }
 ],
-"metadata": {
+metadata: {
     "length": 1,
     "total_matches": 1
 }
@@ -142,7 +140,6 @@ def get_module_spec():
                     "STATE_DISCOVERING",
                     "STATE_IMAGING",
                 ],
-                default=None,
             ),
         ),
         custom_filter=dict(type="dict"),

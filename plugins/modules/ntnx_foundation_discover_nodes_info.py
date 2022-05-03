@@ -93,6 +93,7 @@ from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: 
 from ..module_utils.foundation.node_discovery import NodeDiscovery  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
+
 def get_module_spec():
     module_args = dict(
         include_configured=dict(type="bool", required=False, default=False),

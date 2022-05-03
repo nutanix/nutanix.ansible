@@ -1006,6 +1006,7 @@ from ..module_utils.foundation.image_nodes import ImageNodes  # noqa: E402
 from ..module_utils.foundation.progress import Progress  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
+
 def get_module_spec():
     hypervisor_options = ["kvm", "hyperv", "xen", "esx", "ahv"]
 

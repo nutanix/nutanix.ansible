@@ -29,7 +29,6 @@ options:
         description:
           - archived clusters
         type: bool
-        required: false
         default: false
   custom_filter:
     description:
@@ -65,7 +64,7 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-"imaged_clusters": [
+imaged_clusters: [
   {
     "archived": false,
     "cluster_external_ip": "",
@@ -225,9 +224,9 @@ RETURN = r"""
       "workflow_type": "FOUNDATION_WORKFLOW"
   }
 ],
-"metadata": {
+metadata: {
   "length": 1,
-  "total_matches": 1 
+  "total_matches": 1
 }
 """
 

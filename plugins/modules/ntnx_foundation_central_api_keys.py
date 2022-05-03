@@ -19,8 +19,8 @@ options:
     type: str
     required: true
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_opperations
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_opperations
 
 author:
  - Abhishek Chaudhary (@abhimutant)
@@ -37,15 +37,17 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-api_key": [
-  {
-    "alias": "test,
-    "api_key": "{{ api_key}}",
-    "created_timestamp": "2022-04-18T00:41:45.000-07:00",
-    "current_time": "2022-04-18T04:45:35.000-07:00",
-    "key_uuid": "{{ uuid }}"
-  }
-]
+api_key:
+  description: API Key
+  returned: always
+  type: dict
+  sample: {
+                "alias": "test,
+                "api_key": "123-654",
+                "created_timestamp": "2022-04-18T00:41:45.000-07:00",
+                "current_time": "2022-04-18T04:45:35.000-07:00",
+                "key_uuid": "1y22-229u"
+            }
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
@@ -54,7 +56,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
-    module_args = dict(alias=dict(type=str, Required=True))
+    module_args = dict(alias=dict(type="str", required=True))
     return module_args
 
 

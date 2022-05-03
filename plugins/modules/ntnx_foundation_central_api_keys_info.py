@@ -15,11 +15,11 @@ version_added: 1.1.0
 description: 'List all the api keys created in Foundation Central.'
 options:
   key_uuid:
-    description: 
+    description:
       - Return the API Key given it's uuid
     type: str
   alias:
-    description: 
+    description:
       - Return the API Key given it's alias
     type: str
   custom_filter:
@@ -27,8 +27,8 @@ options:
       - Return the list of matching values
     type: dict
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_opperations
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_opperations
 
 author:
  - Abhishek Chaudhary (@abhimutant)
@@ -60,15 +60,19 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-api_key": [
-  {
-    "alias": "test,
-    "api_key": "{{ api_key}}",
-    "created_timestamp": "2022-04-18T00:41:45.000-07:00",
-    "current_time": "2022-04-18T04:45:35.000-07:00",
-    "key_uuid": "{{ uuid }}"
-  }
-]
+api_key:
+  description: API Key
+  returned: always
+  type: dict
+  sample: [
+            {
+              "alias": "test,
+              "api_key": "123-654",
+              "created_timestamp": "2022-04-18T00:41:45.000-07:00",
+              "current_time": "2022-04-18T04:45:35.000-07:00",
+              "key_uuid": "1y22-229u"
+            }
+          ]
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
@@ -78,7 +82,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 def get_module_spec():
     module_args = dict(
-        key_uuid=dict(type=str), alias=dict(type=str), custom_filter=dict(type="dict")
+        key_uuid=dict(type="str", no_log=True), alias=dict(type="str"), custom_filter=dict(type="dict")
     )
     return module_args
 

@@ -19,25 +19,19 @@ options:
     description:
       - Cluster external IP
     type: str
-    required: false
-    default: None
   storage_node_count:
     description:
       - Number of storage only nodes in the cluster. AHV iso for storage node will be taken from aos package.
     type: int
-    required: false
-    default: None
   redundancy_factor:
     description:
       - Redundancy factor of the cluster.
     type: int
     required: true
-    default: 2
   cluster_name:
     description:
       - Name of the cluster.
     type: str
-    required: true
     default: test
   aos_package_url:
     description:
@@ -48,25 +42,19 @@ options:
     description:
       - Number of nodes in the cluster.
     type: int
-    required: false
-    default: None
   aos_package_sha256sum:
     description:
       - Sha256sum of AOS package.
     type: str
-    default: None
   timezone:
     description:
       - Timezone to be set on the cluster.
     type: str
     required: false
-    default: None
   cluster_size:
     description:
       - Number of nodes in the cluster.
     type: int
-    required: false
-    default: None
   common_network_settings:
     description:
       - Common network settings across the nodes in the cluster.
@@ -77,14 +65,17 @@ options:
         description:
           - List of dns servers for the cvms in the cluster.
         type: list
+        elements: str
       hypervisor_dns_servers:
         description:
           - List of dns servers for the hypervisors in the cluster.
         type: list
+        elements: str
       cvm_ntp_servers:
         description:
           - List of ntp servers for the cvms in the cluster.
         type: list
+        elements: str
       hypervisor_ntp_servers:
         description:
           - List of ntp servers for the hypervisors in the cluster.
@@ -93,7 +84,6 @@ options:
     description:
       - Details of the hypervisor iso.
     type: dict
-    required: false
     suboptions:
       hyperv_sku:
         description:
@@ -102,12 +92,12 @@ options:
         required: false
       url:
         description:
-          - URL to download hypervisor iso. Required only if imaging is needed.
+          - URL to download hypervisor iso. required only if imaging is needed.
         type: str
         required: true
       hyperv_product_key:
         description:
-          - Product key for hyperv isos. Required only if the hypervisor type is hyperv and product key is mandatory.
+          - Product key for hyperv isos. required only if the hypervisor type is hyperv and product key is mandatory.
         type: str
         required: false
       sha256sum:
@@ -119,7 +109,7 @@ options:
     description:
       - List of details of nodes out of which the cluster needs to be created.
     type: list
-    elements : dict
+    elements: dict
     required: true
     suboptions:
       manual_mode:
@@ -150,11 +140,9 @@ options:
             description:
               - Vlan tag of the cvm, if the cvm is on a vlan.
             type: int
-            required: false
-            default: None
           hypervisor_type:
             description:
-                - Type of hypervisor to be installed.
+              - Type of hypervisor to be installed.
             type: str
             required: true
             choices:
@@ -164,61 +152,61 @@ options:
           image_now:
             description:
               - True, if the node should be imaged, False, otherwise.
-            type: str
-            required: false
+            type: bool
             default: true
           hypervisor_hostname:
             description:
-                - Name to be set for the hypervisor host.
+              - Name to be set for the hypervisor host.
             type: str
             required: true
           hypervisor_netmask:
             description:
-                - Netmask of the hypervisor.
+              - Netmask of the hypervisor.
             type: str
             required: true
           cvm_netmask:
             description:
-                - Netmask of the cvm.
+              - Netmask of the cvm.
             type: str
             required: true
           ipmi_ip:
             description:
-                - IP address to be set for the ipmi of the node.
+              - IP address to be set for the ipmi of the node.
             type: str
             required: true
           hypervisor_gateway:
             description:
-                - Gateway of the hypervisor.
+              - Gateway of the hypervisor.
             type: str
             required: true
           hardware_attributes_override:
             description:
-                - Hardware attributes override json for the node.
+              - Hardware attributes override json for the node.
             type: dict
-            elements: dict
-            required: false
           cvm_ram_gb:
             description:
-                - Amount of memory to be assigned for the cvm.
+              - Amount of memory to be assigned for the cvm.
             type: int
-            required: false
           cvm_ip:
             description:
-                - IP address to be set for the cvm on the node.
+              - IP address to be set for the cvm on the node.
             type: str
             required: true
           use_existing_network_settings:
             description:
               - Decides whether to use the existing network settings for the node.
-              If True, the existing network settings of the node will be used during cluster creation.
-              If False, then client must provide new network settings. If all nodes are booted in phoenix, this field is, by default, considered to be False.
-            type: dict
-            required: false
+              - If True, the existing network settings of the node will be used during cluster creation.
+              - If False, then client must provide new network settings. If all nodes are booted in phoenix, this field is, by default, considered to be False.
+            type: bool
             default: false
           ipmi_gateway:
             description:
-                - Gateway of the ipmi.
+              - Gateway of the ipmi.
+            type: str
+            required: true
+          hypervisor_ip:
+            description:
+                - IP of the hypervisor.
             type: str
             required: true
       discovery_mode:
@@ -237,44 +225,36 @@ options:
                 description:
                   - IP of the cvm.
                 type: str
-                required: false
               ipmi_netmask:
                   description:
                     - Netmask of the ipmi.
                   type: str
-                  required: false
               ipmi_gateway:
                   description:
                     - Gateway of the ipmi.
                   type: str
-                  required: false
               hypervisor_hostname:
                 description:
                   - Name to be set for the hypervisor host.
                 type: str
-                required: false
               hypervisor_ip:
                 description:
                     - IP of the hypervisor.
                 type: str
-                required: false
               ipmi_ip:
                 description:
                     - IP address to be set for the ipmi of the node.
                 type: str
-                required: false
               hardware_attributes_override:
                 description:
                   - Hardware attributes override json for the node.
                 type: dict
-                elements: dict
-                required: false
   skip_cluster_creation:
     description:
       - skip cluster creation. Only imaging needed.
     type: bool
     required: false
-    default: None
+    default: false
   imaged_cluster_uuid:
     description:
       - cluster_uuid needed to delete the cluster
@@ -283,8 +263,8 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_opperations
 author:
- - Abhishek Chaudhary (@abhimutant)
- """
+  - Abhishek Chaudhary (@abhimutant)
+"""
 
 EXAMPLES = r"""
   - name: image nodes and create cluster
@@ -476,38 +456,38 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 def get_module_spec():
     common_network_setting_spec_dict = dict(
-        cvm_dns_servers=dict(type="list"),
-        hypervisor_dns_servers=dict(type="list"),
-        cvm_ntp_servers=dict(type="list"),
-        hypervisor_ntp_servers=dict(type="list"),
+        cvm_dns_servers=dict(type="list", elements="str"),
+        hypervisor_dns_servers=dict(type="list", elements="str"),
+        cvm_ntp_servers=dict(type="list", elements="str"),
+        hypervisor_ntp_servers=dict(type="list", elements="str"),
     )
 
     hypervisor_iso_details_spec_dict = dict(
         hyperv_sku=dict(type="str", default=None),
-        url=dict(type="str", Required=True),
-        hyperv_product_key=dict(type="str", default=None),
+        url=dict(type="str", required=True),
+        hyperv_product_key=dict(type="str", default=None, no_log=True),
         sha256sum=dict(type="str", default=None),
     )
 
     manual_node_spec_dict = dict(
-        cvm_gateway=dict(type="str", Required=True),
-        ipmi_netmask=dict(type="str", Required=True),
-        rdma_passthrough=dict(type="bool", Default=False),
-        imaged_node_uuid=dict(type="str", Required=True),
-        cvm_vlan_id=dict(type="int", default=None),
-        hypervisor_type=dict(type="str", Required=True, choice="[kvm, esx, hyperv]"),
+        cvm_gateway=dict(type="str", required=True),
+        ipmi_netmask=dict(type="str", required=True),
+        rdma_passthrough=dict(type="bool", default=False),
+        imaged_node_uuid=dict(type="str", required=True),
+        cvm_vlan_id=dict(type="int"),
+        hypervisor_type=dict(type="str", required=True, choices=["kvm", "esx", "hyperv"]),
         image_now=dict(type="bool", default=True),
-        hypervisor_hostname=dict(type="str", Required=True),
-        hypervisor_netmask=dict(type="str", Required=True),
-        cvm_netmask=dict(type="str", Required=True),
-        ipmi_ip=dict(type="str", Required=True),
-        hypervisor_gateway=dict(type="str", Required=True),
+        hypervisor_hostname=dict(type="str", required=True),
+        hypervisor_netmask=dict(type="str", required=True),
+        cvm_netmask=dict(type="str", required=True),
+        ipmi_ip=dict(type="str", required=True),
+        hypervisor_gateway=dict(type="str", required=True),
         hardware_attributes_override=dict(type="dict", default=None),
         cvm_ram_gb=dict(type="int", default=None),
-        cvm_ip=dict(type="str", Required=True),
-        hypervisor_ip=dict(type="str", Required=True),
+        cvm_ip=dict(type="str", required=True),
+        hypervisor_ip=dict(type="str", required=True),
         use_existing_network_settings=dict(type="bool", default=False),
-        ipmi_gateway=dict(type="str", Required=True),
+        ipmi_gateway=dict(type="str", required=True),
     )
 
     discovery_override = dict(
@@ -523,7 +503,7 @@ def get_module_spec():
     node_mode_constraints = [("manual_mode", "discovery_mode")]
 
     discovery_mode_spec_dict = dict(
-        node_serial=dict(type="str", Required=True),
+        node_serial=dict(type="str", required=True),
         discovery_override=dict(
             type="dict", required=False, options=discovery_override
         ),
@@ -534,16 +514,16 @@ def get_module_spec():
     )
 
     module_args = dict(
-        cluster_external_ip=dict(type="str", default=None),
-        storage_node_count=dict(type="int", default=None),
-        redundancy_factor=dict(type="int", Required=True),
+        cluster_external_ip=dict(type="str"),
+        storage_node_count=dict(type="int"),
+        redundancy_factor=dict(type="int", required=True),
         cluster_name=dict(type="str", default="test"),
-        aos_package_url=dict(type="str", Required=True),
-        cluster_size=dict(type="int", default=None),
-        aos_package_sha256sum=dict(type="str", default=None),
-        timezone=dict(type="str", default=None),
+        aos_package_url=dict(type="str", required=True),
+        cluster_size=dict(type="int"),
+        aos_package_sha256sum=dict(type="str"),
+        timezone=dict(type="str"),
         common_network_settings=dict(
-            type="dict", Required=True, options=common_network_setting_spec_dict
+            type="dict", required=True, options=common_network_setting_spec_dict
         ),
         hypervisor_iso_details=dict(
             type="dict", options=hypervisor_iso_details_spec_dict
