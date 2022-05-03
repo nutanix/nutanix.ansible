@@ -5,6 +5,10 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+from ..module_utils.foundation.base_module import FoundationBaseModule
+from ..module_utils.foundation.node_network_details import NodeNetworkDetails
+from ..module_utils.utils import remove_param_with_none_value
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -29,9 +33,6 @@ options:
     description: IPv6 addresses for nodes that require network discovery
     type: list
     required: true
-extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_opperations
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -47,6 +48,8 @@ EXAMPLES = r"""
        - node_1_ipv6
        - node_2_ipv6
        - node_3_ipv6
+
+
 """
 
 RETURN = r"""
@@ -73,10 +76,6 @@ nodes:
       }
     ]
 """
-
-from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
-from ..module_utils.foundation.node_network_details import NodeNetworkDetails  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

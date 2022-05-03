@@ -5,6 +5,10 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+from ..module_utils.foundation.base_module import FoundationBaseModule
+from ..module_utils.foundation.enumerate_aos_packages import EnumerateAOSPackages
+from ..module_utils.utils import remove_param_with_none_value
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -25,9 +29,6 @@ options:
     type: str
     default: 8000
     required: false
-extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_opperations
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -51,10 +52,6 @@ aos_packages:
     "package2",s
   ]
 """
-
-from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
-from ..module_utils.foundation.enumerate_aos_packages import EnumerateAOSPackages  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
