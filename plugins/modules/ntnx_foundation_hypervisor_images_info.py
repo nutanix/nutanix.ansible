@@ -54,7 +54,9 @@ hypervisor_images:
 
 
 from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
-from ..module_utils.foundation.enumerate_hypervisor_isos import EnumerateHypervisorIsos  # noqa: E402
+from ..module_utils.foundation.enumerate_hypervisor_isos import (
+    EnumerateHypervisorIsos,
+)  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 

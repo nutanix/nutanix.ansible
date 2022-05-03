@@ -70,7 +70,7 @@ api_key:
               "api_key": "123-654",
               "created_timestamp": "2022-04-18T00:41:45.000-07:00",
               "current_time": "2022-04-18T04:45:35.000-07:00",
-              "key_uuid": "1y22-229u"
+              "key_uuid": "1y22-229u",
             }
           ]
 """
@@ -82,7 +82,9 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 def get_module_spec():
     module_args = dict(
-        key_uuid=dict(type="str", no_log=True), alias=dict(type="str"), custom_filter=dict(type="dict")
+        key_uuid=dict(type="str", no_log=True),
+        alias=dict(type="str"),
+        custom_filter=dict(type="dict"),
     )
     return module_args
 

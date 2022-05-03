@@ -46,7 +46,7 @@ api_key:
                 "api_key": "123-654",
                 "created_timestamp": "2022-04-18T00:41:45.000-07:00",
                 "current_time": "2022-04-18T04:45:35.000-07:00",
-                "key_uuid": "1y22-229u"
+                "key_uuid": "1y22-229u",
             }
 """
 

@@ -475,7 +475,9 @@ def get_module_spec():
         rdma_passthrough=dict(type="bool", default=False),
         imaged_node_uuid=dict(type="str", required=True),
         cvm_vlan_id=dict(type="int"),
-        hypervisor_type=dict(type="str", required=True, choices=["kvm", "esx", "hyperv"]),
+        hypervisor_type=dict(
+          type="str", required=True, choices=["kvm", "esx", "hyperv"]
+        ),
         image_now=dict(type="bool", default=True),
         hypervisor_hostname=dict(type="str", required=True),
         hypervisor_netmask=dict(type="str", required=True),
