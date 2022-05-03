@@ -476,7 +476,7 @@ def get_module_spec():
         imaged_node_uuid=dict(type="str", required=True),
         cvm_vlan_id=dict(type="int"),
         hypervisor_type=dict(
-          type="str", required=True, choices=["kvm", "esx", "hyperv"]
+            type="str", required=True, choices=["kvm", "esx", "hyperv"]
         ),
         image_now=dict(type="bool", default=True),
         hypervisor_hostname=dict(type="str", required=True),
