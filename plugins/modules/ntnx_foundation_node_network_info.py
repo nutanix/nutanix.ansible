@@ -89,8 +89,8 @@ def get_module_spec():
 def get_node_network_details(module, result):
     node_network_details = NodeNetworkDetails(module)
     if module.check_mode:
-      result["response"] = module.params
-      return
+        result["response"] = module.params
+        return
     nodes = module.params.get("nodes")
     timeout = module.params.get("timeout")
     resp = node_network_details.retrieve(nodes, timeout)

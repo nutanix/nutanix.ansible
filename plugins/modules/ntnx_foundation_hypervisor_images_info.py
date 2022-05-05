@@ -63,8 +63,8 @@ def get_module_spec():
 def list_hypervisor_images(module, result):
     images = EnumerateHypervisorIsos(module)
     if module.check_mode:
-      result["response"] = module.params
-      return
+        result["response"] = module.params
+        return
     resp = images.read()
     result["hypervisor_images"] = resp
     result["response"] = resp
