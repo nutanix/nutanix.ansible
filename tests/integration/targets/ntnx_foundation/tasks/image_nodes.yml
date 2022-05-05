@@ -159,3 +159,30 @@
         var: second_cluster_job_result
     - debug:
         var: third_cluster_job_result
+
+    - name: Creation Status
+      assert:
+        that:
+          - first_cluster_job_result.response is defined
+          - first_cluster_job_result.failed==false
+          - first_cluster_job_result.changed==true
+        fail_msg: " Fail : unable to create cluster with three node successfully "
+        success_msg: "Succes: cluster with three node created successfully "
+
+    - name: Creation Status
+      assert:
+        that:
+          - second_cluster_job_result.response is defined
+          - second_cluster_job_result.failed==false
+          - second_cluster_job_result.changed==true
+        fail_msg: " Fail : unable to create cluster with one node successfully "
+        success_msg: "Succes: cluster with one node created successfully "
+
+    - name: Creation Status
+      assert:
+        that:
+          - third_cluster_job_result.response is defined
+          - third_cluster_job_result.failed==false
+          - third_cluster_job_result.changed==true
+        fail_msg: " Fail : unable to create cluster with three node successfully "
+        success_msg: "Succes: cluster with three node created successfully "
