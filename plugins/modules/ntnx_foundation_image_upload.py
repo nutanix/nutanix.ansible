@@ -74,6 +74,9 @@ def get_module_spec():
 
 def upload_image(module, result):
     image = Image(module)
+    if module.check_mode:
+        result["response"] = module.params
+        return
     fname = module.params["filename"]
     itype = module.params["installer_type"]
     source = module.params["source"]
@@ -96,7 +99,7 @@ def delete_image(module, result):
 def run_module():
     module = FoundationBaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=False,
+        supports_check_mode=True,
         required_if=[
             ("state", "present", ("source",)),
         ],

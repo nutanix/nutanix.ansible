@@ -99,6 +99,9 @@ def get_module_spec():
 
 
 def discover_nodes(module, result):
+    if module.check_mode:
+        result["response"] = module.params
+        return
     include_configured = module.params["include_configured"]
     include_network_details = module.params.get("include_network_details")
     timeout = module.params.get("timeout")
@@ -110,15 +113,20 @@ def discover_nodes(module, result):
         result["error"] = err
         module.fail_json(msg="Failed discover nodes via foundation", **result)
     result["blocks"] = resp["blocks"]
+    result["response"] = resp
 
 
 def run_module():
     module = FoundationBaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     discover_nodes(module, result)
     module.exit_json(**result)
 

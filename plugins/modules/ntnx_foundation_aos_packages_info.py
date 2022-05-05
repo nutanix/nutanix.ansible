@@ -61,17 +61,25 @@ def get_module_spec():
 
 def list_aos_packages(module, result):
     packages = EnumerateAOSPackages(module)
+    if module.check_mode:
+        result["response"] = module.params
+        return
     resp = packages.list()
     result["aos_packages"] = resp
+    result["response"] = resp
 
 
 def run_module():
     module = FoundationBaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     list_aos_packages(module, result)
     module.exit_json(**result)
 

@@ -10,7 +10,7 @@ __metaclass__ = type
 class FoundationBaseModule(AnsibleModule):
     argument_spec = dict(
         nutanix_host=dict(
-            type="str", required=True, fallback=(env_fallback, ["NUTANIX_HOST"])
+            type="str", required=True, fallback=(env_fallback, ["FOUNDATION_HOST"])
         ),
         nutanix_port=dict(default="8000", type="str"),
         state=dict(type="str", choices=["present", "absent"], default="present"),

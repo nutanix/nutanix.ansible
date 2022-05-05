@@ -88,6 +88,9 @@ def get_module_spec():
 
 def get_node_network_details(module, result):
     node_network_details = NodeNetworkDetails(module)
+    if module.check_mode:
+      result["response"] = module.params
+      return
     nodes = module.params.get("nodes")
     timeout = module.params.get("timeout")
     resp = node_network_details.retrieve(nodes, timeout)
@@ -97,15 +100,20 @@ def get_node_network_details(module, result):
             msg="Failed to retrieve node network details via foundation", **result
         )
     result["nodes"] = resp
+    result["response"] = resp
 
 
 def run_module():
     module = FoundationBaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=False,
+        supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     get_node_network_details(module, result)
     module.exit_json(**result)
 
