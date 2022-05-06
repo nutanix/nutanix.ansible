@@ -2,12 +2,12 @@
 - debug:
     msg: start testing ntnx_foundation_image_upload
 
-- name: Image upload with esx installer_type
+- name: Image upload with nos installer_type
   ntnx_foundation_image_upload:
     state: present
-    source: "~/integration-test-ntnx-package.tar.gz"
+    source: "/tmp/integration-test-ntnx-package.tar.gz"
     filename: "dont_use_nutanix_installer_package-integration-test.tar.gz"
-    installer_type: esx
+    installer_type: nos
     timeout: 3600
   register: result
   ignore_errors: true
@@ -18,14 +18,14 @@
       - result.response is defined
       - result.failed==false
       - result.changed==true
-    fail_msg: " Fail : unable upload image  with esx installer_type "
-    success_msg: "Succes: upload image  with esx installer_type successfully "
+    fail_msg: " Fail : unable upload image  with nos installer_type "
+    success_msg: "Succes: upload image  with nos installer_type successfully "
 
-- name: Delete Image with esx installer_type
+- name: Delete Image with nos installer_type
   ntnx_foundation_image_upload:
     state: absent
     filename: "dont_use_nutanix_installer_package-integration-test.tar.gz"
-    installer_type: esx
+    installer_type: nos
   register: result
   ignore_errors: true
 
@@ -35,5 +35,5 @@
       - result.response.status_code == 200
       - result.failed==false
       - result.changed==true
-    fail_msg: " Fail : unable to delete image  with esx installer_type "
-    success_msg: "Succes: image  with esx installer_type deleted successfully "
+    fail_msg: " Fail : unable to delete image  with nos installer_type "
+    success_msg: "Succes: image  with nos installer_type deleted successfully "
