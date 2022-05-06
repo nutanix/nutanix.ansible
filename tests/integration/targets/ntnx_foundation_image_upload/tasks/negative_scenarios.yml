@@ -1,0 +1,17 @@
+- name: Image upload with wrong installer_type
+  ntnx_foundation_image_upload:
+    state: present
+    source: "~/integration-test-ntnx-package.tar.gz"
+    filename: "dont_use_nutanix_installer_package-integration-test.tar.gz"
+    installer_type: wrong installler type
+    timeout: 3600
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.failed==true
+      - result.changed==false
+    fail_msg: " Fail : image uploaded with wrong installer type"
+    success_msg: "Succes: returned error as expected  "

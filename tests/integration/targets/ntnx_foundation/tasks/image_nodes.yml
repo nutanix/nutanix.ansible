@@ -5,10 +5,10 @@
     - name: Image one node with manual mode and create cluster
       ntnx_foundation:
         timeout: 3660
-        hypervisor_iso:
-          esx:
-            filename: "{{esx.filename}}"
-            checksum: "{{esx.checksum}}"
+        # hypervisor_iso:
+        #   esx:
+        #     filename: "{{esx.filename}}"
+        #     checksum: "{{esx.checksum}}"
         nutanix_host: "{{foundation_host}}"
         cvm_gateway: "{{cvm_gateway}}"
         cvm_netmask: "{{cvm_netmask}}"
@@ -29,34 +29,6 @@
                   hypervisor: "{{IBIS_node.node1.hypervisor}}"
                   hypervisor_ip: "{{IBIS_node.node1.hypervisor_ip}}"
                   node_position: "{{IBIS_node.node1.node_position}}"
-        clusters:
-          - name: "Ibis19-test1"
-            redundancy_factor: 1
-            cluster_members: 
-              - "{{IBIS_node.node1.cvm_ip}}"
-      async: 1000
-      poll: 0
-      register: first_cluster
-      ignore_errors: True
-######################################################
-    - name: Image two dos  nodes using cvm and ipmi and one aos node using ipmi and create cluster from thre nodes 
-      ntnx_foundation:
-        timeout: 3660
-        hypervisor_iso:
-          esx:
-            filename: "{{esx.filename}}"
-            checksum: "{{esx.checksum}}"
-        nutanix_host: "{{foundation_host}}"
-        cvm_gateway: "{{cvm_gateway}}"
-        cvm_netmask: "{{cvm_netmask}}"
-        hypervisor_gateway: "{{hypervisor_gateway}}"
-        hypervisor_netmask: "{{hypervisor_netmask}}"
-        default_ipmi_user: "{{default_ipmi_user}}"
-        current_cvm_vlan_tag: "0"
-        nos_package: "{{nos_package}}"
-        blocks:
-          - block_id: "{{IBIS_node.block_id}}"
-            nodes:
               - discovery_mode: #dos mode using cvm
                   cvm_gb_ram: 50
                   node_serial: "{{IBIS_node.node3.node_serial}}"
@@ -66,99 +38,20 @@
                     hypervisor_ip: "{{IBIS_node.node3.hypervisor_ip}}"
                     cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
                     hypervisor: "{{IBIS_node.node3.hypervisor}}"
-
-              - discovery_mode: # dos mode using ipmi
-                  cvm_gb_ram: 50
-                  ipmi_password: "{{IBIS_node.node4.ipmi_password}}"
-                  node_serial: "{{IBIS_node.node4.node_serial}}"
-                  discovery_override:
-                    hypervisor_hostname: "{{IBIS_node.node4.hypervisor_hostname}}"
-                    hypervisor_ip: "{{IBIS_node.node4.hypervisor_ip}}"
-                    cvm_ip: "{{IBIS_node.node4.cvm_ip}}"
-                    hypervisor: "{{IBIS_node.node4.hypervisor}}"
-
               - discovery_mode: # aos node using ipmi
                   cvm_gb_ram: 50
                   ipmi_password: "{{IBIS_node.node2.ipmi_password}}"
                   node_serial: "{{IBIS_node.node2.node_serial}}"
+                  discovery_override:
+                    hypervisor_hostname: new_host_name
         clusters:
-          - name: "Ibis19-test2"
             redundancy_factor: 2
             cluster_members: 
-              - "{{IBIS_node.node2.cvm_ip}}"
+              - "{{IBIS_node.node1.cvm_ip}}"
               - "{{IBIS_node.node3.cvm_ip}}"
-              - "{{IBIS_node.node4.cvm_ip}}"
-      async: 1000
-      poll: 0
-      register: second_cluster
+              - "{{IBIS_node.node2.cvm_ip}}"
+      register: first_cluster
       ignore_errors: True
-######################################################
-    - name: Image one aos node using cvm and create cluster from it checkkk
-      ntnx_foundation:
-        timeout: 3660
-        hypervisor_iso:
-          esx:
-            filename: "{{esx.filename}}"
-            checksum: "{{esx.checksum}}"
-        nutanix_host: "{{foundation_host}}"
-        cvm_gateway: "{{cvm_gateway}}"
-        cvm_netmask: "{{cvm_netmask}}"
-        hypervisor_gateway: "{{hypervisor_gateway}}"
-        hypervisor_netmask: "{{hypervisor_netmask}}"
-        default_ipmi_user: "{{default_ipmi_user}}"
-        current_cvm_vlan_tag: "0"
-        nos_package: "{{nos_package}}"
-        blocks:
-          - block_id: ""
-            nodes:
-              - manual_mode: #aos node using cvm
-                  #device_hint: "vm_installer"
-                  cvm_ip: "{{kenobi8_node.node1.cvm_ip}}"
-                  cvm_gb_ram: 50
-                  ipmi_password: "{{kenobi8_node.node1.ipmi_password}}"
-                  ipmi_ip: "{{kenobi8_node.node1.ipmi_ip}}"
-                  hypervisor: "{{kenobi8_node.node1.hypervisor}}"
-                  hypervisor_ip: "{{kenobi8_node.node1.hypervisor_ip}}"
-                  node_position: "{{kenobi8_node.node1.node_position}}"
-                  hypervisor_hostname: "{{kenobi8_node.node1.hypervisor_hostname}}"
-          - name: "Ibis19-test3"
-            redundancy_factor: 1
-            cluster_members: 
-              - "{{kenobi8_node.node1.cvm_ip}}"
-      async: 1000
-      poll: 0
-      register: third_cluster
-      ignore_errors: True
-######################################################
-
-    - name: Wait for asynchronous job to end
-      async_status:
-        jid: '{{ first_cluster.ansible_job_id }}'
-      register: first_cluster_job_result
-      until: first_cluster_job_result.finished
-      retries: 12
-      delay: 360
-    - name: Wait for asynchronous job to end
-      async_status:
-        jid: '{{ second_cluster.ansible_job_id }}'
-      register: second_cluster_job_result
-      until: second_cluster_job_result.finished
-      retries: 5
-      delay: 100
-    - name: Wait for asynchronous job to end
-      async_status:
-        jid: '{{ third_cluster.ansible_job_id }}'
-      register: third_cluster_job_result
-      until: third_cluster_job_result.finished
-      retries: 3
-      delay: 100
-######################################################
-    - debug:
-        var: first_cluster_job_result
-    - debug:
-        var: second_cluster_job_result
-    - debug:
-        var: third_cluster_job_result
 
     - name: Creation Status
       assert:
@@ -168,21 +61,4 @@
           - first_cluster_job_result.changed==true
         fail_msg: " Fail : unable to create cluster with three node successfully "
         success_msg: "Succes: cluster with three node created successfully "
-
-    - name: Creation Status
-      assert:
-        that:
-          - second_cluster_job_result.response is defined
-          - second_cluster_job_result.failed==false
-          - second_cluster_job_result.changed==true
-        fail_msg: " Fail : unable to create cluster with one node successfully "
-        success_msg: "Succes: cluster with one node created successfully "
-
-    - name: Creation Status
-      assert:
-        that:
-          - third_cluster_job_result.response is defined
-          - third_cluster_job_result.failed==false
-          - third_cluster_job_result.changed==true
-        fail_msg: " Fail : unable to create cluster with three node successfully "
-        success_msg: "Succes: cluster with three node created successfully "
+######################################################

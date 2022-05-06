@@ -1,0 +1,158 @@
+    - name: Image nodes with check mode 
+      check_mode: yes
+      ntnx_foundation:
+        timeout: 3660
+        hypervisor_iso:
+          esx:
+            filename: "{{esx.filename}}"
+            checksum: "{{esx.checksum}}"
+        nutanix_host: "{{foundation_host}}"
+        cvm_gateway: "{{cvm_gateway}}"
+        cvm_netmask: "{{cvm_netmask}}"
+        hypervisor_gateway: "{{hypervisor_gateway}}"
+        hypervisor_netmask: "{{hypervisor_netmask}}"
+        default_ipmi_user: "{{default_ipmi_user}}"
+        current_cvm_vlan_tag: "0"
+        nos_package: "{{nos_package}}"
+        blocks:
+          - block_id: "{{IBIS_node.block_id}}"
+            nodes:
+              - manual_mode:
+                  cvm_gb_ram: 50
+                  cvm_ip: "{{IBIS_node.node1.cvm_ip}}"
+                  hypervisor_hostname: "{{IBIS_node.node1.hypervisor_hostname}}"
+                  ipmi_ip: "{{IBIS_node.node1.ipmi_ip}}"
+                  ipmi_password: "{{IBIS_node.node1.ipmi_password}}"
+                  hypervisor: "{{IBIS_node.node1.hypervisor}}"
+                  hypervisor_ip: "{{IBIS_node.node1.hypervisor_ip}}"
+                  node_position: "{{IBIS_node.node1.node_position}}"
+      register: result
+    
+    - name: Creation Status
+      assert:
+        that:
+          - result.response is defined
+          - result.failed==false
+          - result.changed==false
+        fail_msg: " Fail : check_mode fail "
+        success_msg: "Succes: returned response as expected"
+###################################
+    - debug:
+        msg: start negative_scenarios for ntnx_foundation
+###################################
+    - name: Image nodes with wrong serial
+      ntnx_foundation:
+        timeout: 3660
+        hypervisor_iso:
+          esx:
+            filename: "{{esx.filename}}"
+            checksum: "{{esx.checksum}}"
+        nutanix_host: "{{foundation_host}}"
+        cvm_gateway: "{{cvm_gateway}}"
+        cvm_netmask: "{{cvm_netmask}}"
+        hypervisor_gateway: "{{hypervisor_gateway}}"
+        hypervisor_netmask: "{{hypervisor_netmask}}"
+        default_ipmi_user: "{{default_ipmi_user}}"
+        current_cvm_vlan_tag: "0"
+        nos_package: "{{nos_package}}"
+        blocks:
+          - block_id: "{{IBIS_node.block_id}}"
+            nodes:
+              - discovery_mode:
+                  cvm_gb_ram: 50
+                  node_serial: wrong_serial
+                  device_hint: "vm_installer"
+                  discovery_override:
+                    hypervisor_hostname:  "{{IBIS_node.node3.hypervisor_hostname}}"
+                    hypervisor_ip: "{{IBIS_node.node3.hypervisor_ip}}"
+                    cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
+                    hypervisor: "{{IBIS_node.node3.hypervisor}}"
+      register: result
+      ignore_errors: True
+          
+    - name: Creation Status
+      assert:
+        that:
+          - result.msg == "Failed generating Image Nodes Spec"
+          - result.changed==false
+          - result.failed==true
+        fail_msg: " Fail : image node with wrong serial done successfully "
+        success_msg: "Succes: unable to image node with wrong serial "
+###################################
+    - name: Image nodes with wrong hypervisor
+      ntnx_foundation:
+        timeout: 3660
+        hypervisor_iso:
+          esx:
+            filename: "{{esx.filename}}"
+            checksum: "{{esx.checksum}}"
+        nutanix_host: "{{foundation_host}}"
+        cvm_gateway: "{{cvm_gateway}}"
+        cvm_netmask: "{{cvm_netmask}}"
+        hypervisor_gateway: "{{hypervisor_gateway}}"
+        hypervisor_netmask: "{{hypervisor_netmask}}"
+        default_ipmi_user: "{{default_ipmi_user}}"
+        current_cvm_vlan_tag: "0"
+        nos_package: "{{nos_package}}"
+        blocks:
+          - block_id: "{{IBIS_node.block_id}}"
+            nodes:
+              - discovery_mode: 
+                  cvm_gb_ram: 50
+                  node_serial: wrong_serial
+                  device_hint: "vm_installer"
+                  discovery_override:
+                    hypervisor_ip: "{{IBIS_node.node3.hypervisor_ip}}"
+                    cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
+                    hypervisor_hostname:  "{{IBIS_node.node3.hypervisor_hostname}}"
+                    hypervisor: "phoenix"
+      register: result
+      ignore_errors: True
+
+    - name: Creation Status
+      assert:
+        that:
+          - result.changed==false
+          - result.failed==true
+        fail_msg: " Fail : Image nodes with wrong hypervisor done successfully "
+        success_msg: "Succes: unable to image node with wrong hypervisor"
+###################################
+    - name: Image nodes with missing hypervisor
+      ntnx_foundation:
+        timeout: 3660
+        hypervisor_iso:
+          esx:
+            filename: "{{esx.filename}}"
+            checksum: "{{esx.checksum}}"
+        nutanix_host: "{{foundation_host}}"
+        cvm_gateway: "{{cvm_gateway}}"
+        cvm_netmask: "{{cvm_netmask}}"
+        hypervisor_gateway: "{{hypervisor_gateway}}"
+        hypervisor_netmask: "{{hypervisor_netmask}}"
+        default_ipmi_user: "{{default_ipmi_user}}"
+        current_cvm_vlan_tag: "0"
+        nos_package: "{{nos_package}}"
+        blocks:
+          - block_id: "{{IBIS_node.block_id}}"
+            nodes:
+              - discovery_mode:
+                  cvm_gb_ram: 50
+                  node_serial: wrong_serial
+                  device_hint: "vm_installer"
+                  discovery_override:
+                    hypervisor_ip: "{{IBIS_node.node3.hypervisor_ip}}"
+                    cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
+                    hypervisor_hostname:  "{{IBIS_node.node3.hypervisor_hostname}}"
+      register: result
+      ignore_errors: True
+
+    - name: Creation Status
+      assert:
+        that:
+          - result.changed==false
+          - result.failed==true
+        fail_msg: " Fail : Image nodes with missing hypervisor done successfully "
+        success_msg: "Succes: unable to image node with  missing hypervisor "
+###################################
+# add negative 
+# wrong nos package 

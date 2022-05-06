@@ -1,0 +1,19 @@
+---
+- debug:
+    msg: start testing ntnx_foundation_bmc_ipmi_config
+
+- name: configure ipmi
+  ntnx_foundation_bmc_ipmi_config:
+    ipmi_user: "{{bmc.ipmi_user}}"
+    ipmi_password: "{{bmc.ipmi_password}}"
+    ipmi_netmask: "{{bmc.ipmi_netmask}}"
+    ipmi_gateway: "{{bmc.ipmi_gateway}}"
+    timeout: 50
+    blocks:
+        - nodes:
+            - ipmi_mac: "{{bmc.ipmi_mac}}"
+              ipmi_ip: "{{bmc.ipmi_ip}}"
+  register: result
+
+
+# still check mode also

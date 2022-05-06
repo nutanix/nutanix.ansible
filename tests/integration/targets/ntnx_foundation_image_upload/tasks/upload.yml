@@ -5,11 +5,12 @@
 - name: Image upload with esx installer_type
   ntnx_foundation_image_upload:
     state: present
-    source: "~/nutanix_installer_package_pc-release-fraser-6.1-stable-25ea31cbe83c3350e9d5b855ebbdd9889393110c-x86_64.tar.gz"
-    filename: "dont_use10_nutanix_installer_package-release-master-f4d938014320ce2ea7e25918bc0d4c1457bb255c-x86_64.tar.gz"
+    source: "~/integration-test-ntnx-package.tar.gz"
+    filename: "dont_use_nutanix_installer_package-integration-test.tar.gz"
     installer_type: esx
     timeout: 3600
   register: result
+  ignore_errors: true
 
 - name: Creation Status
   assert:
@@ -23,9 +24,10 @@
 - name: Delete Image with esx installer_type
   ntnx_foundation_image_upload:
     state: absent
-    filename: "dont_use10_nutanix_installer_package-release-master-f4d938014320ce2ea7e25918bc0d4c1457bb255c-x86_64.tar.gz"
+    filename: "dont_use_nutanix_installer_package-integration-test.tar.gz"
     installer_type: esx
   register: result
+  ignore_errors: true
 
 - name: Creation Status
   assert:
@@ -35,37 +37,3 @@
       - result.changed==true
     fail_msg: " Fail : unable to delete image  with esx installer_type "
     success_msg: "Succes: image  with esx installer_type deleted successfully "
-
-- name: Image upload with kvm installer_type
-  ntnx_foundation_image_upload:
-    state: present
-    source: "~/nutanix_installer_package_pc-release-fraser-6.1-stable-25ea31cbe83c3350e9d5b855ebbdd9889393110c-x86_64.tar.gz"
-    filename:  "dont_use10_nutanix_installer_package-release-master-f4d938014320ce2ea7e25918bc0d4c1457bb255c-x86_64.tar.gz"
-    installer_type: kvm
-    timeout: 3600
-  register: result
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response is defined
-      - result.failed==false
-      - result.changed==true
-    fail_msg: " Fail : unable upload image  with kvm installer_type "
-    success_msg: "Succes: upload image  with kvm installer_type successfully "
-
-- name: Delete Image with kvm installer_type
-  ntnx_foundation_image_upload:
-    state: absent
-    filename: "dont_use10_nutanix_installer_package-release-master-f4d938014320ce2ea7e25918bc0d4c1457bb255c-x86_64.tar.gz"
-    installer_type: kvm
-  register: result
-
-- name: Creation Status
-  assert:
-    that:
-      - result.response.status_code == 200
-      - result.failed==false
-      - result.changed==true
-    fail_msg: " Fail : unable to delete image  with kvm installer_type "
-    success_msg: "Succes: image  with kvm installer_type deleted successfully "
