@@ -83,64 +83,59 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-# Imaged_Node_List
-#   description: Imaged Node list within Foundation Central
-#   return:  true
-#   type: list
-#   "imaged_nodes": [
-#             {
-#                 "aos_version": "6.1",
-#                 "api_key_uuid": "<api-key-uuid>",
-#                 "available": false,
-#                 "block_serial": "<block_serial>",
-#                 "created_timestamp": "2021-12-05T22:59:02.000-08:00",
-#                 "current_time": "2022-04-25T11:58:51.000-07:00",
-#                 "cvm_gateway": "10.x.xx.xx",
-#                 "cvm_ip": "10.x.xx.xx",
-#                 "cvm_ipv6": "<ipv6>",
-#                 "cvm_netmask": "xx.xx.xx.xx",
-#                 "cvm_up": true,
-#                 "cvm_uuid": "<cvm-uuid>",
-#                 "cvm_vlan_id": 0,
-#                 "foundation_version": "5.1",
-#                 "hardware_attributes": {
-#                     "default_workload": "vdi",
-#                     "is_xpress_node": true,
-#                     "lcm_family": "<lcm-family>",
-#                     "maybe_1GbE_only": true,
-#                     "robo_mixed_hypervisor": true
-#                 },
-#                 "hypervisor_gateway": "10.x.xx.xx",
-#                 "hypervisor_hostname": "KENOBI8-1",
-#                 "hypervisor_ip": "10.x.xx.xx",
-#                 "hypervisor_netmask": "xx.xx.xx.xx",
-#                 "hypervisor_type": "kvm",
-#                 "hypervisor_version": "<hypervisor-version>",
-#                 "imaged_cluster_uuid": "<imaged-cluster-uuid>",
-#                 "imaged_node_uuid": "<imaged-node-uuid>",
-#                 "ipmi_gateway": "10.x.xx.xx",
-#                 "ipmi_ip": "10.x.xx.xx",
-#                 "ipmi_netmask": "xx.xx.xx.xx",
-#                 "ipv6_interface": "eth0",
-#                 "latest_hb_ts_list": [],
-#                 "model": "<model>",
-#                 "node_position": "A",
-#                 "node_serial": "<node-serial>",
-#                 "node_state": "STATE_UNAVAILABLE",
-#                 "node_type": "on-prem",
-#                 "object_version": 26,
-#                 "supported_features": [
-#                     "API_KEY_DELETION",
-#                     "AHV_ISO_URL"
-#                 ]
-#             }
-#         ],
-#         "metadata": {
-#             "length": 1,
-#             "total_matches": 1
-#         }
-#     }
-
+Imaged_Node_List:
+  description: Imaged Node list within Foundation Central
+  returned: always
+  type: list
+  sample:
+   [
+            {
+                "aos_version": "6.1",
+                "api_key_uuid": "<api-key-uuid>",
+                "available": false,
+                "block_serial": "<block_serial>",
+                "created_timestamp": "2021-12-05T22:59:02.000-08:00",
+                "current_time": "2022-04-25T11:58:51.000-07:00",
+                "cvm_gateway": "10.x.xx.xx",
+                "cvm_ip": "10.x.xx.xx",
+                "cvm_ipv6": "<ipv6>",
+                "cvm_netmask": "xx.xx.xx.xx",
+                "cvm_up": true,
+                "cvm_uuid": "<cvm-uuid>",
+                "cvm_vlan_id": 0,
+                "foundation_version": "5.1",
+                "hardware_attributes": {
+                    "default_workload": "vdi",
+                    "is_xpress_node": true,
+                    "lcm_family": "<lcm-family>",
+                    "maybe_1GbE_only": true,
+                    "robo_mixed_hypervisor": true
+                },
+                "hypervisor_gateway": "10.x.xx.xx",
+                "hypervisor_hostname": "KENOBI8-1",
+                "hypervisor_ip": "10.x.xx.xx",
+                "hypervisor_netmask": "xx.xx.xx.xx",
+                "hypervisor_type": "kvm",
+                "hypervisor_version": "<hypervisor-version>",
+                "imaged_cluster_uuid": "<imaged-cluster-uuid>",
+                "imaged_node_uuid": "<imaged-node-uuid>",
+                "ipmi_gateway": "10.x.xx.xx",
+                "ipmi_ip": "10.x.xx.xx",
+                "ipmi_netmask": "xx.xx.xx.xx",
+                "ipv6_interface": "eth0",
+                "latest_hb_ts_list": [],
+                "model": "<model>",
+                "node_position": "A",
+                "node_serial": "<node-serial>",
+                "node_state": "STATE_UNAVAILABLE",
+                "node_type": "on-prem",
+                "object_version": 26,
+                "supported_features": [
+                    "API_KEY_DELETION",
+                    "AHV_ISO_URL"
+                ]
+            }
+]
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

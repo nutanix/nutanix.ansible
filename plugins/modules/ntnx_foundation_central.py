@@ -358,128 +358,126 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-# respone:
-#   description: Sample response when only Imaging is done.
-#   returned: true
-#   type: list
-#   "response": {
-#         "archived": false,
-#         "cluster_external_ip": "",
-#         "cluster_name": "test-cls",
-#         "cluster_size": 0,
-#         "cluster_status": {
-#             "aggregate_percent_complete": 100,
-#             "cluster_creation_started": true,
-#             "cluster_progress_details": {
-#                 "message_list": null
-#             },
-#             "current_foundation_ip": "10.x.xx.xx,
-#             "foundation_session_id": "<session-id>",
-#             "imaging_stopped": true,
-#             "intent_picked_up": true,
-#             "node_progress_details": [
-#                 {
-#                     "imaged_node_uuid": "<node-uuid-1>",
-#                     "imaging_stopped": true,
-#                     "intent_picked_up": true,
-#                     "message_list": [],
-#                     "percent_complete": 100,
-#                     "status": "All operations completed successfully"
-#                 },
-#                 {
-#                     "imaged_node_uuid": "<node-uuid-2>",
-#                     "imaging_stopped": true,
-#                     "intent_picked_up": true,
-#                     "message_list": [],
-#                     "percent_complete": 100,
-#                     "status": "All operations completed successfully"
-#                 }
-#             ]
-#         },
-#         "common_network_settings": {
-#             "cvm_dns_servers": [
-#                 "10.x.xx.xx"
-#             ],
-#             "cvm_ntp_servers": [
-#                 ""
-#             ],
-#             "hypervisor_dns_servers": [
-#                 "10.x.xx.xx"
-#             ],
-#             "hypervisor_ntp_servers": [
-#                 ""
-#             ]
-#         },
-#         "created_timestamp": "2022-04-26T03:25:02.000-07:00",
-#         "current_time": "2022-04-26T03:40:03.000-07:00",
-#         "destroyed": false,
-#         "foundation_init_config": {
-#             "blocks": [
-#                 {
-#                     "block_id": "<block-id>",
-#                     "nodes": [
-#                         {
-#                             "cvm_ip": "10.x.xx.xx",
-#                             "fc_imaged_node_uuid": "<imaged-node-uuid>",
-#                             "hypervisor": "kvm",
-#                             "hypervisor_hostname": "HOST-1",
-#                             "hypervisor_ip": "10.x.xx.xx",
-#                             "image_now": false,
-#                             "ipmi_ip": "10.x.xx.xx",
-#                             "ipv6_address": "<node-ipv6-address>",
-#                             "node_position": "D",
-#                             "node_serial": "<node-serial>"
-#                         },
-#                         {
-#                             "cvm_ip": "10.x.xx.xx",
-#                             "fc_imaged_node_uuid": "<imaged-node-uuid>",
-#                             "hypervisor": "kvm",
-#                             "hypervisor_hostname": "HOST-2",
-#                             "hypervisor_ip": "10.x.xx.xx",
-#                             "image_now": false,
-#                             "ipmi_ip": "10.x.xx.xx",
-#                             "ipv6_address": "<node-ipv6-address>",
-#                             "node_position": "E",
-#                             "node_serial": "<node-serial>"
-#                         }
-#                     ]
-#                 }
-#             ],
-#             "clusters": [],
-#             "cvm_gateway": "10.x.xx.xx",
-#             "cvm_netmask": "xx.xx.xx.xx",
-#             "dns_servers": "10.x.xx.xx",
-#             "hyperv_product_key": "",
-#             "hyperv_sku": "",
-#             "hypervisor_gateway": "10.x.xx.xx",
-#             "hypervisor_iso_url": {
-#                 "hypervisor_type": "",
-#                 "sha256sum": "",
-#                 "url": ""
-#             },
-#             "hypervisor_isos": null,
-#             "hypervisor_netmask": "xx.xx.xx.xx",
-#             "ipmi_gateway": "10.x.xx.xx",
-#             "ipmi_netmask": "10.x.xx.xx",
-#             "nos_package_url": {
-#                 "sha256sum": "",
-#                 "url": "<url>"
-#             }
-#         },
-#         "foundation_init_node_uuid": "<foundation-uuid>",
-#         "imaged_cluster_uuid": "<imaged-cluster-uuid>",
-#         "imaged_node_uuid_list": [
-#             "<node-uuid-1>",
-#             "<node-uuid-2>"
-#         ],
-#         "redundancy_factor": 2,
-#         "skip_cluster_creation": true,
-#         "storage_node_count": 0,
-#         "updated_timestamp": "2022-04-26T03:36:02.000-07:00",
-#         "workflow_type": "FOUNDATION_WORKFLOW"
-#     }
-# }
-
+respone:
+  description: Sample response when only Imaging is done.
+  returned: always
+  type: dict
+  sample: {
+        "archived": false,
+        "cluster_external_ip": "",
+        "cluster_name": "test-cls",
+        "cluster_size": 0,
+        "cluster_status": {
+            "aggregate_percent_complete": 100,
+            "cluster_creation_started": true,
+            "cluster_progress_details": {
+                "message_list": null
+            },
+            "current_foundation_ip": "10.x.xx.xx",
+            "foundation_session_id": "<session-id>",
+            "imaging_stopped": true,
+            "intent_picked_up": true,
+            "node_progress_details": [
+                {
+                    "imaged_node_uuid": "<node-uuid-1>",
+                    "imaging_stopped": true,
+                    "intent_picked_up": true,
+                    "message_list": [],
+                    "percent_complete": 100,
+                    "status": "All operations completed successfully"
+                },
+                {
+                    "imaged_node_uuid": "<node-uuid-2>",
+                    "imaging_stopped": true,
+                    "intent_picked_up": true,
+                    "message_list": [],
+                    "percent_complete": 100,
+                    "status": "All operations completed successfully"
+                }
+            ]
+        },
+        "common_network_settings": {
+            "cvm_dns_servers": [
+                "10.x.xx.xx"
+            ],
+            "cvm_ntp_servers": [
+                ""
+            ],
+            "hypervisor_dns_servers": [
+                "10.x.xx.xx"
+            ],
+            "hypervisor_ntp_servers": [
+                ""
+            ]
+        },
+        "created_timestamp": "2022-04-26T03:25:02.000-07:00",
+        "current_time": "2022-04-26T03:40:03.000-07:00",
+        "destroyed": false,
+        "foundation_init_config": {
+            "blocks": [
+                {
+                    "block_id": "<block-id>",
+                    "nodes": [
+                        {
+                            "cvm_ip": "10.x.xx.xx",
+                            "fc_imaged_node_uuid": "<imaged-node-uuid>",
+                            "hypervisor": "kvm",
+                            "hypervisor_hostname": "HOST-1",
+                            "hypervisor_ip": "10.x.xx.xx",
+                            "image_now": false,
+                            "ipmi_ip": "10.x.xx.xx",
+                            "ipv6_address": "<node-ipv6-address>",
+                            "node_position": "D",
+                            "node_serial": "<node-serial>"
+                        },
+                        {
+                            "cvm_ip": "10.x.xx.xx",
+                            "fc_imaged_node_uuid": "<imaged-node-uuid>",
+                            "hypervisor": "kvm",
+                            "hypervisor_hostname": "HOST-2",
+                            "hypervisor_ip": "10.x.xx.xx",
+                            "image_now": false,
+                            "ipmi_ip": "10.x.xx.xx",
+                            "ipv6_address": "<node-ipv6-address>",
+                            "node_position": "E",
+                            "node_serial": "<node-serial>"
+                        }
+                    ]
+                }
+            ],
+            "clusters": [],
+            "cvm_gateway": "10.x.xx.xx",
+            "cvm_netmask": "xx.xx.xx.xx",
+            "dns_servers": "10.x.xx.xx",
+            "hyperv_product_key": "",
+            "hyperv_sku": "",
+            "hypervisor_gateway": "10.x.xx.xx",
+            "hypervisor_iso_url": {
+                "hypervisor_type": "",
+                "sha256sum": "",
+                "url": ""
+            },
+            "hypervisor_isos": null,
+            "hypervisor_netmask": "xx.xx.xx.xx",
+            "ipmi_gateway": "10.x.xx.xx",
+            "ipmi_netmask": "10.x.xx.xx",
+            "nos_package_url": {
+                "sha256sum": "",
+                "url": "<url>"
+            }
+        },
+        "foundation_init_node_uuid": "<foundation-uuid>",
+        "imaged_cluster_uuid": "<imaged-cluster-uuid>",
+        "imaged_node_uuid_list": [
+            "<node-uuid-1>",
+            "<node-uuid-2>"
+        ],
+        "redundancy_factor": 2,
+        "skip_cluster_creation": true,
+        "storage_node_count": 0,
+        "updated_timestamp": "2022-04-26T03:36:02.000-07:00",
+        "workflow_type": "FOUNDATION_WORKFLOW"
+}
 """
 
 import time  # noqa: E402
