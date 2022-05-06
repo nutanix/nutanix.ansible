@@ -1259,7 +1259,11 @@ def run_module():
         required_if=[("bond_mode", "dynamic", ("bond_lacp_rate",))],
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     image_nodes(module, result)
     module.exit_json(**result)
 

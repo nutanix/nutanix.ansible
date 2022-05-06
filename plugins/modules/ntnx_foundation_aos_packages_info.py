@@ -63,6 +63,7 @@ def list_aos_packages(module, result):
     packages = EnumerateAOSPackages(module)
     resp = packages.list()
     result["aos_packages"] = resp
+    result["response"] = resp
 
 
 def run_module():
@@ -71,7 +72,11 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     list_aos_packages(module, result)
     module.exit_json(**result)
 

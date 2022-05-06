@@ -64,6 +64,7 @@ def list_hypervisor_images(module, result):
     images = EnumerateHypervisorIsos(module)
     resp = images.read()
     result["hypervisor_images"] = resp
+    result["response"] = resp
 
 
 def run_module():
@@ -72,7 +73,11 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     list_hypervisor_images(module, result)
     module.exit_json(**result)
 

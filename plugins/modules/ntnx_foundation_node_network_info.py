@@ -97,6 +97,7 @@ def get_node_network_details(module, result):
             msg="Failed to retrieve node network details via foundation", **result
         )
     result["nodes"] = resp
+    result["response"] = resp
 
 
 def run_module():
@@ -105,7 +106,11 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     get_node_network_details(module, result)
     module.exit_json(**result)
 

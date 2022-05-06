@@ -110,6 +110,7 @@ def discover_nodes(module, result):
         result["error"] = err
         module.fail_json(msg="Failed discover nodes via foundation", **result)
     result["blocks"] = resp["blocks"]
+    result["response"] = resp
 
 
 def run_module():
@@ -118,7 +119,11 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     discover_nodes(module, result)
     module.exit_json(**result)
 
