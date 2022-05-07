@@ -20,26 +20,26 @@
       url: "{{hypervisor_iso_details.url}}"
     nodes_list:
       - manual_mode:
-          cvm_gateway: "{{nod1.cvm_gateway}}"
-          cvm_netmask: "{{nod1.cvm_netmask}}"
-          cvm_ip: "{{nod1.cvm_ip}}"
-          hypervisor_gateway: "{{nod1.hypervisor_gateway}}"
-          hypervisor_netmask: "{{nod1.hypervisor_netmask}}"
-          hypervisor_ip: "{{nod1.hypervisor_ip}}"
+          cvm_gateway: "{{node1.cvm_gateway}}"
+          cvm_netmask: "{{node1.cvm_netmask}}"
+          cvm_ip: "{{node1.cvm_ip}}"
+          hypervisor_gateway: "{{node1.hypervisor_gateway}}"
+          hypervisor_netmask: "{{node1.hypervisor_netmask}}"
+          hypervisor_ip: "{{node1.hypervisor_ip}}"
           hypervisor_hostname: "{{node1.hypervisor_hostname}}"
           imaged_node_uuid: "{{node1.fc_imaged_node_uuid}}"
           use_existing_network_settings: false
           ipmi_gateway: "{{node1.ipmi_gateway}}"
           ipmi_netmask: "{{node1.ipmi_netmask}}"
-          ipmi_ip: "{{nod1.ipmi_ip}}"
+          ipmi_ip: "{{node1.ipmi_ip}}"
           image_now: true
           hypervisor_type: "{{node1.hypervisor}}"
       - discovery_mode:
           node_serial: "{{node2.node_serial}}"
       - discovery_mode:
           node_serial: "{{node3.node_serial}}"
-          discovery_override:
-            hypervisor_hostname: new_host_name
+          # discovery_override:
+          #   hypervisor_hostname: new_host_name
   register: result
   ignore_errors: true
 - debug:
