@@ -117,8 +117,6 @@ class Entity(object):
         timeout=30,
     ):
         url = self.base_url + "/{0}".format(endpoint) if endpoint else self.base_url
-        if endpoint:
-            url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
         return self._upload_file(
