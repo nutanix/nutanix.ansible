@@ -1,0 +1,24 @@
+---
+- debug:
+    msg: start testing ntnx_foundation_hypervisor_images_info
+
+- name: get hypervisor_images_info from foundation
+  ntnx_foundation_hypervisor_images_info:
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.hypervisor_images | length > 0
+      - result.hypervisor_images is defined
+      - result.hypervisor_images.esx is defined
+      - result.hypervisor_images.esx.0.filename is defined
+      - result.hypervisor_images.kvm is defined
+      - result.hypervisor_images.kvm.0 is defined
+      - result.hypervisor_images.xen is defined
+      - result.hypervisor_images.linux is defined
+      - result.hypervisor_images.hyperv is defined
+      - result.failed==false
+      - result.changed==false
+    fail_msg: " Fail : unable to get hypervisor_images_info "
+    success_msg: "Succes: got hypervisor_images_info successfully "

@@ -1,0 +1,26 @@
+---
+- debug:
+    msg: start testing ntnx_foundation_node_network_info
+
+- name: Discover nodes
+  ntnx_foundation_discover_nodes_info:
+  register: result
+
+- name: Get node network info
+  ntnx_foundation_node_network_info:
+    nodes:
+      - "{{result.blocks.0.nodes.0.ipv6_address}}"
+      - "{{result.blocks.1.nodes.0.ipv6_address}}"
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.nodes is defined
+      - result.failed==false
+      - result.changed==false
+      - result.nodes.0.ipmi_ip is defined
+      - result.nodes.0.ipmi_gateway is defined
+      - result.nodes.0.hypervisor_hostname is defined
+    fail_msg: " Fail : unable to get  node network info "
+    success_msg: "Succes: Got node network info successfully "
