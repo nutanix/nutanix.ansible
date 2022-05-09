@@ -48,6 +48,7 @@ jobs:
           echo '{{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
           echo '{{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
           ansible-playbook tests/integration/targets/prepare_env/tasks/prepare_env.yml
+          ansible-playbook tests/integration/targets/prepare_fc_env/tasks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/tasks/prepare_foundation_env.yml
           ansible-test integration --python ${{ matrix.python-version }} --coverage -v $flag
           ansible-test coverage report > coverage.txt
