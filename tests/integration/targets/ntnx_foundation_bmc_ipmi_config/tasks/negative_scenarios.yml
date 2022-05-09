@@ -1,0 +1,15 @@
+- debug:
+    msg: start negative_scenarios for ntnx_foundation_bmc_ipmi_config
+
+- name: configure ipmi
+  ntnx_foundation_bmc_ipmi_config:
+    ipmi_user: "{{bmc.ipmi_user}}"
+    ipmi_password: "{{bmc.ipmi_password}}"
+    ipmi_netmask: "{{bmc.ipmi_netmask}}"
+    ipmi_gateway: "{{bmc.ipmi_gateway}}"
+    blocks:
+        - nodes:
+            - ipmi_mac: wrong mac address
+              ipmi_ip: "{{bmc.ipmi_ip}}"
+  register: result
+  ignore_errors: true

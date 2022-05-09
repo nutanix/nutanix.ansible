@@ -1,0 +1,6 @@
+---
+- module_defaults:
+    nutanix.ncp.ntnx_foundation_discover_nodes_info:
+        nutanix_host: "{{ foundation_host }}"
+  block:
+        - import_tasks: "discover_nodes.yml"

@@ -8,7 +8,6 @@ cluster:
 virtual_switch:
   name: vs0
   uuid: 070d3832-6f28-4cf2-ae29-5514f30ac520
-
 external_nat_subnets:
   name: integration_test_Ext-Nat
   vlan_id: 102
