@@ -1,0 +1,55 @@
+- debug:
+    msg: start testing ntnx_foundation_central_api_keys module
+
+- name: create api key with check_mode
+  ntnx_foundation_central_api_keys:
+    alias:  test
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==false
+      - result.response.alias=="test"
+    fail_msg: "fail: Unable to create api key with check_mode: "
+    success_msg: "succes: api key with check_mode: "
+
+- name: Generate random alias for api key
+  set_fact:
+    random_alias: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+  
+
+- name: create api key with random alias
+  ntnx_foundation_central_api_keys:
+    alias:  "{{random_alias.0}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==true
+      - result.response.key_uuid is defined
+    fail_msg: "fail: Unable to create api key "
+    success_msg: "succes: api key created successfully "
+
+- ntnx_foundation_central_api_keys:
+    alias:  "{{random_alias.0}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.changed==false
+      - result.failed==true
+      - result.status_code==400
+      - result.error is defined
+    fail_msg: "fail: created duplicate api key with same alias "
+    success_msg: "succes: returned error as expected "

@@ -14,3 +14,8 @@ action_groups:
   - ntnx_foundation_image_upload
   - ntnx_foundation_node_network_info
   - ntnx_foundation
+  - ntnx_foundation_central
+  - ntnx_foundation_central_imaged_nodes_info
+  - ntnx_foundation_central_imaged_clusters_info
+  - ntnx_foundation_central_api_keys
+  - ntnx_foundation_central_api_keys_info

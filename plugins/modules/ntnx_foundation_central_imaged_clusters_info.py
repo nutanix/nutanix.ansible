@@ -1,4 +1,11 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2021, Prem Karat
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
@@ -7,23 +14,11 @@ short_description: Nutanix module which returns the imaged clusters within the F
 version_added: 1.1.0
 description: 'List all the imaged clusters created in Foundation Central.'
 options:
-  nutanix_host:
-    description:
-      - Foundation VM hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: 8000
-    required: false
   imaged_cluster_uuid:
     description:
       - Return the cluster details given it's uuid
     type: str
     required: false
-    default: None
   length:
     description:
       - Return the list of imaged clusters upto the length or by default 10.
@@ -48,9 +43,17 @@ options:
             type: bool
             required: false
             default: false
-    default: None
-
+  custom_filter:
+    description:
+      - write
+    type: dict
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_opperations
 author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
  - Abhishek Chaudhary (@abhimutant)
 """
 
@@ -76,11 +79,12 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-Imaged_Clusters_list
+Imaged_Clusters_list:
   description: All the imaged clusters within Foundation Central
-  returned: true
+  returned: always
   type: list
-  "imaged_clusters": [
+  sample:
+   [
             {
                 "archived": false,
                 "cluster_external_ip": "",
@@ -201,7 +205,7 @@ Imaged_Clusters_list
                         }
                     ],
                     "cvm_gateway": "10.x.xx.xx",
-                    "cvm_netmask": "xx.xx.xx.xx,
+                    "cvm_netmask": "xx.xx.xx.xx",
                     "dns_servers": "10.x.xx.xx",
                     "hyperv_product_key": "",
                     "hyperv_sku": "",
@@ -238,26 +242,25 @@ Imaged_Clusters_list
                 "storage_node_count": 0,
                 "updated_timestamp": "2021-12-05T23:13:05.000-08:00",
                 "workflow_type": "FOUNDATION_WORKFLOW"
-            }
-        ],
-        "metadata": {
-            "length": 1,
-            "total_matches": 1
-        }
-    }
+            },
+        ]
 
 """
 
-from ..module_utils.base_module import BaseModule
-from ..module_utils.fc.imaged_clusters import ImagedCluster
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.fc.imaged_clusters import ImagedCluster  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
     module_args = dict(
         imaged_cluster_uuid=dict(type="str"),
-        filters=dict(type="dict", archived=dict(type="bool", default=False)),
+        filters=dict(
+            type="dict", options=dict(archived=dict(type="bool", default=False))
+        ),
         custom_filter=dict(type="dict"),
+        offset=dict(type="int", default=0),
+        length=dict(type="int", default=10),
     )
 
     return module_args
