@@ -20,6 +20,8 @@
                   cvm_ip: "{{IBIS_node.node1.cvm_ip}}"
                   cvm_gb_ram: 50
                   hypervisor_hostname: "{{IBIS_node.node1.hypervisor_hostname}}"
+                  ipmi_netmask: "{{IBIS_node.node1.ipmi_netmask}}"
+                  ipmi_gateway: "{{IBIS_node.node1.ipmi_gateway}}"
                   ipmi_ip: "{{IBIS_node.node1.ipmi_ip}}"
                   ipmi_password: "{{IBIS_node.node1.ipmi_password}}"
                   hypervisor: "{{IBIS_node.node1.hypervisor}}"
