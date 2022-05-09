@@ -12,6 +12,8 @@
       - result.blocks is defined
       - result.failed==false
       - result.changed==false
+      - result.blocks.0.nodes.0.configured==false
+      - result.blocks.0.nodes.0.ipv6_address is defined
     fail_msg: " Fail : unable to Discover nodes "
     success_msg: "Succes: Discover nodes finished successfully "
   
@@ -26,6 +28,7 @@
       - result.blocks is defined
       - result.failed==false
       - result.changed==false
+      - result.blocks.0.nodes.0.ipv6_address is defined
     fail_msg: " Fail : unable to discover all nodes "
     success_msg: "Succes: Discover all nodes finished successfully "
 

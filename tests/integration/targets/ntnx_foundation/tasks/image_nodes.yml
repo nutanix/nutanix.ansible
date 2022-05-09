@@ -5,10 +5,6 @@
     - name: Image one node with manual mode and create cluster
       ntnx_foundation:
         timeout: 3660
-        # hypervisor_iso:
-        #   esx:
-        #     filename: "{{esx.filename}}"
-        #     checksum: "{{esx.checksum}}"
         nutanix_host: "{{foundation_host}}"
         cvm_gateway: "{{cvm_gateway}}"
         cvm_netmask: "{{cvm_netmask}}"
@@ -43,13 +39,14 @@
                   ipmi_password: "{{IBIS_node.node2.ipmi_password}}"
                   node_serial: "{{IBIS_node.node2.node_serial}}"
                   discovery_override:
-                    hypervisor_hostname: new_host_name
+                    hypervisor_hostname: "IBIS2"
         clusters:
-            redundancy_factor: 2
-            cluster_members: 
-              - "{{IBIS_node.node1.cvm_ip}}"
-              - "{{IBIS_node.node3.cvm_ip}}"
-              - "{{IBIS_node.node2.cvm_ip}}"
+            - redundancy_factor: 2
+              cluster_members: 
+                - "{{IBIS_node.node1.cvm_ip}}"
+                - "{{IBIS_node.node3.cvm_ip}}"
+                - "{{IBIS_node.node2.cvm_ip}}"
+              name: "test-cluster"
       register: first_cluster
       ignore_errors: True
 
@@ -59,6 +56,8 @@
           - first_cluster_job_result.response is defined
           - first_cluster_job_result.failed==false
           - first_cluster_job_result.changed==true
-        fail_msg: " Fail : unable to create cluster with three node successfully "
+          - first_cluster_job_result.response.cluster_urls is defined
+          - first_cluster_job_result.response.cluster_urls.0.name=="test-cluster"
+        fail_msg: " Fail : unable to create cluster with three node"
         success_msg: "Succes: cluster with three node created successfully "
 ######################################################

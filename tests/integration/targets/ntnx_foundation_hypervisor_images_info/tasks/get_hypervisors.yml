@@ -12,7 +12,9 @@
       - result.hypervisor_images | length > 0
       - result.hypervisor_images is defined
       - result.hypervisor_images.esx is defined
+      - result.hypervisor_images.esx.0.filename is defined
       - result.hypervisor_images.kvm is defined
+      - result.hypervisor_images.kvm.0 is defined
       - result.hypervisor_images.xen is defined
       - result.hypervisor_images.linux is defined
       - result.hypervisor_images.hyperv is defined

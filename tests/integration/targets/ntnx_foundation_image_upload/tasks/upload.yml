@@ -5,10 +5,10 @@
 - name: Image upload with nos installer_type
   ntnx_foundation_image_upload:
     state: present
-    source: "/tmp/integration-test-ntnx-package.tar.gz"
-    filename: "dont_use_nutanix_installer_package-integration-test.tar.gz"
+    source: "{{ playbook_dir }}/targets/prepare_foundation_env/tasks/integration-test-ntnx-package.tar.gz"
+    filename: "integration-test-ntnx-package.tar.gz"
     installer_type: nos
-    timeout: 3600
+    timeout: 1800
   register: result
   ignore_errors: true
 
@@ -18,13 +18,13 @@
       - result.response is defined
       - result.failed==false
       - result.changed==true
-    fail_msg: " Fail : unable upload image  with nos installer_type "
+    fail_msg: " Fail : unable to upload image  with nos installer_type "
     success_msg: "Succes: upload image  with nos installer_type successfully "
 
 - name: Delete Image with nos installer_type
   ntnx_foundation_image_upload:
     state: absent
-    filename: "dont_use_nutanix_installer_package-integration-test.tar.gz"
+    filename: "integration-test-ntnx-package.tar.gz"
     installer_type: nos
   register: result
   ignore_errors: true
