@@ -8,18 +8,18 @@ cluster:
 virtual_switch:
   name: vs0
   uuid: 070d3832-6f28-4cf2-ae29-5514f30ac520
-# external_nat_subnets:
-#   name: integration_test_Ext-Nat
-#   vlan_id: 102
-#   gateway_ip_address: 10.44.3.193
-#   network_prefix: 27
-#   network_ip: 10.44.3.192
-#   dhcp:
-#     start_address: 10.44.3.198
-#     end_address: 10.44.3.207
-#   static:
-#     start_address: 10.44.3.208
-#     end_address: 10.44.3.217
+external_nat_subnets:
+  name: integration_test_Ext-Nat
+  vlan_id: 103
+  gateway_ip_address: 10.44.3.193
+  network_prefix: 27
+  network_ip: 10.44.3.192
+  dhcp:
+    start_address: 10.44.3.198
+    end_address: 10.44.3.207
+  static:
+    start_address: 10.44.3.208
+    end_address: 10.44.3.217
 
 vpc_name: integration_test_vpc
 vm_name: integration_test_vm
