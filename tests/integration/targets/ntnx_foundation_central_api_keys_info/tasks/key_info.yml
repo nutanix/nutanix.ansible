@@ -1,3 +1,4 @@
+---
 - debug:
     msg: start testing ntnx_foundation_central_api_keys_info module
 

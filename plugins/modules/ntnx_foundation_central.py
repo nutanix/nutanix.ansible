@@ -686,10 +686,11 @@ def _get_progress_error_status(progress):
 def _get_cluster_progress_messages(progress, entity_type, entity_name):
     res = ""
     cluster = progress["cluster_status"][entity_type]
-    if cluster.get(entity_name):
-        res += "cluster_name: {0}\n".format(cluster[entity_name])
-    if cluster.get("status"):
-        res += "status:\n{0}\n".format(cluster["status"])
+    if cluster is not None:
+        if cluster.get(entity_name):
+            res += "cluster_name: {0}\n".format(cluster[entity_name])
+        if cluster.get("status"):
+            res += "status:\n{0}\n".format(cluster["status"])
 
     return res
 

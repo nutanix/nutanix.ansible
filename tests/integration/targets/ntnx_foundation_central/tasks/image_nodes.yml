@@ -27,13 +27,13 @@
           hypervisor_netmask: "{{node1.hypervisor_netmask}}"
           hypervisor_ip: "{{node1.hypervisor_ip}}"
           hypervisor_hostname: "{{node1.hypervisor_hostname}}"
-          imaged_node_uuid: "{{node1.fc_imaged_node_uuid}}"
+          imaged_node_uuid: "{{node1.imaged_node_uuid}}"
           use_existing_network_settings: false
           ipmi_gateway: "{{node1.ipmi_gateway}}"
           ipmi_netmask: "{{node1.ipmi_netmask}}"
           ipmi_ip: "{{node1.ipmi_ip}}"
           image_now: true
-          hypervisor_type: "{{node1.hypervisor}}"
+          hypervisor_type: "{{node1.hypervisor_type}}"
       - discovery_mode:
           node_serial: "{{node2.node_serial}}"
       - discovery_mode:
