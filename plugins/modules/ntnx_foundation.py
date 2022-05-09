@@ -1242,6 +1242,18 @@ def image_nodes(module, result):
     if module.params.get("wait"):
         wait_image_completion(module, result)
 
+    # add cluster urls if any cluster created
+    cluster_urls = []
+    if spec["clusters"]:
+        for cluster in spec["clusters"]:
+            cluster_urls.append(
+                {
+                    "url": "https://{0}:9440/".format(cluster["cluster_members"][0]),
+                    "name": cluster["cluster_name"],
+                }
+            )
+        result["response"]["cluster_urls"] = cluster_urls
+
 
 def wait_image_completion(module, result):
     progress = Progress(module)
