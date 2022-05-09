@@ -4,7 +4,7 @@
 
     - name: Image one node with manual mode and create cluster
       ntnx_foundation:
-        timeout: 3660
+        timeout: 4500
         nutanix_host: "{{foundation_host}}"
         cvm_gateway: "{{cvm_gateway}}"
         cvm_netmask: "{{cvm_netmask}}"
