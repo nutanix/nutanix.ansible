@@ -7,3 +7,10 @@ action_groups:
   - ntnx_vms
   - ntnx_vpcs
   - ntnx_subnets
+  - ntnx_foundation_aos_packages_info
+  - ntnx_foundation_bmc_ipmi_config
+  - ntnx_foundation_discover_nodes_info
+  - ntnx_foundation_hypervisor_images_info
+  - ntnx_foundation_image_upload
+  - ntnx_foundation_node_network_info
+  - ntnx_foundation
