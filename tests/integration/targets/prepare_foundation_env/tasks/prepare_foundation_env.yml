@@ -1,0 +1,15 @@
+
+---
+- name: prepare the environment
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  
+  tasks:
+  - name: include var file
+    include_vars: ../vars/main.yml
+  - name: Download image for test
+    get_url:
+      url: "{{ image_url }}"
+      dest: "{{ playbook_dir }}/tmp/integration-test-ntnx-package.tar.gz"

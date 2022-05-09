@@ -1,0 +1,6 @@
+---
+- module_defaults:
+    nutanix.ncp.ntnx_foundation_aos_packages_info:
+        nutanix_host: "{{ foundation_host }}"
+  block:
+        - import_tasks: "get_aos.yml"

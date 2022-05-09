@@ -5,10 +5,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from ..module_utils.foundation.base_module import FoundationBaseModule
-from ..module_utils.foundation.image_upload import Image
-from ..module_utils.utils import remove_param_with_none_value
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -18,25 +14,13 @@ short_description: Nutanix module which uploads hypervisor or AOS image to found
 version_added: 1.1.0
 description: Uploads hypervisor or AOS image to foundation vm.
 options:
-  nutanix_host:
-    description:
-      - Foundation VM hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - Foundation VM port
-    type: str
-    default: 8000
-    required: false
   source:
     description:
       - local full path of installer file where the ansible playbook runs
       - mandatory incase of upload i.e. state=present
     type: str
     required: false
-    description:
-  file_name:
+  filename:
     description:
       - Name of installer file that will be uploaded to foundation vm
     type: str
@@ -47,17 +31,39 @@ options:
     type: str
     choices: [kvm, esx, hyperv, xen, nos]
     required: true
+extends_documentation_fragment:
+      - nutanix.ncp.FoundationBaseModule
+      - nutanix.ncp.ntnx_opperations
 author:
  - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
+- name: Image upload with esx installer_type
+  ntnx_foundation_image_upload:
+    nutanix_host: "{{ ip }}"
+    state: present
+    source: "{{path}}"
+    filename: "temptar_dont_use.iso"
+    installer_type: esx
+    timeout: 3600
 
+- name: Delete Image with esx installer_type
+  ntnx_foundation_image_upload:
+    nutanix_host: "{{ ip }}"
+    state : "absent"
+    filename: "temptar_dont_use.iso"
+    installer_type: "esx"
 """
 
 RETURN = r"""
 
 """
+from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.foundation.image_upload import Image  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
