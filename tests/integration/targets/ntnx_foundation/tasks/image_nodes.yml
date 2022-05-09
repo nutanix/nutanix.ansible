@@ -53,11 +53,11 @@
     - name: Creation Status
       assert:
         that:
-          - first_cluster_job_result.response is defined
-          - first_cluster_job_result.failed==false
-          - first_cluster_job_result.changed==true
-          - first_cluster_job_result.response.cluster_urls is defined
-          - first_cluster_job_result.response.cluster_urls.0.name=="test-cluster"
+          - first_cluster.response is defined
+          - first_cluster.failed==false
+          - first_cluster.changed==true
+          - first_cluster.response.cluster_urls is defined
+          - first_cluster.response.cluster_urls.0.name=="test-cluster"
         fail_msg: " Fail : unable to create cluster with three node"
         success_msg: "Succes: cluster with three node created successfully "
 ######################################################
