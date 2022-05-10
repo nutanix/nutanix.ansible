@@ -9,7 +9,3 @@
   tasks:
   - name: include var file
     include_vars: ../vars/main.yml
-  - name: Download image for test
-    get_url:
-      url: "{{ image_url }}"
-      dest: "{{ source }}"
