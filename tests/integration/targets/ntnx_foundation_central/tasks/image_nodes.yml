@@ -38,8 +38,8 @@
           node_serial: "{{node2.node_serial}}"
       - discovery_mode:
           node_serial: "{{node3.node_serial}}"
-          # discovery_override:
-          #   hypervisor_hostname: new_host_name
+          discovery_override:
+            hypervisor_hostname: "{{node3.discovery_override.hypervisor_hostname}}"
   register: result
   ignore_errors: true
   # when: false # make it true or remove to unskip task

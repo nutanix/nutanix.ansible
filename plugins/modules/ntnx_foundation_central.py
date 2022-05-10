@@ -654,7 +654,7 @@ def wait_for_completion(module, uuid):
     state = ""
     delay = 30
     time.sleep(15 * 60)
-    timeout = time.time() + (2 * 60 * 60)
+    timeout = time.time() + (3 * 60 * 60)
     progress = ImagedCluster(module)
     while state != "COMPLETED":
         response = progress.read(uuid)
