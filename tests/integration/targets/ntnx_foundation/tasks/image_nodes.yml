@@ -51,7 +51,7 @@
               name: "test-cluster"
       register: first_cluster
       ignore_errors: True
-      # when: false # make it true or remove to unskip task
+      when: false # make it true or remove to unskip task
 
     - name: Creation Status
       assert:
@@ -63,6 +63,6 @@
           - first_cluster.response.cluster_urls.0.name=="test-cluster"
         fail_msg: " Fail : unable to create cluster with three node"
         success_msg: "Succes: cluster with three node created successfully "
-      # when: false # make it true or remove to unskip task
+      when: false # make it true or remove to unskip task
 
 ######################################################
