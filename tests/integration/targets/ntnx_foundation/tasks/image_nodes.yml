@@ -2,7 +2,7 @@
     - debug:
         msg: start testing ntnx_foundation
 
-    - name: Image one node with manual mode and create cluster
+    - name: Image nodes using manual and discovery modes. Create cluster
       ntnx_foundation:
         timeout: 4500
         nutanix_host: "{{foundation_host}}"
