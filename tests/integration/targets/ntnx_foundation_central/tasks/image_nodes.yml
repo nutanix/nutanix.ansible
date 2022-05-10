@@ -42,7 +42,7 @@
           #   hypervisor_hostname: new_host_name
   register: result
   ignore_errors: true
-  when: false # make it true or remove to unskip task
+  # when: false # make it true or remove to unskip task
 
 - name: Creation Status
   assert:
@@ -52,4 +52,4 @@
       - result.changed==true
     fail_msg: "fail: Unable to image nodes or create cluster "
     success_msg: "succes: Imaging and cluster created successfully "
-  when: false # make it true or remove to unskip task
+  # when: false # make it true or remove to unskip task
