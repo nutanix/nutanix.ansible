@@ -1,7 +1,7 @@
 - name: Image upload with wrong installer_type
   ntnx_foundation_image_upload:
     state: present
-    source: "{{ playbook_dir }}/targets/prepare_foundation_env/tasks/integration-test-ntnx-package.tar.gz"
+    source: "{{ source }}"
     filename: "integration-test-ntnx-package.tar.gz"
     installer_type: wrong installler type
     timeout: 3600
