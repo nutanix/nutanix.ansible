@@ -136,6 +136,11 @@ options:
                                     - write
                                 type: str
                                 required: true
+                            image_now:
+                                description:
+                                    - write
+                                type: bool
+                                default: true
                             discovery_override:
                                 description:
                                     - write
@@ -541,6 +546,7 @@ def get_module_spec():
 
     discovery_mode_spec_dict = dict(
         node_serial=dict(type="str", required=True),
+        image_now=dict(type="bool", default=True),
         discovery_override=dict(
             type="dict", required=False, options=discovery_override
         ),
@@ -647,8 +653,8 @@ def wait_till_imaging(module, result):
 def wait_for_completion(module, uuid):
     state = ""
     delay = 30
-    timeout = time.time() + (2 * 60 * 60)
     time.sleep(15 * 60)
+    timeout = time.time() + (2 * 60 * 60)
     progress = ImagedCluster(module)
     while state != "COMPLETED":
         response = progress.read(uuid)
