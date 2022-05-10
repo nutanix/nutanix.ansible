@@ -3,10 +3,10 @@
     msg: start testing ntnx_foundation_image_upload
 
 - name: Download image for test
-    get_url:
-      url: "{{ image_url }}"
-      dest: "{{ source }}"
-      
+  get_url:
+    url: "{{ image_url }}"
+    dest: "{{ source }}"
+
 - name: Image upload with nos installer_type
   ntnx_foundation_image_upload:
     state: present
