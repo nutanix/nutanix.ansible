@@ -5,6 +5,6 @@
   tasks:
     - name: Delete files
       file:
-        path: "{{ playbook_dir }}/tmp/integration-test-ntnx-package.tar.gz"
+        path: "{{ source }}"
         state: absent
   

@@ -12,4 +12,4 @@
   - name: Download image for test
     get_url:
       url: "{{ image_url }}"
-      dest: "{{ playbook_dir }}/tmp/integration-test-ntnx-package.tar.gz"
+      dest: "{{ source }}"
