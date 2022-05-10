@@ -42,5 +42,12 @@
           #   hypervisor_hostname: new_host_name
   register: result
   ignore_errors: true
-- debug:
-    var: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==true
+    fail_msg: "fail: Unable to image nodes or create cluster "
+    success_msg: "succes: Imaging and cluster created successfully "

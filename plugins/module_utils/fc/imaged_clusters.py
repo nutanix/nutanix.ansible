@@ -177,4 +177,6 @@ class ImagedCluster(FoundationCentral):
                 v = node.get(k)
                 if v:
                     spec[k] = v
+            elif k=="image_now":
+                spec[k] = True
         return spec
