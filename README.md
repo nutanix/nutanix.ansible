@@ -8,11 +8,28 @@ It is designed keeping simplicity as the core value. Hence it is
 1. Easy to use
 2. Easy to develop
 
-# Ansible version compatibility
-This collection has been tested against following Ansible versions: >=2.12.2.
+# Version compatibility
 
-# Python version compatibility
-This collection requires Python 2.7 or greater
+## Ansible
+> This collection has been tested against following Ansible versions: >=2.12.2.
+
+## Python
+> This collection requires Python 2.7 or greater
+
+## Prism Cenral
+> For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2 pc.2021.9.0.5 and pc.2021.8.0.1.
+
+Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
+
+## Foundation
+> For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation. This release was tested against Foundation versions v5.2 and v5.1.1
+
+Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation
+
+## Foundation Central
+> For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation Central . This release was tested against Foundation Central versions v1.3 and v1.2
+
+Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc
 
 # Installing the collection
 **Prerequisite**
