@@ -1,4 +1,11 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2021, Prem Karat
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
@@ -7,23 +14,11 @@ short_description: Nutanix module which returns the imaged nodes within the Foud
 version_added: 1.1.0
 description: 'List all the imaged nodes created in Foundation Central.'
 options:
-  nutanix_host:
-    description:
-      - Foundation VM hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: 8000
-    required: false
   imaged_node_uuid:
     description:
       - Return the node details given it's uuid
     type: str
     required: false
-    default: None
   length:
     description:
       - Return the list of imaged nodes upto the length or by default 10.
@@ -51,11 +46,18 @@ options:
                 - STATE_UNAVAILABLE
                 - STATE_DISCOVERING
                 - STATE_IMAGING
-            required: false
-            default: false
-    default: None
+  custom_filter:
+    description:
+      - write
+    type: dict
 
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_opperations
 author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
  - Abhishek Chaudhary (@abhimutant)
 """
 
@@ -81,11 +83,12 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-Imaged_Node_List
+Imaged_Node_List:
   description: Imaged Node list within Foundation Central
-  return:  true
+  returned: always
   type: list
-  "imaged_nodes": [
+  sample:
+   [
             {
                 "aos_version": "6.1",
                 "api_key_uuid": "<api-key-uuid>",
@@ -132,18 +135,12 @@ Imaged_Node_List
                     "AHV_ISO_URL"
                 ]
             }
-        ],
-        "metadata": {
-            "length": 1,
-            "total_matches": 1
-        }
-    }
-
+]
 """
 
-from ..module_utils.base_module import BaseModule
-from ..module_utils.fc.imaged_nodes import ImagedNode
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.fc.imaged_nodes import ImagedNode  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
@@ -151,17 +148,21 @@ def get_module_spec():
         imaged_node_uuid=dict(type="str"),
         filters=dict(
             type="dict",
-            node_state=dict(
-                type="str",
-                choices=[
-                    "STATE_AVAILABLE",
-                    "STATE_UNAVAILABLE",
-                    "STATE_DISCOVERING",
-                    "STATE_IMAGING",
-                ],
-                default=None,
+            options=dict(
+                node_state=dict(
+                    type="str",
+                    choices=[
+                        "STATE_AVAILABLE",
+                        "STATE_UNAVAILABLE",
+                        "STATE_DISCOVERING",
+                        "STATE_IMAGING",
+                    ],
+                    default=None,
+                ),
             ),
         ),
+        offset=dict(type="int", default=0),
+        length=dict(type="int", default=10),
         custom_filter=dict(type="dict"),
     )
 

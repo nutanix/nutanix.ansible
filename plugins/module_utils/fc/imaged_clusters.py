@@ -101,6 +101,7 @@ class ImagedCluster(FoundationCentral):
             elif node.get("discovery_mode"):
                 _node = node.get("discovery_mode")
                 node_serial = _node.get("node_serial")
+                image_now = _node.get("image_now")
                 node_details, error = self.ImgNodes.node_details_by_node_serial(
                     node_serial
                 )
@@ -110,6 +111,7 @@ class ImagedCluster(FoundationCentral):
                 if discovery_override:
                     node_details.update(discovery_override)
                 spec = self._get_default_nodes_spec(node_details)
+                spec["image_now"] = image_now
 
             nodes_list.append(spec)
         payload["nodes_list"] = nodes_list

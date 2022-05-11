@@ -5,7 +5,7 @@
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    priority: 102
+    priority: 103
     vpc:
       name: "{{ vpc.name }}"
     source:

@@ -45,7 +45,7 @@ class Progress(Foundation):
         return response, None
 
     def _get_progress_error_status(self, progress):
-        return "Imaging stopped before completion.\nClusters: {}\nNodes: {}".format(
+        return "Imaging stopped before completion.\nClusters: {0}\nNodes: {1}".format(
             self._get_progress_messages(progress, "clusters", "cluster_name"),
             self._get_progress_messages(progress, "nodes", "cvm_ip"),
         )
@@ -55,6 +55,6 @@ class Progress(Foundation):
         clusters = progress.get(entity_type)
         if clusters:
             for c in clusters:
-                res += "cluster: {}\n".format(c.get(entity_name))
-                res += "messages:\n{}\n".join(c.get("messages", []))
+                res += "cluster: {0}\n".format(c.get(entity_name))
+                res += "messages:\n{0}\n".join(c.get("messages", []))
         return res

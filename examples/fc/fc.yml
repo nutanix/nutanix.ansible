@@ -98,4 +98,3 @@
   - name: output of list 
     debug:
       msg: '{{ output }}'
-

@@ -1,0 +1,44 @@
+---
+- debug:
+    msg: start testing ntnx_foundation_image_upload
+
+- name: Download image for test
+  get_url:
+    url: "{{ image_url }}"
+    dest: "{{ source }}"
+
+- name: Image upload with nos installer_type
+  ntnx_foundation_image_upload:
+    state: present
+    source: "{{ source }}"
+    filename: "integration-test-ntnx-package.tar.gz"
+    installer_type: nos
+    timeout: 1800
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==true
+    fail_msg: " Fail : unable to upload image  with nos installer_type "
+    success_msg: "Succes: upload image  with nos installer_type successfully "
+
+- name: Delete Image with nos installer_type
+  ntnx_foundation_image_upload:
+    state: absent
+    filename: "integration-test-ntnx-package.tar.gz"
+    installer_type: nos
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response.status_code == 200
+      - result.failed==false
+      - result.changed==true
+    fail_msg: " Fail : unable to delete image  with nos installer_type "
+    success_msg: "Succes: image  with nos installer_type deleted successfully "

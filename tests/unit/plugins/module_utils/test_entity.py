@@ -48,6 +48,14 @@ def _fetch_url(url, method, data=None, **kwargs):
     return response
 
 
+def _upload_file(url, source, method, **kwargs):
+    """Mock upload file request"""
+    return {
+        "status_code": 200,
+        "request": {"method": method, "url": url, "source": source},
+    }
+
+
 def exit_json(*args, **kwargs):
     if "changed" not in kwargs:
         kwargs["changed"] = False
@@ -63,6 +71,7 @@ class TestEntity(ModuleTestCase):
     def setUp(self):
         self.module = Module()
         Entity._fetch_url = MagicMock(side_effect=_fetch_url)
+        Entity._upload_file = MagicMock(side_effect=_upload_file)
         Entity._get_default_spec = MagicMock(side_effect=lambda: {})
         Entity.build_spec_methods = {
             "test_param": lambda s, v: ({"test_param": v}, None)
@@ -142,6 +151,18 @@ class TestEntity(ModuleTestCase):
         result = entity.read(data)
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
+
+    def test_upload_action(self):
+        source = "/users/user1/downloads/xyz.iso"
+        query = {"filename": "xyz.iso", "installer_type": "kvm"}
+        req = {
+            "method": "POST",
+            "url": "https://99.99.99.99:9999/test?filename=xyz.iso&installer_type=kvm",
+            "source": source,
+        }
+        result = self.entity.upload(source, query=query)
+        print(result)
+        self.assertEqual(result["request"], req)
 
     def test_delete_action(self):
         uuid = "test_uuid"
@@ -228,3 +249,9 @@ class TestEntity(ModuleTestCase):
         entity = Entity(self.module, resource_type="/test")
         result = entity.get_spec()
         self.assertNotEqual(result, ({"wrong_param": "test_value"}, None))
+
+    def test_unify_spec(self):
+        spec1 = {"k1": "v1", "k2": "", "k3": None}
+        spec2 = {"k2": "v2", "k3": "v3", "k4": "v4"}
+        expected = {"k2": "v2", "k3": "v3"}
+        self.assertEqual(self.entity.unify_spec(spec1, spec2), expected)

@@ -1,4 +1,11 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2021, Prem Karat
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
@@ -7,28 +14,24 @@ short_description: Nutanix module which returns the api key
 version_added: 1.1.0
 description: 'List all the api keys created in Foundation Central.'
 options:
-  nutanix_host:
-    description:
-      - Foundation VM hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: 8000
-    required: false
   key_uuid:
-    description: Return the API Key given it's uuid
+    description:
+      - Return the API Key given it's uuid
     type: str
     required: false
-    default: None
   alias:
-  description: Return the API Key given it's alias
+    description: Return the API Key given it's alias
     type: str
-    required: false
-    default: None
+  custom_filter:
+    description: Return the API Key given it's alias
+    type: dict
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_opperations
 author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
  - Abhishek Chaudhary (@abhimutant)
 """
 
@@ -62,27 +65,27 @@ API_key:
   description: returned API with alias as a filter
   returned: if correct alias is given
   type: list
-  api_key": [
+  sample: [
             {
-                "alias": "test,
+                "alias": "test",
                 "api_key": "{{ api_key}}",
                 "created_timestamp": "2022-04-18T00:41:45.000-07:00",
                 "current_time": "2022-04-18T04:45:35.000-07:00",
                 "key_uuid": "{{ uuid }}"
-            }
-        ],
+            },
+        ]
 """
 
-from ..module_utils.base_module import BaseModule
-from ..module_utils.fc.api_keys import ApiKey
-from ..module_utils.utils import remove_param_with_none_value
-
-__metaclass__ = type
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.fc.api_keys import ApiKey  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
     module_args = dict(
-        key_uuid=dict(type=str), alias=dict(type=str), custom_filter=dict(type="dict")
+        key_uuid=dict(type="str", no_log=True),
+        alias=dict(type="str"),
+        custom_filter=dict(type="dict"),
     )
     return module_args
 
