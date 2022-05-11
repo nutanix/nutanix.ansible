@@ -19,7 +19,7 @@ except ImportError:
 
 
 class Entity(object):
-    entities_limitation = 250
+    entities_limitation = 20
     entity_type = "entities"
 
     def __init__(
@@ -136,7 +136,20 @@ class Entity(object):
         url = self.base_url if use_base_url else self.base_url + "/list"
         if endpoint:
             url = url + "/{0}".format(endpoint)
+
+        resp = self._fetch_url(
+            url,
+            method="POST",
+            data=data,
+            raise_error=False,
+            no_response=no_response,
+            no_fail=False,
+            timeout=timeout,
+        )
+        if resp:
+            return resp
         entities_list = []
+        data["length"] = 20
         while True:
             resp = self._fetch_url(
                 url,
@@ -149,7 +162,7 @@ class Entity(object):
             entities_list.extend(resp[self.entity_type])
             entities_count = len(entities_list)
             data["offset"] = entities_count
-            if entities_count != self.entities_limitation:
+            if len(resp[self.entity_type]) != self.entities_limitation:
                 break
         custom_filters = self.module.params.get("custom_filter")
         if custom_filters:
@@ -248,7 +261,7 @@ class Entity(object):
         return urlunparse(url)
 
     def _fetch_url(
-        self, url, method, data=None, raise_error=True, no_response=False, timeout=30
+        self, url, method, data=None, raise_error=True, no_response=False, no_fail=False, timeout=30
     ):
 
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
@@ -276,6 +289,8 @@ class Entity(object):
             return resp_json
 
         if status_code >= 300:
+            if no_fail:
+                return None
             err = info.get("msg", "Status code != 2xx")
             self.module.fail_json(
                 msg="Failed fetching URL: {0}".format(url),
