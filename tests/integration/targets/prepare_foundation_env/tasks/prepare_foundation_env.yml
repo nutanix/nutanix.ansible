@@ -1,4 +1,3 @@
-
 ---
 - name: prepare the environment
   hosts: localhost
