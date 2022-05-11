@@ -1,4 +1,3 @@
-
 # Here we will discover nodes and also get node network info of particular some discovered nodes
 - name: Discover nodes and get their network info
   hosts: localhost
