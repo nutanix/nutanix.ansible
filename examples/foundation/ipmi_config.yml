@@ -1,0 +1,23 @@
+# Here we will configure IPMI of one node
+- name: Configure IPMI
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+  - name: configure ipmi
+    # check_mode: yes
+    ntnx_foundation_bmc_ipmi_config:
+      nutanix_host: "10.xx.xx.xx"
+      ipmi_user: "<ipmi-username>"
+      ipmi_password: "<ipmi-password>"
+      ipmi_netmask: "xx.xx.xx.xx"
+      ipmi_gateway: "10.xx.xx.xx"
+      blocks:
+          - nodes:
+              - ipmi_mac: xx:xx:xx:xx:xx:xx
+                ipmi_ip: "10.xx.xx.xx"
+    register: output
+
+  - debug:
+      msg: '{{ output }}'

@@ -1,0 +1,22 @@
+# Here this will upload image from local machine (where this script runs) to the FVM
+- name: Upload images
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+    - name: Image upload
+      # check_mode: yes
+      ntnx_foundation_image_upload:
+        nutanix_host: "10.xx.xx.xx"
+        # change state to "absent" to delete this image. For delete, source is not required
+        state: present
+        source: "<source to image file in machine where this ansible script will run>"
+        filename: "<filename>"
+        # value of installer_type must be one of: kvm, esx, hyperv, xen or nos
+        installer_type: kvm
+        timeout: 1800
+      register: upload_result
+
+    - debug:
+        msg: '{{ upload_result }}'
