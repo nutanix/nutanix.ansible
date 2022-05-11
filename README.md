@@ -17,7 +17,7 @@ It is designed keeping simplicity as the core value. Hence it is
 > This collection requires Python 2.7 or greater
 
 ## Prism Cenral
-> For the 1.1.0 release of the provider it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2 pc.2021.9.0.5 and pc.2021.8.0.1.
+> For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2 pc.2021.9.0.5 and pc.2021.8.0.1.
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
