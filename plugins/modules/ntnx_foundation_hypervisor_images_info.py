@@ -15,8 +15,8 @@ version_added: 1.1.0
 description: 'List AOS packages uploaded to Foundation'
 
 extends_documentation_fragment:
-      - nutanix.ncp.FoundationBaseModule
-      - nutanix.ncp.ntnx_opperations
+      - nutanix.ncp.ntnx_foundation_base_module
+      - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
