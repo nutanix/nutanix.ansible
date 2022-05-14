@@ -101,6 +101,11 @@ options:
           - Optionally assign static IP to the VM
         type: str
         required: false
+      mac_address:
+        description:
+          - Optionally assign a MAC Address to the VM
+        type: str
+        required: false
       is_connected:
         description:
           - Connect or disconnect the VM to the subnet
@@ -696,6 +701,7 @@ def get_module_spec():
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         private_ip=dict(type="str", required=False),
+        mac_address=dict(type="str", required=False),
         is_connected=dict(type="bool", default=True),
     )
 
