@@ -1,7 +1,8 @@
 - name: List vms using name filter criteria
   ntnx_vms_info:
-    filter:  "vm_name=={{ vm.name }}; power_state==on"
-    kind: vm
+    filter:
+      vm_name: "{{ vm.name }}"
+      power_state: "on"
   register: result
   ignore_errors: True
 

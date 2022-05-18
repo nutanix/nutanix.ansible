@@ -1,7 +1,7 @@
 - name: List pbrs using virtual_network_uuid filter criteria
   ntnx_pbrs_info:
-    filter: "priority==10"
-    kind: "routing_policy"
+    filter:
+      priority: "10"
   check_mode: true
   register: result
   ignore_errors: True

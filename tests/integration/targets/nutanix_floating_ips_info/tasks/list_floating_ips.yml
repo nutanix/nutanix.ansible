@@ -1,6 +1,7 @@
 - name: List floating_ips using ip filter criteria
   ntnx_floating_ips_info:
-    filter: "floating_ip==10."
+    filter:
+      floating_ip: "10."
     kind: floating_ip
   register: result
   ignore_errors: True
