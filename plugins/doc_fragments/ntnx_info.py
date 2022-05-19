@@ -32,5 +32,9 @@ options:
   filter:
     description:
       - The filter in FIQL syntax used for the results
-    type: str
+    type: dict
+  custom_filter:
+    description:
+      - The filter in FIQL syntax used for the results
+    type: dict
 """

@@ -6,11 +6,13 @@ __metaclass__ = type
 
 import copy
 import json
+import os
 from base64 import b64encode
-from ..module_utils import utils
 
 from ansible.module_utils._text import to_text
 from ansible.module_utils.urls import fetch_url
+
+from ..module_utils import utils
 
 try:
     from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
@@ -261,7 +263,14 @@ class Entity(object):
         return urlunparse(url)
 
     def _fetch_url(
-        self, url, method, data=None, raise_error=True, no_response=False, no_fail=False, timeout=30
+        self,
+        url,
+        method,
+        data=None,
+        raise_error=True,
+        no_response=False,
+        no_fail=False,
+        timeout=30,
     ):
 
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data

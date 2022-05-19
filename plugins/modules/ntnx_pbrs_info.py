@@ -19,6 +19,10 @@ options:
           - The kind name
         type: str
         default: routing_policy
+      pbr_uuid:
+        description:
+            - PBR UUID
+        type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info

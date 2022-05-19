@@ -19,6 +19,10 @@ options:
         - The kind name
       type: str
       default: vpc
+    vpc_uuid:
+        description:
+            - vpc UUID
+        type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info
