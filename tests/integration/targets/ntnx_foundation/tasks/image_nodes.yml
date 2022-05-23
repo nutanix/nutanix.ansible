@@ -1,0 +1,68 @@
+---
+    - debug:
+        msg: start testing ntnx_foundation
+
+    - name: Image nodes using manual and discovery modes. Create cluster
+      ntnx_foundation:
+        timeout: 4500
+        nutanix_host: "{{foundation_host}}"
+        cvm_gateway: "{{cvm_gateway}}"
+        cvm_netmask: "{{cvm_netmask}}"
+        hypervisor_gateway: "{{hypervisor_gateway}}"
+        hypervisor_netmask: "{{hypervisor_netmask}}"
+        default_ipmi_user: "{{default_ipmi_user}}"
+        current_cvm_vlan_tag: "0"
+        nos_package: "{{nos_package}}"
+        blocks:
+          - block_id: "{{IBIS_node.block_id}}"
+            nodes:
+              - manual_mode:
+                  cvm_ip: "{{IBIS_node.node1.cvm_ip}}"
+                  cvm_gb_ram: 50
+                  hypervisor_hostname: "{{IBIS_node.node1.hypervisor_hostname}}"
+                  ipmi_netmask: "{{IBIS_node.node1.ipmi_netmask}}"
+                  ipmi_gateway: "{{IBIS_node.node1.ipmi_gateway}}"
+                  ipmi_ip: "{{IBIS_node.node1.ipmi_ip}}"
+                  ipmi_password: "{{IBIS_node.node1.ipmi_password}}"
+                  hypervisor: "{{IBIS_node.node1.hypervisor}}"
+                  hypervisor_ip: "{{IBIS_node.node1.hypervisor_ip}}"
+                  node_position: "{{IBIS_node.node1.node_position}}"
+              - discovery_mode: #dos mode using cvm
+                  cvm_gb_ram: 50
+                  node_serial: "{{IBIS_node.node3.node_serial}}"
+                  device_hint: "vm_installer"
+                  discovery_override:
+                    hypervisor_hostname: "{{IBIS_node.node3.hypervisor_hostname}}"
+                    hypervisor_ip: "{{IBIS_node.node3.hypervisor_ip}}"
+                    cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
+                    hypervisor: "{{IBIS_node.node3.hypervisor}}"
+              - discovery_mode: # aos node using ipmi
+                  cvm_gb_ram: 50
+                  ipmi_password: "{{IBIS_node.node2.ipmi_password}}"
+                  node_serial: "{{IBIS_node.node2.node_serial}}"
+                  discovery_override:
+                    hypervisor_hostname: "IBIS2"
+        clusters:
+            - redundancy_factor: 2
+              cluster_members: 
+                - "{{IBIS_node.node1.cvm_ip}}"
+                - "{{IBIS_node.node3.cvm_ip}}"
+                - "{{IBIS_node.node2.cvm_ip}}"
+              name: "test-cluster"
+      register: first_cluster
+      ignore_errors: True
+      # when: false # make it true or remove to unskip task
+
+    - name: Creation Status
+      assert:
+        that:
+          - first_cluster.response is defined
+          - first_cluster.failed==false
+          - first_cluster.changed==true
+          - first_cluster.response.cluster_urls is defined
+          - first_cluster.response.cluster_urls.0.name=="test-cluster"
+        fail_msg: " Fail : unable to create cluster with three node"
+        success_msg: "Succes: cluster with three node created successfully "
+      # when: false # make it true or remove to unskip task
+
+######################################################

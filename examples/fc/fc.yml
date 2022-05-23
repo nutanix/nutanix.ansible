@@ -1,0 +1,100 @@
+---
+- name: Foundation Central Playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+
+  tasks:
+  - name: Nodes Imaging with Cluster Creation with manual mode.
+    ntnx_foundation_central:
+      nutanix_host: "{{ pc }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      cluster_name: "test"
+      # skip_cluster_creation: false    #set this to true to skip cluster creation
+      common_network_settings:
+        cvm_dns_servers:
+          - 10.x.xx.xx
+        hypervisor_dns_servers:
+          - 10.x.xx.xx
+        cvm_ntp_servers:
+          - "ntp"
+        hypervisor_ntp_servers:
+          - "ntp"
+      nodes_list:
+        - manual_mode:
+            cvm_gateway: "10.xx.xx.xx"
+            cvm_netmask: "xx.xx.xx.xx"
+            cvm_ip: "10.x.xx.xx"
+            hypervisor_gateway: "10.x.xx.xxx"
+            hypervisor_netmask: "xx.xx.xx.xx"
+            hypervisor_ip: "10.x.x.xx"
+            hypervisor_hostname: "Host-1"
+            imaged_node_uuid: "<node_uuid>"
+            use_existing_network_settings: false
+            ipmi_gateway: "10.x.xx.xx"
+            ipmi_netmask: "xx.xx.xx.xx"
+            ipmi_ip: "10.x.xx.xx"
+            image_now: true
+            hypervisor_type: "kvm"
+
+        - manual_mode:
+            cvm_gateway: "10.xx.xx.xx"
+            cvm_netmask: "xx.xx.xx.xx"
+            cvm_ip: "10.x.xx.xx"
+            hypervisor_gateway: "10.x.xx.xxx"
+            hypervisor_netmask: "xx.xx.xx.xx"
+            hypervisor_ip: "10.x.x.xx"
+            hypervisor_hostname: "Host-2"
+            imaged_node_uuid: "<node_uuid>"
+            use_existing_network_settings: false
+            ipmi_gateway: "10.x.xx.xx"
+            ipmi_netmask: "xx.xx.xx.xx"
+            ipmi_ip: "10.x.xx.xx"
+            image_now: true
+            hypervisor_type: "kvm"
+
+      redundancy_factor: 2
+      aos_package_url: "<url>"
+      hypervisor_iso_details:
+        url: "<hypervisor-url>"
+    register: output
+
+  - name: Nodes Imaging without Cluster Creation with discovery mode.
+    ntnx_foundation_central:
+      nutanix_host: "{{ pc }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      cluster_name: "test"
+      skip_cluster_creation: true
+      common_network_settings:
+        cvm_dns_servers:
+          - 10.x.xx.xx
+        hypervisor_dns_servers:
+          - 10.x.xx.xx
+        cvm_ntp_servers:
+          - "ntp"
+        hypervisor_ntp_servers:
+          - "ntp"
+      nodes_list:
+        - discovery_mode:
+            node_serial: "<node-serial-1>"
+        - discovery_mode:
+            node_serial: "<node-serail-2>"
+        - discovery_mode:
+            node_serial: "<node-serial-3>"
+            discovery_override:
+              cvm_ip: <cvm-ip>
+
+      redundancy_factor: 2
+      aos_package_url: "<url>"
+      hypervisor_iso_details:
+        url: "<hypervisor-url>"
+    register: output
+
+  - name: output of list 
+    debug:
+      msg: '{{ output }}'

@@ -1,3 +1,50 @@
+## v1.1.0 (11 May 2022)
+
+**Features**
+
+**Foundation Cetral**:
+- Ansible module for Foundation Central
+- Ansible module for API Keys to authenticate with FC
+- Ansible info module for API Keys
+- Ansible info module for Imaged Clusters
+- Ansible info module for Imaged Nodes
+
+**Foundation**:
+- Ansible module for Foundation
+- Ansible module for BMC IPMI Configuration
+- Ansible info module for AOS Packages
+- Ansible info module for Discovery Nodes
+- Ansible info module for Hypervisor images
+- Ansible module for image upload
+- Ansible info module for node network
+
+**Automation**:
+- Integration tests for Foundation modules
+- Integration tests for Foundation Central modules
+
+## v1.1.0-beta.2 (28 Apr 2022)
+
+**Features**
+
+- Ansible module for Foundation Central
+- Ansible module for API Keys to authenticate with FC
+- Ansible info module for API Keys
+- Ansible info module for Imaged Clusters
+- Ansible info module for Imaged Nodes
+
+## v1.1.0-beta.1 (11 Apr 2022)
+
+**Features**
+
+- Ansible module for Foundation
+- Ansible module for BMC IPMI Configuration
+- Ansible info module for AOS Packages
+- Ansible info module for Discovery Nodes
+- Ansible info module for Hypervisor images
+- Ansible module for image upload
+- Ansible info module for node network
+
+
 ## v1.0.0 (2nd Mar 2022)
 
 **Improvements**

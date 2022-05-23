@@ -1,0 +1,67 @@
+- debug:
+    msg: start testing ntnx_foundation_central_imaged_clusters_info module
+
+
+- name: get imaged cluster using image_cluster_uuid
+  ntnx_foundation_central_imaged_clusters_info:
+    filters:
+      archived: false
+  register: clusters
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - clusters.changed==true
+      - clusters.failed==false
+      - clusters.response is defined    
+    fail_msg: "fail: unable to get all imaged,archived cluster  "
+    success_msg: "succes:  get all imaged,archived cluster sucessfuly "
+
+
+- name: get imaged cluster using image_cluster_uuid
+  ntnx_foundation_central_imaged_clusters_info:
+    imaged_cluster_uuid: "{{clusters.response.imaged_clusters.0.imaged_cluster_uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.changed==true
+      - result.failed==false
+      - result.response is defined    
+      - result.response.imaged_cluster_uuid == "{{clusters.response.imaged_clusters.0.imaged_cluster_uuid}}" 
+    fail_msg: "fail: unable to get imaged cluster using image_cluster_uuid "
+    success_msg: "succes: get imaged cluster using image_cluster_uuid sucessfuly "
+
+- name: get imaged cluster using custom filter
+  ntnx_foundation_central_imaged_clusters_info:
+    custom_filter: 
+      destroyed: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.changed==true
+      - result.failed==false
+      - result.response.imaged_clusters is defined    
+    fail_msg: "fail: unable to get imaged cluster using custom filter "
+    success_msg: "succes: get imaged cluster using custom filter sucessfully"
+
+
+# still offset and length 
+# - debug:
+#     var: clusters.response
+
+# - name: get imaged cluster using image_cluster_uuid
+#   ntnx_foundation_central_imaged_clusters_info:
+#     filters:
+#       archived: false
+#     length: 20
+#   register: result
+#   ignore_errors: true
+# - debug:
+#     var:  result.response.imaged_clusters|length 

@@ -1,0 +1,12 @@
+---
+- name: clean up the environment
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: include var file
+      include_vars: ../vars/main.yml
+    - name: Delete files
+      file:
+        path: "{{ source }}"
+        state: absent
+      ignore_errors: true  

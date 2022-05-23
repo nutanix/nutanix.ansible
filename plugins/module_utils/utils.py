@@ -48,3 +48,18 @@ def check_for_idempotency(spec, resp, **kwargs):
         ):
             return True
     return False
+
+
+def intersection(first_obj, second_obj):
+    if isinstance(first_obj, dict):
+        for key, value in first_obj.items():
+            if key in second_obj and second_obj[key] == value:
+                return True
+            if isinstance(value, (dict, list)):
+                if intersection(value, second_obj):
+                    return True
+
+    elif isinstance(first_obj, list):
+        for item in first_obj:
+            if intersection(item, second_obj):
+                return True
