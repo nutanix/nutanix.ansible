@@ -262,8 +262,8 @@ task_uuid:
 """
 
 from ..module_utils import utils  # noqa: E402
-from ..module_utils.prism.vm_base_module import VMBaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.prism.vm_base_module import VMBaseModule  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
 
 
