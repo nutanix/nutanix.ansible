@@ -16,7 +16,7 @@ description: "This creates a new vm by cloning the current vm "
 
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_opperations
+      - nutanix.ncp.ntnx_operations
       - nutanix.ncp.ntnx_vms_base
 author:
  - Prem Karat (@premkarat)
