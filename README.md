@@ -8,11 +8,28 @@ It is designed keeping simplicity as the core value. Hence it is
 1. Easy to use
 2. Easy to develop
 
-# Ansible version compatibility
-This collection has been tested against following Ansible versions: >=2.12.2.
+# Version compatibility
 
-# Python version compatibility
-This collection requires Python 2.7 or greater
+## Ansible
+> This collection has been tested against following Ansible versions: >=2.12.2.
+
+## Python
+> This collection requires Python 2.7 or greater
+
+## Prism Cenral
+> For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2 pc.2021.9.0.5 and pc.2021.8.0.1.
+
+Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
+
+## Foundation
+> For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation. This release was tested against Foundation versions v5.2 and v5.1.1
+
+Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation
+
+## Foundation Central
+> For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation Central . This release was tested against Foundation Central versions v1.3 and v1.2
+
+Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc
 
 # Installing the collection
 **Prerequisite**
@@ -90,6 +107,18 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_floating_ips_info | List existing Floating_Ips. |
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
+| ntnx_foundation | Image nodes and create new cluster. |
+| ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
+| ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |
+| ntnx_foundation_aos_packages_info | List the AOS packages uploaded to Foundation. |
+| ntnx_foundation_discover_nodes_info | List the nodes discovered by Foundation. |
+| ntnx_foundation_hypervisor_images_info | List the hypervisor images uploaded to Foundation. |
+| ntnx_foundation_node_network_info | Get node network information discovered by Foundation. |
+| ntnx_foundation_central | Create a cluster out of nodes registered with Foundation Central. |
+| ntnx_foundation_central_api_keys | Create a new api key which will be used by remote nodes to authenticate with Foundation Central. |
+| ntnx_foundation_central_api_keys_info | List all the api keys created in Foundation Central. |
+| ntnx_foundation_central_imaged_clusters_info | List all the clusters created using Foundation Central. |
+| ntnx_foundation_central_imaged_nodes_info | List all the nodes registered with Foundation Central. |
 
 ## Inventory Plugins
 

@@ -5,10 +5,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from ..module_utils.foundation.base_module import FoundationBaseModule
-from ..module_utils.foundation.bmc_ipmi_config import BMC
-from ..module_utils.utils import remove_param_with_none_value
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -18,17 +14,6 @@ short_description: Nutanix module which configures IPMI IP address on BMC of nod
 version_added: 1.1.0
 description: 'Configures IPMI IP address on BMC of nodes.'
 options:
-  nutanix_host:
-    description:
-      - Foundation VM hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - Foundation VM port
-    type: str
-    default: 8000
-    required: false
   ipmi_user:
     description:
       - ipmi username of given nodes
@@ -50,7 +35,7 @@ options:
           description:
             - block id
           type: str
-            required: false
+          required: false
         nodes:
           description:
             - list of nodes
@@ -66,8 +51,7 @@ options:
             ipmi_configure_now:
               description:
                 - configure ipmi now or later
-              type: str
-              required: true
+              type: bool
               default: true
             ipmi_ip:
               description:
@@ -84,8 +68,13 @@ options:
       - ipmi password of given nodes
     type: str
     required: true
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_foundation_base_module
+      - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
@@ -95,6 +84,9 @@ EXAMPLES = r"""
 RETURN = r"""
 
 """
+from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.foundation.bmc_ipmi_config import BMC  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

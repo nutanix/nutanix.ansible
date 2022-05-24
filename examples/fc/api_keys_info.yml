@@ -1,0 +1,29 @@
+---
+- name: API Keys Info Playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+
+  tasks:
+  - name: API key response with alias 
+    ntnx_foundation_central_api_keys:
+      nutanix_host: "{{ pc }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      alias: "test"
+    register: output
+
+  - name: API key response with key_uuid 
+    ntnx_foundation_central_api_keys:
+      nutanix_host: "{{ pc }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      key_uuid: "<key_uuid>"
+    register: output
+    
+  - name: output of api_key
+    debug:
+      msg: '{{ output }}'

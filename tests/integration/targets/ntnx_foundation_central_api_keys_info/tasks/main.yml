@@ -1,0 +1,15 @@
+---
+- module_defaults:
+    nutanix.ncp.ntnx_foundation_central_api_keys:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+
+    nutanix.ncp.ntnx_foundation_central_api_keys_info:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: false
+  block:
+        - import_tasks: "key_info.yml"

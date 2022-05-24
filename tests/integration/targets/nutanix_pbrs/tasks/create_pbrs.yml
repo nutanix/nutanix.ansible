@@ -1,7 +1,11 @@
 - name: Create PBR with vpc name, source network, external destination, with reroute action and any type and code icmp
   ntnx_pbrs:
+    validate_certs: False
     state: present
-    priority: 102
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    priority: 103
     vpc:
       name: "{{ vpc.name }}"
     source:

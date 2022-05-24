@@ -5,35 +5,22 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from ..module_utils.foundation.base_module import FoundationBaseModule
-from ..module_utils.foundation.enumerate_aos_packages import EnumerateAOSPackages
-from ..module_utils.utils import remove_param_with_none_value
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_aos_packages_info
 short_description: Nutanix module which returns the AOS packages uploaded to Foundation
-version_added: 1.1.0
+version_added: 1.1.0-beta.1
 description: 'List AOS packages uploaded to Foundation'
-options:
-  nutanix_host:
-    description:
-      - Foundation VM hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: 8000
-    required: false
+
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_foundation_base_module
+      - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
- - Dina AbuHijleh (@dina-abuhijleh)
 """
 
 EXAMPLES = r"""
@@ -52,6 +39,11 @@ aos_packages:
     "package2",s
   ]
 """
+from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.foundation.enumerate_aos_packages import (  # noqa: E402
+    EnumerateAOSPackages,
+)
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
@@ -63,6 +55,7 @@ def list_aos_packages(module, result):
     packages = EnumerateAOSPackages(module)
     resp = packages.list()
     result["aos_packages"] = resp
+    result["response"] = resp
 
 
 def run_module():
@@ -71,7 +64,11 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     list_aos_packages(module, result)
     module.exit_json(**result)
 

@@ -5,10 +5,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from ..module_utils.foundation.base_module import FoundationBaseModule
-from ..module_utils.foundation.enumerate_hypervisor_isos import EnumerateHypervisorIsos
-from ..module_utils.utils import remove_param_with_none_value
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -17,23 +13,14 @@ module: ntnx_foundation_hypervisor_images_info
 short_description: Nutanix module which returns the hypervisor images uploaded to Foundation
 version_added: 1.1.0
 description: 'List AOS packages uploaded to Foundation'
-options:
-  nutanix_host:
-    description:
-      - Foundation VM hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: 8000
-    required: false
+
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_foundation_base_module
+      - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
- - Dina AbuHijleh (@dina-abuhijleh)
 """
 
 EXAMPLES = r"""
@@ -52,6 +39,11 @@ hypervisor_images:
     "package2",
   ]
 """
+from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.foundation.enumerate_hypervisor_isos import (  # noqa: E402
+    EnumerateHypervisorIsos,
+)
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
@@ -64,6 +56,7 @@ def list_hypervisor_images(module, result):
     images = EnumerateHypervisorIsos(module)
     resp = images.read()
     result["hypervisor_images"] = resp
+    result["response"] = resp
 
 
 def run_module():
@@ -72,7 +65,11 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     list_hypervisor_images(module, result)
     module.exit_json(**result)
 

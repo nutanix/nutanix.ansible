@@ -29,7 +29,7 @@ class Image(Foundation):
         return self.upload(source=source, query=query, timeout=timeout)
 
     def delete_image(self, filename, installer_type):
-        data = "installer_type={}&filename={}".format(installer_type, filename)
+        data = "installer_type={0}&filename={1}".format(installer_type, filename)
         return self.create(data=data, no_response=True)
 
     def _get_default_spec(self):

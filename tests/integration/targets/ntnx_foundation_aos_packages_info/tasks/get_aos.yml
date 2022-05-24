@@ -1,0 +1,17 @@
+---
+- debug:
+    msg: start testing ntnx_foundation_aos_packages_info
+
+- name: get aos_packages_info from foundation
+  ntnx_foundation_aos_packages_info:
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.aos_packages | length > 0
+      - result.aos_packages is defined
+      - result.failed==false
+      - result.changed==false
+    fail_msg: " Fail : unable to get aos_packages "
+    success_msg: "Succes: got aos_packages successfully "

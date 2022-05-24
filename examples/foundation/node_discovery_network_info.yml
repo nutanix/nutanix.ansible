@@ -1,0 +1,25 @@
+# Here we will discover nodes and also get node network info of particular some discovered nodes
+- name: Discover nodes and get their network info
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+  - name: Discover all nodes
+    ntnx_foundation_discover_nodes_info:
+      nutanix_host: "10.xx.xx.xx"
+      # unskip line 12 to include configured(nodes part of cluster) nodes in the output
+      # include_configured: true
+    register: discovered_nodes
+  
+  # get network info of nodes discovered from ntnx_foundation_discover_nodes_info module
+  - name: Get node network info of some discovered nodes
+    ntnx_foundation_node_network_info:
+      nutanix_host: "10.xx.xx.xx"
+      nodes:
+        - "{{discovered_nodes.blocks.0.nodes.0.ipv6_address}}"
+        - "{{discovered_nodes.blocks.1.nodes.0.ipv6_address}}"
+    register: result
+
+  - debug: 
+      msg: "{{ result }}"

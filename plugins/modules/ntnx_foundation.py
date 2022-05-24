@@ -5,110 +5,103 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from ..module_utils.foundation.base_module import FoundationBaseModule
-from ..module_utils.foundation.image_nodes import ImageNodes
-from ..module_utils.foundation.progress import Progress
-from ..module_utils.utils import remove_param_with_none_value
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_foundation_image_nodes
+module: ntnx_foundation
 short_description: Nutanix module to image nodes and optionally create clusters
 version_added: 1.1.0
 description: 'Nutanix module to image nodes and optionally create clusters'
 options:
-    nutanix_host:
-        description:
-        - Foundation VM hostname or IP address
+    hypervisor_nameserver:
+        description: to-write
         type: str
-        required: true
-    nutanix_port:
-        description:
-        - PC port
-        type: str
-        default: 8000
         required: false
     cvm_gateway:
         description:
-        - default CVM gateway
+            - default CVM gateway
         type: str
         required: true
     cvm_netmask:
         description:
-        - default CVM netmask
+            - default CVM netmask
         type: str
         required: true
+    ipmi_netmask:
+        description:
+            - ipmi netmask, mandatory for bare metal nodes
+        type: str
+        required: false
     hypervisor_gateway:
         description:
-        - default hypervisor gateway
+            - default hypervisor gateway
         type: str
         required: true
     hypervisor_netmask:
         description:
-        - default hypervisor netmask
+            - default hypervisor netmask
         type: str
         required: true
     nos_package:
         description:
-        - NOS package to be installed
+            - NOS package to be installed
         type: str
         required: true
     blocks:
         description:
-        - Block level parameters
+            - Block level parameters
         type: list
         elements: dict
         required: True
         suboptions:
             block_id:
                 description:
-                - Block ID
+                    - Block ID
                 type: str
-                required: false
+                required: true
             nodes:
                 description:
-                - Block level parameters
+                    - Block level parameters
                 type: list
                 elements: dict
                 required: true
                 suboptions:
                     manual_mode:
                         description:
-                        - manually add nodes
-                        - mutually exclusive with discovery_modes
+                            - manually add nodes
+                            - mutually exclusive with discovery_modes
                         type: dict
                         required: false
                         suboptions:
                             node_uuid:
                                 description:
-                                - uuid of node
+                                    - uuid of node
                                 type: str
                                 required: false
                             node_serial:
                                 description:
-                                - serial of node
+                                    - serial of node
                                 type: str
                                 required: false
                             node_position:
                                 description:
-                                - set node position
+                                    - set node position
                                 type: str
                                 required: true
                             hypervisor_hostname:
                                 description:
-                                - host name for hypervisor
+                                    - host name for hypervisor
                                 type: str
                                 required: true
                             hypervisor_ip:
                                 description:
-                                - set hypervisor ip
+                                    - set hypervisor ip
                                 type: str
                                 required: true
                             hypervisor:
                                 description:
-                                - hypervisor type
+                                    - hypervisor type
                                 type: str
                                 choices:
                                     - kvm
@@ -119,110 +112,102 @@ options:
                                 required: true
                             cvm_ip:
                                 description:
-                                - set ip for cvm
+                                    - set ip for cvm
                                 type: str
                                 required: true
                             cvm_gb_ram:
                                 description:
-                                - cvm ram in gb
+                                    - cvm ram in gb
                                 type: int
                                 required: false
                             cvm_num_vcpus:
                                 description:
-                                - vcpus for cvm
+                                    - vcpus for cvm
                                 type: int
                                 required: false
                             current_cvm_vlan_tag:
                                 description:
-                                - current cvm vlan tag
+                                    - current cvm vlan tag
                                 type: int
                                 required: false
                             image_now:
                                 description:
-                                - image now or later
-                                type: str
+                                    - image now or later
+                                type: bool
                                 required: false
                                 default: true
                             image_delay:
                                 description:
-                                - Imaging delay
+                                    - Imaging delay
                                 type: int
                                 required: false
                             ipmi_ip:
                                 description:
-                                - ipmi ip
+                                    - ipmi ip
                                 type: str
                                 required: true
                             ipmi_password:
                                 description:
-                                - ipmi password, override default_ipmi_password
-                                - mandatory incase of ipmi based imaging and bare metal nodes
+                                    - ipmi password, override default_ipmi_password
+                                    - mandatory incase of ipmi based imaging and bare metal nodes
                                 type: str
                                 required: false
                             ipmi_user:
                                 description:
-                                - ipmi user, override default_ipmi_user
-                                - mandatory incase of ipmi based imaging and bare metal nodes
+                                    - ipmi user, override default_ipmi_user
+                                    - mandatory incase of ipmi based imaging and bare metal nodes
                                 type: str
                                 required: false
                             ipmi_netmask:
                                 description:
-                                - ipmi netmask, mandatory for bare metal nodes
+                                    - ipmi netmask, mandatory for bare metal nodes
                                 type: str
                                 required: false
                             ipmi_gateway:
                                 description:
-                                - ipmi gateway, mandatory for bare metal nodes
-                                type: str
-                                required: false
-                            ipmi_mac:
-                                description:
-                                - ipmi mac address
+                                    - ipmi gateway, mandatory for bare metal nodes
                                 type: str
                                 required: false
                             ipmi_configure_now:
                                 description:
-                                - set to configure ipmi before imaging
+                                    - set to configure ipmi before imaging
                                 type: bool
                                 required: false
                             ipmi_mac:
                                 description:
-                                - ipmi mac address
+                                    - ipmi mac address
                                 type: str
                                 required: false
                             ipv6_address:
                                 description:
-                                - ipv6 address, required incase of using cvm for imaging
+                                    - ipv6 address, required incase of using cvm for imaging
                                 type: str
                                 required: false
                             device_hint:
                                 description:
-                                - use "vm_installer" to enable CVM imaging from standalone
+                                    - use "vm_installer" to enable CVM imaging from standalone
                                 type: str
                                 required: false
+                                choices:
+                                    - vm_installer
                             ipv6_interface:
                                 description:
-                                - ipv6 interface
+                                    - ipv6 interface
                                 type: str
                                 required: false
                             current_network_interface:
                                 description:
-                                - current network interface, required incase of using cvm for imaging
-                                type: str
-                                required: false
-                            ipv6_interface:
-                                description:
-                                - ipv6 interface
+                                    - current network interface, required incase of using cvm for imaging
                                 type: str
                                 required: false
                             rdma_passthrough:
                                 description:
-                                - passthru RDMA nic to CVM if possible, default to false
+                                    - passthru RDMA nic to CVM if possible, default to false
                                 type: bool
                                 required: false
                             bond_mode:
                                 description:
-                                - bonde mode, "dynamic" if using LACP, "static" for LAG
+                                    - bonde mode, "dynamic" if using LACP, "static" for LAG
                                 type: str
                                 choices:
                                     - dynamic
@@ -230,7 +215,7 @@ options:
                                 required: false
                             bond_lacp_rate:
                                 description:
-                                - slow or fast if lacp if being used at the switch
+                                    - slow or fast if lacp if being used at the switch
                                 type: str
                                 choices:
                                     - slow
@@ -238,7 +223,7 @@ options:
                                 required: false
                             bond_uplinks:
                                 description:
-                                - MAC Addresses of NICs in a team/bond
+                                    - MAC Addresses of NICs in a team/bond
                                 type: list
                                 elements: str
                                 required: false
@@ -274,88 +259,106 @@ options:
                                 required: false
                             vswitches:
                                 description:
-                                - vswitch configuration. Foundation will auto-calculate this in most cases. Provide it only if you want to override foundation's defaults.
+                                    - vswitch configuration. Foundation will auto-calculate this in most cases.
+                                      Provide it only if you want to override foundation's defaults.
                                 type: list
                                 elements: dict
                                 required: false
                                 suboptions:
                                     lacp:
                                         description:
-                                        - Status of LACP
+                                            - Status of LACP
                                         type: str
                                         required: false
                                     bond_mode:
                                         description:
-                                        - bond_mode such as balance-tcp, active-backup, etc
+                                            - bond_mode such as balance-tcp, active-backup, etc
+                                        choices:
+                                            - dynamic
+                                            - static
                                         type: str
                                         required: false
                                     name:
                                         description:
-                                        - Name of the vswitch
+                                            - Name of the vswitch
                                         type: str
                                         required: false
                                     uplinks:
                                         description:
-                                        - MAC Addresses of NICs in a team/bond
+                                            - MAC Addresses of NICs in a team/bond
                                         type: str
                                         required: false
                                     mtu:
                                         description:
-                                        - MTU of the vswitch. Applicable only for AHV
-                                        type: list
-                                        elements: int
+                                            - MTU of the vswitch. Applicable only for AHV
+                                        type: int
                                         required: false
-                                    other_conifg:
+                                    other_config:
                                         description:
-                                        - Auxillary lacp configurations. Applicable only for AHV
+                                            - Auxillary lacp configurations. Applicable only for AHV
                                         type: list
                                         elements: str
                                         required: false
                             ucsm_params:
                                 description:
-                                - UCSM parameters
+                                    - UCSM parameters
                                 type: dict
                                 required: false
                                 suboptions:
                                     native_vlan:
                                         description:
-                                        - if the vlan is native.
+                                            - if the vlan is native.
                                         type: bool
                                         required: false
                                     keep_ucsm_settings:
                                         description:
-                                        - Whether UCSM settings should be kept
+                                            - Whether UCSM settings should be kept
                                         type: bool
                                         required: false
                                     mac_pool:
                                         description:
-                                        - Mac address pool
+                                            - Mac address pool
                                         type: str
                                         required: false
                                     vlan_name:
                                         description:
-                                        - Name of vlan
+                                            - Name of vlan
                                         type: str
                                         required: false
                     discovery_mode:
                         description:
-                        - discover and use existing network informatio pulled from internal info apis
-                        - mutually exclusive with manual_mode
-                        - can override certain fields, which are pulled during discovery
+                            - discover and use existing network informatio pulled from internal info apis
+                            - mutually exclusive with manual_mode
+                            - can override certain fields, which are pulled during discovery
                         type: dict
                         required: false
                         suboptions:
                             node_serial:
                                 description:
-                                - serial of node
+                                    - serial of node
                                 type: str
-                                required: false
+                                required: true
                             image_now:
                                 description:
-                                - image now or later
-                                type: str
+                                    - image now or later
+                                type: bool
                                 required: false
                                 default: true
+                            image_delay:
+                                description:
+                                    - Imaging delay
+                                type: int
+                                required: false
+                            cvm_gb_ram:
+                                description:
+                                    - cvm ram in gb
+                                type: int
+                                required: false
+                            cvm_num_vcpus:
+                                description:
+                                    - vcpus for cvm
+                                type: int
+                                required: false
                             discovery_override:
                                 description:
                                     - can override certain fields, which are pulled during discovery
@@ -364,30 +367,30 @@ options:
                                 suboptions:
                                     node_uuid:
                                         description:
-                                        - uuid of node
+                                            - uuid of node
                                         type: str
                                         required: false
                                     node_position:
                                         description:
-                                        - set node position
+                                            - set node position
                                         type: str
                                         required: false
                                     hypervisor_hostname:
                                         description:
-                                        - host name for hypervisor
-                                        - required for dos based nodes
+                                            - host name for hypervisor
+                                            - required for dos based nodes
                                         type: str
                                         required: false
                                     hypervisor_ip:
                                         description:
-                                        - set hypervisor ip
-                                        - required for dos based nodes
+                                            - set hypervisor ip
+                                            - required for dos based nodes
                                         type: str
                                         required: false
                                     hypervisor:
                                         description:
-                                        - hypervisor type
-                                        - required for dos based nodes
+                                            - hypervisor type
+                                            - required for dos based nodes
                                         type: str
                                         choices:
                                             - kvm
@@ -398,38 +401,38 @@ options:
                                         required: false
                                     cvm_ip:
                                         description:
-                                        - set ip for cvm
+                                            - set ip for cvm
                                         type: str
                                         required: false
                                     current_cvm_vlan_tag:
                                         description:
-                                        - current cvm vlan tag
-                                        - required for certain case like dos based nodes
+                                            - current cvm vlan tag
+                                            - required for certain case like dos based nodes
                                         type: int
                                         required: false
                                     ipmi_ip:
                                         description:
-                                        - ipmi ip
+                                            - ipmi ip
                                         type: str
-                                        required: true
+                                        required: false
                                     ipmi_netmask:
                                         description:
-                                        - ipmi netmask, mandatory for bare metal nodes
+                                            - ipmi netmask, mandatory for bare metal nodes
                                         type: str
                                         required: false
                                     ipmi_gateway:
                                         description:
-                                        - ipmi gateway, mandatory for bare metal nodes
+                                            - ipmi gateway, mandatory for bare metal nodes
                                         type: str
                                         required: false
                                     ipv6_address:
                                         description:
-                                        - ipv6 address, required incase of using cvm for imaging
+                                            - ipv6 address, required incase of using cvm for imaging
                                         type: str
                                         required: false
                                     current_network_interface:
                                         description:
-                                        - current network interface, required incase of using cvm for imaging
+                                            - current network interface, required incase of using cvm for imaging
                                         type: str
                                         required: false
                                     cluster_id:
@@ -439,34 +442,36 @@ options:
                                         required: false
                             ipmi_password:
                                 description:
-                                - ipmi password, override default_ipmi_password
-                                - mandatory incase of ipmi based imaging and bare metal nodes
+                                    - ipmi password, override default_ipmi_password
+                                    - mandatory incase of ipmi based imaging and bare metal nodes
                                 type: str
                                 required: false
                             ipmi_user:
                                 description:
-                                - ipmi user, override default_ipmi_user
-                                - mandatory incase of ipmi based imaging and bare metal nodes
+                                    - ipmi user, override default_ipmi_user
+                                    - mandatory incase of ipmi based imaging and bare metal nodes
                                 type: str
                                 required: false
                             device_hint:
                                 description:
-                                - use "vm_installer" to enable CVM imaging from standalone
+                                    - use "vm_installer" to enable CVM imaging from standalone
                                 type: str
                                 required: false
+                                choices:
+                                    - vm_installer
                             ipv6_interface:
                                 description:
-                                - ipv6 interface
+                                    - ipv6 interface
                                 type: str
                                 required: false
                             rdma_passthrough:
                                 description:
-                                - passthru RDMA nic to CVM if possible, default to false
+                                    - passthru RDMA nic to CVM if possible, default to false
                                 type: bool
                                 required: false
                             bond_mode:
                                 description:
-                                - bonde mode, "dynamic" if using LACP, "static" for LAG
+                                    - bonde mode, "dynamic" if using LACP, "static" for LAG
                                 type: str
                                 choices:
                                     - dynamic
@@ -474,7 +479,7 @@ options:
                                 required: false
                             bond_lacp_rate:
                                 description:
-                                - slow or fast if lacp if being used at the switch
+                                    - slow or fast if lacp if being used at the switch
                                 type: str
                                 choices:
                                     - slow
@@ -482,7 +487,7 @@ options:
                                 required: false
                             bond_uplinks:
                                 description:
-                                - MAC Addresses of NICs in a team/bond
+                                    - MAC Addresses of NICs in a team/bond
                                 type: list
                                 elements: str
                                 required: false
@@ -508,149 +513,152 @@ options:
                                 required: false
                             vswitches:
                                 description:
-                                - vswitch configuration. Foundation will auto-calculate this in most cases. Provide it only if you want to override foundation's defaults.
+                                    - vswitch configuration. Foundation will auto-calculate this in most cases.
+                                      Provide it only if you want to override foundation's defaults.
                                 type: list
                                 elements: dict
                                 required: false
                                 suboptions:
                                     lacp:
                                         description:
-                                        - Status of LACP
+                                            - Status of LACP
                                         type: str
                                         required: false
                                     bond_mode:
                                         description:
-                                        - bond_mode such as balance-tcp, active-backup, etc
+                                            - bond_mode such as balance-tcp, active-backup, etc
                                         type: str
                                         required: false
+                                        choices:
+                                            - dynamic
+                                            - static
                                     name:
                                         description:
-                                        - Name of the vswitch
+                                            - Name of the vswitch
                                         type: str
                                         required: false
                                     uplinks:
                                         description:
-                                        - MAC Addresses of NICs in a team/bond
+                                            - MAC Addresses of NICs in a team/bond
                                         type: str
                                         required: false
                                     mtu:
                                         description:
-                                        - MTU of the vswitch. Applicable only for AHV
-                                        type: list
-                                        elements: int
+                                            - MTU of the vswitch. Applicable only for AHV
+                                        type: int
                                         required: false
-                                    other_conifg:
+                                    other_config:
                                         description:
-                                        - Auxillary lacp configurations. Applicable only for AHV
+                                            - Auxillary lacp configurations. Applicable only for AHV
                                         type: list
                                         elements: str
                                         required: false
                             ucsm_params:
                                 description:
-                                - UCSM parameters
+                                    - UCSM parameters
                                 type: dict
                                 required: false
                                 suboptions:
                                     native_vlan:
                                         description:
-                                        - if the vlan is native.
+                                            - if the vlan is native.
                                         type: bool
                                         required: false
                                     keep_ucsm_settings:
                                         description:
-                                        - Whether UCSM settings should be kept
+                                            - Whether UCSM settings should be kept
                                         type: bool
                                         required: false
                                     mac_pool:
                                         description:
-                                        - Mac address pool
+                                            - Mac address pool
                                         type: str
                                         required: false
                                     vlan_name:
                                         description:
-                                        - Name of vlan
+                                            - Name of vlan
                                         type: str
                                         required: false
     clusters:
         description:
-        - Cluster parameters
+            - Cluster parameters
         type: list
         elements: dict
         required: false
         suboptions:
             enable_ns:
                 description:
-                - If network segmentation should be enabled.
+                    - If network segmentation should be enabled.
                 type: bool
                 required: false
             name:
                 description:
-                - name of cluster
+                    - name of cluster
                 type: str
                 required: true
             redundancy_factor:
                 description:
-                - redundancy factor
+                    - redundancy factor
                 type: int
                 required: true
             timezone:
                 description:
-                - timezone to be set
+                    - timezone to be set
                 type: str
                 required: false
             hypervisor_ntp_servers:
                 description:
-                - list of NTP servers of hypervisor
+                    - list of NTP servers of hypervisor
                 type: list
                 elements: str
                 required: false
             cvm_ntp_servers:
                 description:
-                - list of NTP servers of CVM
+                    - list of NTP servers of CVM
                 type: list
                 elements: str
                 required: false
             cvm_dns_servers:
                 description:
-                - list of dns servers of CVM
+                    - list of dns servers of CVM
                 type: list
                 elements: str
                 required: false
             cluster_members:
                 description:
-                - list of cluster member cvm ips
+                    - list of cluster member cvm ips
                 type: list
                 elements: str
                 required: true
             cvm_vip:
                 description:
-                - cluster external ip
+                    - cluster external ip
                 type: str
                 required: false
             cluster_init_now:
                 description:
-                - whether to create cluster now
+                    - whether to create cluster now
                 type: bool
                 required: false
                 default: true
             backplane_subnet:
                 description:
-                - Backplane subnet address
+                    - Backplane subnet address
                 type: str
                 required: false
             backplane_netmask:
                 description:
-                - Backplane netmask
+                    - Backplane netmask
                 type: str
                 required: false
             backplane_vlan:
                 description:
-                - Backplane vlan
+                    - Backplane vlan
                 type: str
                 required: false
     hypervisor_iso:
         description:
-        - Hypervisor ISO.
+            - Hypervisor ISO.
         type: dict
         required: false
         suboptions:
@@ -722,7 +730,7 @@ options:
 
     foundation_central:
         description:
-        - Foundation Central specific settings
+            - Foundation Central specific settings
         type: dict
         required: false
         suboptions:
@@ -745,13 +753,13 @@ options:
             run_ncc:
                 description:
                     - Whether NCC checks should run
-                type: str
+                type: bool
                 required: false
                 default: false
             run_syscheck:
                 description:
                     - Whether system checks should run
-                type: str
+                type: bool
                 required: false
                 default: false
     eos_metadata:
@@ -779,17 +787,12 @@ options:
 
     ipmi_gateway:
         description:
-        - default IPMI gateway
-        type: str
-        required: false
-    ipmi_gateway:
-        description:
-        - default IPMI gateway
+            - default IPMI gateway
         type: str
         required: false
     default_ipmi_user:
         description:
-        - default ipmi username, required either at node leve or here incase of ipmi based imaging
+            - default ipmi username, required either at node leve or here incase of ipmi based imaging
         type: str
         required: false
     default_ipmi_password:
@@ -799,19 +802,19 @@ options:
         required: false
     skip_hypervisor:
         description:
-        - If hypervisor installation should be skipped.
+            - If hypervisor installation should be skipped.
         type: bool
         default: False
         required: false
     rdma_passthrough:
         description:
-        - passthru RDMA nic to CVM if possible, default to false
+            - passthru RDMA nic to CVM if possible, default to false
         type: bool
         default: false
         required: false
     bond_mode:
         description:
-        - default bond_mode. "dynamic" if using LACP, "static" for LAG
+            - default bond_mode. "dynamic" if using LACP, "static" for LAG
         type: str
         choices:
             - dynamic
@@ -819,7 +822,7 @@ options:
         required: false
     bond_lacp_rate:
         description:
-        - slow or fast if lacp if being used at the switch
+            - slow or fast if lacp if being used at the switch
         type: str
         choices:
             - slow
@@ -827,7 +830,7 @@ options:
         required: false
     current_cvm_vlan_tag:
         description:
-        - Current CVM vlan tag of all nodes
+            - Current CVM vlan tag of all nodes
         type: str
         required: false
     hypervisor_password:
@@ -841,22 +844,22 @@ options:
         type: str
         required: false
     xen_master_password:
-         description:
+        description:
             - xen server master password
         type: str
         required: false
     xen_master_ip:
-         description:
+        description:
             - xen server master ip
         type: str
         required: false
     xen_master_username:
-         description:
+        description:
             - xen server master username
         type: str
         required: false
     xen_config_type:
-         description:
+        description:
             - xen config types
         type: str
         required: false
@@ -914,29 +917,24 @@ options:
         description:
             - Arguments to be passed to svm_rescue for AOS installation. Ensure that the arguments provided are supported by the AOS version used for imaging.
         type: list
-        elements: string
+        elements: str
         required: false
     install_script:
         description:
             - install script
         type: str
         required: false
-    timeout:
-        description:
-            - timeout for polling imaging nodes & cluster creation process in seconds
-        type: int
-        required: false
-        default: 3600
-
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_foundation_base_module
+      - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
- - Dina AbuHijleh (@dina-abuhijleh)
 """
 
 EXAMPLES = r"""
-// in this example, we will image three nodes with new aos package and create cluster
+# in this example, we will image three nodes with new aos package and create cluster
 - name: Image nodes
   hosts: localhost
   gather_facts: false
@@ -956,7 +954,7 @@ EXAMPLES = r"""
       blocks:
         - block_id: "<block_id>"
           nodes:
-            // manually added node / baremetal
+            # manually added node / baremetal
             - manual_mode :
                 current_cvm_vlan_tag: xx
                 cvm_gb_ram: 50
@@ -967,7 +965,7 @@ EXAMPLES = r"""
                 hypervisor_ip: "10.xx.xx.xx"
                 hypervisor_hostname: "superman-1"
                 node_position: "D"
-            // dos based node
+            # dos based node
             - discovery_mode:
                 cvm_gb_ram: 50
                 ipmi_password : "password"
@@ -977,7 +975,7 @@ EXAMPLES = r"""
                   hypervisor_ip: "10.xx.xx.xx"
                   cvm_ip: "10.xx.xx.xx"
                   hypervisor: "kvm"
-            // aos based node
+            # aos based node
             - discovery_mode:
                 cvm_gb_ram: 50
                 ipmi_password : "password"
@@ -999,6 +997,10 @@ EXAMPLES = r"""
 RETURN = r"""
 
 """
+from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.foundation.image_nodes import ImageNodes  # noqa: E402
+from ..module_utils.foundation.progress import Progress  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
@@ -1013,7 +1015,7 @@ def get_module_spec():
 
     vswitches = dict(
         lacp=dict(type="str", required=False),
-        bond_mode=dict(type="str", required=False),
+        bond_mode=dict(type="str", required=False, choices=["static", "dynamic"]),
         name=dict(type="str", required=False),
         uplinks=dict(type="str", required=False),
         mtu=dict(type="int", required=False),
@@ -1022,16 +1024,16 @@ def get_module_spec():
 
     manual_mode_node_spec = dict(
         node_uuid=dict(type="str", required=False),
-        node_serial=dict(type=str, required=False),
+        node_serial=dict(type="str", required=False),
         node_position=dict(type="str", required=True),
         hypervisor_hostname=dict(type="str", required=True),
         hypervisor_ip=dict(type="str", required=True),
-        hypervisor=dict(type="str", required=True, choice=hypervisor_options),
+        hypervisor=dict(type="str", required=True, choices=hypervisor_options),
         cvm_ip=dict(type="str", required=True),
         cvm_gb_ram=dict(type="int", required=False),
         cvm_num_vcpus=dict(type="int", required=False),
         current_cvm_vlan_tag=dict(type="int", required=False),
-        image_now=dict(type=bool, required=False, default=True),
+        image_now=dict(type="bool", required=False, default=True),
         image_delay=dict(type="int", required=False),
         ipmi_ip=dict(type="str", required=True),
         ipmi_password=dict(type="str", required=False, no_log=True),
@@ -1044,8 +1046,8 @@ def get_module_spec():
         device_hint=dict(type="str", required=False, choices=["vm_installer"]),
         ipv6_interface=dict(type="str", required=False),
         current_network_interface=dict(type="str", required=False),
-        bond_mode=dict(type="str", required=False),
-        bond_lacp_rate=dict(type="str", required=False),
+        bond_mode=dict(type="str", required=False, choices=["static", "dynamic"]),
+        bond_lacp_rate=dict(type="str", required=False, choices=["fast", "slow"]),
         rdma_passthrough=dict(type="bool", required=False),
         bond_uplinks=dict(type="list", elements="str", required=False),
         cluster_id=dict(type="str", required=False),
@@ -1063,7 +1065,7 @@ def get_module_spec():
         hypervisor_ip=dict(type="str", required=False),
         cvm_ip=dict(type="str", required=False),
         ipmi_ip=dict(type="str", required=False),
-        hypervisor=dict(type="str", required=False, choice=hypervisor_options),
+        hypervisor=dict(type="str", required=False, choices=hypervisor_options),
         node_position=dict(type="str", required=False),
         node_uuid=dict(type="str", required=False),
         ipmi_netmask=dict(type="str", required=False),
@@ -1087,8 +1089,8 @@ def get_module_spec():
         cvm_gb_ram=dict(type="int", required=False),
         cvm_num_vcpus=dict(type="int", required=False),
         ipv6_interface=dict(type="str", required=False),
-        bond_mode=dict(type="str", required=False),
-        bond_lacp_rate=dict(type="str", required=False),
+        bond_mode=dict(type="str", required=False, choices=["static", "dynamic"]),
+        bond_lacp_rate=dict(type="str", required=False, choices=["fast", "slow"]),
         rdma_passthrough=dict(type="bool", required=False),
         ucsm_node_serial=dict(type="str", required=False),
         ucsm_managed_mode=dict(type="str", required=False),
@@ -1147,7 +1149,7 @@ def get_module_spec():
 
     foundation_central = dict(
         fc_ip=dict(type="str", required=True),
-        api_key=dict(type="str", required=True),
+        api_key=dict(type="str", required=True, no_log=True),
     )
 
     tests = dict(
@@ -1184,8 +1186,8 @@ def get_module_spec():
         default_ipmi_password=dict(type="str", required=False, no_log=True),
         skip_hypervisor=dict(type="bool", required=False, default=False),
         rdma_passthrough=dict(type="bool", required=False, default=False),
-        bond_mode=dict(type="str", required=False, choice=["static", "dynamic"]),
-        bond_lacp_rate=dict(type="str", required=False, choice=["fast", "slow"]),
+        bond_mode=dict(type="str", required=False, choices=["static", "dynamic"]),
+        bond_lacp_rate=dict(type="str", required=False, choices=["fast", "slow"]),
         current_cvm_vlan_tag=dict(type="str", required=False),
         foundation_central=dict(
             type="dict", required=False, options=foundation_central
@@ -1210,7 +1212,7 @@ def get_module_spec():
         unc_password=dict(type="str", required=False, no_log=True),
         svm_rescue_args=dict(type="list", elements="str", required=False),
         install_script=dict(type="str", required=False),
-        timeout=dict(type="int", required=False, default=3600),
+        #    timeout=dict(type="int", required=False, default=3600),
     )
 
     return module_args
@@ -1240,6 +1242,18 @@ def image_nodes(module, result):
     if module.params.get("wait"):
         wait_image_completion(module, result)
 
+    # add cluster urls if any cluster created
+    cluster_urls = []
+    if spec["clusters"]:
+        for cluster in spec["clusters"]:
+            cluster_urls.append(
+                {
+                    "url": "https://{0}:9440/".format(cluster["cluster_members"][0]),
+                    "name": cluster["cluster_name"],
+                }
+            )
+        result["response"]["cluster_urls"] = cluster_urls
+
 
 def wait_image_completion(module, result):
     progress = Progress(module)
@@ -1259,7 +1273,11 @@ def run_module():
         required_if=[("bond_mode", "dynamic", ("bond_lacp_rate",))],
     )
     remove_param_with_none_value(module.params)
-    result = {}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+    }
     image_nodes(module, result)
     module.exit_json(**result)
 
