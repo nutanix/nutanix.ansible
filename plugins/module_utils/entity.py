@@ -175,7 +175,7 @@ class Entity(object):
         if resp:
             return resp
         entities_list = []
-        data["length"] = 20
+        data["length"] = self.entities_limitation
         while True:
             resp = self._fetch_url(
                 url,
