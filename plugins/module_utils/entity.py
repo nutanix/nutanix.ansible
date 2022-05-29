@@ -114,6 +114,7 @@ class Entity(object):
         self,
         source,
         endpoint=None,
+        method="POST",
         query=None,
         raise_error=True,
         no_response=False,
@@ -125,7 +126,7 @@ class Entity(object):
         return self._upload_file(
             url,
             source,
-            method="POST",
+            method=method,
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
