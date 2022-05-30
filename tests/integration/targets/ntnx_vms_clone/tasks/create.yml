@@ -8,7 +8,7 @@
         #cloud-config
         chpasswd:
           list: |
-            root:Nutanix.123
+            root: "{{ password }}"
             expire: False
         fqdn: myNutanixVM
 
