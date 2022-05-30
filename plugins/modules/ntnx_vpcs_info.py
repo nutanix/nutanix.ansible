@@ -176,10 +176,6 @@ def list_vpc(module, result):
     vpc = Vpc(module)
     spec, error = vpc.get_info_spec()
 
-    if module.check_mode:
-        result["response"] = spec
-        return
-
     resp = vpc.list(spec)
 
     result["response"] = resp
@@ -188,12 +184,12 @@ def list_vpc(module, result):
 def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=True,
+        supports_check_mode=False,
         required_together=[("sort_order", "sort_attribute")],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("vm_uuid"):
+    if module.params.get("vpc_uuid"):
         get_vpc(module, result)
     else:
         list_vpc(module, result)

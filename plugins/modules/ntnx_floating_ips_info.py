@@ -154,10 +154,6 @@ def list_fip(module, result):
     floating_ip = FloatingIP(module)
     spec, error = floating_ip.get_info_spec()
 
-    if module.check_mode:
-        result["response"] = spec
-        return
-
     resp = floating_ip.list(spec)
 
     result["response"] = resp
@@ -166,7 +162,7 @@ def list_fip(module, result):
 def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=True,
+        supports_check_mode=False,
         required_together=[("sort_order", "sort_attribute")],
     )
     remove_param_with_none_value(module.params)
