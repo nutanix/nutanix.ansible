@@ -2,6 +2,8 @@
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
 from __future__ import absolute_import, division, print_function
 
+from copy import deepcopy
+
 from ..base_module import BaseModule
 
 __metaclass__ = type
@@ -60,7 +62,7 @@ class VMBaseModule(BaseModule):
     )
 
     def __init__(self, **kwargs):
-        argument_spec = self.vm_argument_spec.copy()
+        argument_spec = deepcopy(self.vm_argument_spec)
         if kwargs.get("argument_spec"):
             argument_spec.update(kwargs["argument_spec"])
         kwargs["argument_spec"] = argument_spec
