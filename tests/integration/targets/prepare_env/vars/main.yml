@@ -2,12 +2,12 @@ validate_certs: False
 todelete: []
 
 cluster:
-  name: auto_cluster_prod_f38a91f932ae
-  uuid: 0005deb8-75a7-29d4-3507-ac1f6b60292f
+  name: auto_cluster_prod_4f4433c72b64
+  uuid: 0005dc0f-13a7-62e0-185b-ac1f6b6f97e2
 
 virtual_switch:
   name: vs0
-  uuid: f2a1dd71-e6e3-4dee-9b2b-c50170746cea
+  uuid: 070d3832-6f28-4cf2-ae29-5514f30ac520
 external_nat_subnets:
   name: integration_test_Ext-Nat
   vlan_id: 103
