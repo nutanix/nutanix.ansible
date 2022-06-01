@@ -9,7 +9,7 @@ from ..base_module import BaseModule
 __metaclass__ = type
 
 
-class VMBaseModule(BaseModule):
+class DefaultVMSpec:
     """Basic VM module with common arguments"""
 
     mutually_exclusive = [("name", "uuid")]
@@ -60,14 +60,3 @@ class VMBaseModule(BaseModule):
         categories=dict(type="dict"),
         force_power_off=dict(type="bool", default=False),
     )
-
-    def __init__(self, **kwargs):
-        argument_spec = deepcopy(self.vm_argument_spec)
-        if kwargs.get("argument_spec"):
-            argument_spec.update(kwargs["argument_spec"])
-        kwargs["argument_spec"] = argument_spec
-
-        if not kwargs.get("supports_check_mode"):
-            kwargs["supports_check_mode"] = True
-
-        super(VMBaseModule, self).__init__(**kwargs)

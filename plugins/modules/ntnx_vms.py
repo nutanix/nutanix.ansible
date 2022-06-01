@@ -732,11 +732,14 @@ task_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.vm_base_module import VMBaseModule  # noqa: E402
+from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.prism.default_vm_spec import DefaultVMSpec  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
 
 
 def get_module_spec():
+    default_vm_spec = DefaultVMSpec.argument_spec
+
     mutually_exclusive = [("name", "uuid")]
 
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
@@ -781,8 +784,8 @@ def get_module_spec():
             ],
         ),
     )
-
-    return module_args
+    default_vm_spec.update(module_args)
+    return default_vm_spec
 
 
 def create_vm(module, result):
@@ -951,7 +954,7 @@ def wait_for_task_completion(module, result, raise_error=True):
 
 
 def run_module():
-    module = VMBaseModule(
+    module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[("vm_uuid", None, ("name",)), ("state", "absent", ("vm_uuid",))],
