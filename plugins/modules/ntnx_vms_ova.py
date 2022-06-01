@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_ova
+module: ntnx_vms_ova
 short_description: VM module which supports ova creation
 version_added: 1.2.0
 description: "Creates an ova entity"
@@ -42,7 +42,7 @@ author:
 
 EXAMPLES = r"""
 - name: create_ova_image  with check mode
-  ntnx_ova:
+  ntnx_vms_ova:
       src_vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_VMDK_ova
       file_format: VMDK
@@ -51,7 +51,7 @@ EXAMPLES = r"""
   check_mode: yes
 
 - name: create QCOW2 ova_image
-  ntnx_ova:
+  ntnx_vms_ova:
       src_vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_QCOW2_ova
       file_format: QCOW2
@@ -59,7 +59,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: create VMDK ova_image
-  ntnx_ova:
+  ntnx_vms_ova:
       src_vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_VMDK_ova
       file_format: VMDK
