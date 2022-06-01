@@ -27,7 +27,7 @@ author:
 EXAMPLES = r"""
 - name: clone vm  with check mode
   ntnx_vms_clone:
-      vm_uuid: "{{ vm.vm_uuid }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       networks:
         - is_connected: false
           subnet:
@@ -36,7 +36,7 @@ EXAMPLES = r"""
 
 - name: clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
   ntnx_vms_clone:
-      vm_uuid: "{{ vm.vm_uuid }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       vcpus: 2
       cores_per_vcpu: 2
       memory_gb: 2
@@ -47,7 +47,7 @@ EXAMPLES = r"""
 
 - name: clone vm and add network
   ntnx_vms_clone:
-      vm_uuid: "{{ vm.vm_uuid }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       networks:
         - is_connected: true
           subnet:
@@ -58,7 +58,7 @@ EXAMPLES = r"""
 
 - name: clone vm  with script
   ntnx_vms_clone:
-      vm_uuid: "{{ vm.vm_uuid }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       guest_customization:
         type: "cloud_init"
         script_path: "./cloud_init.yml"
@@ -249,7 +249,7 @@ status:
                 },
                 "state": "COMPLETE"
             }
-vm_uuid:
+src_vm_uuid:
   description: The cloned vm uuid
   returned: always
   type: str
@@ -268,7 +268,7 @@ from ..module_utils.prism.vms import VM  # noqa: E402
 
 
 def clone_vm(module, result):
-    vm_uuid = module.params["vm_uuid"]
+    src_vm_uuid = module.params["src_vm_uuid"]
 
     vm = VM(module)
 
@@ -289,7 +289,7 @@ def clone_vm(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp = vm.read(vm_uuid)
+        resp = vm.read(src_vm_uuid)
         result["response"] = resp
 
 
@@ -310,6 +310,7 @@ def run_module():
         "error": None,
         "response": None,
         "vm_uuid": None,
+        "src_vm_uuid": None,
         "task_uuid": None,
     }
     clone_vm(module, result)

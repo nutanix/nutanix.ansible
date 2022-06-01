@@ -14,7 +14,7 @@ short_description: VM module which supports ova creation
 version_added: 1.2.0
 description: "Creates an ova entity"
 options:
-  vm_uuid:
+  src_vm_uuid:
     description: VM UUID
     required: true
     type: str
@@ -43,7 +43,7 @@ author:
 EXAMPLES = r"""
 - name: create_ova_image  with check mode
   ntnx_ova:
-      vm_uuid: "{{ vm.vm_uuid }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_VMDK_ova
       file_format: VMDK
   register: result
@@ -52,7 +52,7 @@ EXAMPLES = r"""
 
 - name: create QCOW2 ova_image
   ntnx_ova:
-      vm_uuid: "{{ vm.vm_uuid }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_QCOW2_ova
       file_format: QCOW2
   register: result
@@ -60,7 +60,7 @@ EXAMPLES = r"""
 
 - name: create VMDK ova_image
   ntnx_ova:
-      vm_uuid: "{{ vm.vm_uuid }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_VMDK_ova
       file_format: VMDK
   register: result
@@ -200,7 +200,7 @@ status:
                 },
                 "state": "COMPLETE"
             }
-vm_uuid:
+src_vm_uuid:
   description: The vm uuid
   returned: always
   type: str
@@ -220,7 +220,7 @@ from ..module_utils.prism.vms import VM  # noqa: E402
 
 def get_module_spec():
     module_args = dict(
-        vm_uuid=dict(type="str", required=True),
+        src_vm_uuid=dict(type="str", required=True),
         name=dict(type="str", required=True),
         file_format=dict(type="str", choices=["QCOW2", "VMDK"], required=True),
     )
@@ -229,11 +229,11 @@ def get_module_spec():
 
 
 def create(module, result):
-    vm_uuid = module.params["vm_uuid"]
+    src_vm_uuid = module.params["src_vm_uuid"]
 
     vm = VM(module)
     spec = vm.get_ova_image_spec()
-    result["vm_uuid"] = vm_uuid
+    result["src_vm_uuid"] = src_vm_uuid
 
     if module.check_mode:
         result["response"] = spec
@@ -247,7 +247,7 @@ def create(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp = vm.read(vm_uuid)
+        resp = vm.read(src_vm_uuid)
         result["response"] = resp
 
 
@@ -267,6 +267,7 @@ def run_module():
         "error": None,
         "response": None,
         "vm_uuid": None,
+        "src_vm_uuid": None,
         "task_uuid": None,
     }
     create(module, result)
