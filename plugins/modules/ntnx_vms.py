@@ -738,7 +738,7 @@ from ..module_utils.prism.vms import VM  # noqa: E402
 
 
 def get_module_spec():
-    default_vm_spec = DefaultVMSpec.argument_spec
+    default_vm_spec = DefaultVMSpec.vm_argument_spec
 
     mutually_exclusive = [("name", "uuid")]
 
