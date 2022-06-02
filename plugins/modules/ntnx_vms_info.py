@@ -258,7 +258,6 @@ def get_module_spec():
 
     base_info_spec = BaseInfoModule.info_argument_spec
     module_args = dict(
-
         vm_uuid=dict(type="str"),
         kind=dict(type="str", default="vm"),
         sort_order=dict(type="str"),
