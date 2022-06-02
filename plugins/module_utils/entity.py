@@ -364,13 +364,15 @@ class Entity(object):
     def _upload_file(
         self, url, source, method, raise_error=True, no_response=False, timeout=30
     ):
-
+        file_chunks_iterator = FileChunksIterator(source)
+        headers = copy.deepcopy(self.headers)
+        headers["Content-Length"] = file_chunks_iterator.length
         resp, info = fetch_url(
             self.module,
             url,
-            data=FileChunksIterator(source),
+            data=file_chunks_iterator,
             method=method,
-            headers=self.headers,
+            headers=headers,
             cookies=self.cookies,
             timeout=timeout,
         )

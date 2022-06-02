@@ -49,7 +49,7 @@ class Image(Prism):
 
     def upload_image(self, image_uuid, source_path, timeout = 600):
         endpoint = "{}/file".format(image_uuid)
-        return self.upload(source_path, endpoint=endpoint, method="PUT", timeout=timeout)
+        return self.upload(source_path, endpoint=endpoint, method="PUT", timeout=timeout, no_response=True)
 
     def _get_default_spec(self):
         return deepcopy(
