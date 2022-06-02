@@ -7,7 +7,7 @@ action_groups:
   - ntnx_vms
   - ntnx_vpcs
   - ntnx_subnets
-  - ntnx_ova
+  - ntnx_vms_ova
   - ntnx_vms_clone
   - ntnx_floating_ips_info
   - ntnx_pbrs_info
