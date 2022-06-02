@@ -261,7 +261,7 @@ task_uuid:
   sample: "82c5c1d3-eb6a-406a-8f58-306028099d21"
 """
 
-from copy import deepcopy
+from copy import deepcopy  # noqa: E402
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
