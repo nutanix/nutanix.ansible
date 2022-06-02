@@ -12,198 +12,278 @@ DOCUMENTATION = r"""
 module: ntnx_clusters
 short_description: cluster module which supports updating the configuration on an existing cluster
 version_added: 1.0.0
-description: cluster module which supports updating the configuration on an existing cluster
+description:
+    - cluster module which supports updating the configuration on an existing cluster
 options:
     cluster:
-        name:
-            type: str
-            description:
+        description:
+        - either cluster name or uuid in which the config will apply to
+        type: dict
+        suboptions:
+            name:
+                type: str
+                description:
                 - Cluster name
                 - Mutually exclusive with C(uuid)
-        uuid:
-            type: str
-            description:
+            uuid:
+                type: str
+                description:
                 - Cluster uuid
                 - Mutually exclusive with C(name)
     authorized_public_key_list:
         type: list
-        description: list of public key entries
+        description:
+        - list of public key entries
         elements: dict
         suboptions:
             name:
                 type: str
-                description: name of public key
+                description:
+                - name of public key
             key:
                 type: str
-                description: public key
+                description:
+                - public key
     timezone:
         type: str
-        description: timezone of the cluster
+        description:
+        - timezone of the cluster
     supported_information_verbosity:
         type: str
-        description: verbosity level of the cluster support logging
+        description:
+        - verbosity level of the cluster support logging
     redundancy_factor:
         type: int
-        description: redundancy factor of the cluster
+        description:
+        - redundancy factor of the cluster
     network:
-        external_ip:
-            type: str
-            description: the local IP of the cluster visible externally
-        fully_qualified_domain_name:
-            type: str
-            description: fully qualified domain name of the cluster visible externally
-        external_data_services_ip:
-            type: str
-            description: The cluster IP address that provides external entities access to various cluster data services
-        external_subnet:
-            type: str
-            description: external subnet for cross server communication.  format is IP/netmask
-        internal_subnet:
-            type: str
-            description: The internal subnet is local to every server -
-                its not visible outside.iSCSI requests generated internally within
-                the appliance (by user VMs or VMFS) are sent to the internal subnet.
-                The format is IP/netmask
-        masquerading_ip:
-            type: str
-            description: The cluster NAT'd or proxy IP which maps to the cluster local IP
-        masquerading_port:
-            type: str
-            description: Port used together with masquerading_ip to connect to the cluster
-        domain_server:
-            description: Cluster domain server.  Only applied to the cluster with all Hyper-V hosts.
-            type: dict
-            suboptions:
-                name:
-                    type: str
-                    description: joined domain name. Empty name will unjoin the cluster from current domain
-                nameserver:
-                    type: str
-                    description: ip of the nameserver that can resolve the domain name.
-                domain_credentials:
-                    suboptions:
-                        username:
-                            type: str
-                            description: username
-                        password:
-                            type: str
-                            description: password
-        nfs_subnet_whitelist:
-            type: list
-            description: Comma separated list of subnets (of the form 'a.b.c.d/l.m.n.o') that
-                are allowed to send NFS requests to this container. If not specified, the global
-                NFS whitelist will be looked up for access permission. The internal subnet is always
-                automatically considered part of the whitelist, even if the field below does not
-                explicitly specify it. Similarly, all the hypervisor IPs are considered part of the
-                whitelist. Finally, to permit debugging, all of the SVMs local IPs are considered to be
-                implicitly part of the whitelist.
-        name_server_ip_list:
-            type: list
-            description: list of IP addresses of the name servers.
-        ntp_server_ip_list:
-            type: list
-            description: list of the IP addresses or the FQDNs of the NTP servers.
-        http_proxy_list:
-            type: list
-            suboptions:
-                name:
-                    type: str
-                    description: name of the network entity (optional)
-                address:
-                    ip:
+        description:
+        - all configuration in the cluster that's network related
+        type: dict
+        suboptions:
+            external_ip:
+                type: str
+                description:
+                - the local IP of the cluster visible externally
+            fully_qualified_domain_name:
+                type: str
+                description:
+                - fully qualified domain name of the cluster visible externally
+            external_data_services_ip:
+                type: str
+                description:
+                - The cluster IP address that provides external entities access to various cluster data services
+            external_subnet:
+                type: str
+                description:
+                - external subnet for cross server communication.  format is IP/netmask
+            internal_subnet:
+                type: str
+                description:
+                - The internal subnet is local to every server
+                    its not visible outside.iSCSI requests generated internally within
+                    the appliance (by user VMs or VMFS) are sent to the internal subnet.
+                    The format is IP/netmask
+            masquerading_ip:
+                type: str
+                description:
+                - The cluster NAT'd or proxy IP which maps to the cluster local IP
+            masquerading_port:
+                type: str
+                description:
+                - Port used together with masquerading_ip to connect to the cluster
+            domain_server:
+                description:
+                - Cluster domain server.  Only applied to the cluster with all Hyper-V hosts.
+                type: dict
+                suboptions:
+                    name:
                         type: str
-                        description: ipv4 address
-                    ivp6:
+                        description:
+                        - joined domain name. Empty name will unjoin the cluster from current domain
+                    nameserver:
                         type: str
-                        description: ipv6 address
-                    fqdn:
+                        description:
+                        - ip of the nameserver that can resolve the domain name.
+                    domain_credentials:
+                        description:
+                        - domain creds for the domain server authentication
+                        type: dict
+                        suboptions:
+                            username:
+                                type: str
+                                description:
+                                - username
+                            password:
+                                type: str
+                                description:
+                                - password
+            nfs_subnet_whitelist:
+                type: list
+                description:
+                - Comma separated list of subnets (of the form 'a.b.c.d/l.m.n.o') that
+                    are allowed to send NFS requests to this container. If not specified, the global
+                    NFS whitelist will be looked up for access permission. The internal subnet is always
+                    automatically considered part of the whitelist, even if the field below does not
+                    explicitly specify it. Similarly, all the hypervisor IPs are considered part of the
+                    whitelist. Finally, to permit debugging, all of the SVMs local IPs are considered to be
+                    implicitly part of the whitelist.
+            name_server_ip_list:
+                type: list
+                description:
+                - list of IP addresses of the name servers.
+            ntp_server_ip_list:
+                type: list
+                description:
+                - list of the IP addresses or the FQDNs of the NTP servers.
+            http_proxy_list:
+                description:
+                - list of http proxy entries
+                type: list
+                suboptions:
+                    name:
                         type: str
-                        description: fully qualified domain name
-                    port:
-                        type: int
-                        description: port number
-                    is_backup:
-                        type: bool
-                        description: whether this address is a backup or not
-                credentials:
-                    username:
+                        description:
+                        - name of the network entity (optional)
+                    address:
+                        type: dict
+                        description:
+                        - address details for http proxy
+                        suboptions:
+                            ip:
+                                type: str
+                                description:
+                                - ipv4 address
+                            ivp6:
+                                type: str
+                                description:
+                                - ipv6 address
+                            fqdn:
+                                type: str
+                                description:
+                                - fully qualified domain name
+                            port:
+                                type: int
+                                description:
+                                - port number
+                            is_backup:
+                                type: bool
+                                description:
+                                - whether this address is a backup or not
+                    credentials:
+                        type: dict
+                        description:
+                        - creds for the proxy
+                        suboptions:
+                            username:
+                                type: str
+                                description:
+                                - username
+                            password:
+                                type: str
+                                description:
+                                - password
+                    proxy_type_list:
+                        type: list
+                        description:
+                        - none provided in API spec
+            smtp_server:
+                description:
+                - smtp server definition
+                type: dict
+                suboptions:
+                    email_address:
                         type: str
-                        description: username
-                    password:
+                        description:
+                        - email address
+                    server:
+                        description:
+                        - server details for the smtp server
+                        type: dict
+                        suboptions:
+                            name:
+                                type: str
+                                description:
+                                - name of the network entity (optional)
+                            address:
+                                type: dict
+                                description:
+                                - address details for the network entity
+                                suboptions:
+                                    ip:
+                                        type: str
+                                        description:
+                                        - ipv4 address
+                                    ipv6:
+                                        type: str
+                                        description:
+                                        - ipv6 address
+                                    fqdn:
+                                        type: str
+                                        description:
+                                        - fully qualified domain name
+                                    port:
+                                        type: int
+                                        description:
+                                        - port number
+                                    is_backup:
+                                        type: bool
+                                        description:
+                                        - whether this address is a backup or not
+                            credentials:
+                                description:
+                                - credential details for smtp server
+                                type: dict
+                                suboptions:
+                                    username:
+                                        type: str
+                                        description:
+                                        - username
+                                    password:
+                                        type: str
+                                        description:
+                                        - password
+                            proxy_type_list:
+                                type: list
+                                description:
+                                - none provided in API spec
+                    type:
                         type: str
-                        description: password
-                proxy_type_list:
-                    type: list
-                    description: none provided in API spec
-        smtp_server:
-            type: dict
-            suboptions:
-                email_address:
-                    type: str
-                    description: email address
-                server:
-                    type: dict
-                    suboptions:
-                        name:
-                            type: str
-                            description: name of the network entity (optional)
-                        address:
-                            type: dict
-                            suboptions:
-                                ip:
-                                    type: str
-                                    description: ipv4 address
-                                ipv6:
-                                    type: str
-                                    description: ipv6 address
-                                fqdn:
-                                    type: str
-                                    description: fully qualified domain name
-                                port:
-                                    type: int
-                                    description: port number
-                                is_backup:
-                                    type: bool
-                                    description: whether this address is a backup or not
-                        credentials:
-                            type: dict
-                            suboptions:
-                                username:
-                                    type: str
-                                    description: username
-                                password:
-                                    type: str
-                                    description: password
-                        proxy_type_list:
-                            type: list
-                            description: none provided in API spec
-                type:
-                    type: str
-                    description: type of smtp server, defaults to PLAIN.
-        http_proxy_whitelist:
-            type: list
-            elements: dict
-            suboptions:
-                target:
-                    type: str
-                    description: The target's identifier (as specified by the target_type). For eg: 10.1.1.1
-                target_type:
-                    type: str
-                    description: either "IPv4_ADDRESS" or "HOST_NAME"
-        default_vswitch_config:
-            type: dict
-            suboptions:
-                nic_teaming_policy:
-                    type: str
-                    description: nice teaming policy
-                uplink_grouping:
-                    type: str
-                    description: determines how the ethernet uplinks are selected for this vswitch
+                        description:
+                        - type of smtp server, defaults to PLAIN.
+            http_proxy_whitelist:
+                description:
+                - http proxy whitelist configuration
+                type: list
+                elements: dict
+                suboptions:
+                    target:
+                        type: str
+                        description:
+                        - The target's identifier (as specified by the target_type). For eg  10.1.1.1
+                    target_type:
+                        type: str
+                        description:
+                        - either "IPv4_ADDRESS" or "HOST_NAME"
+            default_vswitch_config:
+                description:
+                - default vswitch configuration
+                type: dict
+                suboptions:
+                    nic_teaming_policy:
+                        type: str
+                        description:
+                        - nice teaming policy
+                    uplink_grouping:
+                        type: str
+                        description:
+                        - determines how the ethernet uplinks are selected for this vswitch
+
 extends_documentation_fragment:
-    - nutanix.ncp.ntnx_credentials
-    - nutanix.ncp.ntnx_operations
+- nutanix.ncp.ntnx_credentials
+- nutanix.ncp.ntnx_operations
 author:
-    - Thomas Tomlinson (@thomas-tomlinson)
+- Thomas Tomlinson (@thomas-tomlinson)
 """
 
 EXAMPLES = r"""
@@ -212,9 +292,9 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_clusters:
     validate_certs: False
     state: present
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
+    nutanix_host: nutanix_host
+    nutanix_username: nutanix_user
+    nutanix_password: nutanix_password
     cluster:
         name: cluster_name
     authorized_public_key_list:
@@ -227,30 +307,32 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-  description: The full API response from the cluster PUT call.
-  returned: always
-  type: dict
-  sample:  {
-       "api_version": "3.1",
-        "metadata": {
-            "categories": {},
-            "categories_mapping": {},
-            "creation_time": "2022-05-27T15:31:23Z",
-            "kind": "cluster",
-            "last_update_time": "2022-06-02T19:15:48Z",
-            "owner_reference": {
-                "kind": "user",
-                "name": "admin",
-                "uuid": "00000000-0000-0000-0000-000000000000"
+    description:
+    - The full API response from the cluster PUT call.
+    returned: always
+    type: dict
+    sample:  {
+        "api_version": "3.1",
+            "metadata": {
+                "categories": {},
+                "categories_mapping": {},
+                "creation_time": "2022-05-27T15:31:23Z",
+                "kind": "cluster",
+                "last_update_time": "2022-06-02T19:15:48Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_version": 51,
+                "uuid": "0005dec1-a7d4-a09e-3740-2cea7f9c9e08"
             },
-            "spec_version": 51,
-            "uuid": "0005dec1-a7d4-a09e-3740-2cea7f9c9e08"
-        },
-        "spec": {
-            "name": "cluster_name",
-            "resources": {
-                "config": {
-                    "authorized_public_key_list": []
+            "spec": {
+                "name": "cluster_name",
+                "resources": {
+                    "config": {
+                        "authorized_public_key_list": []
+                    }
                 }
             }
         }
