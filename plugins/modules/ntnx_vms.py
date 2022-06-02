@@ -730,6 +730,8 @@ task_uuid:
 """
 
 
+from copy import deepcopy  # noqa: E402
+
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.spec.vms import DefaultVMSpec  # noqa: E402
@@ -738,7 +740,7 @@ from ..module_utils.prism.vms import VM  # noqa: E402
 
 
 def get_module_spec():
-    default_vm_spec = DefaultVMSpec.vm_argument_spec
+    default_vm_spec = deepcopy(DefaultVMSpec.vm_argument_spec)
 
     mutually_exclusive = [("name", "uuid")]
 
