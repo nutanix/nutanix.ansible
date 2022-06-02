@@ -13,8 +13,11 @@ class Cluster(Prism):
         resource_type = "/clusters"
         super(Cluster, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
-            # "cluster": self._build_spec_cluster_name,
             "authorized_public_key_list": self._build_spec_public_keys,
+            "timezone": self._build_spec_timezone,
+            "supported_information_verbosity": self._build_spec_supported_information_verbosity,
+            "redundancy_factor": self._build_spec_redundancy_factor,
+            "network": self._build_spec_network,
         }
 
     def _get_default_spec(self):
@@ -33,29 +36,36 @@ class Cluster(Prism):
             }
         )
 
-    def _build_spec_public_keys(self, payload, public_keys):
-        # public keys is a list of dict values with name, key
-        public_key_list = []
-        for key_detail in public_keys:
-            key_entry = {"name": key_detail.get('name'), "key": key_detail.get('key')}
-            public_key_list.append(key_entry)
-        payload["spec"]["resources"]["config"]["authorized_public_key_list"] = public_key_list
+    def _build_spec_redundancy_factor(self, payload, redundancy_factor):
+        if redundancy_factor is not None:
+            payload["spec"]["resources"]["config"]["redundancy_factor"] = redundancy_factor
         return payload, None
 
-    def _build_spec_cluster_name(self, payload, param):
-        if "name" in param:
-            cluster = Cluster(self.module)
-            name = param["name"]
-            uuid = cluster.get_uuid(name)
-            if not uuid:
+    def _build_spec_supported_information_verbosity(self, payload, verbosity):
+        if verbosity is not None:
+            payload["spec"]["resources"]["config"]["supported_information_verbosity"] = verbosity
+        return payload, None
 
-                error = "Cluster {0} not found.".format(name)
-                return None, error
+    def _build_spec_timezone(self, payload, timezone):
+        if timezone is not None:
+            payload["spec"]["resources"]["config"]["timezone"] = timezone
+        return payload, None
 
-        elif "uuid" in param:
-            uuid = param["uuid"]
+    def _build_spec_public_keys(self, payload, public_keys):
+        if public_keys is not None:
+            payload["spec"]["resources"]["config"]["authorized_public_key_list"] = public_keys
+        return payload, None
 
-        payload["metadata"]["uuid"] = uuid
+    def _build_spec_network(self, payload, network):
+        single_entries = ["external_ip", "fully_qualified_domain_name", "external_data_services",
+                          "external_subnet", "internal_subnet", "masquerading_ip", "masquerading_port", "domain_server",
+                          "nfs_subnet_whitelist", "name_server_ip_list", "ntp_server_ip_list",
+                          "http_proxy_list", "http_proxy_whitelist", "default_vswitch_config", "smtp_server"]
+
+        for single_entry in single_entries:
+            if single_entry in network:
+                payload["spec"]["resources"]["network"][single_entry] = network[single_entry]
+
         return payload, None
 
     def get_current_spec(self):
@@ -78,7 +88,6 @@ class Cluster(Prism):
         old_spec['metadata'] = cluster_info['metadata']
 
         return deepcopy(old_spec)
-
 
 # Helper functions
 
