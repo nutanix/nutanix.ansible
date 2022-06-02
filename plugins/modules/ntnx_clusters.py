@@ -408,17 +408,85 @@ def get_module_spec():
 
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
+    domain_server_spec = dict(
+        name=dict(type="str"),
+        nameserver=dict(type="str"),
+        domain_credentials=dict(username=dict(type="str", password=dict(type="str"))),
+    )
+
+    http_proxy_list_spec = dict(
+        name=dict(type="str"),
+        address=dict(
+            ip=dict(type="str"),
+            ipv6=dict(type="str"),
+            fqdn=dict(type="str"),
+            port=dict(type="int"),
+            is_backup=dict(type="bool"),
+        )
+    )
+
+    smtp_server_spec = dict(
+        email_address=dict(type="str"),
+        server=dict(
+            name=dict(type="str"),
+            address=dict(
+                ip=dict(type="str"),
+                ipv6=dict(type="str"),
+                fqdn=dict(type="str"),
+                port=dict(type="int"),
+                is_backup=dict(type="bool"),
+            ),
+            credentials=dict(
+                username=dict(type="str"),
+                password=dict(type="str"),
+            ),
+            type=dict(type="str"),
+        )
+    )
+
+    http_proxy_whitelist_spec = dict(
+        target=dict(type="str"),
+        target_type=dict(type="str"),
+    )
+
+    default_vswitch_config_spec = dict(
+        nic_teaming_policy=dict(type="str"),
+        uplink_grouping=dict(type="str"),
+    )
+
+    network_spec = dict(
+        external_ip=dict(type="str"),
+        fully_qualified_domain_name=dict(type="str"),
+        external_data_services_ip=dict(type="str"),
+        external_subnet=dict(type="str"),
+        internal_subnet=dict(type="str"),
+        masquerading_ip=dict(type="str"),
+        masquerading_port=dict(type="str"),
+        domain_server=dict(type="dict", options=domain_server_spec),
+        nfs_subnet_whitelist=dict(type="list"),
+        name_server_ip_list=dict(type="list"),
+        ntp_server_ip_list=dict(type="list"),
+        http_proxy_list=dict(type="list", options=http_proxy_list_spec),
+        smtp_server=dict(type="dict", options=smtp_server_spec),
+        http_proxy_whitelist=dict(type="list", options=http_proxy_whitelist_spec),
+        default_vswitch_config=dict(type="dict", options=default_vswitch_config_spec),
+    )
+
     module_args = dict(
         cluster=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True,
         ),
         authorized_public_key_list=dict(type="list"),
+        timezone=dict(type="str"),
+        supported_information_verbosity=dict(type="str"),
+        redundancy_factor=dict(type="int"),
+        network=dict(type="dict", options=network_spec),
     )
 
     return module_args
 
 
-def create_public_key_entry(module, result):
+def update_cluster_config(module, result):
     cluster = Cluster(module)
     old_spec = cluster.get_current_spec()
     spec, error = cluster.get_spec(old_spec)
@@ -431,17 +499,20 @@ def create_public_key_entry(module, result):
         return
     uuid = spec["metadata"]["uuid"]
     resp = cluster.update(spec, uuid)
-    # does a return response value sense?
-    # cluster_uuid = resp["metadata"]["uuid"]
-    result["changed"] = True
+    # compare the specs before and after.  currently only way to determine if something changed
+    if old_spec['spec'] != resp['spec']:
+        result["changed"] = True
+    else:
+        result["changed"] = False
+
     result["response"] = resp
-    #result["pbr_uuid"] = pbr_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
         resp = cluster.read(uuid)
         result["response"] = resp
+
 
 def wait_for_task_completion(module, result):
     task = Task(module)
@@ -464,7 +535,7 @@ def run_module():
     }
     state = module.params["state"]
     if state == "present":
-        create_public_key_entry(module, result)
+        update_cluster_config(module, result)
 
     module.exit_json(**result)
 
