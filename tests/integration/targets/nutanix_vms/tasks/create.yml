@@ -89,6 +89,7 @@
     ntnx_vms:
       state: present
       name: VM with CentOS-7-cloud-init image 
+      memory_gb: 1
       timezone: "UTC"
       cluster:
         uuid: "{{ cluster.uuid }}"
@@ -119,6 +120,7 @@
   - name: VM with CentOS-7-cloud-init image without disk image size
     ntnx_vms:
       state: present
+      memory_gb: 1
       name: VM with CentOS-7-cloud-init image without image size
       timezone: "UTC"
       cluster:
@@ -150,6 +152,7 @@
     ntnx_vms:
       state: present
       name: "VM with Cluster Network and Disk"
+      memory_gb: 1
       timezone: "Universal"
       cluster:
         name: "{{ cluster.name }}"
@@ -188,7 +191,7 @@
         - type: "DISK"
           size_gb: 30
           bus: "SCSI"
-      memory_gb: 20
+      memory_gb: 2
     register: result
     ignore_errors: True
   - name: Creation Status
@@ -206,6 +209,7 @@
   - name: VM with Cluster, different CDROMs
     ntnx_vms:
       state: present
+      memory_gb: 1
       wait: true
       name: "VM with multiple CDROMs"
       cluster:
@@ -262,9 +266,9 @@
             - "DISK"
             - "CDROM"
             - "NETWORK"
-      vcpus: 2
+      vcpus: 1
       cores_per_vcpu: 2
-      memory_gb: 2
+      memory_gb: 1
     register: result
     ignore_errors: True 
 
@@ -284,6 +288,7 @@
     ntnx_vms:
       state: present
       name: VM with managed subnet
+      memory_gb: 1
       cluster:
         name: "{{ cluster.name }}"
       networks:
@@ -405,9 +410,9 @@
           - DISK
           - CDROM
           - NETWORK
-      vcpus: 2
-      cores_per_vcpu: 2
-      memory_gb: 2
+      vcpus: 1
+      cores_per_vcpu: 1
+      memory_gb: 1
     register: result
     ignore_errors: true
     
@@ -458,7 +463,7 @@
           - DISK
           - CDROM
           - NETWORK
-      vcpus: 2
+      vcpus: 1
       cores_per_vcpu: 1
       memory_gb: 1
     register: result
@@ -501,7 +506,7 @@
           bus: SCSI
           storage_container:
             uuid: "{{ storage_container.uuid }}"
-      vcpus: 2
+      vcpus: 1
       cores_per_vcpu: 1
       memory_gb: 1
     register: result
