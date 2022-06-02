@@ -166,7 +166,7 @@ def get_module_spec():
 
 def get_vpc(module, result):
     vpc = Vpc(module)
-    vpc_uuid = module.params.get("vm_uuid")
+    vpc_uuid = module.params.get("vpc_uuid")
     resp = vpc.read(vpc_uuid)
 
     result["response"] = resp
