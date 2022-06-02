@@ -146,9 +146,6 @@ options:
     description: VM Name
     required: false
     type: str
-  vm_uuid:
-    description: VM UUID
-    type: str
   boot_config:
     description:
       - >-

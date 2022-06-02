@@ -43,6 +43,9 @@ options:
     description: A description for VM.
     required: false
     type: str
+  vm_uuid:
+    description: VM UUID
+    type: str
   disks:
     description:
       - List of disks attached to the VM
