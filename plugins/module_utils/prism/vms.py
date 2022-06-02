@@ -67,7 +67,7 @@ class VM(Prism):
         )
 
     def create_ova_image(self, spec):
-        endpoint = "{0}/{1}".format(self.module.params["vm_uuid"], "export")
+        endpoint = "{0}/{1}".format(self.module.params["src_vm_uuid"], "export")
         resp = self.create(spec, endpoint)
         return resp
 
