@@ -19,8 +19,8 @@
     success_msg: 'Success: VM with minimum requiremnts created successfully '
 #########################################
 - name: create_ova_image  with check mode
-  ntnx_ova:
-      vm_uuid: "{{ vm.vm_uuid }}"
+  ntnx_vms_ova:
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_VMDK_ova
       file_format: VMDK
   register: result
@@ -38,7 +38,7 @@
     fail_msg: ' Fail: create_ova_image  with check mode '
 #########################################
 - name: create QCOW2 ova_image
-  ntnx_ova:
+  ntnx_vms_ova:
       vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_QCOW2_ova
       file_format: QCOW2
@@ -54,8 +54,8 @@
     success_msg: 'Success: create QCOW2 ova_image successfully '
 #########################################
 - name: create VMDK ova_image
-  ntnx_ova:
-      vm_uuid: "{{ vm.vm_uuid }}"
+  ntnx_vms_ova:
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_VMDK_ova
       file_format: VMDK
   register: result
