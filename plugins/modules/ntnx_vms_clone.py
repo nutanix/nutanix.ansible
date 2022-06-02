@@ -265,7 +265,7 @@ from copy import deepcopy  # noqa: E402
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.default_vm_spec import DefaultVMSpec  # noqa: E402
+from ..module_utils.prism.spec.vms import DefaultVMSpec  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vms import VM  # noqa: E402
 

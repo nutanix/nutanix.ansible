@@ -18,7 +18,7 @@ class BaseInfoModule(BaseModule):
     )
 
     def __init__(self, **kwargs):
-        self.argument_spec = deepcopy(self.argument_spec)
+        self.argument_spec = deepcopy(BaseModule.argument_spec)
         self.argument_spec.pop("state")
         self.argument_spec.pop("wait")
         self.argument_spec.update(self.info_argument_spec)

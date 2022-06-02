@@ -256,15 +256,13 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
     """Extend base argument spec"""
 
-    base_info_spec = BaseInfoModule.info_argument_spec
     module_args = dict(
         vm_uuid=dict(type="str"),
         kind=dict(type="str", default="vm"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
     )
-    base_info_spec.update(module_args)
-    return base_info_spec
+    return module_args
 
 
 def get_vm(module, result):
