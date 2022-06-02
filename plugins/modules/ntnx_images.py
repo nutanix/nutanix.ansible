@@ -17,7 +17,7 @@ EXAMPLES = r"""
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.images import Image  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value, strip_extra_attrs_from_status  # noqa: E402
 
 
 def get_module_spec():
@@ -62,24 +62,74 @@ def create_image(module, result):
     resp = image.create(spec)
     image_uuid = resp["metadata"]["uuid"]
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
-
-    # wait for image create to finish
-    task = Task(module)
-    # TO-DO : Delete image if image create fails in between
-    task.wait_for_completion(task_uuid)
+    result["image_uuid"] = image_uuid
+    result["changed"] = True
 
     # upload image if source_path is given
     source_path = module.params.get("source_path", "")
     if source_path:
+        # wait for image create to finish
+        task = Task(module)
+        task.wait_for_completion(task_uuid)
+
+        #upload image contents
         timeout = module.params.get("timeout", 600)
         image_upload = Image(module, upload_image=True)
         image_upload.upload_image(image_uuid, source_path, timeout)
         # TO-DO : Delete image if upload create fails in process
+        resp = image.read(image_uuid)
 
-    # get the image
+    elif module.params.get("wait"):
+        task = Task(module)
+        task.wait_for_completion(task_uuid)
+        # get the image
+        resp = image.read(image_uuid)
+
+    result["response"] = resp
+
+def update_image(module, result):
+    image = Image(module)
+    image_uuid = module.params.get("image_uuid")
+    if not image_uuid:
+        result["error"] = "Missing parameter image_uuid in playbook"
+        module.fail_json(msg="Failed deleting image", **result)
+    result["image_uuid"] = image_uuid
+
+    # read the current state of image
     resp = image.read(image_uuid)
+    strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    resp["spec"] = resp.pop("status")
+
+    # new spec for updating image
+    update_spec, error = image.get_update_spec(resp)
+    if error:
+        result["error"] = error
+        module.fail_json(msg="Failed generating Image update spec", **result)
+        
+    # check for idempotency
+    if resp == update_spec:
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change. Refer docs to check for fields which can be updated")
+
+    if module.check_mode:
+        result["response"] = update_spec
+        return
+
+    # update image
+    resp = image.update(update_spec, uuid=image_uuid)
+    task_uuid = resp["status"]["execution_context"]["task_uuid"]
+
+    # wait for image update to finish
+    if module.params.get("wait"):
+        task = Task(module)
+        task.wait_for_completion(task_uuid)
+        # get the image
+        resp = image.read(image_uuid)
+    
     result["changed"] = True
     result["response"] = resp
+
+    
 
 def delete_image(module, result):
     uuid = module.params["image_uuid"]
@@ -111,13 +161,16 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
+        "image_uuid": None,
     }
     state = module.params["state"]
     if state == "present":
-        if "source_path" in module.params or "source_uri" in module.params:
+        if module.params.get("image_uuid"):
+            update_image(module, result)
+        elif module.params.get("source_uri") or module.params.get("source_path"):
             create_image(module, result)
         else:
-            module.fail_json(msg="Source for image missing. Provide source_path or source_uri", **result)
+            module.fail_json(msg="Provide source_path/source_uri to create new or image_uuid to update image", **result)
     elif state == "absent":
         delete_image(module, result)
 

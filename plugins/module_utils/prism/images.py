@@ -35,6 +35,17 @@ class Image(Prism):
             "version": self._build_spec_version,
             "architecture": self._build_spec_architecture,
         }
+        self.build_update_spec_methods = {
+            "name": self._build_spec_name,
+            "description": self._build_spec_desc,
+            "categories": self._build_spec_categories,
+            "project": self._build_spec_project,
+            "owner": self._build_spec_owner,
+            "checksum": self._build_spec_checksum,
+            "image_type": self._build_spec_image_type,
+            "version": self._build_spec_version,
+            "architecture": self._build_spec_architecture,
+        }
 
     def upload_image(self, image_uuid, source_path, timeout = 600):
         endpoint = "{}/file".format(image_uuid)

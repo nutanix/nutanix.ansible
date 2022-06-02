@@ -220,6 +220,16 @@ class Entity(object):
                 if error:
                     return None, error
         return spec, None
+    
+    def get_update_spec(self, old_spec=None):
+        spec = copy.deepcopy(old_spec)
+        for ansible_param, ansible_config in self.module.params.items():
+            build_update_spec_methods = self.build_update_spec_methods.get(ansible_param)
+            if build_update_spec_methods and ansible_config:
+                spec, error = build_update_spec_methods(spec, ansible_config)
+                if error:
+                    return None, error
+        return spec, None
 
     def get_uuid(self, value, key="name", raise_error=True, no_response=False):
         data = {"filter": "{0}=={1}".format(key, value), "length": 1}
