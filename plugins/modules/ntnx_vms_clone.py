@@ -261,6 +261,8 @@ task_uuid:
   sample: "82c5c1d3-eb6a-406a-8f58-306028099d21"
 """
 
+from copy import deepcopy
+
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
@@ -269,7 +271,10 @@ from ..module_utils.prism.vms import VM  # noqa: E402
 
 
 def get_module_spec():
-    default_vm_spec = DefaultVMSpec.vm_argument_spec
+    default_vm_spec = deepcopy(DefaultVMSpec.vm_argument_spec)
+    default_vm_spec.pop("vm_uuid")
+    default_vm_spec.update(src_vm_uuid=dict(type="str", required=True))
+
     return default_vm_spec
 
 
