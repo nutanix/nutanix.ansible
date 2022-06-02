@@ -39,7 +39,7 @@
 #########################################
 - name: create QCOW2 ova_image
   ntnx_vms_ova:
-      vm_uuid: "{{ vm.vm_uuid }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
       name: integration_test_QCOW2_ova
       file_format: QCOW2
   register: result
