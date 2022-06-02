@@ -54,7 +54,7 @@ class VM(Prism):
         return spec, None
 
     def clone(self, spec):
-        endpoint = "{0}/clone".format(self.module.params["vm_uuid"])
+        endpoint = "{0}/clone".format(self.module.params["src_vm_uuid"])
         resp = self.create(spec, endpoint)
         return resp
 
