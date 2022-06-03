@@ -409,11 +409,11 @@ class Entity(object):
         return spec
 
     @staticmethod
-    def parse_filters(filters):
+    def _parse_filters(filters):
         return ",".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
 
     @staticmethod
-    def filter_entities(entities, custom_filters):
+    def _filter_entities(entities, custom_filters):
         filtered_entities = []
         for entity in entities:
             if utils.intersection(entity, custom_filters.copy()):
