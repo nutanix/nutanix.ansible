@@ -17,7 +17,7 @@
         script_path: ""
         subnet_name: ""
         image_name: ""
-        
+
   - name: create Vm
     ntnx_vms:
       state: present

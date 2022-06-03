@@ -29,13 +29,15 @@ class Task(Prism):
     def get_uuid(self, name):
         raise NotImplementedError("get_uuid not permitted")
 
-    def wait_for_completion(self, uuid):
+    def wait_for_completion(self, uuid, raise_error=True):
         state = ""
         while state != "SUCCEEDED":
             time.sleep(2)
-            response = self.read(uuid)
+            response = self.read(uuid, raise_error=raise_error)
             state = response.get("status")
             if state == "FAILED":
+                if not raise_error:
+                    break
                 self.module.fail_json(
                     msg=response["error_detail"],
                     status_code=response["error_code"],

@@ -98,10 +98,15 @@ ansible-playbook examples/iaas/iaas.yml
 | Name | Description |
 | --- | --- |
 | ntnx_vms | Create or delete a VM. |
+| ntnx_vms_info | List existing VMs. |
 | ntnx_vpcs | Create or delete a VPC. |
+| ntnx_vpcs_info | List existing VPCs. |
 | ntnx_subnets | Create or delete a Subnet. |
+| ntnx_subnets_info | List existing Subnets. |
 | ntnx_floating_ips | Create or delete a Floating Ip. |
+| ntnx_floating_ips_info | List existing Floating_Ips. |
 | ntnx_pbrs | Create or delete a PBR. |
+| ntnx_pbrs_info | List existing PBRs. |
 | ntnx_foundation | Image nodes and create new cluster. |
 | ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
 | ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |

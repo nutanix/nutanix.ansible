@@ -1,0 +1,53 @@
+- name: List vms using name filter criteria
+  ntnx_vms_info:
+    filter:
+      vm_name: "{{ vm.name }}"
+      power_state: "on"
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='spec.name') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list vms "
+    success_msg: " VMs listed successfully "
+################################################## 
+- name: List vms using length and offset
+  ntnx_vms_info:
+    length: 10
+    offset: 1
+  register: result
+  check_mode: true
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list vms "
+    success_msg: " VMs listed successfully "
+##################################################
+- name: List vms using ascending name sorting
+  ntnx_vms_info:
+    sort_order: "ASCENDING"
+    sort_attribute: "vm_name"
+    kind: vm
+  register: result
+  ignore_errors: True
+
+- name: Show result
+  debug:
+    msg: "{{ result.response.entities | map(attribute='spec.name') }}"
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: " Unable to list vms "
+    success_msg: " VMs listed successfully "
+####################################################

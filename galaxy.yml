@@ -1,8 +1,10 @@
 namespace: "nutanix"
 name: "ncp"
-version: "1.1.0"
+version: "1.2.0"
 readme: "README.md"
 authors:
+  - "Balu George (@balugeorge)"
+  - "Sarath Kumar K (@kumarsarath588)"
   - "Prem Karat (@premkarat)"
   - "Gevorg Khachatryan (@Gevorg-Khachatryan-97)"
 description: Ansible collection for v3 Nutanix APIs https://www.nutanix.dev/api-reference-v3/
