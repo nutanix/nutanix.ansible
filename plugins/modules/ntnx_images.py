@@ -67,20 +67,28 @@ def create_image(module, result):
 
     # upload image if source_path is given
     source_path = module.params.get("source_path", "")
+    task = Task(module)
+
     if source_path:
         # wait for image create to finish
-        task = Task(module)
         task.wait_for_completion(task_uuid)
 
         #upload image contents
         timeout = module.params.get("timeout", 600)
         image_upload = Image(module, upload_image=True)
-        image_upload.upload_image(image_uuid, source_path, timeout)
-        # TO-DO : Delete image if upload create fails in process
+        resp = image_upload.upload_image(image_uuid, source_path, timeout, raise_error=False)
+        error = resp.get("error")
+        if error:
+            #delete the image metadata from PC
+            image.delete(image_uuid)
+            task.wait_for_completion(task_uuid)
+            result["error"] = error
+            result["changed"] = False
+            result["response"] = None
+            module.fail_json(msg="Failed uploading image contents", **result)
         resp = image.read(image_uuid)
 
     elif module.params.get("wait"):
-        task = Task(module)
         task.wait_for_completion(task_uuid)
         # get the image
         resp = image.read(image_uuid)

@@ -385,6 +385,12 @@ class Entity(object):
             resp_json = None
 
         if not raise_error:
+            # Add error details and status details if any
+            if not resp_json:
+                resp_json = {}
+            if status_code>=300:
+                resp_json["error"] = body
+            resp_json["status_code"] = status_code
             return resp_json
 
         if status_code >= 300:

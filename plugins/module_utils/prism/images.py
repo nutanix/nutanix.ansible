@@ -47,9 +47,9 @@ class Image(Prism):
             "architecture": self._build_spec_architecture,
         }
 
-    def upload_image(self, image_uuid, source_path, timeout = 600):
+    def upload_image(self, image_uuid, source_path, timeout = 600, raise_error=True):
         endpoint = "{}/file".format(image_uuid)
-        return self.upload(source_path, endpoint=endpoint, method="PUT", timeout=timeout, no_response=True)
+        return self.upload(source_path, endpoint=endpoint, method="PUT", timeout=timeout, no_response=True, raise_error=raise_error)
 
     def _get_default_spec(self):
         return deepcopy(
