@@ -7,6 +7,7 @@ authors:
   - "Pradeepsingh Bhati (@bhati-pradeep)"
   - "Prem Karat (@premkarat)"
   - "Gevorg Khachatryan (@Gevorg-Khachatryan-97)"
+  - "Alaa Bishtawi (@alaa-bish)"
 description: Ansible collection for v3 Nutanix APIs https://www.nutanix.dev/api-reference-v3/
 license_file: 'LICENSE'
 tags: [nutanix, prism, ahv, cloud, infrastructure]
