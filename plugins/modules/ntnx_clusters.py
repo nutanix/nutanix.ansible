@@ -19,6 +19,7 @@ options:
         description:
         - either cluster name or uuid in which the config will apply to
         type: dict
+        required: True
         suboptions:
             name:
                 type: str
@@ -120,6 +121,7 @@ options:
                                 - password
             nfs_subnet_whitelist:
                 type: list
+                elements: str
                 description:
                 - Comma separated list of subnets (of the form 'a.b.c.d/l.m.n.o') that
                     are allowed to send NFS requests to this container. If not specified, the global
@@ -130,16 +132,19 @@ options:
                     implicitly part of the whitelist.
             name_server_ip_list:
                 type: list
+                elements: str
                 description:
                 - list of IP addresses of the name servers.
             ntp_server_ip_list:
                 type: list
+                elements: str
                 description:
                 - list of the IP addresses or the FQDNs of the NTP servers.
             http_proxy_list:
                 description:
                 - list of http proxy entries
                 type: list
+                elements: dict
                 suboptions:
                     name:
                         type: str
@@ -154,7 +159,7 @@ options:
                                 type: str
                                 description:
                                 - ipv4 address
-                            ivp6:
+                            ipv6:
                                 type: str
                                 description:
                                 - ipv6 address
@@ -185,6 +190,7 @@ options:
                                 - password
                     proxy_type_list:
                         type: list
+                        elements: str
                         description:
                         - none provided in API spec
             smtp_server:
@@ -245,9 +251,10 @@ options:
                                         - password
                             proxy_type_list:
                                 type: list
+                                elements: str
                                 description:
                                 - none provided in API spec
-                    type:
+                    server_type:
                         type: str
                         description:
                         - type of smtp server, defaults to PLAIN.
@@ -338,7 +345,6 @@ response:
         }
 """
 
-
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.clusters import Cluster  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
@@ -353,37 +359,60 @@ def get_module_spec():
     domain_server_spec = dict(
         name=dict(type="str"),
         nameserver=dict(type="str"),
-        domain_credentials=dict(username=dict(type="str", password=dict(type="str"))),
+        domain_credentials=dict(
+            type="dict", options=dict(
+                username=dict(type="str"),
+                password=dict(type="str", no_log=True),
+            )
+        )
     )
 
     http_proxy_list_spec = dict(
         name=dict(type="str"),
         address=dict(
-            ip=dict(type="str"),
-            ipv6=dict(type="str"),
-            fqdn=dict(type="str"),
-            port=dict(type="int"),
-            is_backup=dict(type="bool"),
+            type="dict", options=dict(
+                ip=dict(type="str"),
+                ipv6=dict(type="str"),
+                fqdn=dict(type="str"),
+                port=dict(type="int"),
+                is_backup=dict(type="bool"),
+            )
+        ),
+        credentials=dict(
+            type="dict", options=dict(
+                username=dict(type="str"),
+                password=dict(type="str", no_log=True),
+            ),
+        ),
+        proxy_type_list=dict(
+            type="list", elements="str",
         )
     )
 
     smtp_server_spec = dict(
         email_address=dict(type="str"),
         server=dict(
-            name=dict(type="str"),
-            address=dict(
-                ip=dict(type="str"),
-                ipv6=dict(type="str"),
-                fqdn=dict(type="str"),
-                port=dict(type="int"),
-                is_backup=dict(type="bool"),
-            ),
-            credentials=dict(
-                username=dict(type="str"),
-                password=dict(type="str"),
-            ),
-            type=dict(type="str"),
-        )
+            type="dict", options=dict(
+                name=dict(type="str"),
+                address=dict(
+                    type="dict", options=dict(
+                        ip=dict(type="str"),
+                        ipv6=dict(type="str"),
+                        fqdn=dict(type="str"),
+                        port=dict(type="int"),
+                        is_backup=dict(type="bool"),
+                    ),
+                ),
+                credentials=dict(
+                    type="dict", options=dict(
+                        username=dict(type="str"),
+                        password=dict(type="str", no_log=True),
+                    ),
+                ),
+                proxy_type_list=dict(type="list", elements="str"),
+            )
+        ),
+        server_type=dict(type="str"),
     )
 
     http_proxy_whitelist_spec = dict(
@@ -405,24 +434,24 @@ def get_module_spec():
         masquerading_ip=dict(type="str"),
         masquerading_port=dict(type="str"),
         domain_server=dict(type="dict", options=domain_server_spec),
-        nfs_subnet_whitelist=dict(type="list"),
-        name_server_ip_list=dict(type="list"),
-        ntp_server_ip_list=dict(type="list"),
-        http_proxy_list=dict(type="list", options=http_proxy_list_spec),
+        nfs_subnet_whitelist=dict(type="list", elements="str"),
+        name_server_ip_list=dict(type="list", elements="str"),
+        ntp_server_ip_list=dict(type="list", elements="str"),
+        http_proxy_list=dict(type="list", elements="dict", options=http_proxy_list_spec),
         smtp_server=dict(type="dict", options=smtp_server_spec),
-        http_proxy_whitelist=dict(type="list", options=http_proxy_whitelist_spec),
+        http_proxy_whitelist=dict(type="list", elements="dict", options=http_proxy_whitelist_spec),
         default_vswitch_config=dict(type="dict", options=default_vswitch_config_spec),
     )
     authorized_public_key_list_spec = dict(
         name=dict(type="str"),
-        key=dict(type="str"),
+        key=dict(type="str", no_log=False),
     )
 
     module_args = dict(
         cluster=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True,
         ),
-        authorized_public_key_list=dict(type="list", options=authorized_public_key_list_spec),
+        authorized_public_key_list=dict(type="list", elements="dict", options=authorized_public_key_list_spec),
         timezone=dict(type="str"),
         supported_information_verbosity=dict(type="str"),
         redundancy_factor=dict(type="int"),
@@ -445,19 +474,18 @@ def update_cluster_config(module, result):
         return
     uuid = spec["metadata"]["uuid"]
     resp = cluster.update(spec, uuid)
-    # compare the specs before and after.  currently only way to determine if something changed
-    if old_spec['spec'] != resp['spec']:
-        result["changed"] = True
-    else:
-        result["changed"] = False
-
-    result["response"] = resp
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
         resp = cluster.read(uuid)
         result["response"] = resp
+
+    # compare the specs before and after.  currently only way to determine if something changed
+    if old_spec["spec"] != result["response"]["spec"]:
+        result["changed"] = True
+    else:
+        result["changed"] = False
 
 
 def wait_for_task_completion(module, result):

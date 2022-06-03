@@ -60,11 +60,26 @@ class Cluster(Prism):
         single_entries = ["external_ip", "fully_qualified_domain_name", "external_data_services",
                           "external_subnet", "internal_subnet", "masquerading_ip", "masquerading_port", "domain_server",
                           "nfs_subnet_whitelist", "name_server_ip_list", "ntp_server_ip_list",
-                          "http_proxy_list", "http_proxy_whitelist", "default_vswitch_config", "smtp_server"]
+                          "http_proxy_list", "http_proxy_whitelist", "default_vswitch_config"]
 
         for single_entry in single_entries:
             if single_entry in network:
                 payload["spec"]["resources"]["network"][single_entry] = network[single_entry]
+
+        # special snowflake with keyword option collision.  smtp server has an argument of "type"
+        # which is a keyword in the ansible argument spec.  this will remap the value back to type in the
+        # spec file is specified.  this will change server_type back to type.  the PLAIN default is
+        # used here if nothing is found in the config or existing spec file
+        if "smtp_server" in network:
+            if "server_type" in network["smtp_server"]:
+                network["smtp_server"]["type"] = network["smtp_server"]["server_type"]
+                del network["server_type"]
+            elif "type" in payload["spec"]["resources"]["network"]["smtp_server"]:
+                network["smtp_server"]["type"] = payload["spec"]["resources"]["network"]["smtp_server"]["type"]
+            else:
+                network["smtp_server"]["type"] = "PLAIN"
+
+            payload["spec"]["resources"]["network"]["smtp_server"] = network["smtp_server"]
 
         return payload, None
 
