@@ -172,12 +172,13 @@ class Entity(object):
             data=data,
             raise_error=False,
             no_response=no_response,
-            no_fail=False,
             timeout=timeout,
         )
         if resp:
             return resp
         entities_list = []
+        main_length = data.get("length")
+        main_offset = data.get("offset", 0)
         data["length"] = self.entities_limitation
         while True:
             resp = self._fetch_url(
@@ -188,21 +189,25 @@ class Entity(object):
                 no_response=no_response,
                 timeout=timeout,
             )
-            if not resp.get(self.entity_type):
+            if self.entity_type not in resp:
                 return resp
             entities_list.extend(resp[self.entity_type])
             entities_count = len(entities_list)
-            data["offset"] = entities_count
-            if len(resp[self.entity_type]) != self.entities_limitation:
+            data["offset"] = main_offset + entities_count
+            if (
+                len(resp[self.entity_type]) != self.entities_limitation
+                or entities_count == main_length
+            ):
                 break
         custom_filters = self.module.params.get("custom_filter")
         if custom_filters:
-            entities_list = self.filter_entities(entities_list, custom_filters)
+            entities_list = self._filter_entities(entities_list, custom_filters)
             entities_count = len(entities_list)
 
         resp[self.entity_type] = entities_list
+        resp["metadata"]["offset"] = main_offset
         resp["metadata"]["length"] = entities_count
-        resp["metadata"]["total_matches"] = entities_count
+
         return resp
 
     def get_spec(self, old_spec=None):
@@ -251,7 +256,7 @@ class Entity(object):
         if params.get("filter", {}).get("name") and params.get("kind") == "vm":
             spec["filter"]["vm_name"] = spec["filter"].pop("name")
 
-        spec["filter"] = self.parse_filters(params.get("filter", {}))
+        spec["filter"] = self._parse_filters(params.get("filter", {}))
 
         return spec, None
 
@@ -292,14 +297,7 @@ class Entity(object):
         return urlunparse(url)
 
     def _fetch_url(
-        self,
-        url,
-        method,
-        data=None,
-        raise_error=True,
-        no_response=False,
-        no_fail=False,
-        timeout=30,
+        self, url, method, data=None, raise_error=True, no_response=False, timeout=30
     ):
 
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
@@ -330,8 +328,6 @@ class Entity(object):
                 return resp_json
 
             if status_code >= 300:
-                if no_fail:
-                    return None
                 err = info.get("msg", "Status code != 2xx")
                 self.module.fail_json(
                     msg="Failed fetching URL: {0}".format(url),

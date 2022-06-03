@@ -71,6 +71,37 @@ class VM(Prism):
         resp = self.create(spec, endpoint)
         return resp
 
+    def power_on(self, payload, raise_error=True):
+        uuid = payload["metadata"]["uuid"]
+        payload["spec"]["resources"]["power_state"] = "ON"
+        resp = self.update(payload, uuid, raise_error=raise_error)
+        return resp
+
+    def soft_shutdown(self, payload, raise_error=True):
+        uuid = payload["metadata"]["uuid"]
+        payload["spec"]["resources"]["power_state"] = "OFF"
+        payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = "ACPI"
+        resp = self.update(payload, uuid, raise_error=raise_error)
+        return resp
+
+    def hard_power_off(self, payload, raise_error=True):
+        uuid = payload["metadata"]["uuid"]
+        payload["spec"]["resources"]["power_state"] = "OFF"
+        payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = "HARD"
+        resp = self.update(payload, uuid, raise_error=raise_error)
+        return resp
+
+    def is_restart_required(self):
+
+        if self.require_vm_restart:
+            return True
+
+        return False
+
+    @staticmethod
+    def set_power_state(spec, power_state):
+        spec["spec"]["resources"]["power_state"] = power_state
+
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -165,7 +196,7 @@ class VM(Prism):
 
     def _build_spec_vcpus(self, payload, vcpus):
         current_vcpus = payload["spec"]["resources"].get("num_sockets", 0)
-        self.check_and_set_require_vm_restart(current_vcpus, vcpus)
+        self._check_and_set_require_vm_restart(current_vcpus, vcpus)
         payload["spec"]["resources"]["num_sockets"] = vcpus
         return payload, None
 
@@ -177,7 +208,7 @@ class VM(Prism):
     def _build_spec_mem(self, payload, mem_gb):
         mem_mib = mem_gb * 1024
         current_mem_mib = payload["spec"]["resources"].get("memory_size_mib", 0)
-        self.check_and_set_require_vm_restart(current_mem_mib, mem_mib)
+        self._check_and_set_require_vm_restart(current_mem_mib, mem_mib)
         payload["spec"]["resources"]["memory_size_mib"] = mem_mib
         return payload, None
 
@@ -185,7 +216,7 @@ class VM(Prism):
         nics = []
         for network in networks:
             if network.get("uuid"):
-                nic = self.filter_by_uuid(
+                nic = self._filter_by_uuid(
                     network["uuid"], payload["spec"]["resources"]["nic_list"]
                 )
 
@@ -194,7 +225,7 @@ class VM(Prism):
                 if network.get("state") == "absent":
                     continue
 
-                network = self.filter_by_uuid(
+                network = self._filter_by_uuid(
                     network["uuid"], self.params_without_defaults.get("networks", [])
                 )
 
@@ -240,11 +271,11 @@ class VM(Prism):
 
             if vdisk.get("uuid"):
                 if vdisk.get("state") == "absent":
-                    self.remove_disk(vdisk, payload, existing_devise_indexes)
+                    self._remove_disk(vdisk, payload, existing_devise_indexes)
                 else:
-                    self.update_disk(vdisk, payload)
+                    self._update_disk(vdisk, payload)
             else:
-                disk = self.add_disk(vdisk, device_indexes, existing_devise_indexes)
+                disk = self._add_disk(vdisk, device_indexes, existing_devise_indexes)
                 payload["spec"]["resources"]["disk_list"].append(disk)
 
         return payload, None
@@ -297,11 +328,11 @@ class VM(Prism):
         payload["metadata"]["use_categories_mapping"] = True
         return payload, None
 
-    def check_and_set_require_vm_restart(self, current_value, new_value):
+    def _check_and_set_require_vm_restart(self, current_value, new_value):
         if new_value < current_value:
             self.require_vm_restart = True
 
-    def filter_by_uuid(self, uuid, items_list):
+    def _filter_by_uuid(self, uuid, items_list):
         try:
             return next(filter(lambda d: d.get("uuid") == uuid, items_list))
         except BaseException:
@@ -309,33 +340,6 @@ class VM(Prism):
                 msg="Failed generating VM Spec",
                 error="Entity {0} not found.".format(uuid),
             )
-
-    def power_on(self, payload, raise_error=True):
-        uuid = payload["metadata"]["uuid"]
-        payload["spec"]["resources"]["power_state"] = "ON"
-        resp = self.update(payload, uuid, raise_error=raise_error)
-        return resp
-
-    def soft_shutdown(self, payload, raise_error=True):
-        uuid = payload["metadata"]["uuid"]
-        payload["spec"]["resources"]["power_state"] = "OFF"
-        payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = "ACPI"
-        resp = self.update(payload, uuid, raise_error=raise_error)
-        return resp
-
-    def hard_power_off(self, payload, raise_error=True):
-        uuid = payload["metadata"]["uuid"]
-        payload["spec"]["resources"]["power_state"] = "OFF"
-        payload["spec"]["resources"]["power_state_mechanism"]["mechanism"] = "HARD"
-        resp = self.update(payload, uuid, raise_error=raise_error)
-        return resp
-
-    def is_restart_required(self):
-
-        if self.require_vm_restart:
-            return True
-
-        return False
 
     def _generate_disk_spec(
         self, vdisk, disk, device_indexes=None, existing_devise_indexes=None
@@ -417,7 +421,7 @@ class VM(Prism):
             disk.pop("data_source_reference", None)
         return disk
 
-    def add_disk(self, vdisk, device_indexes, existing_devise_indexes):
+    def _add_disk(self, vdisk, device_indexes, existing_devise_indexes):
         disk = self._get_default_disk_spec()
 
         disk = self._generate_disk_spec(
@@ -425,20 +429,20 @@ class VM(Prism):
         )
         return disk
 
-    def update_disk(self, vdisk, payload):
-        disk = self.filter_by_uuid(
+    def _update_disk(self, vdisk, payload):
+        disk = self._filter_by_uuid(
             vdisk["uuid"], payload["spec"]["resources"]["disk_list"]
         )
 
         disk.pop("disk_size_mib", None)
 
-        vdisk = self.filter_by_uuid(
+        vdisk = self._filter_by_uuid(
             vdisk["uuid"], self.params_without_defaults.get("disks", [])
         )
         self._generate_disk_spec(vdisk, disk)
 
-    def remove_disk(self, vdisk, payload, existing_devise_indexes):
-        disk = self.filter_by_uuid(
+    def _remove_disk(self, vdisk, payload, existing_devise_indexes):
+        disk = self._filter_by_uuid(
             vdisk["uuid"], payload["spec"]["resources"]["disk_list"]
         )
         existing_devise_indexes.remove(disk["device_properties"]["disk_address"])
@@ -447,10 +451,6 @@ class VM(Prism):
             self.require_vm_restart = True
 
         payload["spec"]["resources"]["disk_list"].remove(disk)
-
-    @staticmethod
-    def set_power_state(spec, power_state):
-        spec["spec"]["resources"]["power_state"] = power_state
 
 
 # Helper functions
