@@ -52,7 +52,7 @@ For <font color=royalblue>Developers</font>, please follow [this install guide](
 
 **4. Install the collection**
 
-```ansible-galaxy collection install nutanix-ncp-<version>.tar.gz```
+```ansible-galaxy collection install nutanix.ncp```
 
 **Note** Add <font color=red>`--force`</font> option for rebuilding or reinstalling to overwrite existing data
 
