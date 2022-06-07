@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_subnets
-short_description: subnets module which suports subnet CRUD operations
+short_description: subnets module which supports subnet CRUD operations
 version_added: 1.0.0
 description: "Create, Update, Delete subnets"
 options:
@@ -577,9 +577,6 @@ def create_subnet(module, result):
 
 def delete_subnet(module, result):
     subnet_uuid = module.params["subnet_uuid"]
-    if not subnet_uuid:
-        result["error"] = "Missing parameter subnet_uuid in playbook"
-        module.fail_json(msg="Failed deleting subnet", **result)
 
     subnet = Subnet(module)
     resp = subnet.delete(subnet_uuid)

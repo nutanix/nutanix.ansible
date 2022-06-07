@@ -1,3 +1,17 @@
+## v1.2.0 (3 June 2022)
+
+**Features**
+
+**Prism Central**
+- Ansible info module for VM
+- Ansible info module for VPC
+- Ansible info module for PBR
+- Ansible info module for Subnet
+- Ansible info module for Floating IPs
+- VM's update functionality
+- VM's clone functionality
+- VM's create OVA image functionality
+
 ## v1.1.0 (11 May 2022)
 
 **Features**

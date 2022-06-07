@@ -1,0 +1,134 @@
+- debug:
+    msg: Start testing VM clone
+
+- name: Create Cloud-init Script file
+  copy:
+    dest: "init_cloud.yml"
+    content: |
+        #cloud-config
+        chpasswd:
+          list: |
+            root: "{{ password }}"
+            expire: False
+        fqdn: myNutanixVM
+
+- name: VM with minimum requiremnts to clone
+  ntnx_vms:
+      state: present
+      name: integration_test_clone_vm
+      cluster:
+        name: "{{ cluster.name }}"
+      disks:
+        - type: "DISK"
+          clone_image: 
+            name: "{{ ubuntu }}"
+          bus: "SCSI"
+          size_gb: 20
+  register: vm
+  ignore_errors: true
+    
+- name: Creation Status
+  assert:
+    that:
+      - vm.response is defined
+      - vm.response.status.state == 'COMPLETE'
+    fail_msg: 'Fail: Unable to create VM with minimum requiremnts to clone '
+    success_msg: 'Succes: VM with minimum requiremnts created successfully '
+##############################
+
+- name: clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
+  ntnx_vms_clone:
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      vcpus: 2
+      cores_per_vcpu: 2
+      memory_gb: 2
+      name: cloned vm
+      timezone: GMT
+      force_power_off: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: 'Fail: Unable to clone vm and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off'
+    success_msg: 'Succes: VM cloned  successfully and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off '
+
+- set_fact:
+      todelete: '{{ todelete + [  result.vm_uuid ] }}'
+##############################
+- name: clone vm and add network
+  ntnx_vms_clone:
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      networks:
+        - is_connected: true
+          subnet:
+            uuid: "{{ static.uuid }}"
+  register: result
+  ignore_errors: true
+  
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: 'Fail: Unable to clone vm while it is off '
+    success_msg: 'Succes: VM cloned  successfully '
+
+- set_fact:
+      todelete: '{{ todelete + [  result.vm_uuid ] }}'
+###########################################
+- name: clone vm  with check mode
+  ntnx_vms_clone:
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      networks:
+        - is_connected: false
+          subnet:
+            name: "{{ network.dhcp.name }}"
+  register: result
+  ignore_errors: true
+  check_mode: yes
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.task_uuid != ""
+    success_msg: ' Success: returned response as expected '
+    fail_msg: ' Fail: clone vm with check_mode  '
+###########################################
+- name: clone vm  with script 
+  ntnx_vms_clone:
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      guest_customization:
+        type: "cloud_init"
+        script_path: "./init_cloud.yml"
+        is_overridable: True
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: 'Fail: Unable to clone vm vm  with script'
+    success_msg: 'Succes: VM cloned   with script  successfully '
+
+- set_fact:
+      todelete: '{{ todelete + [  result.vm_uuid ] }}'
+###########################################
+- name: Delete all Created VMs 
+  ntnx_vms:
+      state: absent
+      vm_uuid: '{{ item }}'
+  loop: '{{ todelete }}'
+
+- name: Delete all Created VMs 
+  ntnx_vms:
+      state: absent
+      vm_uuid: '{{ vm.vm_uuid }}'

@@ -2,7 +2,10 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from http.client import IncompleteRead
+try:
+    from http.client import IncompleteRead
+except ImportError:
+    from httplib import IncompleteRead  # python2
 
 __metaclass__ = type
 
@@ -23,7 +26,7 @@ except ImportError:
 
 
 class Entity(object):
-    entities_limitation = 250
+    entities_limitation = 20
     entity_type = "entities"
 
     def __init__(
@@ -162,7 +165,21 @@ class Entity(object):
         url = self.base_url if use_base_url else self.base_url + "/list"
         if endpoint:
             url = url + "/{0}".format(endpoint)
+
+        resp = self._fetch_url(
+            url,
+            method="POST",
+            data=data,
+            raise_error=False,
+            no_response=no_response,
+            timeout=timeout,
+        )
+        if resp:
+            return resp
         entities_list = []
+        main_length = data.get("length")
+        main_offset = data.get("offset", 0)
+        data["length"] = self.entities_limitation
         while True:
             resp = self._fetch_url(
                 url,
@@ -172,21 +189,25 @@ class Entity(object):
                 no_response=no_response,
                 timeout=timeout,
             )
-            if not resp.get(self.entity_type):
+            if self.entity_type not in resp:
                 return resp
             entities_list.extend(resp[self.entity_type])
             entities_count = len(entities_list)
-            data["offset"] = entities_count
-            if len(resp[self.entity_type]) != self.entities_limitation:
+            data["offset"] = main_offset + entities_count
+            if (
+                len(resp[self.entity_type]) != self.entities_limitation
+                or entities_count == main_length
+            ):
                 break
         custom_filters = self.module.params.get("custom_filter")
         if custom_filters:
-            entities_list = self.filter_entities(entities_list, custom_filters)
+            entities_list = self._filter_entities(entities_list, custom_filters)
             entities_count = len(entities_list)
 
         resp[self.entity_type] = entities_list
+        resp["metadata"]["offset"] = main_offset
         resp["metadata"]["length"] = entities_count
-        resp["metadata"]["total_matches"] = entities_count
+
         return resp
 
     def get_spec(self, old_spec=None):
@@ -208,6 +229,36 @@ class Entity(object):
                 if entity["spec"]["name"] == value:
                     return entity["metadata"]["uuid"]
         return None
+
+    @staticmethod
+    def update_entity_spec_version(spec):
+        spec["metadata"]["entity_version"] = str(
+            int(spec["metadata"]["entity_version"]) + 1
+        )
+
+    def get_info_spec(self):
+        params = self.module.params
+        spec = {
+            "kind": None,
+            "offset": None,
+            "length": None,
+            "filter": None,
+            "sort_order": None,
+            "sort_attribute": None,
+        }
+
+        for key in spec.copy().keys():
+            if params.get(key):
+                spec[key] = params[key]
+            else:
+                spec.pop(key)
+
+        if params.get("filter", {}).get("name") and params.get("kind") == "vm":
+            spec["filter"]["vm_name"] = spec["filter"].pop("name")
+
+        spec["filter"] = self._parse_filters(params.get("filter", {}))
+
+        return spec, None
 
     def _build_url(self, module, scheme, resource_type):
         host = module.params.get("nutanix_host")
@@ -358,11 +409,11 @@ class Entity(object):
         return spec
 
     @staticmethod
-    def parse_filters(filters):
+    def _parse_filters(filters):
         return ",".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
 
     @staticmethod
-    def filter_entities(entities, custom_filters):
+    def _filter_entities(entities, custom_filters):
         filtered_entities = []
         for entity in entities:
             if utils.intersection(entity, custom_filters.copy()):

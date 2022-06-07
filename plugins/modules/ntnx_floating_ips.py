@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_floating_ips
-short_description: floating_ips module which suports floating_ip CRUD operations
+short_description: floating_ips module which supports floating_ip CRUD operations
 version_added: 1.0.0
 description: 'Create, Update, Delete floating_ips'
 options:
@@ -229,9 +229,6 @@ def create_floating_ip(module, result):
 
 def delete_floating_ip(module, result):
     fip_uuid = module.params["fip_uuid"]
-    if not fip_uuid:
-        result["error"] = "Missing parameter fip_uuid in playbook"
-        module.fail_json(msg="Failed deleting floating_ip", **result)
 
     floating_ip = FloatingIP(module)
     resp = floating_ip.delete(fip_uuid)

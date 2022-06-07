@@ -1,0 +1,32 @@
+---
+- name: VM_Info playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      set_fact:
+        vm_name: ""
+        
+    - name: List vms using name filter criteria
+      ntnx_vms_info:
+        filter: "vm_name=={{ vm_name }}"
+        kind: vm
+      register: result
+      ignore_errors: True
+    
+    - name: List vms using length, offset and ascending vm_name sorting 
+      ntnx_vms_info:
+        length: 10
+        offset: 1
+        sort_order: "ASCENDING"
+        sort_attribute: "vm_name"
+      register: result
+      ignore_errors: True

@@ -1,0 +1,206 @@
+- debug:
+    msg: Start testing VM with different opperations
+
+- set_fact:
+      todelete: []
+- name: VM with minimum requiremnts
+  ntnx_vms:
+      state: present
+      name: integration_test_opperations_vm
+      cluster:
+        name: "{{ cluster.name }}"
+      disks:
+        - type: "DISK"
+          clone_image: 
+            name: "{{ ubuntu }}"
+          bus: "SCSI"
+          size_gb: 20
+  register: vm
+  ignore_errors: true
+    
+- name: Creation Status
+  assert:
+    that:
+      - vm.response is defined
+      - vm.response.status.state == 'COMPLETE'
+    fail_msg: ' Unable to create VM with minimum requiremnts '
+    success_msg: ' VM with minimum requiremnts created successfully '
+
+############################################
+- name: VM with minimum requiremnts with check mode
+  ntnx_vms:
+      state: present
+      name: integration_test_opperations_vm
+      cluster:
+        name: "{{ cluster.name }}"
+      disks:
+        - type: "DISK"
+          clone_image: 
+            name: "{{ ubuntu }}"
+          bus: "SCSI"
+          size_gb: 20
+  register: result
+  ignore_errors: true
+  check_mode: yes
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.task_uuid != ""
+    success_msg: ' Success: returned  as expected '
+    fail_msg: ' Fail '
+###########################################
+- name: hard power off the vm
+  ntnx_vms:
+      vm_uuid: "{{ vm.vm_uuid }}"
+      state: hard_poweroff
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.status.resources.power_state == 'OFF'
+    fail_msg: ' Unable to hard power off the vm '
+    success_msg: ' VM powerd off successfully '
+# ###########################################
+- name: power on the vm
+  ntnx_vms:
+      state: power_on
+      vm_uuid: "{{ vm.vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.status.resources.power_state == 'ON'
+    fail_msg: ' Unable to power on vm '
+    success_msg: ' VM powerd on successfully '
+##########################################
+- name: power on the vm while it's on
+  ntnx_vms:
+      state: power_on
+      vm_uuid: "{{ vm.vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.msg == "Nothing to change"
+    success_msg: ' Success: returned msg as expected '
+    fail_msg: ' Fail '
+##########################################
+# - name: soft shut down the vm
+#   ntnx_vms:
+#       state: soft_shutdown
+#       vm_uuid: "{{ vm.vm_uuid }}"
+#       wait: true
+#   register: result
+#   ignore_errors: true
+
+# - name: Creation Status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.response.status.state == 'COMPLETE'
+#     fail_msg: ' Unable to soft soft_shutdown   the vm '
+#     success_msg: ' VM soft_shutdown  successfully '
+###########################################
+###############################
+# - name: VM with minimum requiremnts and soft_shutdown 
+#   ntnx_vms:
+#       state: present
+#       name: integration_test_opperations_vm
+#       operation: soft_shutdown
+#       cluster:
+#         name: "{{ cluster.name }}"
+#       disks:
+#         - type: "DISK"
+#           clone_image: 
+#             name: "{{ centos }}"
+#           bus: "SCSI"
+#           size_gb: 20
+#   register: result
+#   ignore_errors: true
+
+# - name: Creation Status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.response.status.state == 'COMPLETE'
+#       - result.response.status.resources.power_state == 'OFF'
+#       - result.response.status.resources.power_state_mechanism.mechanism == 'ACPI'
+#     fail_msg: ' Unable to create VM with minimum requiremnts and soft_shutdown '
+#     success_msg: ' VM with minimum requiremnts created successfully and soft_shutdown '
+
+# - set_fact:
+#       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+
+- name: Create VM with minimum requiremnts with hard_poweroff opperation
+  ntnx_vms:
+      state: hard_poweroff
+      name: integration_test_opperations_vm
+      cluster:
+        name: "{{ cluster.name }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.status.resources.power_state == 'OFF'
+      - result.response.status.resources.power_state_mechanism.mechanism == 'HARD'
+    fail_msg: ' Unable to create VM with minimum requiremnts with hard_poweroff opperation '
+    success_msg: ' VM with minimum requiremnts and hard_poweroff state created successfully '
+
+- set_fact:
+      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+
+- name: Create VM with minimum requiremnts with hard_poweroff opperation without wait
+  ntnx_vms:
+      state: hard_poweroff
+      name: integration_test_opperations_vm_111
+      cluster:
+        name: "{{ cluster.name }}"
+      wait: false
+  register: result
+  ignore_errors: true
+ 
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE' or result.response.status.state == 'PENDING'
+      - result.vm_uuid
+      - result.task_uuid
+    fail_msg: ' Unable to create VM with minimum requiremnts with hard_poweroff opperation '
+    success_msg: ' VM with minimum requiremnts and hard_poweroff state created successfully '
+
+- set_fact:
+      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
+
+- name: Delete all Created VMs 
+  ntnx_vms:
+      state: absent
+      vm_uuid: '{{ item }}'
+  loop: '{{ todelete }}'
+
+- name: Delete all Created VMs 
+  ntnx_vms:
+      state: absent
+      vm_uuid: '{{ vm.vm_uuid }}'
+
+- set_fact:
+      todelete: []

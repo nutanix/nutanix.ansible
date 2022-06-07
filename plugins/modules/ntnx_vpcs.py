@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_vpcs
-short_description: Virtual Private Cloud (VPC) module which suports vpc CRUD operations
+short_description: Virtual Private Cloud (VPC) module which supports vpc CRUD operations
 version_added: 1.0.0
 description: 'Create, Update, Delete vpcs'
 options:
@@ -255,9 +255,6 @@ def create_vpc(module, result):
 
 def delete_vpc(module, result):
     vpc_uuid = module.params["vpc_uuid"]
-    if not vpc_uuid:
-        result["error"] = "Missing parameter vpc_uuid in playbook"
-        module.fail_json(msg="Failed deleting vpc", **result)
 
     vpc = Vpc(module)
     resp = vpc.delete(vpc_uuid)

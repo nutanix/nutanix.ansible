@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_pbrs
-short_description: pbr module which suports pbr CRUD operations
+short_description: pbr module which supports pbr CRUD operations
 version_added: 1.0.0
-description: 'Create, Update, Delete, Power-on, Power-off Nutanix pbr''s'
+description: "Create, Update, Delete Nutanix pbr's"
 options:
   priority:
     description: The policy priority number
@@ -500,9 +500,6 @@ def create_pbr(module, result):
 
 def delete_pbr(module, result):
     pbr_uuid = module.params["pbr_uuid"]
-    if not pbr_uuid:
-        result["error"] = "Missing parameter pbr_uuid in playbook"
-        module.fail_json(msg="Failed deleting pbr", **result)
 
     pbr = Pbr(module)
     resp = pbr.delete(pbr_uuid)

@@ -17,7 +17,8 @@ It is designed keeping simplicity as the core value. Hence it is
 > This collection requires Python 2.7 or greater
 
 ## Prism Cenral
-> For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2 pc.2021.9.0.5 and pc.2021.8.0.1.
+> For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
+> For the 1.2.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.5.
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
@@ -98,10 +99,17 @@ ansible-playbook examples/iaas/iaas.yml
 | Name | Description |
 | --- | --- |
 | ntnx_vms | Create or delete a VM. |
+| ntnx_vms_clone | Clone VM. |
+| ntnx_vms_ova | Create OVA image from VM. |
+| ntnx_vms_info | List existing VMs. |
 | ntnx_vpcs | Create or delete a VPC. |
+| ntnx_vpcs_info | List existing VPCs. |
 | ntnx_subnets | Create or delete a Subnet. |
+| ntnx_subnets_info | List existing Subnets. |
 | ntnx_floating_ips | Create or delete a Floating Ip. |
+| ntnx_floating_ips_info | List existing Floating_Ips. |
 | ntnx_pbrs | Create or delete a PBR. |
+| ntnx_pbrs_info | List existing PBRs. |
 | ntnx_foundation | Image nodes and create new cluster. |
 | ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
 | ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |

@@ -1,0 +1,75 @@
+- debug:
+    msg: Start testing create ova for vm
+
+- name: VM with minimum requiremnts
+  ntnx_vms:
+      state: present
+      name: integration_test_ova_vm
+      cluster:
+        name: "{{ cluster.name }}"
+  register: vm
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - vm.response is defined
+      - vm.response.status.state == 'COMPLETE'
+    fail_msg: 'Fail: Unable to create VM with minimum requiremnts '
+    success_msg: 'Success: VM with minimum requiremnts created successfully '
+#########################################
+- name: create_ova_image  with check mode
+  ntnx_vms_ova:
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      name: integration_test_VMDK_ova
+      file_format: VMDK
+  register: result
+  ignore_errors: true
+  check_mode: yes
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.task_uuid != ""
+    success_msg: ' Success: returned  as expected '
+    fail_msg: ' Fail: create_ova_image  with check mode '
+#########################################
+- name: create QCOW2 ova_image
+  ntnx_vms_ova:
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      name: integration_test_QCOW2_ova
+      file_format: QCOW2
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: 'Fail: Unable to create QCOW2 ova_image '
+    success_msg: 'Success: create QCOW2 ova_image successfully '
+#########################################
+- name: create VMDK ova_image
+  ntnx_vms_ova:
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      name: integration_test_VMDK_ova
+      file_format: VMDK
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: 'Fail: Unable to create VMDK ova_image '
+    success_msg: 'Success: create VMDK ova_image successfully '
+#########################################
+- name: Delete all Created VMs 
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm.vm_uuid }}"
