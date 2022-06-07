@@ -6,6 +6,7 @@ action_groups:
   - ntnx_pbrs
   - ntnx_vms
   - ntnx_vpcs
+  - ntnx_clusters
   - ntnx_subnets
   - ntnx_vms_ova
   - ntnx_vms_clone

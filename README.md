@@ -110,6 +110,7 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_floating_ips_info | List existing Floating_Ips. |
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
+| ntnx_clusters | Update the settings of an existing cluster. |
 | ntnx_foundation | Image nodes and create new cluster. |
 | ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
 | ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |

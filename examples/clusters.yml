@@ -1,0 +1,27 @@
+---
+- name: Cluster update playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: update the settings within a cluster
+      nutanix.ncp.ntnx_clusters:
+          cluster:
+            name: cluster_name
+          timezone: etc/Utc
+          authorized_public_key_list:
+            - name: user1
+              key: ssh-rsa 123456789abcd...........== user1.testkey
+            - name: user2
+              key: ssh-rsa 123456789abcd...........== user2.testkey
+          network:
+            ntp_server_ip_list:
+              - time1.mycompany.com
+              - time2.mycompany.com
