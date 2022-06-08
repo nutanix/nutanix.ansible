@@ -85,8 +85,66 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
+    group_spec = dict(
+        uuid=dict(type="str")
+    )
+    tcp_and_udp_spec = dict(
+        src=dict(type="list", default=["*"], elements="str"),
+        dst=dict(type="list", default=["*"], elements="str"),
+    )
+
+    network_spec = dict(ip=dict(type="str"), prefix=dict(type="str"))
+
+    icmp_spec = dict(
+        any=dict(type="bool"), code=dict(type="int"), type=dict(type="int")
+    )
+    filters_spec = dict(
+        type=dict(type="str"),
+        kind_list=dict(type="list", elements="dict", ),
+        params=dict(type="dict"),
+    )
+
+    target_spec = dict(
+        peer_specification_type=dict(type="str"),
+        filter=dict(type="dict", options=filters_spec),
+        default_internal_policy=dict(type="str"),
+    )
+    bound_allow_spec = dict(
+        peer_specification_type=dict(type="str"),
+        filter=dict(type="dict", options=filters_spec),
+        address_group_inclusion_list=dict(type="list", elements="dict", options=group_spec),
+        ip_subnet=dict(type="dict", options=network_spec),
+        service_group_list=dict(type="list", elements="dict", options=group_spec),
+        protocol=dict(type="str"),
+        tcp_port_range_list=dict(type="list", elements="dict", options=tcp_and_udp_spec),
+        udp_port_range_list=dict(type="list", elements="dict", options=tcp_and_udp_spec),
+        icmp=dict(type="list", elements="dict", options=icmp_spec),
+        network_function_chain_reference=dict(type="dict", options=dict(uuid=dict(type="str"))),
+        expiration_time=dict(type="str"),
+        description=dict(type="str"),
+        rule_id=dict(type="int"),
+    )
+
+    rule_spec = dict(
+        target_group=dict(type="dict", options=target_spec),
+        inbound_allow_list=dict(type="list", elements="dict", options=bound_allow_spec),
+        outbound_allow_list=dict(type="list", elements="dict", options=bound_allow_spec),
+        action=dict(type="str"),
+    )
+
+    isolation_rule_spec = dict(
+        first_entity_filter=dict(type="dict", options=filters_spec),
+        second_entity_filter=dict(type="dict", options=filters_spec),
+        action=dict(type="str"),
+    )
     module_args = dict(
-    # Step 1: Ansible module spec and spec validation
+        name=dict(type="bool"),
+        allow_ipv6_traffic=dict(type="bool"),
+        is_policy_hitlog_enabled=dict(type="bool"),
+        ad_rule=dict(type="dict", options=rule_spec),
+        app_rule=dict(type="dict", options=rule_spec),
+        isolation_rule=dict(type="dict", options=isolation_rule_spec),
+        quarantine_rule=dict(type="dict", options=rule_spec),
     )
 
     return module_args
@@ -168,4 +226,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
