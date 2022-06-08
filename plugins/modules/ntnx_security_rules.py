@@ -8,7 +8,6 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
----
 module: ntnx_security_rules
 short_description: security_rule module which suports security_rule CRUD operations
 version_added: 1.0.0
@@ -57,16 +56,902 @@ options:
     description: Wait for security_rule CRUD operation to complete.
     type: bool
     required: false
-    default: True
+    default: true
   name:
     description: security_rule Name
-    required: False
+    required: false
     type: str
   security_rule_uuid:
     description: security_rule UUID
     type: str
-
-  # Step 4: here should be additional arguments documentation
+  allow_ipv6_traffic:
+    description: Allow traffic from ipv6
+    type: bool
+  is_policy_hitlog_enabled:
+    description: write
+    type: bool
+  ad_rule:
+    description: >-
+      These rules are used for quarantining suspected VMs. Target group is a
+      required attribute. Empty inbound_allow_list will not allow anything into
+      target group. Empty outbound_allow_list will allow everything from target
+      group.
+    type: dict
+    suboptions:
+      action:
+        description: Type of deployment of the rule.
+        type: str
+      target_group:
+        description: Target Group
+        type: dict
+        suboptions:
+          peer_specification_type:
+            description: Way to identify the object for which rule is applied.
+            type: str
+          default_internal_policy:
+            description: Default policy for communication within target group.
+            type: str
+          filter:
+            description: A category filter.
+            type: dict
+            suboptions:
+              type:
+                description: The type of the filter being used.
+                type: str
+              params:
+                description: A list of category key and list of values.
+                type: dict
+              kind_list:
+                description: List of kinds associated with this filter.
+                type: list
+                elements: str
+      inbound_allow_list:
+        description: Array of inbound Network rule
+        type: list
+        elements: dict
+        suboptions:
+          peer_specification_type:
+            description: Way to identify the object for which rule is applied.
+            type: str
+          expiration_time:
+            description: Timestamp of expiration time.
+            type: str
+          description:
+            type: str
+            description: >-
+              Description for network security rule that is for inbound or
+              outbound
+          rule_id:
+            type: int
+            description: >-
+              Unique identifier for inbound or outbound rule. This is system
+              generated and used internally. User should not set this field
+              while creating a new rule or should not modify it while updating
+              the existing rule.
+          protocol:
+            type: str
+            description: >-
+              Select a protocol to allow. Multiple protocols can be allowed by
+              repeating network_rule object. If a protocol is not configured in
+              the network_rule object then it is allowed.
+          filter:
+            description: A category filter.
+            type: dict
+            suboptions:
+              type:
+                description: The type of the filter being used.
+                type: str
+              params:
+                description: A list of category key and list of values.
+                type: dict
+              kind_list:
+                description: List of kinds associated with this filter.
+                type: list
+                elements: str
+          address_group_inclusion_list:
+            type: list
+            elements: dict
+            description: List of address groups that are allowed access by this rule
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          service_group_list:
+            type: list
+            elements: dict
+            description: >-
+              List of service groups associated with this rule. The exiting
+              fields for protocol or ports is not recommended for use and will
+              be deprecated for these new fields at the API level.
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          ip_subnet:
+            description: IP subnet provided as an address and prefix length.
+            type: dict
+            suboptions:
+              ip:
+                type: str
+                description: IPV4 address.
+              prefix:
+                description: prefix length
+                type: str
+          tcp_port_range_list:
+            description: List of TCP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          udp_port_range_list:
+            description: List of UDP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          icmp:
+            description: List of ICMP types and codes allowed by this rule.
+            elements: dict
+            type: list
+            suboptions:
+              any:
+                description: any
+                type: bool
+              code:
+                description: ICMP code
+                type: int
+              type:
+                description: ICMP type
+                type: int
+          network_function_chain_reference:
+            type: dict
+            description: The reference to a network_function_chain
+            suboptions:
+              uuid:
+                type: str
+                description: UUID
+      outbound_allow_list:
+        description: Array of Outbound Network rule
+        type: list
+        elements: dict
+        suboptions:
+          peer_specification_type:
+            description: Way to identify the object for which rule is applied.
+            type: str
+          expiration_time:
+            description: Timestamp of expiration time.
+            type: str
+          description:
+            type: str
+            description: >-
+              Description for network security rule that is for inbound or
+              outbound
+          rule_id:
+            type: int
+            description: >-
+              Unique identifier for inbound or outbound rule. This is system
+              generated and used internally. User should not set this field
+              while creating a new rule or should not modify it while updating
+              the existing rule.
+          protocol:
+            type: str
+            description: >-
+              Select a protocol to allow. Multiple protocols can be allowed by
+              repeating network_rule object. If a protocol is not configured in
+              the network_rule object then it is allowed.
+          filter:
+            description: A category filter.
+            type: dict
+            suboptions:
+              type:
+                description: The type of the filter being used.
+                type: str
+              params:
+                description: A list of category key and list of values.
+                type: dict
+              kind_list:
+                description: List of kinds associated with this filter.
+                type: list
+                elements: str
+          address_group_inclusion_list:
+            type: list
+            elements: dict
+            description: List of address groups that are allowed access by this rule
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          service_group_list:
+            type: list
+            elements: dict
+            description: >-
+              List of service groups associated with this rule. The exiting
+              fields for protocol or ports is not recommended for use and will
+              be deprecated for these new fields at the API level.
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          ip_subnet:
+            description: IP subnet provided as an address and prefix length.
+            type: dict
+            suboptions:
+              ip:
+                type: str
+                description: IPV4 address.
+              prefix:
+                description: prefix length
+                type: str
+          tcp_port_range_list:
+            description: List of TCP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          udp_port_range_list:
+            description: List of UDP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          icmp:
+            description: List of ICMP types and codes allowed by this rule.
+            elements: dict
+            type: list
+            suboptions:
+              any:
+                description: any
+                type: bool
+              code:
+                description: ICMP code
+                type: int
+              type:
+                description: ICMP type
+                type: int
+          network_function_chain_reference:
+            type: dict
+            description: The reference to a network_function_chain
+            suboptions:
+              uuid:
+                type: str
+                description: UUID
+  app_rule:
+    description: >-
+      These rules are used for quarantining suspected VMs. Target group is a
+      required attribute. Empty inbound_allow_list will not allow anything into
+      target group. Empty outbound_allow_list will allow everything from target
+      group.
+    type: dict
+    suboptions:
+      action:
+        description: Type of deployment of the rule.
+        type: str
+      target_group:
+        description: Target Group
+        type: dict
+        suboptions:
+          peer_specification_type:
+            description: Way to identify the object for which rule is applied.
+            type: str
+          default_internal_policy:
+            description: Default policy for communication within target group.
+            type: str
+          filter:
+            description: A category filter.
+            type: dict
+            suboptions:
+              type:
+                description: The type of the filter being used.
+                type: str
+              params:
+                description: A list of category key and list of values.
+                type: dict
+              kind_list:
+                description: List of kinds associated with this filter.
+                type: list
+                elements: str
+      inbound_allow_list:
+        description: Array of inbound Network rule
+        type: list
+        elements: dict
+        suboptions:
+          peer_specification_type:
+            description: Way to identify the object for which rule is applied.
+            type: str
+          expiration_time:
+            description: Timestamp of expiration time.
+            type: str
+          description:
+            type: str
+            description: >-
+              Description for network security rule that is for inbound or
+              outbound
+          rule_id:
+            type: int
+            description: >-
+              Unique identifier for inbound or outbound rule. This is system
+              generated and used internally. User should not set this field
+              while creating a new rule or should not modify it while updating
+              the existing rule.
+          protocol:
+            type: str
+            description: >-
+              Select a protocol to allow. Multiple protocols can be allowed by
+              repeating network_rule object. If a protocol is not configured in
+              the network_rule object then it is allowed.
+          filter:
+            description: A category filter.
+            type: dict
+            suboptions:
+              type:
+                description: The type of the filter being used.
+                type: str
+              params:
+                description: A list of category key and list of values.
+                type: dict
+              kind_list:
+                description: List of kinds associated with this filter.
+                type: list
+                elements: str
+          address_group_inclusion_list:
+            type: list
+            elements: dict
+            description: List of address groups that are allowed access by this rule
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          service_group_list:
+            type: list
+            elements: dict
+            description: >-
+              List of service groups associated with this rule. The exiting
+              fields for protocol or ports is not recommended for use and will
+              be deprecated for these new fields at the API level.
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          ip_subnet:
+            description: IP subnet provided as an address and prefix length.
+            type: dict
+            suboptions:
+              ip:
+                type: str
+                description: IPV4 address.
+              prefix:
+                description: prefix length
+                type: str
+          tcp_port_range_list:
+            description: List of TCP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          udp_port_range_list:
+            description: List of UDP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          icmp:
+            description: List of ICMP types and codes allowed by this rule.
+            elements: dict
+            type: list
+            suboptions:
+              any:
+                description: any
+                type: bool
+              code:
+                description: ICMP code
+                type: int
+              type:
+                description: ICMP type
+                type: int
+          network_function_chain_reference:
+            type: dict
+            description: The reference to a network_function_chain
+            suboptions:
+              uuid:
+                type: str
+                description: UUID
+      outbound_allow_list:
+        description: Array of Outbound Network rule
+        type: list
+        elements: dict
+        suboptions:
+          peer_specification_type:
+            description: Way to identify the object for which rule is applied.
+            type: str
+          expiration_time:
+            description: Timestamp of expiration time.
+            type: str
+          description:
+            type: str
+            description: >-
+              Description for network security rule that is for inbound or
+              outbound
+          rule_id:
+            type: int
+            description: >-
+              Unique identifier for inbound or outbound rule. This is system
+              generated and used internally. User should not set this field
+              while creating a new rule or should not modify it while updating
+              the existing rule.
+          protocol:
+            type: str
+            description: >-
+              Select a protocol to allow. Multiple protocols can be allowed by
+              repeating network_rule object. If a protocol is not configured in
+              the network_rule object then it is allowed.
+          filter:
+            description: A category filter.
+            type: dict
+            suboptions:
+              type:
+                description: The type of the filter being used.
+                type: str
+              params:
+                description: A list of category key and list of values.
+                type: dict
+              kind_list:
+                description: List of kinds associated with this filter.
+                type: list
+                elements: str
+          address_group_inclusion_list:
+            type: list
+            elements: dict
+            description: List of address groups that are allowed access by this rule
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          service_group_list:
+            type: list
+            elements: dict
+            description: >-
+              List of service groups associated with this rule. The exiting
+              fields for protocol or ports is not recommended for use and will
+              be deprecated for these new fields at the API level.
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          ip_subnet:
+            description: IP subnet provided as an address and prefix length.
+            type: dict
+            suboptions:
+              ip:
+                type: str
+                description: IPV4 address.
+              prefix:
+                description: prefix length
+                type: str
+          tcp_port_range_list:
+            description: List of TCP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          udp_port_range_list:
+            description: List of UDP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          icmp:
+            description: List of ICMP types and codes allowed by this rule.
+            elements: dict
+            type: list
+            suboptions:
+              any:
+                description: any
+                type: bool
+              code:
+                description: ICMP code
+                type: int
+              type:
+                description: ICMP type
+                type: int
+          network_function_chain_reference:
+            type: dict
+            description: The reference to a network_function_chain
+            suboptions:
+              uuid:
+                type: str
+                description: UUID
+  isolation_rule:
+    description: These rules are used for environmental isolation.
+    type: dict
+    suboptions:
+      action:
+        description: Type of deployment of the rule.
+        type: str
+      first_entity_filter:
+        description: A category filter.
+        type: dict
+        suboptions:
+          type:
+            description: The type of the filter being used.
+            type: str
+          params:
+            description: A list of category key and list of values.
+            type: dict
+          kind_list:
+            description: List of kinds associated with this filter.
+            type: list
+            elements: str
+      second_entity_filter:
+        description: A category filter.
+        type: dict
+        suboptions:
+          type:
+            description: The type of the filter being used.
+            type: str
+          params:
+            description: A list of category key and list of values.
+            type: dict
+          kind_list:
+            description: List of kinds associated with this filter.
+            type: list
+            elements: str
+  quarantine_rule:
+    description: >-
+      These rules are used for quarantining suspected VMs. Target group is a
+      required attribute. Empty inbound_allow_list will not allow anything into
+      target group. Empty outbound_allow_list will allow everything from target
+      group.
+    type: dict
+    suboptions:
+      action:
+        description: Type of deployment of the rule.
+        type: str
+      target_group:
+        description: Target Group
+        type: dict
+        suboptions:
+          peer_specification_type:
+            description: Way to identify the object for which rule is applied.
+            type: str
+          default_internal_policy:
+            description: Default policy for communication within target group.
+            type: str
+          filter:
+            description: A category filter.
+            type: dict
+            suboptions:
+              type:
+                description: The type of the filter being used.
+                type: str
+              params:
+                description: A list of category key and list of values.
+                type: dict
+              kind_list:
+                description: List of kinds associated with this filter.
+                type: list
+                elements: str
+      inbound_allow_list:
+        description: Array of inbound Network rule
+        type: list
+        elements: dict
+        suboptions:
+          peer_specification_type:
+            description: Way to identify the object for which rule is applied.
+            type: str
+          expiration_time:
+            description: Timestamp of expiration time.
+            type: str
+          description:
+            type: str
+            description: >-
+              Description for network security rule that is for inbound or
+              outbound
+          rule_id:
+            type: int
+            description: >-
+              Unique identifier for inbound or outbound rule. This is system
+              generated and used internally. User should not set this field
+              while creating a new rule or should not modify it while updating
+              the existing rule.
+          protocol:
+            type: str
+            description: >-
+              Select a protocol to allow. Multiple protocols can be allowed by
+              repeating network_rule object. If a protocol is not configured in
+              the network_rule object then it is allowed.
+          filter:
+            description: A category filter.
+            type: dict
+            suboptions:
+              type:
+                description: The type of the filter being used.
+                type: str
+              params:
+                description: A list of category key and list of values.
+                type: dict
+              kind_list:
+                description: List of kinds associated with this filter.
+                type: list
+                elements: str
+          address_group_inclusion_list:
+            type: list
+            elements: dict
+            description: List of address groups that are allowed access by this rule
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          service_group_list:
+            type: list
+            elements: dict
+            description: >-
+              List of service groups associated with this rule. The exiting
+              fields for protocol or ports is not recommended for use and will
+              be deprecated for these new fields at the API level.
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          ip_subnet:
+            description: IP subnet provided as an address and prefix length.
+            type: dict
+            suboptions:
+              ip:
+                type: str
+                description: IPV4 address.
+              prefix:
+                description: prefix length
+                type: str
+          tcp_port_range_list:
+            description: List of TCP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          udp_port_range_list:
+            description: List of UDP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          icmp:
+            description: List of ICMP types and codes allowed by this rule.
+            elements: dict
+            type: list
+            suboptions:
+              any:
+                description: any
+                type: bool
+              code:
+                description: ICMP code
+                type: int
+              type:
+                description: ICMP type
+                type: int
+          network_function_chain_reference:
+            type: dict
+            description: The reference to a network_function_chain
+            suboptions:
+              uuid:
+                type: str
+                description: UUID
+      outbound_allow_list:
+        description: Array of Outbound Network rule
+        type: list
+        elements: dict
+        suboptions:
+          peer_specification_type:
+            description: Way to identify the object for which rule is applied.
+            type: str
+          expiration_time:
+            description: Timestamp of expiration time.
+            type: str
+          description:
+            type: str
+            description: >-
+              Description for network security rule that is for inbound or
+              outbound
+          rule_id:
+            type: int
+            description: >-
+              Unique identifier for inbound or outbound rule. This is system
+              generated and used internally. User should not set this field
+              while creating a new rule or should not modify it while updating
+              the existing rule.
+          protocol:
+            type: str
+            description: >-
+              Select a protocol to allow. Multiple protocols can be allowed by
+              repeating network_rule object. If a protocol is not configured in
+              the network_rule object then it is allowed.
+          filter:
+            description: A category filter.
+            type: dict
+            suboptions:
+              type:
+                description: The type of the filter being used.
+                type: str
+              params:
+                description: A list of category key and list of values.
+                type: dict
+              kind_list:
+                description: List of kinds associated with this filter.
+                type: list
+                elements: str
+          address_group_inclusion_list:
+            type: list
+            elements: dict
+            description: List of address groups that are allowed access by this rule
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          service_group_list:
+            type: list
+            elements: dict
+            description: >-
+              List of service groups associated with this rule. The exiting
+              fields for protocol or ports is not recommended for use and will
+              be deprecated for these new fields at the API level.
+            suboptions:
+              uuid:
+                description: UUID
+                type: str
+          ip_subnet:
+            description: IP subnet provided as an address and prefix length.
+            type: dict
+            suboptions:
+              ip:
+                type: str
+                description: IPV4 address.
+              prefix:
+                description: prefix length
+                type: str
+          tcp_port_range_list:
+            description: List of TCP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          udp_port_range_list:
+            description: List of UDP ports that are allowed by this rule.
+            type: list
+            elements: dict
+            suboptions:
+              src:
+                description: start_port
+                type: list
+                elements: str
+                default: '*'
+              dst:
+                description: end_port
+                type: list
+                elements: str
+                default: '*'
+          icmp:
+            description: List of ICMP types and codes allowed by this rule.
+            elements: dict
+            type: list
+            suboptions:
+              any:
+                description: any
+                type: bool
+              code:
+                description: ICMP code
+                type: int
+              type:
+                description: ICMP type
+                type: int
+          network_function_chain_reference:
+            type: dict
+            description: The reference to a network_function_chain
+            suboptions:
+              uuid:
+                type: str
+                description: UUID
+author:
+  - Prem Karat (@premkarat)
+  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+  - Alaa Bishtawi (@alaa-bish)
 
 """
 
@@ -79,15 +964,13 @@ RETURN = r"""
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.security_rules import SecurityRule  # noqa: E402
+from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
-    group_spec = dict(
-        uuid=dict(type="str")
-    )
+    group_spec = dict(uuid=dict(type="str"))
     tcp_and_udp_spec = dict(
         src=dict(type="list", default=["*"], elements="str"),
         dst=dict(type="list", default=["*"], elements="str"),
@@ -112,14 +995,22 @@ def get_module_spec():
     bound_allow_spec = dict(
         peer_specification_type=dict(type="str"),
         filter=dict(type="dict", options=filters_spec),
-        address_group_inclusion_list=dict(type="list", elements="dict", options=group_spec),
+        address_group_inclusion_list=dict(
+            type="list", elements="dict", options=group_spec
+        ),
         ip_subnet=dict(type="dict", options=network_spec),
         service_group_list=dict(type="list", elements="dict", options=group_spec),
         protocol=dict(type="str"),
-        tcp_port_range_list=dict(type="list", elements="dict", options=tcp_and_udp_spec),
-        udp_port_range_list=dict(type="list", elements="dict", options=tcp_and_udp_spec),
+        tcp_port_range_list=dict(
+            type="list", elements="dict", options=tcp_and_udp_spec
+        ),
+        udp_port_range_list=dict(
+            type="list", elements="dict", options=tcp_and_udp_spec
+        ),
         icmp=dict(type="list", elements="dict", options=icmp_spec),
-        network_function_chain_reference=dict(type="dict", options=dict(uuid=dict(type="str"))),
+        network_function_chain_reference=dict(
+            type="dict", options=dict(uuid=dict(type="str"))
+        ),
         expiration_time=dict(type="str"),
         description=dict(type="str"),
         rule_id=dict(type="int"),
@@ -128,7 +1019,9 @@ def get_module_spec():
     rule_spec = dict(
         target_group=dict(type="dict", options=target_spec),
         inbound_allow_list=dict(type="list", elements="dict", options=bound_allow_spec),
-        outbound_allow_list=dict(type="list", elements="dict", options=bound_allow_spec),
+        outbound_allow_list=dict(
+            type="list", elements="dict", options=bound_allow_spec
+        ),
         action=dict(type="str"),
     )
 
@@ -200,10 +1093,7 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(
-        argument_spec=get_module_spec(),
-        supports_check_mode=True
-    )
+    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
