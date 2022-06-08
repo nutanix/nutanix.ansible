@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_security_rules
-short_description: security_rules module which suports security_rules CRUD operations
+short_description: security_rule module which suports security_rule CRUD operations
 version_added: 1.0.0
-description: 'Create, Update, Delete security_rules'
+description: 'Create, Update, Delete security_rule'
 options:
   nutanix_host:
     description:
@@ -43,27 +43,27 @@ options:
     default: true
   state:
     description:
-      - Specify state of security_rules
-      - If C(state) is set to C(present) then security_rules is created.
+      - Specify state of security_rule
+      - If C(state) is set to C(present) then security_rule is created.
       - >-
-        If C(state) is set to C(absent) and if the security_rules exists, then
-        security_rules is removed.
+        If C(state) is set to C(absent) and if the security_rule exists, then
+        security_rule is removed.
     choices:
       - present
       - absent
     type: str
     default: present
   wait:
-    description: Wait for security_rules CRUD operation to complete.
+    description: Wait for security_rule CRUD operation to complete.
     type: bool
     required: false
     default: True
   name:
-    description: security_rules Name
+    description: security_rule Name
     required: False
     type: str
-  security_rules_uuid:
-    description: security_rules UUID
+  security_rule_uuid:
+    description: security_rule UUID
     type: str
 
   # Step 4: here should be additional arguments documentation
@@ -80,7 +80,7 @@ RETURN = r"""
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.security_rules import SecurityRules  # noqa: E402
+from ..module_utils.prism.security_rules import SecurityRule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -100,7 +100,7 @@ def get_module_spec():
     )
     filters_spec = dict(
         type=dict(type="str"),
-        kind_list=dict(type="list", elements="dict", ),
+        kind_list=dict(type="list", elements="str"),
         params=dict(type="dict"),
     )
 
@@ -138,7 +138,8 @@ def get_module_spec():
         action=dict(type="str"),
     )
     module_args = dict(
-        name=dict(type="bool"),
+        name=dict(type="str"),
+        security_rule_uuid=dict(type="str"),
         allow_ipv6_traffic=dict(type="bool"),
         is_policy_hitlog_enabled=dict(type="bool"),
         ad_rule=dict(type="dict", options=rule_spec),
@@ -150,41 +151,41 @@ def get_module_spec():
     return module_args
 
 
-def create_security_rules(module, result):
-    security_rules = SecurityRules(module)
-    spec, error = security_rules.get_spec()
+def create_security_rule(module, result):
+    security_rule = SecurityRule(module)
+    spec, error = security_rule.get_spec()
     if error:
         result["error"] = error
-        module.fail_json(msg="Failed generating security_rules spec", **result)
+        module.fail_json(msg="Failed generating security_rule spec", **result)
 
     if module.check_mode:
         result["response"] = spec
         return
 
-    resp = security_rules.create(spec)
-    security_rules_uuid = resp["metadata"]["uuid"]
+    resp = security_rule.create(spec)
+    security_rule_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
-    result["security_rules_uuid"] = security_rules_uuid
+    result["security_rule_uuid"] = security_rule_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp = security_rules.read(security_rules_uuid)
+        resp = security_rule.read(security_rule_uuid)
         result["response"] = resp
 
 
-def delete_security_rules(module, result):
-    security_rules_uuid = module.params["security_rules_uuid"]
-    if not security_rules_uuid:
-        result["error"] = "Missing parameter security_rules_uuid in playbook"
-        module.fail_json(msg="Failed deleting security_rules", **result)
+def delete_security_rule(module, result):
+    security_rule_uuid = module.params["security_rule_uuid"]
+    if not security_rule_uuid:
+        result["error"] = "Missing parameter security_rule_uuid in playbook"
+        module.fail_json(msg="Failed deleting security_rule", **result)
 
-    security_rules = SecurityRules(module)
-    resp = security_rules.delete(security_rules_uuid)
+    security_rule = SecurityRule(module)
+    resp = security_rule.delete(security_rule_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["security_rules_uuid"] = security_rules_uuid
+    result["security_rule_uuid"] = security_rule_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
@@ -208,14 +209,14 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
-        "security_rules_uuid": None,
+        "security_rule_uuid": None,
         "task_uuid": None,
     }
     state = module.params["state"]
     if state == "present":
-        create_security_rules(module, result)
+        create_security_rule(module, result)
     elif state == "absent":
-        delete_security_rules(module, result)
+        delete_security_rule(module, result)
 
     module.exit_json(**result)
 
