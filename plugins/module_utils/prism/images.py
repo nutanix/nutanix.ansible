@@ -5,8 +5,6 @@ from copy import deepcopy
 from distutils.command.upload import upload
 
 from .clusters import Cluster
-from .projects import Project
-from .users import get_user_uuid
 from .prism import Prism
 
 __metaclass__ = type
@@ -26,8 +24,6 @@ class Image(Prism):
             "name": self._build_spec_name,
             "description": self._build_spec_desc,
             "categories": self._build_spec_categories,
-            "project": self._build_spec_project,
-            "owner": self._build_spec_owner,
             "source_uri": self._build_spec_source_uri,
             "checksum": self._build_spec_checksum,
             "image_type": self._build_spec_image_type,
@@ -38,9 +34,6 @@ class Image(Prism):
             "name": self._build_spec_name,
             "description": self._build_spec_desc,
             "categories": self._build_spec_categories,
-            "project": self._build_spec_project,
-            "owner": self._build_spec_owner,
-            "checksum": self._build_spec_checksum,
             "image_type": self._build_spec_image_type,
             "version": self._build_spec_version,
         }
@@ -72,28 +65,9 @@ class Image(Prism):
         return payload, None
     
     def _build_spec_categories(self, payload, categories):
-        payload["spec"]["metadata"]["categories"] = categories
-        return payload, None
-    
-    def _build_spec_project(self, payload, param):
-        if "name" in param:
-            project = Project(self.module)
-            name = param["name"]
-            uuid = project.get_uuid(name)
-            if not uuid:
-
-                error = "Project {0} not found.".format(name)
-                return None, error
-
-        elif "uuid" in param:
-            uuid = param["uuid"]
-
-        payload["metadata"]["project_reference"] = {"uuid": uuid, "kind": "project"}
-        return payload, None
-    
-    def _build_spec_owner(self, payload, param):
-        uuid = get_user_uuid(param, self.module)
-        payload["metadata"]["owner_reference"] = {"uuid": uuid, "kind": "user"}
+        if categories:
+            payload["metadata"]["use_categories_mapping"] = True
+        payload["metadata"]["categories_mapping"] = categories
         return payload, None
     
     def _build_spec_source_uri(self, payload, source_uri):

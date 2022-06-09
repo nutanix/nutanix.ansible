@@ -36,12 +36,10 @@ def get_module_spec():
         description=dict(type="str", required=False),
         source_uri=dict(type="str", required=False),
         source_path=dict(type="str", required=False),
-        categories=dict(type="dict", required=False),
+        categories=dict(type="dict", required=False, default={}),
         image_type=dict(type="str", required=False, choices=["DISK_IMAGE", "ISO_IMAGE"], default="DISK_IMAGE"),
         version=dict(type="dict", options=version, required=False),
         clusters=dict(type="list", elements="dict", mutually_exclusive=mutually_exclusive, options=entity_by_spec, required=False),
-        project=dict(type="dict", mutually_exclusive=mutually_exclusive, options=entity_by_spec, required=False),
-        owner=dict(type="dict", mutually_exclusive=mutually_exclusive, options=entity_by_spec, required=False),
         checksum=dict(type="dict", options=checksum, required=False),
         image_uuid=dict(type="str", required=False),
     )
