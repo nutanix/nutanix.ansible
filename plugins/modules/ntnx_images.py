@@ -4,6 +4,7 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+from random import choice, choices
 
 
 __metaclass__ = type
@@ -28,7 +29,7 @@ def get_module_spec():
         product_name=dict(type="str", required=True),
     )
     checksum = dict(
-        checksum_algorithm=dict(type="str", required=True),
+        checksum_algorithm=dict(type="str", required=True, choices=["SHA_1","SHA_256"]),
         checksum_value=dict(type="str", required=True),
     )
     module_args = dict(
@@ -36,7 +37,7 @@ def get_module_spec():
         description=dict(type="str", required=False),
         source_uri=dict(type="str", required=False),
         source_path=dict(type="str", required=False),
-        categories=dict(type="dict", required=False, default={}),
+        categories=dict(type="dict", required=False),
         image_type=dict(type="str", required=False, choices=["DISK_IMAGE", "ISO_IMAGE"], default="DISK_IMAGE"),
         version=dict(type="dict", options=version, required=False),
         clusters=dict(type="list", elements="dict", mutually_exclusive=mutually_exclusive, options=entity_by_spec, required=False),
@@ -157,7 +158,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("name",)),
+            ("vm_uuid", None, ("name",)),
             ("state", "absent", ("image_uuid",)),
         ],
         mutually_exclusive=[("source_path", "source_uri"),],
@@ -173,10 +174,8 @@ def run_module():
     if state == "present":
         if module.params.get("image_uuid"):
             update_image(module, result)
-        elif module.params.get("source_uri") or module.params.get("source_path"):
-            create_image(module, result)
         else:
-            module.fail_json(msg="Provide source_path/source_uri to create new or image_uuid to update image", **result)
+            create_image(module, result)
     elif state == "absent":
         delete_image(module, result)
 

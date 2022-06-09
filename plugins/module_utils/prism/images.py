@@ -65,9 +65,9 @@ class Image(Prism):
         return payload, None
     
     def _build_spec_categories(self, payload, categories):
-        if categories:
+        if payload["metadata"].get("categories_mapping") != categories:
             payload["metadata"]["use_categories_mapping"] = True
-        payload["metadata"]["categories_mapping"] = categories
+            payload["metadata"]["categories_mapping"] = categories
         return payload, None
     
     def _build_spec_source_uri(self, payload, source_uri):
