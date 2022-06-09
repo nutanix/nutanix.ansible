@@ -963,6 +963,8 @@ RETURN = r"""
 # Step 6
 """
 
+
+from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.security_rules import SecurityRule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
@@ -1056,6 +1058,42 @@ def create_security_rule(module, result):
         return
 
     resp = security_rule.create(spec)
+    security_rule_uuid = resp["metadata"]["uuid"]
+    result["changed"] = True
+    result["response"] = resp
+    result["security_rule_uuid"] = security_rule_uuid
+    result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp = security_rule.read(security_rule_uuid)
+        result["response"] = resp
+
+
+def update_security_rule(module, result):
+    security_rule_uuid = module.params["security_rule_uuid"]
+    state = module.params.get("state")
+
+    security_rule = SecurityRule(module)
+    resp = security_rule.read(security_rule_uuid)
+    result["response"] = resp
+    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    resp["spec"] = resp.pop("status")
+    spec, error = security_rule.get_spec(resp)
+
+    if error:
+        result["error"] = error
+        module.fail_json(msg="Failed generating security_rule spec", **result)
+
+    if module.check_mode:
+        result["response"] = spec
+        return
+
+    if utils.check_for_idempotency(spec, resp, state=state):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change")
+
+    resp = security_rule.update(spec, security_rule_uuid)
     security_rule_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
