@@ -39,7 +39,6 @@ def get_module_spec():
         categories=dict(type="dict", required=False),
         image_type=dict(type="str", required=False, choices=["DISK_IMAGE", "ISO_IMAGE"], default="DISK_IMAGE"),
         version=dict(type="dict", options=version, required=False),
-        architecture=dict(type="str", required=False),
         clusters=dict(type="list", elements="dict", mutually_exclusive=mutually_exclusive, options=entity_by_spec, required=False),
         project=dict(type="dict", mutually_exclusive=mutually_exclusive, options=entity_by_spec, required=False),
         owner=dict(type="dict", mutually_exclusive=mutually_exclusive, options=entity_by_spec, required=False),
@@ -163,6 +162,7 @@ def run_module():
             ("state", "present", ("name",)),
             ("state", "absent", ("image_uuid",)),
         ],
+        mutually_exclusive=[("source_path", "source_uri"),],
     )
     remove_param_with_none_value(module.params)
     result = {

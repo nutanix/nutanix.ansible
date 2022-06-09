@@ -6,7 +6,7 @@ from distutils.command.upload import upload
 
 from .clusters import Cluster
 from .projects import Project
-from .users import Users
+from .users import get_user_uuid
 from .prism import Prism
 
 __metaclass__ = type
@@ -33,7 +33,6 @@ class Image(Prism):
             "image_type": self._build_spec_image_type,
             "clusters": self._build_spec_clusters,
             "version": self._build_spec_version,
-            "architecture": self._build_spec_architecture,
         }
         self.build_update_spec_methods = {
             "name": self._build_spec_name,
@@ -44,7 +43,6 @@ class Image(Prism):
             "checksum": self._build_spec_checksum,
             "image_type": self._build_spec_image_type,
             "version": self._build_spec_version,
-            "architecture": self._build_spec_architecture,
         }
 
     def upload_image(self, image_uuid, source_path, timeout = 600, raise_error=True):
@@ -58,7 +56,9 @@ class Image(Prism):
                 "metadata": {"kind": "image",},
                 "spec": {
                     "name": None,
-                    "resources": {},
+                    "resources": {
+                        "architecture": "X86_64",
+                    },
                 },
             }
         )
@@ -92,18 +92,7 @@ class Image(Prism):
         return payload, None
     
     def _build_spec_owner(self, payload, param):
-        if "name" in param:
-            users = Users(self.module)
-            name = param["name"]
-            uuid = users.get_uuid(name)
-            if not uuid:
-
-                error = "User {0} not found.".format(name)
-                return None, error
-
-        elif "uuid" in param:
-            uuid = param["uuid"]
-
+        uuid = get_user_uuid(param, self.module)
         payload["metadata"]["owner_reference"] = {"uuid": uuid, "kind": "user"}
         return payload, None
     
@@ -140,10 +129,6 @@ class Image(Prism):
     
     def _build_spec_version(self, payload, version):
         payload["spec"]["resources"]["version"] = version
-        return payload, None
-    
-    def _build_spec_architecture(self, payload, arch):
-        payload["spec"]["resources"]["architecture"] = arch
         return payload, None
 
 def get_image_uuid(config, module):
