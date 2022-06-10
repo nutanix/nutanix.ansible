@@ -27,3 +27,24 @@
       - result.response.entities[0].status.name == '{{ disk_image.centos }}'
     fail_msg: "Unable to get particular image"
     success_msg: "Image info obtained successfully"
+
+################################################################
+
+- name: getting image info for test
+  ntnx_images_info:
+    filter:
+      name: "{{ disk_image.centos }}"
+  register: result
+
+- name: test getting particular image using uuid
+  ntnx_images_info:
+    image_uuid: '{{ result.response.entities[0].metadata.uuid }}'
+  register: result
+  
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.name == '{{ disk_image.centos }}'
+    fail_msg: "Unable to get particular image"
+    success_msg: "Image info obtained successfully"

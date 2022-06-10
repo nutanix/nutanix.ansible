@@ -27,7 +27,7 @@
   ntnx_images:
     state: present
     name: integration-test-image-with-upload
-    description: "uploaded image during integration test"
+    desc: "uploaded image during integration test"
     source_path: "{{ disk_image.dest }}"
     image_type: "DISK_IMAGE"
     categories:
@@ -61,11 +61,11 @@
 ###############################################################################################
 
 - name: Verify check mode for ntnx_image
-  check_mode : yes
+  check_mode: yes
   ntnx_images:
     state: present
     name: integration-test-image-with-upload
-    description: "uploaded image during integration test"
+    desc: "uploaded image during integration test"
     source_path: "{{ disk_image.dest }}"
     image_type: "DISK_IMAGE"
     categories:
