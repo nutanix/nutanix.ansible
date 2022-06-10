@@ -60,7 +60,7 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.response.status.name == 'integration-test-image-after-update'
-      - result.response.status.desc == 'description after update'
+      - result.response.status.description == 'description after update'
       - result.response.status.resources.image_type == 'ISO_IMAGE'
       - result.response.metadata.categories_mapping["Environment"][0] == 'Production'
     fail_msg: "Unable to update image"
