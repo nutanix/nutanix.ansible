@@ -98,3 +98,7 @@
     image_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
+  ignore_errors: True
+
+- set_fact:
+    todelete: []
