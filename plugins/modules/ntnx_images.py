@@ -17,8 +17,10 @@ options:
     state:
         description:
         - Specify state
-        - If C(state) is set to C(present) then the opperation will be  create the item.
+        - If C(state) is set to C(present) then the operation will be  create the item.
         - if C(state) is set to C(present) and C(image_uuid) is given then it will update that image.
+        - if C(state) is set to C(present) then C(image_uuid), C(source_uri) and C(source_path) are mutually exclusive.
+        - if C(state) is set to C(present) then C(image_uuid) or C(name) needs to be set.
         - >-
             If C(state) is set to C(absent) and if the item exists, then
             item is removed.
@@ -452,7 +454,8 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("vm_uuid", None, ("name",)),
+            ("state", "present", ("source_uri", "source_path", "image_uuid"), True),
+            ("state", "present", ("name", "image_uuid"), True),
             ("state", "absent", ("image_uuid",)),
         ],
         mutually_exclusive=mutually_exclusive_list,
