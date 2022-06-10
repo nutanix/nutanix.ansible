@@ -96,7 +96,7 @@ options:
                 description:
                     - Cluster UUID
                     - Mutually exclusive with C(name)
-                type: str 
+                type: str
     checksum:
         description: Image checksum
         type: dict
@@ -392,7 +392,7 @@ def update_image(module, result):
     resp["spec"] = resp.pop("status")
 
     # new spec for updating image
-    update_spec, error = image.get_update_spec(resp)
+    update_spec, error = image.get_spec(resp)
     if error:
         result["error"] = error
         module.fail_json(msg="Failed generating Image update spec", **result)
@@ -441,6 +441,13 @@ def delete_image(module, result):
 
 
 def run_module():
+    # mutually_exclusive_list have params which are not allowed together
+    # we cannot update source_uri, source_path, checksum and clusters.
+    mutually_exclusive_list = [
+        ("image_uuid", "source_uri", "source_path"),
+        ("image_uuid", "checksum"),
+        ("image_uuid", "clusters"),
+    ]
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
@@ -448,9 +455,7 @@ def run_module():
             ("vm_uuid", None, ("name",)),
             ("state", "absent", ("image_uuid",)),
         ],
-        mutually_exclusive=[
-            ("source_path", "source_uri"),
-        ],
+        mutually_exclusive=mutually_exclusive_list,
     )
     utils.remove_param_with_none_value(module.params)
     result = {
