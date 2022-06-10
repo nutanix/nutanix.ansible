@@ -35,5 +35,5 @@ def get_user_uuid(config, module):
 
     elif "uuid" in config:
         uuid = config["uuid"]
-    
+
     return uuid

@@ -220,11 +220,13 @@ class Entity(object):
                 if error:
                     return None, error
         return spec, None
-    
+
     def get_update_spec(self, old_spec=None):
         spec = copy.deepcopy(old_spec)
         for ansible_param, ansible_config in self.module.params.items():
-            build_update_spec_methods = self.build_update_spec_methods.get(ansible_param)
+            build_update_spec_methods = self.build_update_spec_methods.get(
+                ansible_param
+            )
             if build_update_spec_methods and ansible_config is not None:
                 spec, error = build_update_spec_methods(spec, ansible_config)
                 if error:
@@ -388,7 +390,7 @@ class Entity(object):
             # Add error details and status details if any
             if not resp_json:
                 resp_json = {}
-            if status_code>=300:
+            if status_code >= 300:
                 resp_json["error"] = body
             resp_json["status_code"] = status_code
             return resp_json

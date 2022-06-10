@@ -4,8 +4,6 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-from random import choice, choices
-
 
 __metaclass__ = type
 
@@ -15,10 +13,11 @@ DOCUMENTATION = r"""
 EXAMPLES = r"""
 """
 
+
+from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.images import Image  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value, strip_extra_attrs_from_status  # noqa: E402
+from ..module_utils.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():
@@ -29,7 +28,9 @@ def get_module_spec():
         product_name=dict(type="str", required=True),
     )
     checksum = dict(
-        checksum_algorithm=dict(type="str", required=True, choices=["SHA_1","SHA_256"]),
+        checksum_algorithm=dict(
+            type="str", required=True, choices=["SHA_1", "SHA_256"]
+        ),
         checksum_value=dict(type="str", required=True),
     )
     module_args = dict(
@@ -38,13 +39,25 @@ def get_module_spec():
         source_uri=dict(type="str", required=False),
         source_path=dict(type="str", required=False),
         categories=dict(type="dict", required=False),
-        image_type=dict(type="str", required=False, choices=["DISK_IMAGE", "ISO_IMAGE"], default="DISK_IMAGE"),
+        image_type=dict(
+            type="str",
+            required=False,
+            choices=["DISK_IMAGE", "ISO_IMAGE"],
+            default="DISK_IMAGE",
+        ),
         version=dict(type="dict", options=version, required=False),
-        clusters=dict(type="list", elements="dict", mutually_exclusive=mutually_exclusive, options=entity_by_spec, required=False),
+        clusters=dict(
+            type="list",
+            elements="dict",
+            mutually_exclusive=mutually_exclusive,
+            options=entity_by_spec,
+            required=False,
+        ),
         checksum=dict(type="dict", options=checksum, required=False),
         image_uuid=dict(type="str", required=False),
     )
     return module_args
+
 
 def create_image(module, result):
     image = Image(module)
@@ -71,13 +84,15 @@ def create_image(module, result):
         # wait for image create to finish
         task.wait_for_completion(task_uuid)
 
-        #upload image contents
+        # upload image contents
         timeout = module.params.get("timeout", 600)
         image_upload = Image(module, upload_image=True)
-        resp = image_upload.upload_image(image_uuid, source_path, timeout, raise_error=False)
+        resp = image_upload.upload_image(
+            image_uuid, source_path, timeout, raise_error=False
+        )
         error = resp.get("error")
         if error:
-            #delete the image metadata from PC
+            # delete the image metadata from PC
             image.delete(image_uuid)
             task.wait_for_completion(task_uuid)
             result["error"] = error
@@ -93,6 +108,7 @@ def create_image(module, result):
 
     result["response"] = resp
 
+
 def update_image(module, result):
     image = Image(module)
     image_uuid = module.params.get("image_uuid")
@@ -103,7 +119,7 @@ def update_image(module, result):
 
     # read the current state of image
     resp = image.read(image_uuid)
-    strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
 
     # new spec for updating image
@@ -111,11 +127,13 @@ def update_image(module, result):
     if error:
         result["error"] = error
         module.fail_json(msg="Failed generating Image update spec", **result)
-        
+
     # check for idempotency
     if resp == update_spec:
         result["skipped"] = True
-        module.exit_json(msg="Nothing to change. Refer docs to check for fields which can be updated")
+        module.exit_json(
+            msg="Nothing to change. Refer docs to check for fields which can be updated"
+        )
 
     if module.check_mode:
         result["response"] = update_spec
@@ -131,11 +149,10 @@ def update_image(module, result):
         task.wait_for_completion(task_uuid)
         # get the image
         resp = image.read(image_uuid)
-    
+
     result["changed"] = True
     result["response"] = resp
 
-    
 
 def delete_image(module, result):
     uuid = module.params["image_uuid"]
@@ -148,10 +165,11 @@ def delete_image(module, result):
     result["response"] = resp
     result["changed"] = True
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
-    
+
     if module.params.get("wait"):
         task = Task(module)
         task.wait_for_completion(task_uuid)
+
 
 def run_module():
     module = BaseModule(
@@ -161,9 +179,11 @@ def run_module():
             ("vm_uuid", None, ("name",)),
             ("state", "absent", ("image_uuid",)),
         ],
-        mutually_exclusive=[("source_path", "source_uri"),],
+        mutually_exclusive=[
+            ("source_path", "source_uri"),
+        ],
     )
-    remove_param_with_none_value(module.params)
+    utils.remove_param_with_none_value(module.params)
     result = {
         "changed": False,
         "error": None,

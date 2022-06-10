@@ -5,10 +5,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from ..module_utils.base_info_module import BaseInfoModule
-from ..module_utils.prism.images import Image
-from ..module_utils.utils import remove_param_with_none_value
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -17,6 +13,12 @@ EXAMPLES = r"""
 """
 RETURN = r"""
 """
+
+
+from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.prism.images import Image  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+
 
 def get_module_spec():
 
@@ -49,14 +51,12 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         required_together=[("sort_order", "sort_attribute")],
-        mutually_exclusive=[("image_uuid", "filter"),]
+        mutually_exclusive=[
+            ("image_uuid", "filter"),
+        ],
     )
     remove_param_with_none_value(module.params)
-    result = {
-        "changed": False, 
-        "error": None, 
-        "response": None
-    }
+    result = {"changed": False, "error": None, "response": None}
     if module.params.get("image_uuid"):
         get_image(module, result)
     else:

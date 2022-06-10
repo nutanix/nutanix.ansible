@@ -1,6 +1,7 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 from copy import deepcopy
 
 from .clusters import Cluster
@@ -18,7 +19,9 @@ class Image(Prism):
                 "Accept": "application/json",
             }
         resource_type = "/images"
-        super(Image, self).__init__(module, resource_type=resource_type, additional_headers=additional_headers)
+        super(Image, self).__init__(
+            module, resource_type=resource_type, additional_headers=additional_headers
+        )
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "description": self._build_spec_desc,
@@ -37,15 +40,24 @@ class Image(Prism):
             "version": self._build_spec_version,
         }
 
-    def upload_image(self, image_uuid, source_path, timeout = 600, raise_error=True):
+    def upload_image(self, image_uuid, source_path, timeout=600, raise_error=True):
         endpoint = "{}/file".format(image_uuid)
-        return self.upload(source_path, endpoint=endpoint, method="PUT", timeout=timeout, no_response=True, raise_error=raise_error)
+        return self.upload(
+            source_path,
+            endpoint=endpoint,
+            method="PUT",
+            timeout=timeout,
+            no_response=True,
+            raise_error=raise_error,
+        )
 
     def _get_default_spec(self):
         return deepcopy(
             {
                 "api_version": "3.1.0",
-                "metadata": {"kind": "image",},
+                "metadata": {
+                    "kind": "image",
+                },
                 "spec": {
                     "name": None,
                     "resources": {
@@ -56,31 +68,31 @@ class Image(Prism):
         )
 
     def _build_spec_name(self, payload, name):
-            payload["spec"]["name"] = name
-            return payload, None
-    
+        payload["spec"]["name"] = name
+        return payload, None
+
     def _build_spec_desc(self, payload, desc):
         payload["spec"]["description"] = desc
         return payload, None
-    
+
     def _build_spec_categories(self, payload, categories):
         if payload["metadata"].get("categories_mapping") != categories:
             payload["metadata"]["use_categories_mapping"] = True
             payload["metadata"]["categories_mapping"] = categories
         return payload, None
-    
+
     def _build_spec_source_uri(self, payload, source_uri):
         payload["spec"]["resources"]["source_uri"] = source_uri
         return payload, None
-    
+
     def _build_spec_checksum(self, payload, checksum):
         payload["spec"]["resources"]["checksum"] = checksum
         return payload, None
-    
+
     def _build_spec_image_type(self, payload, image_type):
         payload["spec"]["resources"]["image_type"] = image_type
         return payload, None
-    
+
     def _build_spec_clusters(self, payload, clusters):
         cluster_references = []
         for cluster_ref in clusters:
@@ -99,10 +111,11 @@ class Image(Prism):
 
         payload["spec"]["resources"]["initial_placement_ref_list"] = cluster_references
         return payload, None
-    
+
     def _build_spec_version(self, payload, version):
         payload["spec"]["resources"]["version"] = version
         return payload, None
+
 
 def get_image_uuid(config, module):
     if "name" in config:
