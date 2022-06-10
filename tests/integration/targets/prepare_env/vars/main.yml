@@ -1,6 +1,12 @@
 validate_certs: False
 todelete: []
 
+disk_image:
+  url: https://cloud-images.ubuntu.com/releases/xenial/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img
+  dest: /home/ubuntu/.ansible/collections/ansible_collections/nutanix/ncp/tests/integration/targets/prepare_env/tasks/int-test-disk-image-1.dmg
+  checksum: 99301a5e7f91cb93bc2c50a699b2c993f9fa0eaf
+  centos: "CentOS-7-cloudinit" 
+
 cluster:
   name: auto_cluster_prod_f3a148405c53
   uuid: 0005e0f4-2094-ab15-3507-ac1f6b60292f

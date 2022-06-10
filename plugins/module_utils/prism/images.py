@@ -81,9 +81,9 @@ class Image(Prism):
         payload["spec"]["resources"]["image_type"] = image_type
         return payload, None
     
-    def _build_spec_clusters(self, payload, param):
-        custer_references = []
-        for cluster_ref in param["clusters"]:
+    def _build_spec_clusters(self, payload, clusters):
+        cluster_references = []
+        for cluster_ref in clusters:
             if "name" in cluster_ref:
                 cluster = Cluster(self.module)
                 name = cluster_ref["name"]
@@ -95,9 +95,9 @@ class Image(Prism):
             elif "uuid" in cluster_ref:
                 uuid = cluster_ref["uuid"]
 
-            custer_references.append({"uuid": uuid, "kind": "cluster"})
+            cluster_references.append({"uuid": uuid, "kind": "cluster"})
 
-        payload["resources"]["initial_placement_ref_list"] = custer_references
+        payload["spec"]["resources"]["initial_placement_ref_list"] = cluster_references
         return payload, None
     
     def _build_spec_version(self, payload, version):

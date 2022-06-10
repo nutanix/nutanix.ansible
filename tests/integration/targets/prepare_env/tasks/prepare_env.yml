@@ -158,3 +158,8 @@
           vm:
             name: "{{vm_name}}"
             uuid: "{{result.vm_uuid}}"
+
+  - name: Downloading disk image for image related tests
+    get_url:
+      url: "{{ disk_image.url }}"
+      dest: "{{ disk_image.dest }}"
