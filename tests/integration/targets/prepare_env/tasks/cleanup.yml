@@ -45,7 +45,7 @@
       - "{{external_nat_subnet.uuid}}"
       - "{{static.uuid}}"
 
-- name: Delete downloaded disk file
-  ansible.builtin.file:
-    path: "{{ disk_image.dest }}"
-    state: absent
+  - name: Delete downloaded disk file
+    file:
+      path: "{{ disk_image.dest }}"
+      state: absent
