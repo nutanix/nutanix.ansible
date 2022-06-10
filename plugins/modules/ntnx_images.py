@@ -8,11 +8,280 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_images
+short_description: images module which supports pc images management CRUD operations
+version_added: 1.0.0
+description: "Create, Update, Delete images"
+options:
+    state:
+        description:
+        - Specify state
+        - If C(state) is set to C(present) then the opperation will be  create the item.
+        - if C(state) is set to C(present) and C(image_uuid) is given then it will update that image.
+        - >-
+            If C(state) is set to C(absent) and if the item exists, then
+            item is removed.
+        choices:
+        - present
+        - absent
+        type: str
+        default: present
+    wait:
+        description: Wait for the  CRUD operation to complete.
+        type: bool
+        required: false
+        default: True
+    name:
+        description: Image name
+        required: false
+        type: str
+    image_uuid:
+        description: Image uuid
+        type: str
+        required: false
+    desc:
+        description: A description for image
+        required: false
+        type: str
+    source_uri:
+        description:
+            - Source URL for image
+            - Mutually exclusive with C(source_path)
+        required: false
+        type: str
+    source_path:
+        description:
+            - local image path
+            - Mutually exclusive with C(source_uri)
+        required: false
+        type: str
+    categories:
+        description: Categories for the image. This allows setting up multiple values from a single key.
+        required: false
+        type: dict
+    image_type:
+        description: The type of image.
+        required: false
+        type: str
+        choices:
+            - ISO_IMAGE
+            - DISK_IMAGE
+        default: DISK_IMAGE
+    version:
+        description: The image version, which is composed of a product name and product version.
+        required: false
+        type: dict
+        suboptions:
+            product_name:
+                description: Name of the producer/distribution of the image. For example windows or red hat. <= 64 characters.
+                type: str
+                required: true
+            product_version:
+                description: Version string for the disk image. <= 64 characters
+                type: str
+                required: true
+    clusters:
+        description: Name or UUID of the cluster on which the image will be placed
+        type: list
+        elements: dict
+        required: false
+        suboptions:
+            name:
+                description:
+                    - Cluster Name
+                    - Mutually exclusive with C(uuid)
+                type: str
+            uuid:
+                description:
+                    - Cluster UUID
+                    - Mutually exclusive with C(name)
+                type: str 
+    checksum:
+        description: Image checksum
+        type: dict
+        required: false
+        suboptions:
+            checksum_algorithm:
+                description: checksum algorithm
+                choices:
+                    - SHA_1
+                    - SHA_256
+                type: str
+                required: true
+            checksum_value:
+                description: checksum value
+                type: str
+                required: true
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
+  - name: create image from local workstation
+    ntnx_images:
+      state: "present"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      source_path: "/Users/ubuntu/Downloads/alpine-virt-3.8.1-x86_64.iso"
+      clusters:
+        - name: "temp_cluster"
+      categories:
+        AppFamily:
+          - Backup
+      checksum:
+        checksum_algorithm: SHA_1
+        checksum_value: 44610efd741a3ab4a548a81ea94869bb8b692977
+      name: "ansible-test-with-categories-mapping"
+      desc: "description"
+      image_type: "ISO_IMAGE"
+      version:
+        product_name: "test"
+        product_version: "1.2.0"
+      wait: true
+
+  - name: create image from with source as remote server file location
+    ntnx_images:
+      state: "present"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      source_uri: "https://cloud-images.ubuntu.com/releases/xenial/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
+      clusters:
+        - name: "temp_cluster"
+      categories:
+        AppFamily:
+          - Backup
+      checksum:
+        checksum_algorithm: SHA_1
+        checksum_value: 44610efd741a3ab4a548a81ea94869bb8b692977
+      name: "ansible-test-with-categories-mapping"
+      desc: "description"
+      image_type: "DISK_IMAGE"
+      version:
+        product_name: "test"
+        product_version: "1.2.0"
+      wait: true
+
+  - name: update category of existing image
+    ntnx_images:
+      state: "present"
+      image_uuid: "<image-uuid>"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      categories:
+        AppTier:
+          - Default
+        AppFamily:
+          - Backup
+      wait: true
+  - name: update category of existing image
+    ntnx_images:
+      state: "absent"
+      image_uuid: "00000000-0000-0000-0000-000000000000"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      wait: true
 """
 
+RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The image kind metadata
+  returned: always
+  type: dict
+  sample: {
+                "categories": {
+                    "AppFamily": "Backup"
+                },
+                "categories_mapping": {
+                    "AppFamily": [
+                        "Backup"
+                    ]
+                },
+                "creation_time": "2022-06-09T10:13:38Z",
+                "kind": "image",
+                "last_update_time": "2022-06-09T10:37:14Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_hash": "00000000000000000000000000000000000000000000000000",
+                "spec_version": 14,
+                "uuid": "00000000-0000-0000-0000-000000000000"
+            }
+spec:
+  description: An intentful representation of a image spec
+  returned: always
+  type: dict
+  sample: {
+                "description": "check123",
+                "name": "update_name",
+                "resources": {
+                    "architecture": "X86_64",
+                    "image_type": "ISO_IMAGE",
+                    "source_uri": "http://dl-cdn.alpinelinux.org/alpine/v3.8/releases/x86_64/alpine-virt-3.8.1-x86_64.iso",
+                    "version": {
+                        "product_name": "test",
+                        "product_version": "1.2.0"
+                    }
+                }
+            }
+status:
+  description: An intentful representation of a image status
+  returned: always
+  type: dict
+  sample: {
+                "description": "check123",
+                "execution_context": {
+                    "task_uuid": [
+                        "00000000-0000-0000-0000-000000000000"
+                    ]
+                },
+                "name": "update_name",
+                "resources": {
+                    "architecture": "X86_64",
+                    "current_cluster_reference_list": [
+                        {
+                            "kind": "cluster",
+                            "uuid": "00000000-0000-0000-0000-000000000000"
+                        }
+                    ],
+                    "image_type": "ISO_IMAGE",
+                    "retrieval_uri_list": [
+                        "<retrieval_uri>"
+                    ],
+                    "size_bytes": 33554432,
+                    "source_uri": "http://dl-cdn.alpinelinux.org/alpine/v3.8/releases/x86_64/alpine-virt-3.8.1-x86_64.iso",
+                    "version": {
+                        "product_name": "test",
+                        "product_version": "1.2.0"
+                    }
+                },
+                "state": "COMPLETE"
+            }
+image_uuid:
+  description: The created image uuid
+  returned: always
+  type: str
+  sample: "00000000-0000-0000-0000-000000000000"
+"""
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
@@ -35,7 +304,7 @@ def get_module_spec():
     )
     module_args = dict(
         name=dict(type="str", required=False),
-        description=dict(type="str", required=False),
+        desc=dict(type="str", required=False),
         source_uri=dict(type="str", required=False),
         source_path=dict(type="str", required=False),
         categories=dict(type="dict", required=False),
