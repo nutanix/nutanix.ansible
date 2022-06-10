@@ -19,7 +19,7 @@
     success_msg: "Image with given source_uri created successfully"
 
 - set_fact:
-    to_delete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 ###################################################################################
 
@@ -56,7 +56,7 @@
     success_msg: "Image with given local path created successfully"
 
 - set_fact:
-    to_delete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 ###############################################################################################
 

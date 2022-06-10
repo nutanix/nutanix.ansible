@@ -35,7 +35,7 @@
     success_msg: "Image with given source_uri created successfully for update tests"
 
 - set_fact:
-    to_delete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 ############################################# UPDATE TESTS ########################################
 
