@@ -41,8 +41,8 @@ class SecurityRule(Prism):
                         # "app_rule": {},
                         # "isolation_rule": {},
                         # "quarantine_rule": {}
-                    }
-                }
+                    },
+                },
             }
         )
 
