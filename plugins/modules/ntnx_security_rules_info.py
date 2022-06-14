@@ -18,7 +18,7 @@ options:
       description:
         - The kind name
       type: str
-      default: security_rule
+      default: network_security_rule
     security_rule_uuid:
         description:
             - security_rule UUID
@@ -30,7 +30,6 @@ author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
- - Dina AbuHijleh (@dina-abuhijleh)
 """
 EXAMPLES = r"""
   - name: List security_rule using name filter criteria
@@ -156,7 +155,7 @@ def get_module_spec():
 
     module_args = dict(
         security_rule_uuid=dict(type="str"),
-        kind=dict(type="str", default="security_rule"),
+        kind=dict(type="str", default="network_security_rule"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
     )
