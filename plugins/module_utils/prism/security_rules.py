@@ -84,7 +84,10 @@ class SecurityRule(Prism):
         return payload, None
 
     def _build_app_rule(self, payload, value):
-        payload["spec"]["resources"]["app_rule"] = value
+        if payload["spec"]["resources"].get("app_rule"):
+            self._build_spec_rule(payload["spec"]["resources"]["app_rule"], value)
+        else:
+            payload["spec"]["resources"]["app_rule"] = value
         return payload, None
 
     def _build_isolation_rule(self, payload, value):
@@ -99,3 +102,36 @@ class SecurityRule(Prism):
         payload["metadata"]["categories_mapping"] = value
         payload["metadata"]["use_categories_mapping"] = True
         return payload, None
+
+    def _build_spec_rule(self, payload, value):
+        rule = payload
+        if value.get("target_group"):
+            rule["target_group"] = value["target_group"]
+        if value.get("inbound_allow_list"):
+            self._generate_bound_spec(rule["inbound_allow_list"], value["inbound_allow_list"])
+        if value.get("outbound_allow_list"):
+            self._generate_bound_spec(rule["outbound_allow_list"], value["outbound_allow_list"])
+        if value.get("action"):
+            rule["action"] = value["action"]
+
+        return payload, None
+
+    def _generate_bound_spec(self, payload, list_of_rules):
+        for rule in list_of_rules:
+            if rule.get("rule_id"):
+                rule_spec = self._filter_by_uuid(rule["rule_id"], payload)
+            else:
+                rule_spec = {}
+            for key, value in rule.items():
+                rule_spec[key] = value
+            if not rule.get("rule_id"):
+                payload.append(rule_spec)
+
+    def _filter_by_uuid(self, uuid, items_list):
+        try:
+            return next(filter(lambda d: d.get("rule_id") == uuid, items_list))
+        except BaseException:
+            self.module.fail_json(
+                msg="Failed generating VM Spec",
+                error="Entity {0} not found.".format(uuid),
+            )

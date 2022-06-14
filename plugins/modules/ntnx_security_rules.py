@@ -973,20 +973,22 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 def get_module_spec():
     group_spec = dict(uuid=dict(type="str"))
+
     tcp_and_udp_spec = dict(
         start_port=dict(type="int"),
         end_port=dict(type="int"),
     )
 
-    network_spec = dict(ip=dict(type="str"), prefix=dict(type="str"))
+    network_spec = dict(ip=dict(type="str"), prefix_length=dict(type="int"))
 
     icmp_spec = dict(
-        any=dict(type="bool"), code=dict(type="int"), type=dict(type="int")
+        code=dict(type="int"), type=dict(type="int")
     )
+
     filters_spec = dict(
         type=dict(type="str"),
-        kind_list=dict(type="list", elements="str"),
-        params=dict(type="dict"),
+        kind_list=dict(type="list", elements="str", required=True),
+        params=dict(type="dict", required=True),
     )
 
     target_spec = dict(
@@ -994,15 +996,16 @@ def get_module_spec():
         filter=dict(type="dict", options=filters_spec),
         default_internal_policy=dict(type="str"),
     )
+
     bound_allow_spec = dict(
-        peer_specification_type=dict(type="str"),
-        filter=dict(type="dict", options=filters_spec),
+        peer_specification_type=dict(type="str", choices=['ALL', 'FILTER', 'IP_SUBNET'], required=True),
+        filter=dict(type="dict", options=filters_spec, required=True),
         address_group_inclusion_list=dict(
             type="list", elements="dict", options=group_spec
         ),
         ip_subnet=dict(type="dict", options=network_spec),
         service_group_list=dict(type="list", elements="dict", options=group_spec),
-        protocol=dict(type="str"),
+        protocol=dict(type="str", choices=['ALL', 'ICMP', 'TCP', 'UDP']),
         tcp_port_range_list=dict(
             type="list", elements="dict", options=tcp_and_udp_spec
         ),
@@ -1032,6 +1035,7 @@ def get_module_spec():
         second_entity_filter=dict(type="dict", options=filters_spec),
         action=dict(type="str"),
     )
+
     module_args = dict(
         name=dict(type="str"),
         security_rule_uuid=dict(type="str"),
@@ -1078,7 +1082,8 @@ def update_security_rule(module, result):
     resp = security_rule.read(security_rule_uuid)
     result["response"] = resp
     utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
-    resp["spec"] = resp.pop("status")
+    resp.pop("status")
+
     spec, error = security_rule.get_spec(resp)
 
     if error:
@@ -1133,7 +1138,11 @@ def wait_for_task_completion(module, result):
 def run_module():
     module = BaseModule(argument_spec=get_module_spec(),
                         supports_check_mode=True,
-                        mutually_exclusive=[("ad_rule", "app_rule", "isolation_rule", "quarantine_rule")])
+                        mutually_exclusive=[("ad_rule", "app_rule", "isolation_rule", "quarantine_rule")],
+                        required_by={
+                            "quarantine_rule": "security_rule_uuid",
+                        }
+                        )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
@@ -1143,10 +1152,13 @@ def run_module():
         "task_uuid": None,
     }
     state = module.params["state"]
-    if state == "present":
-        create_security_rule(module, result)
-    elif state == "absent":
+    if state == "absent":
         delete_security_rule(module, result)
+    elif module.params.get("security_rule_uuid"):
+        update_security_rule(module, result)
+    else:
+        create_security_rule(module, result)
+
 
     module.exit_json(**result)
 
