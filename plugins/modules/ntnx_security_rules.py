@@ -1009,7 +1009,7 @@ def get_module_spec():
         udp_port_range_list=dict(
             type="list", elements="dict", options=tcp_and_udp_spec
         ),
-        icmp=dict(type="list", elements="dict", options=icmp_spec),
+        icmp_type_code_list=dict(type="list", elements="dict", options=icmp_spec),
         network_function_chain_reference=dict(
             type="dict", options=dict(uuid=dict(type="str"))
         ),
@@ -1131,7 +1131,9 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseModule(argument_spec=get_module_spec(),
+                        supports_check_mode=True,
+                        mutually_exclusive=[("ad_rule", "app_rule", "isolation_rule", "quarantine_rule")])
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
