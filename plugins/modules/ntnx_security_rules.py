@@ -974,8 +974,8 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
     group_spec = dict(uuid=dict(type="str"))
     tcp_and_udp_spec = dict(
-        start_port=dict(type="list", elements="dict"),
-        end_port=dict(type="list", elements="dict"),
+        start_port=dict(type="int"),
+        end_port=dict(type="int"),
     )
 
     network_spec = dict(ip=dict(type="str"), prefix=dict(type="str"))
