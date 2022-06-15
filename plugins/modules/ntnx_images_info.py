@@ -21,7 +21,7 @@ options:
       default: image
     image_uuid:
         description:
-            - subnet UUID
+            - image UUID
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
@@ -39,18 +39,6 @@ EXAMPLES = r"""
       validate_certs: False
       filter:
         - name: Ubuntu
-    register: result
-
-  - name: List images using length, offset, sort order and sort attribute
-    ntnx_images_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 2
-      offset: 1
-      sort_order: "DESCENDING"
-      sort_attribute: "vlan_id"
     register: result
 """
 RETURN = r"""

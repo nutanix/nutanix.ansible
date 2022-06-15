@@ -385,7 +385,7 @@ def update_image(module, result):
     image_uuid = module.params.get("image_uuid")
     if not image_uuid:
         result["error"] = "Missing parameter image_uuid in playbook"
-        module.fail_json(msg="Failed deleting image", **result)
+        module.fail_json(msg="Failed updating image", **result)
     result["image_uuid"] = image_uuid
 
     # read the current state of image
