@@ -9,31 +9,10 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_images
-short_description: images module which supports pc images management CRUD operations
+module: ntnx_image_placement_policy
+short_description: image placement policy module which supports Create, update and delete operations
 version_added: 1.0.0
-description: "Create, Update, Delete images"
-options:
-    state:
-        description:
-        - Specify state
-        - If C(state) is set to C(present) then the operation will be  create the item.
-        - if C(state) is set to C(present) and C(image_uuid) is given then it will update that image.
-        - if C(state) is set to C(present) then C(image_uuid), C(source_uri) and C(source_path) are mutually exclusive.
-        - if C(state) is set to C(present) then C(image_uuid) or C(name) needs to be set.
-        - >-
-            If C(state) is set to C(absent) and if the item exists, then
-            item is removed.
-        choices:
-        - present
-        - absent
-        type: str
-        default: present
-    wait:
-        description: Wait for the  CRUD operation to complete.
-        type: bool
-        required: false
-        default: True
+description: "Create, Update, Delete image placement policy"
 """
 
 EXAMPLES = r"""
