@@ -1027,13 +1027,13 @@ def get_module_spec():
         outbound_allow_list=dict(
             type="list", elements="dict", options=bound_allow_spec
         ),
-        action=dict(type="str"),
+        action=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
 
     isolation_rule_spec = dict(
-        first_entity_filter=dict(type="dict", options=filters_spec),
-        second_entity_filter=dict(type="dict", options=filters_spec),
-        action=dict(type="str"),
+        first_entity_filter=dict(type="dict", options=filters_spec, required=True),
+        second_entity_filter=dict(type="dict", options=filters_spec, required=True),
+        action=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
 
     module_args = dict(
