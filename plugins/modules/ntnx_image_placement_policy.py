@@ -4,7 +4,7 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-from plugins.module_utils.prism.image_placement_policy import ImagePlacementPolicy
+from email.policy import default
 
 __metaclass__ = type
 
@@ -46,6 +46,7 @@ RETURN = r"""
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.prism.image_placement_policy import ImagePlacementPolicy
 
 
 def get_module_spec():
@@ -53,9 +54,10 @@ def get_module_spec():
         name = dict(type="str", required=False),
         desc = dict(type="str", required=False),
         placement_type = dict(type="str", choices=["hard", "soft"], default="soft", required=False),
-        image_categories = dict(type="dict", required=True),
-        cluster_categories = dict(type="dict", required=True),
+        image_categories = dict(type="dict", required=False),
+        cluster_categories = dict(type="dict", required=False),
         categories=dict(type="dict", required=False),
+        policy_uuid=dict(type="str", required=False)
     )
     return module_args
 
@@ -67,6 +69,7 @@ def create_policy(module, result):
         module.fail_json(msg="Failed generating create Image Placement Policies Spec", **result)
     if module.check_mode:
         result["response"] = spec
+        return
     
     # create image placement policies
     resp = policy_obj.create(spec)
@@ -107,12 +110,13 @@ def update_policy(module, result):
             msg="Nothing to change. Refer docs to check for fields which can be updated"
         )
     
+    result["policy_uuid"] = policy_uuid
     if module.check_mode:
         result["response"] = update_spec
         return
 
     # update policy
-    resp = policy_obj.update(update_spec)
+    resp = policy_obj.update(update_spec, uuid=policy_uuid)
     policy_uuid = resp["metadata"]["uuid"]
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
     result["policy_uuid"] = policy_uuid
@@ -142,9 +146,18 @@ def delete_policy(module, result):
         task.wait_for_completion(task_uuid)
 
 def run_module():
+    required_one_of_list = [
+        ("policy_uuid","name"),
+        ("policy_uuid","image_categories"),
+        ("policy_uuid","cluster_categories")
+    ]
     module = BaseModule(
         argument_spec = get_module_spec(),
-        support_check_mode = True,
+        supports_check_mode = True,
+        required_one_of = required_one_of_list,
+        required_if = [
+            ("state", "absent",("policy_uuid",))
+        ]
     )
     result = {
         "changed": False,
