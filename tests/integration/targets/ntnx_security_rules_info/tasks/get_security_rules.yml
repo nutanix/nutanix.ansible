@@ -29,6 +29,7 @@
       - first_rule.response is defined
       - first_rule.failed == false
       - first_rule.response.status.state == 'COMPLETE'
+      - first_rule.response.spec.name=="isolation_test_rule"
     fail_msg: ' fail: Unable to create  isolation_rule for testing   '
     success_msg: 'pass:  isolation_rule for testing  created successfully  '
 ###################################
@@ -77,6 +78,9 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
+      - result.response.metadata.kind == "network_security_rule"
+      - result.response.metadata.sort_order == "ASCENDING"
+      - result.response.metadata.sort_attribute == "Name"
     fail_msg: ' fail: unable to get all secuirty rules sorted'
     success_msg: 'pass: getting all secuirty rules sorted successfully '
 ###################################
