@@ -66,6 +66,8 @@
     fail_msg: "Unable to update image"
     success_msg: "Image with given update spec updated successfully"
 
+########################################################################################
+
 - name: check idempotency
   ntnx_images: 
     state: present
