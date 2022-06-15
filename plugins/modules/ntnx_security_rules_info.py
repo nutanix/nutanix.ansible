@@ -156,7 +156,7 @@ def get_module_spec():
     module_args = dict(
         security_rule_uuid=dict(type="str"),
         kind=dict(type="str", default="network_security_rule"),
-        sort_order=dict(type="str"),
+        sort_order=dict(type="str", choices=["ASCENDING", "DESCENDING"]),
         sort_attribute=dict(type="str"),
     )
 

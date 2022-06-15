@@ -987,19 +987,19 @@ def get_module_spec():
 
     filters_spec = dict(
         type=dict(type="str"),
-        kind_list=dict(type="list", elements="str", required=True),
-        params=dict(type="dict", required=True),
+        kind_list=dict(type="list", elements="str"),
+        params=dict(type="dict"),
     )
 
     target_spec = dict(
-        peer_specification_type=dict(type="str"),
+        peer_specification_type=dict(type="str", choices=['ALL', 'FILTER', 'IP_SUBNET']),
         filter=dict(type="dict", options=filters_spec),
-        default_internal_policy=dict(type="str"),
+        default_internal_policy=dict(type="str", choices=['ALLOW_ALL', 'DENY_ALL']),
     )
 
     bound_allow_spec = dict(
-        peer_specification_type=dict(type="str", choices=['ALL', 'FILTER', 'IP_SUBNET'], required=True),
-        filter=dict(type="dict", options=filters_spec, required=True),
+        peer_specification_type=dict(type="str", choices=['ALL', 'FILTER', 'IP_SUBNET']),
+        filter=dict(type="dict", options=filters_spec),
         address_group_inclusion_list=dict(
             type="list", elements="dict", options=group_spec
         ),
@@ -1031,8 +1031,8 @@ def get_module_spec():
     )
 
     isolation_rule_spec = dict(
-        first_entity_filter=dict(type="dict", options=filters_spec, required=True),
-        second_entity_filter=dict(type="dict", options=filters_spec, required=True),
+        first_entity_filter=dict(type="dict", options=filters_spec),
+        second_entity_filter=dict(type="dict", options=filters_spec),
         action=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
 
@@ -1138,11 +1138,9 @@ def wait_for_task_completion(module, result):
 def run_module():
     module = BaseModule(argument_spec=get_module_spec(),
                         supports_check_mode=True,
+                        required_one_of=[("security_rule_uuid", "name")],
                         mutually_exclusive=[("ad_rule", "app_rule", "isolation_rule", "quarantine_rule")],
-                        required_by={
-                            "quarantine_rule": "security_rule_uuid",
-                        }
-                        )
+                        required_by={"quarantine_rule": "security_rule_uuid"})
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,

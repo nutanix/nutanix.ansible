@@ -80,7 +80,10 @@ class SecurityRule(Prism):
         return payload, None
 
     def _build_ad_rule(self, payload, value):
-        payload["spec"]["resources"]["ad_rule"] = value
+        if payload["spec"]["resources"].get("ad_rule"):
+            self._build_spec_rule(payload["spec"]["resources"]["ad_rule"], value)
+        else:
+            payload["spec"]["resources"]["ad_rule"] = value
         return payload, None
 
     def _build_app_rule(self, payload, value):
@@ -91,11 +94,21 @@ class SecurityRule(Prism):
         return payload, None
 
     def _build_isolation_rule(self, payload, value):
-        payload["spec"]["resources"]["isolation_rule"] = value
+        if payload["spec"]["resources"].get("isolation_rule"):
+            isolation_rule = payload["spec"]["resources"]["isolation_rule"]
+            if value.get("first_entity_filter"):
+                self._generate_filter_spec(isolation_rule["first_entity_filter"], value["first_entity_filter"])
+            if value.get("second_entity_filter"):
+                self._generate_filter_spec(isolation_rule["second_entity_filter"], value["second_entity_filter"])
+            if value.get("action"):
+                isolation_rule["action"] = value["action"]
+        else:
+            payload["spec"]["resources"]["isolation_rule"] = value
         return payload, None
 
     def _build_quarantine_rule(self, payload, value):
-        payload["spec"]["resources"]["quarantine_rule"] = value
+        if payload["spec"]["resources"].get("quarantine_rule"):
+            self._build_spec_rule(payload["spec"]["resources"]["quarantine_rule"], value)
         return payload, None
 
     def _build_spec_categories(self, payload, value):
@@ -123,9 +136,20 @@ class SecurityRule(Prism):
             else:
                 rule_spec = {}
             for key, value in rule.items():
-                rule_spec[key] = value
-            if not rule.get("rule_id"):
+                if key == "filter":
+                    self._generate_filter_spec(rule_spec[key], value)
+                else:
+                    rule_spec[key] = value
+            if not rule_spec.get("rule_id"):
                 payload.append(rule_spec)
+
+    def _generate_filter_spec(self, payload, value):
+        if value.get("type"):
+            payload["type"] = value["type"]
+        if value.get("kind_list"):
+            payload["kind_list"] = value["kind_list"]
+        if value.get("params"):
+            payload["params"] = value["params"]
 
     def _filter_by_uuid(self, uuid, items_list):
         try:
