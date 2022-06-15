@@ -136,7 +136,7 @@ class SecurityRule(Prism):
             else:
                 rule_spec = {}
             for key, value in rule.items():
-                if key == "filter":
+                if key == "filter" and rule_spec.get(key):
                     self._generate_filter_spec(rule_spec[key], value)
                 else:
                     rule_spec[key] = value
