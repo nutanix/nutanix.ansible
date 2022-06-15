@@ -81,7 +81,9 @@ options:
       action:
         description: Type of deployment of the rule.
         type: str
-        choices: ["MONITOR", "APPLY"]
+        choices:
+          - MONITOR
+          - APPLY
       target_group:
         description: Target Group
         type: dict
@@ -102,10 +104,12 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
+                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
+                required: true
       inbound_allow_list:
         description: Array of inbound Network rule
         type: list
@@ -114,7 +118,11 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            choices: ["ALL", "FILTER", "IP_SUBNET"]
+            required: true
+            choices:
+              - ALL
+              - FILTER
+              - IP_SUBNET
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -136,10 +144,15 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
-            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
+            choices:
+              - ALL
+              - ICMP
+              - TCP
+              - UDP
           filter:
             description: A category filter.
             type: dict
+            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -147,10 +160,12 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
+                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
+                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -228,7 +243,11 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            choices: ["ALL", "FILTER", "IP_SUBNET"]
+            required: true
+            choices:
+              - ALL
+              - FILTER
+              - IP_SUBNET
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -250,10 +269,15 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
-            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
+            choices:
+              - ALL
+              - ICMP
+              - TCP
+              - UDP
           filter:
             description: A category filter.
             type: dict
+            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -261,10 +285,12 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
+                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
+                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -345,7 +371,9 @@ options:
       action:
         description: Type of deployment of the rule.
         type: str
-        choices: ["MONITOR", "APPLY"]
+        choices:
+          - MONITOR
+          - APPLY
       target_group:
         description: Target Group
         type: dict
@@ -366,10 +394,12 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
+                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
+                required: true
       inbound_allow_list:
         description: Array of inbound Network rule
         type: list
@@ -378,7 +408,11 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            choices: ["ALL", "FILTER", "IP_SUBNET"]
+            required: true
+            choices:
+              - ALL
+              - FILTER
+              - IP_SUBNET
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -400,10 +434,15 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
-            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
+            choices:
+              - ALL
+              - ICMP
+              - TCP
+              - UDP
           filter:
             description: A category filter.
             type: dict
+            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -411,10 +450,12 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
+                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
+                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -492,7 +533,11 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            choices: ["ALL", "FILTER", "IP_SUBNET"]
+            required: true
+            choices:
+              - ALL
+              - FILTER
+              - IP_SUBNET
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -514,10 +559,15 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
-            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
+            choices:
+              - ALL
+              - ICMP
+              - TCP
+              - UDP
           filter:
             description: A category filter.
             type: dict
+            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -525,10 +575,12 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
+                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
+                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -605,10 +657,13 @@ options:
       action:
         description: Type of deployment of the rule.
         type: str
-        choices: ["MONITOR", "APPLY"]
+        choices:
+          - MONITOR
+          - APPLY
       first_entity_filter:
         description: A category filter.
         type: dict
+        required: true
         suboptions:
           type:
             description: The type of the filter being used.
@@ -616,13 +671,16 @@ options:
           params:
             description: A list of category key and list of values.
             type: dict
+            required: true
           kind_list:
             description: List of kinds associated with this filter.
             type: list
             elements: str
+            required: true
       second_entity_filter:
         description: A category filter.
         type: dict
+        required: true
         suboptions:
           type:
             description: The type of the filter being used.
@@ -630,10 +688,12 @@ options:
           params:
             description: A list of category key and list of values.
             type: dict
+            required: true
           kind_list:
             description: List of kinds associated with this filter.
             type: list
             elements: str
+            required: true
   quarantine_rule:
     description: >-
       These rules are used for quarantining suspected VMs. Target group is a
@@ -645,7 +705,9 @@ options:
       action:
         description: Type of deployment of the rule.
         type: str
-        choices: ["MONITOR", "APPLY"]
+        choices:
+          - MONITOR
+          - APPLY
       target_group:
         description: Target Group
         type: dict
@@ -666,10 +728,12 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
+                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
+                required: true
       inbound_allow_list:
         description: Array of inbound Network rule
         type: list
@@ -678,7 +742,11 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            choices: ["ALL", "FILTER", "IP_SUBNET"]
+            required: true
+            choices:
+              - ALL
+              - FILTER
+              - IP_SUBNET
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -700,10 +768,15 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
-            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
+            choices:
+              - ALL
+              - ICMP
+              - TCP
+              - UDP
           filter:
             description: A category filter.
             type: dict
+            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -711,10 +784,12 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
+                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
+                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -792,7 +867,11 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            choices: ["ALL", "FILTER", "IP_SUBNET"]
+            required: true
+            choices:
+              - ALL
+              - FILTER
+              - IP_SUBNET
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -814,10 +893,15 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
-            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
+            choices:
+              - ALL
+              - ICMP
+              - TCP
+              - UDP
           filter:
             description: A category filter.
             type: dict
+            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -825,10 +909,12 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
+                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
+                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -902,15 +988,258 @@ author:
   - Prem Karat (@premkarat)
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
-
 """
 
 EXAMPLES = r"""
-# Step 5
+- name: create app security rule
+  ntnx_security_rules:
+    name: test_app_rule
+    app_rule:
+      target_group:
+        peer_specification_type: FILTER
+        filter:
+          type: CATEGORIES_MATCH_ALL
+          kind_list:
+            - vm
+          params:
+            AppType:
+              - Apache_Spark
+        default_internal_policy: DENY_ALL
+      inbound_allow_list:
+        - peer_specification_type: FILTER
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+                - DevOps
+          icmp_type_code_list:
+            - code: 1
+              type: 1
+          tcp_port_range_list:
+            - start_port: 22
+              end_port: 80
+          udp_port_range_list:
+            - start_port: 82
+              end_port: 8080
+          ip_subnet:
+            prefix_length: 24
+            ip: 192.168.1.1
+          description: test description
+          protocol: ALL
+      outbound_allow_list:
+        - peer_specification_type: FILTER
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+      action: MONITOR
+    allow_ipv6_traffic: true
+    is_policy_hitlog_enabled: true
+  register: result
+- name: update app security rule with outbound list
+  ntnx_security_rules:
+    security_rule_uuid: '{{ result.response.metadata.uuid }}'
+    app_rule:
+      action: APPLY
+      outbound_allow_list:
+        - icmp_type_code_list:
+            - code: 1
+              type: 1
+          peer_specification_type: FILTER
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+                - DevOps
+  register: result
+- name: update quarantine_rule by adding inbound and outbound list
+  ntnx_security_rules:
+    security_rule_uuid: '{{quarantine_rule_uuid}}'
+    quarantine_rule:
+      target_group:
+        peer_specification_type: FILTER
+        filter:
+          type: CATEGORIES_MATCH_ALL
+          kind_list:
+            - vm
+          params:
+            Quarantine:
+              - Forensics
+        default_internal_policy: DENY_ALL
+      inbound_allow_list:
+        - peer_specification_type: FILTER
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+                - DevOps
+      outbound_allow_list:
+        - peer_specification_type: FILTER
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+                - DevOps
+      action: MONITOR
+    allow_ipv6_traffic: true
+    is_policy_hitlog_enabled: true
+  register: result
 """
 
 RETURN = r"""
-# Step 6
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: '3.1'
+metadata:
+  description: Metadata for security_rule  output
+  returned: always
+  type: dict
+  sample:
+    categories: {}
+    categories_mapping: {}
+    creation_time: '2022-06-15T11:59:38Z'
+    kind: network_security_rule
+    last_update_time: '2022-06-15T11:59:41Z'
+    owner_reference:
+      kind: user
+      name: admin
+      uuid: 00000000-0000-0000-0000-000000000000
+    spec_hash: '00000000000000000000000000000000000000000000000000'
+    spec_version: 0
+    uuid: c340bc98-170b-4ead-a86c-861b023cc8ff
+spec:
+  description: An intentful representation of a subnet spec
+  returned: always
+  type: dict
+  sample:
+    name: test_app_rule
+    resources:
+      allow_ipv6_traffic: true
+      app_rule:
+        action: MONITOR
+        inbound_allow_list:
+          - description: test description
+            filter:
+              kind_list:
+                - vm
+              params:
+                AppFamily:
+                  - Databases
+                  - DevOps
+              type: CATEGORIES_MATCH_ALL
+            icmp_type_code_list:
+              - code: 1
+                type: 1
+            ip_subnet:
+              ip: 192.168.1.1
+              prefix_length: 24
+            peer_specification_type: FILTER
+            protocol: ALL
+            rule_id: 1
+            tcp_port_range_list:
+              - end_port: 80
+                start_port: 22
+            udp_port_range_list:
+              - end_port: 8080
+                start_port: 82
+        outbound_allow_list:
+          - filter:
+              kind_list:
+                - vm
+              params:
+                AppFamily:
+                  - Databases
+                  - DevOps
+              type: CATEGORIES_MATCH_ALL
+            peer_specification_type: FILTER
+            rule_id: 1
+        target_group:
+          default_internal_policy: DENY_ALL
+          filter:
+            kind_list:
+              - vm
+            params:
+              AppType:
+                - Apache_Spark
+            type: CATEGORIES_MATCH_ALL
+          peer_specification_type: FILTER
+      is_policy_hitlog_enabled: true
+status:
+  description: An intentful representation of a subnet status
+  returned: always
+  type: dict
+  sample:
+    execution_context:
+      task_uuid:
+        - ac7ae2c4-acbe-4ab7-b0b3-faca16395429
+    name: test_app_rule
+    resources:
+      allow_ipv6_traffic: true
+      app_rule:
+        action: MONITOR
+        inbound_allow_list:
+          - description: test description
+            filter:
+              kind_list:
+                - vm
+              params:
+                AppFamily:
+                  - Databases
+                  - DevOps
+              type: CATEGORIES_MATCH_ALL
+            peer_specification_type: FILTER
+            protocol: ALL
+            rule_id: 1
+        outbound_allow_list:
+          - filter:
+              kind_list:
+                - vm
+              params:
+                AppFamily:
+                  - Databases
+                  - DevOps
+              type: CATEGORIES_MATCH_ALL
+            peer_specification_type: FILTER
+            rule_id: 1
+        target_group:
+          default_internal_policy: DENY_ALL
+          filter:
+            kind_list:
+              - vm
+            params:
+              AppType:
+                - Apache_Spark
+            type: CATEGORIES_MATCH_ALL
+          peer_specification_type: FILTER
+      is_policy_hitlog_enabled: true
+    state: COMPLETE
+security_rule_uuid:
+  description: The created security rule  uuid
+  returned: always
+  type: str
+  sample: 00000000000-0000-0000-0000-00000000000
+task_uuid:
+  description: The task uuid for the creation
+  returned: always
+  type: str
+  sample: 00000000000-0000-0000-0000-00000000000
 """
 
 
@@ -940,13 +1269,17 @@ def get_module_spec():
     )
 
     target_spec = dict(
-        peer_specification_type=dict(type="str", choices=['ALL', 'FILTER', 'IP_SUBNET']),
+        peer_specification_type=dict(
+            type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
+        ),
         filter=dict(type="dict", options=filters_spec),
-        default_internal_policy=dict(type="str", choices=['ALLOW_ALL', 'DENY_ALL']),
+        default_internal_policy=dict(type="str", choices=["ALLOW_ALL", "DENY_ALL"]),
     )
 
     bound_allow_spec = dict(
-        peer_specification_type=dict(type="str", choices=['ALL', 'FILTER', 'IP_SUBNET']),
+        peer_specification_type=dict(
+            type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
+        ),
         filter=dict(type="dict", options=filters_spec),
         address_group_inclusion_list=dict(
             type="list", elements="dict", options=group_spec

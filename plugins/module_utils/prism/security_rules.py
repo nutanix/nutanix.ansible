@@ -97,9 +97,14 @@ class SecurityRule(Prism):
         if payload["spec"]["resources"].get("isolation_rule"):
             isolation_rule = payload["spec"]["resources"]["isolation_rule"]
             if value.get("first_entity_filter"):
-                self._generate_filter_spec(isolation_rule["first_entity_filter"], value["first_entity_filter"])
+                self._generate_filter_spec(
+                    isolation_rule["first_entity_filter"], value["first_entity_filter"]
+                )
             if value.get("second_entity_filter"):
-                self._generate_filter_spec(isolation_rule["second_entity_filter"], value["second_entity_filter"])
+                self._generate_filter_spec(
+                    isolation_rule["second_entity_filter"],
+                    value["second_entity_filter"],
+                )
             if value.get("action"):
                 isolation_rule["action"] = value["action"]
         else:
@@ -108,7 +113,9 @@ class SecurityRule(Prism):
 
     def _build_quarantine_rule(self, payload, value):
         if payload["spec"]["resources"].get("quarantine_rule"):
-            self._build_spec_rule(payload["spec"]["resources"]["quarantine_rule"], value)
+            self._build_spec_rule(
+                payload["spec"]["resources"]["quarantine_rule"], value
+            )
         return payload, None
 
     def _build_spec_categories(self, payload, value):
@@ -121,9 +128,13 @@ class SecurityRule(Prism):
         if value.get("target_group"):
             rule["target_group"] = value["target_group"]
         if value.get("inbound_allow_list"):
-            self._generate_bound_spec(rule["inbound_allow_list"], value["inbound_allow_list"])
+            self._generate_bound_spec(
+                rule["inbound_allow_list"], value["inbound_allow_list"]
+            )
         if value.get("outbound_allow_list"):
-            self._generate_bound_spec(rule["outbound_allow_list"], value["outbound_allow_list"])
+            self._generate_bound_spec(
+                rule["outbound_allow_list"], value["outbound_allow_list"]
+            )
         if value.get("action"):
             rule["action"] = value["action"]
 
