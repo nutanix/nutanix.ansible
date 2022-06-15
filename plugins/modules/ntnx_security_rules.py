@@ -81,6 +81,7 @@ options:
       action:
         description: Type of deployment of the rule.
         type: str
+        choices: ["MONITOR", "APPLY"]
       target_group:
         description: Target Group
         type: dict
@@ -113,6 +114,7 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
+            choices: ["ALL", "FILTER", "IP_SUBNET"]
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -134,6 +136,7 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
+            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
           filter:
             description: A category filter.
             type: dict
@@ -174,47 +177,36 @@ options:
               ip:
                 type: str
                 description: IPV4 address.
-              prefix:
+              prefix_length:
                 description: prefix length
-                type: str
+                type: int
           tcp_port_range_list:
             description: List of TCP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
+                type: int
           udp_port_range_list:
             description: List of UDP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
-          icmp:
+                type: int
+          icmp_type_code_list:
             description: List of ICMP types and codes allowed by this rule.
             elements: dict
             type: list
             suboptions:
-              any:
-                description: any
-                type: bool
               code:
                 description: ICMP code
                 type: int
@@ -236,6 +228,7 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
+            choices: ["ALL", "FILTER", "IP_SUBNET"]
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -257,6 +250,7 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
+            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
           filter:
             description: A category filter.
             type: dict
@@ -297,47 +291,36 @@ options:
               ip:
                 type: str
                 description: IPV4 address.
-              prefix:
+              prefix_length:
                 description: prefix length
-                type: str
+                type: int
           tcp_port_range_list:
             description: List of TCP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
+                type: int
           udp_port_range_list:
             description: List of UDP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
-          icmp:
+                type: int
+          icmp_type_code_list:
             description: List of ICMP types and codes allowed by this rule.
             elements: dict
             type: list
             suboptions:
-              any:
-                description: any
-                type: bool
               code:
                 description: ICMP code
                 type: int
@@ -362,6 +345,7 @@ options:
       action:
         description: Type of deployment of the rule.
         type: str
+        choices: ["MONITOR", "APPLY"]
       target_group:
         description: Target Group
         type: dict
@@ -394,6 +378,7 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
+            choices: ["ALL", "FILTER", "IP_SUBNET"]
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -415,6 +400,7 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
+            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
           filter:
             description: A category filter.
             type: dict
@@ -455,47 +441,36 @@ options:
               ip:
                 type: str
                 description: IPV4 address.
-              prefix:
+              prefix_length:
                 description: prefix length
-                type: str
+                type: int
           tcp_port_range_list:
             description: List of TCP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
+                type: int
           udp_port_range_list:
             description: List of UDP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
-          icmp:
+                type: int
+          icmp_type_code_list:
             description: List of ICMP types and codes allowed by this rule.
             elements: dict
             type: list
             suboptions:
-              any:
-                description: any
-                type: bool
               code:
                 description: ICMP code
                 type: int
@@ -517,6 +492,7 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
+            choices: ["ALL", "FILTER", "IP_SUBNET"]
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -538,6 +514,7 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
+            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
           filter:
             description: A category filter.
             type: dict
@@ -572,53 +549,42 @@ options:
                 description: UUID
                 type: str
           ip_subnet:
-            description: IP subnet provided as an address and prefix length.
+            description: IP subnet provided as an address and prefix_length length.
             type: dict
             suboptions:
               ip:
                 type: str
                 description: IPV4 address.
-              prefix:
+              prefix_length:
                 description: prefix length
-                type: str
+                type: int
           tcp_port_range_list:
             description: List of TCP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
+                type: int
           udp_port_range_list:
             description: List of UDP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
-          icmp:
+                type: int
+          icmp_type_code_list:
             description: List of ICMP types and codes allowed by this rule.
             elements: dict
             type: list
             suboptions:
-              any:
-                description: any
-                type: bool
               code:
                 description: ICMP code
                 type: int
@@ -639,6 +605,7 @@ options:
       action:
         description: Type of deployment of the rule.
         type: str
+        choices: ["MONITOR", "APPLY"]
       first_entity_filter:
         description: A category filter.
         type: dict
@@ -678,6 +645,7 @@ options:
       action:
         description: Type of deployment of the rule.
         type: str
+        choices: ["MONITOR", "APPLY"]
       target_group:
         description: Target Group
         type: dict
@@ -710,6 +678,7 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
+            choices: ["ALL", "FILTER", "IP_SUBNET"]
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -731,6 +700,7 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
+            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
           filter:
             description: A category filter.
             type: dict
@@ -765,53 +735,42 @@ options:
                 description: UUID
                 type: str
           ip_subnet:
-            description: IP subnet provided as an address and prefix length.
+            description: IP subnet provided as an address and prefix_length length.
             type: dict
             suboptions:
               ip:
                 type: str
                 description: IPV4 address.
-              prefix:
+              prefix_length:
                 description: prefix length
-                type: str
+                type: int
           tcp_port_range_list:
             description: List of TCP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
+                type: int
           udp_port_range_list:
             description: List of UDP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
-          icmp:
+                type: int
+          icmp_type_code_list:
             description: List of ICMP types and codes allowed by this rule.
             elements: dict
             type: list
             suboptions:
-              any:
-                description: any
-                type: bool
               code:
                 description: ICMP code
                 type: int
@@ -833,6 +792,7 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
+            choices: ["ALL", "FILTER", "IP_SUBNET"]
           expiration_time:
             description: Timestamp of expiration time.
             type: str
@@ -854,6 +814,7 @@ options:
               Select a protocol to allow. Multiple protocols can be allowed by
               repeating network_rule object. If a protocol is not configured in
               the network_rule object then it is allowed.
+            choices: ['ALL', 'ICMP', 'TCP', 'UDP']
           filter:
             description: A category filter.
             type: dict
@@ -888,53 +849,42 @@ options:
                 description: UUID
                 type: str
           ip_subnet:
-            description: IP subnet provided as an address and prefix length.
+            description: IP subnet provided as an address and prefix_length length.
             type: dict
             suboptions:
               ip:
                 type: str
                 description: IPV4 address.
-              prefix:
+              prefix_length:
                 description: prefix length
-                type: str
+                type: int
           tcp_port_range_list:
             description: List of TCP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
+                type: int
           udp_port_range_list:
             description: List of UDP ports that are allowed by this rule.
             type: list
             elements: dict
             suboptions:
-              src:
+              start_port:
                 description: start_port
-                type: list
-                elements: str
-                default: '*'
-              dst:
+                type: int
+              end_port:
                 description: end_port
-                type: list
-                elements: str
-                default: '*'
-          icmp:
+                type: int
+          icmp_type_code_list:
             description: List of ICMP types and codes allowed by this rule.
             elements: dict
             type: list
             suboptions:
-              any:
-                description: any
-                type: bool
               code:
                 description: ICMP code
                 type: int
@@ -981,9 +931,7 @@ def get_module_spec():
 
     network_spec = dict(ip=dict(type="str"), prefix_length=dict(type="int"))
 
-    icmp_spec = dict(
-        code=dict(type="int"), type=dict(type="int")
-    )
+    icmp_spec = dict(code=dict(type="int"), type=dict(type="int"))
 
     filters_spec = dict(
         type=dict(type="str"),
@@ -1005,7 +953,7 @@ def get_module_spec():
         ),
         ip_subnet=dict(type="dict", options=network_spec),
         service_group_list=dict(type="list", elements="dict", options=group_spec),
-        protocol=dict(type="str", choices=['ALL', 'ICMP', 'TCP', 'UDP']),
+        protocol=dict(type="str", choices=["ALL", "ICMP", "TCP", "UDP"]),
         tcp_port_range_list=dict(
             type="list", elements="dict", options=tcp_and_udp_spec
         ),
@@ -1136,11 +1084,19 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(),
-                        supports_check_mode=True,
-                        required_one_of=[("security_rule_uuid", "name")],
-                        mutually_exclusive=[("ad_rule", "app_rule", "isolation_rule", "quarantine_rule")],
-                        required_by={"quarantine_rule": "security_rule_uuid"})
+    module = BaseModule(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+        mutually_exclusive=[
+            ("ad_rule", "app_rule", "isolation_rule", "quarantine_rule")
+        ],
+        required_by={
+            "quarantine_rule": "security_rule_uuid",
+        },
+        required_one_of=[
+            ("security_rule_uuid", "name"),
+        ],
+    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
@@ -1156,7 +1112,6 @@ def run_module():
         update_security_rule(module, result)
     else:
         create_security_rule(module, result)
-
 
     module.exit_json(**result)
 

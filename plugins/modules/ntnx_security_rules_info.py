@@ -61,7 +61,7 @@ api_version:
   type: str
   sample: "3.1"
 metadata:
-  description: Metadata for security_rule list output
+  description: Metadata for security_rule_info list output
   returned: always
   type: dict
   sample: {
@@ -92,7 +92,7 @@ entities:
                         "uuid": "00000000-0000-0000-0000-000000000000"
                     },
                     "spec_version": 0,
-                    "uuid": "7ee05b9d-4021-4f57-8a03-df9503adea9d"
+                    "uuid": "00000000-0000-0000-0000-000000000000"
                 },
                 "spec": {
                     "name": "integration_test_security_rule",
@@ -102,7 +102,7 @@ entities:
                             {
                                 "external_subnet_reference": {
                                     "kind": "subnet",
-                                    "uuid": "946d59d1-65fe-48cc-9882-e93439404e89"
+                                    "uuid": "00000000-0000-0000-0000-000000000000"
                                 }
                             }
                         ],
@@ -112,7 +112,7 @@ entities:
                 "status": {
                     "execution_context": {
                         "task_uuids": [
-                            "b3d99b77-dfe0-4067-b2ec-4fbaca6c30ac"
+                            "00000000-0000-0000-0000-000000000000"
                         ]
                     },
                     "name": "integration_test_security_rule",
@@ -124,16 +124,16 @@ entities:
                                 "active_gateway_node": {
                                     "host_reference": {
                                         "kind": "host",
-                                        "uuid": "e16b6989-a149-4f93-989f-bc3e96f88a40"
+                                        "uuid": "00000000-0000-0000-0000-000000000000"
                                     },
-                                    "ip_address": "10.46.136.28"
+                                    "ip_address": "000.000.000.000"
                                 },
                                 "external_ip_list": [
-                                    "10.44.3.198"
+                                    "000.000.000.000"
                                 ],
                                 "external_subnet_reference": {
                                     "kind": "subnet",
-                                    "uuid": "946d59d1-65fe-48cc-9882-e93439404e89"
+                                    "uuid": "00000000-0000-0000-0000-000000000000"
                                 }
                             }
                         ],
