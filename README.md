@@ -98,10 +98,12 @@ ansible-playbook examples/iaas/iaas.yml
 
 | Name | Description |
 | --- | --- |
-| ntnx_images | Create, update or delete a image. |
-| ntnx_images_info | List existing images. |
 | ntnx_floating_ips | Create or delete a Floating Ip. |
 | ntnx_floating_ips_info | List existing Floating_Ips. |
+| ntnx_images | Create, update or delete a image. |
+| ntnx_images_info | List existing images. |
+| ntnx_image_placement_policy | Create, update or delete a image placement policy. |
+| ntnx_image_placement_policies_info | List existing image placement policies. |
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
 | ntnx_subnets | Create or delete a Subnet. |

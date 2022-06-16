@@ -19,7 +19,7 @@ options:
         - The kind name
       type: str
       default: image_placement_policy
-    policy_uud:
+    policy_uuid:
         description:
             - policy UUID
         type: str
@@ -31,6 +31,17 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
+  - name: Get image placement policy using policy_uuid
+    ntnx_image_placement_policies_info:
+      policy_uuid: "<policy_uuid>"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      filter:
+        - name: test_policy
+    register: result
+
   - name: List image placement policies using name filter criteria
     ntnx_image_placement_policies_info:
       nutanix_host: "{{ ip }}"
@@ -52,6 +63,164 @@ EXAMPLES = r"""
     register: result
 """
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: Metadata for image placement policies list output
+  returned: always
+  type: dict
+  sample: {
+                "filter": "",
+                "kind": "image_placement_policy",
+                "length": 2,
+                "offset": 0,
+                "total_matches": 2
+            }
+entities:
+  description: image placement policies intent response
+  returned: always
+  type: list
+  sample: [
+      {
+                    "metadata": {
+                        "categories": {},
+                        "categories_mapping": {},
+                        "creation_time": "2022-06-15T22:04:26Z",
+                        "kind": "image_placement_policy",
+                        "last_update_time": "2022-06-15T22:04:28Z",
+                        "owner_reference": {
+                            "kind": "user",
+                            "name": "admin",
+                            "uuid": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "spec_version": 0,
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec": {
+                        "name": "test_policy_1",
+                        "resources": {
+                            "cluster_entity_filter": {
+                                "params": {
+                                    "AppTier": [
+                                        "Default"
+                                    ]
+                                },
+                                "type": "CATEGORIES_MATCH_ANY"
+                            },
+                            "image_entity_filter": {
+                                "params": {
+                                    "AppFamily": [
+                                        "Backup"
+                                    ]
+                                },
+                                "type": "CATEGORIES_MATCH_ANY"
+                            },
+                            "placement_type": "AT_LEAST"
+                        }
+                    },
+                    "status": {
+                        "description": "",
+                        "execution_context": {
+                            "task_uuid": [
+                                "00000000-0000-0000-0000-000000000000"
+                            ]
+                        },
+                        "name": "test_policy_1",
+                        "resources": {
+                            "cluster_entity_filter": {
+                                "params": {
+                                    "AppTier": [
+                                        "Default"
+                                    ]
+                                },
+                                "type": "CATEGORIES_MATCH_ANY"
+                            },
+                            "image_entity_filter": {
+                                "params": {
+                                    "AppFamily": [
+                                        "Backup"
+                                    ]
+                                },
+                                "type": "CATEGORIES_MATCH_ANY"
+                            },
+                            "placement_type": "AT_LEAST"
+                        },
+                        "state": "COMPLETE"
+                    }
+                },
+                {
+                    "metadata": {
+                        "categories": {},
+                        "categories_mapping": {},
+                        "creation_time": "2022-06-15T22:04:33Z",
+                        "kind": "image_placement_policy",
+                        "last_update_time": "2022-06-15T22:04:35Z",
+                        "owner_reference": {
+                            "kind": "user",
+                            "name": "admin",
+                            "uuid": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "spec_version": 0,
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec": {
+                        "name": "test_policy_2",
+                        "resources": {
+                            "cluster_entity_filter": {
+                                "params": {
+                                    "AppTier": [
+                                        "Default"
+                                    ]
+                                },
+                                "type": "CATEGORIES_MATCH_ANY"
+                            },
+                            "image_entity_filter": {
+                                "params": {
+                                    "AppFamily": [
+                                        "Backup"
+                                    ]
+                                },
+                                "type": "CATEGORIES_MATCH_ANY"
+                            },
+                            "placement_type": "AT_LEAST"
+                        }
+                    },
+                    "status": {
+                        "description": "",
+                        "execution_context": {
+                            "task_uuid": [
+                                "00000000-0000-0000-0000-000000000000"
+                            ]
+                        },
+                        "name": "test_policy_2",
+                        "resources": {
+                            "cluster_entity_filter": {
+                                "params": {
+                                    "AppTier": [
+                                        "Default"
+                                    ]
+                                },
+                                "type": "CATEGORIES_MATCH_ANY"
+                            },
+                            "image_entity_filter": {
+                                "params": {
+                                    "AppFamily": [
+                                        "Backup"
+                                    ]
+                                },
+                                "type": "CATEGORIES_MATCH_ANY"
+                            },
+                            "placement_type": "AT_LEAST"
+                        },
+                        "state": "COMPLETE"
+                    }
+                },
+  ]
 """
 
 

@@ -13,12 +13,223 @@ module: ntnx_image_placement_policy
 short_description: image placement policy module which supports Create, update and delete operations
 version_added: 1.0.0
 description: "Create, Update, Delete image placement policy"
+options:
+    state:
+        description:
+        - Specify state
+        - If C(state) is set to C(present) then the operation will be  create the item.
+        - if C(state) is set to C(present) and C(policy_uuid) is given then it will update that image placement policy.
+        - if C(state) is set to C(present) then C(image_uuid) or one of C(name), C(image_categories), C(cluster_categories) needs to be set.
+        - >-
+            If C(state) is set to C(absent) and if the item exists, then
+            item is removed.
+        choices:
+        - present
+        - absent
+        type: str
+        default: present
+    wait:
+        description: Wait for the  CRUD operation to complete.
+        type: bool
+        required: false
+        default: True
+    name:
+        description: 
+            - policy name
+            - allowed in update
+        required: false
+        type: str
+    policy_uuid:
+        description: 
+            - image placement policy of existig uuid
+            - required only when updating or deleting
+        type: str
+        required: false
+    desc:
+        description: 
+            - A description for policy
+            - allowed in update
+        required: false
+        type: str
+    placement_type:
+        description:
+            - placement type of the policy.
+            - allowed in update
+        type: str
+        required: false
+        choices:
+            - hard
+            - soft
+        default: soft
+    image_categories:
+        description:
+            - categories for images which needs to be affected by this policy
+            - allowed in update
+        type: dict
+        required: false
+    cluster_categories:
+        description:
+            - categories for clusters which needs to be affected by this policy
+            - allowed in update
+        type: dict
+        required: false
+    categories:
+        description:
+            - Categories for the policy. This allows setting up multiple values from a single key.
+            - allowed in update
+        required: false
+        type: dict
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)    
 """
 
 EXAMPLES = r"""
+- name: Create image placement policy with minimal spec
+  ntnx_image_placement_policy:
+    state: "present"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    name: "test_policy_1"
+    image_categories: 
+      AppFamily:
+        - Backup
+    cluster_categories:
+      AppTier:
+        - Default
+  register: result
+- name: Create image placement policy with all specs and hard type
+  ntnx_image_placement_policy:
+    state: "present"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    name: "test_policy_2"
+    desc: "test_policy_2_desc"
+    placement_type: hard
+    categories:
+      Environment:
+        - "Dev"
+      AppType:
+        - "Default"
+    image_categories: 
+      AppFamily:
+        - Backup
+        - Networking
+    cluster_categories:
+      AppTier:
+        - Default
+  register: result
+- name: Delete image placement policy
+  ntnx_image_placement_policy:
+    state: "absent"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    state: absent
+    policy_uuid: "<policy-uuid>"
+  register: result
 """
 
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The image placement policy type kind metadata
+  returned: always
+  type: dict
+  sample: {
+                "categories": {},
+                "categories_mapping": {},
+                "creation_time": "2022-06-16T08:03:59Z",
+                "kind": "image_placement_policy",
+                "last_update_time": "2022-06-16T08:04:01Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_hash": "00000000000000000000000000000000000000000000000000",
+                "spec_version": 0,
+                "uuid": "00000000-0000-0000-0000-000000000000"
+            }
+spec:
+  description: An intentful representation of a image placement policy spec
+  returned: always
+  type: dict
+  sample: {
+                "description": "check123233",
+                "name": "test_policy_1",
+                "resources": {
+                    "cluster_entity_filter": {
+                        "params": {
+                            "AppFamily": [
+                                "Networking"
+                            ]
+                        },
+                        "type": "CATEGORIES_MATCH_ANY"
+                    },
+                    "image_entity_filter": {
+                        "params": {
+                            "AppFamily": [
+                                "Backup",
+                                "Databases"
+                            ]
+                        },
+                        "type": "CATEGORIES_MATCH_ANY"
+                    },
+                    "placement_type": "AT_LEAST"
+                }
+            }
+status:
+  description: An intentful representation of a image placement policy status
+  returned: always
+  type: dict
+  sample: {
+                "description": "check123233",
+                "execution_context": {
+                    "task_uuid": [
+                        "00000000-0000-0000-0000-000000000000"
+                    ]
+                },
+                "name": "test_policy_1",
+                "resources": {
+                    "cluster_entity_filter": {
+                        "params": {
+                            "AppFamily": [
+                                "Networking"
+                            ]
+                        },
+                        "type": "CATEGORIES_MATCH_ANY"
+                    },
+                    "image_entity_filter": {
+                        "params": {
+                            "AppFamily": [
+                                "Backup",
+                                "Databases"
+                            ]
+                        },
+                        "type": "CATEGORIES_MATCH_ANY"
+                    },
+                    "placement_type": "AT_LEAST"
+                },
+                "state": "COMPLETE"
+            }
+policy_uuid:
+  description: The created image placement policy uuid
+  returned: always
+  type: str
+  sample: "00000000-0000-0000-0000-000000000000"
 """
 
 from ..module_utils import utils  # noqa: E402
