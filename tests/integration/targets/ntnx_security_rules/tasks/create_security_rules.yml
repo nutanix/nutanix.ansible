@@ -166,6 +166,43 @@
 ####################
 - name: >-
     create isolation security rule with first_entity_filter and
+    second_entity_filter with check mode 
+  ntnx_security_rules:
+    name: test_isolation_rule
+    isolation_rule:
+      first_entity_filter:
+        type: CATEGORIES_MATCH_ALL
+        kind_list:
+          - vm
+        params:
+          CalmApplication:
+            - test_check_123_asadsdas
+      second_entity_filter:
+        type: CATEGORIES_MATCH_ALL
+        kind_list:
+          - vm
+        params:
+          CalmApplication:
+            - test_check_123anjsndjasdasd
+      action: MONITOR
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.spec.name=="test_isolation_rule"
+      - result.security_rule_uuid is none
+    fail_msg: ' fail: unable to create isolation security rule with first_entity_filter and second_entity_filter with check mode '
+    success_msg: >-
+      pass: create isolation security rule with first_entity_filter and
+      second_entity_filter successfully with check mode 
+- name: >-
+    create isolation security rule with first_entity_filter and
     second_entity_filter
   ntnx_security_rules:
     name: test_isolation_rule
@@ -200,6 +237,27 @@
       pass: create isolation security rule with first_entity_filter and
       second_entity_filter successfully
 
+- name: update isoloation security rule action with check_mode
+  ntnx_security_rules:
+    security_rule_uuid: '{{ result.response.metadata.uuid }}'
+    isolation_rule:
+      action: APPLY
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.spec.name=="test_isolation_rule"
+      - result.security_rule_uuid is none
+    fail_msg: ' fail: unable to update isoloation security rule action with check_mode'
+    success_msg: >-
+      pass: update isoloation security rule action with check_mode successfully 
+
 - name: update isoloation security rule action
   ntnx_security_rules:
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
@@ -218,7 +276,22 @@
       - result.response.spec.resources.isolation_rule.action == "APPLY"
     fail_msg: ' fail: unable to update isolation rule action  '
     success_msg: 'pass : update isolation rule action successfully'
+- name: update isoloation security with same values
+  ntnx_security_rules:
+    security_rule_uuid: '{{ result.response.metadata.uuid }}'
+    isolation_rule:
+      action: APPLY
+  register: output
+  ignore_errors: true
 
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg == "Nothing to change"
+    fail_msg: ' fail: unable to update isolation rule action  '
+    success_msg: 'pass : update isolation rule action successfully'
 - name: delete isolation rule
   ntnx_security_rules:
     state: absent
