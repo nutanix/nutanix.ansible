@@ -1276,7 +1276,7 @@ def get_module_spec():
         default_internal_policy=dict(type="str", choices=["ALLOW_ALL", "DENY_ALL"]),
     )
 
-    bound_allow_spec = dict(
+    whitelisted_traffic = dict(
         peer_specification_type=dict(
             type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
         ),
@@ -1304,9 +1304,9 @@ def get_module_spec():
 
     rule_spec = dict(
         target_group=dict(type="dict", options=target_spec),
-        inbound_allow_list=dict(type="list", elements="dict", options=bound_allow_spec),
+        inbound_allow_list=dict(type="list", elements="dict", options=whitelisted_traffic),
         outbound_allow_list=dict(
-            type="list", elements="dict", options=bound_allow_spec
+            type="list", elements="dict", options=whitelisted_traffic
         ),
         action=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
