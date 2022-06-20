@@ -215,7 +215,7 @@ class Entity(object):
         spec = copy.deepcopy(old_spec) or self._get_default_spec()
         for ansible_param, ansible_config in self.module.params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
-            if build_spec_method and ansible_config is not None:
+            if build_spec_method and ansible_config:
                 spec, error = build_spec_method(spec, ansible_config)
                 if error:
                     return None, error

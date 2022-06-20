@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
+from ..utils import update_categories
 from .clusters import Cluster
 from .prism import Prism
 
@@ -68,10 +69,17 @@ class Image(Prism):
         payload["spec"]["description"] = desc
         return payload, None
 
-    def _build_spec_categories(self, payload, categories):
-        if payload["metadata"].get("categories_mapping") != categories:
+    def _build_spec_categories(self, payload, spec):
+        curr_categories = payload["metadata"].get("categories_mapping", {})
+        new_categories = spec.get("add", {})
+        if spec.get("remove"):
+            curr_categories = new_categories  # Only keep newly added categories mapping
+        else:
+            update_categories(curr_categories, new_categories) # keep existing categories key-values along with newly added
+
+        if payload["metadata"].get("categories_mapping") != curr_categories:
             payload["metadata"]["use_categories_mapping"] = True
-            payload["metadata"]["categories_mapping"] = categories
+            payload["metadata"]["categories_mapping"] = curr_categories
         return payload, None
 
     def _build_spec_source_uri(self, payload, source_uri):

@@ -304,12 +304,16 @@ def get_module_spec():
         ),
         checksum_value=dict(type="str", required=True),
     )
+    categories = dict(
+        add = dict(type="dict", required=False),
+        remove = dict(type=bool, required=False, default=False),
+    )
     module_args = dict(
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
         source_uri=dict(type="str", required=False),
         source_path=dict(type="str", required=False),
-        categories=dict(type="dict", required=False),
+        categories=dict(type="dict", options=categories, required=False),
         image_type=dict(
             type="str",
             required=False,
