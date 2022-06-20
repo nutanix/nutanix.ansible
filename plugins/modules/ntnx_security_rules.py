@@ -91,9 +91,11 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
+            choices: ["ALL", "FILTER", "IP_SUBNET"]
           default_internal_policy:
             description: Default policy for communication within target group.
             type: str
+            choices: ["ALLOW_ALL", "DENY_ALL"]
           filter:
             description: A category filter.
             type: dict
@@ -104,12 +106,10 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
-                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
-                required: true
       inbound_allow_list:
         description: Array of inbound Network rule
         type: list
@@ -118,7 +118,6 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            required: true
             choices:
               - ALL
               - FILTER
@@ -152,7 +151,6 @@ options:
           filter:
             description: A category filter.
             type: dict
-            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -160,12 +158,10 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
-                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
-                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -243,7 +239,6 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            required: true
             choices:
               - ALL
               - FILTER
@@ -277,7 +272,6 @@ options:
           filter:
             description: A category filter.
             type: dict
-            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -285,12 +279,10 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
-                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
-                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -381,9 +373,11 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
+            choices: ["ALL", "FILTER", "IP_SUBNET"]
           default_internal_policy:
             description: Default policy for communication within target group.
             type: str
+            choices: ["ALLOW_ALL", "DENY_ALL"]
           filter:
             description: A category filter.
             type: dict
@@ -394,12 +388,10 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
-                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
-                required: true
       inbound_allow_list:
         description: Array of inbound Network rule
         type: list
@@ -408,7 +400,6 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            required: true
             choices:
               - ALL
               - FILTER
@@ -442,7 +433,6 @@ options:
           filter:
             description: A category filter.
             type: dict
-            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -450,12 +440,10 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
-                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
-                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -533,7 +521,6 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            required: true
             choices:
               - ALL
               - FILTER
@@ -567,7 +554,6 @@ options:
           filter:
             description: A category filter.
             type: dict
-            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -575,12 +561,10 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
-                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
-                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -663,7 +647,6 @@ options:
       first_entity_filter:
         description: A category filter.
         type: dict
-        required: true
         suboptions:
           type:
             description: The type of the filter being used.
@@ -671,16 +654,13 @@ options:
           params:
             description: A list of category key and list of values.
             type: dict
-            required: true
           kind_list:
             description: List of kinds associated with this filter.
             type: list
             elements: str
-            required: true
       second_entity_filter:
         description: A category filter.
         type: dict
-        required: true
         suboptions:
           type:
             description: The type of the filter being used.
@@ -688,12 +668,10 @@ options:
           params:
             description: A list of category key and list of values.
             type: dict
-            required: true
           kind_list:
             description: List of kinds associated with this filter.
             type: list
             elements: str
-            required: true
   quarantine_rule:
     description: >-
       These rules are used for quarantining suspected VMs. Target group is a
@@ -715,9 +693,11 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
+            choices: ["ALL", "FILTER", "IP_SUBNET"]
           default_internal_policy:
             description: Default policy for communication within target group.
             type: str
+            choices: ["ALLOW_ALL", "DENY_ALL"]
           filter:
             description: A category filter.
             type: dict
@@ -728,12 +708,10 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
-                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
-                required: true
       inbound_allow_list:
         description: Array of inbound Network rule
         type: list
@@ -742,7 +720,6 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            required: true
             choices:
               - ALL
               - FILTER
@@ -776,7 +753,6 @@ options:
           filter:
             description: A category filter.
             type: dict
-            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -784,12 +760,10 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
-                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
-                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -867,7 +841,6 @@ options:
           peer_specification_type:
             description: Way to identify the object for which rule is applied.
             type: str
-            required: true
             choices:
               - ALL
               - FILTER
@@ -901,7 +874,6 @@ options:
           filter:
             description: A category filter.
             type: dict
-            required: true
             suboptions:
               type:
                 description: The type of the filter being used.
@@ -909,12 +881,10 @@ options:
               params:
                 description: A list of category key and list of values.
                 type: dict
-                required: true
               kind_list:
                 description: List of kinds associated with this filter.
                 type: list
                 elements: str
-                required: true
           address_group_inclusion_list:
             type: list
             elements: dict
@@ -1304,7 +1274,9 @@ def get_module_spec():
 
     rule_spec = dict(
         target_group=dict(type="dict", options=target_spec),
-        inbound_allow_list=dict(type="list", elements="dict", options=whitelisted_traffic),
+        inbound_allow_list=dict(
+            type="list", elements="dict", options=whitelisted_traffic
+        ),
         outbound_allow_list=dict(
             type="list", elements="dict", options=whitelisted_traffic
         ),
