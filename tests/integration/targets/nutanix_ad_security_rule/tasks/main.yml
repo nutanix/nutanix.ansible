@@ -6,6 +6,4 @@
         nutanix_password: "{{ password }}"
         validate_certs: "{{ validate_certs }}"
   block:
-        - import_tasks: "app_rule.yml"
-        - import_tasks: "isolation_rule.yml"
-        - import_tasks: "quarantine_rule.yml"
+        - import_tasks: "create_security_rules.yml"

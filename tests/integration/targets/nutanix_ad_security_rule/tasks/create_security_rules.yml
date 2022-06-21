@@ -1,0 +1,80 @@
+- debug:
+    msg: Start testing ntnx_security_rules
+####################
+- name: create ad security rule with inbound and outbound list
+  ntnx_security_rules:
+    name: VDI Policy
+    ad_rule:
+      target_group:
+        peer_specification_type: FILTER
+        filter:
+          type: CATEGORIES_MATCH_ALL
+          kind_list:
+            - vm
+          params:
+            ADGroup:
+              - "$Default"
+        default_internal_policy: DENY_ALL
+      inbound_allow_list:
+        - peer_specification_type: ALL
+      outbound_allow_list:
+        - peer_specification_type: IP_SUBNET
+          ip_subnet:
+            prefix_length: 8
+            ip: 10.0.0.0
+          description: test description
+          protocol: ALL
+      action: MONITOR
+    allow_ipv6_traffic: true
+    is_policy_hitlog_enabled: true
+  register: result
+  ignore_errors: true
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.spec.name=="VDI Policy"
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' fail: unable create ad security rule with inbound and outbound list'
+    success_msg: >-
+      pass: create ad security rule with inbound and outbound list finished successfully
+- name: update isoloation security rule action
+  ntnx_security_rules:
+    security_rule_uuid: '{{ result.response.metadata.uuid }}'
+    ad_rule:
+      inbound_allow_list:
+        - peer_specification_type: IP_SUBNET
+          ip_subnet:
+            prefix_length: 8
+            ip: 10.0.0.0
+          description: test description
+          protocol: ALL
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' fail: unable to update ad_rule    '
+    success_msg: 'pass : update ad_rule   successfully'
+
+- name: delete ad_rule rule
+  ntnx_security_rules:
+    state: absent
+    security_rule_uuid: '{{ result.response.metadata.uuid }}'
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: ' fail: unable to delete ad_rule security rule '
+    success_msg: 'pass : delete ad_rule security rule successfully'

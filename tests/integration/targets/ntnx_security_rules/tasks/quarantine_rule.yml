@@ -1,0 +1,51 @@
+- name: update quarantine_rule by adding inbound and outbound list
+  ntnx_security_rules:
+    security_rule_uuid: '{{quarantine_rule_uuid}}'
+    quarantine_rule:
+      target_group:
+        peer_specification_type: FILTER
+        filter:
+          type: CATEGORIES_MATCH_ALL
+          kind_list:
+            - vm
+          params:
+            Quarantine:
+              - Forensics
+        default_internal_policy: DENY_ALL
+      inbound_allow_list:
+        - peer_specification_type: FILTER
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+                - DevOps
+      outbound_allow_list:
+        - peer_specification_type: FILTER
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+                - DevOps
+      action: MONITOR
+    allow_ipv6_traffic: true
+    is_policy_hitlog_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.status.state == 'COMPLETE'
+      - result.response.spec.resources.quarantine_rule.action == "MONITOR"
+    fail_msg: ' fail: unable to update quarantine_rule by adding inbound and outbound list '
+    success_msg: >-
+      pass: update quarantine_rule by adding inbound and outbound list
+      succesfully 
