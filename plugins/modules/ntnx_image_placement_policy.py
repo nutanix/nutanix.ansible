@@ -4,6 +4,7 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+from email.policy import default
 
 __metaclass__ = type
 
@@ -65,20 +66,29 @@ options:
         description:
             - categories for images which needs to be affected by this policy
             - allowed in update
+            - this field cannot be empty
         type: dict
         required: false
     cluster_categories:
         description:
             - categories for clusters which needs to be affected by this policy
             - allowed in update
+            - this field cannot be empty
         type: dict
         required: false
     categories:
         description:
             - Categories for the policy. This allows setting up multiple values from a single key.
-            - allowed in update
+            - In update, it will override he existing categories attached to policy
         required: false
         type: dict
+    remove_categories:
+        description:
+            - When set will remove all categories attached to the policy.
+            - It doesnot remove C(image_categories) or C(cluster_categories)
+        required: false
+        type: bool
+        default: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -242,6 +252,7 @@ def get_module_spec():
     module_args = dict(
         name = dict(type="str", required=False),
         desc = dict(type="str", required=False),
+        remove_categories = dict(type="bool", required=False, default=False),
         placement_type = dict(type="str", choices=["hard", "soft"], default="soft", required=False),
         image_categories = dict(type="dict", required=False),
         cluster_categories = dict(type="dict", required=False),

@@ -18,6 +18,7 @@ class ImagePlacementPolicy(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "categories": self._build_spec_categories,
+            "remove_categories": self._build_spec_remove_categories,
             "placement_type": self._build_spec_placement_type,
             "image_categories": self._build_spec_image_categories,
             "cluster_categories": self._build_spec_cluster_categories,
@@ -55,11 +56,19 @@ class ImagePlacementPolicy(Prism):
         return payload, None
 
     def _build_spec_categories(self, payload, categories):
+        if self.module.params.get("remove_categories"):
+            categories = {}
         if payload["metadata"].get("categories_mapping") != categories:
             payload["metadata"]["use_categories_mapping"] = True
             payload["metadata"]["categories_mapping"] = categories
         return payload, None
     
+    def _build_spec_remove_categories(self, payload, flag):
+        if flag and payload["metadata"]["categories_mapping"]:
+            payload["metadata"]["use_categories_mapping"] = True
+            payload["metadata"]["categories_mapping"] = {}
+        return payload, None
+
     def _build_spec_placement_type(self, payload, type):
         if type == "hard":
             payload["spec"]["resources"]["placement_type"] = "EXACTLY"
