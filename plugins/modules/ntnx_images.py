@@ -62,6 +62,21 @@ options:
         description: Categories for the image. This allows setting up multiple values from a single key.
         required: false
         type: dict
+        suboptions:
+            add:
+                description: 
+                    - Dictionary containing key-value as category key and list of values
+                required: false
+                type: dict
+            remove:
+                description: 
+                    - Flag to enable removal of category key values
+                    - if C(remove) set to true without C(add) will remove all categories from image
+                    - if C(remove) set to true with C(add) will keep only categories mentioned in C(add) for image
+                    - if C(remove) set to false with C(add) will add newly mentioned categories in C(add) for image
+                required: false
+                default: false
+                type: bool
     image_type:
         description: The type of image.
         required: false
@@ -306,7 +321,7 @@ def get_module_spec():
     )
     categories = dict(
         add = dict(type="dict", required=False),
-        remove = dict(type=bool, required=False, default=False),
+        remove = dict(type="bool", required=False, default=False),
     )
     module_args = dict(
         name=dict(type="str", required=False),

@@ -70,7 +70,7 @@ class Image(Prism):
         return payload, None
 
     def _build_spec_categories(self, payload, spec):
-        curr_categories = payload["metadata"].get("categories_mapping", {})
+        curr_categories = deepcopy(payload["metadata"].get("categories_mapping", {}))
         new_categories = spec.get("add", {})
         if spec.get("remove"):
             curr_categories = new_categories  # Only keep newly added categories mapping
