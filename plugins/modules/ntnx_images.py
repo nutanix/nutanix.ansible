@@ -59,24 +59,19 @@ options:
         required: false
         type: str
     categories:
-        description: Categories for the image. This allows setting up multiple values from a single key.
+        description: 
+            - Categories for the image. This allows setting up multiple values from a single key.
+            - this will override existing categories with mentioned during update
+            - mutually_exclusive with C(remove_categories)
         required: false
         type: dict
-        suboptions:
-            add:
-                description: 
-                    - Dictionary containing key-value as category key and list of values
-                required: false
-                type: dict
-            remove:
-                description: 
-                    - Flag to enable removal of category key values
-                    - if C(remove) set to true without C(add) will remove all categories from image
-                    - if C(remove) set to true with C(add) will keep only categories mentioned in C(add) for image
-                    - if C(remove) set to false with C(add) will add newly mentioned categories in C(add) for image
-                required: false
-                default: false
-                type: bool
+    remove_categories:
+        description: 
+            - set this flag to remove dettach all categories attached to image
+            - mutually_exclusive with C(categories)
+        type: bool
+        required: false
+        default: false
     image_type:
         description: The type of image.
         required: false
