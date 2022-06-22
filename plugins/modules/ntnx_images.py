@@ -465,6 +465,7 @@ def run_module():
         ("image_uuid", "source_uri", "source_path"),
         ("image_uuid", "checksum"),
         ("image_uuid", "clusters"),
+        ("categories", "remove_categories"),
     ]
     module = BaseModule(
         argument_spec=get_module_spec(),
