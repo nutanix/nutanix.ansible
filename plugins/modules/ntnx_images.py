@@ -182,7 +182,7 @@ EXAMPLES = r"""
         product_version: "1.2.0"
       wait: true
 
-  - name: update category of existing image
+  - name: override categories of existing image
     ntnx_images:
       state: "present"
       image_uuid: "<image-uuid>"
@@ -196,7 +196,19 @@ EXAMPLES = r"""
         AppFamily:
           - Backup
       wait: true
-  - name: update category of existing image
+
+  - name: dettach all categories from existing image
+    ntnx_images:
+      state: "present"
+      image_uuid: "00000000-0000-0000-0000-000000000000"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      remove_categories: true
+      wait: true
+
+  - name: delete existing image
     ntnx_images:
       state: "absent"
       image_uuid: "00000000-0000-0000-0000-000000000000"
