@@ -80,11 +80,13 @@ options:
         description:
             - Categories for the policy. This allows setting up multiple values from a single key.
             - In update, it will override he existing categories attached to policy
+            - Mutually exclusive with C(remove_categories)
         required: false
         type: dict
     remove_categories:
         description:
             - When set will remove all categories attached to the policy.
+            - Mutually exclusive ith C(categories)
             - It doesnot remove C(image_categories) or C(cluster_categories)
         required: false
         type: bool
@@ -113,6 +115,7 @@ EXAMPLES = r"""
       AppTier:
         - Default
   register: result
+
 - name: Create image placement policy with all specs and hard type
   ntnx_image_placement_policy:
     state: "present"
@@ -136,6 +139,40 @@ EXAMPLES = r"""
       AppTier:
         - Default
   register: result
+
+- name: Update image placement policy 
+  ntnx_image_placement_policy:
+    state: "present"
+    policy_uuid: "<policy-uuid>"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    name: "test_policy_2-uodated"
+    desc: "test_policy_2_desc-updated"
+    placement_type: hard
+    categories:
+      Environment:
+        - "Dev"
+    image_categories: 
+      AppFamily:
+        - Backup
+    cluster_categories:
+      AppTier:
+        - Default
+  register: result
+
+- name: Remove all categories attached to policy
+  ntnx_image_placement_policy:
+    state: "present"
+    policy_uuid: "<policy-uuid>"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    remove_categories: True
+  register: result
+
 - name: Delete image placement policy
   ntnx_image_placement_policy:
     state: "absent"
@@ -351,10 +388,14 @@ def run_module():
         ("policy_uuid","image_categories"),
         ("policy_uuid","cluster_categories")
     ]
+    mutually_exclusive_list = [
+        ("categories", "remove_categories"),
+    ]
     module = BaseModule(
         argument_spec = get_module_spec(),
         supports_check_mode = True,
         required_one_of = required_one_of_list,
+        mutually_exclusive = mutually_exclusive_list,
         required_if = [
             ("state", "absent",("policy_uuid",))
         ]
