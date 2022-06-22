@@ -225,7 +225,9 @@ entities:
 
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.image_placement_policy import ImagePlacementPolicy  # noqa: E402
+from ..module_utils.prism.image_placement_policy import (
+    ImagePlacementPolicy,
+)  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -253,7 +255,9 @@ def get_particular_policies(module, result):
     spec, err = policy_obj.get_info_spec()
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating Image Placement Policies info Spec", **result)
+        module.fail_json(
+            msg="Failed generating Image Placement Policies info Spec", **result
+        )
     resp = policy_obj.list(spec)
     result["response"] = resp
 

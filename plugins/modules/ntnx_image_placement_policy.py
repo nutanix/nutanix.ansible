@@ -287,27 +287,32 @@ from ..module_utils.prism.image_placement_policy import ImagePlacementPolicy
 
 def get_module_spec():
     module_args = dict(
-        name = dict(type="str", required=False),
-        desc = dict(type="str", required=False),
-        remove_categories = dict(type="bool", required=False, default=False),
-        placement_type = dict(type="str", choices=["hard", "soft"], default="soft", required=False),
-        image_categories = dict(type="dict", required=False),
-        cluster_categories = dict(type="dict", required=False),
+        name=dict(type="str", required=False),
+        desc=dict(type="str", required=False),
+        remove_categories=dict(type="bool", required=False, default=False),
+        placement_type=dict(
+            type="str", choices=["hard", "soft"], default="soft", required=False
+        ),
+        image_categories=dict(type="dict", required=False),
+        cluster_categories=dict(type="dict", required=False),
         categories=dict(type="dict", required=False),
-        policy_uuid=dict(type="str", required=False)
+        policy_uuid=dict(type="str", required=False),
     )
     return module_args
+
 
 def create_policy(module, result):
     policy_obj = ImagePlacementPolicy(module)
     spec, error = policy_obj.get_spec()
     if error:
         result["error"] = error
-        module.fail_json(msg="Failed generating create Image Placement Policies Spec", **result)
+        module.fail_json(
+            msg="Failed generating create Image Placement Policies Spec", **result
+        )
     if module.check_mode:
         result["response"] = spec
         return
-    
+
     # create image placement policies
     resp = policy_obj.create(spec)
     policy_uuid = resp["metadata"]["uuid"]
@@ -318,9 +323,10 @@ def create_policy(module, result):
     if module.params.get("wait"):
         task = Task(module)
         task.wait_for_completion(task_uuid)
-        resp = policy_obj.read(policy_uuid)    
-    
+        resp = policy_obj.read(policy_uuid)
+
     result["response"] = resp
+
 
 def update_policy(module, result):
     policy_obj = ImagePlacementPolicy(module)
@@ -328,7 +334,7 @@ def update_policy(module, result):
     if not policy_uuid:
         result["error"] = "Missing parameter policy_uuid in task"
         module.fail_json(msg="Failed updating image placement policy", **result)
-    
+
     # read the current state of policy
     resp = policy_obj.read(policy_uuid)
     utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
@@ -338,15 +344,17 @@ def update_policy(module, result):
     update_spec, error = policy_obj.get_spec(resp)
     if error:
         result["error"] = error
-        module.fail_json(msg="Failed generating Image Placement Policy update spec", **result)
-    
+        module.fail_json(
+            msg="Failed generating Image Placement Policy update spec", **result
+        )
+
     # check for idempotency using update spec and current spec
     if resp == update_spec:
         result["skipped"] = True
         module.exit_json(
             msg="Nothing to change. Refer docs to check for fields which can be updated"
         )
-    
+
     result["policy_uuid"] = policy_uuid
     if module.check_mode:
         result["response"] = update_spec
@@ -361,17 +369,18 @@ def update_policy(module, result):
     if module.params.get("wait"):
         task = Task(module)
         task.wait_for_completion(task_uuid)
-        resp = policy_obj.read(policy_uuid)    
-    
+        resp = policy_obj.read(policy_uuid)
+
     result["changed"] = True
     result["response"] = resp
+
 
 def delete_policy(module, result):
     policy_uuid = module.params["policy_uuid"]
     if not policy_uuid:
         result["error"] = "Missing parameter policy_uuid in task"
         module.fail_json(msg="Failed deleting Image placement policy", **result)
-    
+
     policy_obj = ImagePlacementPolicy(module)
     resp = policy_obj.delete(policy_uuid)
     result["response"] = resp
@@ -382,23 +391,21 @@ def delete_policy(module, result):
         task = Task(module)
         task.wait_for_completion(task_uuid)
 
+
 def run_module():
     required_one_of_list = [
-        ("policy_uuid","name"),
-        ("policy_uuid","image_categories"),
-        ("policy_uuid","cluster_categories")
-    ]
-    mutually_exclusive_list = [
-        ("categories", "remove_categories"),
+        ("policy_uuid", "name"),
+        ("policy_uuid", "image_categories"),
+        ("policy_uuid", "cluster_categories"),
     ]
     module = BaseModule(
-        argument_spec = get_module_spec(),
-        supports_check_mode = True,
-        required_one_of = required_one_of_list,
-        mutually_exclusive = mutually_exclusive_list,
-        required_if = [
-            ("state", "absent",("policy_uuid",))
-        ]
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+        required_one_of=required_one_of_list,
+        mutually_exclusive=[
+            ("categories", "remove_categories"),
+        ],
+        required_if=[("state", "absent", ("policy_uuid",))],
     )
     result = {
         "changed": False,

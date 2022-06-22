@@ -8,12 +8,11 @@ from .prism import Prism
 
 __metaclass__ = type
 
+
 class ImagePlacementPolicy(Prism):
     def __init__(self, module):
         resource_type = "/images/placement_policies"
-        super(ImagePlacementPolicy, self).__init__(
-            module, resource_type=resource_type
-        )
+        super(ImagePlacementPolicy, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -23,7 +22,7 @@ class ImagePlacementPolicy(Prism):
             "image_categories": self._build_spec_image_categories,
             "cluster_categories": self._build_spec_cluster_categories,
         }
-    
+
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -60,7 +59,7 @@ class ImagePlacementPolicy(Prism):
             payload["metadata"]["use_categories_mapping"] = True
             payload["metadata"]["categories_mapping"] = categories
         return payload, None
-    
+
     def _build_spec_remove_categories(self, payload, flag):
         if flag and payload["metadata"]["categories_mapping"]:
             payload["metadata"]["use_categories_mapping"] = True
@@ -73,11 +72,15 @@ class ImagePlacementPolicy(Prism):
         else:
             payload["spec"]["resources"]["placement_type"] = "AT_LEAST"
         return payload, None
-    
+
     def _build_spec_image_categories(self, payload, category_mappings):
-        payload["spec"]["resources"]["image_entity_filter"]["params"] = category_mappings
+        payload["spec"]["resources"]["image_entity_filter"][
+            "params"
+        ] = category_mappings
         return payload, None
 
     def _build_spec_cluster_categories(self, payload, category_mappings):
-        payload["spec"]["resources"]["cluster_entity_filter"]["params"] = category_mappings
+        payload["spec"]["resources"]["cluster_entity_filter"][
+            "params"
+        ] = category_mappings
         return payload, None
