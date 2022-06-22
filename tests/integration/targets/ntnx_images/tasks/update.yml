@@ -10,11 +10,10 @@
     source_uri: "{{ disk_image.url }}"
     image_type: "DISK_IMAGE"
     categories:
-      add:
-        Environment:
-          - "Dev"
-        AppType:
-          - "Default"
+      Environment:
+        - "Dev"
+      AppType:
+        - "Default"
     version:
       product_name: "test"
       product_version: "1.2.0"
@@ -47,11 +46,10 @@
     name: integration-test-image-update
     desc: "image for integration"
     categories:
-      add:
-        Environment:
-          - "Dev"
-        AppType:
-          - "Default"
+      Environment:
+        - "Dev"
+      AppType:
+        - "Default"
     image_type: "DISK_IMAGE"
   register: result
 
@@ -66,18 +64,17 @@
 
 ########################################################################################
 
-- name: Update name, desc and categories (adding new categories to existing)
+- name: Update name, desc and categories
   ntnx_images: 
     state: present
     image_uuid: "{{ setup_image.image_uuid }}"
     name: integration-test-image-after-update
     desc: "description after update"
     categories:
-      add:
-        Environment:
-          - "Production"
-        AppType:
-          - "Default"
+      Environment:
+        - "Production"
+      AppType:
+        - "Default"
     image_type: "ISO_IMAGE"
   register: result
 
@@ -89,24 +86,18 @@
       - result.response.status.name == 'integration-test-image-after-update'
       - result.response.status.description == 'description after update'
       - result.response.status.resources.image_type == 'ISO_IMAGE'
-      - result.response.metadata.categories_mapping['Environment'] == ['Dev', 'Production']
+      - result.response.metadata.categories_mapping['Environment'] == ['Production']
       - result.response.metadata.categories_mapping['AppType'] == ['Default']
     fail_msg: "Unable to update image"
     success_msg: "Image with given update spec updated successfully"
 
 ########################################################################################
 
-- name: check update categories spec to keep new categories only
+- name: test removal of all categories from image
   ntnx_images: 
     state: present
     image_uuid: "{{ setup_image.image_uuid }}"
-    categories:
-      remove: true
-      add:
-        Environment:
-          - "Production"
-        AppType:
-          - "Default"
+    remove_categories: true
   register: result
 
   
@@ -115,29 +106,9 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.metadata.categories_mapping['Environment'] == ["Production"]
-      - result.response.metadata.categories_mapping['AppType'] == ['Default']
-    fail_msg: "Unable to fetch update image to keep new categories only"
-    success_msg: "Image updated successfully to keep new categories only"
-
-########################################################################################
-
-- name: Check update categories spec to remove all categories
-  ntnx_images: 
-    state: present
-    image_uuid: "{{ setup_image.image_uuid }}"
-    categories:
-      remove: true
-  register: result
-
-- name: Update Status
-  assert: 
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
       - result.response.metadata.categories_mapping == {}
-    fail_msg: "Unable to fetch correct update spec to remove all categories"
-    success_msg: "update spec to remove all categories generated successfully"
+    fail_msg: "Unable to remove all categories from image"
+    success_msg: "All categories attached to image removed successfully"
 
 ########################################### Cleanup ###################################################
 

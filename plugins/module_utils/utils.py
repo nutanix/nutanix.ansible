@@ -63,19 +63,3 @@ def intersection(first_obj, second_obj):
         for item in first_obj:
             intersection(item, second_obj)
     return False
-
-def update_categories(curr, new):
-    """
-    This routine updates categories mapping of given entity. It will add add
-    new category key values in old categories mapping.
-    Args:
-        curr: dict of current categories key-values(list) mapping
-        new: dict of new categories key-values(list) mapping to be added
-    """
-    for key in new:
-        if key in curr:
-            #keep union of category values
-            curr[key] = list(set(curr[key]).union(set(new[key])))
-        else:
-            #create new category key value
-            curr[key] = new[key]

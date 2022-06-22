@@ -4,7 +4,6 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
-from ..utils import update_categories
 from .clusters import Cluster
 from .prism import Prism
 
@@ -26,6 +25,7 @@ class Image(Prism):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
+            "remove_categories": self._build_spec_remove_categories,
             "categories": self._build_spec_categories,
             "source_uri": self._build_spec_source_uri,
             "checksum": self._build_spec_checksum,
@@ -69,17 +69,18 @@ class Image(Prism):
         payload["spec"]["description"] = desc
         return payload, None
 
-    def _build_spec_categories(self, payload, spec):
-        curr_categories = deepcopy(payload["metadata"].get("categories_mapping", {}))
-        new_categories = spec.get("add", {})
-        if spec.get("remove"):
-            curr_categories = new_categories  # Only keep newly added categories mapping
-        else:
-            update_categories(curr_categories, new_categories) # keep existing categories key-values along with newly added
-
-        if payload["metadata"].get("categories_mapping") != curr_categories:
+    def _build_spec_categories(self, payload, categories):
+        if self.module.params.get("remove_categories"):
+            categories = {}
+        if payload["metadata"].get("categories_mapping") != categories:
             payload["metadata"]["use_categories_mapping"] = True
-            payload["metadata"]["categories_mapping"] = curr_categories
+            payload["metadata"]["categories_mapping"] = categories
+        return payload, None
+    
+    def _build_spec_remove_categories(self, payload, flag):
+        if flag and payload["metadata"]["categories_mapping"]:
+            payload["metadata"]["use_categories_mapping"] = True
+            payload["metadata"]["categories_mapping"] = {}
         return payload, None
 
     def _build_spec_source_uri(self, payload, source_uri):
