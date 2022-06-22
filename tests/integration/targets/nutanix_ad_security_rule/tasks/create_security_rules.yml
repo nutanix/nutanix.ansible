@@ -4,7 +4,7 @@
 - name: create ad security rule with inbound and outbound list
   ntnx_security_rules:
     name: VDI Policy
-    ad_rule:
+    vdi_rule:
       target_group:
         peer_specification_type: FILTER
         filter:
@@ -42,7 +42,7 @@
 - name: update isoloation security rule action
   ntnx_security_rules:
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
-    ad_rule:
+    vdi_rule:
       inbound_allow_list:
         - peer_specification_type: IP_SUBNET
           ip_subnet:
@@ -60,10 +60,10 @@
       - result.failed == false
       - result.changed == true
       - result.response.status.state == 'COMPLETE'
-    fail_msg: ' fail: unable to update ad_rule    '
-    success_msg: 'pass : update ad_rule   successfully'
+    fail_msg: ' fail: unable to update vdi_rule    '
+    success_msg: 'pass : update vdi_rule   successfully'
 
-- name: delete ad_rule rule
+- name: delete vdi_rule rule
   ntnx_security_rules:
     state: absent
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
@@ -76,5 +76,5 @@
       - result.response is defined
       - result.failed == false
       - result.response.status == 'SUCCEEDED'
-    fail_msg: ' fail: unable to delete ad_rule security rule '
-    success_msg: 'pass : delete ad_rule security rule successfully'
+    fail_msg: ' fail: unable to delete vdi_rule security rule '
+    success_msg: 'pass : delete vdi_rule security rule successfully'

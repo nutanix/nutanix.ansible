@@ -20,7 +20,7 @@ class SecurityRule(Prism):
             "project": self._build_spec_project,
             "allow_ipv6_traffic": self._build_allow_ipv6_traffic,
             "is_policy_hitlog_enabled": self._build_is_policy_hitlog_enabled,
-            "ad_rule": self._build_ad_rule,
+            "vdi_rule": self._build_vdi_rule,
             "app_rule": self._build_app_rule,
             "isolation_rule": self._build_isolation_rule,
             "quarantine_rule": self._build_quarantine_rule,
@@ -35,12 +35,7 @@ class SecurityRule(Prism):
                 "spec": {
                     "name": None,
                     "resources": {
-                        # "allow_ipv6_traffic": False,
                         "is_policy_hitlog_enabled": False,
-                        # "ad_rule": {},
-                        # "app_rule": {},
-                        # "isolation_rule": {},
-                        # "quarantine_rule": {}
                     },
                 },
             }
@@ -79,7 +74,7 @@ class SecurityRule(Prism):
         payload["spec"]["resources"]["is_policy_hitlog_enabled"] = value
         return payload, None
 
-    def _build_ad_rule(self, payload, value):
+    def _build_vdi_rule(self, payload, value):
         if payload["spec"]["resources"].get("ad_rule"):
             self._build_spec_rule(payload["spec"]["resources"]["ad_rule"], value)
         else:

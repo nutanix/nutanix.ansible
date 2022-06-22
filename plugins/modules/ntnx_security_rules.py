@@ -70,7 +70,7 @@ options:
   is_policy_hitlog_enabled:
     description: write
     type: bool
-  ad_rule:
+  vdi_rule:
     description: >-
       These rules are used for quarantining suspected VMs. Target group is a
       required attribute. Empty inbound_allow_list will not allow anything into
@@ -1270,6 +1270,7 @@ def get_module_spec():
         expiration_time=dict(type="str"),
         description=dict(type="str"),
         rule_id=dict(type="int"),
+        # state=
     )
 
     rule_spec = dict(
@@ -1294,7 +1295,7 @@ def get_module_spec():
         security_rule_uuid=dict(type="str"),
         allow_ipv6_traffic=dict(type="bool"),
         is_policy_hitlog_enabled=dict(type="bool"),
-        ad_rule=dict(type="dict", options=rule_spec),
+        vdi_rule=dict(type="dict", options=rule_spec),
         app_rule=dict(type="dict", options=rule_spec),
         isolation_rule=dict(type="dict", options=isolation_rule_spec),
         quarantine_rule=dict(type="dict", options=rule_spec),
@@ -1393,7 +1394,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         mutually_exclusive=[
-            ("ad_rule", "app_rule", "isolation_rule", "quarantine_rule")
+            ("vdi_rule", "app_rule", "isolation_rule", "quarantine_rule")
         ],
         required_by={
             "quarantine_rule": "security_rule_uuid",
