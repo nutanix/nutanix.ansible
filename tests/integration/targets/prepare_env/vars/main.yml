@@ -3,7 +3,7 @@ todelete: []
 
 disk_image:
   url: https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1602.qcow2
-  dest: /Users/pradeep.bhati/Downloads/images/CentOS-7-x86_64-GenericCloud-1602.qcow2
+  dest: /home/ubuntu/.ansible/collections/ansible_collections/nutanix/ncp/tests/integration/targets/prepare_env/tasks/centosO7-1.qcow2
   checksum: 37e7e3ceacfc6ac20c451fe34ce2c9ec1ef5d6ce
   centos: "CentOS-7-cloudinit" 
 
