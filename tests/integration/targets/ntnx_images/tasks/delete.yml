@@ -23,7 +23,7 @@
 - name: Delete image created above
   ntnx_images:
     state: absent
-    policy_uuid: "{{ result.response.metadata.uuid }}"
+    image_uuid: "{{ result.response.metadata.uuid }}"
   register: result
 
 - name: Delete Status
