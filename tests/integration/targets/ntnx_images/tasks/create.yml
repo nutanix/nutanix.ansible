@@ -53,9 +53,13 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
+      - result.response.spec.resources.image_type == "DISK_IMAGE"
       - result.response.metadata.categories_mapping['AppType'] == ['Default']
       - result.response.metadata.categories_mapping['Environment'] == ['Dev']
       - result.response.status.resources.initial_placement_ref_list[0]['uuid'] == "{{ cluster.uuid }}" 
+      - result.response.spec.resources.checksum.checksum_value == "{{ disk_image.checksum }}"
+      - result.response.spec.resources.version.product_name == "test"
+      - result.response.spec.resources.version.product_version == "1.2.0"
     fail_msg: "Unable to create image and upload local image with all specification"
     success_msg: "Image with given local path created successfully"
 
@@ -68,9 +72,9 @@
   check_mode: yes
   ntnx_images:
     state: present
-    name: integration-test-image-with-upload
+    name: integration-test-image
     desc: "uploaded image during integration test"
-    source_path: "{{ disk_image.dest }}"
+    source_uri: "{{ disk_image.url }}"
     image_type: "DISK_IMAGE"
     categories:
       Environment:
@@ -95,6 +99,11 @@
       - result.changed == false
       - result.failed == false
       - result.response.metadata is defined
+      - result.response.status.name == 'integration-test-image'
+      - result.response.status.resources.source_uri == "{{ disk_image.url }}"
+      - result.response.metadata.categories_mapping['AppType'] == ['Default']
+      - result.response.metadata.categories_mapping['Environment'] == ['Dev']
+      - result.response.status.resources.initial_placement_ref_list[0]['uuid'] == "{{ cluster.uuid }}"
       - result.response.spec.resources.checksum.checksum_value == "{{ disk_image.checksum }}"
       - result.response.spec.resources.version.product_name == "test"
       - result.response.spec.resources.version.product_version == "1.2.0"

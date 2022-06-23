@@ -380,20 +380,20 @@ def create_image(module, result):
 
         # upload image contents
         timeout = module.params.get("timeout", 600)
-        image_upload = Image(module, upload_image=True)
-        resp = image_upload.upload_image(
+        image_upload_obj = Image(module, upload_image=True)
+        resp = image_upload_obj.upload_image(
             image_uuid, source_path, timeout, raise_error=False
         )
         error = resp.get("error")
         if error:
             # delete the image metadata from PC
-            image.delete(image_uuid)
+            image_upload_obj.delete(image_uuid)
             task.wait_for_completion(task_uuid)
             result["error"] = error
             result["changed"] = False
             result["response"] = None
             module.fail_json(msg="Failed uploading image contents", **result)
-        resp = image.read(image_uuid)
+        resp = image_upload_obj.read(image_uuid)
 
     elif module.params.get("wait"):
         task.wait_for_completion(task_uuid)
