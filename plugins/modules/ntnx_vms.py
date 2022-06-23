@@ -46,6 +46,13 @@ options:
   vm_uuid:
     description: VM UUID
     type: str
+  remove_categories:
+    description:
+        - When set will remove all categories attached to the vm.
+        - Mutually exclusive ith C(categories)
+    required: false
+    type: bool
+    default: false
   disks:
     description:
       - List of disks attached to the VM
