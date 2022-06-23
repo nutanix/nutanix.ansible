@@ -21,7 +21,7 @@
     success_msg: "Image with minimal spec created successfully"
 
 - name: Delete image created above
-  ntnx_image:
+  ntnx_images:
     state: absent
     policy_uuid: "{{ result.response.metadata.uuid }}"
   register: result
