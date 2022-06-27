@@ -1238,6 +1238,16 @@ def get_module_spec():
         params=dict(type="dict"),
     )
 
+    protocol_spec = dict(
+        tcp=dict(type="list", elements="dict", options=tcp_and_udp_spec),
+        udp=dict(type="list", elements="dict", options=tcp_and_udp_spec),
+        icmp=dict(
+            type="dict",
+            options=icmp_spec,
+            required_by={"code": "type"},
+        ),
+    )
+
     target_spec = dict(
         peer_specification_type=dict(
             type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
@@ -1256,13 +1266,6 @@ def get_module_spec():
         ),
         ip_subnet=dict(type="dict", options=network_spec),
         service_group_list=dict(type="list", elements="dict", options=group_spec),
-        protocol=dict(type="str", choices=["ALL", "ICMP", "TCP", "UDP"]),
-        tcp_port_range_list=dict(
-            type="list", elements="dict", options=tcp_and_udp_spec
-        ),
-        udp_port_range_list=dict(
-            type="list", elements="dict", options=tcp_and_udp_spec
-        ),
         icmp_type_code_list=dict(type="list", elements="dict", options=icmp_spec),
         network_function_chain_reference=dict(
             type="dict", options=dict(uuid=dict(type="str"))
@@ -1270,7 +1273,13 @@ def get_module_spec():
         expiration_time=dict(type="str"),
         description=dict(type="str"),
         rule_id=dict(type="int"),
-        # state=
+        state=dict(type="str", choices=["absent"]),
+        protocol=dict(
+            type="dict",
+            options=protocol_spec,
+            apply_defaults=True,
+            mutually_exclusive=[("tcp", "udp", "icmp")],
+        ),
     )
 
     rule_spec = dict(
@@ -1299,6 +1308,7 @@ def get_module_spec():
         app_rule=dict(type="dict", options=rule_spec),
         isolation_rule=dict(type="dict", options=isolation_rule_spec),
         quarantine_rule=dict(type="dict", options=rule_spec),
+        rule_type=dict(type="str", choices=["VDI", "APP", "ISOLATION", "QUARANTINE"]),
     )
 
     return module_args

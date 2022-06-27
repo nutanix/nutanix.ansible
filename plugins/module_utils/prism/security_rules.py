@@ -75,17 +75,13 @@ class SecurityRule(Prism):
         return payload, None
 
     def _build_vdi_rule(self, payload, value):
-        if payload["spec"]["resources"].get("ad_rule"):
-            self._build_spec_rule(payload["spec"]["resources"]["ad_rule"], value)
-        else:
-            payload["spec"]["resources"]["ad_rule"] = value
+        ad_rule = payload["spec"]["resources"].get("ad_rule", {})
+        payload["spec"]["resources"]["ad_rule"] = self._build_spec_rule(ad_rule, value)
         return payload, None
 
     def _build_app_rule(self, payload, value):
-        if payload["spec"]["resources"].get("app_rule"):
-            self._build_spec_rule(payload["spec"]["resources"]["app_rule"], value)
-        else:
-            payload["spec"]["resources"]["app_rule"] = value
+        app_rule = payload["spec"]["resources"].get("app_rule", {})
+        payload["spec"]["resources"]["app_rule"] = self._build_spec_rule(app_rule, value)
         return payload, None
 
     def _build_isolation_rule(self, payload, value):
@@ -108,9 +104,8 @@ class SecurityRule(Prism):
 
     def _build_quarantine_rule(self, payload, value):
         if payload["spec"]["resources"].get("quarantine_rule"):
-            self._build_spec_rule(
-                payload["spec"]["resources"]["quarantine_rule"], value
-            )
+            quarantine_rule = payload["spec"]["resources"]["quarantine_rule"]
+            payload["spec"]["resources"]["quarantine_rule"] = self._build_spec_rule(quarantine_rule, value)
         return payload, None
 
     def _build_spec_categories(self, payload, value):
@@ -123,31 +118,36 @@ class SecurityRule(Prism):
         if value.get("target_group"):
             rule["target_group"] = value["target_group"]
         if value.get("inbound_allow_list"):
-            self._generate_bound_spec(
-                rule["inbound_allow_list"], value["inbound_allow_list"]
+            rule["inbound_allow_list"] = self._generate_bound_spec(
+                rule.get("inbound_allow_list", []), value["inbound_allow_list"]
             )
         if value.get("outbound_allow_list"):
-            self._generate_bound_spec(
-                rule["outbound_allow_list"], value["outbound_allow_list"]
+            rule["outbound_allow_list"] = self._generate_bound_spec(
+                rule.get("outbound_allow_list", []), value["outbound_allow_list"]
             )
         if value.get("action"):
             rule["action"] = value["action"]
-
-        return payload, None
+        return rule
 
     def _generate_bound_spec(self, payload, list_of_rules):
         for rule in list_of_rules:
             if rule.get("rule_id"):
                 rule_spec = self._filter_by_uuid(rule["rule_id"], payload)
+                if rule.get("state") == "absent":
+                    payload.remove(rule_spec)
+                    continue
             else:
                 rule_spec = {}
             for key, value in rule.items():
                 if key == "filter" and rule_spec.get(key):
                     self._generate_filter_spec(rule_spec[key], value)
+                elif key == "protocol":
+                    self._generate_protocol_spec(rule_spec, value)
                 else:
                     rule_spec[key] = value
             if not rule_spec.get("rule_id"):
                 payload.append(rule_spec)
+        return payload
 
     def _generate_filter_spec(self, payload, value):
         if value.get("type"):
@@ -165,3 +165,32 @@ class SecurityRule(Prism):
                 msg="Failed generating VM Spec",
                 error="Entity {0} not found.".format(uuid),
             )
+
+
+    def _generate_protocol_spec(self, payload, config):
+        if config.get("tcp") or config.get("udp"):
+            key = "tcp" if config.get("tcp") else "udp"
+            protocol_type = key.upper()
+            port_range_list = []
+            for range_item in config[key]:
+                port_range_list.append(
+                    {"start_port": range_item["start_port"], "end_port": range_item["end_port"]}
+                )
+            if key == "tcp":
+                payload["tcp_port_range_list"] = port_range_list
+            elif key == "udp":
+                payload["udp_port_range_list"] = port_range_list
+
+        elif config.get("icmp"):
+            protocol_type = "ICMP"
+            icmp_type_code_list = payload.get("icmp_type_code_list", [])
+            for type, code in config["icmp"]:
+                icmp_type_code_list.append(
+                    {"type": type, "code": code}
+                )
+
+        else:
+            protocol_type = "ALL"
+
+        payload["protocol"] = protocol_type
+
