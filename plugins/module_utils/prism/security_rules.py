@@ -171,7 +171,8 @@ class SecurityRule(Prism):
         if config.get("tcp") or config.get("udp"):
             key = "tcp" if config.get("tcp") else "udp"
             protocol_type = key.upper()
-            port_range_list = []
+            spec_key = key + "_port_range_list"
+            port_range_list = payload.get(spec_key, [])
             for range_item in config[key]:
                 port_range_list.append(
                     {"start_port": range_item["start_port"], "end_port": range_item["end_port"]}
@@ -184,11 +185,11 @@ class SecurityRule(Prism):
         elif config.get("icmp"):
             protocol_type = "ICMP"
             icmp_type_code_list = payload.get("icmp_type_code_list", [])
-            for type, code in config["icmp"]:
+            for item in config["icmp"]:
                 icmp_type_code_list.append(
-                    {"type": type, "code": code}
+                    {"type": item["type"], "code": item["code"]}
                 )
-
+            payload["icmp_type_code_list"] = icmp_type_code_list
         else:
             protocol_type = "ALL"
 

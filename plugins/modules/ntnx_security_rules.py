@@ -1242,7 +1242,8 @@ def get_module_spec():
         tcp=dict(type="list", elements="dict", options=tcp_and_udp_spec),
         udp=dict(type="list", elements="dict", options=tcp_and_udp_spec),
         icmp=dict(
-            type="dict",
+            type="list",
+            elements="dict",
             options=icmp_spec,
             required_by={"code": "type"},
         ),
