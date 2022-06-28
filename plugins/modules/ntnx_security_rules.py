@@ -1308,7 +1308,6 @@ def get_module_spec():
         app_rule=dict(type="dict", options=rule_spec),
         isolation_rule=dict(type="dict", options=isolation_rule_spec),
         quarantine_rule=dict(type="dict", options=rule_spec),
-        rule_type=dict(type="str", choices=["VDI", "APP", "ISOLATION", "QUARANTINE"]),
     )
 
     return module_args
