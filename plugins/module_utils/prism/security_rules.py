@@ -149,6 +149,17 @@ class SecurityRule(Prism):
                 payload.append(rule_spec)
         return payload
 
+    def _generate_protocol_spec(self, payload, config):
+        if config.get("tcp"):
+            payload["protocol"] = "TCP"
+            payload["tcp_port_range_list"] = config["tcp"]
+        elif config.get("udp"):
+            payload["protocol"] = "UDP"
+            payload["udp_port_range_list"] = config["udp"]
+        elif config.get("icmp"):
+            payload["protocol"] = "ICMP"
+            payload["icmp_type_code_list"] = config["icmp"]
+
     def _generate_filter_spec(self, payload, value):
         if value.get("type"):
             payload["type"] = value["type"]
@@ -165,33 +176,3 @@ class SecurityRule(Prism):
                 msg="Failed generating VM Spec",
                 error="Entity {0} not found.".format(uuid),
             )
-
-
-    def _generate_protocol_spec(self, payload, config):
-        if config.get("tcp") or config.get("udp"):
-            key = "tcp" if config.get("tcp") else "udp"
-            protocol_type = key.upper()
-            spec_key = key + "_port_range_list"
-            port_range_list = payload.get(spec_key, [])
-            for range_item in config[key]:
-                port_range_list.append(
-                    {"start_port": range_item["start_port"], "end_port": range_item["end_port"]}
-                )
-            if key == "tcp":
-                payload["tcp_port_range_list"] = port_range_list
-            elif key == "udp":
-                payload["udp_port_range_list"] = port_range_list
-
-        elif config.get("icmp"):
-            protocol_type = "ICMP"
-            icmp_type_code_list = payload.get("icmp_type_code_list", [])
-            for item in config["icmp"]:
-                icmp_type_code_list.append(
-                    {"type": item["type"], "code": item["code"]}
-                )
-            payload["icmp_type_code_list"] = icmp_type_code_list
-        else:
-            protocol_type = "ALL"
-
-        payload["protocol"] = protocol_type
-
