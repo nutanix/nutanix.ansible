@@ -208,7 +208,7 @@ def get_subnet(module, result):
     result["response"] = resp
 
 
-def list_subnet(module, result):
+def get_subnets(module, result):
     subnet = Subnet(module)
     spec, error = subnet.get_info_spec()
 
@@ -228,7 +228,7 @@ def run_module():
     if module.params.get("subnet_uuid"):
         get_subnet(module, result)
     else:
-        list_subnet(module, result)
+        get_subnets(module, result)
 
     module.exit_json(**result)
 

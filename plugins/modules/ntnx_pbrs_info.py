@@ -173,7 +173,7 @@ def get_pbr(module, result):
     result["response"] = resp
 
 
-def list_pbr(module, result):
+def get_pbrs(module, result):
     pbr = Pbr(module)
     spec, error = pbr.get_info_spec()
 
@@ -193,7 +193,7 @@ def run_module():
     if module.params.get("pbr_uuid"):
         get_pbr(module, result)
     else:
-        list_pbr(module, result)
+        get_pbrs(module, result)
     module.exit_json(**result)
 
 

@@ -273,7 +273,7 @@ def get_vm(module, result):
     result["response"] = resp
 
 
-def list_vm(module, result):
+def get_vms(module, result):
     vm = VM(module)
     spec, error = vm.get_info_spec()
 
@@ -293,7 +293,7 @@ def run_module():
     if module.params.get("vm_uuid"):
         get_vm(module, result)
     else:
-        list_vm(module, result)
+        get_vms(module, result)
 
     module.exit_json(**result)
 
