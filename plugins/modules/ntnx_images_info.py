@@ -194,7 +194,7 @@ def get_image(module, result):
     result["response"] = resp
 
 
-def get_all_images(module, result):
+def get_specific_images(module, result):
     image = Image(module)
     spec, err = image.get_info_spec()
     if err:
@@ -218,7 +218,7 @@ def run_module():
     if module.params.get("image_uuid"):
         get_image(module, result)
     else:
-        get_all_images(module, result)
+        get_specific_images(module, result)
 
     module.exit_json(**result)
 
