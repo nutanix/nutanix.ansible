@@ -1233,9 +1233,11 @@ def get_module_spec():
     icmp_spec = dict(code=dict(type="int"), type=dict(type="int"))
 
     filters_spec = dict(
-        type=dict(type="str"),
-        kind_list=dict(type="list", elements="str"),
-        params=dict(type="dict"),
+        # type=dict(type="str"),
+        # kind_list=dict(type="list", elements="str"),
+        params=dict(type="dict", options=dict(
+            apptype=dict(),
+        )),
     )
 
     protocol_spec = dict(
@@ -1253,25 +1255,32 @@ def get_module_spec():
         peer_specification_type=dict(
             type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
         ),
-        filter=dict(type="dict", options=filters_spec),
+        categories=dict(type="dict", options=filters_spec),
         default_internal_policy=dict(type="str", choices=["ALLOW_ALL", "DENY_ALL"]),
     )
 
+
     whitelisted_traffic = dict(
-        peer_specification_type=dict(
-            type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
-        ),
-        filter=dict(type="dict", options=filters_spec),
-        address_group_inclusion_list=dict(
+        # peer_specification_type=dict(
+        #     type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
+        # ),
+        categories=dict(type="dict", options=dict(
+            apptype=dict(),
+            apptype_filter_by_category=dict(),
+            apptier=dict(),
+        )),
+        addresses=dict(
+        # address_group_inclusion_list=dict(
             type="list", elements="dict", options=group_spec
         ),
+        allow_all=dict(),
         ip_subnet=dict(type="dict", options=network_spec),
-        service_group_list=dict(type="list", elements="dict", options=group_spec),
-        icmp_type_code_list=dict(type="list", elements="dict", options=icmp_spec),
-        network_function_chain_reference=dict(
-            type="dict", options=dict(uuid=dict(type="str"))
-        ),
-        expiration_time=dict(type="str"),
+        # service_group_list=dict(type="list", elements="dict", options=group_spec),
+        # icmp_type_code_list=dict(type="list", elements="dict", options=icmp_spec),
+        # network_function_chain_reference=dict(
+        #     type="dict", options=dict(uuid=dict(type="str"))
+        # ),
+        expiration_time=dict(type="str"), #need to check in UI payload
         description=dict(type="str"),
         rule_id=dict(type="int"),
         state=dict(type="str", choices=["absent"]),
@@ -1279,32 +1288,31 @@ def get_module_spec():
             type="dict",
             options=protocol_spec,
             apply_defaults=True,
-            mutually_exclusive=[("tcp", "udp", "icmp")],
+            mutually_exclusive=[("tcp", "udp", "icmp", "service")],
         ),
     )
-
     rule_spec = dict(
         target_group=dict(type="dict", options=target_spec),
-        inbound_allow_list=dict(
+        inbounds=dict(
             type="list", elements="dict", options=whitelisted_traffic
         ),
-        outbound_allow_list=dict(
+        outbounds=dict(
             type="list", elements="dict", options=whitelisted_traffic
         ),
         action=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
 
     isolation_rule_spec = dict(
-        first_entity_filter=dict(type="dict", options=filters_spec),
-        second_entity_filter=dict(type="dict", options=filters_spec),
-        action=dict(type="str", choices=["MONITOR", "APPLY"]),
+        isolate_category=dict(type="dict"),
+        from_category=dict(type="dict"),
+        subset_category=dict(type="dict"),
     )
-
     module_args = dict(
         name=dict(type="str"),
         security_rule_uuid=dict(type="str"),
         allow_ipv6_traffic=dict(type="bool"),
-        is_policy_hitlog_enabled=dict(type="bool"),
+        policy_hitlog=dict(type="bool"),
+        policy_mode=dict(type="str", choices=["MONITOR", "APPLY"]),
         vdi_rule=dict(type="dict", options=rule_spec),
         app_rule=dict(type="dict", options=rule_spec),
         isolation_rule=dict(type="dict", options=isolation_rule_spec),

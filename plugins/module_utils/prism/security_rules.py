@@ -85,21 +85,29 @@ class SecurityRule(Prism):
         return payload, None
 
     def _build_isolation_rule(self, payload, value):
-        if payload["spec"]["resources"].get("isolation_rule"):
-            isolation_rule = payload["spec"]["resources"]["isolation_rule"]
-            if value.get("first_entity_filter"):
-                self._generate_filter_spec(
-                    isolation_rule["first_entity_filter"], value["first_entity_filter"]
-                )
-            if value.get("second_entity_filter"):
-                self._generate_filter_spec(
-                    isolation_rule["second_entity_filter"],
-                    value["second_entity_filter"],
-                )
-            if value.get("action"):
-                isolation_rule["action"] = value["action"]
-        else:
-            payload["spec"]["resources"]["isolation_rule"] = value
+        # if payload["spec"]["resources"].get("isolation_rule"):
+        isolation_rule = payload["spec"]["resources"].get("isolation_rule", {})
+        if value.get("isolate_category"):
+            isolation_rule["first_entity_filter"] = self._generate_filter_spec(
+                {}, value["isolate_category"]
+            )
+        if value.get("from_category"):
+            isolation_rule["second_entity_filter"] = self._generate_filter_spec(
+                {}, value["from_category"]
+            )
+        if value.get("subset_category"):
+            category_key = next(iter(value["subset_category"]))
+            category_value = value["subset_category"][category_key]
+            for category in isolation_rule.values():
+                if category_key in category["params"]:
+                    category["params"][category_key].extend(category_value)
+                else:
+                    category["params"].update(value["subset_category"])
+
+
+        if self.module.params.get("policy_mode"): #todo
+            isolation_rule["action"] = self.module.params["policy_mode"]
+        payload["spec"]["resources"]["isolation_rule"] = isolation_rule
         return payload, None
 
     def _build_quarantine_rule(self, payload, value):
@@ -161,12 +169,11 @@ class SecurityRule(Prism):
             payload["icmp_type_code_list"] = config["icmp"]
 
     def _generate_filter_spec(self, payload, value):
-        if value.get("type"):
-            payload["type"] = value["type"]
-        if value.get("kind_list"):
-            payload["kind_list"] = value["kind_list"]
-        if value.get("params"):
-            payload["params"] = value["params"]
+        payload["type"] = "CATEGORIES_MATCH_ALL"
+        payload["kind_list"] = ["vm"]
+
+        payload["params"] = value
+        return payload
 
     def _filter_by_uuid(self, uuid, items_list):
         try:
