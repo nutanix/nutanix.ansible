@@ -60,8 +60,8 @@ class ImagePlacementPolicy(Prism):
             payload["metadata"]["categories_mapping"] = categories
         return payload, None
 
-    def _build_spec_remove_categories(self, payload, flag):
-        if flag and payload["metadata"].get("categories_mapping"):
+    def _build_spec_remove_categories(self, payload, remove_categories):
+        if remove_categories and payload["metadata"].get("categories_mapping"):
             payload["metadata"]["use_categories_mapping"] = True
             payload["metadata"]["categories_mapping"] = {}
         return payload, None

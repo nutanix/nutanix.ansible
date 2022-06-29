@@ -250,7 +250,7 @@ def get_policy(module, result):
     result["response"] = resp
 
 
-def get_particular_policies(module, result):
+def get_specific_policies(module, result):
     policy_obj = ImagePlacementPolicy(module)
     spec, err = policy_obj.get_info_spec()
     if err:
@@ -276,7 +276,7 @@ def run_module():
     if module.params.get("policy_uuid"):
         get_policy(module, result)
     else:
-        get_particular_policies(module, result)
+        get_specific_policies(module, result)
 
     module.exit_json(**result)
 
