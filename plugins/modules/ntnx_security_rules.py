@@ -1233,11 +1233,14 @@ def get_module_spec():
     icmp_spec = dict(code=dict(type="int"), type=dict(type="int"))
 
     filters_spec = dict(
-        # type=dict(type="str"),
-        # kind_list=dict(type="list", elements="str"),
         params=dict(type="dict", options=dict(
             apptype=dict(),
         )),
+    )
+    categories_spec = dict(
+        apptype=dict(type="str"),
+        apptype_filter_by_category=dict(type="dict"),
+        apptier=dict(type="str"),
     )
 
     protocol_spec = dict(
@@ -1255,20 +1258,13 @@ def get_module_spec():
         peer_specification_type=dict(
             type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
         ),
-        categories=dict(type="dict", options=filters_spec),
+        categories=dict(type="dict", options=categories_spec),
         default_internal_policy=dict(type="str", choices=["ALLOW_ALL", "DENY_ALL"]),
     )
 
 
     whitelisted_traffic = dict(
-        # peer_specification_type=dict(
-        #     type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
-        # ),
-        categories=dict(type="dict", options=dict(
-            apptype=dict(),
-            apptype_filter_by_category=dict(),
-            apptier=dict(),
-        )),
+        categories=dict(type="dict"),
         addresses=dict(
         # address_group_inclusion_list=dict(
             type="list", elements="dict", options=group_spec
@@ -1299,7 +1295,7 @@ def get_module_spec():
         outbounds=dict(
             type="list", elements="dict", options=whitelisted_traffic
         ),
-        action=dict(type="str", choices=["MONITOR", "APPLY"]),
+        # action=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
 
     isolation_rule_spec = dict(

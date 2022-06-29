@@ -85,16 +85,14 @@ class SecurityRule(Prism):
         return payload, None
 
     def _build_isolation_rule(self, payload, value):
-        # if payload["spec"]["resources"].get("isolation_rule"):
         isolation_rule = payload["spec"]["resources"].get("isolation_rule", {})
         if value.get("isolate_category"):
-            isolation_rule["first_entity_filter"] = self._generate_filter_spec(
-                {}, value["isolate_category"]
-            )
+            isolation_rule["first_entity_filter"] = self._get_default_filter_spec()
+            isolation_rule["first_entity_filter"]["params"] = value["isolate_category"]
+
         if value.get("from_category"):
-            isolation_rule["second_entity_filter"] = self._generate_filter_spec(
-                {}, value["from_category"]
-            )
+            isolation_rule["second_entity_filter"] = self._get_default_filter_spec()
+            isolation_rule["second_entity_filter"]["params"] = value["from_category"]
         if value.get("subset_category"):
             category_key = next(iter(value["subset_category"]))
             category_value = value["subset_category"][category_key]
@@ -104,8 +102,7 @@ class SecurityRule(Prism):
                 else:
                     category["params"].update(value["subset_category"])
 
-
-        if self.module.params.get("policy_mode"): #todo
+        if self.module.params.get("policy_mode"):
             isolation_rule["action"] = self.module.params["policy_mode"]
         payload["spec"]["resources"]["isolation_rule"] = isolation_rule
         return payload, None
@@ -123,18 +120,33 @@ class SecurityRule(Prism):
 
     def _build_spec_rule(self, payload, value):
         rule = payload
+
         if value.get("target_group"):
-            rule["target_group"] = value["target_group"]
-        if value.get("inbound_allow_list"):
+            target_group = {}
+            params = {}
+            categories = value["target_group"].get("categories", {})
+            if categories.get("apptype"):
+                params["AppType"] = [categories["apptype"]]
+            if categories.get("apptier"):
+                params["AppTier"] = [categories.get("apptier")]
+            if categories.get("apptype_filter_by_category"):
+                params.update(**categories["apptype_filter_by_category"])
+
+            target_group["filter"] = self._get_default_filter_spec()
+            target_group["filter"]["params"] = params
+            target_group["peer_specification_type"] = "FILTER"
+            payload["target_group"] = target_group
+
+        if value.get("inbounds"):
             rule["inbound_allow_list"] = self._generate_bound_spec(
-                rule.get("inbound_allow_list", []), value["inbound_allow_list"]
+                rule.get("inbound_allow_list", []), value["inbounds"]
             )
-        if value.get("outbound_allow_list"):
+        if value.get("outbounds"):
             rule["outbound_allow_list"] = self._generate_bound_spec(
-                rule.get("outbound_allow_list", []), value["outbound_allow_list"]
+                rule.get("outbound_allow_list", []), value["outbounds"]
             )
-        if value.get("action"):
-            rule["action"] = value["action"]
+        if self.module.params.get("policy_mode"):
+            rule["action"] = self.module.params["policy_mode"]
         return rule
 
     def _generate_bound_spec(self, payload, list_of_rules):
@@ -146,13 +158,18 @@ class SecurityRule(Prism):
                     continue
             else:
                 rule_spec = {}
-            for key, value in rule.items():
-                if key == "filter" and rule_spec.get(key):
-                    self._generate_filter_spec(rule_spec[key], value)
-                elif key == "protocol":
-                    self._generate_protocol_spec(rule_spec, value)
-                else:
-                    rule_spec[key] = value
+            if rule.get("allow_all"):
+                rule_spec["peer_specification_type"] = "ALL"
+            elif rule.get("categories"):
+                rule_spec["filter"] = self._get_default_filter_spec()
+                rule_spec["filter"]["params"] = rule["categories"]
+                rule_spec["peer_specification_type"] = "FILTER"
+            elif rule.get("ip_subnet"):
+                rule_spec["ip_subnet"] = rule["ip_subnet"]
+                rule_spec["peer_specification_type"] = "IP_SUBNET"
+            if rule.get("protocol"):
+                self._generate_protocol_spec(rule_spec, rule["protocol"])
+
             if not rule_spec.get("rule_id"):
                 payload.append(rule_spec)
         return payload
@@ -168,12 +185,14 @@ class SecurityRule(Prism):
             payload["protocol"] = "ICMP"
             payload["icmp_type_code_list"] = config["icmp"]
 
-    def _generate_filter_spec(self, payload, value):
-        payload["type"] = "CATEGORIES_MATCH_ALL"
-        payload["kind_list"] = ["vm"]
-
-        payload["params"] = value
-        return payload
+    def _get_default_filter_spec(self):
+        return deepcopy(
+            {
+                "type": "CATEGORIES_MATCH_ALL",
+                "kind_list": ["vm"],
+                "params": {},
+            }
+        )
 
     def _filter_by_uuid(self, uuid, items_list):
         try:
