@@ -9,15 +9,15 @@
         kind_list:
           - vm
         params:
-          CalmApplication:
-            - test_check_123_asadsdas
+          Environment:
+            - Dev
       second_entity_filter:
         type: CATEGORIES_MATCH_ALL
         kind_list:
           - vm
         params:
-          CalmApplication:
-            - test_check_123anjsndjasdasd
+          Environment:
+            - Production
       action: MONITOR
   register: result
   ignore_errors: true
@@ -46,15 +46,15 @@
         kind_list:
           - vm
         params:
-          CalmApplication:
-            - test_check_123_asadsdas
+          Environment:
+            - Dev
       second_entity_filter:
         type: CATEGORIES_MATCH_ALL
         kind_list:
           - vm
         params:
-          CalmApplication:
-            - test_check_123anjsndjasdasd
+          Environment:
+            - Production
       action: MONITOR
   register: result
   ignore_errors: true

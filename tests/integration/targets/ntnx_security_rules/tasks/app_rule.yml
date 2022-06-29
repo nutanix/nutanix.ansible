@@ -22,20 +22,49 @@
               AppFamily:
                 - Databases
                 - DevOps
-          icmp_type_code_list:
-            - code: 1
-              type: 1
-          tcp_port_range_list:
-            - start_port: 22
-              end_port: 80
-          udp_port_range_list:
-            - start_port: 82
-              end_port: 8080
+          protocol:
+              tcp:
+                - start_port: 22
+                  end_port: 80
+        - peer_specification_type: FILTER
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+                - DevOps
+          protocol:
+              icmp:
+                - code: 1
+                  type: 1
+        - peer_specification_type: FILTER
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+                - DevOps
+          protocol: 
+            udp:
+              - start_port: 82
+                end_port: 8080
+        - peer_specification_type: IP_SUBNET
+          filter:
+            type: CATEGORIES_MATCH_ALL
+            kind_list:
+              - vm
+            params:
+              AppFamily:
+                - Databases
+                - DevOps
           ip_subnet:
             prefix_length: 24
             ip: 192.168.1.0
           description: test description
-          protocol: ALL
       outbound_allow_list:
         - peer_specification_type: FILTER
           filter:
@@ -46,6 +75,10 @@
               AppFamily:
                 - Databases
                 - DevOps
+          protocol: 
+            icmp:
+              - code: 1
+                type: 1
       action: MONITOR
     allow_ipv6_traffic: true
     is_policy_hitlog_enabled: true
@@ -62,24 +95,30 @@
     fail_msg: ' fail: unable to create app security rule with inbound and outbound list'
     success_msg: 'pass: create app security rule with inbound and outbound list successfully'
 
-- name: update app security rule with   outbound list
+- name: update app security rule by adding to outbound list and remove tule from inbound list
   ntnx_security_rules:
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
     app_rule:
       action: APPLY
+      inbound_allow_list:
+        - 
+          rule_id: "{{result.response.spec.resources.app_rule.inbound_allow_list.0.rule_id}}"
+          state: absent
       outbound_allow_list:
-        - icmp_type_code_list:
-            - code: 1
-              type: 1
-          peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
-              AppFamily:
-                - Databases
-                - DevOps
+          -
+            peer_specification_type: FILTER
+            protocol: 
+              icmp:
+                - code: 1
+                  type: 1
+            filter:
+              type: CATEGORIES_MATCH_ALL
+              kind_list:
+                - vm
+              params:
+                AppFamily:
+                  - Databases
+                  - DevOps
   register: result
   ignore_errors: true
 
@@ -90,6 +129,7 @@
       - result.failed == false
       - result.response.status.state == 'COMPLETE'
       - result.response.spec.resources.app_rule.action == "APPLY"
+      - result.response.spec.resources.app_rule.outbound_allow_list.0.icmp_type_code_list is defined
     fail_msg: ' fail: unable to update app security rule with   outbound list '
     success_msg: 'pass :update app security rule with   outbound list successfully'
 
