@@ -16,12 +16,14 @@ from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
 from .subnets import Subnet
+from spec.categories_mapping import CategoriesMapping
 
 
 class VM(Prism):
     def __init__(self, module):
         resource_type = "/vms"
         super(VM, self).__init__(module, resource_type=resource_type)
+        categories_mapping_obj = CategoriesMapping()
         self.params_without_defaults = _load_params()
         self.require_vm_restart = False
         self.build_spec_methods = {
@@ -37,8 +39,8 @@ class VM(Prism):
             "boot_config": self._build_spec_boot_config,
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
-            "categories": self._build_spec_categories,
-            "remove_categories": self._build_spec_remove_categories,
+            "categories": categories_mapping_obj.build_categories_mapping_spec,
+            "remove_categories": categories_mapping_obj.build_remove_all_categories_spec,
         }
 
     @staticmethod
@@ -322,18 +324,6 @@ class VM(Prism):
 
     def _build_spec_timezone(self, payload, value):
         payload["spec"]["resources"]["hardware_clock_timezone"] = value
-        return payload, None
-
-    def _build_spec_categories(self, payload, value):
-        if value != payload["metadata"].get("categories_mapping", {}):
-            payload["metadata"]["categories_mapping"] = value
-            payload["metadata"]["use_categories_mapping"] = True
-        return payload, None
-    
-    def _build_spec_remove_categories(self, payload, remove_categories):
-        if remove_categories and payload["metadata"].get("categories_mapping"):
-            payload["metadata"]["categories_mapping"] = {}
-            payload["metadata"]["use_categories_mapping"] = True
         return payload, None
 
     def _check_and_set_require_vm_restart(self, current_value, new_value):
