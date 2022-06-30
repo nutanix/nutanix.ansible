@@ -179,7 +179,6 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: False
-    state: absent
     policy_uuid: "<policy-uuid>"
   register: result
 """

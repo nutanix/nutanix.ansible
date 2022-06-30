@@ -10,7 +10,6 @@
     name: integration-test-image-with-uri
     wait: true
   register: result
-  register: result
 
 - name: Creation Status
   assert: 
