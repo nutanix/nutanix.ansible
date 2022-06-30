@@ -1221,15 +1221,9 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
-    group_spec = dict(
-        uuid=dict(type="str"),
-        name=dict(type="str"),
-    )
+    group_spec = dict(uuid=dict(type="str"), name=dict(type="str"))
 
-    tcp_and_udp_spec = dict(
-        start_port=dict(type="int"),
-        end_port=dict(type="int"),
-    )
+    tcp_and_udp_spec = dict(start_port=dict(type="int"), end_port=dict(type="int"))
 
     network_spec = dict(ip=dict(type="str"), prefix_length=dict(type="int"))
 
@@ -1250,7 +1244,7 @@ def get_module_spec():
             options=icmp_spec,
             required_by={"code": "type"},
         ),
-        service=dict(type="dict",  options=group_spec),
+        service=dict(type="dict", options=group_spec),
     )
 
     target_spec = dict(
@@ -1261,14 +1255,13 @@ def get_module_spec():
         default_internal_policy=dict(type="str", choices=["ALLOW_ALL", "DENY_ALL"]),
     )
 
-
     whitelisted_traffic = dict(
         categories=dict(type="dict"),
-        address=dict(type="dict",  options=group_spec),
+        address=dict(type="dict", options=group_spec),
         allow_all=dict(),
         ip_subnet=dict(type="dict", options=network_spec),
         # service_group_list=dict(type="list", elements="dict", options=group_spec),
-        expiration_time=dict(type="str"), #need to check in UI payload
+        expiration_time=dict(type="str"),  # need to check in UI payload
         description=dict(type="str"),
         rule_id=dict(type="int"),
         state=dict(type="str", choices=["absent"]),
@@ -1281,12 +1274,8 @@ def get_module_spec():
     )
     rule_spec = dict(
         target_group=dict(type="dict", options=target_spec),
-        inbounds=dict(
-            type="list", elements="dict", options=whitelisted_traffic
-        ),
-        outbounds=dict(
-            type="list", elements="dict", options=whitelisted_traffic
-        ),
+        inbounds=dict(type="list", elements="dict", options=whitelisted_traffic),
+        outbounds=dict(type="list", elements="dict", options=whitelisted_traffic),
         policy_mode=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
 
@@ -1402,12 +1391,8 @@ def run_module():
         mutually_exclusive=[
             ("vdi_rule", "app_rule", "isolation_rule", "quarantine_rule")
         ],
-        required_by={
-            "quarantine_rule": "security_rule_uuid",
-        },
-        required_one_of=[
-            ("security_rule_uuid", "name"),
-        ],
+        required_by={"quarantine_rule": "security_rule_uuid"},
+        required_one_of=[("security_rule_uuid", "name")],
     )
     remove_param_with_none_value(module.params)
     result = {
