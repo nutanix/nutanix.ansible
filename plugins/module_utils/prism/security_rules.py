@@ -2,14 +2,16 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-__metaclass__ = type
-
 from copy import deepcopy
 
 from .address_groups import get_address_uuid
-from .service_groups import get_service_uuid
 from .prism import Prism
 from .projects import Project
+from .service_groups import get_service_uuid
+
+__metaclass__ = type
+
+
 
 
 class SecurityRule(Prism):
@@ -36,9 +38,7 @@ class SecurityRule(Prism):
                 "metadata": {"kind": "network_security_rule"},
                 "spec": {
                     "name": None,
-                    "resources": {
-                        "is_policy_hitlog_enabled": False,
-                    },
+                    "resources": {"is_policy_hitlog_enabled": False},
                 },
             }
         )
@@ -83,19 +83,27 @@ class SecurityRule(Prism):
 
     def _build_app_rule(self, payload, value):
         app_rule = payload["spec"]["resources"].get("app_rule", {})
-        payload["spec"]["resources"]["app_rule"] = self._build_spec_rule(app_rule, value)
+        payload["spec"]["resources"]["app_rule"] = self._build_spec_rule(
+            app_rule, value
+        )
         return payload, None
 
     def _build_isolation_rule(self, payload, value):
         isolation_rule = payload["spec"]["resources"].get("isolation_rule", {})
-        if not isolation_rule.get("first_entity_filter") and not isolation_rule.get("second_entity_filter"):
+        if not isolation_rule.get("first_entity_filter") and not isolation_rule.get(
+            "second_entity_filter"
+        ):
             if value.get("isolate_category"):
                 isolation_rule["first_entity_filter"] = self._get_default_filter_spec()
-                isolation_rule["first_entity_filter"]["params"] = value["isolate_category"]
+                isolation_rule["first_entity_filter"]["params"] = value[
+                    "isolate_category"
+                ]
 
             if value.get("from_category"):
                 isolation_rule["second_entity_filter"] = self._get_default_filter_spec()
-                isolation_rule["second_entity_filter"]["params"] = value["from_category"]
+                isolation_rule["second_entity_filter"]["params"] = value[
+                    "from_category"
+                ]
             if value.get("subset_category"):
                 category_key = next(iter(value["subset_category"]))
                 category_value = value["subset_category"][category_key]
@@ -113,7 +121,9 @@ class SecurityRule(Prism):
     def _build_quarantine_rule(self, payload, value):
         if payload["spec"]["resources"].get("quarantine_rule"):
             quarantine_rule = payload["spec"]["resources"]["quarantine_rule"]
-            payload["spec"]["resources"]["quarantine_rule"] = self._build_spec_rule(quarantine_rule, value)
+            payload["spec"]["resources"]["quarantine_rule"] = self._build_spec_rule(
+                quarantine_rule, value
+            )
         return payload, None
 
     def _build_spec_categories(self, payload, value):
@@ -177,10 +187,7 @@ class SecurityRule(Prism):
                     address_group["kind"] = "address_group"
                     rule_spec["address_group_inclusion_list"] = [address_group]
                 elif address_group.get("name"):
-                    uuid, error = get_address_uuid(
-                        address_group,
-                        self.module
-                    )
+                    uuid, error = get_address_uuid(address_group, self.module)
                     if error:
                         self.module.fail_json(
                             msg="Failed generating Security Rule Spec",
@@ -217,10 +224,7 @@ class SecurityRule(Prism):
                 service["kind"] = "service_group"
                 payload["service_group_list"] = [service]
             elif service.get("name"):
-                uuid, error = get_service_uuid(
-                    service,
-                    self.module
-                )
+                uuid, error = get_service_uuid(service, self.module)
                 if error:
                     self.module.fail_json(
                         msg="Failed generating Security Rule Spec",
@@ -233,11 +237,7 @@ class SecurityRule(Prism):
 
     def _get_default_filter_spec(self):
         return deepcopy(
-            {
-                "type": "CATEGORIES_MATCH_ALL",
-                "kind_list": ["vm"],
-                "params": {},
-            }
+            {"type": "CATEGORIES_MATCH_ALL", "kind_list": ["vm"], "params": {}}
         )
 
     def _filter_by_uuid(self, uuid, items_list):
