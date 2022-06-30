@@ -8,12 +8,12 @@ disk_image:
   centos: "CentOS-7-cloudinit" 
 
 cluster:
-  name: auto_cluster_prod_f30b41e8b814
-  uuid: 0005e1db-b0a4-b937-3507-ac1f6b60292f
+  name: auto_cluster_prod_1a87d3b4b507
+  uuid: 0005e298-1741-9353-3507-ac1f6b60292f
 
 virtual_switch:
   name: vs0
-  uuid: 09efb8dc-a14c-4296-b954-656f6479a55e
+  uuid: 7a88a08c-cc4c-44ef-b8c6-a0e8e970311f
 external_nat_subnets:
   name: integration_test_Ext-Nat
   vlan_id: 103
