@@ -16,14 +16,18 @@ class Image(Prism):
         if upload_image:
             additional_headers = {
                 "Content-Type": "application/octet-stream",
-                "Accept": "application/json"
+                "Accept": "application/json",
             }
 
             # add checksum headers if given incase of local upload
             checksum = module.params.get("checksum")
             if checksum and module.params.get("source_path"):
-                additional_headers["X-Nutanix-Checksum-Type"] = checksum["checksum_algorithm"]
-                additional_headers["X-Nutanix-Checksum-Bytes"] = checksum["checksum_value"]
+                additional_headers["X-Nutanix-Checksum-Type"] = checksum[
+                    "checksum_algorithm"
+                ]
+                additional_headers["X-Nutanix-Checksum-Bytes"] = checksum[
+                    "checksum_value"
+                ]
 
         resource_type = "/images"
         super(Image, self).__init__(
