@@ -289,9 +289,7 @@ def get_module_spec():
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
         remove_categories=dict(type="bool", required=False, default=False),
-        placement_type=dict(
-            type="str", choices=["hard", "soft"], required=False
-        ),
+        placement_type=dict(type="str", choices=["hard", "soft"], required=False),
         image_categories=dict(type="dict", required=False),
         cluster_categories=dict(type="dict", required=False),
         categories=dict(type="dict", required=False),

@@ -970,8 +970,8 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive = [
-          ("categories", "remove_categories"),
+        mutually_exclusive=[
+            ("categories", "remove_categories"),
         ],
         required_if=[("vm_uuid", None, ("name",)), ("state", "absent", ("vm_uuid",))],
     )

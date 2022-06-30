@@ -4,8 +4,9 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+
 class CategoriesMapping:
-    """"Categories mapping related helpers and spec"""
+    """ Categories mapping related helpers and spec"""
 
     def build_categories_mapping_spec(self, payload, categories_mapping):
         """
@@ -21,7 +22,7 @@ class CategoriesMapping:
             payload["metadata"]["use_categories_mapping"] = True
             payload["metadata"]["categories_mapping"] = categories_mapping
         return payload, None
-    
+
     def build_remove_all_categories_spec(self, payload, remove_categories):
         """
         This routine removes all categories from pc v3 api input payload
