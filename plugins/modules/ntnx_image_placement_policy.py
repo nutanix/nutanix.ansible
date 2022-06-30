@@ -106,6 +106,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: False
     name: "test_policy_1"
+    placement_type: soft
     image_categories: 
       AppFamily:
         - Backup
