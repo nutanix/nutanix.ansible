@@ -1248,9 +1248,6 @@ def get_module_spec():
     )
 
     target_spec = dict(
-        peer_specification_type=dict(
-            type="str", choices=["ALL", "FILTER", "IP_SUBNET"]
-        ),
         categories=dict(type="dict", options=categories_spec),
         default_internal_policy=dict(type="str", choices=["ALLOW_ALL", "DENY_ALL"]),
     )
@@ -1277,13 +1274,13 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=whitelisted_traffic,
-            mutually_exclusive=[("address", "categories", "ip_subnet")],
+            mutually_exclusive=[("address", "categories", "ip_subnet", "allow_all")],
         ),
         outbounds=dict(
             type="list",
             elements="dict",
             options=whitelisted_traffic,
-            mutually_exclusive=[("address", "categories", "ip_subnet")],
+            mutually_exclusive=[("address", "categories", "ip_subnet", "allow_all")],
         ),
         policy_mode=dict(type="str", choices=["MONITOR", "APPLY"]),
     )

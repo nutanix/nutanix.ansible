@@ -125,8 +125,9 @@ class SecurityRule(Prism):
         return payload, None
 
     def _build_spec_categories(self, payload, value):
-        payload["metadata"]["categories_mapping"] = value
-        payload["metadata"]["use_categories_mapping"] = True
+        if payload["metadata"].get("categories_mapping", {}) != value:
+            payload["metadata"]["categories_mapping"] = value
+            payload["metadata"]["use_categories_mapping"] = True
         return payload, None
 
     def _build_spec_rule(self, payload, value):
