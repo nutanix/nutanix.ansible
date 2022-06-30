@@ -67,7 +67,7 @@ options:
   allow_ipv6_traffic:
     description: Allow traffic from ipv6
     type: bool
-  is_policy_hitlog_enabled:
+  policy_hitlog::
     description: write
     type: bool
   vdi_rule:
@@ -1010,7 +1010,7 @@ EXAMPLES = r"""
                 - Databases
       action: MONITOR
     allow_ipv6_traffic: true
-    is_policy_hitlog_enabled: true
+    policy_hitlog:: true
   register: result
 - name: update app security rule with outbound list
   ntnx_security_rules:
@@ -1067,7 +1067,7 @@ EXAMPLES = r"""
                 - DevOps
       action: MONITOR
     allow_ipv6_traffic: true
-    is_policy_hitlog_enabled: true
+    policy_hitlog:: true
   register: result
 """
 
@@ -1150,7 +1150,7 @@ spec:
                 - Apache_Spark
             type: CATEGORIES_MATCH_ALL
           peer_specification_type: FILTER
-      is_policy_hitlog_enabled: true
+      policy_hitlog:: true
 status:
   description: An intentful representation of a subnet status
   returned: always
@@ -1198,7 +1198,7 @@ status:
                 - Apache_Spark
             type: CATEGORIES_MATCH_ALL
           peer_specification_type: FILTER
-      is_policy_hitlog_enabled: true
+      policy_hitlog:: true
     state: COMPLETE
 security_rule_uuid:
   description: The created security rule  uuid
