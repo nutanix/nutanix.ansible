@@ -243,14 +243,14 @@ def get_module_spec():
     return module_args
 
 
-def get_policy(module, result):
+def get_placement_policy(module, result):
     policy_obj = ImagePlacementPolicy(module)
     uuid = module.params.get("policy_uuid")
     resp = policy_obj.read(uuid)
     result["response"] = resp
 
 
-def get_specific_policies(module, result):
+def get_placement_policies(module, result):
     policy_obj = ImagePlacementPolicy(module)
     spec, err = policy_obj.get_info_spec()
     if err:
@@ -274,9 +274,9 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("policy_uuid"):
-        get_policy(module, result)
+        get_placement_policy(module, result)
     else:
-        get_specific_policies(module, result)
+        get_placement_policies(module, result)
 
     module.exit_json(**result)
 
