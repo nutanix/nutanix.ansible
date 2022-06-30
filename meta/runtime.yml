@@ -7,6 +7,7 @@ action_groups:
   - ntnx_vms
   - ntnx_vpcs
   - ntnx_subnets
+  - ntnx_images
   - ntnx_vms_ova
   - ntnx_vms_clone
   - ntnx_floating_ips_info
@@ -14,6 +15,7 @@ action_groups:
   - ntnx_vms_info
   - ntnx_vpcs_info
   - ntnx_subnets_info
+  - ntnx_images_info
   - ntnx_foundation_aos_packages_info
   - ntnx_foundation_bmc_ipmi_config
   - ntnx_foundation_discover_nodes_info

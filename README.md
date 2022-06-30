@@ -98,24 +98,26 @@ ansible-playbook examples/iaas/iaas.yml
 
 | Name | Description |
 | --- | --- |
+| ntnx_images | Create, update or delete a image. |
+| ntnx_images_info | List existing images. |
+| ntnx_floating_ips | Create or delete a Floating Ip. |
+| ntnx_floating_ips_info | List existing Floating_Ips. |
+| ntnx_pbrs | Create or delete a PBR. |
+| ntnx_pbrs_info | List existing PBRs. |
+| ntnx_subnets | Create or delete a Subnet. |
+| ntnx_subnets_info | List existing Subnets. |
 | ntnx_vms | Create or delete a VM. |
 | ntnx_vms_clone | Clone VM. |
 | ntnx_vms_ova | Create OVA image from VM. |
 | ntnx_vms_info | List existing VMs. |
 | ntnx_vpcs | Create or delete a VPC. |
 | ntnx_vpcs_info | List existing VPCs. |
-| ntnx_subnets | Create or delete a Subnet. |
-| ntnx_subnets_info | List existing Subnets. |
-| ntnx_floating_ips | Create or delete a Floating Ip. |
-| ntnx_floating_ips_info | List existing Floating_Ips. |
-| ntnx_pbrs | Create or delete a PBR. |
-| ntnx_pbrs_info | List existing PBRs. |
 | ntnx_foundation | Image nodes and create new cluster. |
-| ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
-| ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |
 | ntnx_foundation_aos_packages_info | List the AOS packages uploaded to Foundation. |
+| ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
 | ntnx_foundation_discover_nodes_info | List the nodes discovered by Foundation. |
 | ntnx_foundation_hypervisor_images_info | List the hypervisor images uploaded to Foundation. |
+| ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |
 | ntnx_foundation_node_network_info | Get node network information discovered by Foundation. |
 | ntnx_foundation_central | Create a cluster out of nodes registered with Foundation Central. |
 | ntnx_foundation_central_api_keys | Create a new api key which will be used by remote nodes to authenticate with Foundation Central. |
