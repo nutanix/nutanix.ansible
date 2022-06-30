@@ -22,6 +22,7 @@ class ServiceGroup(Prism):
                     return entity["uuid"]
         return None
 
+
 # Helper functions
 
 

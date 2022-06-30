@@ -22,6 +22,7 @@ class AddressGroup(Prism):
                     return entity["uuid"]
         return None
 
+
 # Helper functions
 
 
