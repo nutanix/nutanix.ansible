@@ -3,85 +3,59 @@
     name: test_app_rule
     app_rule:
       target_group:
-        peer_specification_type: FILTER
-        filter:
-          type: CATEGORIES_MATCH_ALL
-          kind_list:
-            - vm
-          params:
-            AppType:
-              - Apache_Spark
-        default_internal_policy: DENY_ALL
-      inbound_allow_list:
-        - peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
+          categories:
+            apptype: Apache_Spark
+          default_internal_policy: DENY_ALL
+      inbounds:
+        - 
+            categories:
               AppFamily:
                 - Databases
                 - DevOps
-          protocol:
+            protocol:
               tcp:
                 - start_port: 22
                   end_port: 80
-        - peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
+        - 
+            categories:
               AppFamily:
                 - Databases
                 - DevOps
-          protocol:
+            protocol:
+                icmp:
+                  - code: 1
+                    type: 1
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            protocol: 
+              udp:
+                - start_port: 82
+                  end_port: 8080
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            ip_subnet:
+              prefix_length: 24
+              ip: 192.168.1.0
+            description: test description
+      outbounds:
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            protocol: 
               icmp:
                 - code: 1
                   type: 1
-        - peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
-              AppFamily:
-                - Databases
-                - DevOps
-          protocol: 
-            udp:
-              - start_port: 82
-                end_port: 8080
-        - peer_specification_type: IP_SUBNET
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
-              AppFamily:
-                - Databases
-                - DevOps
-          ip_subnet:
-            prefix_length: 24
-            ip: 192.168.1.0
-          description: test description
-      outbound_allow_list:
-        - peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
-              AppFamily:
-                - Databases
-                - DevOps
-          protocol: 
-            icmp:
-              - code: 1
-                type: 1
-      action: MONITOR
+    policy_mode: MONITOR
     allow_ipv6_traffic: true
-    is_policy_hitlog_enabled: true
+    policy_hitlog: true
   register: result
   ignore_errors: true
 
@@ -98,24 +72,19 @@
 - name: update app security rule by adding to outbound list and remove tule from inbound list
   ntnx_security_rules:
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
+    policy_mode: APPLY
     app_rule:
-      action: APPLY
-      inbound_allow_list:
+      inbounds:
         - 
           rule_id: "{{result.response.spec.resources.app_rule.inbound_allow_list.0.rule_id}}"
           state: absent
-      outbound_allow_list:
+      outbounds:
           -
-            peer_specification_type: FILTER
             protocol: 
               icmp:
                 - code: 1
                   type: 1
-            filter:
-              type: CATEGORIES_MATCH_ALL
-              kind_list:
-                - vm
-              params:
+            categories:
                 AppFamily:
                   - Databases
                   - DevOps
