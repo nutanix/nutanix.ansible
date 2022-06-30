@@ -12,8 +12,6 @@ from .service_groups import get_service_uuid
 __metaclass__ = type
 
 
-
-
 class SecurityRule(Prism):
     def __init__(self, module):
         resource_type = "/network_security_rules"
