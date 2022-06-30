@@ -1249,7 +1249,11 @@ def get_module_spec():
     )
 
     target_spec = dict(
-        categories=dict(type="dict", options=categories_spec),
+        categories=dict(
+            type="dict",
+            options=categories_spec,
+            mutually_exclusive=[("apptype", "adgroup")],
+        ),
         default_internal_policy=dict(type="str", choices=["ALLOW_ALL", "DENY_ALL"]),
     )
 
