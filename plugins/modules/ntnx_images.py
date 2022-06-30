@@ -79,7 +79,6 @@ options:
         choices:
             - ISO_IMAGE
             - DISK_IMAGE
-        default: DISK_IMAGE
     version:
         description: The image version, which is composed of a product name and product version.
         required: false
@@ -337,7 +336,6 @@ def get_module_spec():
             type="str",
             required=False,
             choices=["DISK_IMAGE", "ISO_IMAGE"],
-            default="DISK_IMAGE",
         ),
         version=dict(type="dict", options=version, required=False),
         clusters=dict(

@@ -5,6 +5,7 @@
 - name: Create image placement policy with minimal spec
   ntnx_image_placement_policy:
     name: "test_policy_1"
+    placement_type: soft
     image_categories: 
       AppFamily:
         - Backup

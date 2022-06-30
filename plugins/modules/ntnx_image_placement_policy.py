@@ -4,7 +4,6 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-from email.policy import default
 
 __metaclass__ = type
 
@@ -61,7 +60,6 @@ options:
         choices:
             - hard
             - soft
-        default: soft
     image_categories:
         description:
             - categories for images which needs to be affected by this policy
@@ -291,7 +289,7 @@ def get_module_spec():
         desc=dict(type="str", required=False),
         remove_categories=dict(type="bool", required=False, default=False),
         placement_type=dict(
-            type="str", choices=["hard", "soft"], default="soft", required=False
+            type="str", choices=["hard", "soft"], required=False
         ),
         image_categories=dict(type="dict", required=False),
         cluster_categories=dict(type="dict", required=False),

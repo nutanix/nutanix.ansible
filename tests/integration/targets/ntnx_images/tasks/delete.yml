@@ -5,6 +5,7 @@
 - name: Create image with minimal spec and source uri for delete tests
   ntnx_images:
     state: present
+    image_type: DISK_IMAGE
     source_uri: "{{ disk_image.url }}"
     name: integration-test-image-with-uri
     wait: true

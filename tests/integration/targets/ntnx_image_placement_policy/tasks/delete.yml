@@ -5,6 +5,7 @@
 - name: Create image placement policy with minimal spec for delete tests
   ntnx_image_placement_policy:
     name: "test_policy_5"
+    placement_type: soft
     image_categories: 
       AppFamily:
         - Backup

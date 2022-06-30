@@ -5,6 +5,7 @@
 - name: Create image with minimal spec and source uri
   ntnx_images:
     state: present
+    image_type: DISK_IMAGE
     source_uri: "{{ disk_image.url }}"
     name: integration-test-image-with-uri
     wait: true
@@ -15,6 +16,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
+      - result.response.status.resources.image_type == "DISK_IMAGE"
       - result.response.status.name == 'integration-test-image-with-uri'
       - result.response.status.resources.source_uri == "{{ disk_image.url }}"
     fail_msg: "Unable to create image using source_uri"
@@ -31,7 +33,7 @@
     name: integration-test-image-with-upload
     desc: "uploaded image during integration test"
     source_path: "{{ disk_image.dest }}"
-    image_type: "DISK_IMAGE"
+    image_type: "ISO_IMAGE"
     categories:
       Environment:
         - "Dev"
@@ -53,7 +55,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.resources.image_type == "DISK_IMAGE"
+      - result.response.status.resources.image_type == "ISO_IMAGE"
       - result.response.metadata.categories_mapping['AppType'] == ['Default']
       - result.response.metadata.categories_mapping['Environment'] == ['Dev']
       - result.response.status.resources.initial_placement_ref_list[0]['uuid'] == "{{ cluster.uuid }}" 
@@ -116,6 +118,7 @@
   ntnx_images:
     state: present
     source_uri: "www.google.com"
+    image_type: "DISK_IMAGE"
     name: integration-test-image-with-uri
     wait: true
   register: result
