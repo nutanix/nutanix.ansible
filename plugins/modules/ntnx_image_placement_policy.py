@@ -94,7 +94,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
- - Pradeepsingh Bhati (@bhati-pradeep)   
+ - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
@@ -280,9 +280,9 @@ policy_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.image_placement_policy import (
+from ..module_utils.prism.image_placement_policy import (  # noqa: E402
     ImagePlacementPolicy,
-)  # noqa: E402
+)
 from ..module_utils.prism.tasks import Task  # noqa: E402
 
 

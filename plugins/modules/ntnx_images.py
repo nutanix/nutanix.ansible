@@ -59,14 +59,14 @@ options:
         required: false
         type: str
     categories:
-        description: 
+        description:
             - Categories for the image. This allows setting up multiple values from a single key.
             - this will override existing categories with mentioned during update
             - mutually_exclusive with C(remove_categories)
         required: false
         type: dict
     remove_categories:
-        description: 
+        description:
             - set this flag to remove dettach all categories attached to image
             - mutually_exclusive with C(categories)
         type: bool
