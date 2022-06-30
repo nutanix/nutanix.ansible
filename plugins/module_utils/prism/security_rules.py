@@ -143,6 +143,10 @@ class SecurityRule(Prism):
                 params["AppType"] = [categories["apptype"]]
             if categories.get("apptier"):
                 params["AppTier"] = [categories.get("apptier")]
+                if value["target_group"].get("default_internal_policy"):
+                    target_group["default_internal_policy"] = value["target_group"][
+                        "default_internal_policy"
+                    ]
             if categories.get("apptype_filter_by_category"):
                 params.update(**categories["apptype_filter_by_category"])
 
@@ -155,10 +159,14 @@ class SecurityRule(Prism):
             rule["inbound_allow_list"] = self._generate_bound_spec(
                 rule.get("inbound_allow_list", []), value["inbounds"]
             )
+        elif value.get("allow_all_inbounds"):
+            rule["inbound_allow_list"] = [{"peer_specification_type": "ALL"}]
         if value.get("outbounds"):
             rule["outbound_allow_list"] = self._generate_bound_spec(
                 rule.get("outbound_allow_list", []), value["outbounds"]
             )
+        elif value.get("allow_all_outbounds"):
+            rule["outbound_allow_list"] = [{"peer_specification_type": "ALL"}]
         if value.get("policy_mode"):
             rule["action"] = value["policy_mode"]
         return rule
@@ -172,9 +180,7 @@ class SecurityRule(Prism):
                     continue
             else:
                 rule_spec = {}
-            if rule.get("allow_all"):
-                rule_spec = {"peer_specification_type": "ALL"}
-            elif rule.get("categories"):
+            if rule.get("categories"):
                 rule_spec["filter"] = self._get_default_filter_spec()
                 rule_spec["filter"]["params"] = rule["categories"]
                 rule_spec["peer_specification_type"] = "FILTER"

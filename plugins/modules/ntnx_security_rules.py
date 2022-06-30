@@ -1260,7 +1260,6 @@ def get_module_spec():
     whitelisted_traffic = dict(
         categories=dict(type="dict"),
         address=dict(type="dict", options=group_spec),
-        allow_all=dict(type="bool"),
         ip_subnet=dict(type="dict", options=network_spec),
         expiration_time=dict(type="str"),  # need to check in UI payload
         description=dict(type="str"),
@@ -1279,14 +1278,16 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=whitelisted_traffic,
-            mutually_exclusive=[("address", "categories", "ip_subnet", "allow_all")],
+            mutually_exclusive=[("address", "categories", "ip_subnet")],
         ),
+        allow_all_inbounds=dict(type="bool"),
         outbounds=dict(
             type="list",
             elements="dict",
             options=whitelisted_traffic,
-            mutually_exclusive=[("address", "categories", "ip_subnet", "allow_all")],
+            mutually_exclusive=[("address", "categories", "ip_subnet")],
         ),
+        allow_all_outbounds=dict(type="bool"),
         policy_mode=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
 
@@ -1301,10 +1302,22 @@ def get_module_spec():
         security_rule_uuid=dict(type="str"),
         allow_ipv6_traffic=dict(type="bool"),
         policy_hitlog=dict(type="bool"),
-        vdi_rule=dict(type="dict", options=rule_spec),
-        app_rule=dict(type="dict", options=rule_spec),
+        vdi_rule=dict(
+            type="dict",
+            options=rule_spec,
+            mutually_exclusive=[("inbounds", "allow_all_inbounds")],
+        ),
+        app_rule=dict(
+            type="dict",
+            options=rule_spec,
+            mutually_exclusive=[("inbounds", "allow_all_inbounds")],
+        ),
         isolation_rule=dict(type="dict", options=isolation_rule_spec),
-        quarantine_rule=dict(type="dict", options=rule_spec),
+        quarantine_rule=dict(
+            type="dict",
+            options=rule_spec,
+            mutually_exclusive=[("inbounds", "allow_all_inbounds")],
+        ),
     )
 
     return module_args
