@@ -137,6 +137,8 @@ class SecurityRule(Prism):
             target_group = {}
             params = {}
             categories = value["target_group"].get("categories", {})
+            if categories.get("adgroup"):
+                params["ADGroup"] = [categories["adgroup"]]
             if categories.get("apptype"):
                 params["AppType"] = [categories["apptype"]]
             if categories.get("apptier"):

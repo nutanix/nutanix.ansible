@@ -1233,6 +1233,7 @@ def get_module_spec():
         apptype=dict(type="str"),
         apptype_filter_by_category=dict(type="dict"),
         apptier=dict(type="str"),
+        adgroup=dict(type="str"),
     )
 
     protocol_spec = dict(
