@@ -7,8 +7,8 @@
     name: "test_policy_6"
     placement_type: soft
     image_categories: 
-      AppFamily:
-        - Backup
+      AnalyticsExclusions:
+        - EfficiencyMeasurement
     cluster_categories:
       AppTier:
         - Default
@@ -39,8 +39,8 @@
     policy_uuid: "{{ setup_policy.response.metadata.uuid }}"
     placement_type: "soft"
     image_categories: 
-      AppFamily:
-        - Backup
+      AnalyticsExclusions:
+        - EfficiencyMeasurement
     cluster_categories:
       AppTier:
         - Default
@@ -72,8 +72,8 @@
       AppTier:
         - Default
     cluster_categories:
-      AppFamily:
-        - Backup
+      AnalyticsExclusions:
+        - EfficiencyMeasurement
     categories:
       Environment:
         - "Production"
@@ -90,7 +90,7 @@
       - result.response.status.name == 'test_policy_6_updated'
       - result.response.status.description == 'test_policy_6_desc_updated'
       - result.response.status.resources.image_entity_filter.params["AppTier"][0] == 'Default'
-      - result.response.status.resources.cluster_entity_filter.params["AppFamily"][0] == 'Backup'
+      - result.response.status.resources.cluster_entity_filter.params["AnalyticsExclusions"][0] == 'EfficiencyMeasurement'
       - result.response.status.resources.placement_type == 'EXACTLY'
       - result.response.metadata.categories_mapping["Environment"] == ['Production']
       - result.response.metadata.categories_mapping["AppType"] == ['Default']

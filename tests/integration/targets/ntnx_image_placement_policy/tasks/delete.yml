@@ -7,8 +7,8 @@
     name: "test_policy_5"
     placement_type: soft
     image_categories: 
-      AppFamily:
-        - Backup
+      AnalyticsExclusions:
+        - AnomalyDetection
     cluster_categories:
       AppTier:
         - Default

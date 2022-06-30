@@ -6,8 +6,8 @@
   ntnx_image_placement_policy:
     name: "test_policy_1"
     image_categories: 
-      AppFamily:
-        - Backup
+      AnalyticsExclusions:
+        - AnomalyDetection
     cluster_categories:
       AppTier:
         - Default
@@ -17,8 +17,8 @@
   ntnx_image_placement_policy:
     name: "test_policy_2"
     image_categories: 
-      AppFamily:
-        - Backup
+      AnalyticsExclusions:
+        - AnomalyDetection
     cluster_categories:
       AppTier:
         - Default
