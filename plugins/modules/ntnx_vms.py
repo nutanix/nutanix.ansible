@@ -46,6 +46,13 @@ options:
   vm_uuid:
     description: VM UUID
     type: str
+  remove_categories:
+    description:
+        - When set will remove all categories attached to the vm.
+        - Mutually exclusive ith C(categories)
+    required: false
+    type: bool
+    default: false
   disks:
     description:
       - List of disks attached to the VM
@@ -778,6 +785,7 @@ def get_module_spec():
             default="present",
         ),
         desc=dict(type="str"),
+        remove_categories=dict(type="bool", required=False, default=False),
         disks=dict(
             type="list",
             elements="dict",
@@ -962,6 +970,9 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        mutually_exclusive = [
+          ("categories", "remove_categories"),
+        ],
         required_if=[("vm_uuid", None, ("name",)), ("state", "absent", ("vm_uuid",))],
     )
     utils.remove_param_with_none_value(module.params)

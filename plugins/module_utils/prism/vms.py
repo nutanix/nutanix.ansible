@@ -38,6 +38,7 @@ class VM(Prism):
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
             "categories": self._build_spec_categories,
+            "remove_categories": self._build_spec_remove_categories,
         }
 
     @staticmethod
@@ -324,8 +325,15 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_categories(self, payload, value):
-        payload["metadata"]["categories_mapping"] = value
-        payload["metadata"]["use_categories_mapping"] = True
+        if value != payload["metadata"].get("categories_mapping", {}):
+            payload["metadata"]["categories_mapping"] = value
+            payload["metadata"]["use_categories_mapping"] = True
+        return payload, None
+    
+    def _build_spec_remove_categories(self, payload, remove_categories):
+        if remove_categories and payload["metadata"].get("categories_mapping"):
+            payload["metadata"]["categories_mapping"] = {}
+            payload["metadata"]["use_categories_mapping"] = True
         return payload, None
 
     def _check_and_set_require_vm_restart(self, current_value, new_value):
