@@ -1305,18 +1305,27 @@ def get_module_spec():
         vdi_rule=dict(
             type="dict",
             options=rule_spec,
-            mutually_exclusive=[("inbounds", "allow_all_inbounds")],
+            mutually_exclusive=[
+                ("inbounds", "allow_all_inbounds"),
+                ("outbounds", "allow_all_outbounds"),
+            ],
         ),
         app_rule=dict(
             type="dict",
             options=rule_spec,
-            mutually_exclusive=[("inbounds", "allow_all_inbounds")],
+            mutually_exclusive=[
+                ("inbounds", "allow_all_inbounds"),
+                ("outbounds", "allow_all_outbounds"),
+            ],
         ),
         isolation_rule=dict(type="dict", options=isolation_rule_spec),
         quarantine_rule=dict(
             type="dict",
             options=rule_spec,
-            mutually_exclusive=[("inbounds", "allow_all_inbounds")],
+            mutually_exclusive=[
+                ("inbounds", "allow_all_inbounds"),
+                ("outbounds", "allow_all_outbounds"),
+            ],
         ),
     )
 
