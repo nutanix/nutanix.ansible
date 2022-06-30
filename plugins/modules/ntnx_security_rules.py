@@ -1221,7 +1221,10 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
-    group_spec = dict(uuid=dict(type="str"))
+    group_spec = dict(
+        uuid=dict(type="str"),
+        name=dict(type="str"),
+    )
 
     tcp_and_udp_spec = dict(
         start_port=dict(type="int"),
@@ -1232,11 +1235,6 @@ def get_module_spec():
 
     icmp_spec = dict(code=dict(type="int"), type=dict(type="int"))
 
-    filters_spec = dict(
-        params=dict(type="dict", options=dict(
-            apptype=dict(),
-        )),
-    )
     categories_spec = dict(
         apptype=dict(type="str"),
         apptype_filter_by_category=dict(type="dict"),
@@ -1252,6 +1250,7 @@ def get_module_spec():
             options=icmp_spec,
             required_by={"code": "type"},
         ),
+        service=dict(type="dict",  options=group_spec),
     )
 
     target_spec = dict(
@@ -1265,17 +1264,10 @@ def get_module_spec():
 
     whitelisted_traffic = dict(
         categories=dict(type="dict"),
-        addresses=dict(
-        # address_group_inclusion_list=dict(
-            type="list", elements="dict", options=group_spec
-        ),
+        address=dict(type="dict",  options=group_spec),
         allow_all=dict(),
         ip_subnet=dict(type="dict", options=network_spec),
         # service_group_list=dict(type="list", elements="dict", options=group_spec),
-        # icmp_type_code_list=dict(type="list", elements="dict", options=icmp_spec),
-        # network_function_chain_reference=dict(
-        #     type="dict", options=dict(uuid=dict(type="str"))
-        # ),
         expiration_time=dict(type="str"), #need to check in UI payload
         description=dict(type="str"),
         rule_id=dict(type="int"),
@@ -1295,20 +1287,20 @@ def get_module_spec():
         outbounds=dict(
             type="list", elements="dict", options=whitelisted_traffic
         ),
-        # action=dict(type="str", choices=["MONITOR", "APPLY"]),
+        policy_mode=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
 
     isolation_rule_spec = dict(
         isolate_category=dict(type="dict"),
         from_category=dict(type="dict"),
         subset_category=dict(type="dict"),
+        policy_mode=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
     module_args = dict(
         name=dict(type="str"),
         security_rule_uuid=dict(type="str"),
         allow_ipv6_traffic=dict(type="bool"),
         policy_hitlog=dict(type="bool"),
-        policy_mode=dict(type="str", choices=["MONITOR", "APPLY"]),
         vdi_rule=dict(type="dict", options=rule_spec),
         app_rule=dict(type="dict", options=rule_spec),
         isolation_rule=dict(type="dict", options=isolation_rule_spec),

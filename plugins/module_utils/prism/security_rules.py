@@ -6,6 +6,8 @@ __metaclass__ = type
 
 from copy import deepcopy
 
+from .address_groups import get_address_uuid
+from .service_groups import get_service_uuid
 from .prism import Prism
 from .projects import Project
 
@@ -86,24 +88,25 @@ class SecurityRule(Prism):
 
     def _build_isolation_rule(self, payload, value):
         isolation_rule = payload["spec"]["resources"].get("isolation_rule", {})
-        if value.get("isolate_category"):
-            isolation_rule["first_entity_filter"] = self._get_default_filter_spec()
-            isolation_rule["first_entity_filter"]["params"] = value["isolate_category"]
+        if not isolation_rule.get("first_entity_filter") and not isolation_rule.get("second_entity_filter"):
+            if value.get("isolate_category"):
+                isolation_rule["first_entity_filter"] = self._get_default_filter_spec()
+                isolation_rule["first_entity_filter"]["params"] = value["isolate_category"]
 
-        if value.get("from_category"):
-            isolation_rule["second_entity_filter"] = self._get_default_filter_spec()
-            isolation_rule["second_entity_filter"]["params"] = value["from_category"]
-        if value.get("subset_category"):
-            category_key = next(iter(value["subset_category"]))
-            category_value = value["subset_category"][category_key]
-            for category in isolation_rule.values():
-                if category_key in category["params"]:
-                    category["params"][category_key].extend(category_value)
-                else:
-                    category["params"].update(value["subset_category"])
+            if value.get("from_category"):
+                isolation_rule["second_entity_filter"] = self._get_default_filter_spec()
+                isolation_rule["second_entity_filter"]["params"] = value["from_category"]
+            if value.get("subset_category"):
+                category_key = next(iter(value["subset_category"]))
+                category_value = value["subset_category"][category_key]
+                for category in isolation_rule.values():
+                    if category_key in category["params"]:
+                        category["params"][category_key].extend(category_value)
+                    else:
+                        category["params"].update(value["subset_category"])
 
-        if self.module.params.get("policy_mode"):
-            isolation_rule["action"] = self.module.params["policy_mode"]
+        if value.get("policy_mode"):
+            isolation_rule["action"] = value["policy_mode"]
         payload["spec"]["resources"]["isolation_rule"] = isolation_rule
         return payload, None
 
@@ -145,8 +148,8 @@ class SecurityRule(Prism):
             rule["outbound_allow_list"] = self._generate_bound_spec(
                 rule.get("outbound_allow_list", []), value["outbounds"]
             )
-        if self.module.params.get("policy_mode"):
-            rule["action"] = self.module.params["policy_mode"]
+        if value.get("policy_mode"):
+            rule["action"] = value["policy_mode"]
         return rule
 
     def _generate_bound_spec(self, payload, list_of_rules):
@@ -167,6 +170,29 @@ class SecurityRule(Prism):
             elif rule.get("ip_subnet"):
                 rule_spec["ip_subnet"] = rule["ip_subnet"]
                 rule_spec["peer_specification_type"] = "IP_SUBNET"
+            elif rule.get("address"):
+                address_group = rule["address"]
+
+                if address_group.get("uuid"):
+                    address_group["kind"] = "address_group"
+                    rule_spec["address_group_inclusion_list"] = [address_group]
+                elif address_group.get("name"):
+                    uuid, error = get_address_uuid(
+                        address_group,
+                        self.module
+                    )
+                    if error:
+                        self.module.fail_json(
+                            msg="Failed generating Security Rule Spec",
+                            error="Entity {0} not found.".format(address_group["name"]),
+                        )
+
+                    address_group["kind"] = "address_group"
+                    address_group["uuid"] = uuid
+                    rule_spec["address_group_inclusion_list"] = [address_group]
+
+                    rule_spec["peer_specification_type"] = "IP_SUBNET"
+
             if rule.get("protocol"):
                 self._generate_protocol_spec(rule_spec, rule["protocol"])
 
@@ -184,6 +210,26 @@ class SecurityRule(Prism):
         elif config.get("icmp"):
             payload["protocol"] = "ICMP"
             payload["icmp_type_code_list"] = config["icmp"]
+        elif config.get("service"):
+            service = config["service"]
+
+            if service.get("uuid"):
+                service["kind"] = "service_group"
+                payload["service_group_list"] = [service]
+            elif service.get("name"):
+                uuid, error = get_service_uuid(
+                    service,
+                    self.module
+                )
+                if error:
+                    self.module.fail_json(
+                        msg="Failed generating Security Rule Spec",
+                        error="Entity {0} not found.".format(service["name"]),
+                    )
+
+                service["kind"] = "service_group"
+                service["uuid"] = uuid
+                payload["service_group_list"] = [service]
 
     def _get_default_filter_spec(self):
         return deepcopy(
