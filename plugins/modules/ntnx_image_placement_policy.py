@@ -280,7 +280,9 @@ policy_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.image_placement_policy import ImagePlacementPolicy  # noqa: E402
+from ..module_utils.prism.image_placement_policy import (
+    ImagePlacementPolicy,
+)  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 
 
