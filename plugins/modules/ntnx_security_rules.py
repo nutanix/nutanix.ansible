@@ -1258,9 +1258,8 @@ def get_module_spec():
     whitelisted_traffic = dict(
         categories=dict(type="dict"),
         address=dict(type="dict", options=group_spec),
-        allow_all=dict(),
+        allow_all=dict(type="bool"),
         ip_subnet=dict(type="dict", options=network_spec),
-        # service_group_list=dict(type="list", elements="dict", options=group_spec),
         expiration_time=dict(type="str"),  # need to check in UI payload
         description=dict(type="str"),
         rule_id=dict(type="int"),
@@ -1274,8 +1273,18 @@ def get_module_spec():
     )
     rule_spec = dict(
         target_group=dict(type="dict", options=target_spec),
-        inbounds=dict(type="list", elements="dict", options=whitelisted_traffic),
-        outbounds=dict(type="list", elements="dict", options=whitelisted_traffic),
+        inbounds=dict(
+            type="list",
+            elements="dict",
+            options=whitelisted_traffic,
+            mutually_exclusive=[("address", "categories", "ip_subnet")],
+        ),
+        outbounds=dict(
+            type="list",
+            elements="dict",
+            options=whitelisted_traffic,
+            mutually_exclusive=[("address", "categories", "ip_subnet")],
+        ),
         policy_mode=dict(type="str", choices=["MONITOR", "APPLY"]),
     )
 

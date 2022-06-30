@@ -170,7 +170,7 @@ class SecurityRule(Prism):
             else:
                 rule_spec = {}
             if rule.get("allow_all"):
-                rule_spec["peer_specification_type"] = "ALL"
+                rule_spec = {"peer_specification_type": "ALL"}
             elif rule.get("categories"):
                 rule_spec["filter"] = self._get_default_filter_spec()
                 rule_spec["filter"]["params"] = rule["categories"]
