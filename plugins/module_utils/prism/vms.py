@@ -16,14 +16,13 @@ from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
 from .subnets import Subnet
-from spec.categories_mapping import CategoriesMapping
+from .spec.categories_mapping import CategoriesMapping
 
 
 class VM(Prism):
     def __init__(self, module):
         resource_type = "/vms"
         super(VM, self).__init__(module, resource_type=resource_type)
-        categories_mapping_obj = CategoriesMapping()
         self.params_without_defaults = _load_params()
         self.require_vm_restart = False
         self.build_spec_methods = {
@@ -39,8 +38,8 @@ class VM(Prism):
             "boot_config": self._build_spec_boot_config,
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
-            "categories": categories_mapping_obj.build_categories_mapping_spec,
-            "remove_categories": categories_mapping_obj.build_remove_all_categories_spec,
+            "categories": CategoriesMapping.build_categories_mapping_spec,
+            "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
         }
 
     @staticmethod

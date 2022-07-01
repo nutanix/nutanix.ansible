@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
-from spec.categories_mapping import CategoriesMapping
+from .spec.categories_mapping import CategoriesMapping
 from .prism import Prism
 
 __metaclass__ = type
@@ -14,12 +14,11 @@ class ImagePlacementPolicy(Prism):
     def __init__(self, module):
         resource_type = "/images/placement_policies"
         super(ImagePlacementPolicy, self).__init__(module, resource_type=resource_type)
-        categories_mapping_obj = CategoriesMapping()
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "categories": categories_mapping_obj.build_categories_mapping_spec,
-            "remove_categories": categories_mapping_obj.build_remove_all_categories_spec,
+            "categories": CategoriesMapping.build_categories_mapping_spec,
+            "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
             "placement_type": self._build_spec_placement_type,
             "image_categories": self._build_spec_image_categories,
             "cluster_categories": self._build_spec_cluster_categories,

@@ -8,7 +8,8 @@ __metaclass__ = type
 class CategoriesMapping:
     """ Categories mapping related helpers and spec"""
 
-    def build_categories_mapping_spec(self, payload, categories_mapping):
+    @staticmethod
+    def build_categories_mapping_spec(payload, categories_mapping):
         """
         This routine overrides categories mapping in a pc v3 api input payload
         Args:
@@ -23,7 +24,8 @@ class CategoriesMapping:
             payload["metadata"]["categories_mapping"] = categories_mapping
         return payload, None
 
-    def build_remove_all_categories_spec(self, payload, remove_categories):
+    @staticmethod
+    def build_remove_all_categories_spec(payload, remove_categories):
         """
         This routine removes all categories from pc v3 api input payload
         Args:
