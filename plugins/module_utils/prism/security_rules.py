@@ -141,6 +141,10 @@ class SecurityRule(Prism):
                 params["ADGroup"] = [categories["adgroup"]]
             if categories.get("apptype"):
                 params["AppType"] = [categories["apptype"]]
+                if value["target_group"].get("default_internal_policy"):
+                    target_group["default_internal_policy"] = value["target_group"][
+                        "default_internal_policy"
+                    ]
             if categories.get("apptier"):
                 params["AppTier"] = [categories.get("apptier")]
                 if value["target_group"].get("default_internal_policy"):
