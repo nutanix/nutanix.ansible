@@ -68,7 +68,7 @@ options:
     description: Allow traffic from ipv6
     type: bool
   policy_hitlog:
-    description: write
+    description: Allow policy hitlog
     type: bool
   vdi_rule:
     description: >-
@@ -93,26 +93,28 @@ options:
             type: str
             choices: ["ALLOW_ALL", "DENY_ALL"]
           categories:
-            description: write
             type: dict
+            description: A category's key and values 
             suboptions:
               apptype:
-                description: write
+                description: A category value.
                 type: str
               apptype_filter_by_category:
-                description: write
+                description: A category key and value.
                 type: dict
               apptier:
-                description: write
+                description: A category value.
                 type: str
               adgroup:
-                description: write
+                description:
+                    - A category value.
+                    - Mutually exclusive with c(apptype).
                 type: str
       allow_all_inbounds:
-            description: write
+            description: Allow all inbounds
             type: bool
       allow_all_outbounds:
-            description: write
+            description: Allow all outbounds
             type: bool
       inbounds:
         description: Array of inbound Network rule
@@ -120,13 +122,14 @@ options:
         elements: dict
         suboptions:
           state:
+            description:
+                - Item's state to delete it
             type: str
-            description: write
             choices:
               - absent
           categories:
             type: dict
-            description: write
+            description: A category's key and values 
           description:
             type: str
             description: >-
@@ -181,23 +184,31 @@ options:
                     type: int
               service:
                 type: dict
-                description: write
+                description: A service groups associated with this rule.
                 suboptions:
                   uuid:
                     type: str
-                    description: write
+                    description:
+                        - Service group uuid.
+                        - Mutually exclusive with c(name).
                   name:
-                    description: write
+                    description:
+                        - Service group name.
+                        - Mutually exclusive with c(uuid).
                     type: str
           address:
             type: dict
-            description: List of address groups that are allowed access by this rule
+            description: Address groups that is allowed access by this rule
             suboptions:
               uuid:
-                description: UUID
                 type: str
+                description:
+                    - Address group uuid.
+                    - Mutually exclusive with c(name).
               name:
-                description: write
+                description:
+                    - Address group name.
+                    - Mutually exclusive with c(uuid).
                 type: str
           ip_subnet:
             description: IP subnet provided as an address and prefix_length length.
@@ -216,13 +227,14 @@ options:
         elements: dict
         suboptions:
           state:
+            description:
+                - Item's state to delete it
             type: str
-            description: write
             choices:
               - absent
           categories:
             type: dict
-            description: write
+            description: A category's key and values 
           description:
             type: str
             description: >-
@@ -277,23 +289,31 @@ options:
                     type: int
               service:
                 type: dict
-                description: write
+                description: A service groups associated with this rule.
                 suboptions:
                   uuid:
                     type: str
-                    description: write
+                    description:
+                        - Service group uuid.
+                        - Mutually exclusive with c(name).
                   name:
-                    description: write
+                    description:
+                        - Service group name.
+                        - Mutually exclusive with c(uuid).
                     type: str
           address:
             type: dict
-            description: List of address groups that are allowed access by this rule
+            description: Address groups that is allowed access by this rule
             suboptions:
               uuid:
-                description: UUID
                 type: str
+                description:
+                    - Address group uuid.
+                    - Mutually exclusive with c(name).
               name:
-                description: write
+                description:
+                    - Address group name.
+                    - Mutually exclusive with c(uuid).
                 type: str
           ip_subnet:
             description: IP subnet provided as an address and prefix_length length.
@@ -328,26 +348,28 @@ options:
             type: str
             choices: ["ALLOW_ALL", "DENY_ALL"]
           categories:
-            description: write
             type: dict
+            description: A category's key and values 
             suboptions:
               apptype:
-                description: write
+                description: A category value.
                 type: str
               apptype_filter_by_category:
-                description: write
+                description: A category key and value.
                 type: dict
               apptier:
-                description: write
+                description: A category value.
                 type: str
               adgroup:
-                description: write
+                description:
+                    - A category value.
+                    - Mutually exclusive with c(apptype).
                 type: str
       allow_all_inbounds:
-            description: write
+            description: Allow all inbounds
             type: bool
       allow_all_outbounds:
-            description: write
+            description: Allow all outbounds
             type: bool
       inbounds:
         description: Array of inbound Network rule
@@ -355,13 +377,14 @@ options:
         elements: dict
         suboptions:
           state:
+            description:
+                - Item's state to delete it
             type: str
-            description: write
             choices:
               - absent
           categories:
             type: dict
-            description: write
+            description: A category's key and values 
           description:
             type: str
             description: >-
@@ -416,23 +439,31 @@ options:
                     type: int
               service:
                 type: dict
-                description: write
+                description: A service groups associated with this rule.
                 suboptions:
                   uuid:
                     type: str
-                    description: write
+                    description:
+                        - Service group uuid.
+                        - Mutually exclusive with c(name).
                   name:
-                    description: write
+                    description:
+                        - Service group name.
+                        - Mutually exclusive with c(uuid).
                     type: str
           address:
             type: dict
-            description: List of address groups that are allowed access by this rule
+            description: Address groups that is allowed access by this rule
             suboptions:
               uuid:
-                description: UUID
                 type: str
+                description:
+                    - Address group uuid.
+                    - Mutually exclusive with c(name).
               name:
-                description: write
+                description:
+                    - Address group name.
+                    - Mutually exclusive with c(uuid).
                 type: str
           ip_subnet:
             description: IP subnet provided as an address and prefix_length length.
@@ -451,13 +482,14 @@ options:
         elements: dict
         suboptions:
           state:
+            description:
+                - Item's state to delete it
             type: str
-            description: write
             choices:
               - absent
           categories:
             type: dict
-            description: write
+            description: A category's key and values 
           description:
             type: str
             description: >-
@@ -512,23 +544,31 @@ options:
                     type: int
               service:
                 type: dict
-                description: write
+                description: A service groups associated with this rule.
                 suboptions:
                   uuid:
                     type: str
-                    description: write
+                    description:
+                        - Service group uuid.
+                        - Mutually exclusive with c(name).
                   name:
-                    description: write
+                    description:
+                        - Service group name.
+                        - Mutually exclusive with c(uuid).
                     type: str
           address:
             type: dict
-            description: List of address groups that are allowed access by this rule
+            description: Address groups that is allowed access by this rule
             suboptions:
               uuid:
-                description: UUID
                 type: str
+                description:
+                    - Address group uuid.
+                    - Mutually exclusive with c(name).
               name:
-                description: write
+                description:
+                    - Address group name.
+                    - Mutually exclusive with c(uuid).
                 type: str
           ip_subnet:
             description: IP subnet provided as an address and prefix_length length.
@@ -563,26 +603,28 @@ options:
             type: str
             choices: ["ALLOW_ALL", "DENY_ALL"]
           categories:
-            description: write
             type: dict
+            description: A category's key and values 
             suboptions:
               apptype:
-                description: write
+                description: A category value.
                 type: str
               apptype_filter_by_category:
-                description: write
+                description: A category key and value.
                 type: dict
               apptier:
-                description: write
+                description: A category value.
                 type: str
               adgroup:
-                description: write
+                description:
+                    - A category value.
+                    - Mutually exclusive with c(apptype).
                 type: str
       allow_all_inbounds:
-            description: write
+            description: Allow all inbounds
             type: bool
       allow_all_outbounds:
-            description: write
+            description: Allow all outbounds
             type: bool
       inbounds:
         description: Array of inbound Network rule
@@ -590,13 +632,14 @@ options:
         elements: dict
         suboptions:
           state:
+            description:
+                - Item's state to delete it
             type: str
-            description: write
             choices:
               - absent
           categories:
             type: dict
-            description: write
+            description: A category's key and values 
           description:
             type: str
             description: >-
@@ -651,23 +694,31 @@ options:
                     type: int
               service:
                 type: dict
-                description: write
+                description: A service groups associated with this rule.
                 suboptions:
                   uuid:
                     type: str
-                    description: write
+                    description:
+                        - Service group uuid.
+                        - Mutually exclusive with c(name).
                   name:
-                    description: write
+                    description:
+                        - Service group name.
+                        - Mutually exclusive with c(uuid).
                     type: str
           address:
             type: dict
-            description: List of address groups that are allowed access by this rule
+            description: Address groups that is allowed access by this rule
             suboptions:
               uuid:
-                description: UUID
                 type: str
+                description:
+                    - Address group uuid.
+                    - Mutually exclusive with c(name).
               name:
-                description: write
+                description:
+                    - Address group name.
+                    - Mutually exclusive with c(uuid).
                 type: str
           ip_subnet:
             description: IP subnet provided as an address and prefix_length length.
@@ -685,13 +736,14 @@ options:
         elements: dict
         suboptions:
           state:
+            description:
+                - Item's state to delete it
             type: str
-            description: write
             choices:
               - absent
           categories:
             type: dict
-            description: write
+            description: A category's key and values 
           description:
             type: str
             description: >-
@@ -746,23 +798,31 @@ options:
                     type: int
               service:
                 type: dict
-                description: write
+                description: A service groups associated with this rule.
                 suboptions:
                   uuid:
                     type: str
-                    description: write
+                    description:
+                        - Service group uuid.
+                        - Mutually exclusive with c(name).
                   name:
-                    description: write
+                    description:
+                        - Service group name.
+                        - Mutually exclusive with c(uuid).
                     type: str
           address:
             type: dict
-            description: List of address groups that are allowed access by this rule
+            description: Address groups that is allowed access by this rule
             suboptions:
               uuid:
-                description: UUID
                 type: str
+                description:
+                    - Address group uuid.
+                    - Mutually exclusive with c(name).
               name:
-                description: write
+                description:
+                    - Address group name.
+                    - Mutually exclusive with c(uuid).
                 type: str
           ip_subnet:
             description: IP subnet provided as an address and prefix_length length.
