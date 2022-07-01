@@ -16,11 +16,12 @@ RETURN = r"""
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.prism.static_routes import StaticRoutes  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.static_routes import StaticRoutes
-from ..module_utils import utils
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-
+from ..module_utils.utils import (  # noqa: E402
+    remove_param_with_none_value,
+    strip_extra_attrs_from_status,
+)
 
 
 def get_module_spec():
@@ -29,27 +30,34 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     nexthop_spec = dict(
-        external_subnet_ref = dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=False),
-        vpn_connection_ref = dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=False)
+        external_subnet_ref=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        vpn_connection_ref=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
     )
     static_route_spec = dict(
-        destination = dict(type="str", required=True),
-        next_hop = dict(
-            type = "dict",
+        destination=dict(type="str", required=True),
+        next_hop=dict(
+            type="dict",
             options=nexthop_spec,
             required=True,
-            mutually_exclusive = [("external_subnet_ref", "vpn_connection_ref")]
-        )
-    ) 
-    module_args = dict(
-        vpc_uuid = dict(type="str", required=True),
-        static_routes_list = dict(
-            type="list",
-            elements="dict",
-            options=static_route_spec,
-            required=False 
+            mutually_exclusive=[("external_subnet_ref", "vpn_connection_ref")],
         ),
-        remove_all_routes = dict(type="bool", required=False, default=False)
+    )
+    module_args = dict(
+        vpc_uuid=dict(type="str", required=True),
+        static_routes_list=dict(
+            type="list", elements="dict", options=static_route_spec, required=False
+        ),
+        remove_all_routes=dict(type="bool", required=False, default=False),
     )
     return module_args
 
@@ -63,11 +71,13 @@ def update_static_routes(module, result):
 
     # status and spec have field name different schema for default static routes
     if curr_routes["status"]["resources"].get("default_route"):
-        curr_routes["status"]["resources"]["default_route_nexthop"] = curr_routes["status"]["resources"]["default_route"]["nexthop"]
-    
-    utils.strip_extra_attrs_from_status(curr_routes["status"], curr_routes["spec"])
+        curr_routes["status"]["resources"]["default_route_nexthop"] = curr_routes[
+            "status"
+        ]["resources"]["default_route"]["nexthop"]
+
+    strip_extra_attrs_from_status(curr_routes["status"], curr_routes["spec"])
     curr_routes["spec"] = curr_routes.pop("status")
-    
+
     # new spec for updating static routes
     update_spec, err = static_routes.get_spec(curr_routes)
     if err:
@@ -76,9 +86,7 @@ def update_static_routes(module, result):
 
     if update_spec == curr_routes:
         result["skipped"] = True
-        module.exit_json(
-            msg="Nothing to update"
-        )
+        module.exit_json(msg="Nothing to update")
 
     if module.check_mode:
         result["response"] = update_spec

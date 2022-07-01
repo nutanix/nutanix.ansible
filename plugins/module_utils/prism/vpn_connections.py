@@ -12,6 +12,7 @@ class VpnConnection(Prism):
         resource_type = "/vpn_connections"
         super(VpnConnection, self).__init__(module, resource_type=resource_type)
 
+
 # Helper functions
 
 

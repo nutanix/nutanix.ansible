@@ -19,28 +19,25 @@ class StaticRoutes(Prism):
         super(StaticRoutes, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "static_routes_list": self._build_spec_static_routes_list,
-            "remove_all_routes": self._build_spec_remove_all_routes
+            "remove_all_routes": self._build_spec_remove_all_routes,
         }
 
     def update_static_routes(self, data, vpc_uuid):
         return self.update(data=data, uuid=vpc_uuid, endpoint="route_tables")
-    
+
     def get_static_routes(self, vpc_uuid):
         return self.read(uuid=vpc_uuid, endpoint="route_tables")
-    
+
     def _get_default_spec(self):
         return deepcopy(
             {
-                "metadata":{
-                    "kind": "vpc_route_table"
-                },
-                "spec":{
-                    "resources":{
+                "metadata": {"kind": "vpc_route_table"},
+                "spec": {
+                    "resources": {
                         "static_routes_list": [],
-                        "default_route_nexthop": None
+                        "default_route_nexthop": None,
                     }
-                }
-
+                },
             }
         )
 
@@ -63,10 +60,7 @@ class StaticRoutes(Prism):
                 uuid, err = get_subnet_uuid(subnet_ref, self.module)
                 if err:
                     return None, err
-                next_hop["external_subnet_reference"] = {
-                    "kind": "subnet",
-                    "uuid" : uuid
-                }
+                next_hop["external_subnet_reference"] = {"kind": "subnet", "uuid": uuid}
             elif route["next_hop"].get("vpn_connection_ref"):
                 vpn_ref = route["next_hop"]["vpn_connection_ref"]
                 uuid, err = get_vpn_connection_uuid(self.module, vpn_ref)
@@ -74,7 +68,7 @@ class StaticRoutes(Prism):
                     return None, err
                 next_hop["vpn_connection_reference"] = {
                     "kind": "vpn_connection",
-                    "uuid" : uuid
+                    "uuid": uuid,
                 }
 
             if route["destination"] == self.default_route_dest:
@@ -82,10 +76,9 @@ class StaticRoutes(Prism):
                 if err:
                     return None, err
             else:
-                static_routes_list.append({
-                    "nexthop" : next_hop,
-                    "destination": route["destination"]
-                })
+                static_routes_list.append(
+                    {"nexthop": next_hop, "destination": route["destination"]}
+                )
 
         payload["spec"]["resources"]["static_routes_list"] = static_routes_list
         return payload, None
