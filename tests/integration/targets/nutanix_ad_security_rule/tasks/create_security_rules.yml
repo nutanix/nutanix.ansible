@@ -1,32 +1,23 @@
-- debug:
-    msg: Start testing ntnx_security_rules
-####################
 - name: create ad security rule with inbound and outbound list
   ntnx_security_rules:
     name: VDI Policy
     vdi_rule:
       target_group:
-        peer_specification_type: FILTER
-        filter:
-          type: CATEGORIES_MATCH_ALL
-          kind_list:
-            - vm
-          params:
-            ADGroup:
-              - "$Default"
-        default_internal_policy: DENY_ALL
-      inbound_allow_list:
-        - peer_specification_type: ALL
-      outbound_allow_list:
-        - peer_specification_type: IP_SUBNET
+          categories:
+            adgroup: "$Default"
+          default_internal_policy: DENY_ALL
+      # inbounds:
+      #   - peer_specification_type: ALL
+      outbounds:
+        - #peer_specification_type: IP_SUBNET
           ip_subnet:
             prefix_length: 8
             ip: 10.0.0.0
           description: test description
-          protocol: ALL
-      action: MONITOR
+          #protocol: ALL
+      policy_mode: MONITOR
     allow_ipv6_traffic: true
-    is_policy_hitlog_enabled: true
+    policy_hitlog: true
   register: result
   ignore_errors: true
 - name: Creation Status
@@ -43,13 +34,13 @@
   ntnx_security_rules:
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
     vdi_rule:
-      inbound_allow_list:
-        - peer_specification_type: IP_SUBNET
+      inbounds:
+        - #peer_specification_type: IP_SUBNET
           ip_subnet:
             prefix_length: 8
             ip: 10.0.0.0
           description: test description
-          protocol: ALL
+          #protocol: ALL
   register: result
   ignore_errors: true
 

@@ -5,6 +5,10 @@
       target_group:
           categories:
             apptype: Apache_Spark
+            apptype_filter_by_category:
+              AppFamily:
+                - Backup
+            #apptier:
           default_internal_policy: DENY_ALL
       inbounds:
         - 
@@ -39,6 +43,10 @@
               AppFamily:
                 - Databases
                 - DevOps
+            protocol: 
+              service:
+                name: 6a44
+        - 
             ip_subnet:
               prefix_length: 24
               ip: 192.168.1.0
@@ -53,7 +61,7 @@
               icmp:
                 - code: 1
                   type: 1
-    policy_mode: MONITOR
+      policy_mode: MONITOR
     allow_ipv6_traffic: true
     policy_hitlog: true
   register: result
@@ -72,8 +80,8 @@
 - name: update app security rule by adding to outbound list and remove tule from inbound list
   ntnx_security_rules:
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
-    policy_mode: APPLY
     app_rule:
+      policy_mode: APPLY
       inbounds:
         - 
           rule_id: "{{result.response.spec.resources.app_rule.inbound_allow_list.0.rule_id}}"

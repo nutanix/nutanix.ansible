@@ -10,7 +10,10 @@
       from_category:
           Environment:
             - Production
-    policy_mode: MONITOR
+      subset_category:
+        Environment:
+          - Staging
+      policy_mode: MONITOR
   register: result
   ignore_errors: true
   check_mode: true
@@ -39,7 +42,11 @@
       from_category:
           Environment:
             - Production
-    policy_mode: MONITOR
+      subset_category:
+        Environment:
+          - Staging
+      policy_mode: MONITOR
+    policy_hitlog: true
   register: result
   ignore_errors: true
 
@@ -58,7 +65,8 @@
 - name: update isoloation security rule action with check_mode
   ntnx_security_rules:
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
-    policy_mode: APPLY
+    isolation_rule:
+      policy_mode: APPLY
   register: output
   ignore_errors: true
   check_mode: true
@@ -74,16 +82,15 @@
     fail_msg: ' fail: unable to update isoloation security rule action with check_mode'
     success_msg: >-
       pass: update isoloation security rule action with check_mode successfully 
-- debug:
-    var: result
+
 - name: update isoloation security rule action
   ntnx_security_rules:
     security_rule_uuid: '{{ result.security_rule_uuid}}'
-    policy_mode: APPLY
+    isolation_rule:
+      policy_mode: APPLY
   register: result
   ignore_errors: true
-- debug:
-    var: result
+
 - name: Creation Status
   assert:
     that:
@@ -98,11 +105,9 @@
   ntnx_security_rules:
     security_rule_uuid: '{{result.security_rule_uuid}}'
     isolation_rule:
-    policy_mode: APPLY
+      policy_mode: APPLY
   register: output
   ignore_errors: true
-- debug:
-    var: result
 - name: Creation Status
   assert:
     that:
