@@ -6,15 +6,47 @@
           categories:
             adgroup: "$Default"
           default_internal_policy: DENY_ALL
-      # inbounds:
-      #   - peer_specification_type: ALL
-      outbounds:
-        - #peer_specification_type: IP_SUBNET
-          ip_subnet:
-            prefix_length: 8
-            ip: 10.0.0.0
-          description: test description
-          #protocol: ALL
+      allow_all_outbounds: true
+      inbounds:
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            description: test description
+            protocol:
+              tcp:
+                - start_port: 22
+                  end_port: 80
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            protocol:
+                icmp:
+                  - code: 1
+                    type: 1
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            protocol: 
+              udp:
+                - start_port: 82
+                  end_port: 8080
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            protocol: 
+              service:
+                name: 6a44
+        - 
+          address:
+            name: dest
       policy_mode: MONITOR
     allow_ipv6_traffic: true
     policy_hitlog: true
@@ -30,17 +62,16 @@
     fail_msg: ' fail: unable create ad security rule with inbound and outbound list'
     success_msg: >-
       pass: create ad security rule with inbound and outbound list finished successfully
-- name: update isoloation security rule action
+- name: update VDI security rule action
   ntnx_security_rules:
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
     vdi_rule:
       inbounds:
-        - #peer_specification_type: IP_SUBNET
+        - 
           ip_subnet:
             prefix_length: 8
             ip: 10.0.0.0
           description: test description
-          #protocol: ALL
   register: result
   ignore_errors: true
 

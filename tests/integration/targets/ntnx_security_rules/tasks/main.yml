@@ -9,3 +9,4 @@
         - import_tasks: "app_rule.yml"
         - import_tasks: "isolation_rule.yml"
         - import_tasks: "quarantine_rule.yml"
+        - import_tasks: "vdi.yml"
