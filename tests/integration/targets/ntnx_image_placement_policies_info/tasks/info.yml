@@ -4,6 +4,7 @@
 
 - name: create image placement policy
   ntnx_image_placement_policy:
+    placement_type: soft
     name: "test_policy_1"
     image_categories: 
       AnalyticsExclusions:
@@ -15,6 +16,7 @@
 
 - name: create image placement policy
   ntnx_image_placement_policy:
+    placement_type: soft
     name: "test_policy_2"
     image_categories: 
       AnalyticsExclusions:
