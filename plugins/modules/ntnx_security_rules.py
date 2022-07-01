@@ -966,49 +966,41 @@ EXAMPLES = r"""
     name: test_app_rule
     app_rule:
       target_group:
-        peer_specification_type: FILTER
-        filter:
-          type: CATEGORIES_MATCH_ALL
-          kind_list:
-            - vm
-          params:
-            AppType:
-              - Apache_Spark
+        categories:
+            apptype: Apache_Spark
         default_internal_policy: DENY_ALL
-      inbound_allow_list:
-        - peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
+      inbound:
+        - categories:
               AppFamily:
                 - Databases
                 - DevOps
-          icmp_type_code_list:
+          icmp:
             - code: 1
               type: 1
-          tcp_port_range_list:
+        - categories:
+              AppFamily:
+                - Databases
+                - DevOps
+          tcp:
             - start_port: 22
               end_port: 80
-          udp_port_range_list:
+        - categories:
+              AppFamily:
+                - Databases
+                - DevOps
+          udp:
             - start_port: 82
               end_port: 8080
-          ip_subnet:
+        - ip_subnet:
             prefix_length: 24
             ip: 192.168.1.1
           description: test description
           protocol: ALL
-      outbound_allow_list:
-        - peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
+      outbound:
+        - categories:
               AppFamily:
                 - Databases
-      action: MONITOR
+      policy_mode: MONITOR
     allow_ipv6_traffic: true
     policy_hitlog:: true
   register: result
@@ -1016,17 +1008,12 @@ EXAMPLES = r"""
   ntnx_security_rules:
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
     app_rule:
-      action: APPLY
-      outbound_allow_list:
-        - icmp_type_code_list:
+      policy_mode: APPLY
+      outbound:
+        - icmp:
             - code: 1
               type: 1
-          peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
+          categories:
               AppFamily:
                 - Databases
                 - DevOps
@@ -1035,37 +1022,17 @@ EXAMPLES = r"""
   ntnx_security_rules:
     security_rule_uuid: '{{quarantine_rule_uuid}}'
     quarantine_rule:
-      target_group:
-        peer_specification_type: FILTER
-        filter:
-          type: CATEGORIES_MATCH_ALL
-          kind_list:
-            - vm
-          params:
-            Quarantine:
-              - Forensics
-        default_internal_policy: DENY_ALL
-      inbound_allow_list:
-        - peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
+      inbound:
+        - categories:
               AppFamily:
                 - Databases
                 - DevOps
-      outbound_allow_list:
-        - peer_specification_type: FILTER
-          filter:
-            type: CATEGORIES_MATCH_ALL
-            kind_list:
-              - vm
-            params:
+      outbound:
+        - categories:
               AppFamily:
                 - Databases
                 - DevOps
-      action: MONITOR
+      policy_mode: MONITOR
     allow_ipv6_traffic: true
     policy_hitlog:: true
   register: result
