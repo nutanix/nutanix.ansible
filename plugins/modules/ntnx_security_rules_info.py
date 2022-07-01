@@ -9,9 +9,9 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_subnets_info
+module: ntnx_security_rules_info
 short_description: subnet info module
-version_added: 1.0.0
+version_added: 1.3.0
 description: 'Get subnet info'
 options:
     kind:
