@@ -34,19 +34,19 @@ options:
         required: false
         default: True
     name:
-        description: 
+        description:
             - policy name
             - allowed in update
         required: false
         type: str
     policy_uuid:
-        description: 
+        description:
             - image placement policy of existig uuid
             - required only when updating or deleting
         type: str
         required: false
     desc:
-        description: 
+        description:
             - A description for policy
             - allowed in update
         required: false
@@ -94,7 +94,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
- - Pradeepsingh Bhati (@bhati-pradeep)    
+ - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
@@ -107,7 +107,7 @@ EXAMPLES = r"""
     validate_certs: False
     name: "test_policy_1"
     placement_type: soft
-    image_categories: 
+    image_categories:
       AppFamily:
         - Backup
     cluster_categories:
@@ -130,7 +130,7 @@ EXAMPLES = r"""
         - "Dev"
       AppType:
         - "Default"
-    image_categories: 
+    image_categories:
       AppFamily:
         - Backup
         - Networking
@@ -139,7 +139,7 @@ EXAMPLES = r"""
         - Default
   register: result
 
-- name: Update image placement policy 
+- name: Update image placement policy
   ntnx_image_placement_policy:
     state: "present"
     policy_uuid: "<policy-uuid>"
@@ -153,7 +153,7 @@ EXAMPLES = r"""
     categories:
       Environment:
         - "Dev"
-    image_categories: 
+    image_categories:
       AppFamily:
         - Backup
     cluster_categories:
@@ -179,7 +179,6 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: False
-    state: absent
     policy_uuid: "<policy-uuid>"
   register: result
 """
@@ -280,8 +279,10 @@ policy_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.prism.image_placement_policy import (  # noqa: E402
+    ImagePlacementPolicy,
+)
 from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.image_placement_policy import ImagePlacementPolicy
 
 
 def get_module_spec():

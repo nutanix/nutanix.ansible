@@ -225,9 +225,9 @@ entities:
 
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.image_placement_policy import (
+from ..module_utils.prism.image_placement_policy import (  # noqa: E402
     ImagePlacementPolicy,
-)  # noqa: E402
+)
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 

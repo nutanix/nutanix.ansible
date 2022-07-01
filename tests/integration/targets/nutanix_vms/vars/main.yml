@@ -3,13 +3,13 @@ centos: "CentOS-7-cloudinit"
 ubuntu: "Ubuntu-20.04.4" 
 storage_container:
   name: SelfServiceContainer
-  uuid: a2265c28-28ea-4202-89a7-91c041149f0b
+  uuid: 56cdf392-8d0b-47bc-b976-edd91a0df420
 network:
   dhcp:
     name: vlan.154
-    uuid: a7cadf52-b890-4825-ae5a-31693de108f8
+    uuid: dc196f6f-08ae-4fa2-bcff-753e6bfba6ca
   static:
     ip:   10.30.30.75
 project:
   name: integration_test_project
-  uuid: 09aab190-78b1-4ea2-bed5-1d8f95c09c11
+  uuid: 16d175ee-5e61-49ea-8d81-27289570bda7

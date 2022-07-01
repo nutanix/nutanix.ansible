@@ -7,8 +7,8 @@
     name: "test_policy_1"
     placement_type: soft
     image_categories: 
-      AppFamily:
-        - Backup
+      AnalyticsExclusions:
+        - AnomalyDetection
     cluster_categories:
       AppTier:
         - Default
@@ -22,7 +22,7 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.name == 'test_policy_1'
       - result.response.status.resources.cluster_entity_filter.params["AppTier"][0] == 'Default'
-      - result.response.status.resources.image_entity_filter.params["AppFamily"][0] == 'Backup'
+      - result.response.status.resources.image_entity_filter.params["AnalyticsExclusions"][0] == 'AnomalyDetection'
       - result.response.status.resources.placement_type == 'AT_LEAST'
     fail_msg: "Unable to create image placement policy with minimal spec"
     success_msg: "Image placement policy with minimal spec created successfully"
@@ -43,9 +43,9 @@
       AppType:
         - "Default"
     image_categories: 
-      AppFamily:
-        - Backup
-        - Networking
+      AnalyticsExclusions:
+        - EfficiencyMeasurement
+        - AnomalyDetection
     cluster_categories:
       AppTier:
         - Default
@@ -73,9 +73,9 @@
     desc: "test_policy_3_desc"
     placement_type: hard
     image_categories: 
-      AppFamily:
-        - Backup
-        - Networking
+      AnalyticsExclusions:
+        - EfficiencyMeasurement
+        - AnomalyDetection
     cluster_categories:
       AppTier:
         - Default

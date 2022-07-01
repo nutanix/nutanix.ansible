@@ -38,10 +38,12 @@ def check_for_idempotency(spec, resp, **kwargs):
     if spec == resp:
         if (
             state == "present"
+            # only for VMs
             or (
                 state in ["soft_shutdown", "hard_poweroff", "power_off"]
                 and resp["spec"]["resources"]["power_state"] == "OFF"
             )
+            # only for VMs
             or (
                 state == "power_on" and resp["spec"]["resources"]["power_state"] == "ON"
             )
