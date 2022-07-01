@@ -8,14 +8,16 @@
             apptype_filter_by_category:
               AppFamily:
                 - Backup
-            #apptier:
+            apptier: Default
           default_internal_policy: DENY_ALL
+
       inbounds:
         - 
             categories:
               AppFamily:
                 - Databases
                 - DevOps
+            description: test description
             protocol:
               tcp:
                 - start_port: 22
@@ -51,6 +53,9 @@
               prefix_length: 24
               ip: 192.168.1.0
             description: test description
+        - 
+          address:
+            name: dest
       outbounds:
         - 
             categories:
@@ -110,6 +115,50 @@
     fail_msg: ' fail: unable to update app security rule with   outbound list '
     success_msg: 'pass :update app security rule with   outbound list successfully'
 
+- name: delete app security rule
+  ntnx_security_rules:
+    state: absent
+    security_rule_uuid: '{{ result.response.metadata.uuid }}'
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: ' fail: unable to delete app security rule '
+    success_msg: 'pass : delete app security rule successfully'
+- name: create app security rule with allow all inbound and outbound list
+  ntnx_security_rules:
+    name: test_app_rule
+    app_rule:
+      target_group:
+          categories:
+            apptype: Apache_Spark
+            apptype_filter_by_category:
+              AppFamily:
+                - Backup
+            apptier: Default
+          default_internal_policy: DENY_ALL
+      allow_all_outbounds: true
+      allow_all_inbounds: true
+      policy_mode: MONITOR
+    allow_ipv6_traffic: true
+    policy_hitlog: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.status.state == 'COMPLETE'
+      - result.response.spec.name=="test_app_rule"
+    fail_msg: ' fail: unable to create app security rule with allow all inbound and outbound list'
+    success_msg: 'pass: create app security rule with allow all inbound and outbound list successfully'
 - name: delete app security rule
   ntnx_security_rules:
     state: absent
