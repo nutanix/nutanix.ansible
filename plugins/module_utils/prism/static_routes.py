@@ -52,8 +52,9 @@ class StaticRoutes(Prism):
         return payload, None
 
     def _build_spec_static_routes_list(self, payload, inp_static_routes):
+        # since static route list has to be overriden
         if payload["spec"]["resources"].get("default_route_nexthop"):
-            payload["spec"]["resources"]["default_route_nexthop"] = None
+            payload["spec"]["resources"].pop("default_route_nexthop")
         static_routes_list = []
         for route in inp_static_routes:
             next_hop = {}
@@ -91,6 +92,7 @@ class StaticRoutes(Prism):
 
     def _build_spec_remove_all_routes(self, payload, remove_all_routes):
         if remove_all_routes:
-            payload["spec"]["resources"].pop("default_route_nexthop")
+            if payload["spec"]["resources"].get("default_route_nexthop"):
+                payload["spec"]["resources"].pop("default_route_nexthop")
             payload["spec"]["resources"]["static_routes_list"] = []
         return payload, None
