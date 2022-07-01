@@ -1261,7 +1261,6 @@ def get_module_spec():
         categories=dict(type="dict"),
         address=dict(type="dict", options=group_spec),
         ip_subnet=dict(type="dict", options=network_spec),
-        expiration_time=dict(type="str"),  # need to check in UI payload
         description=dict(type="str"),
         rule_id=dict(type="int"),
         state=dict(type="str", choices=["absent"]),
@@ -1300,8 +1299,6 @@ def get_module_spec():
     module_args = dict(
         name=dict(type="str"),
         security_rule_uuid=dict(type="str"),
-        categories=dict(type="dict"),
-        remove_categories=dict(type="bool", default=False),
         allow_ipv6_traffic=dict(type="bool"),
         policy_hitlog=dict(type="bool"),
         vdi_rule=dict(
@@ -1424,7 +1421,8 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         mutually_exclusive=[
-            ("vdi_rule", "app_rule", "isolation_rule", "quarantine_rule")
+            ("vdi_rule", "app_rule", "isolation_rule", "quarantine_rule"),
+            ("allow_ipv6_traffic", "isolation_rule"),
         ],
         required_by={"quarantine_rule": "security_rule_uuid"},
         required_one_of=[("security_rule_uuid", "name")],

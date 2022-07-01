@@ -217,7 +217,8 @@ class SecurityRule(Prism):
 
             if rule.get("protocol"):
                 self._generate_protocol_spec(rule_spec, rule["protocol"])
-
+            if rule.get("description"):
+                rule_spec["description"] = rule["description"]
             if not rule_spec.get("rule_id"):
                 payload.append(rule_spec)
         return payload
