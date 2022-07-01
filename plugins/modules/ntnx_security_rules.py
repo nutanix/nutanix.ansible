@@ -78,7 +78,7 @@ options:
       group.
     type: dict
     suboptions:
-      action:
+      policy_mode:
         description: Type of deployment of the rule.
         type: str
         choices:
@@ -326,7 +326,7 @@ options:
       group.
     type: dict
     suboptions:
-      action:
+      policy_mode:
         description: Type of deployment of the rule.
         type: str
         choices:
@@ -574,6 +574,12 @@ options:
       group.
     type: dict
     suboptions:
+      policy_mode:
+        description: Type of deployment of the rule.
+        type: str
+        choices:
+          - MONITOR
+          - APPLY
       target_group:
         description: Target Group
         type: dict
@@ -809,6 +815,7 @@ options:
               prefix_length:
                 description: prefix length
                 type: int
+
   isolation_rule:
     description: These rules are used for environmental isolation.
     type: dict
@@ -949,7 +956,7 @@ spec:
     resources:
       allow_ipv6_traffic: true
       app_rule:
-        action: MONITOR
+        policy_mode: MONITOR
         inbound_allow_list:
           - description: test description
             filter:
@@ -1009,7 +1016,7 @@ status:
     resources:
       allow_ipv6_traffic: true
       app_rule:
-        action: MONITOR
+        policy_mode: MONITOR
         inbound_allow_list:
           - description: test description
             filter:
