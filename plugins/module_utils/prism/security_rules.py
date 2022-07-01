@@ -19,14 +19,12 @@ class SecurityRule(Prism):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "project": self._build_spec_project,
             "allow_ipv6_traffic": self._build_allow_ipv6_traffic,
             "is_policy_hitlog_enabled": self._build_is_policy_hitlog_enabled,
             "vdi_rule": self._build_vdi_rule,
             "app_rule": self._build_app_rule,
             "isolation_rule": self._build_isolation_rule,
             "quarantine_rule": self._build_quarantine_rule,
-            "categories": self._build_spec_categories,
         }
 
     def _get_default_spec(self):
@@ -47,23 +45,6 @@ class SecurityRule(Prism):
 
     def _build_spec_desc(self, payload, value):
         payload["spec"]["description"] = value
-        return payload, None
-
-    def _build_spec_project(self, payload, param):
-        if "name" in param:
-            project = Project(self.module)
-            name = param["name"]
-            uuid = project.get_uuid(name)
-            if not uuid:
-                error = "Project {0} not found.".format(name)
-                return None, error
-
-        elif "uuid" in param:
-            uuid = param["uuid"]
-
-        payload["metadata"].update(
-            {"project_reference": {"uuid": uuid, "kind": "project"}}
-        )
         return payload, None
 
     def _build_allow_ipv6_traffic(self, payload, value):
@@ -122,12 +103,6 @@ class SecurityRule(Prism):
             payload["spec"]["resources"]["quarantine_rule"] = self._build_spec_rule(
                 quarantine_rule, value
             )
-        return payload, None
-
-    def _build_spec_categories(self, payload, value):
-        if payload["metadata"].get("categories_mapping", {}) != value:
-            payload["metadata"]["categories_mapping"] = value
-            payload["metadata"]["use_categories_mapping"] = True
         return payload, None
 
     def _build_spec_rule(self, payload, value):
