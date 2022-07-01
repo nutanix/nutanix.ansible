@@ -1,13 +1,19 @@
 validate_certs: False
 todelete: []
 
+disk_image:
+  url: https://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1602.qcow2
+  dest: /home/ubuntu/.ansible/collections/ansible_collections/nutanix/ncp/tests/integration/targets/prepare_env/tasks/centosO7-1.qcow2
+  checksum: b0e24d81219fe39bfe16d9b10c91e66315333100
+  centos: "CentOS-7-cloudinit" 
+
 cluster:
-  name: auto_cluster_prod_1a680af8db60
-  uuid: 0005e07c-aca2-a24f-3507-ac1f6b60292f
+  name: auto_cluster_prod_1a87d3b4b507
+  uuid: 0005e298-1741-9353-3507-ac1f6b60292f
 
 virtual_switch:
   name: vs0
-  uuid: b71adeea-c7a8-4bf2-80d0-3b127a31bb80
+  uuid: 7a88a08c-cc4c-44ef-b8c6-a0e8e970311f
 external_nat_subnets:
   name: integration_test_Ext-Nat
   vlan_id: 103

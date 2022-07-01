@@ -150,7 +150,7 @@ def get_fip(module, result):
     result["response"] = resp
 
 
-def list_fip(module, result):
+def get_fips(module, result):
     floating_ip = FloatingIP(module)
     spec, error = floating_ip.get_info_spec()
 
@@ -170,7 +170,7 @@ def run_module():
     if module.params.get("fip_uuid"):
         get_fip(module, result)
     else:
-        list_fip(module, result)
+        get_fips(module, result)
     module.exit_json(**result)
 
 
