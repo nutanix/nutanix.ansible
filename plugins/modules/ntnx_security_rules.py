@@ -1300,6 +1300,8 @@ def get_module_spec():
     module_args = dict(
         name=dict(type="str"),
         security_rule_uuid=dict(type="str"),
+        categories=dict(type="dict"),
+        remove_categories=dict(type="bool", default=False),
         allow_ipv6_traffic=dict(type="bool"),
         policy_hitlog=dict(type="bool"),
         vdi_rule=dict(
