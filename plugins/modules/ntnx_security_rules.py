@@ -638,40 +638,27 @@ options:
     description: These rules are used for environmental isolation.
     type: dict
     suboptions:
-      action:
+      policy_mode:
         description: Type of deployment of the rule.
         type: str
         choices:
           - MONITOR
           - APPLY
-      first_entity_filter:
-        description: A category filter.
+      isolate_category:
+        description:
+            - A category key and value.
+            - Need to provide only one.
         type: dict
-        suboptions:
-          type:
-            description: The type of the filter being used.
-            type: str
-          params:
-            description: A list of category key and list of values.
-            type: dict
-          kind_list:
-            description: List of kinds associated with this filter.
-            type: list
-            elements: str
-      second_entity_filter:
-        description: A category filter.
+      from_category:
+        description:
+            - A category key and value.
+            - Need to provide only one.
         type: dict
-        suboptions:
-          type:
-            description: The type of the filter being used.
-            type: str
-          params:
-            description: A list of category key and list of values.
-            type: dict
-          kind_list:
-            description: List of kinds associated with this filter.
-            type: list
-            elements: str
+      subset_category:
+        description:
+            - A category key and value.
+            - Need to provide only one.
+        type: dict
   quarantine_rule:
     description: >-
       These rules are used for quarantining suspected VMs. Target group is a
