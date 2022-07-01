@@ -15,8 +15,8 @@ from .groups import get_entity_uuid
 from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
-from .subnets import Subnet
 from .spec.categories_mapping import CategoriesMapping
+from .subnets import Subnet
 
 
 class VM(Prism):

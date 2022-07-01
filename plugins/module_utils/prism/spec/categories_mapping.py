@@ -6,7 +6,7 @@ __metaclass__ = type
 
 
 class CategoriesMapping:
-    """ Categories mapping related helpers and spec"""
+    """Categories mapping related helpers and spec"""
 
     @staticmethod
     def build_categories_mapping_spec(payload, categories_mapping):
