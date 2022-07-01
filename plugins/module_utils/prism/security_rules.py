@@ -6,7 +6,6 @@ from copy import deepcopy
 
 from .address_groups import get_address_uuid
 from .prism import Prism
-from .projects import Project
 from .service_groups import get_service_uuid
 
 __metaclass__ = type
