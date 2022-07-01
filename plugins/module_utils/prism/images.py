@@ -4,9 +4,9 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
-from .spec.categories_mapping import CategoriesMapping
 from .clusters import Cluster
 from .prism import Prism
+from .spec.categories_mapping import CategoriesMapping
 
 __metaclass__ = type
 
