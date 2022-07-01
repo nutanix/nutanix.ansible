@@ -94,7 +94,7 @@ options:
             choices: ["ALLOW_ALL", "DENY_ALL"]
           categories:
             type: dict
-            description: A category's key and values 
+            description: A category's key and values
             suboptions:
               apptype:
                 description: A category value.
@@ -129,7 +129,7 @@ options:
               - absent
           categories:
             type: dict
-            description: A category's key and values 
+            description: A category's key and values
           description:
             type: str
             description: >-
@@ -234,7 +234,7 @@ options:
               - absent
           categories:
             type: dict
-            description: A category's key and values 
+            description: A category's key and values
           description:
             type: str
             description: >-
@@ -349,7 +349,7 @@ options:
             choices: ["ALLOW_ALL", "DENY_ALL"]
           categories:
             type: dict
-            description: A category's key and values 
+            description: A category's key and values
             suboptions:
               apptype:
                 description: A category value.
@@ -384,7 +384,7 @@ options:
               - absent
           categories:
             type: dict
-            description: A category's key and values 
+            description: A category's key and values
           description:
             type: str
             description: >-
@@ -489,7 +489,7 @@ options:
               - absent
           categories:
             type: dict
-            description: A category's key and values 
+            description: A category's key and values
           description:
             type: str
             description: >-
@@ -604,7 +604,7 @@ options:
             choices: ["ALLOW_ALL", "DENY_ALL"]
           categories:
             type: dict
-            description: A category's key and values 
+            description: A category's key and values
             suboptions:
               apptype:
                 description: A category value.
@@ -639,7 +639,7 @@ options:
               - absent
           categories:
             type: dict
-            description: A category's key and values 
+            description: A category's key and values
           description:
             type: str
             description: >-
@@ -743,7 +743,7 @@ options:
               - absent
           categories:
             type: dict
-            description: A category's key and values 
+            description: A category's key and values
           description:
             type: str
             description: >-
