@@ -154,8 +154,12 @@ class SecurityRule(Prism):
             if categories.get("apptype_filter_by_category"):
                 params.update(**categories["apptype_filter_by_category"])
 
-            target_group["filter"] = self._get_default_filter_spec()
-            target_group["filter"]["params"] = params
+            target_group["filter"] = (
+                payload.get("target_group", {}).get("filter")
+                or self._get_default_filter_spec()
+            )
+            if params:
+                target_group["filter"]["params"] = params
             target_group["peer_specification_type"] = "FILTER"
             payload["target_group"] = target_group
 
