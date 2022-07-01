@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
+from .spec.categories_mapping import CategoriesMapping
 from .prism import Prism
 
 __metaclass__ = type
@@ -16,8 +17,8 @@ class ImagePlacementPolicy(Prism):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "categories": self._build_spec_categories,
-            "remove_categories": self._build_spec_remove_categories,
+            "categories": CategoriesMapping.build_categories_mapping_spec,
+            "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
             "placement_type": self._build_spec_placement_type,
             "image_categories": self._build_spec_image_categories,
             "cluster_categories": self._build_spec_cluster_categories,
@@ -52,18 +53,6 @@ class ImagePlacementPolicy(Prism):
 
     def _build_spec_desc(self, payload, desc):
         payload["spec"]["description"] = desc
-        return payload, None
-
-    def _build_spec_categories(self, payload, categories):
-        if payload["metadata"].get("categories_mapping") != categories:
-            payload["metadata"]["use_categories_mapping"] = True
-            payload["metadata"]["categories_mapping"] = categories
-        return payload, None
-
-    def _build_spec_remove_categories(self, payload, remove_categories):
-        if remove_categories and payload["metadata"].get("categories_mapping"):
-            payload["metadata"]["use_categories_mapping"] = True
-            payload["metadata"]["categories_mapping"] = {}
         return payload, None
 
     def _build_spec_placement_type(self, payload, type):

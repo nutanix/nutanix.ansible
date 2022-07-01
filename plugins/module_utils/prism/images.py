@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
+from .spec.categories_mapping import CategoriesMapping
 from .clusters import Cluster
 from .prism import Prism
 
@@ -36,8 +37,8 @@ class Image(Prism):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "remove_categories": self._build_spec_remove_categories,
-            "categories": self._build_spec_categories,
+            "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
+            "categories": CategoriesMapping.build_categories_mapping_spec,
             "source_uri": self._build_spec_source_uri,
             "checksum": self._build_spec_checksum,
             "image_type": self._build_spec_image_type,
@@ -78,18 +79,6 @@ class Image(Prism):
 
     def _build_spec_desc(self, payload, desc):
         payload["spec"]["description"] = desc
-        return payload, None
-
-    def _build_spec_categories(self, payload, categories):
-        if payload["metadata"].get("categories_mapping") != categories:
-            payload["metadata"]["use_categories_mapping"] = True
-            payload["metadata"]["categories_mapping"] = categories
-        return payload, None
-
-    def _build_spec_remove_categories(self, payload, remove_categories):
-        if remove_categories and payload["metadata"].get("categories_mapping"):
-            payload["metadata"]["use_categories_mapping"] = True
-            payload["metadata"]["categories_mapping"] = {}
         return payload, None
 
     def _build_spec_source_uri(self, payload, source_uri):
