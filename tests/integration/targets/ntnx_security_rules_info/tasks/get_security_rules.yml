@@ -5,21 +5,13 @@
   ntnx_security_rules:
     name: isolation_test_rule
     isolation_rule:
-      first_entity_filter:
-        type: CATEGORIES_MATCH_ALL
-        kind_list:
-          - vm
-        params:
-          CalmApplication:
-            - test_check_123_asadsdas
-      second_entity_filter:
-        type: CATEGORIES_MATCH_ALL
-        kind_list:
-          - vm
-        params:
-          CalmApplication:
-            - test_check_123anjsndjasdasd
-      action: MONITOR
+      isolate_category:
+        Environment:
+          - Dev
+      from_category:
+        Environment:
+          - Production
+      policy_mode: MONITOR
   register: first_rule
   ignore_errors: true
 
@@ -34,7 +26,7 @@
     success_msg: 'pass:  isolation_rule for testing  created successfully  '
 ###################################
 - name: getting all security rules
-  ntnx_security_rules_info: null
+  ntnx_security_rules_info:
   register: result
   ignore_errors: true
 
@@ -45,6 +37,7 @@
       - result.changed == false
       - result.failed == false
       - result.response.metadata.kind == "network_security_rule"
+      - result.response.metadata.total_matches > 0
     fail_msg: ' fail: unable to get security rules '
     success_msg: 'pass: get all security rules successfully '
 ###################################
@@ -65,7 +58,7 @@
     fail_msg: ' fail : unable to get particlar security rule using security_rule_uuid'
     success_msg: 'pass: getting  security rule using security_rule_uuid succesfuly'
 ###################################
-- name: getting all secuirty rules sorted
+- name: getting all security rules sorted
   ntnx_security_rules_info:
     sort_order: ASCENDING
     sort_attribute: Name
@@ -81,10 +74,10 @@
       - result.response.metadata.kind == "network_security_rule"
       - result.response.metadata.sort_order == "ASCENDING"
       - result.response.metadata.sort_attribute == "Name"
-    fail_msg: ' fail: unable to get all secuirty rules sorted'
-    success_msg: 'pass: getting all secuirty rules sorted successfully '
+    fail_msg: ' fail: unable to get all security rules sorted'
+    success_msg: 'pass: getting all security rules sorted successfully '
 ###################################
-- name: delete secuirty rule
+- name: delete security rule
   ntnx_security_rules:
     state: absent
     security_rule_uuid: '{{ first_rule.response.metadata.uuid }}'
@@ -98,5 +91,5 @@
       - result.failed == false
       - result.response.status == 'SUCCEEDED'
     fail_msg: ' fail: unable to delete secutiry rule '
-    success_msg: 'pass: secuirty rule deleted succesfully '
+    success_msg: 'pass: security rule deleted succesfully '
 ###################################

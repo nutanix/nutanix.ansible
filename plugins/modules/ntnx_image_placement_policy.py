@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_image_placement_policy
 short_description: image placement policy module which supports Create, update and delete operations
-version_added: 1.0.0
+version_added: 1.3.0
 description: "Create, Update, Delete image placement policy"
 options:
     state:

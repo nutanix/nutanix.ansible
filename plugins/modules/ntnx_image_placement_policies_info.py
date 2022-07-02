@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_image_placement_policies_info
 short_description: image placement policies info module
-version_added: 1.0.0
+version_added: 1.3.0
 description: 'Get image placement policy info'
 options:
     kind:

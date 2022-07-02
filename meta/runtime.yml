@@ -6,6 +6,7 @@ action_groups:
   - ntnx_images
   - ntnx_image_placement_policy
   - ntnx_pbrs
+  - ntnx_security_rules
   - ntnx_subnets
   - ntnx_vms_ova
   - ntnx_vms_clone
@@ -15,6 +16,7 @@ action_groups:
   - ntnx_images_info
   - ntnx_image_placement_policies_info
   - ntnx_pbrs_info
+  - ntnx_security_rules_info
   - ntnx_subnets_info
   - ntnx_vms_info
   - ntnx_vpcs_info
@@ -30,5 +32,3 @@ action_groups:
   - ntnx_foundation_central_imaged_clusters_info
   - ntnx_foundation_central_api_keys
   - ntnx_foundation_central_api_keys_info
-  - ntnx_security_rules
-  - ntnx_security_rules_info

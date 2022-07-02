@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_images_info
 short_description: images info module
-version_added: 1.0.0
+version_added: 1.3.0
 description: 'Get images info'
 options:
     kind:

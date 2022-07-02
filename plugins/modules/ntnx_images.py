@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_images
 short_description: images module which supports pc images management CRUD operations
-version_added: 1.0.0
+version_added: 1.3.0
 description: "Create, Update, Delete images"
 options:
     state:
