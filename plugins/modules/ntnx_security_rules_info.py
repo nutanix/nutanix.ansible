@@ -79,71 +79,92 @@ entities:
   type: list
   sample: {
     "entities": [
-            {
-                "metadata": {
-                    "categories": {},
-                    "categories_mapping": {},
-                    "creation_time": "2022-03-09T08:37:15Z",
-                    "kind": "security_rule",
-                    "last_update_time": "2022-03-09T08:37:17Z",
-                    "owner_reference": {
-                        "kind": "user",
-                        "name": "admin",
-                        "uuid": "00000000-0000-0000-0000-000000000000"
+                {
+                    "metadata": {
+                        "categories": {},
+                        "categories_mapping": {},
+                        "creation_time": "2022-07-02T07:31:20Z",
+                        "kind": "network_security_rule",
+                        "last_update_time": "2022-07-02T07:31:22Z",
+                        "owner_reference": {
+                            "kind": "user",
+                            "name": "admin",
+                            "uuid": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "spec_version": 0,
+                        "uuid": "734a569e-f43b-4b33-b71b-e3b5f1970a37"
                     },
-                    "spec_version": 0,
-                    "uuid": "00000000-0000-0000-0000-000000000000"
-                },
-                "spec": {
-                    "name": "integration_test_security_rule",
-                    "resources": {
-                        "common_domain_name_server_ip_list": [],
-                        "external_subnet_list": [
-                            {
-                                "external_subnet_reference": {
-                                    "kind": "subnet",
-                                    "uuid": "00000000-0000-0000-0000-000000000000"
-                                }
-                            }
-                        ],
-                        "externally_routable_prefix_list": []
-                    }
-                },
-                "status": {
-                    "execution_context": {
-                        "task_uuids": [
-                            "00000000-0000-0000-0000-000000000000"
-                        ]
-                    },
-                    "name": "integration_test_security_rule",
-                    "resources": {
-                        "availability_zone_reference_list": [],
-                        "common_domain_name_server_ip_list": [],
-                        "external_subnet_list": [
-                            {
-                                "active_gateway_node": {
-                                    "host_reference": {
-                                        "kind": "host",
-                                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    "spec": {
+                        "name": "isolation_test_rule",
+                        "resources": {
+                            "is_policy_hitlog_enabled": false,
+                            "isolation_rule": {
+                                "action": "MONITOR",
+                                "first_entity_filter": {
+                                    "kind_list": [
+                                        "vm"
+                                    ],
+                                    "params": {
+                                        "Environment": [
+                                            "Dev"
+                                        ]
                                     },
-                                    "ip_address": "000.000.000.000"
+                                    "type": "CATEGORIES_MATCH_ALL"
                                 },
-                                "external_ip_list": [
-                                    "000.000.000.000"
-                                ],
-                                "external_subnet_reference": {
-                                    "kind": "subnet",
-                                    "uuid": "00000000-0000-0000-0000-000000000000"
+                                "second_entity_filter": {
+                                    "kind_list": [
+                                        "vm"
+                                    ],
+                                    "params": {
+                                        "Environment": [
+                                            "Production"
+                                        ]
+                                    },
+                                    "type": "CATEGORIES_MATCH_ALL"
                                 }
                             }
-                        ],
-                        "externally_routable_prefix_list": []
+                        }
                     },
-                    "state": "COMPLETE"
+                    "status": {
+                        "description": null,
+                        "execution_context": {
+                            "task_uuid": [
+                                "2b88bf1d-ed24-4bc0-a0eb-baecc4cae71f"
+                            ]
+                        },
+                        "name": "isolation_test_rule",
+                        "resources": {
+                            "isolation_rule": {
+                                "action": "MONITOR",
+                                "first_entity_filter": {
+                                    "kind_list": [
+                                        "vm"
+                                    ],
+                                    "params": {
+                                        "Environment": [
+                                            "Dev"
+                                        ]
+                                    },
+                                    "type": "CATEGORIES_MATCH_ALL"
+                                },
+                                "second_entity_filter": {
+                                    "kind_list": [
+                                        "vm"
+                                    ],
+                                    "params": {
+                                        "Environment": [
+                                            "Production"
+                                        ]
+                                    },
+                                    "type": "CATEGORIES_MATCH_ALL"
+                                }
+                            }
+                        },
+                        "state": "COMPLETE"
+                    }
                 }
-            }
-        ],
-        }
+            ]
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
