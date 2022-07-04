@@ -23,7 +23,9 @@ class StaticRoutes(Vpc):
         }
 
     def update_static_routes(self, data, vpc_uuid):
-        return self.update(data=data, uuid=vpc_uuid, endpoint=self.route_tables_endpoint)
+        return self.update(
+            data=data, uuid=vpc_uuid, endpoint=self.route_tables_endpoint
+        )
 
     def get_static_routes(self, vpc_uuid):
         return self.read(uuid=vpc_uuid, endpoint=self.route_tables_endpoint)
