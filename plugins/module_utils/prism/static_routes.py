@@ -71,7 +71,7 @@ class StaticRoutes(Vpc):
                 }
 
             if route["destination"] == self.default_route_dest:
-                _, err = self._build_default_route_spec(payload, next_hop)
+                default_spec, err = self._build_default_route_spec(payload, next_hop)
                 if err:
                     return None, err
             else:
