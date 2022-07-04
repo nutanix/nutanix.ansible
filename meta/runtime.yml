@@ -7,7 +7,7 @@ action_groups:
   - ntnx_image_placement_policy
   - ntnx_pbrs
   - ntnx_security_rules
-  - ntnx_static_routes_info
+  - ntnx_static_routes
   - ntnx_subnets
   - ntnx_vms_ova
   - ntnx_vms_clone
