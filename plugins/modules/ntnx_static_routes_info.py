@@ -178,6 +178,11 @@ def get_module_spec():
 
     return module_args
 
+def get_static_routes(module, result):
+    vpc_uuid = module.params["vpc_uuid"]
+    static_routes = StaticRoutes(module)
+    result["response"] = static_routes.get_static_routes(vpc_uuid)
+    result["vpc_uuid"] = vpc_uuid
 
 def run_module():
     module = BaseModule(
@@ -186,10 +191,7 @@ def run_module():
     )
     result = {"changed": False, "error": None, "response": None, "vpc_uuid": None}
 
-    vpc_uuid = module.params["vpc_uuid"]
-    static_routes = StaticRoutes(module)
-    result["response"] = static_routes.get_static_routes(vpc_uuid)
-    result["vpc_uuid"] = vpc_uuid
+    get_static_routes(module, result)
     module.exit_json(**result)
 
 

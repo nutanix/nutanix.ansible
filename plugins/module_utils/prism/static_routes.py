@@ -13,6 +13,7 @@ from .vpn_connections import get_vpn_connection_uuid
 
 class StaticRoutes(Vpc):
     default_route_dest = "0.0.0.0/0"
+    route_tables_endpoint = "route_tables"
 
     def __init__(self, module):
         super(StaticRoutes, self).__init__(module)
@@ -22,10 +23,10 @@ class StaticRoutes(Vpc):
         }
 
     def update_static_routes(self, data, vpc_uuid):
-        return self.update(data=data, uuid=vpc_uuid, endpoint="route_tables")
+        return self.update(data=data, uuid=vpc_uuid, endpoint=self.route_tables_endpoint)
 
     def get_static_routes(self, vpc_uuid):
-        return self.read(uuid=vpc_uuid, endpoint="route_tables")
+        return self.read(uuid=vpc_uuid, endpoint=self.route_tables_endpoint)
 
     def _get_default_spec(self):
         return deepcopy(
