@@ -27,21 +27,19 @@
     ignore_errors: true
     
   - name: create_ova_image  while vm is on
-    ntnx_vms:
+    ntnx_vms_ova:
         state: present
-        vm_uuid: "{{ vm_uuid }}"
-        operation: create_ova_image
-        ova_name: integration_test_VMDK_ova
-        ova_file_format: VMDK
+        src_vm_uuid: "{{ vm_uuid }}"
+        name: integration_test_VMDK_ova
+        file_format: VMDK
         wait: true
     register: result
     ignore_errors: true
 
   - name: clone vm while it's off also add network and script
-    ntnx_vms:
+    ntnx_vms_clone:
         state: present
-        vm_uuid: "{{ vm_uuid }}"
-        operation: clone
+        src_vm_uuid: "{{ vm_uuid }}"
         networks:
           - is_connected: true
             subnet:

@@ -114,6 +114,7 @@ class Entity(object):
         self,
         source,
         endpoint=None,
+        method="POST",
         query=None,
         raise_error=True,
         no_response=False,
@@ -125,7 +126,7 @@ class Entity(object):
         return self._upload_file(
             url,
             source,
-            method="POST",
+            method=method,
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
@@ -353,13 +354,15 @@ class Entity(object):
     def _upload_file(
         self, url, source, method, raise_error=True, no_response=False, timeout=30
     ):
-
+        file_chunks_iterator = FileChunksIterator(source)
+        headers = copy.deepcopy(self.headers)
+        headers["Content-Length"] = file_chunks_iterator.length
         resp, info = fetch_url(
             self.module,
             url,
-            data=FileChunksIterator(source),
+            data=file_chunks_iterator,
             method=method,
-            headers=self.headers,
+            headers=headers,
             cookies=self.cookies,
             timeout=timeout,
         )
@@ -372,6 +375,12 @@ class Entity(object):
             resp_json = None
 
         if not raise_error:
+            # Add error details and status details if any
+            if not resp_json:
+                resp_json = {}
+            if status_code >= 300:
+                resp_json["error"] = body
+            resp_json["status_code"] = status_code
             return resp_json
 
         if status_code >= 300:

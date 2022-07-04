@@ -19,6 +19,7 @@ It is designed keeping simplicity as the core value. Hence it is
 ## Prism Cenral
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
 > For the 1.2.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.5.
+> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. Static routes module (ntnx_static_routes) is only supported for PC versions >= pc.2022.1.
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
@@ -98,24 +99,32 @@ ansible-playbook examples/iaas/iaas.yml
 
 | Name | Description |
 | --- | --- |
+| ntnx_floating_ips | Create or delete a Floating Ip. |
+| ntnx_floating_ips_info | List existing Floating_Ips. |
+| ntnx_images | Create, update or delete a image. |
+| ntnx_images_info | List existing images. |
+| ntnx_image_placement_policy | Create, update or delete a image placement policy. |
+| ntnx_image_placement_policies_info | List existing image placement policies. |
+| ntnx_pbrs | Create or delete a PBR. |
+| ntnx_pbrs_info | List existing PBRs. |
+| ntnx_security_rules | Create, update or delete a Security Rule. |
+| ntnx_security_rules_info | List existing Security Rules. |
+| ntnx_static_routes | Update static routes of a vpc. |
+| ntnx_static_routes_info | List existing static routes of a vpc. |
+| ntnx_subnets | Create or delete a Subnet. |
+| ntnx_subnets_info | List existing Subnets. |
 | ntnx_vms | Create or delete a VM. |
 | ntnx_vms_clone | Clone VM. |
 | ntnx_vms_ova | Create OVA image from VM. |
 | ntnx_vms_info | List existing VMs. |
 | ntnx_vpcs | Create or delete a VPC. |
 | ntnx_vpcs_info | List existing VPCs. |
-| ntnx_subnets | Create or delete a Subnet. |
-| ntnx_subnets_info | List existing Subnets. |
-| ntnx_floating_ips | Create or delete a Floating Ip. |
-| ntnx_floating_ips_info | List existing Floating_Ips. |
-| ntnx_pbrs | Create or delete a PBR. |
-| ntnx_pbrs_info | List existing PBRs. |
 | ntnx_foundation | Image nodes and create new cluster. |
-| ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
-| ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |
 | ntnx_foundation_aos_packages_info | List the AOS packages uploaded to Foundation. |
+| ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
 | ntnx_foundation_discover_nodes_info | List the nodes discovered by Foundation. |
 | ntnx_foundation_hypervisor_images_info | List the hypervisor images uploaded to Foundation. |
+| ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |
 | ntnx_foundation_node_network_info | Get node network information discovered by Foundation. |
 | ntnx_foundation_central | Create a cluster out of nodes registered with Foundation Central. |
 | ntnx_foundation_central_api_keys | Create a new api key which will be used by remote nodes to authenticate with Foundation Central. |
@@ -127,7 +136,7 @@ ansible-playbook examples/iaas/iaas.yml
 
 | Name | Description |
 | --- | --- |
-| ntnx_vms_inventory | Nutanix VMs inventory source |
+| ntnx_prism_vm_inventory | Nutanix VMs inventory source |
 
 # Module documentation and examples
 ```

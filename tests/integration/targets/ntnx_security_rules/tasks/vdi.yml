@@ -1,0 +1,102 @@
+- name: create ad security rule with inbound and outbound list
+  ntnx_security_rules:
+    name: VDI Policy
+    vdi_rule:
+      target_group:
+          categories:
+            adgroup: "$Default"
+          default_internal_policy: DENY_ALL
+      allow_all_outbounds: true
+      inbounds:
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            description: test description
+            protocol:
+              tcp:
+                - start_port: 22
+                  end_port: 80
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            protocol:
+                icmp:
+                  - code: 1
+                    type: 1
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            protocol: 
+              udp:
+                - start_port: 82
+                  end_port: 8080
+        - 
+            categories:
+              AppFamily:
+                - Databases
+                - DevOps
+            protocol: 
+              service:
+                name: 6a44
+        - 
+          address:
+            name: dest
+      policy_mode: MONITOR
+    allow_ipv6_traffic: true
+    policy_hitlog: true
+  register: result
+  ignore_errors: true
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.spec.name=="VDI Policy"
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' fail: unable create ad security rule with inbound and outbound list'
+    success_msg: >-
+      pass: create ad security rule with inbound and outbound list finished successfully
+- name: update VDI security rule action
+  ntnx_security_rules:
+    security_rule_uuid: '{{ result.response.metadata.uuid }}'
+    vdi_rule:
+      inbounds:
+        - 
+          ip_subnet:
+            prefix_length: 8
+            ip: 10.0.0.0
+          description: test description
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: ' fail: unable to update vdi_rule    '
+    success_msg: 'pass : update vdi_rule   successfully'
+
+- name: delete vdi_rule rule
+  ntnx_security_rules:
+    state: absent
+    security_rule_uuid: '{{ result.response.metadata.uuid }}'
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: ' fail: unable to delete vdi_rule security rule '
+    success_msg: 'pass : delete vdi_rule security rule successfully'

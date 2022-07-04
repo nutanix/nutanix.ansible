@@ -1,0 +1,53 @@
+---
+- debug:
+    msg: start ntnx_image delete tests
+
+- name: Create image with minimal spec and source uri for delete tests
+  ntnx_images:
+    state: present
+    image_type: DISK_IMAGE
+    source_uri: "{{ disk_image.url }}"
+    name: integration-test-image-with-uri
+    wait: true
+  register: result
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: "Unable to create image with minimal spec for delete tests"
+    success_msg: "Image with minimal spec created successfully"
+
+- name: Delete image created above
+  ntnx_images:
+    state: absent
+    image_uuid: "{{ result.response.metadata.uuid }}"
+  register: result
+
+- name: Delete Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Unable to delete image"
+    success_msg: "Image deleted successfully"
+      
+#####################################################################################################
+
+- name: "Negative scenario when delete image with incorrect uuid"
+  ntnx_images:
+    state: absent
+    image_uuid: abcd
+  register: result
+  ignore_errors: True
+      
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == True
+    success_msg: "Success: delete failed as expected"
+    fail_msg: "Fail: Delete vm didn't returned error for incorrect uuid"

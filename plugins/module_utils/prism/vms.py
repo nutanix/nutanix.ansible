@@ -15,6 +15,7 @@ from .groups import get_entity_uuid
 from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
+from .spec.categories_mapping import CategoriesMapping
 from .subnets import Subnet
 
 
@@ -22,7 +23,10 @@ class VM(Prism):
     def __init__(self, module):
         resource_type = "/vms"
         super(VM, self).__init__(module, resource_type=resource_type)
-        self.params_without_defaults = _load_params()
+        if self.module.params.get("load_params_without_defaults", True):
+            self.params_without_defaults = _load_params()
+        else:
+            self.params_without_defaults = self.module.params
         self.require_vm_restart = False
         self.build_spec_methods = {
             "name": self._build_spec_name,
@@ -37,7 +41,8 @@ class VM(Prism):
             "boot_config": self._build_spec_boot_config,
             "guest_customization": self._build_spec_gc,
             "timezone": self._build_spec_timezone,
-            "categories": self._build_spec_categories,
+            "categories": CategoriesMapping.build_categories_mapping_spec,
+            "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
         }
 
     @staticmethod
@@ -321,11 +326,6 @@ class VM(Prism):
 
     def _build_spec_timezone(self, payload, value):
         payload["spec"]["resources"]["hardware_clock_timezone"] = value
-        return payload, None
-
-    def _build_spec_categories(self, payload, value):
-        payload["metadata"]["categories_mapping"] = value
-        payload["metadata"]["use_categories_mapping"] = True
         return payload, None
 
     def _check_and_set_require_vm_restart(self, current_value, new_value):

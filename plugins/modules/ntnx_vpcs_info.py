@@ -172,7 +172,7 @@ def get_vpc(module, result):
     result["response"] = resp
 
 
-def list_vpc(module, result):
+def get_vpcs(module, result):
     vpc = Vpc(module)
     spec, error = vpc.get_info_spec()
 
@@ -192,7 +192,7 @@ def run_module():
     if module.params.get("vpc_uuid"):
         get_vpc(module, result)
     else:
-        list_vpc(module, result)
+        get_vpcs(module, result)
     module.exit_json(**result)
 
 

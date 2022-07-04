@@ -47,7 +47,7 @@
         is_overridable: True
     register: output
 
-  - name: output of list Subnets
+  - name: output of vm created
     debug:
       msg: '{{ output }}'
 
@@ -55,4 +55,3 @@
     ntnx_vms:
       state: absent
       vm_uuid: "{{output.vm_uuid}}"
-      register: output

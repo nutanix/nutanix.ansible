@@ -1,0 +1,124 @@
+---
+- debug:
+    msg: start ntnx_image create tests
+
+- name: Create image for update tests
+  ntnx_images:
+    state: present
+    name: integration-test-image-update
+    desc: "image for integration"
+    source_uri: "{{ disk_image.url }}"
+    image_type: "DISK_IMAGE"
+    categories:
+      Environment:
+        - "Dev"
+      AppType:
+        - "Default"
+    version:
+      product_name: "test"
+      product_version: "1.2.0"
+    clusters:
+      - name: "{{ cluster.name }}" 
+    checksum:
+      checksum_algorithm: "SHA_1"
+      checksum_value: "{{ disk_image.checksum }}"
+    wait: true
+
+  register: setup_image
+
+- name: Creation Status
+  assert: 
+    that:
+      - setup_image.response is defined
+      - setup_image.response.status.state == 'COMPLETE'
+    fail_msg: "Unable to create image using source_uri for update tests"
+    success_msg: "Image with given source_uri created successfully for update tests"
+
+- set_fact:
+    todelete: '{{ todelete + [  setup_image["response"]["metadata"]["uuid"] ] }}'
+
+############################################# UPDATE TESTS ########################################
+
+- name: check idempotency
+  ntnx_images: 
+    state: present
+    image_uuid: "{{ setup_image.image_uuid }}"
+    name: integration-test-image-update
+    desc: "image for integration"
+    categories:
+      Environment:
+        - "Dev"
+      AppType:
+        - "Default"
+    image_type: "DISK_IMAGE"
+  register: result
+
+- name: check idempotency status
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - "'Nothing to change' in result.msg"
+    fail_msg: "Image got updated"
+    success_msg: "Image update skipped succesfully due to no changes in spec"
+
+########################################################################################
+
+- name: Update name, desc and categories
+  ntnx_images: 
+    state: present
+    image_uuid: "{{ setup_image.image_uuid }}"
+    name: integration-test-image-after-update
+    desc: "description after update"
+    categories:
+      Environment:
+        - "Production"
+      AppType:
+        - "Default"
+    image_type: "ISO_IMAGE"
+  register: result
+
+- name: Update Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.status.name == 'integration-test-image-after-update'
+      - result.response.status.description == 'description after update'
+      - result.response.status.resources.image_type == 'ISO_IMAGE'
+      - result.response.metadata.categories_mapping['Environment'] == ['Production']
+      - result.response.metadata.categories_mapping['AppType'] == ['Default']
+    fail_msg: "Unable to update image"
+    success_msg: "Image with given update spec updated successfully"
+
+########################################################################################
+
+- name: test removal of all categories from image
+  ntnx_images: 
+    state: present
+    image_uuid: "{{ setup_image.image_uuid }}"
+    remove_categories: true
+  register: result
+
+  
+- name: Update Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.metadata.categories_mapping == {}
+    fail_msg: "Unable to remove all categories from image"
+    success_msg: "All categories attached to image removed successfully"
+
+########################################### Cleanup ###################################################
+
+- name: cleanup created entities
+  ntnx_images:
+    state: absent
+    image_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- set_fact:
+    todelete: []

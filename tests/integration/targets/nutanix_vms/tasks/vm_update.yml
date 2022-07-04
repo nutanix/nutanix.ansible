@@ -6,6 +6,9 @@
     name: update vm
     cluster:
       name: "{{ cluster.name }}"
+    categories:
+        Environment:
+          - Production
     vcpus: 5
     cores_per_vcpu: 5 
     memory_gb: 5
@@ -82,7 +85,53 @@
       - result.response.status.state == "COMPLETE"
     fail_msg: ' Unable to update vm by increase values for  corespervcpu with force_power_off'
     success_msg: ' VM updated successfully by increase values for  corespervcpu with force_power_off '
+
 ####################################################################
+- debug:
+    msg: Start update tests for vm categories
+
+- name: update categories
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    categories:
+        Environment:
+          - Dev
+        AppType:
+          - Default
+  register: result
+  ignore_errors: true
+
+- name: Assert categories Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+      - result.response.metadata.categories_mapping["Environment"] == ["Dev"]
+      - result.response.metadata.categories_mapping["AppType"] == ["Default"]
+    fail_msg: ' Unable to update categories attached to vm'
+    success_msg: ' VM categories updated successfully '
+
+- name: remove all categoies attached to vm
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    remove_categories: true
+  register: result
+  ignore_errors: true
+
+- name: Assert categories Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+      - result.response.metadata.categories_mapping == {}
+    fail_msg: ' Unable to remove all categories attached to vm'
+    success_msg: ' All VM categories removed successfully '
+
+###################################################################
 - debug:
     msg: Start update tests for disks
 ##### CRUD opperation for SCSI disks

@@ -1,0 +1,107 @@
+---
+- debug:
+    msg: "start ntnx_image_placement_policies_info tests"
+
+- name: create image placement policy
+  ntnx_image_placement_policy:
+    placement_type: soft
+    name: "test_policy_1"
+    image_categories: 
+      AnalyticsExclusions:
+        - AnomalyDetection
+    cluster_categories:
+      AppTier:
+        - Default
+  register: policy_1
+
+- name: create image placement policy
+  ntnx_image_placement_policy:
+    placement_type: soft
+    name: "test_policy_2"
+    image_categories: 
+      AnalyticsExclusions:
+        - AnomalyDetection
+    cluster_categories:
+      AppTier:
+        - Default
+  register: policy_2
+
+- set_fact:
+    todelete: '{{ todelete + [  policy_1["response"]["metadata"]["uuid"] ] }}'
+
+- set_fact:
+    todelete: '{{ todelete + [  policy_2["response"]["metadata"]["uuid"] ] }}'
+
+###################################################################
+- name: test getting all image placement policies
+  ntnx_image_placement_policies_info:
+  register: result
+  
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.metadata.total_matches > 0
+    fail_msg: "Unable to list all image placement policies"
+    success_msg: "Image placement policies listed successfully"
+################################################################
+
+- name: test getting particular image placement policy using filter
+  ntnx_image_placement_policies_info:
+    filter:
+      name: "{{ policy_1.response.status.name }}"
+    length: 1
+    offset: 0
+  register: result
+  
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.entities[0].status.name == '{{ policy_1.response.status.name }}'
+    fail_msg: "Unable to get particular image placement policy"
+    success_msg: "Image placement policy info obtained successfully using filter"
+
+################################################################
+
+- name: test getting particular image placement policy using uuid
+  ntnx_image_placement_policies_info:
+    policy_uuid: "{{ policy_2.response.metadata.uuid }}"
+  register: result
+  
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.name == '{{ policy_2.response.status.name }}'
+    fail_msg: "Unable to get particular image placement policy"
+    success_msg: "Image placement policy info obtained successfully using uuid"
+
+#############################################################
+
+- name: List image placement policy using ascending name sorting
+  ntnx_image_placement_policies_info:
+    sort_order: "DESCENDING"
+    sort_attribute: "name"
+  register: result
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: "Unable to list policies as per names"
+    success_msg: "Image placement policy listed successfully"
+
+##################################################CLEANUP#######################################################
+
+- name: cleanup created entities
+  ntnx_image_placement_policy:
+    state: absent
+    policy_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- set_fact:
+    todelete: []

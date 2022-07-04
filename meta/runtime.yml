@@ -3,17 +3,25 @@ requires_ansible: '>=2.11.6'
 action_groups:
   ntnx:
   - ntnx_floating_ips
+  - ntnx_images
+  - ntnx_image_placement_policy
   - ntnx_pbrs
-  - ntnx_vms
-  - ntnx_vpcs
+  - ntnx_security_rules
+  - ntnx_static_routes
   - ntnx_subnets
   - ntnx_vms_ova
   - ntnx_vms_clone
+  - ntnx_vms
+  - ntnx_vpcs
   - ntnx_floating_ips_info
+  - ntnx_images_info
+  - ntnx_image_placement_policies_info
   - ntnx_pbrs_info
+  - ntnx_security_rules_info
+  - ntnx_static_routes_info
+  - ntnx_subnets_info
   - ntnx_vms_info
   - ntnx_vpcs_info
-  - ntnx_subnets_info
   - ntnx_foundation_aos_packages_info
   - ntnx_foundation_bmc_ipmi_config
   - ntnx_foundation_discover_nodes_info
