@@ -19,7 +19,9 @@ It is designed keeping simplicity as the core value. Hence it is
 ## Prism Cenral
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
 > For the 1.2.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.5.
-> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4.
+> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. Static routes module (ntnx_static_routes) is only supported for PC versions >= pc.2022.1.
+
+Note: Static routes modules is qualified for p
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
