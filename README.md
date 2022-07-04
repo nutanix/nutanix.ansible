@@ -106,6 +106,8 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_image_placement_policies_info | List existing image placement policies. |
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
+| ntnx_security_rules | Create, update or delete a Security Rule. |
+| ntnx_security_rules_info | List existing Security Rules. |
 | ntnx_static_routes | Update static routes of a vpc. |
 | ntnx_static_routes_info | List existing static routes of a vpc. |
 | ntnx_subnets | Create or delete a Subnet. |

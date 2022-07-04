@@ -1,3 +1,15 @@
+## v1.3.0 (4 Jule 2022)
+
+**Features**
+
+**Prism Central**
+- Ansible module for Image
+- Ansible info module for Image
+- Ansible module for Security Rules
+- Ansible info module for Security Rules
+- Ansible module for Static Routes
+- Ansible info module for Static Routes
+
 ## v1.2.0 (3 June 2022)
 
 **Features**
