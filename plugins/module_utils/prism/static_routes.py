@@ -8,15 +8,14 @@ from copy import deepcopy
 
 from .subnets import get_subnet_uuid
 from .vpn_connections import get_vpn_connection_uuid
-from .prism import Prism
+from .vpcs import Vpc
 
 
-class StaticRoutes(Prism):
+class StaticRoutes(Vpc):
     default_route_dest = "0.0.0.0/0"
 
     def __init__(self, module):
-        resource_type = "/vpcs"
-        super(StaticRoutes, self).__init__(module, resource_type=resource_type)
+        super(StaticRoutes, self).__init__(module)
         self.build_spec_methods = {
             "static_routes": self._build_spec_static_routes,
             "remove_all_routes": self._build_spec_remove_all_routes,
