@@ -1,0 +1,71 @@
+- debug:
+    msg: Start testing static routes info tests
+
+- name: create new static routes
+  ntnx_static_routes:
+    vpc_uuid: "{{ vpc.uuid }}"
+    static_routes:
+      - destination: "0.0.0.0/0"
+        next_hop:
+          external_subnet_ref:
+            name: "{{ external_nat_subnet.name }}"
+      - destination: "10.2.2.0/24"
+        next_hop:
+          external_subnet_ref:
+            uuid: "{{ external_nat_subnet.uuid }}"
+      - destination: "10.2.3.0/24"
+        next_hop:
+          external_subnet_ref:
+            uuid: "{{ external_nat_subnet.uuid }}"
+  register: result
+  
+- name: Update static routes list Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.changed == true      
+    fail_msg: 'Fail: Unable to update static routes of vpc'
+    success_msg: 'Succes: static routes updated succesfully'
+
+###########################################################################################################
+
+- name: get all static routes
+  ntnx_static_routes_info:
+    vpc_uuid: "{{ vpc.uuid }}"
+  register: result
+
+- name: check info module response
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.status.resources.static_routes_list[0]["is_active"] == true
+      - result.response.status.resources.static_routes_list[0]["destination"] == "10.2.2.0/24"
+      - result.response.status.resources.static_routes_list[0]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
+      - result.response.status.resources.static_routes_list[1]["is_active"] == true
+      - result.response.status.resources.static_routes_list[1]["destination"] == "10.2.3.0/24"
+      - result.response.status.resources.static_routes_list[1]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
+      - result.response.status.resources.default_route["is_active"] == true
+      - result.response.status.resources.default_route["destination"] == "0.0.0.0/0"
+      - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
+      
+    fail_msg: 'Fail: Unable to get static routes for vpc'
+    success_msg: 'Succes'
+
+###########################################################################################################
+
+- name: remove all routes for cleanup
+  ntnx_static_routes:
+    vpc_uuid: "{{ vpc.uuid }}"
+    remove_all_routes: true
+  register: result
+  ignore_errors: true
+
+- name: Remove all routes status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.changed == true
+      - result.response.status.resources.static_routes_list == []
