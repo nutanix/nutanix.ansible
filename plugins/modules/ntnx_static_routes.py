@@ -26,11 +26,11 @@ options:
         description:
             - set this flag to remove all static routes
             - this will only remove all static routes except local and dynamic routes
-            - mutually_exclusive with C(static_routes_list)
+            - mutually_exclusive with C(static_routes)
         type: bool
         required: false
         default: false
-    static_routes_list:
+    static_routes:
         description:
             - list of static routes to be overriden in vpc.
             - mutually exclusive with C(remove_all_routes)
@@ -106,7 +106,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: False
     vpc_uuid: "{{ vpc.uuid }}"
-    static_routes_list:
+    static_routes:
       - destination: "0.0.0.0/0"
         next_hop:
           external_subnet_ref:
@@ -305,7 +305,7 @@ def get_module_spec():
     )
     module_args = dict(
         vpc_uuid=dict(type="str", required=True),
-        static_routes_list=dict(
+        static_routes=dict(
             type="list", elements="dict", options=static_route_spec, required=False
         ),
         remove_all_routes=dict(type="bool", required=False, default=False),
@@ -364,8 +364,8 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_one_of=[("static_routes_list", "remove_all_routes")],
-        mutually_exclusive=[("static_routes_list", "remove_all_routes")],
+        required_one_of=[("static_routes", "remove_all_routes")],
+        mutually_exclusive=[("static_routes", "remove_all_routes")],
     )
     remove_param_with_none_value(module.params)
     result = {

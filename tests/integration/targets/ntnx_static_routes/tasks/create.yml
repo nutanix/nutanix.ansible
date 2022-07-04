@@ -4,7 +4,7 @@
 - name: Add default static route and external nat static route to the vpc route table
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
-    static_routes_list:
+    static_routes:
       - destination: "0.0.0.0/0"
         next_hop:
           external_subnet_ref:
@@ -43,7 +43,7 @@
 - name: Idempotency check
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
-    static_routes_list:
+    static_routes:
       - destination: "0.0.0.0/0"
         next_hop:
           external_subnet_ref:
@@ -72,7 +72,7 @@
 - name: Override existing static routes
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
-    static_routes_list:
+    static_routes:
       - destination: "10.2.4.0/24"
         next_hop:
           external_subnet_ref:
@@ -96,7 +96,7 @@
 - name: Netgative scenario of cretaing multiple default routes
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
-    static_routes_list:
+    static_routes:
       - destination: "0.0.0.0/0"
         next_hop:
           external_subnet_ref:

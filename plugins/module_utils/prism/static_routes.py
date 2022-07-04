@@ -18,7 +18,7 @@ class StaticRoutes(Prism):
         resource_type = "/vpcs"
         super(StaticRoutes, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
-            "static_routes_list": self._build_spec_static_routes_list,
+            "static_routes": self._build_spec_static_routes,
             "remove_all_routes": self._build_spec_remove_all_routes,
         }
 
@@ -48,7 +48,7 @@ class StaticRoutes(Prism):
         payload["spec"]["resources"]["default_route_nexthop"] = next_hop
         return payload, None
 
-    def _build_spec_static_routes_list(self, payload, inp_static_routes):
+    def _build_spec_static_routes(self, payload, inp_static_routes):
         # since static route list has to be overriden
         if payload["spec"]["resources"].get("default_route_nexthop"):
             payload["spec"]["resources"].pop("default_route_nexthop")
