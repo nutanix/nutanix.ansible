@@ -133,7 +133,7 @@ ansible-playbook examples/iaas/iaas.yml
 
 | Name | Description |
 | --- | --- |
-| ntnx_vms_inventory | Nutanix VMs inventory source |
+| ntnx_prism_vm_inventory | Nutanix VMs inventory source |
 
 # Module documentation and examples
 ```

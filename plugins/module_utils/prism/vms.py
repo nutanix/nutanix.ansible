@@ -23,7 +23,10 @@ class VM(Prism):
     def __init__(self, module):
         resource_type = "/vms"
         super(VM, self).__init__(module, resource_type=resource_type)
-        self.params_without_defaults = _load_params()
+        if self.module.params.get("load_params_without_defaults", True):
+            self.params_without_defaults = _load_params()
+        else:
+            self.params_without_defaults = self.module.params
         self.require_vm_restart = False
         self.build_spec_methods = {
             "name": self._build_spec_name,
