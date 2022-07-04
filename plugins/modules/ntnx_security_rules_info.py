@@ -20,9 +20,9 @@ options:
       type: str
       default: network_security_rule
     security_rule_uuid:
-        description:
-            - security_rule UUID
-        type: str
+      description:
+        - security_rule UUID
+      type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info
