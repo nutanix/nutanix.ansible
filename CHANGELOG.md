@@ -3,12 +3,14 @@
 **Features**
 
 **Prism Central**
-- Ansible module for Image
-- Ansible info module for Image
-- Ansible module for Security Rules
-- Ansible info module for Security Rules
-- Ansible module for Static Routes
-- Ansible info module for Static Routes
+- Ansible module for Image Management
+- Ansible info module for Image Management
+- Ansible module for Image Placement Policy 
+- Ansible info module for Image Placement Policies
+- Ansible module for Network Security Rules
+- Ansible info module for Network Security Rules
+- Ansible module for VPC Static Routes
+- Ansible info module for VPC Static Routes
 
 ## v1.2.0 (3 June 2022)
 
