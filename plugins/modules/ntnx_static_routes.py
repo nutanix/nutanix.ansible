@@ -119,6 +119,10 @@ EXAMPLES = r"""
         next_hop:
           external_subnet_ref:
             uuid: "{{ external_nat_subnet.uuid }}"
+      - destination: "10.2.4.0/24"
+        next_hop:
+          vpn_connection_ref:
+            uuid: "{{ vpn.uuid }}"
   register: result
 
 - name: remove all routes excluding dynamic and local routes
