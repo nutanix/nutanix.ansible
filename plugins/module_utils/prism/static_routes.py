@@ -7,8 +7,8 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .subnets import get_subnet_uuid
-from .vpn_connections import get_vpn_connection_uuid
 from .vpcs import Vpc
+from .vpn_connections import get_vpn_connection_uuid
 
 
 class StaticRoutes(Vpc):

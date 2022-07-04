@@ -18,6 +18,7 @@ options:
         description:
             - vpc UUID whose static routes needs to be fetched
         type: str
+        required: true
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
