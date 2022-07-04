@@ -82,6 +82,7 @@ class Mock_Module:
             "nutanix_username": username,
             "nutanix_password": password,
             "validate_certs": validate_certs,
+            "load_params_without_defaults": False,
         }
 
     def jsonify(self, data):
@@ -150,7 +151,7 @@ class InventoryModule(BaseInventoryPlugin):
             for nics in entity["status"]["resources"]["nic_list"]:
                 if nics["nic_type"] == "NORMAL_NIC" and nic_count == 0:
                     for endpoint in nics["ip_endpoint_list"]:
-                        if endpoint["type"] == "ASSIGNED":
+                        if endpoint["type"] in ["ASSIGNED", "LEARNED"]:
                             vm_ip = endpoint["ip"]
                             nic_count += 1
                             continue
