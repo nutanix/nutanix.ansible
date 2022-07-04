@@ -23,6 +23,13 @@ options:
       description:
         - security_rule UUID
       type: str
+    sort_order:
+        description:
+        - The sort order in which results are returned
+        type: str
+        choices:
+            - ASCENDING
+            - DESCENDING
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info
@@ -165,6 +172,7 @@ entities:
                     }
                 }
             ]
+            }
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
