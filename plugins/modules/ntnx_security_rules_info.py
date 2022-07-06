@@ -45,7 +45,8 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter: "name=={{ security_rule.name }}"
+      filter:
+         name: "{{ security_rule.name }}"
       kind: security_rule
     register: result
 

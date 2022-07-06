@@ -30,20 +30,20 @@ author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
- - Dina AbuHijleh (@dina-abuhijleh)
 """
 EXAMPLES = r"""
-  - name: List pbrs using ip starts with 10 filter criteria
+  - name: List Floating ip using ip starts with 10 filter criteria
     ntnx_floating_ips_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter: "floating_ip==10."
+      filter:
+        floating_ip: "10."
       kind: floating_ip
     register: result
 
-  - name: List pbrs using length, offset, sort order and floating_ip sort attribute
+  - name: List Floating ip using length, offset, sort order and floating_ip sort attribute
     ntnx_floating_ips_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"

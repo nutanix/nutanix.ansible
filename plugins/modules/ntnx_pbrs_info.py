@@ -39,7 +39,8 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter: "priority==2"
+      filter:
+        priority: "2"
       kind: routing_policy
     register: result
 
