@@ -1,0 +1,41 @@
+  - debug:
+      msg: Start testing ntnx_clusters_info
+  - name: test getting all clusters
+    ntnx_clusters_info:
+    register: result
+    ignore_errors: True
+  - name: check listing status
+    assert:
+      that:
+        - result.response is defined
+        - result.failed == false
+      fail_msg: "Unable to list all cluster"
+      success_msg: "clusters listed successfully"
+  - name: test getting particular cluster using uuid
+    ntnx_clusters_info:
+      cluster_uuid: '{{ result.response.entities[0].metadata.uuid }}'
+    register: result
+    ignore_errors: True
+    
+  - name: check listing status
+    assert:
+      that:
+        - result.response is defined
+      fail_msg: "Unable to get particular cluster"
+      success_msg: "custer info obtained successfully"
+
+  - name: List clusters using length, offset, sort order and priority sort attribute
+    ntnx_clusters_info:
+      length: 2
+      offset: 0
+      sort_order: "ASCENDING"
+      sort_attribute: "priority"
+    register: result
+    ignore_errors: True
+  - name: check listing status
+    assert:
+      that:
+        - result.response is defined
+        - result.failed == false
+      fail_msg: "Unable to list all cluster"
+      success_msg: "clusters listed successfully"

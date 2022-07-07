@@ -10,8 +10,8 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_clusters_info
-short_description: cluster  info module
-version_added: 1.0.0
+short_description: cluster info module
+version_added: 1.3.0
 description: 'Get cluster info'
 options:
       kind:
@@ -79,7 +79,7 @@ entities:
   returned: always
   type: list
   sample: {
-    "entities": [
+    "entities": [ {
             "metadata": {
                 "categories": {},
                 "categories_mapping": {},
