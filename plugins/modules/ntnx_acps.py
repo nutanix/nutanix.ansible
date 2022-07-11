@@ -103,9 +103,11 @@ def get_module_spec():
     )
 
     module_args = dict(
+        name=dict(type="str"),
+        desc=dict(type="str"),
         user=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
         user_group=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        role=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
+        role=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True),
         scope_filter=dict(type="dict", options=filter_spec),
         entity_filter=dict(type="dict", options=filter_spec),
     )
