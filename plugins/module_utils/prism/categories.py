@@ -31,12 +31,8 @@ class CategoryKey(Categories):
         data = {
             "kind": "category"
         }
-        resp = super().list(data=data, use_base_url=True, endpoint="{0}/list".format(name))
-        values = {}
-        entities = resp.get("entities", [])
-        for value in entities:
-            values[value["value"]] = value
-        return values
+        endpoint = "{0}/list".format(name)
+        return super().list(data=data, use_base_url=True, endpoint=endpoint)
     
     def create(self, name, data):
         return super().create(data=data, endpoint=name, method="PUT")

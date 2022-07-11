@@ -37,7 +37,6 @@ def create_categories(module, result):
     # check if new category create is required or not
     category_key = key_obj.read(endpoint=name, raise_error=False)
     category_key_values = {}
-    category_values_specs = []
     category_key_exists = False
     if not category_key or category_key.get("state") == "ERROR":
         category_key_create_spec, err = key_obj.get_spec()
@@ -51,10 +50,14 @@ def create_categories(module, result):
             result["error"] = err
             module.fail_json(msg="Failed generating category key update spec", **result)
         utils.strip_extra_attrs(category_key, category_key_create_spec)
-        category_key_values = key_obj.list(name)
+        resp = key_obj.list(name)
+        category_key_values = []
+        for v in resp.get("entities", []):
+            category_key_values.append(v["value"])
 
     # create spec for all the values which needed to be added to category key
     values = module.params.get("values")
+    category_values_specs = []
     if values:
         value_obj = CategoryValue(module)
         for value in values:
@@ -140,7 +143,7 @@ def run_module():
     )
     utils.remove_param_with_none_value(module.params)
     result = {
-        "response": None,
+        "response": {},
         "error": None,
         "changed": False,
     }
