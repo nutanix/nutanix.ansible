@@ -47,6 +47,7 @@ class Entity(object):
         data=None,
         endpoint=None,
         query=None,
+        method = "POST",
         raise_error=True,
         no_response=False,
         timeout=30,
@@ -56,7 +57,7 @@ class Entity(object):
             url = self._build_url_with_query(url, query)
         return self._fetch_url(
             url,
-            method="POST",
+            method=method,
             data=data,
             raise_error=raise_error,
             no_response=no_response,

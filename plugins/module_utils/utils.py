@@ -18,18 +18,18 @@ def remove_param_with_none_value(d):
                     remove_param_with_none_value(e)
 
 
-def strip_extra_attrs_from_status(status, spec):
-    for k, v in status.copy().items():
-        if k not in spec:
-            status.pop(k)
+def strip_extra_attrs(spec1, spec2):
+    for k, v in spec1.copy().items():
+        if k not in spec2:
+            spec1.pop(k)
         elif isinstance(v, dict):
-            strip_extra_attrs_from_status(status[k], spec[k])
+            strip_extra_attrs(spec1[k], spec2[k])
         elif isinstance(v, list) and v and isinstance(v[0], dict):
             for i in range(len(v)):
                 try:
-                    strip_extra_attrs_from_status(status[k][i], spec[k][i])
+                    strip_extra_attrs(spec1[k][i], spec2[k][i])
                 except IndexError:
-                    status[k] = spec[k]
+                    spec1[k] = spec2[k]
                     break
 
 
