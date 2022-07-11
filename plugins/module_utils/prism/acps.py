@@ -14,15 +14,38 @@ class ACP(Prism):
         resource_type = "/access_control_policies"
         super(ACP, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
-            # Step 2. This is a Map of
-            # ansible attirbute and corresponding API spec generation method
-            # Example: method name should start with _build_spec_<method_name>
-            # name: _build_spec_name
+            "name": self._build_spec_name,
+            "desc": self._build_spec_desc,
+            "role": self._build_spec_role,
         }
 
     def _get_default_spec(self):
         return deepcopy(
             {
-                # Step 3: Default API spec
+                "api_version": "3.1.0",
+                "metadata": {
+                    "kind": "access_control_policy",
+                },
+                "spec": {
+                    "name": None,
+                    "resources": {
+                    },
+                },
             }
         )
+
+    def _build_spec_name(self, payload, name):
+        payload["spec"]["name"] = name
+        return payload, None
+
+    def _build_spec_desc(self, payload, desc):
+        payload["spec"]["description"] = desc
+        return payload, None
+
+    def _build_spec_role(self, payload, config):
+        if config.get("uuid"):
+            payload["spec"]["resources"]["role_reference"] = {
+                                                                "kind": "role",
+                                                                "uuid": config["uuid"]
+                                                            }
+        return payload, None
