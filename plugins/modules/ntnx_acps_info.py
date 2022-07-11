@@ -18,7 +18,7 @@ options:
       description:
         - The kind name
       type: str
-      default: network_acp
+      default: access_control_policy
     acp_uuid:
       description:
         - acp UUID
@@ -73,7 +73,7 @@ metadata:
   type: dict
   sample: {
     "metadata": {
-            "kind": "acp",
+            "kind": "access_control_policy",
             "length": 1,
             "offset": 2,
             "sort_attribute": "name",
@@ -90,83 +90,340 @@ entities:
                     "metadata": {
                         "categories": {},
                         "categories_mapping": {},
-                        "creation_time": "2022-07-02T07:31:20Z",
-                        "kind": "network_acp",
-                        "last_update_time": "2022-07-02T07:31:22Z",
-                        "owner_reference": {
-                            "kind": "user",
-                            "name": "admin",
-                            "uuid": "00000000-0000-0000-0000-000000000000"
-                        },
-                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "creation_time": "",
+                        "entity_version": "",
+                        "kind": "access_control_policy",
+                        "last_update_time": "",
+                        "spec_hash": "",
                         "spec_version": 0,
-                        "uuid": "734a569e-f43b-4b33-b71b-e3b5f1970a37"
+                        "uuid": ""
                     },
                     "spec": {
-                        "name": "isolation_test_rule",
+                        "description": "",
+                        "name": "",
                         "resources": {
-                            "is_policy_hitlog_enabled": false,
-                            "isolation_rule": {
-                                "action": "MONITOR",
-                                "first_entity_filter": {
-                                    "kind_list": [
-                                        "vm"
-                                    ],
-                                    "params": {
-                                        "Environment": [
-                                            "Dev"
+                            "filter_list": {
+                                "context_list": [
+                                    {
+                                        "entity_filter_expression_list": [
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "ALL"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            }
+                                        ],
+                                        "scope_filter_expression_list": [
+                                            {
+                                                "left_hand_side": "PROJECT",
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "uuid_list": [
+                                                        ""
+                                                    ]
+                                                }
+                                            }
                                         ]
                                     },
-                                    "type": "CATEGORIES_MATCH_ALL"
-                                },
-                                "second_entity_filter": {
-                                    "kind_list": [
-                                        "vm"
-                                    ],
-                                    "params": {
-                                        "Environment": [
-                                            "Production"
+                                    {
+                                        "entity_filter_expression_list": [
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "app_icon"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "app_task"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "SELF_OWNED"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "app_variable"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "SELF_OWNED"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "category"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "cluster"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "uuid_list": [
+                                                        ""
+                                                    ]
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "image"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "marketplace_item"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "SELF_OWNED"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "vm_recovery_point"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            }
                                         ]
                                     },
-                                    "type": "CATEGORIES_MATCH_ALL"
+                                    {
+                                        "entity_filter_expression_list": [
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "blueprint"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "environment"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "marketplace_item"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            }
+                                        ],
+                                        "scope_filter_expression_list": [
+                                            {
+                                                "left_hand_side": "PROJECT",
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "uuid_list": [
+                                                        ""
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "role_reference": {
+                                "kind": "role",
+                                "uuid": ""
+                            },
+                            "user_group_reference_list": [],
+                            "user_reference_list": [
+                                {
+                                    "kind": "user",
+                                    "name": "",
+                                    "uuid": ""
                                 }
-                            }
+                            ]
                         }
                     },
                     "status": {
-                        "description": null,
-                        "execution_context": {
-                            "task_uuid": [
-                                "2b88bf1d-ed24-4bc0-a0eb-baecc4cae71f"
-                            ]
-                        },
-                        "name": "isolation_test_rule",
+                        "description": "",
+                        "is_system_defined": false,
+                        "name": "",
                         "resources": {
-                            "isolation_rule": {
-                                "action": "MONITOR",
-                                "first_entity_filter": {
-                                    "kind_list": [
-                                        "vm"
-                                    ],
-                                    "params": {
-                                        "Environment": [
-                                            "Dev"
+                            "filter_list": {
+                                "context_list": [
+                                    {
+                                        "entity_filter_expression_list": [
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "ALL"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            }
+                                        ],
+                                        "scope_filter_expression_list": [
+                                            {
+                                                "left_hand_side": "PROJECT",
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "uuid_list": [
+                                                        ""
+                                                    ]
+                                                }
+                                            }
                                         ]
                                     },
-                                    "type": "CATEGORIES_MATCH_ALL"
-                                },
-                                "second_entity_filter": {
-                                    "kind_list": [
-                                        "vm"
-                                    ],
-                                    "params": {
-                                        "Environment": [
-                                            "Production"
+                                    {
+                                        "entity_filter_expression_list": [
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "app_icon"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "app_task"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "SELF_OWNED"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "app_variable"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "SELF_OWNED"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "category"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "image"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "marketplace_item"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "SELF_OWNED"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "vm_recovery_point"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "cluster"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "uuid_list": [
+                                                        ""
+                                                    ]
+                                                }
+                                            }
                                         ]
                                     },
-                                    "type": "CATEGORIES_MATCH_ALL"
-                                }
-                            }
+                                    {
+                                        "entity_filter_expression_list": [
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "blueprint"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "environment"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            },
+                                            {
+                                                "left_hand_side": {
+                                                    "entity_type": "marketplace_item"
+                                                },
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "collection": "ALL"
+                                                }
+                                            }
+                                        ],
+                                        "scope_filter_expression_list": [
+                                            {
+                                                "left_hand_side": "PROJECT",
+                                                "operator": "IN",
+                                                "right_hand_side": {
+                                                    "uuid_list": [
+                                                        ""
+                                                    ]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "role_reference": {
+                                "kind": "role",
+                                "name": "Consumer",
+                                "uuid": ""
+                            },
+                            "user_group_reference_list": [],
+                            "user_reference_list": []
                         },
                         "state": "COMPLETE"
                     }
