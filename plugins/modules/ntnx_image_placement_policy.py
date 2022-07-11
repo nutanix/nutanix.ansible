@@ -335,7 +335,7 @@ def update_policy(module, result):
 
     # read the current state of policy
     resp = policy_obj.read(policy_uuid)
-    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    utils.strip_extra_attrs(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
 
     # new spec for updating policy
