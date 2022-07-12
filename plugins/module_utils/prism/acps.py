@@ -17,6 +17,8 @@ class ACP(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "role": self._build_spec_role,
+            "user": self._build_spec_user,
+            "user_group": self._build_spec_user_group,
         }
 
     def _get_default_spec(self):
@@ -45,7 +47,26 @@ class ACP(Prism):
     def _build_spec_role(self, payload, config):
         if config.get("uuid"):
             payload["spec"]["resources"]["role_reference"] = {
-                                                                "kind": "role",
-                                                                "uuid": config["uuid"]
-                                                            }
+                "kind": "role",
+                "uuid": config["uuid"]
+            }
+        return payload, None
+
+    def _build_spec_user(self, payload, config):
+        if config.get("uuid"):
+            payload["spec"]["resources"]["user_reference_list"] = [{
+                "kind": "user",
+                "uuid": config["uuid"]
+            }]
+        return payload, None
+
+    def _build_spec_user_group(self, payload, config):
+        user_group_reference_list = []
+        for item in config:
+            if item.get("uuid"):
+                user_group_reference_list.append({
+                    "kind": "user_group",
+                    "uuid": item["uuid"]
+                })
+        payload["spec"]["resources"]["user_group_reference_list"] = user_group_reference_list
         return payload, None
