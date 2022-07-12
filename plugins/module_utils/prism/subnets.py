@@ -158,3 +158,12 @@ def get_subnet_uuid(config, module):
         None, error
 
     return uuid, None
+
+
+def get_subnet_reference_spec(uuid=None):
+    return deepcopy(
+        {
+            "kind": "subnet",
+            "uuid": uuid
+        }
+    )

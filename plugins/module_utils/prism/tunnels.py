@@ -8,13 +8,13 @@ __metaclass__ = type
 from .prism import Prism
 
 
-class Users(Prism):
+class Tunnels(Prism):
     def __init__(self, module):
-        resource_type = "/users"
-        super(Users, self).__init__(module, resource_type=resource_type)
+        resource_type = "/tunnels"
+        super(Tunnels, self).__init__(module, resource_type=resource_type)
 
-    def get_uuid(self, value, key="username", raise_error=True, no_response=False):
-        data = {"filter": "{0}=={1}".format(key, value), "length": 1}
+    def get_uuid(self, value, key=None, raise_error=True, no_response=False):
+        data = {"filter":"type!=network_group","length":249}
         resp = self.list(data, raise_error=raise_error, no_response=no_response)
         entities = resp.get("entities") if resp else None
         if entities:
@@ -24,14 +24,14 @@ class Users(Prism):
         return None
 
 
-def get_user_uuid(config, module):
+def get_tunnel_uuid(config, module):
     if "name" in config:
-        users = Users(module)
+        users = Tunnels(module)
         name = config["name"]
         uuid = users.get_uuid(name)
         if not uuid:
 
-            error = "User {0} not found.".format(name)
+            error = "Tunnel {0} not found.".format(name)
             return None, error
 
     elif "uuid" in config:
@@ -39,10 +39,9 @@ def get_user_uuid(config, module):
 
     return uuid, None
 
-def get_user_reference_spec(uuid=None):
+def get_tunnel_reference_spec(uuid=None):
     return deepcopy(
         {
-            "kind": "user",
             "uuid": uuid
         }
     )

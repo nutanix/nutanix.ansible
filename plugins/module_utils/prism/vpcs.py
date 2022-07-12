@@ -92,3 +92,12 @@ def get_vpc_uuid(config, module):
     elif "uuid" in config:
         uuid = config["uuid"]
     return uuid, None
+
+
+def get_vpc_reference_spec(uuid=None):
+    return deepcopy(
+        {
+            "kind": "vpc",
+            "uuid": uuid
+        }
+    )
