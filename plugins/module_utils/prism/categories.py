@@ -46,6 +46,7 @@ class CategoryKey(Categories):
     def _get_default_spec(self):
         return deepcopy(
             {
+                "api_version": "3.1.0",
                 "name": None,
             }
         )
@@ -53,6 +54,7 @@ class CategoryKey(Categories):
     def _strip_extra_attributes_from_key_spec(self, key_spec):
         spec = {}
         default_spec = {
+            "api_version": "3.1.0",
             "name": None,
             "description": None
         }
@@ -89,6 +91,7 @@ class CategoryValue(Categories):
     def _get_default_spec(self):
         return deepcopy(
             {
+                "api_version": "3.1.0",
                 "value": None
             }
         )
