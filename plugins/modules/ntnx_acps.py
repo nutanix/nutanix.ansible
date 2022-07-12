@@ -96,20 +96,24 @@ def get_module_spec():
         uuids=dict(type="list"),
     )
 
-    filter_spec = dict(
+    context_spec = dict(
         lhs=dict(type="str"),
         operator=dict(type="str"),
         rhs=dict(type="dict", options=rhs_spec),
+    )
+
+    filter_spec = dict(
+        scope_filter=dict(type="dict", options=context_spec),
+        entity_filter=dict(type="dict", options=context_spec),
     )
 
     module_args = dict(
         name=dict(type="str"),
         desc=dict(type="str"),
         user=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        user_group=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
+        user_group=dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
         role=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True),
-        scope_filter=dict(type="dict", options=filter_spec),
-        entity_filter=dict(type="dict", options=filter_spec),
+        filters=dict(type="list", elements="dict", options=filter_spec)
     )
 
     return module_args
