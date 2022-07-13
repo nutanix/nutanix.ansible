@@ -86,7 +86,7 @@ class ACP(Prism):
                     scope_filter["right_hand_side"] = item["scope_filter"]["rhs"]
 
                 if scope_filter:
-                    filter["scope_filter_expression_list"] = scope_filter
+                    filter["scope_filter_expression_list"] = [scope_filter]
 
             if item.get("entity_filter"):
                 entity_filter = {}
@@ -98,7 +98,7 @@ class ACP(Prism):
                     entity_filter["right_hand_side"] = item["entity_filter"]["rhs"]
 
                 if entity_filter:
-                    filter["entity_filter_expression_list"] = entity_filter
+                    filter["entity_filter_expression_list"] = [entity_filter]
             if filter:
                 filter_list.append(filter)
         payload["spec"]["resources"]["filter_list"] = {"context_list": filter_list}
