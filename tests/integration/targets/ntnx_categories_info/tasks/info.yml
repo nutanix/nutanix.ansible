@@ -15,9 +15,10 @@
       - result.failed == false
     fail_msg: "Unable to list all categories"
     success_msg: "categories listed successfully"
-#####################
+#####################################################################################################
 - set_fact:
-    category_name: test-cat11
+    category_name: test-catA
+
 - name: Create category key 
   ntnx_categories:
     state: "present"
@@ -25,13 +26,12 @@
   register: result
   ignore_errors: true
 
-- name: test getting the category by it's name
+- name: test getting the category with filter by it's name
   ntnx_categories_info:
     filter:
         name: "{{category_name}}"
   register: result
   ignore_errors: true
-
 
 - name: check listing status
   assert:
@@ -40,12 +40,36 @@
       - result.changed == false
       - result.failed == false
       - - result.response.entities.0.name ==  "{{category_name}}"
-    fail_msg: "Unable to get particular category"
-    success_msg: "category info obtained successfully"
+    fail_msg: "Unable to get particular category with name filter"
+    success_msg: "category info obtained successfully by name filter"
+#####################################################################################################
+- name: test getting the category  by it's name
+  ntnx_categories_info:
+        name: "{{category_name}}"
+  register: result
+  ignore_errors: true
 
-# - name: delete the category  
-#   ntnx_categories:
-#     state: "absent"
-#     name: "{{category_name}}"
-#   register: result
-#   ignore_errors: true
+- name: check listing status
+  assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - - result.response.category_key.name ==  "{{category_name}}"
+    fail_msg: "Unable to get particular category with it'sname "
+    success_msg: "category info obtained successfully by it's name"
+#####################################################################################################
+- name: delete the category  
+  ntnx_categories:
+    state: "absent"
+    name: "{{category_name}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Fail: Unable to delete the category"
+    success_msg: "Pass : category has been deleted successfully"

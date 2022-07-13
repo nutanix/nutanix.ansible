@@ -1,12 +1,14 @@
+---
 - debug:
     msg: Start testing ntnx_categories
+
 - set_fact:
     first_category:
-      name: testAAAA
+      name: testAAAAcc
       desc: first test description
       update_desc: updated test description
     second_category:
-      name: testBBBB
+      name: testBBBBac
     values:
         - 'value-a'
         - 'value-b'
@@ -31,7 +33,7 @@
       - result.response.category_values is not defined
     fail_msg: "Unable to Create only category key with description"
     success_msg: "Create only category key with description finished successfully"
-
+#################
 - name: Add values to existing category key having no values & Update description
   ntnx_categories:
     state: "present"
@@ -56,7 +58,7 @@
       - result.response.category_values.1.value == "{{values.1}}"
     fail_msg: "Unable to Add values to existing category key having no values & Update description"
     success_msg: "Add values to existing category key having no values & Update description finished successfully"
-
+#################
 - name: update existing category with same values
   ntnx_categories:
     state: "present"
@@ -76,7 +78,7 @@
       - result.msg == "Nothing to update."
     fail_msg: "Fail: existing category update with wrong values"
     success_msg: "Passed: Nothing to update as expected "
-  
+  ################# 
 - name: update existing category by deleting some values
   ntnx_categories:
     state: "absent"
@@ -104,55 +106,54 @@
     fail_msg: "Fail: unable to update existing category by deleting some values "
     success_msg: "Passed: update existing category by deleting some values finished succesfully"
 #################
-# - name: update existing category by deleting all values
-#   ntnx_categories:
-#     state: "absent"
-#     name: "{{first_category.name}}"
-#     remove_values: true
-#   register : result
-#   ignore_errors: true
+- name: update existing category by deleting all values
+  ntnx_categories:
+    state: "absent"
+    name: "{{first_category.name}}"
+    remove_values: true
+  register : result
+  ignore_errors: true
 
-# - name: get modified category 
-#   ntnx_categories_info:
-#     name: "{{first_category.name}}"
-#   register : result
-#   ignore_errors: true
-# - debug:
-#     var: result
-# - name: Creation Status
-#   assert: 
-#     that:
-#       - result.changed == false
-#       - result.failed == false
-#       - result.response is defined
-#       - result.response.category_values.entities|length == 0
-#     fail_msg: "Fail: unable to update existing category by deleting all values "
-#     success_msg: "Passed: update existing category by deleting all values finished succesfully"
-# - name: Delte the category 
-#   ntnx_categories:
-#     state: "absent"
-#     name: "{{first_category.name}}"
-#   register : result
-#   ignore_errors: true
+- name: get modified category 
+  ntnx_categories_info:
+    name: "{{first_category.name}}"
+  register : result
+  ignore_errors: true
+- debug:
+    var: result
+- name: Creation Status
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.category_values.entities|length == 0
+    fail_msg: "Fail: unable to update existing category by deleting all values "
+    success_msg: "Passed: update existing category by deleting all values finished succesfully"
+#################
+- name: Delte the category 
+  ntnx_categories:
+    state: "absent"
+    name: "{{first_category.name}}"
+  register : result
+  ignore_errors: true
 
-# - name: get modified category 
-#   ntnx_categories_info:
-#     name: "{{first_category.name}}"
-#   register : result
-#   ignore_errors: true
-# - debug:
-#     var: result
-# - name: Creation Status
-#   assert: 
-#     that:
-#       - result.changed == false
-#       - result.failed == false
-#       - result.response is defined
-#       - result.response.category_values.entities|length == 0
-#     fail_msg: "Fail: unable to Delete the category "
-#     success_msg: "Passed: Delete the category finished succesfully"
+- name: search deleted category 
+  ntnx_categories_info:
+    name: "{{first_category.name}}"
+  register : result
+  ignore_errors: true
 
+- name: Creation Status
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response == {}
+    fail_msg: "Fail: unable to Delete the category "
+    success_msg: "Passed: Delete the category finished succesfully"
 
+#################
 - name: Create category key and value together with check_mode
   ntnx_categories:
     state: "present"
@@ -177,7 +178,7 @@
     fail_msg: "Unable to Create category key and value together with check_mode"
     success_msg: "Create category key and value together with check_mode finished successfully"
 
-
+#################
 - name: Create category key and value together
   ntnx_categories:
     state: "present"
@@ -200,3 +201,19 @@
       - result.response.category_values.1.value == "{{values.1}}"
     fail_msg: "Unable to Create category key and value together"
     success_msg: "Create category key and value together finished successfully"
+#################
+- name: delete the category  
+  ntnx_categories:
+    state: "absent"
+    name: "{{second_category.name}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Fail: Unable to delete the category"
+    success_msg: "Pass : category has been deleted successfully"
