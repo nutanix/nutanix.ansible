@@ -40,10 +40,7 @@ def get_category(module, result):
         result["response"] = {}
         return
     values = key_obj.list(name)
-    result["response"] = {
-        "category_key": category_key,
-        "category_values": values
-    }
+    result["response"] = {"category_key": category_key, "category_values": values}
 
 
 def get_categories(module, result):

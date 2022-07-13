@@ -13,30 +13,25 @@ class Categories(Prism):
     def __init__(self, module):
 
         resource_type = "/categories"
-        super(Categories, self).__init__(
-            module, resource_type=resource_type
-        )
+        super(Categories, self).__init__(module, resource_type=resource_type)
+
 
 class CategoryKey(Categories):
     def __init__(self, module):
-        super(CategoryKey, self).__init__(
-            module
-        )
+        super(CategoryKey, self).__init__(module)
         self.build_spec_methods = {
             "name": self._build_spec_name,
-            "desc": self._build_spec_desc
+            "desc": self._build_spec_desc,
         }
-    
+
     def list(self, name):
-        data = {
-            "kind": "category"
-        }
+        data = {"kind": "category"}
         endpoint = "{0}/list".format(name)
         return super().list(data=data, use_base_url=True, endpoint=endpoint)
-    
+
     def create(self, name, data):
         return super().create(data=data, endpoint=name, method="PUT")
-    
+
     def get_spec(self, old_spec=None):
         if old_spec:
             spec = self._strip_extra_attributes_from_old_spec(old_spec)
@@ -53,11 +48,7 @@ class CategoryKey(Categories):
 
     def _strip_extra_attributes_from_old_spec(self, old_spec):
         spec = {}
-        default_spec = {
-            "api_version": "3.1.0",
-            "name": None,
-            "description": None
-        }
+        default_spec = {"api_version": "3.1.0", "name": None, "description": None}
         for k in default_spec:
             v = old_spec.get(k)
             if v:
@@ -76,25 +67,18 @@ class CategoryKey(Categories):
 
 class CategoryValue(Categories):
     def __init__(self, module):
-        super(CategoryValue, self).__init__(
-            module
-        )
-    
+        super(CategoryValue, self).__init__(module)
+
     def create(self, name, data):
         endpoint = "{0}/{1}".format(name, data["value"])
         return super().create(data=data, endpoint=endpoint, method="PUT")
-    
+
     def delete(self, name, value):
         endpoint = "{0}/{1}".format(name, value)
         return super().delete(endpoint=endpoint, no_response=True)
 
     def _get_default_spec(self):
-        return deepcopy(
-            {
-                "api_version": "3.1.0",
-                "value": None
-            }
-        )
+        return deepcopy({"api_version": "3.1.0", "value": None})
 
     def get_value_spec(self, value):
         spec = self._get_default_spec()

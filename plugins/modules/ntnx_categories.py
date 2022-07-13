@@ -23,12 +23,13 @@ from ..module_utils.prism.categories import CategoryKey, CategoryValue  # noqa: 
 
 def get_module_spec():
     module_args = dict(
-        name = dict(type="str", required=True),
-        desc = dict(type="str", required=False),
-        values = dict(type="list", elements="str", required=False),
-        remove_values = dict(type="bool", required=False, default=False)
+        name=dict(type="str", required=True),
+        desc=dict(type="str", required=False),
+        values=dict(type="list", elements="str", required=False),
+        remove_values=dict(type="bool", required=False, default=False),
     )
     return module_args
+
 
 def create_categories(module, result):
     _category_key = CategoryKey(module)
@@ -65,32 +66,25 @@ def create_categories(module, result):
                 category_values_specs.append(_category_value.get_value_spec(value))
 
     # indempotency check
-    if not category_values_specs and (category_key_exists and (category_key == category_key_spec)):
+    if not category_values_specs and (
+        category_key_exists and (category_key == category_key_spec)
+    ):
         result["skipped"] = True
-        module.exit_json(
-            msg="Nothing to update."
-        )
+        module.exit_json(msg="Nothing to update.")
 
     # check mode
     if module.check_mode:
-        response = {
-            "category_key": {},
-            "category_values": {}
-        }
-        if (category_key_exists and (category_key == category_key_spec)):
-            response["category_key"] = {
-                "msg": "Nothing to update."
-            }
+        response = {"category_key": {}, "category_values": {}}
+        if category_key_exists and (category_key == category_key_spec):
+            response["category_key"] = {"msg": "Nothing to update."}
         else:
             response["category_key"] = category_key_spec
-        
+
         if not category_values_specs:
-            response["category_values"] = {
-                "msg": "Nothing to update."
-            }
+            response["category_values"] = {"msg": "Nothing to update."}
         else:
             response["category_values"] = category_values_specs
-        
+
         result["response"] = response
         return
 
@@ -108,10 +102,12 @@ def create_categories(module, result):
             responses.append(resp)
         result["response"]["category_values"] = responses
 
+
 def delete_category_values(module, name, values):
     _category_value = CategoryValue(module)
     for value in values:
         _category_value.delete(name, value)
+
 
 def delete_categories(module, result):
     name = module.params["name"]
@@ -148,9 +144,10 @@ def delete_categories(module, result):
         }
 
     result["changed"] = True
-        
+
+
 def run_module():
-    
+
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
@@ -168,6 +165,7 @@ def run_module():
         delete_categories(module, result)
 
     module.exit_json(**result)
+
 
 def main():
     run_module()
