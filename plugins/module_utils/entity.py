@@ -47,7 +47,7 @@ class Entity(object):
         data=None,
         endpoint=None,
         query=None,
-        method = "POST",
+        method="POST",
         raise_error=True,
         no_response=False,
         timeout=30,
