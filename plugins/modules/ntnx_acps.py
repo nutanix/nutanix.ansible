@@ -93,7 +93,7 @@ def get_module_spec():
     rhs_spec = dict(
         collection=dict(type="str"),
         categories=dict(type="dict"),
-        uuids=dict(type="list"),
+        uuid_list=dict(type="list"),
     )
 
     context_spec = dict(
@@ -113,7 +113,7 @@ def get_module_spec():
         user=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
         user_group=dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
         role=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True),
-        filters=dict(type="list", elements="dict", options=filter_spec)
+        filters=dict(type="list", elements="dict", options=filter_spec),
     )
 
     return module_args
