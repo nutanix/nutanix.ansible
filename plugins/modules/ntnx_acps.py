@@ -78,6 +78,7 @@ RETURN = r"""
 # Step 6
 """
 
+from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.acps import ACP  # noqa: E402
@@ -91,28 +92,35 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     rhs_spec = dict(
-        collection=dict(type="str"),
+        collection=dict(type="str", choices=['ALL', 'SELF_OWNED']),
         categories=dict(type="dict"),
         uuid_list=dict(type="list"),
     )
 
-    context_spec = dict(
+    scope_context_spec = dict(
+        lhs=dict(type="str", choices=['CATEGORY', 'PROJECT', 'CLUSTER', 'VPC']),
+        operator=dict(type="str", choices=['IN', 'IN_ALL', 'NOT_IN']),
+        rhs=dict(type="dict", options=rhs_spec),
+    )
+
+    entity_context_spec = dict(
         lhs=dict(type="str"),
-        operator=dict(type="str"),
+        operator=dict(type="str", choices=['IN', 'NOT_IN']),
         rhs=dict(type="dict", options=rhs_spec),
     )
 
     filter_spec = dict(
-        scope_filter=dict(type="dict", options=context_spec),
-        entity_filter=dict(type="dict", options=context_spec),
+        scope_filter=dict(type="dict", options=scope_context_spec),
+        entity_filter=dict(type="dict", options=entity_context_spec),
     )
 
     module_args = dict(
         name=dict(type="str"),
+        acp_uuid=dict(type="str"),
         desc=dict(type="str"),
         user=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
         user_group=dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        role=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True),
+        role=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
         filters=dict(type="list", elements="dict", options=filter_spec),
     )
 
@@ -131,6 +139,43 @@ def create_acp(module, result):
         return
 
     resp = acp.create(spec)
+    acp_uuid = resp["metadata"]["uuid"]
+    result["changed"] = True
+    result["response"] = resp
+    result["acp_uuid"] = acp_uuid
+    result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
+
+    if module.params.get("wait"):
+        wait_for_task_completion(module, result)
+        resp = acp.read(acp_uuid)
+        result["response"] = resp
+
+
+def update_acp(module, result):
+    acp_uuid = module.params["acp_uuid"]
+    state = module.params.get("state")
+
+    acp = ACP(module)
+    resp = acp.read(acp_uuid)
+    result["response"] = resp
+    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    resp.pop("status")
+
+    spec, error = acp.get_spec(resp)
+
+    if error:
+        result["error"] = error
+        module.fail_json(msg="Failed generating ACP spec", **result)
+
+    if module.check_mode:
+        result["response"] = spec
+        return
+
+    if utils.check_for_idempotency(spec, resp, state=state):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change")
+
+    resp = acp.update(spec, acp_uuid)
     acp_uuid = resp["metadata"]["uuid"]
     result["changed"] = True
     result["response"] = resp
