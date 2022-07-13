@@ -1,0 +1,51 @@
+---
+- debug:
+    msg: Start testing ntnx_categories_info
+
+- name: test getting all categories
+  ntnx_categories_info:
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response.entities is defined
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "Unable to list all categories"
+    success_msg: "categories listed successfully"
+#####################
+- set_fact:
+    category_name: test-cat11
+- name: Create category key 
+  ntnx_categories:
+    state: "present"
+    name: "{{category_name}}"
+  register: result
+  ignore_errors: true
+
+- name: test getting the category by it's name
+  ntnx_categories_info:
+    filter:
+        name: "{{category_name}}"
+  register: result
+  ignore_errors: true
+
+
+- name: check listing status
+  assert:
+    that:
+      - result.response.entities|length == 1
+      - result.changed == false
+      - result.failed == false
+      - - result.response.entities.0.name ==  "{{category_name}}"
+    fail_msg: "Unable to get particular category"
+    success_msg: "category info obtained successfully"
+
+# - name: delete the category  
+#   ntnx_categories:
+#     state: "absent"
+#     name: "{{category_name}}"
+#   register: result
+#   ignore_errors: true
