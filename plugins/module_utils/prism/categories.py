@@ -95,8 +95,8 @@ class CategoryValue(Categories):
                 "value": None
             }
         )
-    
-    def get_spec(self, value):
+
+    def get_value_spec(self, value):
         spec = self._get_default_spec()
         spec["value"] = value
         return spec
