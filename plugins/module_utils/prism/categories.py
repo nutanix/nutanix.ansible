@@ -39,8 +39,8 @@ class CategoryKey(Categories):
     
     def get_spec(self, old_spec=None):
         if old_spec:
-            key_spec = self._strip_extra_attributes_from_key_spec(old_spec)
-            return super().get_spec(old_spec=key_spec)
+            spec = self._strip_extra_attributes_from_old_spec(old_spec)
+            return super().get_spec(old_spec=spec)
         return super().get_spec()
 
     def _get_default_spec(self):
@@ -51,7 +51,7 @@ class CategoryKey(Categories):
             }
         )
 
-    def _strip_extra_attributes_from_key_spec(self, key_spec):
+    def _strip_extra_attributes_from_old_spec(self, old_spec):
         spec = {}
         default_spec = {
             "api_version": "3.1.0",
@@ -59,7 +59,7 @@ class CategoryKey(Categories):
             "description": None
         }
         for k in default_spec:
-            v = key_spec.get(k)
+            v = old_spec.get(k)
             if v:
                 spec[k] = v
 

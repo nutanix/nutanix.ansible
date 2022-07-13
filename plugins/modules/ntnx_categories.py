@@ -31,26 +31,26 @@ def get_module_spec():
     return module_args
 
 def create_categories(module, result):
-    key_obj = CategoryKey(module)
+    _category_key = CategoryKey(module)
     name = module.params["name"]
 
     # check if new category create is required or not
-    category_key = key_obj.read(endpoint=name, raise_error=False)
+    category_key = _category_key.read(endpoint=name, raise_error=False)
     category_key_values = {}
     category_key_exists = False
     if not category_key or category_key.get("state") == "ERROR":
-        category_key_create_spec, err = key_obj.get_spec()
+        category_key_spec, err = _category_key.get_spec()
         if err:
             result["error"] = err
             module.fail_json(msg="Failed generating create category key spec", **result)
     else:
         category_key_exists = True
-        category_key_create_spec, err = key_obj.get_spec(category_key)
+        category_key_spec, err = _category_key.get_spec(category_key)
         if err:
             result["error"] = err
             module.fail_json(msg="Failed generating category key update spec", **result)
-        utils.strip_extra_attrs(category_key, category_key_create_spec)
-        resp = key_obj.list(name)
+        utils.strip_extra_attrs(category_key, category_key_spec)
+        resp = _category_key.list(name)
         category_key_values = []
         for v in resp.get("entities", []):
             category_key_values.append(v["value"])
@@ -58,14 +58,14 @@ def create_categories(module, result):
     # create spec for all the values which needed to be added to category key
     values = module.params.get("values")
     category_values_specs = []
+    _category_value = CategoryValue(module)
     if values:
-        value_obj = CategoryValue(module)
         for value in values:
             if value not in category_key_values:
-                category_values_specs.append(value_obj.get_spec(value))
+                category_values_specs.append(_category_value.get_spec(value))
 
     # indempotency check
-    if not category_values_specs and (category_key_exists and (category_key == category_key_create_spec)):
+    if not category_values_specs and (category_key_exists and (category_key == category_key_spec)):
         result["skipped"] = True
         module.exit_json(
             msg="Nothing to update."
@@ -77,12 +77,12 @@ def create_categories(module, result):
             "category_key": {},
             "category_values": {}
         }
-        if (category_key_exists and (category_key == category_key_create_spec)):
+        if (category_key_exists and (category_key == category_key_spec)):
             response["category_key"] = {
                 "msg": "Nothing to update."
             }
         else:
-            response["category_key"] = category_key_create_spec
+            response["category_key"] = category_key_spec
         
         if not category_values_specs:
             response["category_values"] = {
@@ -95,43 +95,42 @@ def create_categories(module, result):
         return
 
     # create/update category
-    if not category_key_exists or (category_key != category_key_create_spec):
-        resp = key_obj.create(name, category_key_create_spec)
+    if not category_key_exists or (category_key != category_key_spec):
+        resp = _category_key.create(name, category_key_spec)
         result["response"]["category_key"] = resp
     result["changed"] = True
 
     # add category values
     if category_values_specs:
-        value_obj = CategoryValue(module)
         responses = []
         for value_spec in category_values_specs:
-            resp = value_obj.create(name, value_spec)
+            resp = _category_value.create(name, value_spec)
             responses.append(resp)
         result["response"]["category_values"] = responses
 
 def delete_category_values(module, name, values):
     responses = []
-    value_obj = CategoryValue(module)
+    _category_value = CategoryValue(module)
     for value in values:
-        resp = value_obj.delete(name, value)
+        resp = _category_value.delete(name, value)
         responses.append(resp)
     return responses
 
 def delete_categories(module, result):
     name = module.params["name"]
-    key_obj = CategoryKey(module)
+    _category_key = CategoryKey(module)
     if module.params.get("remove_values", False):
-        values = key_obj.list(name)
+        values = _category_key.list(name)
         result["response"] = delete_category_values(module, name, values)
     elif module.params.get("values"):
         values = module.params["values"]
         result["response"] = delete_category_values(module, name, values)
     else:
         #first delete all values if exists
-        values = key_obj.list(name)
+        values = _category_key.list(name)
         delete_category_values(module, name, values)
         #delete the category
-        resp = key_obj.delete(uuid=name, no_response=True)
+        resp = _category_key.delete(uuid=name, no_response=True)
         result["response"] = resp
     result["changed"] = True
         
