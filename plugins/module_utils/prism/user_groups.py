@@ -13,13 +13,13 @@ class UserGroups(Prism):
         resource_type = "/user_groups"
         super(UserGroups, self).__init__(module, resource_type=resource_type)
 
-    def get_uuid(self, value, key="user_group", raise_error=True, no_response=False):
+    def get_uuid(self, value, key="group_name", raise_error=True, no_response=False):
         data = {"filter": "{0}=={1}".format(key, value), "length": 1}
         resp = self.list(data, raise_error=raise_error, no_response=no_response)
         entities = resp.get("entities") if resp else None
         if entities:
             for entity in entities:
-                if entity["status"]["name"] == value:
+                if entity["status"]["resources"]["display_name"]== value:
                     return entity["metadata"]["uuid"]
         return None
 

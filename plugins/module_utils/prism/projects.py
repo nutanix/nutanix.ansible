@@ -3,12 +3,9 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
-from .accounts import get_account_reference_spec, get_account_uuid
-from .subnets import get_subnet_reference_spec, get_subnet_uuid
-from .tunnels import get_tunnel_reference_spec, get_tunnel_uuid
 from .user_groups import get_user_group_reference_spec, get_user_group_uuid
+from .subnets import get_subnet_reference_spec, get_subnet_uuid
 from .users import get_user_reference_spec, get_user_uuid
-from .vpcs import get_vpc_reference_spec, get_vpc_uuid
 from .spec.categories_mapping import CategoriesMapping
 
 __metaclass__ = type
@@ -27,15 +24,10 @@ class Projects(Prism):
             "categories": CategoriesMapping.build_categories_mapping_spec,
             "resource_limits": self._build_spec_resource_limits,
             "default_subnet_reference": self._build_spec_default_subnet_reference,
-            "default_environment_reference": self._build_spec_default_environment_reference,
             "subnet_reference_list": self._build_spec_subnet_reference_list,
-            "external_network_list": self._build_spec_external_network_list,
-            "environment_reference_list": self._build_spec_environment_reference_list,
             "user_reference_list": self._build_spec_user_reference_list,
             "external_user_group_reference_list": self._build_spec_external_user_group_reference_list,
-            "account_reference_list": self._build_spec_account_reference_list,
-            "tunnel_reference_list": self._build_spec_tunnel_reference_list,
-            "vpc_reference_list": self._build_spec_vpc_reference_list
+
         }
 
     def validate_project_name_exists(self, name):
@@ -86,18 +78,6 @@ class Projects(Prism):
             subnet_reference_specs.append(get_subnet_reference_spec(uuid))
         payload["spec"]["resources"]["subnet_reference_list"] = subnet_reference_specs
         return payload, None
-    
-    def _build_spec_external_network_list(self, payload, ext_network_list):
-        payload["spec"]["resources"]["external_network_list"] = ext_network_list
-        return payload, None
-        
-    def _build_spec_default_environment_reference(self, payload, env_ref):
-        payload["spec"]["resources"]["default_environment_reference"] = env_ref
-        return payload, None
-    
-    def _build_spec_environment_reference_list(self, payload, env_ref_list):
-        payload["spec"]["resources"]["environment_reference_list"] = env_ref_list
-        return payload, None
         
     def _build_spec_user_reference_list(self, payload, user_ref_list):
         user_reference_specs = []
@@ -119,32 +99,3 @@ class Projects(Prism):
         payload["spec"]["resources"]["external_user_group_reference_list"] = user_groups_reference_specs
         return payload, None
     
-    def _build_spec_account_reference_list(self, payload, acc_ref_list):
-        account_reference_specs = []
-        for ref in acc_ref_list:
-            uuid, err = get_account_uuid(ref, self.module)
-            if err:
-                return None, err
-            account_reference_specs.append(get_account_reference_spec(uuid))
-        payload["spec"]["resources"]["account_reference_list"] = account_reference_specs
-        return payload, None
-    
-    def _build_spec_tunnel_reference_list(self, payload, tunnels_ref_list):
-        tunnel_reference_specs = []
-        for ref in tunnels_ref_list:
-            uuid, err = get_tunnel_uuid(ref, self.module)
-            if err:
-                return None, err
-            tunnel_reference_specs.append(get_tunnel_reference_spec(uuid))
-        payload["spec"]["resources"]["tunnel_reference_list"] = tunnel_reference_specs
-        return payload, None
-    
-    def _build_spec_vpc_reference_list(self, payload, vpcs_ref_list):
-        vpcs_reference_specs = []
-        for ref in vpcs_ref_list:
-            uuid, err = get_vpc_uuid(ref, self.module)
-            if err:
-                return None, err
-            vpcs_reference_specs.append(get_vpc_reference_spec(uuid))
-        payload["spec"]["resources"]["vpc_reference_list"] = vpcs_reference_specs
-        return payload, None

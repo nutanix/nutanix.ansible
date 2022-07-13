@@ -19,39 +19,29 @@ RETURN = r"""
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.spec.entity_reference import EntityReference
 from ..module_utils.prism.projects import Projects  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
-    entity_by_spec = deepcopy(EntityReference.entity_by_spec)
+    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     resource_limit = dict(
         resource_type = dict(type="str", required=True),
         limit = dict(type="str", required=True)
     )
     # To-Do: 
-    # 1. Write get logic for external networks
-    # 2. Tunnels and accounts API not in api doc
-    # 3. ACPs create using users
+    # 1. ACPs create using users and group users
     module_args = dict(
         name = dict(type="str", required=False),
         project_uuid = dict(type="str", required=False),
         desc = dict(type="str", required=False),
-        is_default = dict(type="bool", required=False),
         remove_categories=dict(type="bool", required=False, default=False),
         categories=dict(type="dict", required=False),
         resource_limits = dict(type="list", elememts="dict", options=resource_limit, required=False),
         default_subnet_reference = dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
         subnet_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        external_network_list = dict(type="list", elements="dict", options=EntityReference.get_entity_reference_by_uuid_module_spec("subnet")),
-        vpc_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        default_environment_reference = dict(type="dict", options=EntityReference.get_entity_reference_by_uuid_module_spec("environment")),
-        environment_reference_list = dict(type="list", elements="dict", options=EntityReference.get_entity_reference_by_uuid_module_spec("environment")),
         user_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
         external_user_group_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        account_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        tunnel_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
     )
     return module_args
 
