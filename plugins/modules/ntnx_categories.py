@@ -62,7 +62,7 @@ def create_categories(module, result):
     if values:
         for value in values:
             if value not in category_key_values:
-                category_values_specs.append(_category_value.get_spec(value))
+                category_values_specs.append(_category_value.get_value_spec(value))
 
     # indempotency check
     if not category_values_specs and (category_key_exists and (category_key == category_key_spec)):
@@ -109,29 +109,44 @@ def create_categories(module, result):
         result["response"]["category_values"] = responses
 
 def delete_category_values(module, name, values):
-    responses = []
     _category_value = CategoryValue(module)
     for value in values:
-        resp = _category_value.delete(name, value)
-        responses.append(resp)
-    return responses
+        _category_value.delete(name, value)
 
 def delete_categories(module, result):
     name = module.params["name"]
     _category_key = CategoryKey(module)
     if module.params.get("remove_values", False):
-        values = _category_key.list(name)
-        result["response"] = delete_category_values(module, name, values)
+        resp = _category_key.list(name)
+        category_key_values = []
+        for v in resp.get("entities", []):
+            category_key_values.append(v["value"])
+        delete_category_values(module, name, category_key_values)
+        result["response"] = {
+            "msg": "All values for category key: {0} has been deleted successfully.".format(name)
+        }
+
     elif module.params.get("values"):
         values = module.params["values"]
-        result["response"] = delete_category_values(module, name, values)
+        delete_category_values(module, name, values)
+        result["response"] = {
+            "msg": "Given values for category key: {0} has been deleted successfully.".format(name)
+        }
+
     else:
         #first delete all values if exists
-        values = _category_key.list(name)
-        delete_category_values(module, name, values)
+        resp = _category_key.list(name)
+        category_key_values = []
+        for v in resp.get("entities", []):
+            category_key_values.append(v["value"])
+        delete_category_values(module, name, category_key_values)
+
         #delete the category
         resp = _category_key.delete(uuid=name, no_response=True)
-        result["response"] = resp
+        result["response"] = {
+            "msg": "Category key: {0} has been deleted successfully along with all associated values.".format(name)
+        }
+
     result["changed"] = True
         
 def run_module():
