@@ -7,7 +7,7 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-
+from.users import get_user_uuid
 
 class ACP(Prism):
     def __init__(self, module):
@@ -54,11 +54,16 @@ class ACP(Prism):
         return payload, None
 
     def _build_spec_user(self, payload, config):
-        if config.get("uuid"):
-            payload["spec"]["resources"]["user_reference_list"] = [{
-                "kind": "user",
-                "uuid": config["uuid"]
-            }]
+        uuid, error = get_user_uuid(config, self.module)
+        if error:
+            self.module.fail_json(
+                msg="Failed generating ACP Spec",
+                error="User {0} not found.".format(config["name"]),
+            )
+        payload["spec"]["resources"]["user_reference_list"] = [{
+            "kind": "user",
+            "uuid": config["uuid"]
+        }]
         return payload, None
 
     def _build_spec_user_group(self, payload, config):
