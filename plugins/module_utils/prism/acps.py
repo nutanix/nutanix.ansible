@@ -7,7 +7,7 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-from .users import get_user_uuid
+from .roles import get_role_uuid
 
 
 class ACP(Prism):
@@ -18,8 +18,8 @@ class ACP(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "role": self._build_spec_role,
-            "user": self._build_spec_user,
-            "user_group": self._build_spec_user_group,
+            "user_uuid": self._build_spec_user,
+            "user_group_uuids": self._build_spec_user_group,
             "filters": self._build_spec_filters,
         }
 
@@ -27,13 +27,8 @@ class ACP(Prism):
         return deepcopy(
             {
                 "api_version": "3.1.0",
-                "metadata": {
-                    "kind": "access_control_policy",
-                },
-                "spec": {
-                    "name": None,
-                    "resources": {},
-                },
+                "metadata": {"kind": "access_control_policy"},
+                "spec": {"name": None, "resources": {}},
             }
         )
 
@@ -46,32 +41,22 @@ class ACP(Prism):
         return payload, None
 
     def _build_spec_role(self, payload, config):
-        if config.get("uuid"):
-            payload["spec"]["resources"]["role_reference"] = {
-                "kind": "role",
-                "uuid": config["uuid"],
-            }
+        uuid, error = get_role_uuid(config, self.module)
+        if error:
+            self.module.fail_json(msg="Failed generating ACP Spec", error=error)
+        payload["spec"]["resources"]["role_reference"] = {"kind": "role", "uuid": uuid}
         return payload, None
 
-    def _build_spec_user(self, payload, config):
-        uuid, error = get_user_uuid(config, self.module)
-        if error:
-            self.module.fail_json(
-                msg="Failed generating ACP Spec",
-                error="User {0} not found.".format(config["name"]),
-            )
+    def _build_spec_user(self, payload, uuid):
         payload["spec"]["resources"]["user_reference_list"] = [
-            {"kind": "user", "uuid": config["uuid"]}
+            {"kind": "user", "uuid": uuid}
         ]
         return payload, None
 
     def _build_spec_user_group(self, payload, config):
         user_group_reference_list = []
         for item in config:
-            if item.get("uuid"):
-                user_group_reference_list.append(
-                    {"kind": "user_group", "uuid": item["uuid"]}
-                )
+            user_group_reference_list.append({"kind": "user_group", "uuid": item})
         payload["spec"]["resources"][
             "user_group_reference_list"
         ] = user_group_reference_list
