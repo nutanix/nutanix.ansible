@@ -29,8 +29,6 @@ def get_module_spec():
         resource_type = dict(type="str", required=True),
         limit = dict(type="str", required=True)
     )
-    # To-Do: 
-    # 1. ACPs create using users and group users
     module_args = dict(
         name = dict(type="str", required=False),
         project_uuid = dict(type="str", required=False),
@@ -38,10 +36,10 @@ def get_module_spec():
         remove_categories=dict(type="bool", required=False, default=False),
         categories=dict(type="dict", required=False),
         resource_limits = dict(type="list", elememts="dict", options=resource_limit, required=False),
-        default_subnet_reference = dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        subnet_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        user_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        external_user_group_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
+        default_subnet_reference = dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=False),
+        subnet_reference_list = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=False),
+        user_uuid_list = dict(type="list", elements="str", required=False),
+        external_user_group_uuid_list = dict(type="list", elements="str", required=False),
     )
     return module_args
 

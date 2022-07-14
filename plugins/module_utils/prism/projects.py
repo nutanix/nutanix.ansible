@@ -3,9 +3,9 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
-from .user_groups import get_user_group_reference_spec, get_user_group_uuid
+from .user_groups import get_user_group_reference_spec
 from .subnets import get_subnet_reference_spec, get_subnet_uuid
-from .users import get_user_reference_spec, get_user_uuid
+from .users import get_user_reference_spec
 from .spec.categories_mapping import CategoriesMapping
 
 __metaclass__ = type
@@ -25,9 +25,8 @@ class Projects(Prism):
             "resource_limits": self._build_spec_resource_limits,
             "default_subnet_reference": self._build_spec_default_subnet_reference,
             "subnet_reference_list": self._build_spec_subnet_reference_list,
-            "user_reference_list": self._build_spec_user_reference_list,
-            "external_user_group_reference_list": self._build_spec_external_user_group_reference_list,
-
+            "user_uuid_list": self._build_spec_user_reference_list,
+            "external_user_group_uuid_list": self._build_spec_external_user_group_reference_list
         }
 
     def validate_project_name_exists(self, name):
@@ -79,22 +78,16 @@ class Projects(Prism):
         payload["spec"]["resources"]["subnet_reference_list"] = subnet_reference_specs
         return payload, None
         
-    def _build_spec_user_reference_list(self, payload, user_ref_list):
+    def _build_spec_user_reference_list(self, payload, user_uuid_list):
         user_reference_specs = []
-        for ref in user_ref_list:
-            uuid, err = get_user_uuid(ref, self.module)
-            if err:
-                return None, err
+        for uuid in user_uuid_list:
             user_reference_specs.append(get_user_reference_spec(uuid))
         payload["spec"]["resources"]["user_reference_list"] = user_reference_specs
         return payload, None
     
-    def _build_spec_external_user_group_reference_list(self, payload, ext_user_ref_list):
+    def _build_spec_external_user_group_reference_list(self, payload, ext_user_uuid_list):
         user_groups_reference_specs = []
-        for ref in ext_user_ref_list:
-            uuid, err = get_user_group_uuid(ref, self.module)
-            if err:
-                return None, err
+        for uuid in ext_user_uuid_list:
             user_groups_reference_specs.append(get_user_group_reference_spec(uuid))
         payload["spec"]["resources"]["external_user_group_reference_list"] = user_groups_reference_specs
         return payload, None
