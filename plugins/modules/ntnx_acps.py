@@ -14,50 +14,6 @@ short_description: acp module which suports acp CRUD operations
 version_added: 1.0.0
 description: 'Create, Update, Delete acp'
 options:
-  nutanix_host:
-    description:
-      - PC hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: 9440
-    required: false
-  nutanix_username:
-    description:
-      - PC username
-    type: str
-    required: true
-  nutanix_password:
-    description:
-      - PC password;
-    required: true
-    type: str
-  validate_certs:
-    description:
-      - Set value to C(False) to skip validation for self signed certificates
-      - This is not recommended for production setup
-    type: bool
-    default: true
-  state:
-    description:
-      - Specify state of acp
-      - If C(state) is set to C(present) then acp is created.
-      - >-
-        If C(state) is set to C(absent) and if the acp exists, then
-        acp is removed.
-    choices:
-      - present
-      - absent
-    type: str
-    default: present
-  wait:
-    description: Wait for acp CRUD operation to complete.
-    type: bool
-    required: false
-    default: True
   name:
     description: acp Name
     required: False
@@ -65,9 +21,110 @@ options:
   acp_uuid:
     description: acp UUID
     type: str
-
-  # Step 4: here should be additional arguments documentation
-
+  desc:
+    description: write
+    required: False
+    type: str
+  user:
+    type: dict
+    description: write
+    suboptions:
+        name:
+          description: write
+          required: False
+          type: str
+        uuid:
+          description: write
+          required: False
+          type: str
+  user_group:
+    type: list
+    elements: dict
+    description: write
+    suboptions:
+        name:
+          description: write
+          required: False
+          type: str
+        uuid:
+          description: write
+          required: False
+          type: str
+  filters:
+    type: list
+    elements: dict
+    description: write
+    suboptions:
+        scope_filter:
+            type: dict
+            description: write
+            suboptions:
+                lhs:
+                     type: str
+                     description: write
+                     choices: ["CATEGORY", "PROJECT", "CLUSTER", "VPC"]
+                operator:
+                    type: str
+                    description: write
+                    choices: ["IN", "IN_ALL", "NOT_IN"]
+                rhs:
+                    type: dict
+                    description: write
+                    suboptions:
+                        collection:
+                            type: str
+                            description: write
+                            choices: ["ALL", "SELF_OWNED"]
+                        categories:
+                            type: dict
+                            description: write  
+                        uuid_list:
+                            type: list
+                            description: write
+        entity_filter:
+            type: dict
+            description: write
+            suboptions:
+                lhs:
+                        type: str
+                        description: write
+                operator:
+                        type: str
+                        description: write
+                        choices: ["IN", "NOT_IN"]
+                rhs:
+                    type: dict
+                    description: write
+                    suboptions:
+                        collection:
+                            type: str
+                            description: write
+                            choices: ["ALL", "SELF_OWNED"]
+                        categories:
+                            type: dict
+                            description: write      
+                        uuid_list:
+                            type: list
+                            description: write
+  role:
+    type: dict
+    description: write
+    suboptions:
+        name:
+          description: write
+          required: False
+          type: str
+        uuid:
+          description: write
+          required: False
+          type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
@@ -92,20 +149,20 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     rhs_spec = dict(
-        collection=dict(type="str", choices=['ALL', 'SELF_OWNED']),
+        collection=dict(type="str", choices=["ALL", "SELF_OWNED"]),
         categories=dict(type="dict"),
         uuid_list=dict(type="list"),
     )
 
     scope_context_spec = dict(
-        lhs=dict(type="str", choices=['CATEGORY', 'PROJECT', 'CLUSTER', 'VPC']),
-        operator=dict(type="str", choices=['IN', 'IN_ALL', 'NOT_IN']),
+        lhs=dict(type="str", choices=["CATEGORY", "PROJECT", "CLUSTER", "VPC"]),
+        operator=dict(type="str", choices=["IN", "IN_ALL", "NOT_IN"]),
         rhs=dict(type="dict", options=rhs_spec),
     )
 
     entity_context_spec = dict(
         lhs=dict(type="str"),
-        operator=dict(type="str", choices=['IN', 'NOT_IN']),
+        operator=dict(type="str", choices=["IN", "NOT_IN"]),
         rhs=dict(type="dict", options=rhs_spec),
     )
 
@@ -118,9 +175,18 @@ def get_module_spec():
         name=dict(type="str"),
         acp_uuid=dict(type="str"),
         desc=dict(type="str"),
-        user=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        user_group=dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
-        role=dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive),
+        user=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        user_group=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+        ),
+        role=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
         filters=dict(type="list", elements="dict", options=filter_spec),
     )
 
@@ -213,10 +279,7 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(
-        argument_spec=get_module_spec(),
-        supports_check_mode=True
-    )
+    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
@@ -240,4 +303,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

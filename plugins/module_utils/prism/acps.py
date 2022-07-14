@@ -7,7 +7,8 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-from.users import get_user_uuid
+from .users import get_user_uuid
+
 
 class ACP(Prism):
     def __init__(self, module):
@@ -31,8 +32,7 @@ class ACP(Prism):
                 },
                 "spec": {
                     "name": None,
-                    "resources": {
-                    },
+                    "resources": {},
                 },
             }
         )
@@ -49,7 +49,7 @@ class ACP(Prism):
         if config.get("uuid"):
             payload["spec"]["resources"]["role_reference"] = {
                 "kind": "role",
-                "uuid": config["uuid"]
+                "uuid": config["uuid"],
             }
         return payload, None
 
@@ -60,21 +60,21 @@ class ACP(Prism):
                 msg="Failed generating ACP Spec",
                 error="User {0} not found.".format(config["name"]),
             )
-        payload["spec"]["resources"]["user_reference_list"] = [{
-            "kind": "user",
-            "uuid": config["uuid"]
-        }]
+        payload["spec"]["resources"]["user_reference_list"] = [
+            {"kind": "user", "uuid": config["uuid"]}
+        ]
         return payload, None
 
     def _build_spec_user_group(self, payload, config):
         user_group_reference_list = []
         for item in config:
             if item.get("uuid"):
-                user_group_reference_list.append({
-                    "kind": "user_group",
-                    "uuid": item["uuid"]
-                })
-        payload["spec"]["resources"]["user_group_reference_list"] = user_group_reference_list
+                user_group_reference_list.append(
+                    {"kind": "user_group", "uuid": item["uuid"]}
+                )
+        payload["spec"]["resources"][
+            "user_group_reference_list"
+        ] = user_group_reference_list
         return payload, None
 
     def _build_spec_filters(self, payload, config):
@@ -96,7 +96,9 @@ class ACP(Prism):
             if item.get("entity_filter"):
                 entity_filter = {}
                 if item["entity_filter"].get("lhs"):
-                    entity_filter["left_hand_side"] = {"entity_type": item["entity_filter"]["lhs"]}
+                    entity_filter["left_hand_side"] = {
+                        "entity_type": item["entity_filter"]["lhs"]
+                    }
                 if item["entity_filter"].get("operator"):
                     entity_filter["operator"] = item["entity_filter"]["operator"]
                 if item["entity_filter"].get("rhs"):
