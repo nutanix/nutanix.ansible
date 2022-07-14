@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_acps
 short_description: acp module which suports acp CRUD operations
-version_added: 1.0.0
+version_added: 1.3.0
 description: 'Create, Update, Delete acp'
 options:
   name:
@@ -22,100 +22,100 @@ options:
     description: acp UUID
     type: str
   desc:
-    description: write
+    description: The description of the association of a role to a user in a given context
     required: False
     type: str
   user:
     type: dict
-    description: write
+    description: The User(s) being assigned a given role.
     suboptions:
         name:
-          description: write
+          description: the name of the user
           required: False
           type: str
         uuid:
-          description: write
+          description: the uuid of the user
           required: False
           type: str
   user_group:
     type: list
     elements: dict
-    description: write
+    description: The User group(s) being assigned a given role.
     suboptions:
         name:
-          description: write
+          description: the name of th user_group
           required: False
           type: str
         uuid:
-          description: write
+          description: the uuid of th user_group
           required: False
           type: str
   filters:
     type: list
     elements: dict
-    description: write
+    description: The list of filters, which define the entities.
     suboptions:
         scope_filter:
             type: dict
-            description: write
+            description: A list of Scope filter expressions.
             suboptions:
                 lhs:
                      type: str
-                     description: write
+                     description: The left hand side of an expression.
                      choices: ["CATEGORY", "PROJECT", "CLUSTER", "VPC"]
                 operator:
                     type: str
-                    description: write
+                    description: The operator of the filter expression.
                     choices: ["IN", "IN_ALL", "NOT_IN"]
                 rhs:
                     type: dict
-                    description: write
+                    description: The right hand side of an expression.
                     suboptions:
                         collection:
                             type: str
-                            description: write
+                            description: A representative term for supported groupings of entities. ALL = All the entities of a given kind.
                             choices: ["ALL", "SELF_OWNED"]
                         categories:
                             type: dict
-                            description: write  
+                            description: The category values represented as a dictionary of key -> list of values. e.g.{"env":["env1", "env2"]}
                         uuid_list:
                             type: list
-                            description: write
+                            description: The explicit list of UUIDs for the given kind.
         entity_filter:
             type: dict
-            description: write
+            description: A list of Entity filter expressions.
             suboptions:
                 lhs:
                         type: str
-                        description: write
+                        description: The left hand side of an expression.
                 operator:
                         type: str
-                        description: write
+                        description: The operator of the filter expression.
                         choices: ["IN", "NOT_IN"]
                 rhs:
                     type: dict
-                    description: write
+                    description: The right hand side of an expression.
                     suboptions:
                         collection:
                             type: str
-                            description: write
+                            description: A representative term for supported groupings of entities. ALL = All the entities of a given kind.
                             choices: ["ALL", "SELF_OWNED"]
                         categories:
                             type: dict
-                            description: write      
+                            description: The category values represented as a dictionary of key -> list of values. e.g.{"env":["env1", "env2"]}
                         uuid_list:
                             type: list
-                            description: write
+                            description: The explicit list of UUIDs for the given kind.
   role:
     type: dict
-    description: write
+    description: The reference to a role
     suboptions:
         name:
-          description: write
+          description: the name of th role
           required: False
           type: str
         uuid:
-          description: write
+          description: the uuid of the role
           required: False
           type: str
 extends_documentation_fragment:
