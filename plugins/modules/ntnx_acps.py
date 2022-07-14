@@ -25,31 +25,14 @@ options:
     description: The description of the association of a role to a user in a given context
     required: False
     type: str
-  user:
-    type: dict
-    description: The User(s) being assigned a given role.
-    suboptions:
-        name:
-          description: the name of the user
-          required: False
-          type: str
-        uuid:
-          description: the uuid of the user
-          required: False
-          type: str
-  user_group:
+  user_uuid:
+    type: str
+    description: The uuid of the user.
+    required: False
+  user_group_uuids:
     type: list
-    elements: dict
-    description: The User group(s) being assigned a given role.
-    suboptions:
-        name:
-          description: the name of th user_group
-          required: False
-          type: str
-        uuid:
-          description: the uuid of th user_group
-          required: False
-          type: str
+    elements: str
+    description: The User group(s) uuid being assigned a given role.
   filters:
     type: list
     elements: dict
@@ -175,15 +158,8 @@ def get_module_spec():
         name=dict(type="str"),
         acp_uuid=dict(type="str"),
         desc=dict(type="str"),
-        user=dict(
-            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
-        ),
-        user_group=dict(
-            type="list",
-            elements="dict",
-            options=entity_by_spec,
-            mutually_exclusive=mutually_exclusive,
-        ),
+        user_uuid=dict(type="str"),
+        user_group_uuids=dict(type="list", elements="str"),
         role=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
