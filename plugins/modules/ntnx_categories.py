@@ -8,12 +8,141 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_categories
+short_description: category module which supports pc category management CRUD operations
+version_added: 1.3.0
+description: "Create, Update, Delete categories"
+options:
+    remove_values:
+        description: it indicates to remove all values of the specfied category
+        type: bool
+        required: false
+        default: false
+    name:
+        description: Name of PC category
+        type: str
+        required: True
+    desc:
+        description: the description of PC category
+        type: str
+        required: false
+    values:
+        description: list of values of the category
+        type: list
+        required: false
+        elements: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
+- name: Create only category key with description
+  ntnx_categories:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    state: "present"
+    name: "{{first_category.name}}"
+    desc: "{{first_category.desc}}"
+  register: result
+- name: Add values to existing category key having no values & Update description
+  ntnx_categories:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    state: "present"
+    name: "{{first_category.name}}"
+    desc: "{{first_category.update_desc}}"
+    values:
+      - "{{values.0}}"
+      - "{{values.1}}"
+  register: result
+- name: update existing category by deleting some values
+  ntnx_categories:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    state: "absent"
+    name: "{{first_category.name}}"
+    desc: "{{first_category.update_desc}}"
+    values:
+      - "{{values.1}}"
+  register: result
+- name: update existing category by deleting all values
+  ntnx_categories:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    state: "absent"
+    name: "{{first_category.name}}"
+    remove_values: true
+  register: result
+- name: Delte the category
+  ntnx_categories:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    state: "absent"
+    name: "{{first_category.name}}"
+  register: result
+- name: Create category key and value together
+  ntnx_categories:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    state: "present"
+    name: "{{second_category.name}}"
+    desc: test description
+    values:
+      - "{{values.0}}"
+      - "{{values.1}}"
+  register: result
 """
 
 RETURN = r"""
+category_key:
+  description: category key name
+  returned: always
+  type: dict
+  sample: {
+                "capabilities": {
+                    "cardinality": null
+                },
+                "description": "test description",
+                "name": "test-cat1",
+                "system_defined": false
+            }
+category_values:
+  description: list of all values of the category key
+  returned: always
+  type: list
+  sample: [
+                {
+                    "description": null,
+                    "name": "test-cat1",
+                    "system_defined": false,
+                    "value": "value1"
+                },
+                {
+                    "description": null,
+                    "name": "test-cat1",
+                    "system_defined": false,
+                    "value": "value2"
+                }
+            ]
 """
 
 from ..module_utils import utils  # noqa: E402
@@ -119,24 +248,34 @@ def delete_categories(module, result):
             category_key_values.append(v["value"])
         delete_category_values(module, name, category_key_values)
         result["response"] = {
-            "msg": "All values for category key: {0} has been deleted successfully.".format(name)
+            "msg": "All values for category key: {0} has been deleted successfully.".format(
+                name
+            )
         }
 
     elif module.params.get("values"):
         values = module.params["values"]
         delete_category_values(module, name, values)
         result["response"] = {
-            "msg": "Given values for category key: {0} has been deleted successfully.".format(name)
+            "msg": "Given values for category key: {0} has been deleted successfully.".format(
+                name
+            )
         }
 
     else:
         # first delete all values if exists
-        values = _category_key.list(name)
-        delete_category_values(module, name, values)
+        resp = _category_key.list(name)
+        category_key_values = []
+        for v in resp.get("entities", []):
+            category_key_values.append(v["value"])
+        delete_category_values(module, name, category_key_values)
+
         # delete the category
         resp = _category_key.delete(uuid=name, no_response=True)
         result["response"] = {
-            "msg": "Category key: {0} has been deleted successfully along with all associated values.".format(name)
+            "msg": "Category key: {0} has been deleted successfully along with all associated values.".format(
+                name
+            )
         }
 
     result["changed"] = True

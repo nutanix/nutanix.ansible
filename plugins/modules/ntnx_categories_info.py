@@ -8,15 +8,188 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_categories_info
+short_description: categories info module
+version_added: 1.3.0
+description: 'Get categories info'
+options:
+    kind:
+      description:
+        - The kind name
+      type: str
+      default: category
+    name:
+        description:
+            - The category name
+        type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_info
+author:
+ - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
+- name: test getting all categories
+  ntnx_categories_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+  register: result
+  ignore_errors: true
+
+- name: test getting the category with filter by it's name
+  ntnx_categories_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    filter:
+        name: "{{category_name}}"
+  register: result
+
+- name: test getting the category  by it's name
+  ntnx_categories_info:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False
+        name: "{{category_name}}"
+  register: result
 """
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: Metadata for categories list output
+  returned: always
+  type: dict
+  sample: {
+                "filter": "",
+                "kind": "category_key",
+                "length": 20,
+                "offset": 0,
+                "total_matches": 25
+            }
+entities:
+  description: categories intent response
+  returned: always
+  type: list
+  sample: [
+                {
+                    "description": "Application tier.",
+                    "name": "AppTier",
+                    "system_defined": true
+                },
+                {
+                    "description": "Application type.",
+                    "name": "AppType",
+                    "system_defined": true
+                },
+                {
+                    "description": "Environment type.",
+                    "name": "Environment",
+                    "system_defined": true
+                },
+                {
+                    "description": "Category used to categorise the entities which are excluded from VMBL features",
+                    "name": "AnalyticsExclusions",
+                    "system_defined": true
+                },
+                {
+                    "description": "Template type",
+                    "name": "TemplateType",
+                    "system_defined": true
+                },
+                {
+                    "description": "Quarantine Category",
+                    "name": "Quarantine",
+                    "system_defined": true
+                },
+                {
+                    "description": "Virtual Network Type",
+                    "name": "VirtualNetworkType",
+                    "system_defined": true
+                },
+                {
+                    "description": "Imported AD Groups",
+                    "name": "ADGroup",
+                    "system_defined": true
+                },
+                {
+                    "description": "Application created through CALM.",
+                    "name": "CalmApplication",
+                    "system_defined": true
+                },
+                {
+                    "description": "Deployment created through CALM.",
+                    "name": "CalmDeployment",
+                    "system_defined": true
+                },
+                {
+                    "description": "Service created through CALM.",
+                    "name": "CalmService",
+                    "system_defined": true
+                },
+                {
+                    "description": "Package created through CALM.",
+                    "name": "CalmPackage",
+                    "system_defined": true
+                },
+                {
+                    "description": "OS Type of the VM.",
+                    "name": "OSType",
+                    "system_defined": true
+                },
+                {
+                    "description": "Application family name.123",
+                    "name": "AppFamily",
+                    "system_defined": false
+                },
+                {
+                    "description": "Created by CALM",
+                    "name": "CalmPolicyEngineVM",
+                    "system_defined": false
+                },
+                {
+                    "description": "App Support CategoryKey",
+                    "name": "app-support-118",
+                    "system_defined": false
+                },
+                {
+                    "description": "Check1",
+                    "name": "CalmUsername",
+                    "system_defined": false
+                },
+                {
+                    "description": "App Support CategoryKey",
+                    "name": "app-support-239",
+                    "system_defined": false
+                },
+                {
+                    "description": "App Support CategoryKey",
+                    "name": "app-support-238",
+                    "system_defined": false
+                },
+                {
+                    "description": "Tenant Onboarding category for DND",
+                    "name": "TenantName",
+                    "system_defined": false
+                }
+            ]
+
 """
 
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.categories import Categories, CategoryKey
+from ..module_utils.prism.categories import Categories, CategoryKey  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
