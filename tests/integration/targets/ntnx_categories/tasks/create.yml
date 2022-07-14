@@ -4,11 +4,11 @@
 
 - set_fact:
     first_category:
-      name: testAAAAcc
+      name: test-catA1
       desc: first test description
       update_desc: updated test description
     second_category:
-      name: testBBBBac
+      name: test-catB1
     values:
         - 'value-a'
         - 'value-b'
@@ -19,7 +19,7 @@
     state: "present"
     name: "{{first_category.name}}"
     desc: "{{first_category.desc}}"
-  register : result
+  register: result
   ignore_errors: true
 
 - name: Creation Status
@@ -42,7 +42,7 @@
     values:
       - "{{values.0}}"
       - "{{values.1}}"
-  register : result
+  register: result
   ignore_errors: true
 
 
@@ -67,7 +67,7 @@
     values:
       - "{{values.0}}"
       - "{{values.1}}"
-  register : result
+  register: result
   ignore_errors: true
 
 - name: Creation Status
@@ -86,13 +86,13 @@
     desc: "{{first_category.update_desc}}"
     values:
       - "{{values.1}}"
-  register : result
+  register: result
   ignore_errors: true
 
 - name: get modified category 
   ntnx_categories_info:
     name: "{{first_category.name}}"
-  register : result
+  register: result
   ignore_errors: true
 
 - name: Creation Status
@@ -111,13 +111,13 @@
     state: "absent"
     name: "{{first_category.name}}"
     remove_values: true
-  register : result
+  register: result
   ignore_errors: true
 
 - name: get modified category 
   ntnx_categories_info:
     name: "{{first_category.name}}"
-  register : result
+  register: result
   ignore_errors: true
 - debug:
     var: result
@@ -135,13 +135,13 @@
   ntnx_categories:
     state: "absent"
     name: "{{first_category.name}}"
-  register : result
+  register: result
   ignore_errors: true
 
 - name: search deleted category 
   ntnx_categories_info:
     name: "{{first_category.name}}"
-  register : result
+  register: result
   ignore_errors: true
 
 - name: Creation Status
