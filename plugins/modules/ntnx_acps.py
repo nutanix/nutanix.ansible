@@ -111,11 +111,177 @@ author:
 """
 
 EXAMPLES = r"""
-# Step 5
+- name: Create min ACP
+  ntnx_acps:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    wait: true
+    name: MinACP
+    role:
+      uuid: '{{ role.uuid }}'
+
+- name: Create ACP with user reference
+  ntnx_acps:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: acp_with_user_reference
+    role:
+      uuid: "{{ role.uuid }}"
+    user_uuids:
+      - "{{ user_uuid }}"
+
+- name: Create ACP with user ad user group reference
+  ntnx_acps:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: acp_with_user_and_user_group_reference
+    role:
+      uuid: "{{ role.uuid }}"
+    user_uuids:
+      - "{{ user_uuid }}"
+    user_group_uuids:
+      - "{{ user_group_uuid }}"
+
+- name: Create ACP with all specfactions
+  ntnx_acps:
+    validate_certs: False
+    state: present
+    nutanix_host: "{{ IP }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: acp_with_all_specfactions
+    role:
+      uuid: "{{ role.uuid }}"
+    user_uuids:
+      - "{{ user_uuid }}"
+    user_group_uuids:
+      - "{{ user_group_uuid }}"
+    filters:
+      - scope_filter:
+          lhs: PROJECT
+          operator: IN
+          rhs:
+            uuid_list:
+              - "{{ project.uuid }}"
+        entity_filter:
+          lhs: ALL
+          operator: IN
+          rhs:
+            collection: ALL
 """
 
 RETURN = r"""
-# Step 6
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: '3.1'
+metadata:
+  description: Metadata for ACP output
+  returned: always
+  type: dict
+  sample:
+    categories: {}
+    categories_mapping: {}
+    creation_time: '2022-06-15T11:59:38Z'
+    kind: access_control_policy
+    last_update_time: '2022-06-15T11:59:41Z'
+    owner_reference:
+      kind: user
+      name: admin
+      uuid: 00000000000-0000-0000-0000-00000000000
+    spec_hash: '00000000000000000000000000000000000000000000000000'
+    spec_version: 0
+    uuid: 00000000000-0000-0000-0000-00000000000
+spec:
+  description: An intentful representation of a subnet spec
+  returned: always
+  type: dict
+  sample:
+    description: desc,
+    name: name,
+    resources:
+        filter_list:
+            context_list:
+                entity_filter_expression_list:
+                    left_hand_side:
+                        entity_type: ALL
+                    operator: IN,
+                    right_hand_side:
+                        collection: ALL
+                scope_filter_expression_list:
+                    left_hand_side: PROJECT,
+                    operator: IN,
+                    right_hand_side:
+                        uuid_list:
+                            00000000000-0000-0000-0000-00000000000
+        role_reference:
+            kind: role,
+            uuid: 00000000000-0000-0000-0000-00000000000
+        user_group_reference_list:
+            kind: user_group,
+            uuid: 00000000000-0000-0000-0000-00000000000
+        user_reference_list:
+                kind: user,
+                uuid: 00000000000-0000-0000-0000-00000000000
+status:
+  description: An intentful representation of a ACP status
+  returned: always
+  type: dict
+  sample:
+    description: desc
+    execution_context:
+        task_uuid:
+            00000000000-0000-0000-0000-00000000000
+    is_system_defined: false
+    name: name
+    resources:
+        filter_list:
+            context_list:
+                entity_filter_expression_list:
+                    left_hand_side:
+                        entity_type: ALL
+                    operator: IN
+                    right_hand_side:
+                        collection: ALL
+                scope_filter_expression_list:
+                    left_hand_side: PROJECT,
+                    operator: IN,
+                    right_hand_side:
+                        uuid_list:
+                            00000000000-0000-0000-0000-00000000000
+        role_reference:
+            kind: role,
+            name: Project Admin,
+            uuid: 00000000000-0000-0000-0000-00000000000
+        user_group_reference_list:
+                kind: user_group,
+                name: cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io,
+                uuid: 00000000000-0000-0000-0000-00000000000
+        user_reference_list:
+                kind: user,
+                name: idpuser1@calmsaastest.com,
+                uuid: 00000000000-0000-0000-0000-00000000000
+    state: COMPLETE
+acp_uuid:
+  description: The created security rule  uuid
+  returned: always
+  type: str
+  sample: 00000000000-0000-0000-0000-00000000000
+task_uuid:
+  description: The task uuid for the creation
+  returned: always
+  type: str
+  sample: 00000000000-0000-0000-0000-00000000000
 """
 
 from ..module_utils import utils  # noqa: E402
@@ -265,10 +431,12 @@ def run_module():
         "task_uuid": None,
     }
     state = module.params["state"]
-    if state == "present":
-        create_acp(module, result)
-    elif state == "absent":
+    if state == "absent":
         delete_acp(module, result)
+    elif module.params.get("acp_uuid"):
+        update_acp(module, result)
+    else:
+        create_acp(module, result)
 
     module.exit_json(**result)
 

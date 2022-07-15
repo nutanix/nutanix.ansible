@@ -1,5 +1,5 @@
 ---
-- name: FIP_Info playbook
+- name: ACP_Info playbook
   hosts: localhost
   gather_facts: false
   collections:
@@ -13,17 +13,17 @@
 
   tasks:
         
-    - name: List floating_ips using ascending ip sorting and floating_ip filter
+    - name: List ACPs using ascending, sorting and name filter
       ntnx_floating_ips_info:
         filter:
-          floating_ip: "10."
-        kind: floating_ip
+          name: "{{ acp_name }}"
+        kind: access_control_policy
         sort_order: "ASCENDING"
-        sort_attribute: "floating_ip"
+        sort_attribute: "name"
       register: result
       ignore_errors: True
 
-    - name: List floating_ips using length and offset
+    - name: List ACPs using length and offset
       ntnx_floating_ips_info:
         length: 3
         offset: 0

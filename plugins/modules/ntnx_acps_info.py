@@ -46,7 +46,7 @@ EXAMPLES = r"""
       nutanix_password: "{{ password }}"
       validate_certs: False
       filter: "name=={{ acp.name }}"
-      kind: acp
+      kind: access_control_policy
     register: result
 
   - name: List acp using length, offset, sort order and name sort attribute
