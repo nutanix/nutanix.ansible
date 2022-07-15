@@ -1,0 +1,33 @@
+- name:
+  debug:
+    msg: "Start ntnx_project delete tests"
+
+- name: Create Project for delete
+  ntnx_projects:
+    name: "test-ansible-project-3"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: "Unable to create project with minimal spec"
+    success_msg: "Project with minimal spec created successfully"
+
+- name: Delete created project
+  ntnx_projects:
+    state: absent
+    project_uuid: "{{ result.project_uuid }}"
+    wait: true
+  register: result
+  ignore_errors: True
+
+- name: Delete Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to create project with minimal spec"
+    success_msg: "Project with minimal spec created successfully"

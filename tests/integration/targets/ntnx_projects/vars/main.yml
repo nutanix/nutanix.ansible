@@ -1,0 +1,13 @@
+---
+network:
+  dhcp:
+    name: vlan.154
+    uuid: f1b7a142-ed69-4077-9385-ee34dd6a3532
+project:
+  name: integration_test_project
+  uuid: cb38ebbf-de15-4239-8197-cedcf27ec88d
+users:
+  - "2d1239ed-9b38-58c0-a308-eb72f07dcd8c"
+  - "1f5c487e-434e-54c3-8a99-f89e41321245"
+user_groups:
+  - "2c420da6-94df-4889-abed-f8025efcb154"
