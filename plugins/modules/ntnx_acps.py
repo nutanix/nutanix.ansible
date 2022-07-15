@@ -25,10 +25,10 @@ options:
     description: The description of the association of a role to a user in a given context
     required: False
     type: str
-  user_uuid:
-    type: str
-    description: The uuid of the user.
-    required: False
+  user_uuids:
+    type: list
+    elements: str
+    description: The User(s) uuid being assigned a given role.
   user_group_uuids:
     type: list
     elements: str
@@ -158,7 +158,7 @@ def get_module_spec():
         name=dict(type="str"),
         acp_uuid=dict(type="str"),
         desc=dict(type="str"),
-        user_uuid=dict(type="str"),
+        user_uuids=dict(type="list", elements="str"),
         user_group_uuids=dict(type="list", elements="str"),
         role=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive

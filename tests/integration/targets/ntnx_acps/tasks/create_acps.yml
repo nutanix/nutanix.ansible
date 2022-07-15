@@ -1,0 +1,122 @@
+- name: Create min ACP
+  ntnx_acps:
+    state: present
+    wait: True
+    name: MinACP
+    role:
+      uuid: "{{ role.uuid }}"
+  register: result
+  check_mode: true
+  ignore_errors: True
+##########################################################
+- name: Create min ACP
+  ntnx_acps:
+    state: present
+    wait: true
+    name: MinACP
+    role:
+      uuid: '{{ role.uuid }}'
+  check_mode: false
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create Min ACP "
+    success_msg: " Min ACP created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+##########################################################
+- name: Create ACP with user reference
+  ntnx_acps:
+    state: present
+    name: acp_with_user_reference
+    role:
+      uuid: "{{ role.uuid }}"
+    user_uuids:
+      - "{{ user_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to Create ACP with user reference "
+    success_msg: " ACP with user reference created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+##########################################################
+- name: Create ACP with user ad user group reference
+  ntnx_acps:
+    state: present
+    name: acp_with_user_and_user_group_reference
+    role:
+      uuid: "{{ role.uuid }}"
+    user_uuids:
+      - "{{ user_uuid }}"
+    user_group_uuids:
+      - "{{ user_group_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to Create ACP with user and user group reference "
+    success_msg: " ACP with user and user group reference created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+##########################################################
+- name: Create ACP with all specfactions
+  ntnx_acps:
+    state: present
+    name: acp_with_all_specfactions
+    role:
+      uuid: "{{ role.uuid }}"
+    user_uuids:
+      - "{{ user_uuid }}"
+    user_group_uuids:
+      - "{{ user_group_uuid }}"
+    filters:
+      - scope_filter:
+          lhs: PROJECT
+          operator: IN
+          rhs:
+            uuid_list:
+              - "{{ project.uuid }}"
+        entity_filter:
+          lhs: ALL
+          operator: IN
+          rhs:
+            collection: ALL
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to Create ACP all specfactions "
+    success_msg: " ACP with all specfactions created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+##########################################################
+- name: Delete all created acps
+  ntnx_acps:
+    state: absent
+    acp_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
