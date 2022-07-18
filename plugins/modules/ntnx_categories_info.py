@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_categories_info
 short_description: categories info module
-version_added: 1.3.0
+version_added: 1.4.0
 description: 'Get categories info'
 options:
     kind:

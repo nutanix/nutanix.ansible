@@ -11,11 +11,11 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_categories
 short_description: category module which supports pc category management CRUD operations
-version_added: 1.3.0
+version_added: 1.4.0
 description: "Create, Update, Delete categories"
 options:
     remove_values:
-        description: 
+        description:
             - it indicates to remove all values of the specfied category
             - This attribute can be only used with C(state) is absent
             - This attribute is mutually exclusive with C(values) when state is absent
@@ -23,7 +23,7 @@ options:
         required: false
         default: false
     name:
-        description: 
+        description:
             - Name of PC category
             - Category will be deleted along with associated values when C(name) is given without C(values) if C(state) is present.
         type: str
@@ -33,7 +33,7 @@ options:
         type: str
         required: false
     values:
-        description: 
+        description:
             - list of values of the category to be created for given C(name) when C(state) is present
             - list of values of the category to be removed for given C(name) when C(state) is absent
             - This attribute is mutually exclusive with C(remove_values)
