@@ -13,10 +13,6 @@ class Users(Prism):
         resource_type = "/users"
         super(Users, self).__init__(module, resource_type=resource_type)
 
+
 def get_user_reference_spec(uuid=None):
-    return deepcopy(
-        {
-            "kind": "user",
-            "uuid": uuid
-        }
-    )
+    return deepcopy({"kind": "user", "uuid": uuid})

@@ -6,9 +6,6 @@
   ntnx_projects:
     name: "test-ansible-project-4"
     desc: desc-123
-    categories:
-      Environment:
-        - Dev
     subnet_reference_list: 
       - name: "{{ network.dhcp.name }}"
     default_subnet_reference:
@@ -39,9 +36,6 @@
     project_uuid: "{{ result.project_uuid }}"
     name: "test-ansible-project-4-updated"
     desc: desc-123-updated
-    categories:
-      Environment:
-        - Production
     subnet_reference_list: 
       - uuid: "{{ static.uuid }}"
     default_subnet_reference:
@@ -63,7 +57,6 @@
       - result.changed == false
       - result.response.spec.name == 'test-ansible-project-4-updated'
       - result.response.spec.description == 'desc-123-updated'
-      - result.response.metadata.categories_mapping['Environment'] == ['Production']
       - result.response.spec.resources.resource_domain.resources[0].limit == 2046 
       - result.response.spec.resources.resource_domain.resources[0].resource_type == 'MEMORY'
       - result.response.spec.resources.user_reference_list[0].uuid == "{{ users[1] }}"
@@ -81,9 +74,6 @@
     project_uuid: "{{ result.project_uuid }}"
     name: "test-ansible-project-4-updated"
     desc: desc-123-updated
-    categories:
-      Environment:
-        - Production
     subnet_reference_list: 
       - uuid: "{{ static.uuid }}"
     default_subnet_reference:
@@ -106,7 +96,6 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.name == 'test-ansible-project-4-updated'
       - result.response.status.description == 'desc-123-updated'
-      - result.response.metadata.categories_mapping['Environment'] == ['Production']
       - result.response.status.resources.resource_domain.resources[0].limit == 2046 
       - result.response.status.resources.resource_domain.resources[0].resource_type == 'STORAGE'
       - result.response.status.resources.user_reference_list[0].uuid == "{{ users[1] }}"
@@ -124,9 +113,6 @@
     project_uuid: "{{ result.project_uuid }}"
     name: "test-ansible-project-4-updated"
     desc: desc-123-updated
-    categories:
-      Environment:
-        - Production
     subnet_reference_list: 
       - uuid: "{{ static.uuid }}"
     default_subnet_reference:

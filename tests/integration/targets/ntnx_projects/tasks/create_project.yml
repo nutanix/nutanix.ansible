@@ -28,9 +28,6 @@
   ntnx_projects:
     name: "test-ansible-project-1"
     desc: desc-123
-    categories:
-      Environment:
-        - Dev
     subnet_reference_list: 
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
@@ -54,7 +51,6 @@
       - result.changed == false
       - result.response.spec.name == 'test-ansible-project-1'
       - result.response.spec.description == 'desc-123'
-      - result.response.metadata.categories_mapping['Environment'] == ['Dev']
       - result.response.spec.resources.resource_domain.resources[0].limit == 2046 
       - result.response.spec.resources.resource_domain.resources[0].resource_type == 'STORAGE'
       - result.response.spec.resources.user_reference_list[0].uuid == "{{ users[0] }}"
@@ -73,9 +69,6 @@
   ntnx_projects:
     name: "test-ansible-project-1"
     desc: desc-123
-    categories:
-      Environment:
-        - Dev
     subnet_reference_list: 
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
@@ -99,7 +92,6 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.name == 'test-ansible-project-1'
       - result.response.status.description == 'desc-123'
-      - result.response.metadata.categories_mapping['Environment'] == ['Dev']
       - result.response.status.resources.resource_domain.resources[0].limit == 2046 
       - result.response.status.resources.resource_domain.resources[0].resource_type == 'STORAGE'
       - result.response.status.resources.user_reference_list[0].uuid == "{{ users[0] }}"

@@ -169,7 +169,7 @@ class VM(Prism):
 
     def _build_spec_project(self, payload, param):
         if "name" in param:
-            project = Project(self.module)
+            project = Projects(self.module)
             name = param["name"]
             uuid = project.get_uuid(name)
             if not uuid:

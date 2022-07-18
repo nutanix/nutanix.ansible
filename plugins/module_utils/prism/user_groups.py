@@ -13,10 +13,6 @@ class UserGroups(Prism):
         resource_type = "/user_groups"
         super(UserGroups, self).__init__(module, resource_type=resource_type)
 
+
 def get_user_group_reference_spec(uuid=None):
-    return deepcopy(
-        {
-            "kind": "user_group",
-            "uuid": uuid
-        }
-    )
+    return deepcopy({"kind": "user_group", "uuid": uuid})

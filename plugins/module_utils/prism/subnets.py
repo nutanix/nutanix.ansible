@@ -161,9 +161,4 @@ def get_subnet_uuid(config, module):
 
 
 def get_subnet_reference_spec(uuid=None):
-    return deepcopy(
-        {
-            "kind": "subnet",
-            "uuid": uuid
-        }
-    )
+    return deepcopy({"kind": "subnet", "uuid": uuid})

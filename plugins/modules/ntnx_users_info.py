@@ -8,10 +8,121 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_users_info
+short_description: users info module
+version_added: 1.4.0
+description: 'Get users info'
+options:
+    kind:
+      description:
+        - The kind name
+      type: str
+      default: user
+    user_uuid:
+        description:
+            - user UUID
+        type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_info
+author:
+ - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
+
 EXAMPLES = r"""
+- name: List all users
+  ntnx_users_info:
+  register: users
+
+- name: List users using user uuid criteria
+  ntnx_users_info:
+    user_uuid: "{{ test_user_uuid }}"
+  register: result
+
+- name: List users using filter criteria
+  ntnx_users_info:
+    filter:
+      username: "{{ test_user_name }}"
+  register: result
 """
 RETURN = r"""
+Note: Below response struct is for users info using filters
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: Metadata for user list output
+  returned: always
+  type: dict
+  sample: {
+                "filter": "username==xx@xx.com",
+                "kind": "user",
+                "length": 1,
+                "offset": 0,
+                "total_matches": 1
+            }
+entities:
+  description: users intent response
+  returned: Not when query done using user uuid
+  type: list
+  sample: [
+                {
+                    "metadata": {
+                        "categories": {},
+                        "categories_mapping": {},
+                        "kind": "user",
+                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "spec_version": 0,
+                        "uuid": "1e70cfe9-e1e6-589e-921d-26aabd37c2ae"
+                    },
+                    "spec": {
+                        "resources": {
+                            "directory_service_user": {
+                                "directory_service_reference": {
+                                    "kind": "directory_service",
+                                    "uuid": "c9fd7a56-4cdd-4156-92e2-b0ea26876e91"
+                                },
+                                "user_principal_name": "xx@xx.com"
+                            }
+                        }
+                    },
+                    "status": {
+                        "name": "xx@xx.com",
+                        "resources": {
+                            "access_control_policy_reference_list": [],
+                            "directory_service_user": {
+                                "default_user_principal_name": "xx@xx.com",
+                                "directory_service_reference": {
+                                    "kind": "directory_service",
+                                    "name": "xx",
+                                    "uuid": "c9fd7a56-4cdd-4156-92e2-b0ea26876e91"
+                                },
+                                "user_principal_name": "xx@xx.com"
+                            },
+                            "display_name": null,
+                            "projects_reference_list": [
+                                {
+                                    "kind": "project",
+                                    "name": "xx",
+                                    "uuid": "c1838689-2a2f-4665-8184-4bc30b259987"
+                                }
+                            ],
+                            "resource_usage_summary": {
+                                "resource_domain": {
+                                    "resources": []
+                                }
+                            },
+                            "user_type": "DIRECTORY_SERVICE"
+                        },
+                        "state": "COMPLETE"
+                    }
+                }
+            ]
 """
 
 
