@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_hosts_info
 short_description: host  info module
-version_added: 1.0.0
+version_added: 1.4.0
 description: 'Get host info'
 options:
       kind:

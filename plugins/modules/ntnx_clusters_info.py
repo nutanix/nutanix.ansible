@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_clusters_info
 short_description: cluster info module
-version_added: 1.3.0
+version_added: 1.4.0
 description: 'Get cluster info'
 options:
       kind:
