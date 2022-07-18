@@ -63,6 +63,7 @@ options:
                             description: The category values represented as a dictionary of key -> list of values. e.g.{"env":["env1", "env2"]}
                         uuid_list:
                             type: list
+                            elements: str
                             description: The explicit list of UUIDs for the given kind.
         entity_filter:
             type: dict
@@ -88,6 +89,7 @@ options:
                             description: The category values represented as a dictionary of key -> list of values. e.g.{"env":["env1", "env2"]}
                         uuid_list:
                             type: list
+                            elements: str
                             description: The explicit list of UUIDs for the given kind.
   role:
     type: dict
@@ -286,8 +288,8 @@ task_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.acps import ACP  # noqa: E402
+from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -300,7 +302,7 @@ def get_module_spec():
     rhs_spec = dict(
         collection=dict(type="str", choices=["ALL", "SELF_OWNED"]),
         categories=dict(type="dict"),
-        uuid_list=dict(type="list"),
+        uuid_list=dict(type="list", elements="str"),
     )
 
     scope_context_spec = dict(
