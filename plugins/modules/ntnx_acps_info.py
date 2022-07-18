@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_acps_info
 short_description: acp info module
-version_added: 1.3.0
+version_added: 1.4.0
 description: 'Get acp info'
 options:
     kind:
