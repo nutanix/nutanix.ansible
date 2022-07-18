@@ -1,3 +1,4 @@
+---
 - name: Create min ACP
   ntnx_acps:
     state: present
