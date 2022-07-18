@@ -45,7 +45,8 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter: "name=={{ acp.name }}"
+      filter:
+        name: "{{ acp.name }}"
       kind: access_control_policy
     register: result
 

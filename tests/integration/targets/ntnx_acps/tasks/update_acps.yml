@@ -1,3 +1,4 @@
+---
 - name: Create min ACP
   ntnx_acps:
     state: present
@@ -12,6 +13,8 @@
     that:
       - setup_acp.response is defined
       - setup_acp.response.status.state == 'COMPLETE'
+      - setup_acp.response.spec.name == 'integration-test-acp-update'
+      - setup_acp.response.status.resources.role_reference.uuid == "{{ role.uuid }}"
     fail_msg: "Unable to create ACP for update tests"
     success_msg: "ACP created successfully for update tests"
 
@@ -35,8 +38,8 @@
       - result.changed == false
       - result.failed == false
       - "'Nothing to change' in result.msg"
-    fail_msg: "ACP got updated"
-    success_msg: "ACP update skipped succesfully due to no changes in spec"
+    fail_msg: "Fail: ACP got updated"
+    success_msg: "Pass: ACP update skipped succesfully due to no changes in spec"
 
 ########################################################################################
 
@@ -59,7 +62,8 @@
           rhs:
             collection: ALL
   register: result
-
+- debug:
+    var: result
 - name: Update Status
   assert: 
     that:
@@ -67,8 +71,14 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.name == 'integration-test-acp-after-update'
       - result.response.status.description == 'description after update'
-    fail_msg: "Unable to update ACP"
-    success_msg: "ACP with given update spec updated successfully"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.left_hand_side.entity_type == "ALL"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.right_hand_side.collection == "ALL"
+      - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.left_hand_side == "PROJECT"
+      - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.right_hand_side.uuid_list.0 == "{{ project.uuid }}"
+    fail_msg: "Fail: Unable to update ACP"
+    success_msg: "Pass: ACP with given update spec updated successfully"
 
 ########################################### Cleanup ###################################################
 
