@@ -51,9 +51,7 @@ class ACP(Prism):
         user_reference_list = []
         for item in config:
             user_reference_list.append({"kind": "user", "uuid": item})
-        payload["spec"]["resources"][
-            "user_reference_list"
-        ] = user_reference_list
+        payload["spec"]["resources"]["user_reference_list"] = user_reference_list
         return payload, None
 
     def _build_spec_user_group(self, payload, config):
