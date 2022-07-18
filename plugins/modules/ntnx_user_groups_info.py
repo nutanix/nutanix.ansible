@@ -49,14 +49,15 @@ EXAMPLES = r"""
   register: result
 """
 RETURN = r"""
-#Note: Below response struct is for user groups info using filters
 api_version:
   description: API Version of the Nutanix v3 API framework.
   returned: always
   type: str
   sample: "3.1"
 metadata:
-  description: Metadata for user group list output
+  description: 
+    - Metadata for user group list output
+    - Below response struct is for user groups info using filters
   returned: Only when listed using filter
   type: dict
   sample: {
@@ -67,7 +68,9 @@ metadata:
                 "total_matches": 1
             }
 entities:
-  description: user groups intent response
+  description: 
+    - user groups intent response
+    - Below response struct is for user groups info using filters
   returned: Only when all user groups are listed or using filter
   type: list
   sample: [

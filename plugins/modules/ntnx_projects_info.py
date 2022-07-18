@@ -47,14 +47,15 @@ EXAMPLES = r"""
 
 """
 RETURN = r"""
-#Note: Below response is when we use project_uuid for getting info
 api_version:
   description: API Version of the Nutanix v3 API framework.
   returned: always
   type: str
   sample: "3.1"
 metadata:
-  description: Metadata for project list output using uuid
+  description:
+    - Metadata for project list output using uuid
+    - Below response is when we use project_uuid for getting info
   returned: always
   type: dict
   sample: {
@@ -78,7 +79,9 @@ metadata:
                 "uuid": "csb38ebbf-de15-4239-8197-cedcf27ec88d"
             }
 spec:
-  description: given project spec response
+  description:
+    - given project spec response
+    - below response is when we use project_uuid for getting info
   returned: always
   type: dict
   sample: {
@@ -95,7 +98,9 @@ spec:
                 }
             }
 status:
-  description: given project status response
+  description:
+    - given project status response
+    - below response is when we use project_uuid for getting info
   returned: always
   type: dict
   sample:  {

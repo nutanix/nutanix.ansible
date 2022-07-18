@@ -23,7 +23,7 @@ class Projects(Prism):
             "resource_limits": self._build_spec_resource_limits,
             "cluster_uuid_list": self._build_spec_cluster_reference_list,
             "default_subnet_reference": self._build_spec_default_subnet_reference,
-            "subnet_reference_list": self._build_spec_subnet_reference_list,      
+            "subnet_reference_list": self._build_spec_subnet_reference_list,
             "user_uuid_list": self._build_spec_user_reference_list,
             "external_user_group_uuid_list": self._build_spec_external_user_group_reference_list,
         }
@@ -58,13 +58,12 @@ class Projects(Prism):
         payload["spec"]["resources"]["resource_domain"] = {}
         payload["spec"]["resources"]["resource_domain"]["resources"] = resource_limits
         return payload, None
+
     def _build_spec_cluster_reference_list(self, payload, cluster_ref_list):
         cluster_reference_specs = []
         for uuid in cluster_ref_list:
             cluster_reference_specs.append(get_cluster_reference_spec(uuid))
-        payload["spec"]["resources"][
-            "cluster_reference_list"
-        ] = cluster_reference_specs
+        payload["spec"]["resources"]["cluster_reference_list"] = cluster_reference_specs
         return payload, None
 
     def _build_spec_default_subnet_reference(self, payload, subnet_ref):

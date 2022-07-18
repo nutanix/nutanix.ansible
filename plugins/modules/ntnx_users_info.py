@@ -49,14 +49,15 @@ EXAMPLES = r"""
   register: result
 """
 RETURN = r"""
-#Note: Below response struct is for users info using filters
 api_version:
   description: API Version of the Nutanix v3 API framework.
   returned: always
   type: str
   sample: "3.1"
 metadata:
-  description: Metadata for user list output
+  description: 
+    - Metadata for user list output
+    - Below response struct is for users info using filters
   returned: always
   type: dict
   sample: {
@@ -67,7 +68,9 @@ metadata:
                 "total_matches": 1
             }
 entities:
-  description: users intent response
+  description: 
+    - users intent response
+    - below response struct is for users info using filters
   returned: Not when query done using user uuid
   type: list
   sample: [

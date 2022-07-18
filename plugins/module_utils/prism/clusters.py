@@ -33,5 +33,6 @@ def get_cluster_uuid(config, module):
 
     return uuid, None
 
+
 def get_cluster_reference_spec(uuid=None):
     return deepcopy({"kind": "cluster", "uuid": uuid})
