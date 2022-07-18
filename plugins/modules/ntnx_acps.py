@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_acps
 short_description: acp module which suports acp CRUD operations
-version_added: 1.3.0
+version_added: 1.4.0
 description: 'Create, Update, Delete acp'
 options:
   name:
