@@ -252,7 +252,7 @@ def get_module_spec():
         project_uuid=dict(type="str", required=False),
         desc=dict(type="str", required=False),
         resource_limits=dict(
-            type="list", elememts="dict", options=resource_limit, required=False
+            type="list", elements="dict", options=resource_limit, required=False
         ),
         default_subnet_reference=dict(
             type="dict",
@@ -362,7 +362,6 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[("categories", "remove_categories")],
         required_if=[
             ("state", "present", ("project_uuid", "name"), True),
             ("state", "absent", ("project_uuid",)),

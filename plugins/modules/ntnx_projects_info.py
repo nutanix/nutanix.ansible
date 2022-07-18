@@ -47,7 +47,7 @@ EXAMPLES = r"""
 
 """
 RETURN = r"""
-Note: Below response is when we use project_uuid for getting info
+#Note: Below response is when we use project_uuid for getting info
 api_version:
   description: API Version of the Nutanix v3 API framework.
   returned: always
