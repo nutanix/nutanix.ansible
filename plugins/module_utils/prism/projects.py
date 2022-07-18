@@ -6,6 +6,7 @@ from copy import deepcopy
 from .user_groups import get_user_group_reference_spec
 from .subnets import get_subnet_reference_spec, get_subnet_uuid
 from .users import get_user_reference_spec
+from .clusters import get_cluster_reference_spec
 
 __metaclass__ = type
 
@@ -20,8 +21,9 @@ class Projects(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "resource_limits": self._build_spec_resource_limits,
+            "cluster_uuid_list": self._build_spec_cluster_reference_list,
             "default_subnet_reference": self._build_spec_default_subnet_reference,
-            "subnet_reference_list": self._build_spec_subnet_reference_list,
+            "subnet_reference_list": self._build_spec_subnet_reference_list,      
             "user_uuid_list": self._build_spec_user_reference_list,
             "external_user_group_uuid_list": self._build_spec_external_user_group_reference_list,
         }
@@ -55,6 +57,14 @@ class Projects(Prism):
     def _build_spec_resource_limits(self, payload, resource_limits):
         payload["spec"]["resources"]["resource_domain"] = {}
         payload["spec"]["resources"]["resource_domain"]["resources"] = resource_limits
+        return payload, None
+    def _build_spec_cluster_reference_list(self, payload, cluster_ref_list):
+        cluster_reference_specs = []
+        for uuid in cluster_ref_list:
+            cluster_reference_specs.append(get_cluster_reference_spec(uuid))
+        payload["spec"]["resources"][
+            "cluster_reference_list"
+        ] = cluster_reference_specs
         return payload, None
 
     def _build_spec_default_subnet_reference(self, payload, subnet_ref):

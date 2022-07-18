@@ -69,6 +69,8 @@
   ntnx_projects:
     name: "test-ansible-project-1"
     desc: desc-123
+    cluster_uuid_list:
+      - "{{ cluster.uuid }}"
     subnet_reference_list: 
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
@@ -100,6 +102,7 @@
       - result.response.status.resources.subnet_reference_list[0].uuid == "{{ network.dhcp.uuid }}"
       - result.response.status.resources.subnet_reference_list[1].uuid == "{{ static.uuid }}"
       - result.response.status.resources.default_subnet_reference.uuid == "{{ network.dhcp.uuid }}"
+      - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
 
     fail_msg: "Unable to create project with all specifications"
     success_msg: "Project with all specifications created successfully"

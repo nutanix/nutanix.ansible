@@ -99,6 +99,12 @@ options:
         required: false
         type: list
         elements: str
+    cluster_uuid_list:
+        description:
+            - list of uuid of cluster to be added in project
+        required: false
+        type: list
+        elements: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -261,6 +267,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
+        cluster_uuid_list=dict(type="list", elements="str", required=False),
         user_uuid_list=dict(type="list", elements="str", required=False),
         external_user_group_uuid_list=dict(type="list", elements="str", required=False),
     )

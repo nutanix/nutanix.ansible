@@ -2,7 +2,7 @@
   debug:
     msg: "Start ntnx_project update tests"
 
-- name: Create Project with minimal spec
+- name: Create Project
   ntnx_projects:
     name: "test-ansible-project-4"
     desc: desc-123
@@ -36,6 +36,8 @@
     project_uuid: "{{ result.project_uuid }}"
     name: "test-ansible-project-4-updated"
     desc: desc-123-updated
+    cluster_uuid_list:
+      - "{{ cluster.uuid }}"
     subnet_reference_list: 
       - uuid: "{{ static.uuid }}"
     default_subnet_reference:
@@ -63,6 +65,7 @@
       - result.response.spec.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
       - result.response.spec.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
       - result.response.spec.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
+      - result.response.spec.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
 
     fail_msg: "Check mode response for update is incorrect"
     success_msg: "Check mode response for update verified successfully"
@@ -74,6 +77,8 @@
     project_uuid: "{{ result.project_uuid }}"
     name: "test-ansible-project-4-updated"
     desc: desc-123-updated
+    cluster_uuid_list:
+      - "{{ cluster.uuid }}"
     subnet_reference_list: 
       - uuid: "{{ static.uuid }}"
     default_subnet_reference:
@@ -102,6 +107,7 @@
       - result.response.status.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
       - result.response.status.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
       - result.response.status.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
+      - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
 
     fail_msg: "Project update failed"
     success_msg: "Project updated successfully"
