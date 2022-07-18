@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_acps
-short_description: acp module which suports acp CRUD operations
+short_description: acp module which suports acp Create, update and delete operations
 version_added: 1.4.0
 description: 'Create, Update, Delete acp'
 options:
@@ -423,7 +423,11 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseModule(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+        required_if=[("vm_uuid", None, ("name",)), ("state", "absent", ("vm_uuid",))],
+    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
