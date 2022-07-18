@@ -355,7 +355,6 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[("categories", "remove_categories")],
         required_if=[
             ("state", "present", ("project_uuid", "name"), True),
             ("state", "absent", ("project_uuid",)),
