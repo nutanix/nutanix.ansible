@@ -15,12 +15,17 @@ version_added: 1.3.0
 description: "Create, Update, Delete categories"
 options:
     remove_values:
-        description: it indicates to remove all values of the specfied category
+        description: 
+            - it indicates to remove all values of the specfied category
+            - This attribute can be only used with C(state) is absent
+            - This attribute is mutually exclusive with C(values) when state is absent
         type: bool
         required: false
         default: false
     name:
-        description: Name of PC category
+        description: 
+            - Name of PC category
+            - Category will be deleted along with associated values when C(name) is given without C(values) if C(state) is present.
         type: str
         required: True
     desc:
@@ -28,7 +33,10 @@ options:
         type: str
         required: false
     values:
-        description: list of values of the category
+        description: 
+            - list of values of the category to be created for given C(name) when C(state) is present
+            - list of values of the category to be removed for given C(name) when C(state) is absent
+            - This attribute is mutually exclusive with C(remove_values)
         type: list
         required: false
         elements: str
@@ -88,7 +96,7 @@ EXAMPLES = r"""
     name: "{{first_category.name}}"
     remove_values: true
   register: result
-- name: Delte the category
+- name: Delete the category
   ntnx_categories:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

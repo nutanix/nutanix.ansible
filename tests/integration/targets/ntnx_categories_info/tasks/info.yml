@@ -13,16 +13,23 @@
       - result.response.entities is defined
       - result.changed == false
       - result.failed == false
+      - result.response.metadata.total_matches > 0
+      - result.response.metadata.length > 0
     fail_msg: "Unable to list all categories"
     success_msg: "categories listed successfully"
 #####################################################################################################
 - set_fact:
-    category_name: test-catA
+    category_name: test-catAA
+    values:
+        - 'value-a'
+        - 'value-b'
+        - 'value-c'
 
 - name: Create category key 
   ntnx_categories:
     state: "present"
     name: "{{category_name}}"
+    values: "{{ values }}"
   register: result
   ignore_errors: true
 
@@ -39,7 +46,7 @@
       - result.response.entities|length == 1
       - result.changed == false
       - result.failed == false
-      - - result.response.entities.0.name ==  "{{category_name}}"
+      - result.response.entities.0.name ==  "{{category_name}}"
     fail_msg: "Unable to get particular category with name filter"
     success_msg: "category info obtained successfully by name filter"
 #####################################################################################################
@@ -54,8 +61,9 @@
     that:
       - result.changed == false
       - result.failed == false
-      - - result.response.category_key.name ==  "{{category_name}}"
-    fail_msg: "Unable to get particular category with it'sname "
+      - result.response.category_key.name ==  "{{category_name}}"
+      - result.response.category_values.entities | length == 3
+    fail_msg: "Unable to get particular category with it's name"
     success_msg: "category info obtained successfully by it's name"
 #####################################################################################################
 - name: delete the category  
