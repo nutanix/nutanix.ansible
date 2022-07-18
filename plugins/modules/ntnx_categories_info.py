@@ -22,6 +22,7 @@ options:
     name:
         description:
             - The category name
+            - Using this will also fetch all the category values associated with it
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
@@ -74,20 +75,15 @@ metadata:
   sample: {
                 "filter": "",
                 "kind": "category_key",
-                "length": 20,
+                "length": 2,
                 "offset": 0,
-                "total_matches": 25
+                "total_matches": 2
             }
 entities:
   description: categories intent response
   returned: always
   type: list
   sample: [
-                {
-                    "description": "Application tier.",
-                    "name": "AppTier",
-                    "system_defined": true
-                },
                 {
                     "description": "Application type.",
                     "name": "AppType",
@@ -97,91 +93,6 @@ entities:
                     "description": "Environment type.",
                     "name": "Environment",
                     "system_defined": true
-                },
-                {
-                    "description": "Category used to categorise the entities which are excluded from VMBL features",
-                    "name": "AnalyticsExclusions",
-                    "system_defined": true
-                },
-                {
-                    "description": "Template type",
-                    "name": "TemplateType",
-                    "system_defined": true
-                },
-                {
-                    "description": "Quarantine Category",
-                    "name": "Quarantine",
-                    "system_defined": true
-                },
-                {
-                    "description": "Virtual Network Type",
-                    "name": "VirtualNetworkType",
-                    "system_defined": true
-                },
-                {
-                    "description": "Imported AD Groups",
-                    "name": "ADGroup",
-                    "system_defined": true
-                },
-                {
-                    "description": "Application created through CALM.",
-                    "name": "CalmApplication",
-                    "system_defined": true
-                },
-                {
-                    "description": "Deployment created through CALM.",
-                    "name": "CalmDeployment",
-                    "system_defined": true
-                },
-                {
-                    "description": "Service created through CALM.",
-                    "name": "CalmService",
-                    "system_defined": true
-                },
-                {
-                    "description": "Package created through CALM.",
-                    "name": "CalmPackage",
-                    "system_defined": true
-                },
-                {
-                    "description": "OS Type of the VM.",
-                    "name": "OSType",
-                    "system_defined": true
-                },
-                {
-                    "description": "Application family name.123",
-                    "name": "AppFamily",
-                    "system_defined": false
-                },
-                {
-                    "description": "Created by CALM",
-                    "name": "CalmPolicyEngineVM",
-                    "system_defined": false
-                },
-                {
-                    "description": "App Support CategoryKey",
-                    "name": "app-support-118",
-                    "system_defined": false
-                },
-                {
-                    "description": "Check1",
-                    "name": "CalmUsername",
-                    "system_defined": false
-                },
-                {
-                    "description": "App Support CategoryKey",
-                    "name": "app-support-239",
-                    "system_defined": false
-                },
-                {
-                    "description": "App Support CategoryKey",
-                    "name": "app-support-238",
-                    "system_defined": false
-                },
-                {
-                    "description": "Tenant Onboarding category for DND",
-                    "name": "TenantName",
-                    "system_defined": false
                 }
             ]
 
