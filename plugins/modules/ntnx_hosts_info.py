@@ -38,12 +38,10 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter:
-        priority: 2
       kind: host
     register: result
 
-  - name: List hosts using length, offset, sort order and priority sort attribute
+  - name: List hosts using length, offset, sort order and name sort attribute
     ntnx_hosts_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
@@ -52,7 +50,7 @@ EXAMPLES = r"""
       length: 2
       offset: 0
       sort_order: "ASCENDING"
-      sort_attribute: "priority"
+      sort_attribute: "nama"
     register: result
 
 """

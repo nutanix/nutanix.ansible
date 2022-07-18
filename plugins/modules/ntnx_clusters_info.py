@@ -32,13 +32,12 @@ author:
   - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List clusters using priority filter criteria
+  - name: List clusterss
     ntnx_clusters_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter: TODO
       kind: cluster
     register: result
 
@@ -50,7 +49,7 @@ EXAMPLES = r"""
       validate_certs: False
       length: 2
       offset: 0
-      sort_order: "ASCENDING"
+      sort_order: "name"
       sort_attribute: "priority"
     register: result
 """
