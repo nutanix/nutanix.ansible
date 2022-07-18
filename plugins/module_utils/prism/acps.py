@@ -43,7 +43,7 @@ class ACP(Prism):
     def _build_spec_role(self, payload, config):
         uuid, error = get_role_uuid(config, self.module)
         if error:
-            self.module.fail_json(msg="Failed generating ACP Spec", error=error)
+             return None, error
         payload["spec"]["resources"]["role_reference"] = {"kind": "role", "uuid": uuid}
         return payload, None
 
