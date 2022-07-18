@@ -49,7 +49,7 @@ EXAMPLES = r"""
   register: result
 """
 RETURN = r"""
-Note: Below response struct is for user groups info using filters
+#Note: Below response struct is for user groups info using filters
 api_version:
   description: API Version of the Nutanix v3 API framework.
   returned: always
