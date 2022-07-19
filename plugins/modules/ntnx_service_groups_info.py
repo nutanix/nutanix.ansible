@@ -142,7 +142,7 @@ entities:
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.service_groups import SecurityRule  # noqa: E402
+from ..module_utils.prism.service_groups import ServiceGroup  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -159,7 +159,7 @@ def get_module_spec():
 
 
 def get_service_group(module, result):
-    service_group = SecurityRule(module)
+    service_group = ServiceGroup(module)
     service_group_uuid = module.params.get("service_group_uuid")
     resp = service_group.read(service_group_uuid)
 
@@ -167,7 +167,7 @@ def get_service_group(module, result):
 
 
 def get_service_groups(module, result):
-    service_group = SecurityRule(module)
+    service_group = ServiceGroup(module)
     spec, error = service_group.get_info_spec()
 
     resp = service_group.list(spec)
