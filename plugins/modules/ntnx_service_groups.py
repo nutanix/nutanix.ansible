@@ -159,12 +159,6 @@ def create_service_group(module, result):
     result["changed"] = True
     result["response"] = resp
     result["service_group_uuid"] = service_group_uuid
-    # result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
-
-    if module.params.get("wait") and result.get("task_uuid"):
-        wait_for_task_completion(module, result)
-        resp = service_group.read(service_group_uuid)
-        result["response"] = resp
 
 
 def update_service_group(module, result):
@@ -197,7 +191,7 @@ def update_service_group(module, result):
         return
 
     # update service_group
-    resp = service_group.update(update_spec, uuid=service_group_uuid, raise_error=False)
+    resp = service_group.update(update_spec, uuid=service_group_uuid, no_response=True)
 
     result["changed"] = True
     result["response"] = resp
@@ -210,21 +204,10 @@ def delete_service_group(module, result):
         module.fail_json(msg="Failed deleting service_groups", **result)
 
     service_group = ServiceGroup(module)
-    resp = service_group.delete(service_group_uuid)
+    resp = service_group.delete(service_group_uuid, no_response=True)
     result["changed"] = True
     result["response"] = resp
     result["service_group_uuid"] = service_group_uuid
-    result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
-
-    if module.params.get("wait"):
-        wait_for_task_completion(module, result)
-
-
-def wait_for_task_completion(module, result):
-    task = Task(module)
-    task_uuid = result["task_uuid"]
-    resp = task.wait_for_completion(task_uuid)
-    result["response"] = resp
 
 
 def run_module():
