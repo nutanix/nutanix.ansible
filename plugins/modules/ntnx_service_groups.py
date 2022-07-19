@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_service_groups
 short_description: service_groups module which suports service_groups CRUD operations
-version_added: 1.0.0
+version_added: 1.4.0
 description: 'Create, Update, Delete service_group'
 options:
   nutanix_host:
@@ -65,9 +65,41 @@ options:
   service_group_uuid:
     description: service_group UUID
     type: str
-
-  # Step 4: here should be additional arguments documentation
-
+  desc:
+    description: service_groups description
+    type: str
+  services:
+    type: dict
+    description: List of port, protocol or icmp codes
+    suboptions:
+      any_icmp:
+        description: any icmp code or type
+        type: bool
+        default: false
+      tcp:
+        description: List of TCP ports in the service
+        type: list
+        elements: str
+      udp:
+        description: List of UDP ports in the service
+        type: list
+        elements: str
+      icmp:
+        description: List of ICMP types and codes in the service
+        type: list
+        elements: dict
+        suboptions:
+          code:
+            type: int
+            description: ICMP code
+          type:
+            description: ICMP type
+            type: int
+author:
+  - Prem Karat (@premkarat)
+  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+  - Alaa Bishtawi (@alaa-bish)
+  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
@@ -79,8 +111,8 @@ RETURN = r"""
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.service_groups import ServiceGroup  # noqa: E402
+from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -104,9 +136,7 @@ def get_module_spec():
         desc=dict(type="str"),
         service_group_uuid=dict(type="str"),
         services=dict(
-            type="dict",
-            options=service_spec,
-            mutually_exclusive=[("icmp", "any_icmp")]
+            type="dict", options=service_spec, mutually_exclusive=[("icmp", "any_icmp")]
         ),
     )
 
@@ -198,10 +228,7 @@ def wait_for_task_completion(module, result):
 
 
 def run_module():
-    module = BaseModule(
-        argument_spec=get_module_spec(),
-        supports_check_mode=True
-    )
+    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
@@ -226,4 +253,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

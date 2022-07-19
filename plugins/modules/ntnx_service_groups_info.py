@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_service_groups_info
 short_description: service_group info module
-version_added: 1.3.0
+version_added: 1.4.0
 description: 'Get service_group info'
 options:
     kind:
@@ -45,7 +45,7 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter: 
+      filter:
         name: "{{ service_group.name }}"
       kind: service_group
     register: result

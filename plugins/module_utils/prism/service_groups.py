@@ -59,9 +59,7 @@ class ServiceGroup(Prism):
                         {"start_port": int(port[0]), "end_port": int(port[-1])}
                     )
             else:
-                port_range_list.append(
-                    {"start_port": 0, "end_port": 65535}
-                )
+                port_range_list.append({"start_port": 0, "end_port": 65535})
             service["tcp_port_range_list"] = port_range_list
             service_list.append(service)
 
@@ -76,9 +74,7 @@ class ServiceGroup(Prism):
                         {"start_port": int(port[0]), "end_port": int(port[-1])}
                     )
             else:
-                port_range_list.append(
-                    {"start_port": 0, "end_port": 65535}
-                )
+                port_range_list.append({"start_port": 0, "end_port": 65535})
             service["udp_port_range_list"] = port_range_list
             service_list.append(service)
 
@@ -96,6 +92,7 @@ class ServiceGroup(Prism):
         payload["service_list"] = service_list
 
         return payload, None
+
 
 # Helper functions
 
