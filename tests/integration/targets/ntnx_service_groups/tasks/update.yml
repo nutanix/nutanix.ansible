@@ -1,0 +1,106 @@
+---
+
+- name: create tcp service group
+  ntnx_service_groups:
+    name: tcp_srvive_group
+    desc: desc
+    services:
+      tcp:
+        - "10-50"
+      udp:
+        - "10-50"
+      icmp:
+        - code: 10
+  register: service_group
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - service_group.response is defined
+      - service_group.failed == false
+      - service_group.changed == true
+      - service_group.response.kind == "service_group"
+      - service_group.service_group_uuid is defined
+    fail_msg: "Fail: Unable to create tcp service group  "
+    success_msg: "Pass: tcp service group  created successfully"
+
+- set_fact:
+    todelete: "{{ todelete + [  service_group.service_group_uuid ] }}"
+################################################################ 
+- name: update tcp service group name and description and other protocols 
+  ntnx_service_groups:
+    service_group_uuid: "{{service_group.service_group_uuid}}"
+    name: updated_name
+    desc: updated_desc
+    services:
+      tcp:
+        - "60-90"
+      icmp:
+        - type: 2
+          code: 3
+  register: result
+  ignore_errors: true
+
+- name:  getting particular service_group using uuid
+  ntnx_service_groups_info:
+    service_group_uuid: '{{ result.service_group_uuid }}'
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.service_group.name == "updated_name"
+      - result.response.service_group.description == "updated_desc"
+      - result.response.service_group.service_list[0].protocol == "TCP"
+      - result.response.service_group.service_list[0].tcp_port_range_list[0].start_port == 60
+      - result.response.service_group.service_list[0].tcp_port_range_list[0].end_port == 90
+      - result.response.service_group.service_list[1].protocol == "ICMP"
+      - result.response.service_group.service_list[1].icmp_type_code_list[0].code == 3
+      - result.response.service_group.service_list[1].icmp_type_code_list[0].type == 2
+    fail_msg: "Fail: Unable to update tcp service group  "
+    success_msg: "Pass: tcp service group  update successfully"
+################################################################
+- name: update tcp service group with same values
+  ntnx_service_groups:
+    service_group_uuid: "{{service_group.service_group_uuid}}"
+    name: updated_name
+    desc: updated_desc
+    services:
+      tcp:
+        - "60-90"
+      icmp:
+        - type: 2
+          code: 3
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change. Refer docs to check for fields which can be updated"
+    fail_msg: "Fail service group updated with same values"
+    success_msg: "Pass : return as expected "
+################################################################
+- name: Delete all created service groups
+  ntnx_service_groups:
+    state: absent
+    service_group_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True 
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "unable to delete all created service groups"
+    success_msg: "All service groups deleted succesfully"

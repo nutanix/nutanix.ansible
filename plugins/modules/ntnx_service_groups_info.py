@@ -18,7 +18,7 @@ options:
       description:
         - The kind name
       type: str
-      default: network_service_group
+      default: service_group
     service_group_uuid:
       description:
         - service_group UUID
