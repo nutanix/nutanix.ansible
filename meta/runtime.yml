@@ -17,6 +17,7 @@ action_groups:
   - ntnx_images_info
   - ntnx_image_placement_policies_info
   - ntnx_pbrs_info
+  - ntnx_permissions_info
   - ntnx_security_rules_info
   - ntnx_static_routes_info
   - ntnx_subnets_info
