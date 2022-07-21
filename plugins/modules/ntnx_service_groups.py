@@ -14,33 +14,6 @@ short_description: service_groups module which suports service_groups CRUD opera
 version_added: 1.4.0
 description: 'Create, Update, Delete service_group'
 options:
-  nutanix_host:
-    description:
-      - PC hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: 9440
-    required: false
-  nutanix_username:
-    description:
-      - PC username
-    type: str
-    required: true
-  nutanix_password:
-    description:
-      - PC password;
-    required: true
-    type: str
-  validate_certs:
-    description:
-      - Set value to C(False) to skip validation for self signed certificates
-      - This is not recommended for production setup
-    type: bool
-    default: true
   state:
     description:
       - Specify state of service_groups
@@ -68,7 +41,7 @@ options:
   desc:
     description: service_groups description
     type: str
-  services:
+  service_details:
     type: dict
     description: List of port, protocol or icmp codes
     suboptions:
@@ -95,19 +68,79 @@ options:
           type:
             description: ICMP type
             type: int
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_operations
 author:
   - Prem Karat (@premkarat)
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
-  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
-# Step 5
+- name: create  service group with tcp and udp and icmp
+  ntnx_service_groups:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    name: app_srvive_group
+    desc: desc
+    service_details:
+      tcp:
+        - "*"
+      udp:
+        - "10-50"
+        - "60-90"
+        - "99"
+      any_icmp: True
+  register: result
+
+- name: create  service group with icmp
+  ntnx_service_groups:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    name: icmp_srvive_group
+    desc: desc
+    service_details:
+      icmp:
+        - code: 10
+        - type: 1
+        - type: 2
+          code: 3
+  register: result
+
+- name: update tcp service group name and description and other protocols
+  ntnx_service_groups:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    service_group_uuid: "{{service_group_uuid}}"
+    name: updated_name
+    desc: updated_desc
+    service_details:
+      tcp:
+        - "60-90"
+      icmp:
+        - type: 2
+          code: 3
+  register: result
 """
 
 RETURN = r"""
-# Step 6
+service_group_uuid:
+  description: The created service group  uuid
+  returned: always
+  type: str
+  sample: 00000000000-0000-0000-0000-00000000000
+kind:
+  description: The  service group  kind name
+  returned: always
+  type: str
+  sample: service_group
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

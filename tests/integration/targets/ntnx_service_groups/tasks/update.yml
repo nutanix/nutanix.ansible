@@ -4,7 +4,7 @@
   ntnx_service_groups:
     name: tcp_srvive_group
     desc: desc
-    services:
+    service_details:
       tcp:
         - "10-50"
       udp:
@@ -33,7 +33,7 @@
     service_group_uuid: "{{service_group.service_group_uuid}}"
     name: updated_name
     desc: updated_desc
-    services:
+    service_details:
       tcp:
         - "60-90"
       icmp:
@@ -70,7 +70,7 @@
     service_group_uuid: "{{service_group.service_group_uuid}}"
     name: updated_name
     desc: updated_desc
-    services:
+    service_details:
       tcp:
         - "60-90"
       icmp:

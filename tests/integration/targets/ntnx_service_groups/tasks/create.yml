@@ -6,7 +6,7 @@
   ntnx_service_groups:
     name: tcp_srvive_group
     desc: desc
-    services:
+    service_details:
       tcp:
         - "10-50"
         - "60-90"
@@ -45,7 +45,7 @@
   ntnx_service_groups:
     name: udp_srvive_group
     desc: desc
-    services:
+    service_details:
       udp:
         - "10-50"
         - "60-90"
@@ -84,7 +84,7 @@
   ntnx_service_groups:
     name: icmp_srvive_group
     desc: desc
-    services:
+    service_details:
       icmp:
         - code: 10
         - type: 1
@@ -119,7 +119,7 @@
   ntnx_service_groups:
     name: app_srvive_group
     desc: desc
-    services:
+    service_details:
       tcp:
         - "*"
       udp:
@@ -175,3 +175,6 @@
       - result.msg == "All items completed"
     fail_msg: "unable to delete all created service groups"
     success_msg: "All service groups deleted succesfully"
+
+- set_fact:
+    todelete: []
