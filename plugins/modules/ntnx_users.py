@@ -19,8 +19,6 @@ options:
         - Specify state
         - If C(state) is set to C(present) then the operation will be  create the item.
         - if C(state) is set to C(present) and C(user_uuid) is given then it will update that user.
-        - if C(state) is set to C(present) then C(user_uuid), C(source_uri) and C(source_path) are mutually exclusive.
-        - if C(state) is set to C(present) then C(user_uuid) or C(name) needs to be set.
         - >-
             If C(state) is set to C(absent) and if the item exists, then
             item is removed.
@@ -164,10 +162,8 @@ def create_user(module, result):
     result["user_uuid"] = user_uuid
     result["changed"] = True
 
-    # upload user if source_path is given
-    task = Task(module)
-
     if module.params.get("wait"):
+        task = Task(module)
         task.wait_for_completion(task_uuid)
         # get the user
         resp = user.read(user_uuid)
@@ -239,11 +235,7 @@ def delete_user(module, result):
 
 def run_module():
     # mutually_exclusive_list have params which are not allowed together
-    # we cannot update source_uri, source_path, checksum and clusters.
     mutually_exclusive_list = [
-        ("user_uuid", "source_uri", "source_path"),
-        ("user_uuid", "checksum"),
-        ("user_uuid", "clusters"),
         ("categories", "remove_categories"),
     ]
     module = BaseModule(
