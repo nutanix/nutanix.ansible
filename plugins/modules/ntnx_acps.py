@@ -171,14 +171,14 @@ EXAMPLES = r"""
       - "{{ user_group_uuid }}"
     filters:
       - scope_filter:
-          - 
+          -
             lhs: PROJECT
             operator: IN
             rhs:
               uuid_list:
                 - "{{ project.uuid }}"
         entity_filter:
-          - 
+          -
             lhs: ALL
             operator: IN
             rhs:
