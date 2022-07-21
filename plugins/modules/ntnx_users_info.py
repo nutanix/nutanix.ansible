@@ -39,7 +39,28 @@ EXAMPLES = r"""
       nutanix_password: "{{ password }}"
       validate_certs: False
       filter:
-        name: "{{ name }}"
+        username: "{{ name }}"
+    register: result
+
+  - name: List users using length, offset, sort order and sort attribute
+    ntnx_users_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      length: 2
+      offset: 1
+      sort_order: "DESCENDING"
+      sort_attribute: "username"
+    register: result
+
+  - name: test getting particular user using uuid
+    ntnx_users_info:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False
+        user_uuid: '{{ uuid  }}'
     register: result
 """
 RETURN = r"""
@@ -53,7 +74,7 @@ metadata:
   returned: always
   type: dict
   sample: {
-                "filter": "name=={{name}}",
+                "filter": "username=={{name}}",
                 "kind": "user",
                 "length": 2,
                 "offset": 0,
