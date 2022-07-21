@@ -29,8 +29,14 @@ def get_module_spec():
         name=dict(type="str", required=False),
         role_uuid=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        permission_list=dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive,required=False),
-        remove_permissions=dict(type="bool", default=False, required=False)
+        permission_list=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        remove_permissions=dict(type="bool", default=False, required=False),
     )
     return module_args
 
@@ -49,7 +55,7 @@ def create_role(module, result):
     if module.check_mode:
         result["response"] = spec
         return
-    
+
     resp = roles.create(data=spec)
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
     role_uuid = resp["metadata"]["uuid"]
@@ -60,7 +66,8 @@ def create_role(module, result):
         tasks = Task(module)
         tasks.wait_for_completion(task_uuid)
         resp = roles.read(uuid=role_uuid)
-    result["response"]=resp
+    result["response"] = resp
+
 
 def update_role(module, result):
     roles = Roles(module)
@@ -79,9 +86,7 @@ def update_role(module, result):
     # check for idempotency
     if resp == update_spec:
         result["skipped"] = True
-        module.exit_json(
-            msg="Nothing to change."
-        )
+        module.exit_json(msg="Nothing to change.")
 
     if module.check_mode:
         result["response"] = update_spec
@@ -98,6 +103,7 @@ def update_role(module, result):
 
     result["response"] = resp
 
+
 def delete_role(module, result):
     roles = Roles(module)
     role_uuid = module.params["role_uuid"]
@@ -110,10 +116,17 @@ def delete_role(module, result):
         resp = tasks.wait_for_completion(task_uuid)
     result["response"] = resp
 
+
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        mutually_exclusive=[
+            ("remove_permissions", "permission_list"),
+        ],
+        required_if=[
+            ("state", "present", ("name, role_uuid"), True),
+        ],
     )
     utils.remove_param_with_none_value(module.params)
     result = {

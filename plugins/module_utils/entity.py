@@ -221,9 +221,15 @@ class Entity(object):
                     return None, error
         return spec, None
 
-    def get_uuid(self, value, key="name", data=None, raise_error=True, no_response=False):
-        filter_spec = data if data else {"filter": "{0}=={1}".format(key, value), "length": 1}
-        resp = self.list(data=filter_spec, raise_error=raise_error, no_response=no_response)
+    def get_uuid(
+        self, value, key="name", data=None, raise_error=True, no_response=False
+    ):
+        filter_spec = (
+            data if data else {"filter": "{0}=={1}".format(key, value), "length": 1}
+        )
+        resp = self.list(
+            data=filter_spec, raise_error=raise_error, no_response=no_response
+        )
         entities = resp.get("entities") if resp else None
         if entities:
             for entity in entities:
@@ -346,12 +352,6 @@ class Entity(object):
                     status_code=status_code,
                     error=body,
                     response=resp_json,
-                    data=data,
-                    url=url,
-                    method=method,
-                    resp=resp,
-                    info=info
-
                 )
 
             return resp_json

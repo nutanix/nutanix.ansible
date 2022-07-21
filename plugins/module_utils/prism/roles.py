@@ -8,6 +8,7 @@ from .permissions import Permissions, get_permission_uuid
 
 __metaclass__ = type
 
+
 class Roles(Prism):
     def __init__(self, module):
         resource_type = "/roles"
@@ -16,42 +17,37 @@ class Roles(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "permission_list": self._build_spec_permission_list,
-            "remove_permissions": self._build_spec_remove_permissions
+            "remove_permissions": self._build_spec_remove_permissions,
         }
-    
+
     def _get_default_spec(self):
         return deepcopy(
             {
-                "metadata":{
-                    "kind": "role"
-                },
-                "spec":{
-                    "resources":{
-                        "permission_reference_list":[]
-                    },
-                    "name": None
-                }
+                "metadata": {"kind": "role"},
+                "spec": {"resources": {"permission_reference_list": []}, "name": None},
             }
         )
 
     def _build_spec_name(self, payload, name):
         payload["spec"]["name"] = name
         return payload, None
-    
+
     def _build_spec_desc(self, payload, desc):
         payload["spec"]["description"] = desc
         return payload, None
-    
+
     def _build_spec_permission_list(self, payload, permission_ref_list):
         permission_ref_specs = []
         for ref in permission_ref_list:
             uuid, err = get_permission_uuid(ref, self.module)
             if err:
                 return None, err
-            permission_ref_specs.append(Permissions.build_permission_reference_spec(uuid))
+            permission_ref_specs.append(
+                Permissions.build_permission_reference_spec(uuid)
+            )
         payload["spec"]["resources"]["permission_reference_list"] = permission_ref_specs
         return payload, None
-    
+
     def _build_spec_remove_permissions(self, payload, remove_permissions):
         if remove_permissions:
             payload["spec"]["resources"]["permission_reference_list"] = []
