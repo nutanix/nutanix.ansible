@@ -51,30 +51,14 @@ class ServiceGroup(Prism):
         if config.get("tcp"):
             service = {}
             service["protocol"] = "TCP"
-            port_range_list = []
-            if "*" not in config["tcp"]:
-                for port in config["tcp"]:
-                    port = port.split("-")
-                    port_range_list.append(
-                        {"start_port": int(port[0]), "end_port": int(port[-1])}
-                    )
-            else:
-                port_range_list.append({"start_port": 0, "end_port": 65535})
+            port_range_list = self._generate_port_range_list(config["tcp"])
             service["tcp_port_range_list"] = port_range_list
             service_list.append(service)
 
         if config.get("udp"):
             service = {}
             service["protocol"] = "UDP"
-            port_range_list = []
-            if "*" not in config["udp"]:
-                for port in config["udp"]:
-                    port = port.split("-")
-                    port_range_list.append(
-                        {"start_port": int(port[0]), "end_port": int(port[-1])}
-                    )
-            else:
-                port_range_list.append({"start_port": 0, "end_port": 65535})
+            port_range_list = self._generate_port_range_list(config["udp"])
             service["udp_port_range_list"] = port_range_list
             service_list.append(service)
 
@@ -92,6 +76,19 @@ class ServiceGroup(Prism):
         payload["service_list"] = service_list
 
         return payload, None
+
+    @staticmethod
+    def _generate_port_range_list(config):
+        port_range_list = []
+        if "*" not in config:
+            for port in config:
+                port = port.split("-")
+                port_range_list.append(
+                    {"start_port": int(port[0]), "end_port": int(port[-1])}
+                )
+        else:
+            port_range_list.append({"start_port": 0, "end_port": 65535})
+        return port_range_list
 
 
 # Helper functions
