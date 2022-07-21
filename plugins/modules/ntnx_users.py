@@ -186,51 +186,6 @@ def create_user(module, result):
         resp = user.read(user_uuid)
 
     result["response"] = resp
-#
-#
-# def update_user(module, result):
-#     user = Users(module)
-#     user_uuid = module.params.get("user_uuid")
-#     if not user_uuid:
-#         result["error"] = "Missing parameter user_uuid in playbook"
-#         module.fail_json(msg="Failed updating user", **result)
-#     result["user_uuid"] = user_uuid
-#
-#     # read the current state of user
-#     resp = user.read(user_uuid)
-#     utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
-#     resp["spec"] = resp.pop("status")
-#
-#     # new spec for updating user
-#     update_spec, error = user.get_spec(resp)
-#     if error:
-#         result["error"] = error
-#         module.fail_json(msg="Failed generating user update spec", **result)
-#
-#     # check for idempotency
-#     if resp == update_spec:
-#         result["skipped"] = True
-#         module.exit_json(
-#             msg="Nothing to change. Refer docs to check for fields which can be updated"
-#         )
-#
-#     if module.check_mode:
-#         result["response"] = update_spec
-#         return
-#
-#     # update user
-#     resp = user.update(update_spec, uuid=user_uuid)
-#     task_uuid = resp["status"]["execution_context"]["task_uuid"]
-#
-#     # wait for user update to finish
-#     if module.params.get("wait"):
-#         task = Task(module)
-#         task.wait_for_completion(task_uuid)
-#         # get the user
-#         resp = user.read(user_uuid)
-#
-#     result["changed"] = True
-#     result["response"] = resp
 
 
 def delete_user(module, result):
@@ -259,7 +214,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            # ("state", "present", ("name", "user_uuid"), True),
             ("state", "absent", ("user_uuid",)),
         ],
         mutually_exclusive=mutually_exclusive_list,
@@ -273,11 +227,8 @@ def run_module():
     }
     state = module.params["state"]
     if state == "present":
-        if module.params.get("user_uuid"):
-            update_user(module, result)
-        else:
-            create_user(module, result)
-    elif state == "absent":
+        create_user(module, result)
+    else:
         delete_user(module, result)
 
     module.exit_json(**result)
