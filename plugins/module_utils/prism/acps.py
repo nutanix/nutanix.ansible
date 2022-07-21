@@ -43,7 +43,7 @@ class ACP(Prism):
     def _build_spec_role(self, payload, config):
         uuid, error = get_role_uuid(config, self.module)
         if error:
-             return None, error
+            return None, error
         payload["spec"]["resources"]["role_reference"] = {"kind": "role", "uuid": uuid}
         return payload, None
 
@@ -88,9 +88,7 @@ class ACP(Prism):
                 for item in filter["entity_filter"]:
                     entity_filter = {}
                     if item.get("lhs"):
-                        entity_filter["left_hand_side"] = {
-                            "entity_type": item["lhs"]
-                        }
+                        entity_filter["left_hand_side"] = {"entity_type": item["lhs"]}
                     if item.get("operator"):
                         entity_filter["operator"] = item["operator"]
                     if item.get("rhs"):

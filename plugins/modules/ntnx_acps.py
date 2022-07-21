@@ -39,7 +39,8 @@ options:
     description: The list of filters, which define the entities.
     suboptions:
         scope_filter:
-            type: dict
+            type: list
+            elements: dict
             description: A list of Scope filter expressions.
             suboptions:
                 lhs:
@@ -66,7 +67,8 @@ options:
                             elements: str
                             description: The explicit list of UUIDs for the given kind.
         entity_filter:
-            type: dict
+            type: list
+            elements: dict
             description: A list of Entity filter expressions.
             suboptions:
                 lhs:
@@ -169,16 +171,18 @@ EXAMPLES = r"""
       - "{{ user_group_uuid }}"
     filters:
       - scope_filter:
-          lhs: PROJECT
-          operator: IN
-          rhs:
-            uuid_list:
-              - "{{ project.uuid }}"
+          - 
+            lhs: PROJECT
+            operator: IN
+            rhs:
+              uuid_list:
+                - "{{ project.uuid }}"
         entity_filter:
-          lhs: ALL
-          operator: IN
-          rhs:
-            collection: ALL
+          - 
+            lhs: ALL
+            operator: IN
+            rhs:
+              collection: ALL
 """
 
 RETURN = r"""
@@ -426,7 +430,7 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[("vm_uuid", None, ("name",)), ("state", "absent", ("vm_uuid",))],
+        required_if=[("acp_uuid", None, ("name",)), ("state", "absent", ("acp_uuid",))],
     )
     remove_param_with_none_value(module.params)
     result = {
