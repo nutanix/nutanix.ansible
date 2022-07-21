@@ -426,7 +426,10 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[("vm_uuid", None, ("name",)), ("state", "absent", ("vm_uuid",))],
+        required_if=[
+            ("state", "present", ("name", "acp_uuid"), True),
+            ("state", "absent", ("acp_uuid",)),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {
