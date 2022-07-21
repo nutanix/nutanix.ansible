@@ -428,6 +428,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "present", ("name", "acp_uuid"), True),
+            ("state", "present", ("role", "acp_uuid"), True),
             ("state", "absent", ("acp_uuid",)),
         ],
     )
