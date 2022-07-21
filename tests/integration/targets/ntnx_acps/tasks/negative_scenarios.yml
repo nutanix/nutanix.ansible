@@ -8,12 +8,13 @@
       role:
         name: "unknown987"
     register: result
-    ignore_errors: True
+    ignore_errors: true
+
   - name: Creation Status
     assert:
       that:
         - result.failed==True
-        - result.msg=="Failed generating ACP Spec"
+        - result.msg=="Failed generating acp spec"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail ACP created successfully with unknown role name '
 #######################################################
