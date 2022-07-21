@@ -65,19 +65,20 @@ class ACP(Prism):
 
     def _build_spec_filters(self, payload, config):
         filter_list = []
-        for item in config:
+        for filter in config:
             filter = {}
-            if item.get("scope_filter"):
+            if filter.get("scope_filter"):
                 scope_filter = {}
-                if item["scope_filter"].get("lhs"):
-                    scope_filter["left_hand_side"] = item["scope_filter"]["lhs"]
-                if item["scope_filter"].get("operator"):
-                    scope_filter["operator"] = item["scope_filter"]["operator"]
-                if item["scope_filter"].get("rhs"):
-                    scope_filter["right_hand_side"] = item["scope_filter"]["rhs"]
+                for item in filter:
+                    if item["scope_filter"].get("lhs"):
+                        scope_filter["left_hand_side"] = item["scope_filter"]["lhs"]
+                    if item["scope_filter"].get("operator"):
+                        scope_filter["operator"] = item["scope_filter"]["operator"]
+                    if item["scope_filter"].get("rhs"):
+                        scope_filter["right_hand_side"] = item["scope_filter"]["rhs"]
 
-                if scope_filter:
-                    filter["scope_filter_expression_list"] = [scope_filter]
+                    if scope_filter:
+                        filter["scope_filter_expression_list"] = [scope_filter]
 
             if item.get("entity_filter"):
                 entity_filter = {}

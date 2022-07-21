@@ -318,8 +318,8 @@ def get_module_spec():
     )
 
     filter_spec = dict(
-        scope_filter=dict(type="dict", options=scope_context_spec),
-        entity_filter=dict(type="dict", options=entity_context_spec),
+        scope_filter=dict(type="list", elements="dict", options=scope_context_spec),
+        entity_filter=dict(type="list", elements="dict", options=entity_context_spec),
     )
 
     module_args = dict(
