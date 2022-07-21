@@ -66,34 +66,41 @@ class ACP(Prism):
     def _build_spec_filters(self, payload, config):
         filter_list = []
         for filter in config:
-            filter = {}
+            filter_spec = {}
             if filter.get("scope_filter"):
-                scope_filter = {}
-                for item in filter:
-                    if item["scope_filter"].get("lhs"):
-                        scope_filter["left_hand_side"] = item["scope_filter"]["lhs"]
-                    if item["scope_filter"].get("operator"):
-                        scope_filter["operator"] = item["scope_filter"]["operator"]
-                    if item["scope_filter"].get("rhs"):
-                        scope_filter["right_hand_side"] = item["scope_filter"]["rhs"]
+                scope_filters = []
+                for item in filter["scope_filter"]:
+                    scope_filter = {}
+                    if item.get("lhs"):
+                        scope_filter["left_hand_side"] = item["lhs"]
+                    if item.get("operator"):
+                        scope_filter["operator"] = item["operator"]
+                    if item.get("rhs"):
+                        scope_filter["right_hand_side"] = item["rhs"]
 
                     if scope_filter:
-                        filter["scope_filter_expression_list"] = [scope_filter]
+                        scope_filters.append(scope_filter)
+                if scope_filters:
+                    filter_spec["scope_filter_expression_list"] = scope_filters
 
-            if item.get("entity_filter"):
-                entity_filter = {}
-                if item["entity_filter"].get("lhs"):
-                    entity_filter["left_hand_side"] = {
-                        "entity_type": item["entity_filter"]["lhs"]
-                    }
-                if item["entity_filter"].get("operator"):
-                    entity_filter["operator"] = item["entity_filter"]["operator"]
-                if item["entity_filter"].get("rhs"):
-                    entity_filter["right_hand_side"] = item["entity_filter"]["rhs"]
+            if filter.get("entity_filter"):
+                entity_filters = []
+                for item in filter["entity_filter"]:
+                    entity_filter = {}
+                    if item.get("lhs"):
+                        entity_filter["left_hand_side"] = {
+                            "entity_type": item["lhs"]
+                        }
+                    if item.get("operator"):
+                        entity_filter["operator"] = item["operator"]
+                    if item.get("rhs"):
+                        entity_filter["right_hand_side"] = item["rhs"]
 
-                if entity_filter:
-                    filter["entity_filter_expression_list"] = [entity_filter]
-            if filter:
-                filter_list.append(filter)
+                    if entity_filter:
+                        entity_filters.append(entity_filter)
+                if entity_filters:
+                    filter_spec["entity_filter_expression_list"] = entity_filters
+            if filter_spec:
+                filter_list.append(filter_spec)
         payload["spec"]["resources"]["filter_list"] = {"context_list": filter_list}
         return payload, None
