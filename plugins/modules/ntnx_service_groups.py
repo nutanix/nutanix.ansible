@@ -112,7 +112,6 @@ RETURN = r"""
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.service_groups import ServiceGroup  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -135,7 +134,7 @@ def get_module_spec():
         name=dict(type="str"),
         desc=dict(type="str"),
         service_group_uuid=dict(type="str"),
-        services=dict(
+        service_details=dict(
             type="dict", options=service_spec, mutually_exclusive=[("icmp", "any_icmp")]
         ),
     )
@@ -191,7 +190,9 @@ def update_service_group(module, result):
         return
 
     # update service_group
-    resp = service_group.update(update_spec, uuid=service_group_uuid, no_response=True)
+    service_group.update(update_spec, uuid=service_group_uuid, no_response=True)
+
+    resp = service_group.read(service_group_uuid)
 
     result["changed"] = True
     result["response"] = resp

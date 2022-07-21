@@ -16,11 +16,11 @@ class ServiceGroup(Prism):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "services": self._build_spec_services,
+            "service_details": self._build_spec_service_details,
         }
 
     def get_uuid(self, value, key="name", raise_error=True, no_response=False):
-        data = {"filter": "{0}=={1}".format(key, value), "length": 1}
+        data = {"filter": "{0}=={1}".format(key, value)}
         resp = self.list(data, raise_error=raise_error, no_response=no_response)
         entities = resp.get("entities") if resp else None
         if entities:
@@ -45,7 +45,7 @@ class ServiceGroup(Prism):
         payload["description"] = value
         return payload, None
 
-    def _build_spec_services(self, payload, config):
+    def _build_spec_service_details(self, payload, config):
         service_list = []
 
         if config.get("tcp"):
