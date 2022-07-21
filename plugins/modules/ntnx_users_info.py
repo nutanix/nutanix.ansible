@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_users_info
 short_description: users info module
-version_added: 1.3.0
+version_added: 1.4.0
 description: 'Get users info'
 options:
     kind:
@@ -28,7 +28,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_info
 author:
  - Prem Karat (@premkarat)
- - Pradeepsingh Bhati (@bhati-pradeep)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
   - name: List users using name filter criteria

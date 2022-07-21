@@ -28,15 +28,13 @@ class Users(Prism):
     def _get_default_spec(self):
         return deepcopy(
             {
-                "metadata": {
-                    "kind": "user"
-                },
+                "metadata": {"kind": "user"},
                 "spec": {
                     "resources": {
                         "directory_service_user": {},
-                        "identity_provider_user": {}
+                        "identity_provider_user": {},
                     }
-                }
+                },
             }
         )
 
@@ -64,23 +62,25 @@ class Users(Prism):
         return payload, None
 
     def _build_spec_directory_service(self, payload, config):
-        payload["spec"]["resources"]["directory_service_user"]["directory_service_reference"] = {
+        payload["spec"]["resources"]["directory_service_user"][
+            "directory_service_reference"
+        ] = {
             "kind": "directory_service",
             "name": config.get("name"),
-            "uuid": config.get("uuid")
+            "uuid": config.get("uuid"),
         }
         return payload, None
 
     def _build_spec_username(self, payload, config):
-        payload["spec"]["resources"]["identity_provider_user"] = {
-            "username": config
-        }
+        payload["spec"]["resources"]["identity_provider_user"] = {"username": config}
         return payload, None
 
     def _build_spec_identity_provider(self, payload, config):
-        payload["spec"]["resources"]["identity_provider_user"]["identity_provider_reference"] = {
-                "kind": "identity_provider",
-                "name": config.get("name"),
-                "uuid": config.get("uuid")
-            }
+        payload["spec"]["resources"]["identity_provider_user"][
+            "identity_provider_reference"
+        ] = {
+            "kind": "identity_provider",
+            "name": config.get("name"),
+            "uuid": config.get("uuid"),
+        }
         return payload, None

@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_users
 short_description: users module which supports pc users management CRUD operations
-version_added: 1.3.0
+version_added: 1.4.0
 description: "Create, Update, Delete users"
 options:
     state:
@@ -32,7 +32,7 @@ options:
         type: bool
         required: false
         default: True
-    name:
+    username:
         description: user name
         required: false
         type: str
@@ -40,11 +40,6 @@ options:
         description: user uuid
         type: str
         required: false
-    desc:
-        description: A description for user
-        required: false
-        type: str
-
     categories:
         description:
             - Categories for the user. This allows setting up multiple values from a single key.
@@ -59,7 +54,29 @@ options:
         type: bool
         required: false
         default: false
-
+    identity_provider:
+        type: dict
+        description: An Identity Provider user.
+        suboptions:
+            name:
+                type: str
+                description: The username from the identity provider. Name Id for SAML Identity Provider.
+            uuid:
+                type: str
+                description: The uuid from the identity provider. Name Id for SAML Identity Provider.
+    directory_service:
+        type: dict
+        description: A Directory Service user.
+        suboptions:
+            name:
+                type: str
+                description: The UserPrincipalName of the user from the directory service.
+            uuid:
+                type: str
+                description: The UserPrincipal UUID of the user from the directory service.
+    principal_name:
+        type: str
+        description: The UserPrincipalName of the user from the directory service.
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -126,8 +143,8 @@ user_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.users import Users  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.prism.users import Users  # noqa: E402
 
 
 def get_module_spec():
