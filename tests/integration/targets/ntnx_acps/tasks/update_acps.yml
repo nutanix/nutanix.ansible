@@ -51,19 +51,20 @@
     desc: "description after update"
     filters:
       - scope_filter:
-          lhs: PROJECT
-          operator: IN
-          rhs:
-            uuid_list:
-              - "{{ project.uuid }}"
+          - 
+            lhs: PROJECT
+            operator: IN
+            rhs:
+              uuid_list:
+                - "{{ project.uuid }}"
         entity_filter:
-          lhs: ALL
-          operator: IN
-          rhs:
-            collection: ALL
+          - 
+            lhs: ALL
+            operator: IN
+            rhs:
+              collection: ALL
   register: result
-- debug:
-    var: result
+
 - name: Update Status
   assert: 
     that:
@@ -89,6 +90,16 @@
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True
+
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "unable to delete all created acp's"
+    success_msg: "All acp's deleted succesfully"
 
 - set_fact:
     todelete: []

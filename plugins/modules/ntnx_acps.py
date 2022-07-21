@@ -39,7 +39,8 @@ options:
     description: The list of filters, which define the entities.
     suboptions:
         scope_filter:
-            type: dict
+            type: list
+            elements: dict
             description: A list of Scope filter expressions.
             suboptions:
                 lhs:
@@ -66,7 +67,8 @@ options:
                             elements: str
                             description: The explicit list of UUIDs for the given kind.
         entity_filter:
-            type: dict
+            type: list
+            elements: dict
             description: A list of Entity filter expressions.
             suboptions:
                 lhs:
@@ -169,16 +171,18 @@ EXAMPLES = r"""
       - "{{ user_group_uuid }}"
     filters:
       - scope_filter:
-          lhs: PROJECT
-          operator: IN
-          rhs:
-            uuid_list:
-              - "{{ project.uuid }}"
+          -
+            lhs: PROJECT
+            operator: IN
+            rhs:
+              uuid_list:
+                - "{{ project.uuid }}"
         entity_filter:
-          lhs: ALL
-          operator: IN
-          rhs:
-            collection: ALL
+          -
+            lhs: ALL
+            operator: IN
+            rhs:
+              collection: ALL
 """
 
 RETURN = r"""
