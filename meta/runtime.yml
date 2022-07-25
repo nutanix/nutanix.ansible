@@ -2,6 +2,7 @@
 requires_ansible: '>=2.11.6'
 action_groups:
   ntnx:
+  - ntnx_address_groups
   - ntnx_floating_ips
   - ntnx_images
   - ntnx_image_placement_policy
@@ -13,6 +14,7 @@ action_groups:
   - ntnx_vms_clone
   - ntnx_vms
   - ntnx_vpcs
+  - ntnx_address_groups_info
   - ntnx_floating_ips_info
   - ntnx_images_info
   - ntnx_image_placement_policies_info

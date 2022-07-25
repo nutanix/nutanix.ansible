@@ -126,6 +126,7 @@ def run_module():
         ],
         required_if=[
             ("state", "present", ("name, role_uuid"), True),
+            ("state", "absent", ("role_uuid",))
         ],
     )
     utils.remove_param_with_none_value(module.params)

@@ -1,16 +1,21 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-
-__metaclass__ = type
+from copy import deepcopy
 
 from .prism import Prism
 
+__metaclass__ = type
 
 class AddressGroup(Prism):
     def __init__(self, module):
         resource_type = "/address_groups"
         super(AddressGroup, self).__init__(module, resource_type=resource_type)
+        self.build_spec_methods = {
+            "name": self._build_spec_name,
+            "desc": self._build_spec_desc,
+            "subnet_details_list": self._build_spec_subnet_details_list
+        }
 
     def get_uuid(self, value, key="name", raise_error=True, no_response=False):
         data = {"filter": "{0}=={1}".format(key, value), "length": 1}
@@ -21,6 +26,40 @@ class AddressGroup(Prism):
                 if entity["address_group"]["name"] == value:
                     return entity["uuid"]
         return None
+
+    def _get_default_spec(self):
+        return deepcopy(
+            {
+                "name": None,
+                "ip_address_block_list": []
+            }
+        )
+
+    def _build_spec_name(self, payload, name):
+        payload["name"] = name
+        return payload, None
+
+    def _build_spec_desc(self, payload, desc):
+        payload["description"] = desc
+        return payload, None
+
+    def _build_spec_subnet_details_list(self, payload, subnet_details_list):
+        ip_address_block_list = []
+        for subnet in subnet_details_list:
+            if "/" in subnet:
+                ip, prefix = subnet.split("/")
+                ip_address_block_list.append(self._get_ip_address_block(ip, int(prefix)))
+            else:
+                ip_address_block_list.append(self._get_ip_address_block(subnet, 32))
+        payload["ip_address_block_list"] = ip_address_block_list
+        return payload, None
+
+    def _get_ip_address_block(self, ip, prefix):
+        spec = {
+            "ip": ip,
+            "prefix_length": prefix
+        }
+        return spec
 
 
 # Helper functions
