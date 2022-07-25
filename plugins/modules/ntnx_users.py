@@ -209,12 +209,18 @@ def run_module():
     # mutually_exclusive_list have params which are not allowed together
     mutually_exclusive_list = [
         ("categories", "remove_categories"),
+        ("identity_provider", "directory_service"),
+        ("username", "principal_name"),
     ]
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
             ("state", "absent", ("user_uuid",)),
+        ],
+        required_together=[
+            ("username", "identity_provider"),
+            ("principal_name", "directory_service"),
         ],
         mutually_exclusive=mutually_exclusive_list,
     )
