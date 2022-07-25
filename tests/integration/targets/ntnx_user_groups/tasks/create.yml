@@ -1,0 +1,38 @@
+---
+- debug:
+    msg: start ntnx_user_groups create tests
+
+- name: create user  group
+  ntnx_user_groups:
+    name: "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.status.state == "COMPLETE"
+      - result.user_group_uuid is defined
+      - result.response.status.resources.directory_service_user_group.distinguished_name == "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+    fail_msg: "Unable to create user  group  "
+    success_msg: "user  group created successfully"
+
+- name: delete user group
+  ntnx_user_groups:
+    state: absent
+    user_group_uuid: "{{result.user_group_uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.status.state == "DELETE_PENDING"
+    fail_msg: "Unable to delete user  group  "
+    success_msg: "user  group deletd successfully"
