@@ -19,7 +19,9 @@ options:
         required: false
         default: True
     name:
-        description: project name
+        description: 
+            - project name
+            - cannot update once project is created
         required: false
         type: str
     project_uuid:
@@ -363,7 +365,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("project_uuid", "name"), True),
+            ("state", "present", ("project_uuid", "name")),
             ("state", "absent", ("project_uuid",)),
         ],
     )
