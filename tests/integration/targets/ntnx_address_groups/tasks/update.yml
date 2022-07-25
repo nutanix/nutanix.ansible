@@ -1,0 +1,120 @@
+---
+- debug:
+    msg: start ntnx_address_groups create tests
+
+##############################################################################################
+
+- name: Create role with 
+  ntnx_address_groups:
+    state: present
+    name: test-ansible-address-group-3
+    desc: test-ansible-address-group-3-desc
+    subnet_details:
+      - network_ip: "10.1.1.0"
+        network_prefix: 24
+      - network_ip: "10.1.2.1"
+        network_prefix: 32
+  register: test_ag
+
+- name: Creation Status
+  assert: 
+    that:
+      - test_ag.response is defined
+      - test_ag.changed == True
+    fail_msg: "Unable to create adress group"
+    success_msg: "Address group created susccessfully"
+
+
+###################################################################################################
+
+- name: Update all fields
+  ntnx_address_groups:
+    state: present
+    address_group_uuid: "{{test_ag.address_group_uuid}}"
+    name: test-ansible-address-group-3-updated
+    desc: test-ansible-address-group-3-desc-updated
+    subnet_details:
+      - network_ip: "10.1.3.1"
+        network_prefix: 32
+  register: result
+
+- debug:
+    msg: "{{result}}"
+- name: Update status
+  assert: 
+    that:
+      - result.response is defined
+      - result.address_group_uuid is defined
+      - result.changed == True
+      - result.response.name == "test-ansible-address-group-3-updated"
+      - result.response.description == "test-ansible-address-group-3-desc-updated"
+      - result.response.ip_address_block_list[0].ip == "10.1.3.1"
+      - result.response.ip_address_block_list[0].prefix_length == 32
+      - result.response.ip_address_block_list | length == 1
+
+    fail_msg: "Unable to update address group"
+    success_msg: "Address group updated susccessfully"
+
+###################################################################################################
+
+- name: Idempotency check
+  ntnx_address_groups:
+    state: present
+    address_group_uuid: "{{test_ag.address_group_uuid}}"
+    name: test-ansible-address-group-3-updated
+    desc: test-ansible-address-group-3-desc-updated
+    subnet_details:
+      - network_ip: "10.1.3.1"
+        network_prefix: 32
+  register: result
+
+- name: idempotency check status
+  assert: 
+    that:
+      - result.changed == False
+      - result.failed == False
+      - "'Nothing to change' in result.msg"
+
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+###################################################################################################
+
+- name: Check mode test
+  check_mode: yes
+  ntnx_address_groups:
+    state: present
+    address_group_uuid: "{{test_ag.address_group_uuid}}"
+    name: test-ansible-address-group-3
+    desc: test-ansible-address-group-3-desc
+    subnet_details:
+      - network_ip: "10.1.1.0"
+        network_prefix: 24
+      - network_ip: "10.1.2.1"
+        network_prefix: 32
+  register: result
+
+- name: check mode Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.address_group_uuid is defined
+      - result.changed == False
+      - result.response.name == "test-ansible-address-group-3"
+      - result.response.description == "test-ansible-address-group-3-desc"
+      - result.response.ip_address_block_list[0].ip == "10.1.1.0"
+      - result.response.ip_address_block_list[1].ip == "10.1.2.1"
+      - result.response.ip_address_block_list[0].prefix_length == 24
+      - result.response.ip_address_block_list[1].prefix_length == 32
+
+    fail_msg: "Check mode failed"
+    success_msg: "Check mode spec generated successfully"
+
+###################################################################################################
+
+- name: cleanup created entities
+  ntnx_address_groups:
+    state: absent
+    address_group_uuid: "{{test_ag.address_group_uuid}}"
+  register: result
+  ignore_errors: True

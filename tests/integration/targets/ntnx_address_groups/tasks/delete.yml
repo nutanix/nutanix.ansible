@@ -1,0 +1,38 @@
+---
+- debug:
+    msg: start ntnx_address_groups create tests
+
+- name: Create address group
+  ntnx_address_groups:
+    state: present
+    name: test-ansible-address-group-4
+    desc: test-ansible-address-group-4-desc
+    subnet_details:
+      - network_ip: "10.0.1.0"
+        network_prefix: 24
+  register: test_ag
+
+- name: Creation Status
+  assert: 
+    that:
+      - test_ag.response is defined
+      - test_ag.changed == True
+    fail_msg: "Unable to create address group"
+    success_msg: "address group created susccessfully"
+
+###################################################################################################
+
+- name: delete address group
+  ntnx_address_groups:
+    state: absent
+    address_group_uuid: "{{ test_ag.address_group_uuid }}"
+  register: result
+
+- name: delete Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == True
+
+    fail_msg: "address group delete failed"
+    success_msg: "address group deleted successfully"

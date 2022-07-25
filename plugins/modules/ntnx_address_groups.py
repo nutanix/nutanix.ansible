@@ -37,12 +37,12 @@ def get_module_spec():
 
 
 def create_address_group(module, result):
-    address_group = AddressGroup(module)
+    _address_group = AddressGroup(module)
     name = module.params["name"]
-    if address_group.get_uuid(name):
+    if _address_group.get_uuid(name):
         module.fail_json(msg="Address group with given name already exists", **result)
 
-    spec, err = address_group.get_spec()
+    spec, err = _address_group.get_spec()
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create Address group spec", **result)
@@ -51,10 +51,13 @@ def create_address_group(module, result):
         result["response"] = spec
         return
     
-    resp = address_group.create(data=spec)
-    result["response"] = resp
+    resp = _address_group.create(data=spec)
+
+    # read current state of address group
+    address_group = _address_group.read(uuid=resp["uuid"])
+    result["response"] = address_group["address_group"]
     result["changed"] = True
-    result["address_group_uuid"] = resp["uuid"]
+    result["address_group_uuid"] = address_group["uuid"]
 
 def update_address_group(module, result):
     _address_group = AddressGroup(module)
@@ -80,7 +83,7 @@ def update_address_group(module, result):
     
     _address_group.update(data=update_spec, uuid=uuid, no_response=True)
     resp = _address_group.read(uuid=uuid)
-    result["response"] = resp
+    result["response"] = resp["address_group"]
     result["changed"] = True
 
 def delete_address_group(module, result):
@@ -100,7 +103,7 @@ def run_module():
         required_if=[
             ("state", "present", ("name", "address_group_uuid"), True),
             ("state", "present", ("subnet_details", "address_group_uuid"), True),
-            ("state", "absent", ("address_group_uuid"))
+            ("state", "absent", ("address_group_uuid",))
         ],
     )
     utils.remove_param_with_none_value(module.params)

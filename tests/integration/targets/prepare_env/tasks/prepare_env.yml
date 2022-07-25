@@ -163,3 +163,12 @@
     get_url:
       url: "{{ disk_image.url }}"
       dest: "{{ disk_image.dest }}"
+
+  - name: create address group for network security policy related tests
+    ntnx_address_groups:
+      state: present
+      name: dest
+      desc: dest
+      subnet_details:
+        - network_ip: "10.1.1.0"
+          network_prefix: 24
