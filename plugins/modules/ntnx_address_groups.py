@@ -23,15 +23,17 @@ from ..module_utils.prism.address_groups import AddressGroup  # noqa: E402
 
 def get_module_spec():
     subnet_detail = dict(
-        network_prefix = dict(type=int, required=True),
-        network_ip = dict(type="str", required=True)
+        network_prefix=dict(type=int, required=True),
+        network_ip=dict(type="str", required=True),
     )
 
     module_args = dict(
         address_group_uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        subnet_details = dict(type="list", elements="dict", options=subnet_detail,required=False)
+        subnet_details=dict(
+            type="list", elements="dict", options=subnet_detail, required=False
+        ),
     )
     return module_args
 
@@ -50,7 +52,7 @@ def create_address_group(module, result):
     if module.check_mode:
         result["response"] = spec
         return
-    
+
     resp = _address_group.create(data=spec)
 
     # read current state of address group
@@ -58,6 +60,7 @@ def create_address_group(module, result):
     result["response"] = address_group["address_group"]
     result["changed"] = True
     result["address_group_uuid"] = address_group["uuid"]
+
 
 def update_address_group(module, result):
     _address_group = AddressGroup(module)
@@ -70,7 +73,9 @@ def update_address_group(module, result):
     update_spec, err = _address_group.get_spec(address_group)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create Address group update spec", **result)
+        module.fail_json(
+            msg="Failed generating create Address group update spec", **result
+        )
 
     # check for idempotency
     if update_spec == address_group:
@@ -80,21 +85,21 @@ def update_address_group(module, result):
     if module.check_mode:
         result["response"] = update_spec
         return
-    
+
     _address_group.update(data=update_spec, uuid=uuid, no_response=True)
     resp = _address_group.read(uuid=uuid)
     result["response"] = resp["address_group"]
     result["changed"] = True
 
+
 def delete_address_group(module, result):
     address_group = AddressGroup(module)
     uuid = module.params["address_group_uuid"]
     address_group.delete(uuid=uuid, no_response=True)
-    result["response"] = {
-        "msg": "Address group deleted successfully"
-    }
+    result["response"] = {"msg": "Address group deleted successfully"}
     result["address_group_uuid"] = uuid
     result["changed"] = True
+
 
 def run_module():
     module = BaseModule(
@@ -103,7 +108,7 @@ def run_module():
         required_if=[
             ("state", "present", ("name", "address_group_uuid"), True),
             ("state", "present", ("subnet_details", "address_group_uuid"), True),
-            ("state", "absent", ("address_group_uuid",))
+            ("state", "absent", ("address_group_uuid",)),
         ],
     )
     utils.remove_param_with_none_value(module.params)

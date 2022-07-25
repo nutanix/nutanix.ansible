@@ -35,7 +35,7 @@ def get_module_spec():
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=False,
-        )
+        ),
     )
     return module_args
 
@@ -122,7 +122,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "present", ("name", "role_uuid"), True),
-            ("state", "absent", ("role_uuid",))
+            ("state", "absent", ("role_uuid",)),
         ],
     )
     utils.remove_param_with_none_value(module.params)

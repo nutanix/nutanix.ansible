@@ -7,6 +7,7 @@ from .prism import Prism
 
 __metaclass__ = type
 
+
 class AddressGroup(Prism):
     def __init__(self, module):
         resource_type = "/address_groups"
@@ -14,7 +15,7 @@ class AddressGroup(Prism):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "subnet_details": self._build_spec_subnet_details
+            "subnet_details": self._build_spec_subnet_details,
         }
 
     def get_uuid(self, value, key="name", raise_error=True, no_response=False):
@@ -28,12 +29,7 @@ class AddressGroup(Prism):
         return None
 
     def _get_default_spec(self):
-        return deepcopy(
-            {
-                "name": None,
-                "ip_address_block_list": []
-            }
-        )
+        return deepcopy({"name": None, "ip_address_block_list": []})
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name
@@ -46,15 +42,16 @@ class AddressGroup(Prism):
     def _build_spec_subnet_details(self, payload, subnet_details):
         ip_address_block_list = []
         for subnet in subnet_details:
-            ip_address_block_list.append(self._get_ip_address_block(subnet["network_ip"], subnet["network_prefix"]))
+            ip_address_block_list.append(
+                self._get_ip_address_block(
+                    subnet["network_ip"], subnet["network_prefix"]
+                )
+            )
         payload["ip_address_block_list"] = ip_address_block_list
         return payload, None
 
     def _get_ip_address_block(self, ip, prefix):
-        spec = {
-            "ip": ip,
-            "prefix_length": prefix
-        }
+        spec = {"ip": ip, "prefix_length": prefix}
         return spec
 
 

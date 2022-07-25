@@ -4,7 +4,7 @@
 
 ##############################################################################################
 
-- name: Create role with 
+- name: Create address group with 
   ntnx_address_groups:
     state: present
     name: test-ansible-address-group-3
@@ -38,8 +38,6 @@
         network_prefix: 32
   register: result
 
-- debug:
-    msg: "{{result}}"
 - name: Update status
   assert: 
     that:
