@@ -148,6 +148,9 @@ from ..module_utils.prism.users import Users  # noqa: E402
 
 
 def get_module_spec():
+
+    mutually_exclusive = [("name", "uuid")]
+
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     module_args = dict(
@@ -156,6 +159,9 @@ def get_module_spec():
         username=dict(type="str"),
         directory_service=dict(type="dict", options=entity_by_spec),
         identity_provider=dict(type="dict", options=entity_by_spec),
+        project=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
         remove_categories=dict(type="bool", default=False),
         categories=dict(type="dict", required=False),
     )
