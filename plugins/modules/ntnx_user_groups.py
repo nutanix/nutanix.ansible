@@ -127,9 +127,22 @@ from ..module_utils.prism.user_groups import UserGroups  # noqa: E402
 
 def get_module_spec():
 
+    mutually_exclusive = [("name", "uuid")]
+
+    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+
+    saml_user_group_spec = dict(
+        idp_uuid=dict(type="str", required=True),
+        group_name=dict(type="str", required=True),
+    )
+
     module_args = dict(
         user_group_uuid=dict(type="str"),
-        name=dict(type="str"),
+        distinguished_name=dict(type="str"),
+        idp=dict(type="dict", options=saml_user_group_spec),
+        project=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
         remove_categories=dict(type="bool", default=False),
         categories=dict(type="dict", required=False),
     )
@@ -183,6 +196,7 @@ def run_module():
     # mutually_exclusive_list have params which are not allowed together
     mutually_exclusive_list = [
         ("categories", "remove_categories"),
+        ("distinguished_name", "idp"),
     ]
     module = BaseModule(
         argument_spec=get_module_spec(),

@@ -17,7 +17,8 @@ class UserGroups(Prism):
         super(UserGroups, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "project": self._build_spec_project,
-            "name": self._build_spec_user_distinguished_name,
+            "distinguished_name": self._build_spec_user_distinguished_name,
+            "idp": self._build_spec_saml_user_group,
             "categories": CategoriesMapping.build_categories_mapping_spec,
             "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
         }
@@ -28,7 +29,6 @@ class UserGroups(Prism):
                 "metadata": {"kind": "user_group"},
                 "spec": {
                     "resources": {
-                        "directory_service_user_group": {},
                     }
                 },
             }
@@ -52,7 +52,16 @@ class UserGroups(Prism):
         return payload, None
 
     def _build_spec_user_distinguished_name(self, payload, config):
-        payload["spec"]["resources"]["directory_service_user_group"][
-            "distinguished_name"
-        ] = config
+        if "ou=" in config:
+            payload["spec"]["resources"]["directory_service_ou"] = {"distinguished_name": config}
+        else:
+            payload["spec"]["resources"]["directory_service_user_group"] = {"distinguished_name": config}
+
+        return payload, None
+
+    def _build_spec_saml_user_group(self, payload, config):
+        payload["spec"]["resources"]["saml_user_group"] = {
+            "name": config["group_name"],
+            "idpUuid": config["idp_uuid"],
+                                                           }
         return payload, None
