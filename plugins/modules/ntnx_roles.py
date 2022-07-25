@@ -35,8 +35,7 @@ def get_module_spec():
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=False,
-        ),
-        remove_permissions=dict(type="bool", default=False, required=False),
+        )
     )
     return module_args
 
@@ -121,11 +120,8 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[
-            ("remove_permissions", "permissions"),
-        ],
         required_if=[
-            ("state", "present", ("name, role_uuid"), True),
+            ("state", "present", ("name", "role_uuid"), True),
             ("state", "absent", ("role_uuid",))
         ],
     )

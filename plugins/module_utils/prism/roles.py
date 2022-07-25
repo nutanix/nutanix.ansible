@@ -17,7 +17,6 @@ class Roles(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "permissions": self._build_spec_permissions,
-            "remove_permissions": self._build_spec_remove_permissions,
         }
 
     def _get_default_spec(self):
@@ -46,11 +45,6 @@ class Roles(Prism):
                 Permissions.build_permission_reference_spec(uuid)
             )
         payload["spec"]["resources"]["permission_reference_list"] = permission_ref_specs
-        return payload, None
-
-    def _build_spec_remove_permissions(self, payload, remove_permissions):
-        if remove_permissions:
-            payload["spec"]["resources"]["permission_reference_list"] = []
         return payload, None
 
 

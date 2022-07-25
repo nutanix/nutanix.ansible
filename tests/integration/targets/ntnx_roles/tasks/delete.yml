@@ -1,0 +1,48 @@
+---
+- debug:
+    msg: start ntnx_roles create tests
+
+- name: Get Some permissions for test
+  ntnx_permissions_info:
+    length: 3
+  register: result
+
+- set_fact:
+    test_permission_1_uuid: "{{ result.response.entities[0].metadata.uuid }}"
+
+##############################################################################################
+
+- name: Create role with permissions
+  ntnx_roles:
+    state: present
+    name: test-ansible-role-4
+    desc: test-ansible-role-4-desc
+    permissions:
+      - uuid: "{{ test_permission_1_uuid }}"
+    wait: true
+  register: test_role
+
+- name: Creation Status
+  assert: 
+    that:
+      - test_role.response is defined
+      - test_role.changed == True
+    fail_msg: "Unable to create roles with certain permissions"
+    success_msg: "Roles with given permissions created susccessfully"
+
+###################################################################################################
+
+- name: delete role
+  ntnx_roles:
+    state: absent
+    role_uuid: "{{ test_role.role_uuid }}"
+  register: result
+
+- name: delete Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == True
+
+    fail_msg: "role delete failed"
+    success_msg: "role deleted successfully"
