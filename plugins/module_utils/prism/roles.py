@@ -16,7 +16,7 @@ class Roles(Prism):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "permission_list": self._build_spec_permission_list,
+            "permissions": self._build_spec_permissions,
             "remove_permissions": self._build_spec_remove_permissions,
         }
 
@@ -36,10 +36,10 @@ class Roles(Prism):
         payload["spec"]["description"] = desc
         return payload, None
 
-    def _build_spec_permission_list(self, payload, permission_ref_list):
+    def _build_spec_permissions(self, payload, permissions):
         permission_ref_specs = []
-        for ref in permission_ref_list:
-            uuid, err = get_permission_uuid(ref, self.module)
+        for permission in permissions:
+            uuid, err = get_permission_uuid(permission, self.module)
             if err:
                 return None, err
             permission_ref_specs.append(

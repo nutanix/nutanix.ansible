@@ -29,7 +29,7 @@ def get_module_spec():
         name=dict(type="str", required=False),
         role_uuid=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        permission_list=dict(
+        permissions=dict(
             type="list",
             elements="dict",
             options=entity_by_spec,
@@ -122,7 +122,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         mutually_exclusive=[
-            ("remove_permissions", "permission_list"),
+            ("remove_permissions", "permissions"),
         ],
         required_if=[
             ("state", "present", ("name, role_uuid"), True),

@@ -22,11 +22,16 @@ from ..module_utils.prism.address_groups import AddressGroup  # noqa: E402
 
 
 def get_module_spec():
+    subnet_detail = dict(
+        network_prefix = dict(type=int, required=True),
+        network_ip = dict(type="str", required=True)
+    )
+
     module_args = dict(
         address_group_uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        subnet_details_list = dict(type="list", elements="str", required=False)
+        subnet_details = dict(type="list", elements="dict", options=subnet_detail,required=False)
     )
     return module_args
 
@@ -94,7 +99,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "present", ("name", "address_group_uuid"), True),
-            ("state", "present", ("subnet_details_list", "address_group_uuid"), True),
+            ("state", "present", ("subnet_details", "address_group_uuid"), True),
             ("state", "absent", ("address_group_uuid"))
         ],
     )

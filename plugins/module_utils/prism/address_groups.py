@@ -14,7 +14,7 @@ class AddressGroup(Prism):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "subnet_details_list": self._build_spec_subnet_details_list
+            "subnet_details": self._build_spec_subnet_details
         }
 
     def get_uuid(self, value, key="name", raise_error=True, no_response=False):
@@ -43,14 +43,10 @@ class AddressGroup(Prism):
         payload["description"] = desc
         return payload, None
 
-    def _build_spec_subnet_details_list(self, payload, subnet_details_list):
+    def _build_spec_subnet_details(self, payload, subnet_details):
         ip_address_block_list = []
-        for subnet in subnet_details_list:
-            if "/" in subnet:
-                ip, prefix = subnet.split("/")
-                ip_address_block_list.append(self._get_ip_address_block(ip, int(prefix)))
-            else:
-                ip_address_block_list.append(self._get_ip_address_block(subnet, 32))
+        for subnet in subnet_details:
+            ip_address_block_list.append(self._get_ip_address_block(subnet["network_ip"], subnet["network_prefix"]))
         payload["ip_address_block_list"] = ip_address_block_list
         return payload, None
 
