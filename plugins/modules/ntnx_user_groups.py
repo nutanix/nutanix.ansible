@@ -32,7 +32,7 @@ options:
         type: bool
         required: false
         default: True
-    user_groupname:
+    name:
         description: user_group name
         required: false
         type: str
@@ -54,35 +54,13 @@ options:
         type: bool
         required: false
         default: false
-    identity_provider:
-        type: dict
-        description: An Identity Provider user_group.
-        suboptions:
-            name:
-                type: str
-                description: The user_groupname from the identity provider. Name Id for SAML Identity Provider.
-            uuid:
-                type: str
-                description: The uuid from the identity provider. Name Id for SAML Identity Provider.
-    directory_service:
-        type: dict
-        description: A Directory Service user_group.
-        suboptions:
-            name:
-                type: str
-                description: The user_groupPrincipalName of the user_group from the directory service.
-            uuid:
-                type: str
-                description: The user_groupPrincipal UUID of the user_group from the directory service.
-    principal_name:
-        type: str
-        description: The user_groupPrincipalName of the user_group from the directory service.
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
- - Pradeepsingh Bhati (@bhati-pradeep)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
@@ -148,7 +126,6 @@ from ..module_utils.prism.user_groups import UserGroups  # noqa: E402
 
 
 def get_module_spec():
-    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     module_args = dict(
         user_group_uuid=dict(type="str"),

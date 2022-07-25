@@ -9,19 +9,19 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_users_info
-short_description: users info module
+module: ntnx_user_groups_info
+short_description: User Groups info module
 version_added: 1.4.0
-description: 'Get users info'
+description: 'Get User Groups info'
 options:
     kind:
       description:
         - The kind name
       type: str
-      default: user
-    user_uuid:
+      default: user_group
+    usergroup_uuid:
         description:
-            - user UUID
+            - user group UUID
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
@@ -32,18 +32,18 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List users using name filter criteria
-    ntnx_users_info:
+  - name: List user groups using name filter criteria
+    ntnx_user_groups_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
       filter:
-        username: "{{ name }}"
+        group_name: "{{ name }}"
     register: result
 
-  - name: List users using length, offset, sort order and sort attribute
-    ntnx_users_info:
+  - name: List user groups using length, offset, sort order and sort attribute
+    ntnx_user_groups_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -51,16 +51,16 @@ EXAMPLES = r"""
       length: 2
       offset: 1
       sort_order: "DESCENDING"
-      sort_attribute: "username"
+      sort_attribute: "group_name"
     register: result
 
-  - name: test getting particular user using uuid
-    ntnx_users_info:
+  - name: test getting particular user group using uuid
+    ntnx_user_groups_info:
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"
         validate_certs: False
-        user_uuid: '{{ uuid  }}'
+        usergroup_uuid: '{{ uuid  }}'
     register: result
 """
 RETURN = r"""
@@ -70,18 +70,18 @@ api_version:
   type: str
   sample: "3.1"
 metadata:
-  description: Metadata for users list output
+  description: Metadata for user groups list output
   returned: always
   type: dict
   sample: {
-                "filter": "username=={{name}}",
+                "filter": "group_name=={{name}}",
                 "kind": "user",
                 "length": 2,
                 "offset": 0,
                 "total_matches": 2
             }
 entities:
-  description: users intent response
+  description: user groups intent response
   returned: always
   type: list
   sample: [
@@ -98,7 +98,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
-        user_uuid=dict(type="str"),
+        usergroup_uuid=dict(type="str"),
         kind=dict(type="str", default="user_group"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
@@ -109,7 +109,7 @@ def get_module_spec():
 
 def get_user(module, result):
     user = UserGroups(module)
-    uuid = module.params.get("user_uuid")
+    uuid = module.params.get("usergroup_uuid")
     resp = user.read(uuid)
     result["response"] = resp
 
@@ -130,12 +130,12 @@ def run_module():
         supports_check_mode=False,
         required_together=[("sort_order", "sort_attribute")],
         mutually_exclusive=[
-            ("user_uuid", "filter"),
+            ("usergroup_uuid", "filter"),
         ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("user_uuid"):
+    if module.params.get("usergroup_uuid"):
         get_user(module, result)
     else:
         get_users(module, result)
