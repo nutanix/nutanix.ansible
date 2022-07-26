@@ -245,14 +245,20 @@ def delete_service_group(module, result):
 
 
 def run_module():
-    module = BaseModule(argument_spec=get_module_spec(), supports_check_mode=True)
+    module = BaseModule(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+        required_if=[
+            ("state", "present", ("name", "service_group_uuid"), True),
+            ("state", "absent", ("service_group_uuid",)),
+        ],
+    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
         "error": None,
         "response": None,
         "service_group_uuid": None,
-        "task_uuid": None,
     }
     state = module.params["state"]
     if state == "absent":
