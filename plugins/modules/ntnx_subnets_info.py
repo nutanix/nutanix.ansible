@@ -39,7 +39,8 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter: "subnet_type=={{ subnet.type }}"
+      filter:
+         subnet_type: "{{ subnet.type }}"
       kind: subnet
     register: result
 
