@@ -77,6 +77,6 @@
       - result.response is defined
       - result.failed == false
       - result.changed == true
-      - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
+      - result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete user  group with idp  "
     success_msg: "user  group with idp deleted successfully"

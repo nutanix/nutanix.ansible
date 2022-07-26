@@ -6,8 +6,7 @@
   ntnx_user_groups_info:
   register: user_groups
   ignore_errors: true
-- debug:
-    var: user_groups
+
 - name: check listing status
   assert:
     that:
