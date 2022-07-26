@@ -96,7 +96,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: False
-    distinguished_name: "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+    distinguished_name: "<distinguished-name>"
     project:
       uuid: "{{project_uuid}}"
     categories:
@@ -148,7 +148,7 @@ spec:
   sample: {
     "resources": {
                         "directory_service_user_group": {
-                            "distinguished_name": "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+                            "distinguished_name": "<distinguished name>"
                         }
                     }
 
@@ -168,12 +168,12 @@ status:
                     "directory_service_user_group": {
                         "directory_service_reference": {
                             "kind": "directory_service",
-                            "name": "qanucalm",
+                            "name": "ds",
                             "uuid": "00000000-0000-0000-0000-000000000000"
                         },
-                        "distinguished_name": "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+                        "distinguished_name": "<distinguished name>"
                     },
-                    "display_name": "sspadmins",
+                    "display_name": "<display_name>",
                     "projects_reference_list": [],
                     "user_group_type": "DIRECTORY_SERVICE"
                 },

@@ -97,7 +97,7 @@ entities:
                     "spec": {
                         "resources": {
                             "directory_service_user_group": {
-                                "distinguished_name": "CN=test_custom_{_group_},CN=Users,DC=qa,DC=nucalm,DC=io"
+                                "distinguished_name": "CN=test_custom_{_group_},CN=Users,DC=ad,DC=ds,DC=io"
                             }
                         }
                     },
@@ -112,10 +112,10 @@ entities:
                             "directory_service_user_group": {
                                 "directory_service_reference": {
                                     "kind": "directory_service",
-                                    "name": "qanucalm",
+                                    "name": "ds",
                                     "uuid": "00000000-0000-0000-0000-000000000000"
                                 },
-                                "distinguished_name": "cn=test_custom_{_group_},cn=users,dc=qa,dc=nucalm,dc=io"
+                                "distinguished_name": "cn=test_custom_{_group_},cn=users,dc=ad,dc=ds,dc=io"
                             },
                             "display_name": "test_custom_{_group_}",
                             "projects_reference_list": [],
@@ -136,7 +136,7 @@ entities:
                     "spec": {
                         "resources": {
                             "directory_service_user_group": {
-                                "distinguished_name": "cn=sspgroupqa4,cn=users,dc=qa,dc=nucalm,dc=io"
+                                "distinguished_name": "<distinguished-name>"
                             }
                         }
                     },
@@ -154,9 +154,9 @@ entities:
                                     "name": "qanucalm",
                                     "uuid": "00000000-0000-0000-0000-000000000000"
                                 },
-                                "distinguished_name": "cn=sspgroupqa4,cn=users,dc=qa,dc=nucalm,dc=io"
+                                "distinguished_name": "<distinugished-name>"
                             },
-                            "display_name": "sspgroupqa4",
+                            "display_name": "name1",
                             "projects_reference_list": [],
                             "user_group_type": "DIRECTORY_SERVICE"
                         },
