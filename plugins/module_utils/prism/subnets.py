@@ -13,6 +13,8 @@ from .vpcs import get_vpc_uuid
 
 
 class Subnet(Prism):
+    kind = "subnet"
+
     def __init__(self, module):
         resource_type = "/subnets"
         super(Subnet, self).__init__(module, resource_type=resource_type)
@@ -139,6 +141,11 @@ class Subnet(Prism):
             }
         )
 
+    @classmethod
+    def build_subnet_reference_spec(cls, uuid):
+        spec = {"kind": cls.kind, "uuid": uuid}
+        return spec
+
 
 # Helper functions
 
@@ -158,7 +165,3 @@ def get_subnet_uuid(config, module):
         None, error
 
     return uuid, None
-
-
-def get_subnet_reference_spec(uuid=None):
-    return deepcopy({"kind": "subnet", "uuid": uuid})

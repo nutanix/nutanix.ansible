@@ -55,7 +55,7 @@ api_version:
   type: str
   sample: "3.1"
 metadata:
-  description: 
+  description:
     - Metadata for user list output
     - Below response struct is for users info using filters
   returned: always
@@ -68,7 +68,7 @@ metadata:
                 "total_matches": 1
             }
 entities:
-  description: 
+  description:
     - users intent response
     - below response struct is for users info using filters
   returned: Not when query done using user uuid

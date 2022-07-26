@@ -19,7 +19,7 @@ options:
         required: false
         default: True
     name:
-        description: 
+        description:
             - project name
             - cannot update once project is created
         required: false

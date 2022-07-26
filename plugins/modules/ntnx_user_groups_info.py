@@ -55,7 +55,7 @@ api_version:
   type: str
   sample: "3.1"
 metadata:
-  description: 
+  description:
     - Metadata for user group list output
     - Below response struct is for user groups info using filters
   returned: Only when listed using filter
@@ -68,7 +68,7 @@ metadata:
                 "total_matches": 1
             }
 entities:
-  description: 
+  description:
     - user groups intent response
     - Below response struct is for user groups info using filters
   returned: Only when all user groups are listed or using filter

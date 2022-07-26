@@ -3,10 +3,10 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
-from .user_groups import get_user_group_reference_spec
-from .subnets import get_subnet_reference_spec, get_subnet_uuid
-from .users import get_user_reference_spec
-from .clusters import get_cluster_reference_spec
+from .user_groups import UserGroups
+from .subnets import Subnet, get_subnet_uuid
+from .users import Users
+from .clusters import Cluster
 
 __metaclass__ = type
 
@@ -62,7 +62,7 @@ class Projects(Prism):
     def _build_spec_cluster_reference_list(self, payload, cluster_ref_list):
         cluster_reference_specs = []
         for uuid in cluster_ref_list:
-            cluster_reference_specs.append(get_cluster_reference_spec(uuid))
+            cluster_reference_specs.append(Cluster.build_cluster_reference_spec(uuid))
         payload["spec"]["resources"]["cluster_reference_list"] = cluster_reference_specs
         return payload, None
 
@@ -73,7 +73,7 @@ class Projects(Prism):
 
         payload["spec"]["resources"][
             "default_subnet_reference"
-        ] = get_subnet_reference_spec(uuid)
+        ] = Subnet.build_subnet_reference_spec(uuid)
         return payload, None
 
     def _build_spec_subnet_reference_list(self, payload, subnet_ref_list):
@@ -82,14 +82,14 @@ class Projects(Prism):
             uuid, err = get_subnet_uuid(ref, self.module)
             if err:
                 return None, err
-            subnet_reference_specs.append(get_subnet_reference_spec(uuid))
+            subnet_reference_specs.append(Subnet.build_subnet_reference_spec(uuid))
         payload["spec"]["resources"]["subnet_reference_list"] = subnet_reference_specs
         return payload, None
 
     def _build_spec_user_reference_list(self, payload, user_uuid_list):
         user_reference_specs = []
         for uuid in user_uuid_list:
-            user_reference_specs.append(get_user_reference_spec(uuid))
+            user_reference_specs.append(Users.build_user_reference_spec(uuid))
         payload["spec"]["resources"]["user_reference_list"] = user_reference_specs
         return payload, None
 
@@ -98,7 +98,9 @@ class Projects(Prism):
     ):
         user_groups_reference_specs = []
         for uuid in ext_user_uuid_list:
-            user_groups_reference_specs.append(get_user_group_reference_spec(uuid))
+            user_groups_reference_specs.append(
+                UserGroups.build_user_group_reference_spec(uuid)
+            )
         payload["spec"]["resources"][
             "external_user_group_reference_list"
         ] = user_groups_reference_specs
