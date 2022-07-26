@@ -7,7 +7,7 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-from .projects import Project
+from .projects import Projects
 from .spec.categories_mapping import CategoriesMapping
 
 
@@ -34,7 +34,7 @@ class UserGroups(Prism):
 
     def _build_spec_project(self, payload, config):
         if "name" in config:
-            project = Project(self.module)
+            project = Projects(self.module)
             name = config["name"]
             uuid = project.get_uuid(name)
             if not uuid:
