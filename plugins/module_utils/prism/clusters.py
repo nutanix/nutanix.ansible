@@ -8,9 +8,16 @@ from .prism import Prism
 
 
 class Cluster(Prism):
+    kind = "cluster"
+
     def __init__(self, module):
         resource_type = "/clusters"
         super(Cluster, self).__init__(module, resource_type=resource_type)
+
+    @classmethod
+    def build_cluster_reference_spec(cls, uuid):
+        spec = {"kind": cls.kind, "uuid": uuid}
+        return spec
 
 
 # Helper functions

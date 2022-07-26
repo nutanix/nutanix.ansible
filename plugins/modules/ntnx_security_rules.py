@@ -1235,7 +1235,7 @@ def update_security_rule(module, result):
     security_rule = SecurityRule(module)
     resp = security_rule.read(security_rule_uuid)
     result["response"] = resp
-    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    utils.strip_extra_attrs(resp["status"], resp["spec"])
     resp.pop("status")
 
     spec, error = security_rule.get_spec(resp)

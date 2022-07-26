@@ -1,0 +1,113 @@
+- name:
+  debug:
+    msg: "Start ntnx_project create tests"
+
+- name: Create Project with minimal spec
+  ntnx_projects:
+    name: "test-ansible-project-7"
+  register: project_1
+  ignore_errors: true
+
+- name: Create Project with minimal spec
+  ntnx_projects:
+    name: "test-ansible-project-8"
+  register: project_2
+  ignore_errors: true
+
+- set_fact:
+    todelete: "{{ todelete + [  project_1.project_uuid ] }}"
+
+- set_fact:
+    todelete: "{{ todelete + [  project_2.project_uuid ] }}"
+
+################################################## 
+
+- name: List project using name filter criteria
+  ntnx_projects_info:
+    filter:
+      name: "test-ansible-project-7"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.entities[0].status.name == "test-ansible-project-7"
+    fail_msg: "Unable to list projects using filter"
+    success_msg: "Project info obtained successfully"
+
+################################################## 
+
+- name: List all projects
+  ntnx_projects_info:
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.metadata.total_matches > 2
+    fail_msg: "Unable to list all projects"
+    success_msg: "Project info of all projects obtained successfully"
+
+################################################## 
+
+- name: List project using project uuid criteria
+  ntnx_projects_info:
+    project_uuid: "{{ project_2.project_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.name == "{{ project_2.response.status.name }}"
+      - result.response.metadata.kind == "project"
+    fail_msg: "Unable to list projects using uuid"
+    success_msg: "Project info obtained successfully"
+
+################################################## 
+- name: List project using length and offset
+  ntnx_projects_info:
+    length: 1
+    offset: 1
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: "Unable to list projects using length and offset"
+    success_msg: "Projects listed successfully"
+
+##################################################
+- name: List projects using ascending name sorting
+  ntnx_projects_info:
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+    kind: project
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+    fail_msg: "Unable to list projects"
+    success_msg: "Projects listed successfully"
+
+#################################################################
+- name: Delete all Created Projects
+  ntnx_projects:
+    state: absent
+    project_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- set_fact:
+    todelete: []

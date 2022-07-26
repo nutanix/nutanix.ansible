@@ -1,0 +1,180 @@
+---
+- debug:
+    msg: Start testing ntnx_service_groups creation
+
+- name: create tcp service group
+  ntnx_service_groups:
+    name: tcp_srvive_group
+    desc: desc
+    service_details:
+      tcp:
+        - "10-50"
+        - "60-90"
+        - "98"
+        - "99"
+  register: result
+  ignore_errors: true
+
+- name:  getting particular service_group using uuid
+  ntnx_service_groups_info:
+    service_group_uuid: '{{ result.service_group_uuid }}'
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.service_group.service_list[0].protocol == "TCP"
+      - result.response.service_group.service_list[0].tcp_port_range_list[0].start_port == 10
+      - result.response.service_group.service_list[0].tcp_port_range_list[0].end_port == 50
+      - result.response.service_group.service_list[0].tcp_port_range_list[1].start_port == 60
+      - result.response.service_group.service_list[0].tcp_port_range_list[1].end_port == 90
+      - result.response.service_group.service_list[0].tcp_port_range_list[2].start_port == 98
+      - result.response.service_group.service_list[0].tcp_port_range_list[2].end_port == 98
+      - result.response.service_group.service_list[0].tcp_port_range_list[3].start_port == 99
+      - result.response.service_group.service_list[0].tcp_port_range_list[3].end_port == 99
+    fail_msg: "Fail: Unable to create tcp service group  "
+    success_msg: "Pass: tcp service group  created successfully"
+
+- set_fact:
+    todelete: "{{ todelete + [  result.response.uuid ] }}"
+################################################################ 
+- name: create udp service group
+  ntnx_service_groups:
+    name: udp_srvive_group
+    desc: desc
+    service_details:
+      udp:
+        - "10-50"
+        - "60-90"
+        - "98"
+        - "99"
+  register: result
+  ignore_errors: true
+
+- name:  getting particular service_group using uuid
+  ntnx_service_groups_info:
+    service_group_uuid: '{{ result.service_group_uuid }}'
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.service_group.service_list[0].protocol == "UDP"
+      - result.response.service_group.service_list[0].udp_port_range_list[0].start_port == 10
+      - result.response.service_group.service_list[0].udp_port_range_list[0].end_port == 50
+      - result.response.service_group.service_list[0].udp_port_range_list[1].start_port == 60
+      - result.response.service_group.service_list[0].udp_port_range_list[1].end_port == 90
+      - result.response.service_group.service_list[0].udp_port_range_list[2].start_port == 98
+      - result.response.service_group.service_list[0].udp_port_range_list[2].end_port == 98
+      - result.response.service_group.service_list[0].udp_port_range_list[3].start_port == 99
+      - result.response.service_group.service_list[0].udp_port_range_list[3].end_port == 99
+    fail_msg: "Fail: Unable to create udp service group  "
+    success_msg: "Pass: udp service group  created successfully"
+
+- set_fact:
+    todelete: "{{ todelete + [  result.response.uuid ] }}"
+################################################################
+- name: create icmp with service group
+  ntnx_service_groups:
+    name: icmp_srvive_group
+    desc: desc
+    service_details:
+      icmp:
+        - code: 10
+        - type: 1
+        - type: 2
+          code: 3
+  register: result
+  ignore_errors: true
+
+- name:  getting particular service_group using uuid
+  ntnx_service_groups_info:
+    service_group_uuid: '{{ result.service_group_uuid }}'
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.service_group.service_list[0].protocol == "ICMP"
+      - result.response.service_group.service_list[0].icmp_type_code_list[0].code == 10
+      - result.response.service_group.service_list[0].icmp_type_code_list[1].type == 1 
+      - result.response.service_group.service_list[0].icmp_type_code_list[2].code == 3
+      - result.response.service_group.service_list[0].icmp_type_code_list[2].type == 2  
+    fail_msg: "Fail: Unable to create icmp service group  "
+    success_msg: "Pass: icmp service group  created successfully"
+
+- set_fact:
+    todelete: "{{ todelete + [  result.response.uuid ] }}"
+################################################################
+- name: create  service group with tcp and udp and icmp
+  ntnx_service_groups:
+    name: app_srvive_group
+    desc: desc
+    service_details:
+      tcp:
+        - "*"
+      udp:
+        - "10-50"
+        - "60-90"
+        - "99"
+      any_icmp: True
+  register: result
+  ignore_errors: true
+  
+- name:  getting particular service_group using uuid
+  ntnx_service_groups_info:
+    service_group_uuid: '{{ result.service_group_uuid }}'
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.service_group.service_list[0].protocol == "TCP"
+      - result.response.service_group.service_list[0].tcp_port_range_list[0].start_port == 0
+      - result.response.service_group.service_list[0].tcp_port_range_list[0].end_port == 65535
+      - result.response.service_group.service_list[1].protocol == "UDP"
+      - result.response.service_group.service_list[1].udp_port_range_list[0].start_port == 10
+      - result.response.service_group.service_list[1].udp_port_range_list[0].end_port == 50 
+      - result.response.service_group.service_list[1].udp_port_range_list[1].start_port == 60
+      - result.response.service_group.service_list[1].udp_port_range_list[1].end_port == 90  
+      - result.response.service_group.service_list[1].udp_port_range_list[2].start_port == 99
+      - result.response.service_group.service_list[1].udp_port_range_list[2].end_port == 99  
+      - result.response.service_group.service_list[2].protocol == "ICMP"
+      - result.response.service_group.service_list[2].icmp_type_code_list == []  
+    fail_msg: "Fail: Unable to create tcp service group  "
+    success_msg: "Pass: tcp service group  created successfully"
+
+- set_fact:
+    todelete: "{{ todelete + [  result.response.uuid ] }}"
+################################################################
+- name: Delete all created service groups
+  ntnx_service_groups:
+    state: absent
+    service_group_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True 
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "unable to delete all created service groups"
+    success_msg: "All service groups deleted succesfully"
+
+- set_fact:
+    todelete: []

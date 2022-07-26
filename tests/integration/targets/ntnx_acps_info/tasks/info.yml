@@ -1,0 +1,55 @@
+---
+- debug:
+    msg: "start ntnx_acps_info tests"
+
+- name: test getting all acp's
+  ntnx_acps_info:
+    kind: access_control_policy
+    length: 1
+    offset: 1
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+  register: acps
+
+- name: check listing status
+  assert:
+    that:
+      - acps.response is defined
+      - acps.changed == false
+      - acps.failed == false
+    fail_msg: "Unable to list all acps"
+    success_msg: "acps listed successfully"
+################################################################
+
+- name: test getting particular acp using filter
+  ntnx_acps_info:
+    filter:
+      name: "{{ acps.response.entities.0.spec.name }}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities[0].metadata.uuid == '{{ acps.response.entities.0.metadata.uuid }}'
+    fail_msg: "Unable to get particular acp using filter"
+    success_msg: "acp info obtained successfully using filter"
+
+#################################################################
+
+- name: test getting particular acp using uuid
+  ntnx_acps_info:
+    acp_uuid: '{{ acps.response.entities.0.metadata.uuid }}'
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.spec.name == '{{ acps.response.entities.0.spec.name }}'
+    fail_msg: "Unable to get particular acp using uuid"
+    success_msg: "acp info obtained successfully using uuid"

@@ -1,0 +1,96 @@
+- debug:
+    msg: start testing ntnx_users_info
+##################################################
+
+- name: List all users
+  ntnx_users_info:
+  register: users
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - users.response is defined
+      - users.response.metadata.total_matches > 0
+    fail_msg: "Unable to list all users"
+    success_msg: "User info obtained successfully"
+
+- set_fact:
+    test_user_name: "{{users.response.entities.2.status.name}}"
+- set_fact:
+    test_user_uuid: "{{users.response.entities.2.metadata.uuid}}"
+
+################################################## 
+
+- name: List users using user uuid criteria
+  ntnx_users_info:
+    user_uuid: "{{ test_user_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.status.name == "{{ test_user_name }}"
+      - result.response.metadata.kind == "user"
+    fail_msg: "Unable to list user using uuid"
+    success_msg: "user info obtained successfully"
+
+################################################## 
+
+- name: List users using filter criteria
+  ntnx_users_info:
+    filter: 
+      username: "{{ test_user_name }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities[0].status.name == "{{ test_user_name }}"
+      - result.response.metadata.kind == "user"
+      - result.response.metadata.total_matches == 1
+    fail_msg: "Unable to list user using filter"
+    success_msg: "user info obtained successfully"
+
+################################################## 
+
+- name: List users using length and offset
+  ntnx_users_info:
+    length: 1
+    offset: 1
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "Unable to list users using length and offset"
+    success_msg: "users listed successfully using length and offset"
+##################################################
+- name: List users using ascending name sorting
+  ntnx_users_info:
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+    kind: user
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed ==false
+    fail_msg: "Unable to list users using ascending name sorting"
+    success_msg: "users listed successfully using ascending name sorting"
