@@ -5,7 +5,7 @@
     wait: true
     name: integration-test-acp-update
     role:
-      uuid: '{{ role.uuid }}'
+      uuid: '{{ acp.role.uuid }}'
   register: setup_acp
 
 - name: Creation Status
@@ -14,7 +14,7 @@
       - setup_acp.response is defined
       - setup_acp.response.status.state == 'COMPLETE'
       - setup_acp.response.spec.name == 'integration-test-acp-update'
-      - setup_acp.response.status.resources.role_reference.uuid == "{{ role.uuid }}"
+      - setup_acp.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
     fail_msg: "Unable to create ACP for update tests"
     success_msg: "ACP created successfully for update tests"
 
@@ -29,7 +29,7 @@
     acp_uuid: "{{ setup_acp.acp_uuid }}"
     name: integration-test-acp-update
     role:
-      uuid: '{{ role.uuid }}'
+      uuid: '{{ acp.role.uuid }}'
   register: result
 
 - name: check idempotency status

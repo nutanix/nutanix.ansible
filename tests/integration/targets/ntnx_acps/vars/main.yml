@@ -1,8 +1,0 @@
----
-project:
-   uuid: 4e42ef74-7176-40f1-8e10-f6aa422e896f
-role:
-  name: Project Admin
-  uuid: 9c4acbe2-d9a1-4c56-a344-55f716882ef4
-user_uuid: dc8dcdab-7ab0-5f49-9ab4-96e57c523c54
-user_group_uuid: e7f476ca-e971-42d3-b56b-578b729d6673

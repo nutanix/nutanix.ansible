@@ -5,7 +5,7 @@
     wait: True
     name: MinACP
     role:
-      uuid: "{{ role.uuid }}"
+      uuid: "{{ acp.role.uuid }}"
   register: result
   check_mode: true
   ignore_errors: True
@@ -26,7 +26,7 @@
     wait: true
     name: MinACP
     role:
-      uuid: '{{ role.uuid }}'
+      uuid: '{{ acp.role.uuid }}'
   check_mode: false
   register: result
   ignore_errors: True
@@ -48,9 +48,9 @@
     state: present
     name: acp_with_user_reference
     role:
-      uuid: "{{ role.uuid }}"
+      uuid: "{{ acp.role.uuid }}"
     user_uuids:
-      - "{{ user_uuid }}"
+      - "{{ acp.user_uuid }}"
   register: result
   ignore_errors: True
 
@@ -60,8 +60,8 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.response.spec.name == 'acp_with_user_reference'
-      - result.response.status.resources.role_reference.uuid == "{{ role.uuid }}"
-      - result.response.status.resources.user_reference_list.0.uuid == "{{ user_uuid }}"
+      - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
+      - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
     fail_msg: " Unable to Create ACP with user reference "
     success_msg: " ACP with user reference created successfully "
 
@@ -73,11 +73,11 @@
     state: present
     name: acp_with_user_and_user_group_reference
     role:
-      uuid: "{{ role.uuid }}"
+      uuid: "{{ acp.role.uuid }}"
     user_uuids:
-      - "{{ user_uuid }}"
+      - "{{ acp.user_uuid }}"
     user_group_uuids:
-      - "{{ user_group_uuid }}"
+      - "{{ acp.user_group_uuid }}"
   register: result
   ignore_errors: True
 
@@ -87,9 +87,9 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.response.spec.name == 'acp_with_user_and_user_group_reference'
-      - result.response.status.resources.role_reference.uuid == "{{ role.uuid }}"
-      - result.response.status.resources.user_reference_list.0.uuid == "{{ user_uuid }}"
-      - result.response.status.resources.user_group_reference_list.0.uuid == "{{ user_group_uuid }}"
+      - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
+      - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
+      - result.response.status.resources.user_group_reference_list.0.uuid == "{{ acp.user_group_uuid }}"
     fail_msg: " Unable to Create ACP with user and user group reference "
     success_msg: " ACP with user and user group reference created successfully "
 
@@ -101,11 +101,11 @@
     state: present
     name: acp_with_all_specfactions
     role:
-      uuid: "{{ role.uuid }}"
+      uuid: "{{ acp.role.uuid }}"
     user_uuids:
-      - "{{ user_uuid }}"
+      - "{{ acp.user_uuid }}"
     user_group_uuids:
-      - "{{ user_group_uuid }}"
+      - "{{ acp.user_group_uuid }}"
     filters:
       - scope_filter:
           - lhs: PROJECT
@@ -143,15 +143,23 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.resources.role_reference.uuid == "{{ role.uuid }}"
-      - result.response.status.resources.user_reference_list.0.uuid == "{{ user_uuid }}"
-      - result.response.status.resources.user_group_reference_list.0.uuid == "{{ user_group_uuid }}"
+      - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
+      - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
+      - result.response.status.resources.user_group_reference_list.0.uuid == "{{ acp.user_group_uuid }}"
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.operator == "IN"
-      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.left_hand_side.entity_type == "ALL"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.left_hand_side.entity_type == "image"
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.right_hand_side.collection == "ALL"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.1.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.1.left_hand_side.entity_type == "subnet"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.1.right_hand_side.uuid_list.0 == "{{ network.dhcp.uuid }}"
       - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.operator == "IN"
       - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.left_hand_side == "PROJECT"
       - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.right_hand_side.uuid_list.0 == "{{ project.uuid }}"
+      - result.response.status.resources.filter_list.context_list.1.entity_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.1.entity_filter_expression_list.0.left_hand_side.entity_type == "vm"
+      - result.response.status.resources.filter_list.context_list.1.entity_filter_expression_list.0.right_hand_side.collection == "ALL"
+      - result.response.status.resources.filter_list.context_list.1.scope_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.1.scope_filter_expression_list.0.left_hand_side == "CATEGORY"
     fail_msg: " Unable to Create ACP all specfactions "
     success_msg: " ACP with all specfactions created successfully "
 

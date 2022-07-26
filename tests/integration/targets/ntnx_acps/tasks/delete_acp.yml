@@ -4,11 +4,11 @@
     state: present
     name: acp_with_all_specfactions
     role:
-      uuid: "{{ role.uuid }}"
+      uuid: "{{ acp.role.uuid }}"
     user_uuids:
-      - "{{ user_uuid }}"
+      - "{{ acp.user_uuid }}"
     user_group_uuids:
-      - "{{ user_group_uuid }}"
+      - "{{ acp.user_group_uuid }}"
     filters:
       - scope_filter:
           - 
@@ -31,9 +31,9 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.resources.role_reference.uuid == "{{ role.uuid }}"
-      - result.response.status.resources.user_reference_list.0.uuid == "{{ user_uuid }}"
-      - result.response.status.resources.user_group_reference_list.0.uuid == "{{ user_group_uuid }}"
+      - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
+      - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
+      - result.response.status.resources.user_group_reference_list.0.uuid == "{{ acp.user_group_uuid }}"
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.operator == "IN"
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.left_hand_side.entity_type == "ALL"
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.right_hand_side.collection == "ALL"

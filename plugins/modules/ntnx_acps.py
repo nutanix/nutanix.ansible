@@ -243,41 +243,52 @@ status:
   description: An intentful representation of a ACP status
   returned: always
   type: dict
-  sample:
-    description: desc
-    execution_context:
-        task_uuid:
-            00000000000-0000-0000-0000-00000000000
-    is_system_defined: false
-    name: name
-    resources:
-        filter_list:
-            context_list:
-                entity_filter_expression_list:
-                    left_hand_side:
-                        entity_type: ALL
-                    operator: IN
-                    right_hand_side:
-                        collection: ALL
-                scope_filter_expression_list:
-                    left_hand_side: PROJECT,
-                    operator: IN,
-                    right_hand_side:
-                        uuid_list:
-                            00000000000-0000-0000-0000-00000000000
-        role_reference:
-            kind: role,
-            name: Project Admin,
-            uuid: 00000000000-0000-0000-0000-00000000000
-        user_group_reference_list:
-                kind: user_group,
-                name: cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io,
-                uuid: 00000000000-0000-0000-0000-00000000000
-        user_reference_list:
-                kind: user,
-                name: idpuser1@calmsaastest.com,
-                uuid: 00000000000-0000-0000-0000-00000000000
-    state: COMPLETE
+  sample: {
+        "description": "desc",
+        "execution_context": {
+            "task_uuid": "00000000000-0000-0000-0000-00000000000"
+        },
+        "is_system_defined": false,
+        "name": "name",
+        "resources": {
+            "filter_list": {
+                "context_list": {
+                    "entity_filter_expression_list": {
+                        "left_hand_side": {
+                            "entity_type": "ALL"
+                        },
+                        "operator": "IN",
+                        "right_hand_side": {
+                            "collection": "ALL"
+                        }
+                    },
+                    "scope_filter_expression_list": {
+                        "left_hand_side": "PROJECT,",
+                        "operator": "IN,",
+                        "right_hand_side": {
+                            "uuid_list": "00000000000-0000-0000-0000-00000000000"
+                        }
+                    }
+                }
+            },
+            "role_reference": {
+                "kind": "role,",
+                "name": "Project Admin,",
+                "uuid": "00000000000-0000-0000-0000-00000000000"
+            },
+            "user_group_reference_list": {
+                "kind": "user_group,",
+                "name": "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io,",
+                "uuid": "00000000000-0000-0000-0000-00000000000"
+            },
+            "user_reference_list": {
+                "kind": "user,",
+                "name": "idpuser1@calmsaastest.com,",
+                "uuid": "00000000000-0000-0000-0000-00000000000"
+            }
+        },
+        "state": "COMPLETE"
+    }
 acp_uuid:
   description: The created acp's uuid
   returned: always
@@ -298,7 +309,6 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
-
     mutually_exclusive = [("name", "uuid")]
 
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
@@ -372,7 +382,7 @@ def update_acp(module, result):
     acp = ACP(module)
     resp = acp.read(acp_uuid)
     result["response"] = resp
-    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    utils.strip_extra_attrs(resp["status"], resp["spec"])
     resp.pop("status")
 
     spec, error = acp.get_spec(resp)
