@@ -16,7 +16,7 @@
     - name: List floating_ips using ascending ip sorting and floating_ip filter
       ntnx_floating_ips_info:
         filter:
-          floating_ip: "10."
+          floating_ip: "10.0.1.2"
         kind: floating_ip
         sort_order: "ASCENDING"
         sort_attribute: "floating_ip"
