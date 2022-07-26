@@ -155,3 +155,30 @@
     success_msg: "Pass: all users deleted succesfully"
 - set_fact:
     todelete: []
+
+############# DELETE TEST ##############################
+
+- name: create local user
+  ntnx_users:
+    principal_name: "{{principal_name}}"
+    directory_service_uuid:  "{{directory_service_uuid}}"
+    project: 
+      uuid: "{{project.uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: Delete created user
+  ntnx_users:
+    state: absent
+    user_uuid: "{{ result.user_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: check delete status
+  assert:
+    that:
+      - result.changed == true
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Fail: unable to delete users"
+    success_msg: "Pass: users deleted succesfully"

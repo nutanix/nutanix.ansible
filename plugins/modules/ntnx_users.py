@@ -271,7 +271,8 @@ def delete_user(module, result):
 
     if module.params.get("wait"):
         task = Task(module)
-        task.wait_for_completion(task_uuid)
+        resp = task.wait_for_completion(task_uuid)
+        result["response"] = resp
 
 
 def run_module():
