@@ -118,6 +118,10 @@ author:
 EXAMPLES = r"""
 - name: Create Project with all specs
   ntnx_projects:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
     name: "test-ansible-project-1"
     desc: desc-123
     subnet_reference_list:

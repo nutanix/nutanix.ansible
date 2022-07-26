@@ -33,15 +33,27 @@ author:
 EXAMPLES = r"""
 - name: List project using name filter criteria
   ntnx_projects_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
     filter:
       name: "test-ansible-project-7"
 
 - name: List all projects
   ntnx_projects_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
   register: result
 
 - name: List project using project uuid criteria
   ntnx_projects_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
     project_uuid: "<uuid>"
   register: result
 
