@@ -83,7 +83,32 @@ author:
 """
 
 EXAMPLES = r"""
+- name: create local user
+  ntnx_users:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    principal_name: "{{principal_name}}"
+    directory_service_uuid:  "{{directory_service_uuid}}"
+    project:
+      uuid: "{{project_uuid}}"
+    categories:
+      Environment:
+        - "Dev"
+      AppType:
+        - "Default"
+  register: result
 
+- name: create idp user
+  ntnx_users:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    identity_provider_uuid: "{{identity_provider_uuid}}"
+    username: "{{username}}"
+  register: result
 """
 
 RETURN = r"""
@@ -122,15 +147,56 @@ spec:
   returned: always
   type: dict
   sample: {
-  #TODO
-  }
+                "resources": {
+                    "directory_service_user": {
+                        "directory_service_reference": {
+                            "kind": "directory_service",
+                            "uuid": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "user_principal_name": "test_custom@qa.nucalm.io"
+                    }
+                }
+            }
 status:
   description: An intentful representation of a user status
   returned: always
   type: dict
   sample: {
-  #TODO
-  }
+                "execution_context": {
+                    "task_uuid": [
+                        "00000000-0000-0000-0000-000000000000"
+                    ]
+                },
+                "name": "test_custom@qa.nucalm.io",
+                "resources": {
+                    "access_control_policy_reference_list": [],
+                    "directory_service_user": {
+                        "default_user_principal_name": "test_custom@qa.nucalm.io",
+                        "directory_service_reference": {
+                            "kind": "directory_service",
+                            "name": "qanucalm",
+                            "uuid": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "user_principal_name": "test_custom@qa.nucalm.io"
+                    },
+                    "display_name": null,
+                    "projects_reference_list": [
+                        {
+                            "kind": "project",
+                            "name": "default",
+                            "uuid": "00000000-0000-0000-0000-000000000000"
+                        }
+                    ],
+                    "resource_usage_summary": {
+                        "resource_domain": {
+                            "resources": []
+                        }
+                    },
+                    "user_type": "DIRECTORY_SERVICE"
+                },
+                "state": "COMPLETE"
+            }
+
 user_uuid:
   description: The created user uuid
   returned: always
