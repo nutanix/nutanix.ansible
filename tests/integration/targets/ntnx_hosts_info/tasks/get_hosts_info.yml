@@ -4,23 +4,23 @@
 
 - name: test getting all hosts
   ntnx_hosts_info:
-  register: result
+  register: hosts
   ignore_errors: True
 
 - name: check listing status
   assert:
     that:
-      - result.response is defined
-      - result.failed == false
-      - result.changed == false
-      - result.response.entities[0].metadata.uuid is defined
+      - hosts.response is defined
+      - hosts.failed == false
+      - hosts.changed == false
+      - hosts.response.entities[0].metadata.uuid is defined
     fail_msg: "Unable to list all hosts"
     success_msg: "hosts listed successfully"
 
 
 - name: test getting particular host using uuid
   ntnx_hosts_info:
-    host_uuid: '{{ result.response.entities[0].metadata.uuid }}'
+    host_uuid: '{{ hosts.response.entities[0].metadata.uuid }}'
   register: result
 
 - name: check listing status
@@ -30,7 +30,7 @@
       - result.failed == false
       - result.changed == false
       - result.response.status.state == "COMPLETE"
-      - result.response.metadata.uuid == "{{ result.response.entities[0].metadata.uuid }}"
+      - result.response.metadata.uuid == "{{ hosts.response.entities[0].metadata.uuid }}"
     fail_msg: "Unable to get particular host"
     success_msg: "host info obtained successfully"
 
