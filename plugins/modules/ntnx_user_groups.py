@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_user_groups
-short_description: user_groups module which supports pc user_groups management CRUD operations
+short_description: user_groups module which supports pc user_groups management create delete operations
 version_added: 1.4.0
-description: "Create, Update, Delete user_groups"
+description: "Create, Delete user_groups"
 options:
     state:
         description:
