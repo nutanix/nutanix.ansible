@@ -279,7 +279,7 @@ status:
                 uuid: 00000000000-0000-0000-0000-00000000000
     state: COMPLETE
 acp_uuid:
-  description: The created security rule  uuid
+  description: The created acp's uuid
   returned: always
   type: str
   sample: 00000000000-0000-0000-0000-00000000000
