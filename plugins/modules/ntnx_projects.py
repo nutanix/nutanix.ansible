@@ -56,7 +56,7 @@ options:
                     - for C(resource_type) as MEMORY or STORAGE, unit is bytes
                 required: true
                 type: int
-    default_subnet_reference:
+    default_subnet:
         description: default subnet reference
         type: dict
         required: false
@@ -71,7 +71,7 @@ options:
                     - subnet UUID
                     - Mutually exclusive with C(name)
                 type: str
-    subnet_reference_list:
+    subnets:
         description: list of subnets to be added in project
         type: list
         elements: dict
@@ -87,21 +87,21 @@ options:
                     - subnet UUID
                     - Mutually exclusive with C(name)
                 type: str
-    user_uuid_list:
+    users:
         description:
             - list of uuid of users to be added in project
             - this won't add role to the users, for same use ntnx_acps modules
         required: false
         type: list
         elements: str
-    external_user_group_uuid_list:
+    external_user_groups:
         description:
             - list of uuid of user groups to be added in project
             - this won't add role to the users, for same use ntnx_acps modules
         required: false
         type: list
         elements: str
-    cluster_uuid_list:
+    clusters:
         description:
             - list of uuid of cluster to be added in project
         required: false
@@ -124,15 +124,15 @@ EXAMPLES = r"""
     validate_certs: False
     name: "test-ansible-project-1"
     desc: desc-123
-    subnet_reference_list:
+    subnets:
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
-    default_subnet_reference:
+    default_subnet:
       name: "{{ network.dhcp.name }}"
-    user_uuid_list:
+    users:
       - "{{ users[0] }}"
       - "{{ users[1] }}"
-    external_user_group_uuid_list:
+    external_user_groups:
       - "{{ user_groups[0] }}"
     resource_limits:
       - resource_type: STORAGE
@@ -260,22 +260,22 @@ def get_module_spec():
         resource_limits=dict(
             type="list", elements="dict", options=resource_limit, required=False
         ),
-        default_subnet_reference=dict(
+        default_subnet=dict(
             type="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        subnet_reference_list=dict(
+        subnets=dict(
             type="list",
             elements="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        cluster_uuid_list=dict(type="list", elements="str", required=False),
-        user_uuid_list=dict(type="list", elements="str", required=False),
-        external_user_group_uuid_list=dict(type="list", elements="str", required=False),
+        clusters=dict(type="list", elements="str", required=False),
+        users=dict(type="list", elements="str", required=False),
+        external_user_groups=dict(type="list", elements="str", required=False),
     )
     return module_args
 

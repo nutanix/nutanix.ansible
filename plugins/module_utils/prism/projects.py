@@ -20,11 +20,11 @@ class Projects(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "resource_limits": self._build_spec_resource_limits,
-            "cluster_uuid_list": self._build_spec_cluster_reference_list,
-            "default_subnet_reference": self._build_spec_default_subnet_reference,
-            "subnet_reference_list": self._build_spec_subnet_reference_list,
-            "user_uuid_list": self._build_spec_user_reference_list,
-            "external_user_group_uuid_list": self._build_spec_external_user_group_reference_list,
+            "clusters": self._build_spec_cluster_reference_list,
+            "default_subnet": self._build_spec_default_subnet,
+            "subnets": self._build_spec_subnets,
+            "users": self._build_spec_user_reference_list,
+            "external_user_groups": self._build_spec_external_user_group_reference_list,
         }
 
 
@@ -60,7 +60,7 @@ class Projects(Prism):
         payload["spec"]["resources"]["cluster_reference_list"] = cluster_reference_specs
         return payload, None
 
-    def _build_spec_default_subnet_reference(self, payload, subnet_ref):
+    def _build_spec_default_subnet(self, payload, subnet_ref):
         uuid, err = get_subnet_uuid(subnet_ref, self.module)
         if err:
             return None, err
@@ -70,7 +70,7 @@ class Projects(Prism):
         ] = Subnet.build_subnet_reference_spec(uuid)
         return payload, None
 
-    def _build_spec_subnet_reference_list(self, payload, subnet_ref_list):
+    def _build_spec_subnets(self, payload, subnet_ref_list):
         subnet_reference_specs = []
         for ref in subnet_ref_list:
             uuid, err = get_subnet_uuid(ref, self.module)
@@ -80,18 +80,18 @@ class Projects(Prism):
         payload["spec"]["resources"]["subnet_reference_list"] = subnet_reference_specs
         return payload, None
 
-    def _build_spec_user_reference_list(self, payload, user_uuid_list):
+    def _build_spec_user_reference_list(self, payload, users):
         user_reference_specs = []
-        for uuid in user_uuid_list:
+        for uuid in users:
             user_reference_specs.append(Users.build_user_reference_spec(uuid))
         payload["spec"]["resources"]["user_reference_list"] = user_reference_specs
         return payload, None
 
     def _build_spec_external_user_group_reference_list(
-        self, payload, ext_user_uuid_list
+        self, payload, ext_users
     ):
         user_groups_reference_specs = []
-        for uuid in ext_user_uuid_list:
+        for uuid in ext_users:
             user_groups_reference_specs.append(
                 UserGroups.build_user_group_reference_spec(uuid)
             )
