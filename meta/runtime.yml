@@ -40,3 +40,9 @@ action_groups:
   - ntnx_categories
   - ntnx_acps
   - ntnx_acps_info
+  - ntnx_users
+  - ntnx_users_info
+  - ntnx_service_groups
+  - ntnx_service_groups_info
+  - ntnx_user_groups_info
+  - ntnx_user_groups
