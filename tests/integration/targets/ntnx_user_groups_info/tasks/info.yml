@@ -44,7 +44,7 @@
 - name: test getting particular user groups using filter
   ntnx_user_groups_info:
     filter:
-        group_name: "{{ user_groups.response.entities[0].status.resources.display_name }}" #"sspgroupqa1"
+        group_name: "{{ user_groups.response.entities[0].status.resources.display_name }}"
   register: result
   ignore_errors: True
 

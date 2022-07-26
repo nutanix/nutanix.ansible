@@ -5,6 +5,11 @@
 - name: create user  group
   ntnx_user_groups:
     distinguished_name: "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+    project:
+      uuid: "{{project_uuid}}"
+    categories:
+      Environment:
+        - "Dev"
   register: result
   ignore_errors: true
 
@@ -16,6 +21,7 @@
       - result.changed == true
       - result.response.status.state == "COMPLETE"
       - result.user_group_uuid is defined
+      - result.response.metadata.project_reference.uuid == "{{project_uuid}}"
       - result.response.status.resources.directory_service_user_group.distinguished_name == "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
     fail_msg: "Unable to create user  group  "
     success_msg: "user  group created successfully"
@@ -41,7 +47,7 @@
 - name: create user group with idp
   ntnx_user_groups:
     idp:
-      idp_uuid: "40fe7aeb-f420-5aee-ba42-cfc2369bc1ec"
+      idp_uuid: "{{idp_uuid}}"
       group_name: test_group_987
   register: result
   ignore_errors: true

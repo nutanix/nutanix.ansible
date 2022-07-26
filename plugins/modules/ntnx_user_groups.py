@@ -56,23 +56,23 @@ options:
         default: false
     idp:
         type: dict
-        description: write
+        description: An Identity Provider user
         suboptions:
             idp_uuid:
                 type: str
                 required: true
-                description: write
+                description: An Identity Provider user uuid
             group_name:
                 type: str
                 required: true
-                description: write
+                description: group name
     project:
         type: dict
-        description: write
+        description: project that belongs to
         suboptions:
             name:
-                type: project name
-                description: write
+                type: str
+                description: project name
             uuid:
                 type: str
                 description: project uuid
@@ -86,7 +86,35 @@ author:
 """
 
 EXAMPLES = r"""
+- name: create image from local workstation
+  ntnx_images:
 
+- name: create user  group
+  ntnx_user_groups:
+    state: "present"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    distinguished_name: "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+    project:
+      uuid: "{{project_uuid}}"
+    categories:
+      Environment:
+        - "Dev"
+  register: result
+
+- name: create user group with idp
+  ntnx_user_groups:
+    state: "present"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: False
+    idp:
+      idp_uuid: "{{idp_uuid}}"
+      group_name: "{{group_name}}"
+  register: result
 """
 
 RETURN = r"""

@@ -85,8 +85,85 @@ entities:
   returned: always
   type: list
   sample: [
-    #TODO
-  ]
+                {
+                    "metadata": {
+                        "categories": {},
+                        "categories_mapping": {},
+                        "kind": "user_group",
+                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "spec_version": 0,
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec": {
+                        "resources": {
+                            "directory_service_user_group": {
+                                "distinguished_name": "CN=test_custom_{_group_},CN=Users,DC=qa,DC=nucalm,DC=io"
+                            }
+                        }
+                    },
+                    "status": {
+                        "execution_context": {
+                            "task_uuid": [
+                               "00000000-0000-0000-0000-000000000000"
+                            ]
+                        },
+                        "resources": {
+                            "access_control_policy_reference_list": [],
+                            "directory_service_user_group": {
+                                "directory_service_reference": {
+                                    "kind": "directory_service",
+                                    "name": "qanucalm",
+                                    "uuid": "00000000-0000-0000-0000-000000000000"
+                                },
+                                "distinguished_name": "cn=test_custom_{_group_},cn=users,dc=qa,dc=nucalm,dc=io"
+                            },
+                            "display_name": "test_custom_{_group_}",
+                            "projects_reference_list": [],
+                            "user_group_type": "DIRECTORY_SERVICE"
+                        },
+                        "state": "COMPLETE"
+                    }
+                },
+                {
+                    "metadata": {
+                        "categories": {},
+                        "categories_mapping": {},
+                        "kind": "user_group",
+                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "spec_version": 1,
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec": {
+                        "resources": {
+                            "directory_service_user_group": {
+                                "distinguished_name": "cn=sspgroupqa4,cn=users,dc=qa,dc=nucalm,dc=io"
+                            }
+                        }
+                    },
+                    "status": {
+                        "execution_context": {
+                            "task_uuid": [
+                               "00000000-0000-0000-0000-000000000000"
+                            ]
+                        },
+                        "resources": {
+                            "access_control_policy_reference_list": [],
+                            "directory_service_user_group": {
+                                "directory_service_reference": {
+                                    "kind": "directory_service",
+                                    "name": "qanucalm",
+                                    "uuid": "00000000-0000-0000-0000-000000000000"
+                                },
+                                "distinguished_name": "cn=sspgroupqa4,cn=users,dc=qa,dc=nucalm,dc=io"
+                            },
+                            "display_name": "sspgroupqa4",
+                            "projects_reference_list": [],
+                            "user_group_type": "DIRECTORY_SERVICE"
+                        },
+                        "state": "PENDING"
+                    }
+                }
+            ]
 """
 
 
