@@ -69,6 +69,7 @@ class Users(Prism):
             "name": config.get("name"),
             "uuid": config.get("uuid"),
         }
+        payload["spec"]["resources"].pop("identity_provider_user")
         return payload, None
 
     def _build_spec_username(self, payload, config):
@@ -83,4 +84,5 @@ class Users(Prism):
             "name": config.get("name"),
             "uuid": config.get("uuid"),
         }
+        payload["spec"]["resources"].pop("directory_service_user")
         return payload, None
