@@ -27,7 +27,6 @@ class Projects(Prism):
             "external_user_groups": self._build_spec_external_user_group_reference_list,
         }
 
-
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -87,9 +86,7 @@ class Projects(Prism):
         payload["spec"]["resources"]["user_reference_list"] = user_reference_specs
         return payload, None
 
-    def _build_spec_external_user_group_reference_list(
-        self, payload, ext_users
-    ):
+    def _build_spec_external_user_group_reference_list(self, payload, ext_users):
         user_groups_reference_specs = []
         for uuid in ext_users:
             user_groups_reference_specs.append(

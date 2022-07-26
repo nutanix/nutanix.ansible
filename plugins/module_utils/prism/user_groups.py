@@ -13,6 +13,7 @@ from .spec.categories_mapping import CategoriesMapping
 
 class UserGroups(Prism):
     kind = "user_group"
+
     def __init__(self, module):
         resource_type = "/user_groups"
         super(UserGroups, self).__init__(module, resource_type=resource_type)
@@ -67,7 +68,7 @@ class UserGroups(Prism):
             "idpUuid": config["idp_uuid"],
         }
         return payload, None
-    
+
     @classmethod
     def build_user_group_reference_spec(cls, uuid):
         spec = {"kind": cls.kind, "uuid": uuid}

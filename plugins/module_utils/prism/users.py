@@ -26,7 +26,7 @@ class Users(Prism):
             "categories": CategoriesMapping.build_categories_mapping_spec,
             "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
         }
-    
+
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -58,36 +58,43 @@ class Users(Prism):
         return payload, None
 
     def _build_spec_principal_name(self, payload, config):
-        payload["spec"]["resources"]["directory_service_user"].update({
-            "user_principal_name": config,
-        })
+        payload["spec"]["resources"]["directory_service_user"].update(
+            {
+                "user_principal_name": config,
+            }
+        )
         return payload, None
 
     def _build_spec_directory_service(self, payload, config):
-        payload["spec"]["resources"]["directory_service_user"].update({
-            "directory_service_reference":
-                {
+        payload["spec"]["resources"]["directory_service_user"].update(
+            {
+                "directory_service_reference": {
                     "kind": "directory_service",
                     "uuid": config,
                 }
-        })
+            }
+        )
         payload["spec"]["resources"].pop("identity_provider_user")
         return payload, None
 
     def _build_spec_username(self, payload, config):
-        payload["spec"]["resources"]["identity_provider_user"].update({"username": config})
+        payload["spec"]["resources"]["identity_provider_user"].update(
+            {"username": config}
+        )
         return payload, None
 
     def _build_spec_identity_provider(self, payload, config):
-        payload["spec"]["resources"]["identity_provider_user"].update({
-            "identity_provider_reference": {
-                "kind": "identity_provider",
-                "uuid": config,
+        payload["spec"]["resources"]["identity_provider_user"].update(
+            {
+                "identity_provider_reference": {
+                    "kind": "identity_provider",
+                    "uuid": config,
+                }
             }
-        })
+        )
         payload["spec"]["resources"].pop("directory_service_user")
         return payload, None
-    
+
     @classmethod
     def build_user_reference_spec(cls, uuid):
         spec = {"kind": cls.kind, "uuid": uuid}
