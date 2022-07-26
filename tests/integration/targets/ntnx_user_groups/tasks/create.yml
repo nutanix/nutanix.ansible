@@ -4,7 +4,7 @@
 
 - name: create user  group
   ntnx_user_groups:
-    name: "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+    distinguished_name: "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
   register: result
   ignore_errors: true
 
@@ -36,3 +36,41 @@
       - result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
     success_msg: "user  group deletd successfully"
+
+
+- name: create user group with idp
+  ntnx_user_groups:
+    idp:
+      idp_uuid: "40fe7aeb-f420-5aee-ba42-cfc2369bc1ec"
+      group_name: test_group_987
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.status.state == "COMPLETE"
+      - result.user_group_uuid is defined
+      - result.response.status.resources.display_name == "test_group_987"
+    fail_msg: "Unable to create user  group with idp  "
+    success_msg: "user  group with idp created successfully"
+
+- name: delete user group
+  ntnx_user_groups:
+    state: absent
+    user_group_uuid: "{{result.user_group_uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.status.state == "DELETE_PENDING"
+    fail_msg: "Unable to delete user  group with idp  "
+    success_msg: "user  group with idp deleted successfully"

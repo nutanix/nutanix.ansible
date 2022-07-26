@@ -32,7 +32,7 @@ options:
         type: bool
         required: false
         default: True
-    name:
+    distinguished_name:
         description: user_group name
         required: false
         type: str
@@ -54,6 +54,28 @@ options:
         type: bool
         required: false
         default: false
+    idp:
+        type: dict
+        description: write
+        suboptions:
+            idp_uuid:
+                type: str
+                required: true
+                description: write
+            group_name:
+                type: str
+                required: true
+                description: write
+    project:
+        type: dict
+        description: write
+        suboptions:
+            name:
+                type: project name
+                description: write
+            uuid:
+                type: str
+                description: project uuid
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -78,39 +100,57 @@ metadata:
   returned: always
   type: dict
   sample: {
-                "categories": {
-                    "AppFamily": "Backup"
-                },
-                "categories_mapping": {
-                    "AppFamily": [
-                        "Backup"
-                    ]
-                },
-                "creation_time": "2022-06-09T10:13:38Z",
+                "categories": {},
+                "categories_mapping": {},
                 "kind": "user_group",
-                "last_update_time": "2022-06-09T10:37:14Z",
                 "owner_reference": {
-                    "kind": "user_group",
+                    "kind": "user",
                     "name": "admin",
                     "uuid": "00000000-0000-0000-0000-000000000000"
                 },
                 "spec_hash": "00000000000000000000000000000000000000000000000000",
-                "spec_version": 14,
+                "spec_version": 0,
                 "uuid": "00000000-0000-0000-0000-000000000000"
+
             }
 spec:
   description: An intentful representation of a user_group spec
   returned: always
   type: dict
   sample: {
-  #TODO
+    "resources": {
+                        "directory_service_user_group": {
+                            "distinguished_name": "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+                        }
+                    }
+
   }
 status:
   description: An intentful representation of a user_group status
   returned: always
   type: dict
   sample: {
-  #TODO
+"execution_context": {
+                    "task_uuid": [
+                        "00000000-0000-0000-0000-000000000000"
+                    ]
+                },
+                "resources": {
+                    "access_control_policy_reference_list": [],
+                    "directory_service_user_group": {
+                        "directory_service_reference": {
+                            "kind": "directory_service",
+                            "name": "qanucalm",
+                            "uuid": "00000000-0000-0000-0000-000000000000"
+                        },
+                        "distinguished_name": "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io"
+                    },
+                    "display_name": "sspadmins",
+                    "projects_reference_list": [],
+                    "user_group_type": "DIRECTORY_SERVICE"
+                },
+                "state": "COMPLETE"
+
   }
 user_group_uuid:
   description: The created user_group uuid

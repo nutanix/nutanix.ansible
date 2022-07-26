@@ -27,10 +27,7 @@ class UserGroups(Prism):
         return deepcopy(
             {
                 "metadata": {"kind": "user_group"},
-                "spec": {
-                    "resources": {
-                    }
-                },
+                "spec": {"resources": {}},
             }
         )
 
@@ -53,9 +50,13 @@ class UserGroups(Prism):
 
     def _build_spec_user_distinguished_name(self, payload, config):
         if "ou=" in config:
-            payload["spec"]["resources"]["directory_service_ou"] = {"distinguished_name": config}
+            payload["spec"]["resources"]["directory_service_ou"] = {
+                "distinguished_name": config
+            }
         else:
-            payload["spec"]["resources"]["directory_service_user_group"] = {"distinguished_name": config}
+            payload["spec"]["resources"]["directory_service_user_group"] = {
+                "distinguished_name": config
+            }
 
         return payload, None
 
@@ -63,5 +64,5 @@ class UserGroups(Prism):
         payload["spec"]["resources"]["saml_user_group"] = {
             "name": config["group_name"],
             "idpUuid": config["idp_uuid"],
-                                                           }
+        }
         return payload, None
