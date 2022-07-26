@@ -1,0 +1,55 @@
+---
+- debug:
+    msg: Start testing ntnx_hosts_info
+
+- name: test getting all hosts
+  ntnx_hosts_info:
+  register: hosts
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - hosts.response is defined
+      - hosts.failed == false
+      - hosts.changed == false
+      - hosts.response.entities[0].metadata.uuid is defined
+    fail_msg: "Unable to list all hosts"
+    success_msg: "hosts listed successfully"
+
+
+- name: test getting particular host using uuid
+  ntnx_hosts_info:
+    host_uuid: '{{ hosts.response.entities[0].metadata.uuid }}'
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.status.state == "COMPLETE"
+      - result.response.metadata.uuid == "{{ hosts.response.entities[0].metadata.uuid }}"
+    fail_msg: "Unable to get particular host"
+    success_msg: "host info obtained successfully"
+
+
+- name: List hosts using length, offset, sort order and name sort attribute
+  ntnx_hosts_info:
+    length: 2
+    offset: 0
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.entities[0].metadata.uuid is defined
+    fail_msg: "Unable to list all host"
+    success_msg: "hosts listed successfully"

@@ -275,7 +275,7 @@ from ..module_utils.prism.static_routes import StaticRoutes  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
     remove_param_with_none_value,
-    strip_extra_attrs_from_status,
+    strip_extra_attrs,
 )
 
 
@@ -330,7 +330,7 @@ def update_static_routes(module, result):
             "status"
         ]["resources"]["default_route"]["nexthop"]
 
-    strip_extra_attrs_from_status(curr_routes["status"], curr_routes["spec"])
+    strip_extra_attrs(curr_routes["status"], curr_routes["spec"])
     curr_routes["spec"] = curr_routes.pop("status")
 
     # new spec for updating static routes

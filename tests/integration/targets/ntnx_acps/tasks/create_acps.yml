@@ -108,15 +108,30 @@
       - "{{ user_group_uuid }}"
     filters:
       - scope_filter:
-          - 
-            lhs: PROJECT
+          - lhs: PROJECT
             operator: IN
             rhs:
               uuid_list:
                 - "{{ project.uuid }}"
         entity_filter:
-          - 
-            lhs: ALL
+          - lhs: image
+            operator: IN
+            rhs:
+              collection: ALL
+          - lhs: subnet
+            operator: IN
+            rhs:
+              uuid_list:
+                  - "{{ network.dhcp.uuid }}"
+      - scope_filter:
+          - lhs: CATEGORY
+            operator: IN
+            rhs:
+              categories:
+                Environment:
+                  - "Dev"
+        entity_filter:
+          - lhs: vm
             operator: IN
             rhs:
               collection: ALL
