@@ -31,7 +31,7 @@ def get_module_spec():
         address_group_uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        subnet_details=dict(
+        subnets=dict(
             type="list", elements="dict", options=subnet_detail, required=False
         ),
     )
@@ -107,7 +107,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "present", ("name", "address_group_uuid"), True),
-            ("state", "present", ("subnet_details", "address_group_uuid"), True),
+            ("state", "present", ("subnets", "address_group_uuid"), True),
             ("state", "absent", ("address_group_uuid",)),
         ],
     )

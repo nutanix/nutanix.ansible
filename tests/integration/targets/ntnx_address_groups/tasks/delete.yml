@@ -7,7 +7,7 @@
     state: present
     name: test-ansible-address-group-4
     desc: test-ansible-address-group-4-desc
-    subnet_details:
+    subnets:
       - network_ip: "10.0.1.0"
         network_prefix: 24
   register: test_ag

@@ -169,6 +169,6 @@
       state: present
       name: dest
       desc: dest
-      subnet_details:
+      subnets:
         - network_ip: "10.1.1.0"
           network_prefix: 24

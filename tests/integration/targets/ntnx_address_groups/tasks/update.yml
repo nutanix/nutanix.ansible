@@ -9,7 +9,7 @@
     state: present
     name: test-ansible-address-group-3
     desc: test-ansible-address-group-3-desc
-    subnet_details:
+    subnets:
       - network_ip: "10.1.1.0"
         network_prefix: 24
       - network_ip: "10.1.2.1"
@@ -33,7 +33,7 @@
     address_group_uuid: "{{test_ag.address_group_uuid}}"
     name: test-ansible-address-group-3-updated
     desc: test-ansible-address-group-3-desc-updated
-    subnet_details:
+    subnets:
       - network_ip: "10.1.3.1"
         network_prefix: 32
   register: result
@@ -61,7 +61,7 @@
     address_group_uuid: "{{test_ag.address_group_uuid}}"
     name: test-ansible-address-group-3-updated
     desc: test-ansible-address-group-3-desc-updated
-    subnet_details:
+    subnets:
       - network_ip: "10.1.3.1"
         network_prefix: 32
   register: result
@@ -85,7 +85,7 @@
     address_group_uuid: "{{test_ag.address_group_uuid}}"
     name: test-ansible-address-group-3
     desc: test-ansible-address-group-3-desc
-    subnet_details:
+    subnets:
       - network_ip: "10.1.1.0"
         network_prefix: 24
       - network_ip: "10.1.2.1"

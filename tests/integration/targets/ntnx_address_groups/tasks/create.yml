@@ -7,7 +7,7 @@
     state: present
     name: test-ansible-group-1
     desc: test-ansible-group-1-desc
-    subnet_details:
+    subnets:
       - network_ip: "10.1.1.0"
         network_prefix: 24
       - network_ip: "10.1.2.2"
@@ -39,7 +39,7 @@
   ntnx_address_groups:
     state: present
     name: test-ansible-group-1
-    subnet_details:
+    subnets:
       - network_ip: "10.1.1.0"
         network_prefix: 24
   register: result
@@ -61,7 +61,7 @@
     state: present
     name: test-ansible-address-group-2
     desc: test-ansible-address-group-2-desc
-    subnet_details:
+    subnets:
       - network_ip: "10.1.1.0"
         network_prefix: 24
       - network_ip: "10.1.2.2"
