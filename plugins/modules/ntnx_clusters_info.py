@@ -41,16 +41,13 @@ EXAMPLES = r"""
       kind: cluster
     register: result
 
-  - name: List clusters using length, offset, sort order and priority sort attribute
+  - name: test getting particular cluster using uuid
     ntnx_clusters_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 2
-      offset: 0
-      sort_order: "name"
-      sort_attribute: "priority"
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False
+        cluster_uuid: cluster_uuid
     register: result
 """
 RETURN = r"""

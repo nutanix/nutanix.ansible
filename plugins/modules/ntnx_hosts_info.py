@@ -32,7 +32,7 @@ author:
   - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List hosts using priority filter criteria
+  - name: List hosts
     ntnx_hosts_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
@@ -41,18 +41,14 @@ EXAMPLES = r"""
       kind: host
     register: result
 
-  - name: List hosts using length, offset, sort order and name sort attribute
+  - name: test getting particular host using uuid
     ntnx_hosts_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 2
-      offset: 0
-      sort_order: "ASCENDING"
-      sort_attribute: "nama"
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False
+        host_uuid: <host-uuid>
     register: result
-
 """
 RETURN = r"""
 api_version:
