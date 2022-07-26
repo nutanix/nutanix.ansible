@@ -51,14 +51,14 @@ class ServiceGroup(Prism):
         if config.get("tcp"):
             service = {}
             service["protocol"] = "TCP"
-            port_range_list = self._generate_port_range_list(config["tcp"])
+            port_range_list = self.generate_port_range_list(config["tcp"])
             service["tcp_port_range_list"] = port_range_list
             service_list.append(service)
 
         if config.get("udp"):
             service = {}
             service["protocol"] = "UDP"
-            port_range_list = self._generate_port_range_list(config["udp"])
+            port_range_list = self.generate_port_range_list(config["udp"])
             service["udp_port_range_list"] = port_range_list
             service_list.append(service)
 
@@ -78,7 +78,7 @@ class ServiceGroup(Prism):
         return payload, None
 
     @staticmethod
-    def _generate_port_range_list(config):
+    def generate_port_range_list(config):
         port_range_list = []
         if "*" not in config:
             for port in config:
