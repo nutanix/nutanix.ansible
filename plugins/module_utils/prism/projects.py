@@ -3,14 +3,13 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
+__metaclass__ = type
+
+from .prism import Prism
 from .user_groups import UserGroups
 from .subnets import Subnet, get_subnet_uuid
 from .users import Users
 from .clusters import Cluster
-
-__metaclass__ = type
-
-from .prism import Prism
 
 
 class Projects(Prism):
@@ -28,11 +27,6 @@ class Projects(Prism):
             "external_user_group_uuid_list": self._build_spec_external_user_group_reference_list,
         }
 
-    def validate_project_name_exists(self, name):
-        uuid = self.get_uuid(name)
-        if uuid:
-            return True
-        return False
 
     def _get_default_spec(self):
         return deepcopy(
