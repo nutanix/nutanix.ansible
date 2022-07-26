@@ -76,22 +76,7 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
+      - result.response.entities | length == 1
     fail_msg: "Unable to list roles using length and offset"
     success_msg: "roles listed successfully using length and offset"
 ##################################################
-- name: List roles using ascending name sorting
-  ntnx_roles_info:
-    sort_order: "ASCENDING"
-    sort_attribute: "name"
-    kind: role
-  register: result
-  ignore_errors: True
-
-- name: Listing Status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-    fail_msg: "Unable to list roles using ascending name sorting"
-    success_msg: "roles listed successfully using ascending name sorting"

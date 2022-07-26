@@ -92,27 +92,9 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
+      - result.response.entities | length == 1
     fail_msg: "Unable to list address groups using length and offset"
     success_msg: "address groups listed successfully using length and offset"
-
-##################################################
-
-- name: List address groups using ascending name sorting
-  ntnx_address_groups_info:
-    sort_order: "ASCENDING"
-    sort_attribute: "name"
-    kind: address_group
-  register: result
-  ignore_errors: True
-
-- name: Listing Status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-    fail_msg: "Unable to list address group using ascending name sorting"
-    success_msg: "address group listed successfully using ascending name sorting"
 
 ##################################################
 
