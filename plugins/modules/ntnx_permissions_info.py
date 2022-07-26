@@ -56,7 +56,7 @@ api_version:
 metadata:
   description:
     - Metadata for permission list output
-    - Below struct is only obtained when we use filters or list all permissions
+    - Below struct is only obtained when we use filters or list permissions using length, etc.
   returned: always
   type: dict
   sample:   {
@@ -68,7 +68,7 @@ metadata:
 entities:
   description:
     - permission intent response
-    - Below struct is only obtained when we use filters or list all permissions
+    - Below struct is only obtained when we use filters or list permissions using length, etc.
   returned: always
   type: list
   sample: [

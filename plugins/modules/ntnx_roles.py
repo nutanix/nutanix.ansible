@@ -8,12 +8,166 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_roles
+short_description: module which supports role CRUD operations
+version_added: 1.4.0
+description: "Create, Update, Delete Nutanix roles"
+options:
+    state:
+        description:
+            - when C(state)=present and role uuid is not given then it will create new role
+            - when C(state)=present and role uuid given then it will update the role
+            - when C(state)=absent, it will delete the role
+    name:
+        description:
+            - name of the role
+            - allowed to update
+            - required for creating role
+        required: false
+        type: str
+    role_uuid:
+        description:
+            - uuid of the role
+            - only required while updating or deleting
+        required: false
+        type: str
+    desc:
+        description:
+            - description of role
+            - allowed to update
+        required: false
+        type: str
+    permissions:
+        description:
+            - list of details of permission to be added in role
+            - required while creating new role
+            - allowed to update
+            - more than or equal to one permission is always required, empty list is not considered
+            - during update, if used, it will override the permission list of role
+        required: false
+        type: list
+        elements: dict
+        suboptions:
+            uuid:
+                type: str
+                description:
+                    - permission uuid.
+                    - Mutually exclusive with C(name).
+            name:
+                description:
+                    - permission name.
+                    - Mutually exclusive with C(uuid).
+                type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_operations
+author:
+  - Prem Karat (@premkarat)
+  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
+
+- name: Create roles with permissions
+  ntnx_roles:
+    state: present
+    name: test-ansible-role-1
+    desc: test-ansible-role-1-desc
+    permissions:
+      - name: "<permision-1-name>"
+      - uuid: "<permission-2-uuid>"
+      - uuid: "<permission-3-uuid>"
+    wait: true
+  register: result
+
+- name: delete role
+  ntnx_roles:
+    state: absent
+    role_uuid: "<role-uuid>"
+  register: result
 """
 
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The role kind metadata from creation of new role
+  returned: always
+  type: dict
+  sample:  {
+                "categories": {},
+                "categories_mapping": {},
+                "creation_time": "2022-07-26T08:25:00Z",
+                "entity_version": "",
+                "kind": "role",
+                "last_update_time": "2022-07-26T08:25:01Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_hash": "00000000000000000000000000000000000000000000000000",
+                "spec_version": 0,
+                "uuid": "5d7bv3ab-d825-4cfd-879c-ec7a86a82cfd"
+            }
+spec:
+  description: An intentful representation of a role spec from creation of new role
+  returned: always
+  type: dict
+  sample: {
+                "description": "check123",
+                "name": "test-ansible",
+                "resources": {
+                    "permission_reference_list": [
+                        {
+                            "kind": "permission",
+                            "uuid": "190951de-26f1-4caf-760d-df81c3c2jn3j2"
+                        },
+                        {
+                            "kind": "permission",
+                            "uuid": "fcf661c5-2253-44a9-7ddd-e10c23424324"
+                        }
+                    ]
+                }
+            }
+status:
+  description: An intentful representation of a role status from creation of role
+  returned: always
+  type: dict
+  sample: {
+                "description": "check123",
+                "execution_context": {
+                    "task_uuid": [
+                        "asdasdsd-3e01-42e3-9276-d75571273f89"
+                    ]
+                },
+                "is_system_defined": false,
+                "name": "test-ansible",
+                "resources": {
+                    "permission_reference_list": [
+                        {
+                            "kind": "permission",
+                            "name": "perm1",
+                            "uuid": "190951de-26f1-4caf-760d-df81c3c2jn3j2"
+                        },
+                        {
+                            "kind": "permission",
+                            "name": "perm2",
+                            "uuid": "fcf661c5-2253-44a9-7ddd-e10c23424324"
+                        }
+                    ]
+                },
+                "state": "COMPLETE"
+            }
+role_uuid:
+  description: The created role uuid
+  returned: always
+  type: str
+  sample: "5d7bv3ab-d825-4cfd-879c-ec7a86a82cfd"
 """
 
 from ..module_utils import utils  # noqa: E402
