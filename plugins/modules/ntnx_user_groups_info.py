@@ -10,16 +10,16 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_user_groups_info
-short_description: user groups info module
+short_description: User Groups info module
 version_added: 1.4.0
-description: 'Get user groups info'
+description: 'Get User Groups info'
 options:
     kind:
       description:
         - The kind name
       type: str
       default: user_group
-    user_group_uuid:
+    usergroup_uuid:
         description:
             - user group UUID
         type: str
@@ -28,25 +28,40 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_info
 author:
  - Prem Karat (@premkarat)
- - Pradeepsingh Bhati (@bhati-pradeep)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-- name: List user_groups using user_group uuid criteria
-  ntnx_user_groups_info:
-    user_group_uuid: "{{ test_user_group_uuid }}"
-  register: result
-  ignore_errors: True
+  - name: List user groups using name filter criteria
+    ntnx_user_groups_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      filter:
+        group_name: "{{ name }}"
+    register: result
 
-- name: List all user groups
-  ntnx_user_groups_info:
-  register: user_groups
+  - name: List user groups using length, offset, sort order and sort attribute
+    ntnx_user_groups_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      length: 2
+      offset: 1
+      sort_order: "DESCENDING"
+      sort_attribute: "group_name"
+    register: result
 
-- name: List user_groups using filter criteria
-  ntnx_user_groups_info:
-    filter:
-      group_name: "{{ test_user_group_name }}"
-  register: result
+  - name: test getting particular user group using uuid
+    ntnx_user_groups_info:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False
+        usergroup_uuid: '{{ uuid  }}'
+    register: result
 """
 RETURN = r"""
 api_version:
@@ -55,23 +70,19 @@ api_version:
   type: str
   sample: "3.1"
 metadata:
-  description:
-    - Metadata for user group list output
-    - Below response struct is for user groups info using filters
-  returned: Only when listed using filter
+  description: Metadata for user groups list output
+  returned: always
   type: dict
   sample: {
-                "filter": "user_group==xx@xx.com",
-                "kind": "user_group",
-                "length": 1,
+                "filter": "group_name=={{name}}",
+                "kind": "user",
+                "length": 2,
                 "offset": 0,
-                "total_matches": 1
+                "total_matches": 2
             }
 entities:
-  description:
-    - user groups intent response
-    - Below response struct is for user groups info using filters
-  returned: Only when all user groups are listed or using filter
+  description: user groups intent response
+  returned: always
   type: list
   sample: [
                 {
@@ -81,31 +92,75 @@ entities:
                         "kind": "user_group",
                         "spec_hash": "00000000000000000000000000000000000000000000000000",
                         "spec_version": 0,
-                        "uuid": "f7f476ca-e971-42d3-b56b-578b729d6673"
+                        "uuid": "00000000-0000-0000-0000-000000000000"
                     },
-                    "spec": {},
+                    "spec": {
+                        "resources": {
+                            "directory_service_user_group": {
+                                "distinguished_name": "CN=test_custom_{_group_},CN=Users,DC=ad,DC=ds,DC=io"
+                            }
+                        }
+                    },
                     "status": {
+                        "execution_context": {
+                            "task_uuid": [
+                               "00000000-0000-0000-0000-000000000000"
+                            ]
+                        },
                         "resources": {
                             "access_control_policy_reference_list": [],
                             "directory_service_user_group": {
                                 "directory_service_reference": {
                                     "kind": "directory_service",
-                                    "name": "xx",
-                                    "uuid": "ca6c1ed6-33cb-441d-92fe-64cb0229751f"
+                                    "name": "ds",
+                                    "uuid": "00000000-0000-0000-0000-000000000000"
                                 },
-                                "distinguished_name": "xx,xx,xx,xx"
+                                "distinguished_name": "cn=test_custom_{_group_},cn=users,dc=ad,dc=ds,dc=io"
                             },
-                            "display_name": "xxx",
-                            "projects_reference_list": [
-                                {
-                                    "kind": "project",
-                                    "name": "test-project",
-                                    "uuid": "s675ede4-0b59-43b4-8e94-bb001d4acad8"
-                                }
-                            ],
+                            "display_name": "test_custom_{_group_}",
+                            "projects_reference_list": [],
                             "user_group_type": "DIRECTORY_SERVICE"
                         },
                         "state": "COMPLETE"
+                    }
+                },
+                {
+                    "metadata": {
+                        "categories": {},
+                        "categories_mapping": {},
+                        "kind": "user_group",
+                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "spec_version": 1,
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec": {
+                        "resources": {
+                            "directory_service_user_group": {
+                                "distinguished_name": "<distinguished-name>"
+                            }
+                        }
+                    },
+                    "status": {
+                        "execution_context": {
+                            "task_uuid": [
+                               "00000000-0000-0000-0000-000000000000"
+                            ]
+                        },
+                        "resources": {
+                            "access_control_policy_reference_list": [],
+                            "directory_service_user_group": {
+                                "directory_service_reference": {
+                                    "kind": "directory_service",
+                                    "name": "qanucalm",
+                                    "uuid": "00000000-0000-0000-0000-000000000000"
+                                },
+                                "distinguished_name": "<distinugished-name>"
+                            },
+                            "display_name": "name1",
+                            "projects_reference_list": [],
+                            "user_group_type": "DIRECTORY_SERVICE"
+                        },
+                        "state": "PENDING"
                     }
                 }
             ]
@@ -120,7 +175,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
-        user_group_uuid=dict(type="str"),
+        usergroup_uuid=dict(type="str"),
         kind=dict(type="str", default="user_group"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
@@ -130,19 +185,19 @@ def get_module_spec():
 
 
 def get_user_group(module, result):
-    user_groups = UserGroups(module)
-    uuid = module.params.get("user_group_uuid")
-    resp = user_groups.read(uuid)
+    user_group = UserGroups(module)
+    uuid = module.params.get("usergroup_uuid")
+    resp = user_group.read(uuid)
     result["response"] = resp
 
 
 def get_user_groups(module, result):
-    user_groups = UserGroups(module)
-    spec, err = user_groups.get_info_spec()
+    user_group = UserGroups(module)
+    spec, err = user_group.get_info_spec()
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating User group info Spec", **result)
-    resp = user_groups.list(spec)
+        module.fail_json(msg="Failed generating user groups info Spec", **result)
+    resp = user_group.list(spec)
     result["response"] = resp
 
 
@@ -152,12 +207,12 @@ def run_module():
         supports_check_mode=False,
         required_together=[("sort_order", "sort_attribute")],
         mutually_exclusive=[
-            ("user_group_uuid", "filter"),
+            ("usergroup_uuid", "filter"),
         ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("user_group_uuid"):
+    if module.params.get("usergroup_uuid"):
         get_user_group(module, result)
     else:
         get_user_groups(module, result)

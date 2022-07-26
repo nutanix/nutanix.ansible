@@ -3,6 +3,7 @@ requires_ansible: '>=2.11.6'
 action_groups:
   ntnx:
   - ntnx_floating_ips
+  - ntnx_hosts_info
   - ntnx_images
   - ntnx_image_placement_policy
   - ntnx_pbrs
@@ -14,6 +15,7 @@ action_groups:
   - ntnx_vms_clone
   - ntnx_vms
   - ntnx_vpcs
+  - ntnx_clusters_info
   - ntnx_floating_ips_info
   - ntnx_images_info
   - ntnx_image_placement_policies_info
@@ -38,4 +40,13 @@ action_groups:
   - ntnx_foundation_central_imaged_clusters_info
   - ntnx_foundation_central_api_keys
   - ntnx_foundation_central_api_keys_info
-  - ntnx_projects_info
+  - ntnx_categories_info
+  - ntnx_categories
+  - ntnx_acps
+  - ntnx_acps_info
+  - ntnx_users
+  - ntnx_users_info
+  - ntnx_service_groups
+  - ntnx_service_groups_info
+  - ntnx_user_groups_info
+  - ntnx_user_groups

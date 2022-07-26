@@ -857,7 +857,7 @@ def update_vm(module, result):
     vm = VM(module)
     resp = vm.read(vm_uuid)
     result["response"] = resp
-    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    utils.strip_extra_attrs(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
     spec, error = vm.get_spec(resp)
 

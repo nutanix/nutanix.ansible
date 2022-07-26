@@ -28,25 +28,41 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_info
 author:
  - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Pradeepsingh Bhati (@bhati-pradeep)
  - Alaa Bishtawi (@alaa-bish)
 """
-
 EXAMPLES = r"""
-- name: List all users
-  ntnx_users_info:
-  register: users
+  - name: List users using name filter criteria
+    ntnx_users_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      filter:
+        username: "{{ name }}"
+    register: result
 
-- name: List users using user uuid criteria
-  ntnx_users_info:
-    user_uuid: "{{ test_user_uuid }}"
-  register: result
+  - name: List users using length, offset, sort order and sort attribute
+    ntnx_users_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      length: 2
+      offset: 1
+      sort_order: "DESCENDING"
+      sort_attribute: "username"
+    register: result
 
-- name: List users using filter criteria
-  ntnx_users_info:
-    filter:
-      username: "{{ test_user_name }}"
-  register: result
+  - name: test getting particular user using uuid
+    ntnx_users_info:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        validate_certs: False
+        user_uuid: '{{ uuid  }}'
+    register: result
 """
 RETURN = r"""
 api_version:
@@ -55,25 +71,21 @@ api_version:
   type: str
   sample: "3.1"
 metadata:
-  description:
-    - Metadata for user list output
-    - Below response struct is for users info using filters
+  description: Metadata for users list output
   returned: always
   type: dict
   sample: {
-                "filter": "username==xx@xx.com",
+                "filter": "username=={{name}}",
                 "kind": "user",
                 "length": 1,
                 "offset": 0,
                 "total_matches": 1
             }
 entities:
-  description:
-    - users intent response
-    - below response struct is for users info using filters
-  returned: Not when query done using user uuid
+  description: users intent response
+  returned: always
   type: list
-  sample: [
+  sample:  [
                 {
                     "metadata": {
                         "categories": {},
@@ -81,38 +93,49 @@ entities:
                         "kind": "user",
                         "spec_hash": "00000000000000000000000000000000000000000000000000",
                         "spec_version": 0,
-                        "uuid": "1e70cfe9-e1e6-589e-921d-26aabd37c2ae"
+                        "uuid": "000000-0000-0000-0000-0000000"
                     },
                     "spec": {
                         "resources": {
                             "directory_service_user": {
                                 "directory_service_reference": {
                                     "kind": "directory_service",
-                                    "uuid": "c9fd7a56-4cdd-4156-92e2-b0ea26876e91"
+                                    "uuid": "000000-0000-0000-0000-0000000"
                                 },
-                                "user_principal_name": "xx@xx.com"
+                                "user_principal_name": "user1@xx.com"
                             }
                         }
                     },
                     "status": {
-                        "name": "xx@xx.com",
+                        "name": "user1@xx.com",
                         "resources": {
-                            "access_control_policy_reference_list": [],
+                            "access_control_policy_reference_list": [
+                                {
+                                    "kind": "access_control_policy",
+                                    "name": "nuCalmAcp-db48cbac-eac8-c384-84f6-3c8376d70db6",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                }
+                            ],
                             "directory_service_user": {
-                                "default_user_principal_name": "xx@xx.com",
+                                "default_user_principal_name": "user1@xx.com",
                                 "directory_service_reference": {
                                     "kind": "directory_service",
-                                    "name": "xx",
-                                    "uuid": "c9fd7a56-4cdd-4156-92e2-b0ea26876e91"
+                                    "name": "ds",
+                                    "uuid": "000000-0000-0000-0000-0000000"
                                 },
-                                "user_principal_name": "xx@xx.com"
+                                "user_principal_name": "user1@xx.com"
                             },
                             "display_name": null,
                             "projects_reference_list": [
                                 {
                                     "kind": "project",
-                                    "name": "xx",
-                                    "uuid": "c1838689-2a2f-4665-8184-4bc30b259987"
+                                    "name": "p1",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                },
+                                {
+                                    "kind": "project",
+                                    "name": "p2",
+                                    "uuid": "000000-0000-0000-0000-0000000"
                                 }
                             ],
                             "resource_usage_summary": {
