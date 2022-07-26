@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_users
-short_description: users module which supports pc users management CRUD operations
+short_description: users module which supports pc users management create delete operations
 version_added: 1.4.0
-description: "Create, Update, Delete users"
+description: "Create, Delete users"
 options:
     state:
         description:
