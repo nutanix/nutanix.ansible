@@ -8,12 +8,106 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_address_groups
+short_description: module which supports address groups CRUD operations
+version_added: 1.4.0
+description: "Create, Update, Delete Nutanix address groups"
+options:
+    state:
+        description:
+            - when C(state)=present and address group uuid is not given then it will create new address group
+            - when C(state)=present and address group uuid given then it will update the address group
+            - when C(state)=absent, it will delete the address group
+    name:
+        description:
+            - name of the address group
+            - allowed to update
+            - required for creating address group
+        required: false
+        type: str
+    address_group_uuid:
+        description:
+            - uuid of the address group
+            - only required while updating or deleting
+        required: false
+        type: str
+    desc:
+        description:
+            - description of address group
+            - allowed to update
+        required: false
+        type: str
+    subnets:
+        description:
+            - list of details of subnets to be added in address group
+            - required while creating new address group
+            - allowed to update
+            - more than or equal to one subnets is always required, empty list is not considered
+            - during update, if used, it will override the subnets list of address group
+        required: false
+        type: list
+        elements: dict
+        suboptions:
+            network_prefix:
+                type: str
+                description:
+                    - subnet prefix.
+                required: true
+            network_ip:
+                description:
+                    - subnet ip.
+                type: str
+                required: true
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_operations
+author:
+  - Prem Karat (@premkarat)
+  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
+- name: Create address group
+  ntnx_address_groups:
+    state: present
+    name: test-ansible-group-1
+    desc: test-ansible-group-1-desc
+    subnets:
+      - network_ip: "10.1.1.0"
+        network_prefix: 24
+      - network_ip: "10.1.2.2"
+        network_prefix: 32
+  register: result
+
+- name: delete address group
+  ntnx_address_groups:
+    state: absent
+    address_group_uuid: "<uuid>"
+  register: result
 """
 
 RETURN = r"""
+response:
+    description: the response of address create using this module
+    returned: always
+    type: dict
+    sample: {
+            "address_group_string": "",
+            "description": "test_desc5",
+            "ip_address_block_list": [
+                {
+                    "ip": "10.1.1.0",
+                    "prefix_length": 24
+                }
+            ],
+            "name": "test_check2"
+        }
+address_group_uuid:
+  description: The created address group uuid
+  returned: always
+  type: str
+  sample: "5d7bv3ab-d825-4cfd-879c-ec7a86a82cfd"
 """
 
 from ..module_utils import utils  # noqa: E402

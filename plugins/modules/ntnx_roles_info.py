@@ -42,7 +42,7 @@ EXAMPLES = r"""
 
 - name: List roles using filter criteria
   ntnx_roles_info:
-    filter: 
+    filter:
       name: "{{ test_role_name }}"
 """
 RETURN = r"""
