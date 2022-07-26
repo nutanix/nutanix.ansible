@@ -42,3 +42,5 @@ action_groups:
   - ntnx_users_info
   - ntnx_service_groups
   - ntnx_service_groups_info
+  - ntnx_user_groups_info
+  - ntnx_user_groups
