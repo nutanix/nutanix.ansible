@@ -7,7 +7,7 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-from .projects import Projects
+from .projects import get_project_uuid
 from .spec.categories_mapping import CategoriesMapping
 
 
@@ -41,16 +41,9 @@ class Users(Prism):
         )
 
     def _build_spec_project(self, payload, config):
-        if "name" in config:
-            project = Projects(self.module)
-            name = config["name"]
-            uuid = project.get_uuid(name)
-            if not uuid:
-                error = "Project {0} not found.".format(name)
-                return None, error
-
-        elif "uuid" in config:
-            uuid = config["uuid"]
+        uuid, err = get_project_uuid(self.module, config)
+        if err:
+            return uuid, err
 
         payload["metadata"].update(
             {"project_reference": {"uuid": uuid, "kind": "project"}}
@@ -94,8 +87,3 @@ class Users(Prism):
         )
         payload["spec"]["resources"].pop("directory_service_user")
         return payload, None
-
-    @classmethod
-    def build_user_reference_spec(cls, uuid):
-        spec = {"kind": cls.kind, "uuid": uuid}
-        return spec

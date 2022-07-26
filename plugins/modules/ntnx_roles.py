@@ -236,7 +236,7 @@ def update_role(module, result):
     result["role_uuid"] = role_uuid
 
     resp = roles.read(uuid=role_uuid)
-    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    utils.strip_extra_attrs(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
 
     update_spec, error = roles.get_spec(resp)
