@@ -84,9 +84,126 @@ entities:
   description: users intent response
   returned: always
   type: list
-  sample: [
-    #TODO
-  ]
+  sample:  [
+                {
+                    "metadata": {
+                        "categories": {},
+                        "categories_mapping": {},
+                        "kind": "user",
+                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "spec_version": 0,
+                        "uuid": "000000-0000-0000-0000-0000000"
+                    },
+                    "spec": {
+                        "resources": {
+                            "directory_service_user": {
+                                "directory_service_reference": {
+                                    "kind": "directory_service",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                },
+                                "user_principal_name": "user1@qa.nucalm.io"
+                            }
+                        }
+                    },
+                    "status": {
+                        "name": "user1@qa.nucalm.io",
+                        "resources": {
+                            "access_control_policy_reference_list": [
+                                {
+                                    "kind": "access_control_policy",
+                                    "name": "nuCalmAcp-db48cbac-eac8-c384-84f6-3c8376d70db6",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                }
+                            ],
+                            "directory_service_user": {
+                                "default_user_principal_name": "user1@qa.nucalm.io",
+                                "directory_service_reference": {
+                                    "kind": "directory_service",
+                                    "name": "qanucalm",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                },
+                                "user_principal_name": "user1@qa.nucalm.io"
+                            },
+                            "display_name": null,
+                            "projects_reference_list": [
+                                {
+                                    "kind": "project",
+                                    "name": "default",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                },
+                                {
+                                    "kind": "project",
+                                    "name": "DND_project",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                }
+                            ],
+                            "resource_usage_summary": {
+                                "resource_domain": {
+                                    "resources": []
+                                }
+                            },
+                            "user_type": "DIRECTORY_SERVICE"
+                        },
+                        "state": "COMPLETE"
+                    }
+                },
+                {
+                    "metadata": {
+                        "categories": {},
+                        "categories_mapping": {},
+                        "kind": "user",
+                        "spec_hash": "00000000000000000000000000000000000000000000000000",
+                        "spec_version": 0,
+                        "uuid": "000000-0000-0000-0000-0000000"
+                    },
+                    "spec": {
+                        "resources": {
+                            "directory_service_user": {
+                                "directory_service_reference": {
+                                    "kind": "directory_service",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                },
+                                "user_principal_name": "test3@qa.nucalm.io"
+                            }
+                        }
+                    },
+                    "status": {
+                        "execution_context": {
+                            "task_uuid": [
+                                "000000-0000-0000-0000-0000000"
+                            ]
+                        },
+                        "name": "test3@qa.nucalm.io",
+                        "resources": {
+                            "access_control_policy_reference_list": [],
+                            "directory_service_user": {
+                                "default_user_principal_name": "test3@qa.nucalm.io",
+                                "directory_service_reference": {
+                                    "kind": "directory_service",
+                                    "name": "qanucalm",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                },
+                                "user_principal_name": "test3@qa.nucalm.io"
+                            },
+                            "display_name": null,
+                            "projects_reference_list": [
+                                {
+                                    "kind": "project",
+                                    "name": "default",
+                                    "uuid": "000000-0000-0000-0000-0000000"
+                                }
+                            ],
+                            "resource_usage_summary": {
+                                "resource_domain": {
+                                    "resources": []
+                                }
+                            },
+                            "user_type": "DIRECTORY_SERVICE"
+                        },
+                        "state": "COMPLETE"
+                    }
+                }
+            ]
 """
 
 

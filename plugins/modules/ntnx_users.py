@@ -63,12 +63,23 @@ options:
     principal_name:
         type: str
         description: The UserPrincipalName of the user from the directory service.
+    project:
+        type: dict
+        description: project that belogs to
+        suboptions:
+            name:
+                type: str
+                description: project name
+            uuid:
+                type: str
+                description: project uuid
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
- - Pradeepsingh Bhati (@bhati-pradeep)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
