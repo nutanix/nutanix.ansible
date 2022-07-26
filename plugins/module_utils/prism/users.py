@@ -18,9 +18,9 @@ class Users(Prism):
         self.build_spec_methods = {
             "project": self._build_spec_project,
             "principal_name": self._build_spec_principal_name,
-            "directory_service": self._build_spec_directory_service,
+            "directory_service_uuid": self._build_spec_directory_service,
             "username": self._build_spec_username,
-            "identity_provider": self._build_spec_identity_provider,
+            "identity_provider_uuid": self._build_spec_identity_provider,
             "categories": CategoriesMapping.build_categories_mapping_spec,
             "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
         }
@@ -66,8 +66,7 @@ class Users(Prism):
             "directory_service_reference"
         ] = {
             "kind": "directory_service",
-            "name": config.get("name"),
-            "uuid": config.get("uuid"),
+            "uuid": config,
         }
         payload["spec"]["resources"].pop("identity_provider_user")
         return payload, None
@@ -81,8 +80,7 @@ class Users(Prism):
             "identity_provider_reference"
         ] = {
             "kind": "identity_provider",
-            "name": config.get("name"),
-            "uuid": config.get("uuid"),
+            "uuid": config,
         }
         payload["spec"]["resources"].pop("directory_service_user")
         return payload, None

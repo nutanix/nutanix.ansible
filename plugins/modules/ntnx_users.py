@@ -54,26 +54,12 @@ options:
         type: bool
         required: false
         default: false
-    identity_provider:
-        type: dict
-        description: An Identity Provider user.
-        suboptions:
-            name:
-                type: str
-                description: The username from the identity provider. Name Id for SAML Identity Provider.
-            uuid:
-                type: str
-                description: The uuid from the identity provider. Name Id for SAML Identity Provider.
-    directory_service:
-        type: dict
-        description: A Directory Service user.
-        suboptions:
-            name:
-                type: str
-                description: The UserPrincipalName of the user from the directory service.
-            uuid:
-                type: str
-                description: The UserPrincipal UUID of the user from the directory service.
+    identity_provider_uuid:
+        type: str
+        description: The uuid of the identity provider.
+    directory_service_uuid:
+        type: str
+        description: The UUID of the directory service.
     principal_name:
         type: str
         description: The UserPrincipalName of the user from the directory service.
@@ -157,8 +143,8 @@ def get_module_spec():
         user_uuid=dict(type="str"),
         principal_name=dict(type="str"),
         username=dict(type="str"),
-        directory_service=dict(type="dict", options=entity_by_spec),
-        identity_provider=dict(type="dict", options=entity_by_spec),
+        directory_service_uuid=dict(type="str"),
+        identity_provider_uuid=dict(type="str"),
         project=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
@@ -215,7 +201,7 @@ def run_module():
     # mutually_exclusive_list have params which are not allowed together
     mutually_exclusive_list = [
         ("categories", "remove_categories"),
-        ("identity_provider", "directory_service"),
+        ("identity_provider_uuid", "directory_service_uuid"),
         ("username", "principal_name"),
     ]
     module = BaseModule(
@@ -225,8 +211,8 @@ def run_module():
             ("state", "absent", ("user_uuid",)),
         ],
         required_together=[
-            ("username", "identity_provider"),
-            ("principal_name", "directory_service"),
+            ("username", "identity_provider_uuid"),
+            ("principal_name", "directory_service_uuid"),
         ],
         mutually_exclusive=mutually_exclusive_list,
     )
