@@ -458,7 +458,7 @@ def get_acp(module, result):
     result["response"] = resp
 
 
-def list_acp(module, result):
+def get_acps(module, result):
     acp = ACP(module)
     spec, error = acp.get_info_spec()
 
@@ -478,7 +478,7 @@ def run_module():
     if module.params.get("acp_uuid"):
         get_acp(module, result)
     else:
-        list_acp(module, result)
+        get_acps(module, result)
     module.exit_json(**result)
 
 
