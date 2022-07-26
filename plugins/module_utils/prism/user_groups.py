@@ -7,11 +7,13 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-from .projects import Project
+from .projects import Projects
 from .spec.categories_mapping import CategoriesMapping
 
 
 class UserGroups(Prism):
+    kind = "user_group"
+
     def __init__(self, module):
         resource_type = "/user_groups"
         super(UserGroups, self).__init__(module, resource_type=resource_type)
@@ -33,7 +35,7 @@ class UserGroups(Prism):
 
     def _build_spec_project(self, payload, config):
         if "name" in config:
-            project = Project(self.module)
+            project = Projects(self.module)
             name = config["name"]
             uuid = project.get_uuid(name)
             if not uuid:
@@ -66,3 +68,8 @@ class UserGroups(Prism):
             "idpUuid": config["idp_uuid"],
         }
         return payload, None
+
+    @classmethod
+    def build_user_group_reference_spec(cls, uuid):
+        spec = {"kind": cls.kind, "uuid": uuid}
+        return spec

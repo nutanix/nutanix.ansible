@@ -273,17 +273,17 @@ status:
             },
             "role_reference": {
                 "kind": "role,",
-                "name": "Project Admin,",
+                "name": "rol1",
                 "uuid": "00000000000-0000-0000-0000-00000000000"
             },
             "user_group_reference_list": {
                 "kind": "user_group,",
-                "name": "cn=sspadmins,cn=users,dc=qa,dc=nucalm,dc=io,",
+                "name": "cn=ss,cn=users,dc=ss,dc=cc,dc=io,",
                 "uuid": "00000000000-0000-0000-0000-00000000000"
             },
             "user_reference_list": {
                 "kind": "user,",
-                "name": "idpuser1@calmsaastest.com,",
+                "name": "xx@xx.com",
                 "uuid": "00000000000-0000-0000-0000-00000000000"
             }
         },

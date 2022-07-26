@@ -29,6 +29,7 @@ extends_documentation_fragment:
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Pradeepsingh Bhati (@bhati-pradeep)
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
@@ -76,9 +77,9 @@ metadata:
   sample: {
                 "filter": "username=={{name}}",
                 "kind": "user",
-                "length": 2,
+                "length": 1,
                 "offset": 0,
-                "total_matches": 2
+                "total_matches": 1
             }
 entities:
   description: users intent response
@@ -101,12 +102,12 @@ entities:
                                     "kind": "directory_service",
                                     "uuid": "000000-0000-0000-0000-0000000"
                                 },
-                                "user_principal_name": "user1@qa.nucalm.io"
+                                "user_principal_name": "user1@xx.com"
                             }
                         }
                     },
                     "status": {
-                        "name": "user1@qa.nucalm.io",
+                        "name": "user1@xx.com",
                         "resources": {
                             "access_control_policy_reference_list": [
                                 {
@@ -116,80 +117,24 @@ entities:
                                 }
                             ],
                             "directory_service_user": {
-                                "default_user_principal_name": "user1@qa.nucalm.io",
+                                "default_user_principal_name": "user1@xx.com",
                                 "directory_service_reference": {
                                     "kind": "directory_service",
-                                    "name": "qanucalm",
+                                    "name": "ds",
                                     "uuid": "000000-0000-0000-0000-0000000"
                                 },
-                                "user_principal_name": "user1@qa.nucalm.io"
+                                "user_principal_name": "user1@xx.com"
                             },
                             "display_name": null,
                             "projects_reference_list": [
                                 {
                                     "kind": "project",
-                                    "name": "default",
+                                    "name": "p1",
                                     "uuid": "000000-0000-0000-0000-0000000"
                                 },
                                 {
                                     "kind": "project",
-                                    "name": "DND_project",
-                                    "uuid": "000000-0000-0000-0000-0000000"
-                                }
-                            ],
-                            "resource_usage_summary": {
-                                "resource_domain": {
-                                    "resources": []
-                                }
-                            },
-                            "user_type": "DIRECTORY_SERVICE"
-                        },
-                        "state": "COMPLETE"
-                    }
-                },
-                {
-                    "metadata": {
-                        "categories": {},
-                        "categories_mapping": {},
-                        "kind": "user",
-                        "spec_hash": "00000000000000000000000000000000000000000000000000",
-                        "spec_version": 0,
-                        "uuid": "000000-0000-0000-0000-0000000"
-                    },
-                    "spec": {
-                        "resources": {
-                            "directory_service_user": {
-                                "directory_service_reference": {
-                                    "kind": "directory_service",
-                                    "uuid": "000000-0000-0000-0000-0000000"
-                                },
-                                "user_principal_name": "test3@qa.nucalm.io"
-                            }
-                        }
-                    },
-                    "status": {
-                        "execution_context": {
-                            "task_uuid": [
-                                "000000-0000-0000-0000-0000000"
-                            ]
-                        },
-                        "name": "test3@qa.nucalm.io",
-                        "resources": {
-                            "access_control_policy_reference_list": [],
-                            "directory_service_user": {
-                                "default_user_principal_name": "test3@qa.nucalm.io",
-                                "directory_service_reference": {
-                                    "kind": "directory_service",
-                                    "name": "qanucalm",
-                                    "uuid": "000000-0000-0000-0000-0000000"
-                                },
-                                "user_principal_name": "test3@qa.nucalm.io"
-                            },
-                            "display_name": null,
-                            "projects_reference_list": [
-                                {
-                                    "kind": "project",
-                                    "name": "default",
+                                    "name": "p2",
                                     "uuid": "000000-0000-0000-0000-0000000"
                                 }
                             ],
@@ -225,19 +170,19 @@ def get_module_spec():
 
 
 def get_user(module, result):
-    user = Users(module)
+    users = Users(module)
     uuid = module.params.get("user_uuid")
-    resp = user.read(uuid)
+    resp = users.read(uuid)
     result["response"] = resp
 
 
 def get_users(module, result):
-    user = Users(module)
-    spec, err = user.get_info_spec()
+    users = Users(module)
+    spec, err = users.get_info_spec()
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating user info Spec", **result)
-    resp = user.list(spec)
+        module.fail_json(msg="Failed generating User info Spec", **result)
+    resp = users.list(spec)
     result["response"] = resp
 
 

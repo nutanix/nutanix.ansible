@@ -7,11 +7,13 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-from .projects import Project
+from .projects import Projects
 from .spec.categories_mapping import CategoriesMapping
 
 
 class Users(Prism):
+    kind = "user"
+
     def __init__(self, module):
         resource_type = "/users"
         super(Users, self).__init__(module, resource_type=resource_type)
@@ -40,7 +42,7 @@ class Users(Prism):
 
     def _build_spec_project(self, payload, config):
         if "name" in config:
-            project = Project(self.module)
+            project = Projects(self.module)
             name = config["name"]
             uuid = project.get_uuid(name)
             if not uuid:
@@ -56,32 +58,44 @@ class Users(Prism):
         return payload, None
 
     def _build_spec_principal_name(self, payload, config):
-        payload["spec"]["resources"]["directory_service_user"].update({
-            "user_principal_name": config,
-        })
+        payload["spec"]["resources"]["directory_service_user"].update(
+            {
+                "user_principal_name": config,
+            }
+        )
         return payload, None
 
     def _build_spec_directory_service(self, payload, config):
-        payload["spec"]["resources"]["directory_service_user"].update({
-            "directory_service_reference":
-                {
+        payload["spec"]["resources"]["directory_service_user"].update(
+            {
+                "directory_service_reference": {
                     "kind": "directory_service",
                     "uuid": config,
                 }
-        })
+            }
+        )
         payload["spec"]["resources"].pop("identity_provider_user")
         return payload, None
 
     def _build_spec_username(self, payload, config):
-        payload["spec"]["resources"]["identity_provider_user"].update({"username": config})
+        payload["spec"]["resources"]["identity_provider_user"].update(
+            {"username": config}
+        )
         return payload, None
 
     def _build_spec_identity_provider(self, payload, config):
-        payload["spec"]["resources"]["identity_provider_user"].update({
-            "identity_provider_reference": {
-                "kind": "identity_provider",
-                "uuid": config,
+        payload["spec"]["resources"]["identity_provider_user"].update(
+            {
+                "identity_provider_reference": {
+                    "kind": "identity_provider",
+                    "uuid": config,
+                }
             }
-        })
+        )
         payload["spec"]["resources"].pop("directory_service_user")
         return payload, None
+
+    @classmethod
+    def build_user_reference_spec(cls, uuid):
+        spec = {"kind": cls.kind, "uuid": uuid}
+        return spec

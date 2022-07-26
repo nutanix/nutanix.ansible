@@ -7,6 +7,7 @@ action_groups:
   - ntnx_images
   - ntnx_image_placement_policy
   - ntnx_pbrs
+  - ntnx_projects
   - ntnx_security_rules
   - ntnx_static_routes
   - ntnx_subnets
@@ -19,9 +20,12 @@ action_groups:
   - ntnx_images_info
   - ntnx_image_placement_policies_info
   - ntnx_pbrs_info
+  - ntnx_projects_info
   - ntnx_security_rules_info
   - ntnx_static_routes_info
   - ntnx_subnets_info
+  - ntnx_user_groups_info
+  - ntnx_users_info
   - ntnx_vms_info
   - ntnx_vpcs_info
   - ntnx_foundation_aos_packages_info

@@ -184,20 +184,20 @@ def get_module_spec():
     return module_args
 
 
-def get_user(module, result):
-    user = UserGroups(module)
+def get_user_group(module, result):
+    user_group = UserGroups(module)
     uuid = module.params.get("usergroup_uuid")
-    resp = user.read(uuid)
+    resp = user_group.read(uuid)
     result["response"] = resp
 
 
-def get_users(module, result):
-    user = UserGroups(module)
-    spec, err = user.get_info_spec()
+def get_user_groups(module, result):
+    user_group = UserGroups(module)
+    spec, err = user_group.get_info_spec()
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating user info Spec", **result)
-    resp = user.list(spec)
+        module.fail_json(msg="Failed generating user groups info Spec", **result)
+    resp = user_group.list(spec)
     result["response"] = resp
 
 
@@ -213,9 +213,9 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("usergroup_uuid"):
-        get_user(module, result)
+        get_user_group(module, result)
     else:
-        get_users(module, result)
+        get_user_groups(module, result)
 
     module.exit_json(**result)
 
