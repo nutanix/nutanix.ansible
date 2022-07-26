@@ -78,12 +78,7 @@ class CategoryValue(Categories):
         return super().delete(endpoint=endpoint, no_response=True)
 
     def _get_default_spec(self):
-        return deepcopy(
-            {
-                "api_version": "3.1.0",
-                "value": None
-            }
-        )
+        return deepcopy({"api_version": "3.1.0", "value": None})
 
     def get_value_spec(self, value):
         spec = self._get_default_spec()
