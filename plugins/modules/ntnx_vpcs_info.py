@@ -39,7 +39,8 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter: "name=={{ vpc.name }}"
+      filter:
+        name: "{{ vpc.name }}"
       kind: vpc
     register: result
 

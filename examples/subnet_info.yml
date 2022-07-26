@@ -15,7 +15,7 @@
     - name: List subnets using subnet_type filter criteria
       ntnx_subnets_info:
         filter:
-          subnet_type: VLAN
+         subnet_type: "VLAN"
         kind: subnet
       register: result
       ignore_errors: True
