@@ -30,7 +30,7 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.metadata.uuid is defined
+      - result.response.metadata.uuid == "{{ result.response.entities[0].metadata.uuid }}"
       - result.response.status.state == "COMPLETE"
     fail_msg: "Unable to get particular cluster"
     success_msg: "custer info obtained successfully"
