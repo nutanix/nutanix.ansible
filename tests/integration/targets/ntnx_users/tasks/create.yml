@@ -24,7 +24,47 @@
     success_msg: "pass: returned as expected"
 
 #################################################
-- name: create local user   
+- name: create local user
+  ntnx_users:
+    principal_name: "{{principal_name}}"
+    directory_service_uuid:  "{{directory_service_uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.user_uuid is defined
+      - result.response.status.state == "COMPLETE"
+      - result.response.status.name == "{{principal_name}}"
+      - result.response.status.resources.directory_service_user.directory_service_reference.uuid == "{{directory_service_uuid}}"
+    fail_msg: "fail"
+    success_msg: "pass"
+
+- set_fact:
+      todelete: "{{ todelete + [  result.user_uuid ] }}"
+#################################################
+- name: Delete created users
+  ntnx_users:
+    state: absent
+    user_uuid: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+- name: check listing status
+  assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "Fail: unable to delete all users"
+    success_msg: "Pass: all users deleted succesfully"
+- set_fact:
+    todelete: []
+#################################################
+- name: create local user  with project and categories 
   ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid:  "{{directory_service_uuid}}"
