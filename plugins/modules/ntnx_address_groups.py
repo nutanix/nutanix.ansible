@@ -70,6 +70,9 @@ author:
 EXAMPLES = r"""
 - name: Create address group
   ntnx_address_groups:
+    nutanix_host: <host_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
     state: present
     name: test-ansible-group-1
     desc: test-ansible-group-1-desc
@@ -82,6 +85,9 @@ EXAMPLES = r"""
 
 - name: delete address group
   ntnx_address_groups:
+    nutanix_host: <host_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
     state: absent
     address_group_uuid: "<uuid>"
   register: result

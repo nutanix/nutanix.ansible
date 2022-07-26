@@ -71,6 +71,10 @@ EXAMPLES = r"""
 
 - name: Create roles with permissions
   ntnx_roles:
+    nutanix_host: <host_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
     state: present
     name: test-ansible-role-1
     desc: test-ansible-role-1-desc
@@ -83,6 +87,10 @@ EXAMPLES = r"""
 
 - name: delete role
   ntnx_roles:
+    nutanix_host: <host_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
     state: absent
     role_uuid: "<role-uuid>"
   register: result

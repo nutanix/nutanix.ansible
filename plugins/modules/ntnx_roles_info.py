@@ -33,15 +33,27 @@ author:
 EXAMPLES = r"""
 - name: List all roles
   ntnx_roles_info:
+    nutanix_host: <host_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
   register: result
 
 - name: List role using uuid criteria
   ntnx_roles_info:
+    nutanix_host: <host_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
     role_uuid: "{{ test_role_uuid }}"
   register: result
 
 - name: List roles using filter criteria
   ntnx_roles_info:
+    nutanix_host: <host_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
     filter:
       name: "{{ test_role_name }}"
 """
