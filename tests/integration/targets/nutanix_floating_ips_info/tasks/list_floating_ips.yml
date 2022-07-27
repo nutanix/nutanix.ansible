@@ -5,10 +5,6 @@
     kind: floating_ip
   register: result
   ignore_errors: True
-  
-- name: Show result
-  debug:
-    msg: "{{ result.response.entities | map(attribute='status.resources.floating_ip') }}"
 
 - name: Listing Status
   assert:
@@ -38,10 +34,6 @@
     sort_attribute: "floating_ip"
   register: result
   ignore_errors: True
-
-- name: Show result
-  debug:
-    msg: "{{ result.response.entities | map(attribute='status.resources.floating_ip') }}"
 
 - name: Listing Status
   assert:

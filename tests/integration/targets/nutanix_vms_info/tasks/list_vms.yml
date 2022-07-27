@@ -6,9 +6,6 @@
   register: result
   ignore_errors: True
 
-- name: Show result
-  debug:
-    msg: "{{ result.response.entities | map(attribute='spec.name') }}"
 
 - name: Listing Status
   assert:
@@ -39,10 +36,6 @@
     kind: vm
   register: result
   ignore_errors: True
-
-- name: Show result
-  debug:
-    msg: "{{ result.response.entities | map(attribute='spec.name') }}"
 
 - name: Listing Status
   assert:
