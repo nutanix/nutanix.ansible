@@ -1,0 +1,30 @@
+---
+- name: Clusters_Info playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:        
+  - name: test getting all clusters
+    ntnx_clusters_info:
+    register: clusters
+
+  - name: test getting particular cluster using uuid
+    ntnx_clusters_info:
+      cluster_uuid: '{{ clusters.response.entities[0].metadata.uuid }}'
+    register: result
+
+  - name: List clusters using length, offset, sort order and priority sort attribute
+    ntnx_clusters_info:
+      length: 2
+      offset: 0
+      sort_order: "ASCENDING"
+      sort_attribute: "name"
+    register: result
