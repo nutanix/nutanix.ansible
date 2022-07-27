@@ -28,6 +28,10 @@
     wait: true
   register: result
 
+- set_fact:
+    p1: "{{ result.response.status.resources.permission_reference_list[0].uuid }}"
+    p2: "{{ result.response.status.resources.permission_reference_list[1].uuid }}"
+
 - name: Creation Status
   assert: 
     that:
@@ -37,8 +41,7 @@
       - result.changed == True
       - result.response.status.name == "test-ansible-role-1"
       - result.response.status.description == "test-ansible-role-1-desc"
-      - result.response.status.resources.permission_reference_list[0]["uuid"] == "{{ test_permission_1_uuid }}"
-      - result.response.status.resources.permission_reference_list[1]["uuid"] == "{{ test_permission_2_uuid }}"
+      - ("{{ p1 }}" == "{{ test_permission_1_uuid }}" and "{{ p2 }}" == "{{ test_permission_2_uuid }}") or ("{{ p2 }}" == "{{ test_permission_1_uuid }}" and "{{ p1 }}" == "{{ test_permission_2_uuid }}")
 
     fail_msg: "Unable to create roles with certain permissions"
     success_msg: "Roles with given permissions created susccessfully"
