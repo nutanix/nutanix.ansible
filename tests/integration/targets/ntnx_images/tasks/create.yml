@@ -27,46 +27,46 @@
 
 ##################################################################################
 
-- name: Create image with all spec and using local image upload
-  ntnx_images:
-    state: present
-    name: integration-test-image-with-upload
-    desc: "uploaded image during integration test"
-    source_path: "{{ disk_image.dest }}"
-    image_type: "DISK_IMAGE"
-    categories:
-      Environment:
-        - "Dev"
-      AppType:
-        - "Default"
-    version:
-      product_name: "test"
-      product_version: "1.2.0"
-    clusters:
-      - name: "{{ cluster.name }}"
-    checksum:
-      checksum_algorithm: "SHA_1"
-      checksum_value: "{{ disk_image.checksum }}"
-    wait: true
-  register: result
+# - name: Create image with all spec and using local image upload
+#   ntnx_images:
+#     state: present
+#     name: integration-test-image-with-upload
+#     desc: "uploaded image during integration test"
+#     source_path: "{{ disk_image.dest }}"
+#     image_type: "DISK_IMAGE"
+#     categories:
+#       Environment:
+#         - "Dev"
+#       AppType:
+#         - "Default"
+#     version:
+#       product_name: "test"
+#       product_version: "1.2.0"
+#     clusters:
+#       - name: "{{ cluster.name }}"
+#     checksum:
+#       checksum_algorithm: "SHA_1"
+#       checksum_value: "{{ disk_image.checksum }}"
+#     wait: true
+#   register: result
 
-- name: Creation Status
-  assert: 
-    that:
-      - result.response is defined
-      - result.response.status.state == 'COMPLETE'
-      - result.response.status.resources.image_type == "DISK_IMAGE"
-      - result.response.metadata.categories_mapping['AppType'] == ['Default']
-      - result.response.metadata.categories_mapping['Environment'] == ['Dev']
-      - result.response.status.resources.initial_placement_ref_list[0]['uuid'] == "{{ cluster.uuid }}" 
-      - result.response.status.resources.checksum.checksum_value == "{{ disk_image.checksum }}"
-      - result.response.status.resources.version.product_name == "test"
-      - result.response.status.resources.version.product_version == "1.2.0"
-    fail_msg: "Unable to create image and upload local image with all specification"
-    success_msg: "Image with given local path created successfully"
+# - name: Creation Status
+#   assert: 
+#     that:
+#       - result.response is defined
+#       - result.response.status.state == 'COMPLETE'
+#       - result.response.status.resources.image_type == "DISK_IMAGE"
+#       - result.response.metadata.categories_mapping['AppType'] == ['Default']
+#       - result.response.metadata.categories_mapping['Environment'] == ['Dev']
+#       - result.response.status.resources.initial_placement_ref_list[0]['uuid'] == "{{ cluster.uuid }}" 
+#       - result.response.status.resources.checksum.checksum_value == "{{ disk_image.checksum }}"
+#       - result.response.status.resources.version.product_name == "test"
+#       - result.response.status.resources.version.product_version == "1.2.0"
+#     fail_msg: "Unable to create image and upload local image with all specification"
+#     success_msg: "Image with given local path created successfully"
 
-- set_fact:
-    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+# - set_fact:
+#     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 ###############################################################################################
 
