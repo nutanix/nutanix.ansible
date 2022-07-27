@@ -119,8 +119,8 @@
     name: "{{first_category.name}}"
   register: result
   ignore_errors: true
-- debug:
-    var: result
+
+
 - name: Creation Status
   assert: 
     that:
