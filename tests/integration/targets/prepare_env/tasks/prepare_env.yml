@@ -164,11 +164,11 @@
       url: "{{ disk_image.url }}"
       dest: "{{ disk_image.dest }}"
 
-  - name: create address group for network security policy related tests
-    ntnx_address_groups:
-      state: present
-      name: dest
-      desc: dest
-      subnets:
-        - network_ip: "10.1.1.0"
-          network_prefix: 24
+  # - name: create address group for network security policy related tests
+  #   ntnx_address_groups:
+  #     state: present
+  #     name: dest
+  #     desc: dest
+  #     subnets:
+  #       - network_ip: "10.1.1.0"
+  #         network_prefix: 24
