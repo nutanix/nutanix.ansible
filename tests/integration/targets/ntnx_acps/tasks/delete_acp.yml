@@ -2,7 +2,7 @@
 - name: Create ACP with all specfactions
   ntnx_acps:
     state: present
-    name: acp_with_all_specfactions
+    name: acp_with_all_specfactions1
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:

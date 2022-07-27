@@ -4,7 +4,7 @@
   - name: Unknown role name
     ntnx_acps:
       state: present
-      name: MinACP
+      name: MinACP2
       role:
         name: "unknown987"
     register: result
@@ -21,7 +21,7 @@
   - name: Unknown role uuid
     ntnx_acps:
       state: present
-      name: MinACP
+      name: MinACP2
       role:
         uuid: 00000000-0000-0000-0000-000000000000
     register: result

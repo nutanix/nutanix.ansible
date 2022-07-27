@@ -3,7 +3,7 @@
   ntnx_acps:
     state: present
     wait: True
-    name: MinACP
+    name: MinACP1
     role:
       uuid: "{{ acp.role.uuid }}"
   register: result
@@ -16,7 +16,7 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.spec.name == 'MinACP'
+      - result.response.spec.name == 'MinACP1'
     fail_msg: " Unable to create Min ACP with check mode "
     success_msg: " Min ACP with check mode passed"
 ##########################################################
@@ -24,7 +24,7 @@
   ntnx_acps:
     state: present
     wait: true
-    name: MinACP
+    name: MinACP1
     role:
       uuid: '{{ acp.role.uuid }}'
   check_mode: false
@@ -36,7 +36,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == 'MinACP'
+      - result.response.spec.name == 'MinACP1'
     fail_msg: " Unable to create Min ACP "
     success_msg: " Min ACP created successfully "
 
@@ -46,7 +46,7 @@
 - name: Create ACP with user reference
   ntnx_acps:
     state: present
-    name: acp_with_user_reference
+    name: acp_with_user_reference1
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -59,7 +59,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == 'acp_with_user_reference'
+      - result.response.spec.name == 'acp_with_user_reference1'
       - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
       - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
     fail_msg: " Unable to Create ACP with user reference "
@@ -71,7 +71,7 @@
 - name: Create ACP with user ad user group reference
   ntnx_acps:
     state: present
-    name: acp_with_user_and_user_group_reference
+    name: acp_with_user_and_user_group_reference1
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -86,7 +86,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == 'acp_with_user_and_user_group_reference'
+      - result.response.spec.name == 'acp_with_user_and_user_group_reference1'
       - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
       - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
       - result.response.status.resources.user_group_reference_list.0.uuid == "{{ acp.user_group_uuid }}"
@@ -99,7 +99,7 @@
 - name: Create ACP with all specfactions
   ntnx_acps:
     state: present
-    name: acp_with_all_specfactions
+    name: acp_with_all_specfactions1
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:

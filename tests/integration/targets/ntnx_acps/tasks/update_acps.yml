@@ -3,7 +3,7 @@
   ntnx_acps:
     state: present
     wait: true
-    name: integration-test-acp-update
+    name: integration-test-acp-update1
     role:
       uuid: '{{ acp.role.uuid }}'
   register: setup_acp
@@ -13,7 +13,7 @@
     that:
       - setup_acp.response is defined
       - setup_acp.response.status.state == 'COMPLETE'
-      - setup_acp.response.spec.name == 'integration-test-acp-update'
+      - setup_acp.response.spec.name == 'integration-test-acp-update1'
       - setup_acp.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
     fail_msg: "Unable to create ACP for update tests"
     success_msg: "ACP created successfully for update tests"
@@ -27,7 +27,7 @@
   ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
-    name: integration-test-acp-update
+    name: integration-test-acp-update1
     role:
       uuid: '{{ acp.role.uuid }}'
   register: result
@@ -47,7 +47,7 @@
   ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
-    name: integration-test-acp-after-update
+    name: integration-test-acp-after-update1
     desc: "description after update"
     filters:
       - scope_filter:
@@ -70,7 +70,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.name == 'integration-test-acp-after-update'
+      - result.response.status.name == 'integration-test-acp-after-update1'
       - result.response.status.description == 'description after update'
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.operator == "IN"
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.left_hand_side.entity_type == "ALL"
