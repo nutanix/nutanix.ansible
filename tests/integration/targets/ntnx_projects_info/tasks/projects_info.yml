@@ -1,6 +1,6 @@
 - name:
   debug:
-    msg: "Start ntnx_project create tests"
+    msg: "Start ntnx_project_info tests"
 
 - name: Create Project with minimal spec
   ntnx_projects:
