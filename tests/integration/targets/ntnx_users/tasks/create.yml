@@ -117,27 +117,27 @@
     fail_msg: "Fail: create wrong user"
     success_msg: "Pass: Returned as expected"
 #################################################
-- name: create idp user
-  ntnx_users:
-    identity_provider_uuid: "{{identity_provider_uuid}}"
-    username: testing_user
-  register: result
-  ignore_errors: true
-
-- name: check listing status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.user_uuid is defined
-      - result.response.status.state == "COMPLETE"
-      - result.response.status.name == "testing_user"
-    fail_msg: "Fail: unable to create idp user"
-    success_msg: "Pass: idp user created succesfully"
-
-- set_fact:
-      todelete: "{{ todelete + [  result.user_uuid ] }}"
+#- name: create idp user
+#  ntnx_users:
+#    identity_provider_uuid: "{{identity_provider_uuid}}"
+#    username: testing_user
+#  register: result
+#  ignore_errors: true
+#
+#- name: check listing status
+#  assert:
+#    that:
+#      - result.response is defined
+#      - result.changed == true
+#      - result.failed == false
+#      - result.user_uuid is defined
+#      - result.response.status.state == "COMPLETE"
+#      - result.response.status.name == "testing_user"
+#    fail_msg: "Fail: unable to create idp user"
+#    success_msg: "Pass: idp user created succesfully"
+#
+#- set_fact:
+#      todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
 - name: Delete created users
   ntnx_users:
