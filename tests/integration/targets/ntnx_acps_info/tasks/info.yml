@@ -24,8 +24,9 @@
 - name: test getting particular acp using filter
   ntnx_acps_info:
     filter:
-      name: "{{ acps.response.entities.0.spec.name }}"
+      name: "{{ acps.response.entities.0.status.name }}"
   register: result
+
 
 - name: check listing status
   assert:
@@ -50,6 +51,6 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.spec.name == '{{ acps.response.entities.0.spec.name }}'
+      - result.response.status.name == '{{ acps.response.entities.0.status.name }}'
     fail_msg: "Unable to get particular acp using uuid"
     success_msg: "acp info obtained successfully using uuid"

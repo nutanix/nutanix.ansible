@@ -87,6 +87,12 @@
   register: result
   ignore_errors: true
 
+- set_fact:
+    subnet1: "{{result.response.status.resources.subnet_reference_list[0].uuid}}"
+    subnet2: "{{result.response.status.resources.subnet_reference_list[1].uuid}}"
+    user1: "{{result.response.status.resources.user_reference_list[0].uuid}}"
+    user2: "{{result.response.status.resources.user_reference_list[1].uuid}}"
+
 - name: Creation Status
   assert:
     that:
@@ -96,11 +102,9 @@
       - result.response.status.description == 'desc-123'
       - result.response.status.resources.resource_domain.resources[0].limit == 2046 
       - result.response.status.resources.resource_domain.resources[0].resource_type == 'STORAGE'
-      - result.response.status.resources.user_reference_list[0].uuid == "{{ users[0] }}"
-      - result.response.status.resources.user_reference_list[1].uuid == "{{ users[1] }}"
+      - ( "{{user1}}" == "{{ users[0] }}" and "{{user2}}" == "{{ users[1] }}" ) or ( "{{user2}}" == "{{ users[0] }}" and "{{user1}}" == "{{ users[1] }}" )
+      - ( "{{subnet1}}" == "{{ network.dhcp.uuid }}" and "{{subnet2}}" == "{{ static.uuid }}" ) or  ( "{{subnet2}}" == "{{ network.dhcp.uuid }}" and "{{subnet1}}" == "{{ static.uuid }}" )
       - result.response.status.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
-      - result.response.status.resources.subnet_reference_list[0].uuid == "{{ network.dhcp.uuid }}"
-      - result.response.status.resources.subnet_reference_list[1].uuid == "{{ static.uuid }}"
       - result.response.status.resources.default_subnet_reference.uuid == "{{ network.dhcp.uuid }}"
       - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
 
