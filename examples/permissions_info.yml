@@ -25,7 +25,7 @@
   - name: get permission using uuid
     ntnx_permissions_info:
       permission_uuid: <permission_uuid>
-    register : op3
+    register: op3
 
   - name: output
     debug:

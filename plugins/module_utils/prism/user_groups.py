@@ -7,8 +7,8 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .prism import Prism
-from .spec.categories_mapping import CategoriesMapping
 from .projects import get_project_uuid
+from .spec.categories_mapping import CategoriesMapping
 
 
 class UserGroups(Prism):

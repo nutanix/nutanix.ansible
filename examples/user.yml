@@ -59,5 +59,3 @@
     ntnx_users:
       state: absent
       user_uuid: "{{ result.user_uuid }}"
-
-

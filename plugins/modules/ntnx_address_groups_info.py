@@ -31,7 +31,7 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
-- name: List all address groups 
+- name: List all address groups
   ntnx_address_groups_info:
     nutanix_host: <host_ip>
     nutanix_username: <user>
@@ -52,7 +52,7 @@ EXAMPLES = r"""
     nutanix_host: <host_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
-    filter: 
+    filter:
       name: "<name>"
   register: result
 """

@@ -48,4 +48,3 @@
       state: absent
       user_group_uuid: "{{result.user_group_uuid}}"
     register: result
-
