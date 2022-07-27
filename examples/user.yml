@@ -1,0 +1,63 @@
+---
+- name: users playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+  - name: Setting Variables
+    set_fact:
+        directory_service_uuid: ""
+        principal_name: ""
+        project:
+          uuid: ""
+        identity_provider_uuid: ""
+
+  - name: create local user
+    ntnx_users:
+      principal_name: "{{principal_name}}"
+      directory_service_uuid:  "{{directory_service_uuid}}"
+    register: result
+
+  - name: Delete created user
+    ntnx_users:
+      state: absent
+      user_uuid: "{{ result.user_uuid }}"
+
+  - name: create local user  with project and categories 
+    ntnx_users:
+      principal_name: "{{principal_name}}"
+      directory_service_uuid:  "{{directory_service_uuid}}"
+      project: 
+        uuid: "{{project.uuid}}"
+      categories:
+        Environment:
+          - "Dev"
+        AppType:
+          - "Default"
+    register: result
+
+  - name: Delete created user
+    ntnx_users:
+      state: absent
+      user_uuid: "{{ result.user_uuid }}"
+
+  - name: create idp user
+    ntnx_users:
+      identity_provider_uuid: "{{identity_provider_uuid}}"
+      username: testing_user
+    register: result
+    ignore_errors: true
+
+  - name: Delete created user
+    ntnx_users:
+      state: absent
+      user_uuid: "{{ result.user_uuid }}"
+
+
