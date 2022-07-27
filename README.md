@@ -99,8 +99,16 @@ ansible-playbook examples/iaas/iaas.yml
 
 | Name | Description |
 | --- | --- |
+| ntnx_acps | Create, Update, Delete acp. |
+| ntnx_acps_info | Get acp info. |
+| ntnx_address_groups | Create, Update, Delete Nutanix address groups. |
+| ntnx_address_groups_info | Get address groups info. |
+| ntnx_categories | Create, Update, Delete categories |
+| ntnx_categories_info | Get categories info. |
+| ntnx_clusters_info | Get cluster info. |
 | ntnx_floating_ips | Create or delete a Floating Ip. |
 | ntnx_floating_ips_info | List existing Floating_Ips. |
+| ntnx_hosts_info | Get host info. |
 | ntnx_images | Create, update or delete a image. |
 | ntnx_images_info | List existing images. |
 | ntnx_image_placement_policy | Create, update or delete a image placement policy. |
@@ -108,8 +116,14 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
 | ntnx_permissions_info | List permissions info |
+| ntnx_projects | create, update and delete pc projects |
+| ntnx_projects_info | Get projects info. |
+| ntnx_roles | Create, Update, Delete Nutanix roles |
+| ntnx_roles_info | Get roles info. |
 | ntnx_security_rules | Create, update or delete a Security Rule. |
 | ntnx_security_rules_info | List existing Security Rules. |
+| ntnx_service_groups | Create, Update, Delete service_group |
+| ntnx_service_groups_info | Get service groups info. |
 | ntnx_static_routes | Update static routes of a vpc. |
 | ntnx_static_routes_info | List existing static routes of a vpc. |
 | ntnx_subnets | Create or delete a Subnet. |
@@ -132,6 +146,10 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_foundation_central_api_keys_info | List all the api keys created in Foundation Central. |
 | ntnx_foundation_central_imaged_clusters_info | List all the clusters created using Foundation Central. |
 | ntnx_foundation_central_imaged_nodes_info | List all the nodes registered with Foundation Central. |
+| ntnx_user_groups | Create, Delete user_groups |
+| ntnx_user_groups_info | Get user groups info. |
+| ntnx_users | Create, Delete users |
+| ntnx_users_info | Get users info. |
 
 ## Inventory Plugins
 
