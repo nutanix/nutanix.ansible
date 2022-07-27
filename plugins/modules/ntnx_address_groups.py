@@ -122,7 +122,7 @@ from ..module_utils.prism.address_groups import AddressGroup  # noqa: E402
 
 
 def get_module_spec():
-    subnet_detail = dict(
+    subnet = dict(
         network_prefix=dict(type=int, required=True),
         network_ip=dict(type="str", required=True),
     )
@@ -132,7 +132,7 @@ def get_module_spec():
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
         subnets=dict(
-            type="list", elements="dict", options=subnet_detail, required=False
+            type="list", elements="dict", options=subnet, required=False
         ),
     )
     return module_args
