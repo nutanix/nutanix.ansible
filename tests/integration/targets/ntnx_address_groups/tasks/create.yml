@@ -1,0 +1,97 @@
+---
+- debug:
+    msg: start ntnx_address_groups create tests
+
+- name: Create address group
+  ntnx_address_groups:
+    state: present
+    name: test-ansible-group-1
+    desc: test-ansible-group-1-desc
+    subnets:
+      - network_ip: "10.1.1.0"
+        network_prefix: 24
+      - network_ip: "10.1.2.2"
+        network_prefix: 32
+  register: result
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.address_group_uuid is defined
+      - result.changed == True
+      - result.response.name == "test-ansible-group-1"
+      - result.response.description == "test-ansible-group-1-desc"
+      - result.response.ip_address_block_list[0].ip == "10.1.1.0"
+      - result.response.ip_address_block_list[1].ip == "10.1.2.2"
+      - result.response.ip_address_block_list[0].prefix_length == 24
+      - result.response.ip_address_block_list[1].prefix_length == 32
+
+    fail_msg: "Unable to create address group"
+    success_msg: "Address group created susccessfully"
+
+- set_fact:
+    todelete: '{{ result["address_group_uuid"] }}'
+
+###################################################################################################
+
+- name: Check if address group with existing name fails or not
+  ntnx_address_groups:
+    state: present
+    name: test-ansible-group-1
+    subnets:
+      - network_ip: "10.1.1.0"
+        network_prefix: 24
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.msg == "Address group with given name already exists"
+      - result.changed == False
+
+    fail_msg: "Was able to create address group with existing address group name"
+    success_msg: "Address group with existing address group name failed successfully"
+
+###################################################################################################
+- name: Check mode test
+  check_mode: yes
+  ntnx_address_groups:
+    state: present
+    name: test-ansible-address-group-2
+    desc: test-ansible-address-group-2-desc
+    subnets:
+      - network_ip: "10.1.1.0"
+        network_prefix: 24
+      - network_ip: "10.1.2.2"
+        network_prefix: 32
+  register: result
+
+- name: Check mode Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.response.name == "test-ansible-address-group-2"
+      - result.response.description == "test-ansible-address-group-2-desc"
+      - result.response.ip_address_block_list[0].ip == "10.1.1.0"
+      - result.response.ip_address_block_list[1].ip == "10.1.2.2"
+      - result.response.ip_address_block_list[0].prefix_length == 24
+      - result.response.ip_address_block_list[1].prefix_length == 32
+
+    fail_msg: "Unable to use check mode"
+    success_msg: "Spec generated successfully with check mode"
+
+###################################################################################################
+
+
+- name: cleanup created entities
+  ntnx_address_groups:
+    state: absent
+    address_group_uuid: "{{ todelete }}"
+  register: result
+  ignore_errors: True
+
+- set_fact:
+    todelete: []

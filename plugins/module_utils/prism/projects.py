@@ -6,9 +6,7 @@ from copy import deepcopy
 __metaclass__ = type
 
 from .prism import Prism
-from .user_groups import UserGroups
 from .subnets import Subnet, get_subnet_uuid
-from .users import Users
 from .clusters import Cluster
 
 
@@ -82,17 +80,32 @@ class Projects(Prism):
     def _build_spec_user_reference_list(self, payload, users):
         user_reference_specs = []
         for uuid in users:
-            user_reference_specs.append(Users.build_user_reference_spec(uuid))
+            user_ref = {"kind": "user", "uuid": uuid}
+            user_reference_specs.append(user_ref)
         payload["spec"]["resources"]["user_reference_list"] = user_reference_specs
         return payload, None
 
     def _build_spec_external_user_group_reference_list(self, payload, ext_users):
         user_groups_reference_specs = []
         for uuid in ext_users:
-            user_groups_reference_specs.append(
-                UserGroups.build_user_group_reference_spec(uuid)
-            )
+            user_group_ref = {"kind": "user_group", "uuid": uuid}
+            user_groups_reference_specs.append(user_group_ref)
         payload["spec"]["resources"][
             "external_user_group_reference_list"
         ] = user_groups_reference_specs
         return payload, None
+
+
+def get_project_uuid(module, config):
+    if "name" in config:
+        project = Projects(module)
+        name = config["name"]
+        uuid = project.get_uuid(name)
+        if not uuid:
+            error = "Project {0} not found.".format(name)
+            return None, error
+
+    elif "uuid" in config:
+        uuid = config["uuid"]
+
+    return uuid, None

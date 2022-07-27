@@ -317,7 +317,7 @@ def update_project(module, result):
 
     projects = Projects(module)
     resp = projects.read(uuid)
-    utils.strip_extra_attrs_from_status(resp["status"], resp["spec"])
+    utils.strip_extra_attrs(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
 
     update_spec, error = projects.get_spec(resp)
@@ -369,7 +369,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("project_uuid", "name")),
+            ("state", "present", ("project_uuid", "name"), True),
             ("state", "absent", ("project_uuid",)),
         ],
     )
