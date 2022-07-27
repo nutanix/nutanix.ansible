@@ -316,13 +316,18 @@ def get_module_spec():
     )
     return module_args
 
+
 def check_static_routes_idempotency(routes1, routes2):
     # check default route
-    if routes1["spec"]["resources"].get("default_route_nexthop") != routes2["spec"]["resources"].get("default_route_nexthop"):
+    if routes1["spec"]["resources"].get("default_route_nexthop") != routes2["spec"][
+        "resources"
+    ].get("default_route_nexthop"):
         return False
 
     # check static routes length
-    if len(routes1["spec"]["resources"]["static_routes_list"]) != len(routes2["spec"]["resources"]["static_routes_list"]):
+    if len(routes1["spec"]["resources"]["static_routes_list"]) != len(
+        routes2["spec"]["resources"]["static_routes_list"]
+    ):
         return False
 
     # check static routes contents
@@ -331,6 +336,7 @@ def check_static_routes_idempotency(routes1, routes2):
             return False
 
     return True
+
 
 def update_static_routes(module, result):
     static_routes = StaticRoutes(module)
