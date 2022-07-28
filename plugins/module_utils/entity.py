@@ -226,8 +226,8 @@ class Entity(object):
         self,
         value,
         key="name",
-        entity_type=None,
         data=None,
+        entity_type=None,
         raise_error=True,
         no_response=False,
     ):
