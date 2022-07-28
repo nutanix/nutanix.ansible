@@ -23,6 +23,9 @@
 - Ansible info module for Hosts
 - Ansible info module for Clusters
 
+**Bugs**
+- Fix examples of info modules [\#226](https://github.com/nutanix/nutanix.ansible/issues/226)
+
 ## v1.3.0 (4 July 2022)
 
 **Features**
