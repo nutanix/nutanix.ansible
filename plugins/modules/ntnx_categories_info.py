@@ -100,7 +100,7 @@ entities:
 
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.categories import Categories, CategoryKey  # noqa: E402
+from ..module_utils.prism.categories import Category, CategoryKey  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -128,7 +128,7 @@ def get_category(module, result):
 
 
 def get_categories(module, result):
-    categories = Categories(module)
+    categories = Category(module)
     spec, err = categories.get_info_spec()
     if err:
         result["error"] = err

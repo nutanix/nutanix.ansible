@@ -146,7 +146,7 @@ entities:
 
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.roles import Roles  # noqa: E402
+from ..module_utils.prism.roles import Role  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -163,14 +163,14 @@ def get_module_spec():
 
 
 def get_role(module, result):
-    roles = Roles(module)
+    roles = Role(module)
     uuid = module.params.get("role_uuid")
     resp = roles.read(uuid)
     result["response"] = resp
 
 
 def get_roles(module, result):
-    roles = Roles(module)
+    roles = Role(module)
     spec, err = roles.get_info_spec()
     if err:
         result["error"] = err

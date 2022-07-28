@@ -180,7 +180,7 @@ role_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.roles import Roles  # noqa: E402
+from ..module_utils.prism.roles import Role  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 
 
@@ -203,7 +203,7 @@ def get_module_spec():
 
 
 def create_role(module, result):
-    roles = Roles(module)
+    roles = Role(module)
     name = module.params["name"]
     if roles.get_uuid(name):
         module.fail_json(msg="Role with given name already exists", **result)
@@ -231,7 +231,7 @@ def create_role(module, result):
 
 
 def update_role(module, result):
-    roles = Roles(module)
+    roles = Role(module)
     role_uuid = module.params.get("role_uuid")
     result["role_uuid"] = role_uuid
 
@@ -266,7 +266,7 @@ def update_role(module, result):
 
 
 def delete_role(module, result):
-    roles = Roles(module)
+    roles = Role(module)
     role_uuid = module.params["role_uuid"]
     resp = roles.delete(uuid=role_uuid)
     task_uuid = resp["status"]["execution_context"]["task_uuid"]

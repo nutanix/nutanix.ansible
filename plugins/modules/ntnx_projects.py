@@ -241,7 +241,7 @@ project_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.projects import Projects  # noqa: E402
+from ..module_utils.prism.projects import Project  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 
 
@@ -282,7 +282,7 @@ def get_module_spec():
 
 
 def create_project(module, result):
-    projects = Projects(module)
+    projects = Project(module)
     name = module.params["name"]
     if projects.get_uuid(name):
         module.fail_json(msg="Project with given name already exists", **result)
@@ -316,7 +316,7 @@ def update_project(module, result):
         module.fail_json(msg="Failed updating project", **result)
     result["project_uuid"] = uuid
 
-    projects = Projects(module)
+    projects = Project(module)
     resp = projects.read(uuid)
     utils.strip_extra_attrs(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
@@ -353,7 +353,7 @@ def delete_project(module, result):
         result["error"] = "Missing parameter project_uuid"
         module.fail_json(msg="Failed deleting Project", **result)
 
-    projects = Projects(module)
+    projects = Project(module)
     resp = projects.delete(uuid)
     result["response"] = resp
     result["changed"] = True

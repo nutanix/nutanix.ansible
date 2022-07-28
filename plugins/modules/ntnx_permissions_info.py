@@ -125,7 +125,7 @@ entities:
 
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.permissions import Permissions  # noqa: E402
+from ..module_utils.prism.permissions import Permission  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -142,14 +142,14 @@ def get_module_spec():
 
 
 def get_permission(module, result):
-    permissions = Permissions(module)
+    permissions = Permission(module)
     uuid = module.params.get("permission_uuid")
     resp = permissions.read(uuid)
     result["response"] = resp
 
 
 def get_permissions(module, result):
-    permissions = Permissions(module)
+    permissions = Permission(module)
     spec, err = permissions.get_info_spec()
     if err:
         result["error"] = err

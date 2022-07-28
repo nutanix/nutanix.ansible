@@ -11,10 +11,10 @@ from .prism import Prism
 from .subnets import Subnet, get_subnet_uuid
 
 
-class Projects(Prism):
+class Project(Prism):
     def __init__(self, module):
         resource_type = "/projects"
-        super(Projects, self).__init__(module, resource_type=resource_type)
+        super(Project, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -99,7 +99,7 @@ class Projects(Prism):
 
 def get_project_uuid(module, config):
     if "name" in config:
-        project = Projects(module)
+        project = Project(module)
         name = config["name"]
         uuid = project.get_uuid(name)
         if not uuid:

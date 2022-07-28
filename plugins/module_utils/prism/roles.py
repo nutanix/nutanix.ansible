@@ -4,16 +4,16 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
-from .permissions import Permissions, get_permission_uuid
+from .permissions import Permission, get_permission_uuid
 from .prism import Prism
 
 __metaclass__ = type
 
 
-class Roles(Prism):
+class Role(Prism):
     def __init__(self, module):
         resource_type = "/roles"
-        super(Roles, self).__init__(module, resource_type=resource_type)
+        super(Role, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -43,7 +43,7 @@ class Roles(Prism):
             if err:
                 return None, err
             permission_ref_specs.append(
-                Permissions.build_permission_reference_spec(uuid)
+                Permission.build_permission_reference_spec(uuid)
             )
         payload["spec"]["resources"]["permission_reference_list"] = permission_ref_specs
         return payload, None
@@ -51,7 +51,7 @@ class Roles(Prism):
 
 def get_role_uuid(config, module):
     if "name" in config:
-        roles = Roles(module)
+        roles = Role(module)
         name = config["name"]
         uuid = roles.get_uuid(name)
         if not uuid:

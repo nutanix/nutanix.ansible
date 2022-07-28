@@ -168,7 +168,7 @@ entities:
 
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.user_groups import UserGroups  # noqa: E402
+from ..module_utils.prism.user_groups import UserGroup  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -185,14 +185,14 @@ def get_module_spec():
 
 
 def get_user_group(module, result):
-    user_group = UserGroups(module)
+    user_group = UserGroup(module)
     uuid = module.params.get("usergroup_uuid")
     resp = user_group.read(uuid)
     result["response"] = resp
 
 
 def get_user_groups(module, result):
-    user_group = UserGroups(module)
+    user_group = UserGroup(module)
     spec, err = user_group.get_info_spec()
     if err:
         result["error"] = err

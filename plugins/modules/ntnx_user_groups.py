@@ -190,7 +190,7 @@ user_group_uuid:
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.user_groups import UserGroups  # noqa: E402
+from ..module_utils.prism.user_groups import UserGroup  # noqa: E402
 
 
 def get_module_spec():
@@ -218,7 +218,7 @@ def get_module_spec():
 
 
 def create_user_group(module, result):
-    user_group = UserGroups(module)
+    user_group = UserGroup(module)
     spec, error = user_group.get_spec()
     if error:
         result["error"] = error
@@ -249,7 +249,7 @@ def delete_user_group(module, result):
         result["error"] = "Missing parameter user_group_uuid"
         module.fail_json(msg="Failed deleting user_group", **result)
 
-    user_group = UserGroups(module)
+    user_group = UserGroup(module)
     resp = user_group.delete(uuid)
     result["response"] = resp
     result["changed"] = True

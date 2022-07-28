@@ -150,7 +150,7 @@ status:
 
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.projects import Projects  # noqa: E402
+from ..module_utils.prism.projects import Project  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -167,14 +167,14 @@ def get_module_spec():
 
 
 def get_project(module, result):
-    projects = Projects(module)
+    projects = Project(module)
     uuid = module.params.get("project_uuid")
     resp = projects.read(uuid)
     result["response"] = resp
 
 
 def get_projects(module, result):
-    projects = Projects(module)
+    projects = Project(module)
     spec, err = projects.get_info_spec()
     if err:
         result["error"] = err

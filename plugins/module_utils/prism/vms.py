@@ -14,7 +14,7 @@ from .clusters import Cluster
 from .groups import get_entity_uuid
 from .images import get_image_uuid
 from .prism import Prism
-from .projects import Projects
+from .projects import Project
 from .spec.categories_mapping import CategoriesMapping
 from .subnets import Subnet
 
@@ -169,7 +169,7 @@ class VM(Prism):
 
     def _build_spec_project(self, payload, param):
         if "name" in param:
-            project = Projects(self.module)
+            project = Project(self.module)
             name = param["name"]
             uuid = project.get_uuid(name)
             if not uuid:

@@ -207,7 +207,7 @@ user_uuid:
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.users import Users  # noqa: E402
+from ..module_utils.prism.users import User  # noqa: E402
 
 
 def get_module_spec():
@@ -232,7 +232,7 @@ def get_module_spec():
 
 
 def create_user(module, result):
-    user = Users(module)
+    user = User(module)
     spec, error = user.get_spec()
     if error:
         result["error"] = error
@@ -263,7 +263,7 @@ def delete_user(module, result):
         result["error"] = "Missing parameter user_uuid"
         module.fail_json(msg="Failed deleting user", **result)
 
-    user = Users(module)
+    user = User(module)
     resp = user.delete(uuid)
     result["response"] = resp
     result["changed"] = True

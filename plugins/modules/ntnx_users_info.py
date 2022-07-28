@@ -153,7 +153,7 @@ entities:
 
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.users import Users  # noqa: E402
+from ..module_utils.prism.users import User  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -170,14 +170,14 @@ def get_module_spec():
 
 
 def get_user(module, result):
-    users = Users(module)
+    users = User(module)
     uuid = module.params.get("user_uuid")
     resp = users.read(uuid)
     result["response"] = resp
 
 
 def get_users(module, result):
-    users = Users(module)
+    users = User(module)
     spec, err = users.get_info_spec()
     if err:
         result["error"] = err

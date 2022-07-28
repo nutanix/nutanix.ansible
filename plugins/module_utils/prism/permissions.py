@@ -7,12 +7,12 @@ __metaclass__ = type
 from .prism import Prism
 
 
-class Permissions(Prism):
+class Permission(Prism):
     kind = "permission"
 
     def __init__(self, module):
         resource_type = "/permissions"
-        super(Permissions, self).__init__(module, resource_type=resource_type)
+        super(Permission, self).__init__(module, resource_type=resource_type)
 
     def get_uuid(self, value, key="name", raise_error=True, no_response=False):
         filter_spec = {
@@ -48,7 +48,7 @@ class Permissions(Prism):
 
 def get_permission_uuid(config, module):
     if "name" in config:
-        users = Permissions(module)
+        users = Permission(module)
         name = config["name"]
         uuid = users.get_uuid(name)
         if not uuid:

@@ -11,12 +11,12 @@ from .projects import get_project_uuid
 from .spec.categories_mapping import CategoriesMapping
 
 
-class Users(Prism):
+class User(Prism):
     kind = "user"
 
     def __init__(self, module):
         resource_type = "/users"
-        super(Users, self).__init__(module, resource_type=resource_type)
+        super(User, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "project": self._build_spec_project,
             "principal_name": self._build_spec_principal_name,

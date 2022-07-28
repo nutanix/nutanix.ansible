@@ -9,14 +9,14 @@ from .prism import Prism
 __metaclass__ = type
 
 
-class Categories(Prism):
+class Category(Prism):
     def __init__(self, module):
 
         resource_type = "/categories"
-        super(Categories, self).__init__(module, resource_type=resource_type)
+        super(Category, self).__init__(module, resource_type=resource_type)
 
 
-class CategoryKey(Categories):
+class CategoryKey(Category):
     def __init__(self, module):
         super(CategoryKey, self).__init__(module)
         self.build_spec_methods = {
@@ -65,7 +65,7 @@ class CategoryKey(Categories):
         return payload, None
 
 
-class CategoryValue(Categories):
+class CategoryValue(Category):
     def __init__(self, module):
         super(CategoryValue, self).__init__(module)
 
