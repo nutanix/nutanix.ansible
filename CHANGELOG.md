@@ -26,6 +26,8 @@
 **Bugs**
 - Fix examples of info modules [\#226](https://github.com/nutanix/nutanix.ansible/issues/226)
 
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.3.0...v1.4.0)
+
 ## v1.3.0 (4 July 2022)
 
 **Features**
