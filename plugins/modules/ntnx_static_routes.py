@@ -271,7 +271,7 @@ vpc_uuid:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.static_routes import StaticRoutes  # noqa: E402
+from ..module_utils.prism.static_routes import StaticRoute  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
     remove_param_with_none_value,
@@ -339,7 +339,7 @@ def check_static_routes_idempotency(routes1, routes2):
 
 
 def update_static_routes(module, result):
-    static_routes = StaticRoutes(module)
+    static_routes = StaticRoute(module)
     vpc_uuid = module.params["vpc_uuid"]
     curr_routes = static_routes.get_static_routes(vpc_uuid)
     result["response"] = curr_routes

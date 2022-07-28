@@ -11,12 +11,12 @@ from .vpcs import Vpc
 from .vpn_connections import get_vpn_connection_uuid
 
 
-class StaticRoutes(Vpc):
+class StaticRoute(Vpc):
     default_route_dest = "0.0.0.0/0"
     route_tables_endpoint = "route_tables"
 
     def __init__(self, module):
-        super(StaticRoutes, self).__init__(module)
+        super(StaticRoute, self).__init__(module)
         self.build_spec_methods = {
             "static_routes": self._build_spec_static_routes,
             "remove_all_routes": self._build_spec_remove_all_routes,
