@@ -35,8 +35,8 @@
   ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
-    # clusters:
-    #   - "{{ cluster.uuid }}"
+    clusters:
+      - "{{ cluster.uuid }}"
     subnets: 
       - uuid: "{{ static.uuid }}"
     default_subnet:
@@ -63,7 +63,7 @@
       - result.response.spec.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
       - result.response.spec.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
       - result.response.spec.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
-      # - result.response.spec.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
+      - result.response.spec.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
 
     fail_msg: "Check mode response for update is incorrect"
     success_msg: "Check mode response for update verified successfully"
@@ -74,8 +74,8 @@
   ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
-    # clusters:
-    #   - "{{ cluster.uuid }}"
+    clusters:
+      - "{{ cluster.uuid }}"
     subnets: 
       - uuid: "{{ static.uuid }}"
     default_subnet:
@@ -103,7 +103,7 @@
       - result.response.status.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
       - result.response.status.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
       - result.response.status.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
-      # - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
+      - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
 
     fail_msg: "Project update failed"
     success_msg: "Project updated successfully"

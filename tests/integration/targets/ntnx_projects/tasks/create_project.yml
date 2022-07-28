@@ -69,8 +69,8 @@
   ntnx_projects:
     name: "test-ansible-project-1"
     desc: desc-123
-    # clusters:
-    #   - "{{ cluster.uuid }}"
+    clusters:
+      - "{{ cluster.uuid }}"
     subnets: 
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
@@ -106,7 +106,7 @@
       - ( "{{subnet1}}" == "{{ network.dhcp.uuid }}" and "{{subnet2}}" == "{{ static.uuid }}" ) or  ( "{{subnet2}}" == "{{ network.dhcp.uuid }}" and "{{subnet1}}" == "{{ static.uuid }}" )
       - result.response.status.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
       - result.response.status.resources.default_subnet_reference.uuid == "{{ network.dhcp.uuid }}"
-      # - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
+      - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
 
     fail_msg: "Unable to create project with all specifications"
     success_msg: "Project with all specifications created successfully"
