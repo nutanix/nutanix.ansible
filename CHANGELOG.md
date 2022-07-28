@@ -1,3 +1,28 @@
+## v1.4.0 (28 July 2022)
+
+**Features**
+
+**Prism Central**
+- Ansible module for Access Control Policy (ACPs)
+- Ansible info module for Access Control Policy (ACPs)
+- Ansible module for Projects
+- Ansible info module for Projects
+- Ansible module for Roles
+- Ansible info module for Roles
+- Ansible info module for Permissions
+- Ansible module for Categories
+- Ansible info module for Categories
+- Ansible module for Address Groups
+- Ansible info module for Address Groups
+- Ansible module for Service Groups
+- Ansible info module for Service Groups
+- Ansible module for Users
+- Ansible info module for Users
+- Ansible module for User Groups
+- Ansible info module for User Groups
+- Ansible info module for Hosts
+- Ansible info module for Clusters
+
 ## v1.3.0 (4 July 2022)
 
 **Features**
