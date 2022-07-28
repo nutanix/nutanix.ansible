@@ -223,7 +223,13 @@ class Entity(object):
         return spec, None
 
     def get_uuid(
-        self, value, key="name", entity_type=None, data=None, raise_error=True, no_response=False
+        self,
+        value,
+        key="name",
+        entity_type=None,
+        data=None,
+        raise_error=True,
+        no_response=False,
     ):
         filter_spec = (
             data if data else {"filter": "{0}=={1}".format(key, value), "length": 1}
