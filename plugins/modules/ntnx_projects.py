@@ -104,6 +104,7 @@ options:
     clusters:
         description:
             - list of uuid of cluster to be added in project
+            - Adding clusters is supported for PC versions >= pc.2022.1
         required: false
         type: list
         elements: str

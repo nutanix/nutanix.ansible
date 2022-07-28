@@ -25,8 +25,12 @@ It is designed keeping simplicity as the core value. Hence it is
 
 > For the 1.4.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
 
-### Note:
-> Static routes module (ntnx_static_routes) is only supported for PC versions >= pc.2022.1.
+### Notes:
+> Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
+
+> Adding cluster references in projects module (ntnx_projects) is supported for PC versions >= pc.2022.1
+
+> For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding identity provider (IdP) & organizational unit (OU) based users/groups are supported for PC versions >= pc.2022.1
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 

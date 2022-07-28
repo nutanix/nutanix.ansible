@@ -350,7 +350,7 @@ def get_module_spec():
 
     return module_args
 
-
+# TO-DO: Test acps with VPC and CLUSTER scope
 def create_acp(module, result):
     acp = ACP(module)
     spec, error = acp.get_spec()
