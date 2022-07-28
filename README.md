@@ -30,7 +30,7 @@ It is designed keeping simplicity as the core value. Hence it is
 
 > Adding cluster references in projects module (ntnx_projects) is supported for PC versions >= pc.2022.1
 
-> For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding identity provider (IdP) & organizational unit (OU) based users/groups are supported for PC versions >= pc.2022.1
+> For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding Identity Provider (IdP) & Organizational Unit (OU) based users/groups are supported for PC versions >= pc.2022.1
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
