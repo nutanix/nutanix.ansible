@@ -11,7 +11,9 @@ It is designed keeping simplicity as the core value. Hence it is
 # Version compatibility
 
 ## Ansible
-> This collection has been tested against following Ansible versions: >=2.12.2.
+> This collection has been tested against following versions: 
+  1. ansible==5.0.1
+  2. ansible-core==2.12.3
 
 ## Python
 > This collection requires Python 2.7 or greater
