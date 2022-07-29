@@ -1,0 +1,187 @@
+---
+- name: Create min ACP
+  ntnx_acps:
+    state: present
+    wait: True
+    name: MinACP1
+    role:
+      uuid: "{{ acp.role.uuid }}"
+  register: result
+  check_mode: true
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.spec.name == 'MinACP1'
+    fail_msg: " Unable to create Min ACP with check mode "
+    success_msg: " Min ACP with check mode passed"
+##########################################################
+- name: Create min ACP
+  ntnx_acps:
+    state: present
+    wait: true
+    name: MinACP1
+    role:
+      uuid: '{{ acp.role.uuid }}'
+  check_mode: false
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.spec.name == 'MinACP1'
+    fail_msg: " Unable to create Min ACP "
+    success_msg: " Min ACP created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+##########################################################
+- name: Create ACP with user reference
+  ntnx_acps:
+    state: present
+    name: acp_with_user_reference1
+    role:
+      uuid: "{{ acp.role.uuid }}"
+    user_uuids:
+      - "{{ acp.user_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.spec.name == 'acp_with_user_reference1'
+      - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
+      - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
+    fail_msg: " Unable to Create ACP with user reference "
+    success_msg: " ACP with user reference created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+##########################################################
+- name: Create ACP with user ad user group reference
+  ntnx_acps:
+    state: present
+    name: acp_with_user_and_user_group_reference1
+    role:
+      uuid: "{{ acp.role.uuid }}"
+    user_uuids:
+      - "{{ acp.user_uuid }}"
+    user_group_uuids:
+      - "{{ acp.user_group_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.spec.name == 'acp_with_user_and_user_group_reference1'
+      - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
+      - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
+      - result.response.status.resources.user_group_reference_list.0.uuid == "{{ acp.user_group_uuid }}"
+    fail_msg: " Unable to Create ACP with user and user group reference "
+    success_msg: " ACP with user and user group reference created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+##########################################################
+- name: Create ACP with all specfactions
+  ntnx_acps:
+    state: present
+    name: acp_with_all_specfactions1
+    role:
+      uuid: "{{ acp.role.uuid }}"
+    user_uuids:
+      - "{{ acp.user_uuid }}"
+    user_group_uuids:
+      - "{{ acp.user_group_uuid }}"
+    filters:
+      - scope_filter:
+          - lhs: PROJECT
+            operator: IN
+            rhs:
+              uuid_list:
+                - "{{ project.uuid }}"
+        entity_filter:
+          - lhs: image
+            operator: IN
+            rhs:
+              collection: ALL
+          - lhs: subnet
+            operator: IN
+            rhs:
+              uuid_list:
+                  - "{{ network.dhcp.uuid }}"
+      - scope_filter:
+          - lhs: CATEGORY
+            operator: IN
+            rhs:
+              categories:
+                Environment:
+                  - "Dev"
+        entity_filter:
+          - lhs: vm
+            operator: IN
+            rhs:
+              collection: ALL
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
+      - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
+      - result.response.status.resources.user_group_reference_list.0.uuid == "{{ acp.user_group_uuid }}"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.left_hand_side.entity_type == "image"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.right_hand_side.collection == "ALL"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.1.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.1.left_hand_side.entity_type == "subnet"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.1.right_hand_side.uuid_list.0 == "{{ network.dhcp.uuid }}"
+      - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.left_hand_side == "PROJECT"
+      - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.right_hand_side.uuid_list.0 == "{{ project.uuid }}"
+      - result.response.status.resources.filter_list.context_list.1.entity_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.1.entity_filter_expression_list.0.left_hand_side.entity_type == "vm"
+      - result.response.status.resources.filter_list.context_list.1.entity_filter_expression_list.0.right_hand_side.collection == "ALL"
+      - result.response.status.resources.filter_list.context_list.1.scope_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.1.scope_filter_expression_list.0.left_hand_side == "CATEGORY"
+    fail_msg: " Unable to Create ACP all specfactions "
+    success_msg: " ACP with all specfactions created successfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+##########################################################
+- name: Delete all created acps
+  ntnx_acps:
+    state: absent
+    acp_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "unable to delete all created acp's"
+    success_msg: "All acp's deleted succesfully"
+
+- set_fact:
+    todelete: []

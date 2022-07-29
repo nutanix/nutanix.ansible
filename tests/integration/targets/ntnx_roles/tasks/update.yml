@@ -1,0 +1,125 @@
+---
+- debug:
+    msg: start ntnx_roles create tests
+
+- name: Get Some permissions for test
+  ntnx_permissions_info:
+    length: 3
+  register: result
+
+- set_fact:
+    test_permission_1_name: "{{ result.response.entities[0].status.name }}"
+    test_permission_1_uuid: "{{ result.response.entities[0].metadata.uuid }}"
+    test_permission_2_name: "{{ result.response.entities[1].status.name }}"
+    test_permission_2_uuid: "{{ result.response.entities[1].metadata.uuid }}"
+    test_permission_3_name: "{{ result.response.entities[2].status.name }}"
+    test_permission_3_uuid: "{{ result.response.entities[2].metadata.uuid }}"
+
+##############################################################################################
+
+- name: Create role with permissions
+  ntnx_roles:
+    state: present
+    name: test-ansible-role-2
+    desc: test-ansible-role-3-desc
+    permissions:
+      - name: "{{ test_permission_1_name }}"
+      - uuid: "{{ test_permission_2_uuid }}"
+    wait: true
+  register: test_role
+
+- name: Creation Status
+  assert: 
+    that:
+      - test_role.response is defined
+      - test_role.changed == True
+    fail_msg: "Unable to create roles with certain permissions"
+    success_msg: "Roles with given permissions created susccessfully"
+
+
+###################################################################################################
+
+- name: Update all fields
+  ntnx_roles:
+    state: present
+    role_uuid: "{{test_role.role_uuid}}"
+    name: test-ansible-role-2-updated
+    desc: test-ansible-role-2-desc-updated
+    permissions:
+      - uuid: "{{ test_permission_3_uuid }}"
+    wait: true
+  register: result
+
+- name: Update status
+  assert: 
+    that:
+      - result.response is defined
+      - result.role_uuid is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.changed == True
+      - result.response.status.name == "test-ansible-role-2-updated"
+      - result.response.status.description == "test-ansible-role-2-desc-updated"
+      - result.response.status.resources.permission_reference_list[0]["uuid"] == "{{ test_permission_3_uuid }}"
+      - result.response.status.resources.permission_reference_list | length == 1
+
+    fail_msg: "Unable to update role"
+    success_msg: "Roles with given permissions updated susccessfully"
+
+###################################################################################################
+
+- name: Idempotency check
+  ntnx_roles:
+    state: present
+    role_uuid: "{{test_role.role_uuid}}"
+    name: test-ansible-role-2-updated
+    desc: test-ansible-role-2-desc-updated
+    permissions:
+      - uuid: "{{ test_permission_3_uuid }}"
+    wait: true
+  register: result
+
+- name: idempotency check status
+  assert: 
+    that:
+      - result.changed == False
+      - result.failed == False
+      - "'Nothing to change' in result.msg"
+
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+###################################################################################################
+
+- name: Check mode test
+  check_mode: yes
+  ntnx_roles:
+    state: present
+    role_uuid: "{{test_role.role_uuid}}"
+    name: test-ansible-role-2
+    desc: test-ansible-role-2-desc
+    permissions:
+      - uuid: "{{ test_permission_1_uuid }}"
+    wait: true
+  register: result
+
+- name: check mode Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.response.spec.name == "test-ansible-role-2"
+      - result.response.spec.description == "test-ansible-role-2-desc"
+      - result.response.spec.resources.permission_reference_list[0]["uuid"] == "{{ test_permission_1_uuid }}"
+      - result.response.spec.resources.permission_reference_list | length == 1
+
+    fail_msg: "Check mode failed"
+    success_msg: "Check mode spec generated successfully"
+
+###################################################################################################
+
+- name: cleanup created entities
+  ntnx_roles:
+    state: absent
+    role_uuid: "{{ test_role.role_uuid }}"
+  register: result
+  ignore_errors: True

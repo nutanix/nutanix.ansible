@@ -1,0 +1,47 @@
+---
+- name: ACP playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+
+    - name: Create ACP with all specfactions
+      ntnx_acps:
+        validate_certs: False
+        state: present
+        nutanix_host: "{{ IP }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        name: acp_with_all_specfactions
+        role:
+          uuid: "{{ role.uuid }}"
+        user_uuids:
+          - "{{ user_uuid }}"
+        user_group_uuids:
+          - "{{ user_group_uuid }}"
+        filters:
+          - scope_filter:
+              lhs: PROJECT
+              operator: IN
+              rhs:
+                uuid_list:
+                  - "{{ project.uuid }}"
+            entity_filter:
+              lhs: ALL
+              operator: IN
+              rhs:
+                collection: ALL
+
+    - name: Delete ACP
+      ntnx_acps:
+        state: absent
+        acp_uuid: "{{ acp_uuid }}"
+      register: result

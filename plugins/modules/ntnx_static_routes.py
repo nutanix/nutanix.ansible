@@ -271,11 +271,11 @@ vpc_uuid:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.static_routes import StaticRoutes  # noqa: E402
+from ..module_utils.prism.static_routes import StaticRoute  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
     remove_param_with_none_value,
-    strip_extra_attrs_from_status,
+    strip_extra_attrs,
 )
 
 
@@ -317,8 +317,29 @@ def get_module_spec():
     return module_args
 
 
+def check_static_routes_idempotency(routes1, routes2):
+    # check default route
+    if routes1["spec"]["resources"].get("default_route_nexthop") != routes2["spec"][
+        "resources"
+    ].get("default_route_nexthop"):
+        return False
+
+    # check static routes length
+    if len(routes1["spec"]["resources"]["static_routes_list"]) != len(
+        routes2["spec"]["resources"]["static_routes_list"]
+    ):
+        return False
+
+    # check static routes contents
+    for route in routes1["spec"]["resources"]["static_routes_list"]:
+        if route not in routes2["spec"]["resources"]["static_routes_list"]:
+            return False
+
+    return True
+
+
 def update_static_routes(module, result):
-    static_routes = StaticRoutes(module)
+    static_routes = StaticRoute(module)
     vpc_uuid = module.params["vpc_uuid"]
     curr_routes = static_routes.get_static_routes(vpc_uuid)
     result["response"] = curr_routes
@@ -330,7 +351,7 @@ def update_static_routes(module, result):
             "status"
         ]["resources"]["default_route"]["nexthop"]
 
-    strip_extra_attrs_from_status(curr_routes["status"], curr_routes["spec"])
+    strip_extra_attrs(curr_routes["status"], curr_routes["spec"])
     curr_routes["spec"] = curr_routes.pop("status")
 
     # new spec for updating static routes
@@ -339,14 +360,12 @@ def update_static_routes(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating static routes update spec", **result)
 
-    if update_spec == curr_routes:
+    if check_static_routes_idempotency(curr_routes, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to update")
 
     if module.check_mode:
         result["response"] = update_spec
-        result["params"] = module.params
-        result["current_spec"] = curr_routes
         return
 
     # update static routes

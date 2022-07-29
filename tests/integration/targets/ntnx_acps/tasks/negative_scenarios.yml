@@ -1,0 +1,61 @@
+  - debug:
+      msg: "Started Negative Creation Cases"
+      
+  - name: Unknown role name
+    ntnx_acps:
+      state: present
+      name: MinACP2
+      role:
+        name: "unknown987"
+    register: result
+    ignore_errors: true
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+        - result.msg=="Failed generating acp spec"
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail ACP created successfully with unknown role name '
+#######################################################
+  - name: Unknown role uuid
+    ntnx_acps:
+      state: present
+      name: MinACP2
+      role:
+        uuid: 00000000-0000-0000-0000-000000000000
+    register: result
+    ignore_errors: True
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+        - result.status_code==405
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail acp created successfully with unknown role uuid '
+#######################################################
+  - name: Delete acp with unknown uuid
+    ntnx_acps:
+      state: absent
+      acp_uuid: 5
+    ignore_errors: True
+    register: result
+  - name: Creation Status
+    assert:
+      that:
+        - result.status_code==400
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail deleting acp with unknown uuid '
+#######################################################
+  - name: Delete acp with missing uuid
+    ntnx_acps:
+      state: absent
+    ignore_errors: True
+    register: result
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.failed==True
+      success_msg: ' Success: returned error as expected '
+      fail_msg: ' Fail deleting acp with missing  uuid '

@@ -1,0 +1,78 @@
+---
+- debug:
+    msg: start ntnx_user_groups_info tests
+
+- name: test getting all user groups
+  ntnx_user_groups_info:
+  register: user_groups
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - user_groups.response is defined
+      - user_groups.changed == false
+      - user_groups.failed == false
+      - user_groups.response.entities is defined
+      - user_groups.response.metadata.total_matches > 0
+    fail_msg: "Unable to list all user groups"
+    success_msg: "user groups listed successfully"
+################################################################
+- name: List user groups using length, offset, sort order and sort attribute
+  ntnx_user_groups_info:
+    length: 2
+    offset: 1
+    sort_order: "DESCENDING"
+    sort_attribute: "group_name"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities is defined
+      - result.response.metadata.total_matches > 0
+    fail_msg: "Unable to list all user groups"
+    success_msg: "user groups listed successfully"
+
+#################################################################
+
+- name: test getting particular user groups using filter
+  ntnx_user_groups_info:
+    filter:
+        group_name: "{{ user_groups.response.entities[0].status.resources.display_name }}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities[0].status.state == "COMPLETE"
+      - result.response.entities[0].metadata.uuid == user_groups.response.entities[0].metadata.uuid
+    fail_msg: "Unable to get particular user groups using filter"
+    success_msg: "user groups info obtained successfully using filter"
+
+##################################################################
+
+- name: test getting particular user group using uuid
+  ntnx_user_groups_info:
+    usergroup_uuid: '{{ user_groups.response.entities[0].metadata.uuid  }}'
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed ==false
+      - result.response.status.state == "COMPLETE"
+      - result.response.status.resources.display_name ==   user_groups.response.entities[0].status.resources.display_name
+    fail_msg: "Unable to get particular user group using uuid"
+    success_msg: "user group info obtained successfully using uuid"

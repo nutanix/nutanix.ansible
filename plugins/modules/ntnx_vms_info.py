@@ -39,7 +39,8 @@ EXAMPLES = r"""
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      filter: "vm_name=={{ vm.name }}"
+      filter:
+         vm_name: "{{ vm.name }}"
       kind: vm
     register: result
 

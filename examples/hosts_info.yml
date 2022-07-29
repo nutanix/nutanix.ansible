@@ -1,0 +1,31 @@
+---
+- name: Hosts_Info playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:        
+  - name: test getting all hosts
+    ntnx_hosts_info:
+    register: hosts
+
+  - name: test getting particular host using uuid
+    ntnx_hosts_info:
+      host_uuid: '{{ hosts.response.entities[0].metadata.uuid }}'
+    register: result
+
+  - name: List hosts using length, offset, sort order and name sort attribute
+    ntnx_hosts_info:
+      length: 2
+      offset: 0
+      sort_order: "ASCENDING"
+      sort_attribute: "name"
+    register: result
+    ignore_errors: True

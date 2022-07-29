@@ -47,6 +47,7 @@ class Entity(object):
         data=None,
         endpoint=None,
         query=None,
+        method="POST",
         raise_error=True,
         no_response=False,
         timeout=30,
@@ -56,7 +57,7 @@ class Entity(object):
             url = self._build_url_with_query(url, query)
         return self._fetch_url(
             url,
-            method="POST",
+            method=method,
             data=data,
             raise_error=raise_error,
             no_response=no_response,
@@ -221,9 +222,22 @@ class Entity(object):
                     return None, error
         return spec, None
 
-    def get_uuid(self, value, key="name", raise_error=True, no_response=False):
-        data = {"filter": "{0}=={1}".format(key, value), "length": 1}
-        resp = self.list(data, raise_error=raise_error, no_response=no_response)
+    def get_uuid(
+        self,
+        value,
+        key="name",
+        data=None,
+        entity_type=None,
+        raise_error=True,
+        no_response=False,
+    ):
+        filter_spec = (
+            data if data else {"filter": "{0}=={1}".format(key, value), "length": 1}
+        )
+
+        resp = self.list(
+            data=filter_spec, raise_error=raise_error, no_response=no_response
+        )
         entities = resp.get("entities") if resp else None
         if entities:
             for entity in entities:

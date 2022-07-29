@@ -1,0 +1,62 @@
+---
+- name: Create ACP with all specfactions
+  ntnx_acps:
+    state: present
+    name: acp_with_all_specfactions1
+    role:
+      uuid: "{{ acp.role.uuid }}"
+    user_uuids:
+      - "{{ acp.user_uuid }}"
+    user_group_uuids:
+      - "{{ acp.user_group_uuid }}"
+    filters:
+      - scope_filter:
+          - 
+            lhs: PROJECT
+            operator: IN
+            rhs:
+              uuid_list:
+                - "{{ project.uuid }}"
+        entity_filter:
+          - 
+            lhs: ALL
+            operator: IN
+            rhs:
+              collection: ALL
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
+      - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
+      - result.response.status.resources.user_group_reference_list.0.uuid == "{{ acp.user_group_uuid }}"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.left_hand_side.entity_type == "ALL"
+      - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.right_hand_side.collection == "ALL"
+      - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.operator == "IN"
+      - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.left_hand_side == "PROJECT"
+      - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.right_hand_side.uuid_list.0 == "{{ project.uuid }}"
+    fail_msg: " Unable to Create ACP all specfactions "
+    success_msg: " ACP with all specfactions created successfully "
+
+
+- name: Delete acp
+  ntnx_acps:
+    state: absent
+    acp_uuid: "{{ result.acp_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+      - result.failed == false
+      - result.changed == true
+    fail_msg: " Unable to delete ACP with all specfactions "
+    success_msg: " ACP has been deleted successfully "

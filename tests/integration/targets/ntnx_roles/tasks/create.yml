@@ -1,0 +1,112 @@
+---
+- debug:
+    msg: start ntnx_roles create tests
+
+- name: Get Some permissions for test
+  ntnx_permissions_info:
+    length: 3
+  register: result
+
+- set_fact:
+    test_permission_1_name: "{{ result.response.entities[0].status.name }}"
+    test_permission_1_uuid: "{{ result.response.entities[0].metadata.uuid }}"
+    test_permission_2_name: "{{ result.response.entities[1].status.name }}"
+    test_permission_2_uuid: "{{ result.response.entities[1].metadata.uuid }}"
+    test_permission_3_name: "{{ result.response.entities[2].status.name }}"
+    test_permission_3_uuid: "{{ result.response.entities[2].metadata.uuid }}"
+
+##############################################################################################
+
+- name: Create roles with permissions
+  ntnx_roles:
+    state: present
+    name: test-ansible-role-1
+    desc: test-ansible-role-1-desc
+    permissions:
+      - name: "{{ test_permission_1_name }}"
+      - uuid: "{{ test_permission_2_uuid }}"
+    wait: true
+  register: result
+
+- set_fact:
+    p1: "{{ result.response.status.resources.permission_reference_list[0].uuid }}"
+    p2: "{{ result.response.status.resources.permission_reference_list[1].uuid }}"
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.role_uuid is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.changed == True
+      - result.response.status.name == "test-ansible-role-1"
+      - result.response.status.description == "test-ansible-role-1-desc"
+      - ("{{ p1 }}" == "{{ test_permission_1_uuid }}" and "{{ p2 }}" == "{{ test_permission_2_uuid }}") or ("{{ p2 }}" == "{{ test_permission_1_uuid }}" and "{{ p1 }}" == "{{ test_permission_2_uuid }}")
+
+    fail_msg: "Unable to create roles with certain permissions"
+    success_msg: "Roles with given permissions created susccessfully"
+
+- set_fact:
+    todelete: '{{ result["response"]["metadata"]["uuid"] }}'
+
+###################################################################################################
+
+- name: Check if role with existing name fails or not
+  ntnx_roles:
+    state: present
+    name: test-ansible-role-1
+    permissions:
+      - name: "{{ test_permission_1_name }}"
+      - uuid: "{{ test_permission_2_uuid }}"
+    wait: true
+  register: result
+  ignore_errors: True
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.msg == "Role with given name already exists"
+      - result.changed == False
+
+    fail_msg: "Was able to create role with existing role name"
+    success_msg: "Roles with duplicate role name failed successfully"
+
+###################################################################################################
+- name: Check mode test
+  check_mode: yes
+  ntnx_roles:
+    state: present
+    name: test-ansible-role-2
+    desc: test-ansible-role-1-desc
+    permissions:
+      - name: "{{ test_permission_1_name }}"
+      - uuid: "{{ test_permission_2_uuid }}"
+    wait: true
+  register: result
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.response.spec.name == "test-ansible-role-2"
+      - result.response.spec.description == "test-ansible-role-1-desc"
+      - result.response.spec.resources.permission_reference_list[0]["uuid"] == "{{ test_permission_1_uuid }}"
+      - result.response.spec.resources.permission_reference_list[1]["uuid"] == "{{ test_permission_2_uuid }}"
+
+    fail_msg: "Unable to use check mode"
+    success_msg: "Spec generated successfully with checkmode"
+
+###################################################################################################
+
+
+- name: cleanup created entities
+  ntnx_roles:
+    state: absent
+    role_uuid: "{{ todelete }}"
+  register: result
+  ignore_errors: True
+
+
+- set_fact:
+    todelete: []

@@ -11,15 +11,28 @@ It is designed keeping simplicity as the core value. Hence it is
 # Version compatibility
 
 ## Ansible
-> This collection has been tested against following Ansible versions: >=2.12.2.
+> This collection has been tested against following versions: 
+  1. ansible==5.0.1
+  2. ansible-core==2.12.3
 
 ## Python
 > This collection requires Python 2.7 or greater
 
 ## Prism Cenral
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
+
 > For the 1.2.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.5.
-> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. Static routes module (ntnx_static_routes) is only supported for PC versions >= pc.2022.1.
+
+> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
+
+> For the 1.4.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
+
+### Notes:
+1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
+
+2. Adding cluster references in projects module (ntnx_projects) is supported for PC versions >= pc.2022.1
+
+3. For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding Identity Provider (IdP) & Organizational Unit (OU) based users/groups are supported for PC versions >= pc.2022.1
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
@@ -99,16 +112,31 @@ ansible-playbook examples/iaas/iaas.yml
 
 | Name | Description |
 | --- | --- |
+| ntnx_acps | Create, Update, Delete acp. |
+| ntnx_acps_info | Get acp info. |
+| ntnx_address_groups | Create, Update, Delete Nutanix address groups. |
+| ntnx_address_groups_info | Get address groups info. |
+| ntnx_categories | Create, Update, Delete categories |
+| ntnx_categories_info | Get categories info. |
+| ntnx_clusters_info | Get cluster info. |
 | ntnx_floating_ips | Create or delete a Floating Ip. |
 | ntnx_floating_ips_info | List existing Floating_Ips. |
+| ntnx_hosts_info | Get host info. |
 | ntnx_images | Create, update or delete a image. |
 | ntnx_images_info | List existing images. |
 | ntnx_image_placement_policy | Create, update or delete a image placement policy. |
 | ntnx_image_placement_policies_info | List existing image placement policies. |
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
+| ntnx_permissions_info | List permissions info |
+| ntnx_projects | create, update and delete pc projects |
+| ntnx_projects_info | Get projects info. |
+| ntnx_roles | Create, Update, Delete Nutanix roles |
+| ntnx_roles_info | Get roles info. |
 | ntnx_security_rules | Create, update or delete a Security Rule. |
 | ntnx_security_rules_info | List existing Security Rules. |
+| ntnx_service_groups | Create, Update, Delete service_group |
+| ntnx_service_groups_info | Get service groups info. |
 | ntnx_static_routes | Update static routes of a vpc. |
 | ntnx_static_routes_info | List existing static routes of a vpc. |
 | ntnx_subnets | Create or delete a Subnet. |
@@ -131,6 +159,10 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_foundation_central_api_keys_info | List all the api keys created in Foundation Central. |
 | ntnx_foundation_central_imaged_clusters_info | List all the clusters created using Foundation Central. |
 | ntnx_foundation_central_imaged_nodes_info | List all the nodes registered with Foundation Central. |
+| ntnx_user_groups | Create, Delete user_groups |
+| ntnx_user_groups_info | Get user groups info. |
+| ntnx_users | Create, Delete users |
+| ntnx_users_info | Get users info. |
 
 ## Inventory Plugins
 

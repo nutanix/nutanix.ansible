@@ -33,7 +33,7 @@
     name: integration-test-image-with-upload
     desc: "uploaded image during integration test"
     source_path: "{{ disk_image.dest }}"
-    image_type: "ISO_IMAGE"
+    image_type: "DISK_IMAGE"
     categories:
       Environment:
         - "Dev"
@@ -55,7 +55,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.resources.image_type == "ISO_IMAGE"
+      - result.response.status.resources.image_type == "DISK_IMAGE"
       - result.response.metadata.categories_mapping['AppType'] == ['Default']
       - result.response.metadata.categories_mapping['Environment'] == ['Dev']
       - result.response.status.resources.initial_placement_ref_list[0]['uuid'] == "{{ cluster.uuid }}" 

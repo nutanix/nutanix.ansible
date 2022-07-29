@@ -4,36 +4,86 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+from copy import deepcopy
+
 from .prism import Prism
+from .projects import get_project_uuid
+from .spec.categories_mapping import CategoriesMapping
 
 
-class Users(Prism):
+class User(Prism):
+    kind = "user"
+
     def __init__(self, module):
         resource_type = "/users"
-        super(Users, self).__init__(module, resource_type=resource_type)
+        super(User, self).__init__(module, resource_type=resource_type)
+        self.build_spec_methods = {
+            "project": self._build_spec_project,
+            "principal_name": self._build_spec_principal_name,
+            "directory_service_uuid": self._build_spec_directory_service,
+            "username": self._build_spec_username,
+            "identity_provider_uuid": self._build_spec_identity_provider,
+            "categories": CategoriesMapping.build_categories_mapping_spec,
+            "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
+        }
 
-    def get_uuid(self, value, key="username", raise_error=True, no_response=False):
-        data = {"filter": "{0}=={1}".format(key, value), "length": 1}
-        resp = self.list(data, raise_error=raise_error, no_response=no_response)
-        entities = resp.get("entities") if resp else None
-        if entities:
-            for entity in entities:
-                if entity["status"]["name"] == value:
-                    return entity["metadata"]["uuid"]
-        return None
+    def _get_default_spec(self):
+        return deepcopy(
+            {
+                "metadata": {"kind": "user"},
+                "spec": {
+                    "resources": {
+                        "directory_service_user": {},
+                        "identity_provider_user": {},
+                    }
+                },
+            }
+        )
 
+    def _build_spec_project(self, payload, config):
+        uuid, err = get_project_uuid(self.module, config)
+        if err:
+            return uuid, err
 
-def get_user_uuid(config, module):
-    if "name" in config:
-        users = Users(module)
-        name = config["name"]
-        uuid = users.get_uuid(name)
-        if not uuid:
+        payload["metadata"].update(
+            {"project_reference": {"uuid": uuid, "kind": "project"}}
+        )
+        return payload, None
 
-            error = "User {0} not found.".format(name)
-            return None, error
+    def _build_spec_principal_name(self, payload, config):
+        payload["spec"]["resources"]["directory_service_user"].update(
+            {
+                "user_principal_name": config,
+            }
+        )
+        return payload, None
 
-    elif "uuid" in config:
-        uuid = config["uuid"]
+    def _build_spec_directory_service(self, payload, config):
+        payload["spec"]["resources"]["directory_service_user"].update(
+            {
+                "directory_service_reference": {
+                    "kind": "directory_service",
+                    "uuid": config,
+                }
+            }
+        )
+        payload["spec"]["resources"].pop("identity_provider_user")
+        return payload, None
 
-    return uuid
+    def _build_spec_username(self, payload, config):
+        payload["spec"]["resources"]["identity_provider_user"].update(
+            {"username": config}
+        )
+        return payload, None
+
+    def _build_spec_identity_provider(self, payload, config):
+        payload["spec"]["resources"]["identity_provider_user"].update(
+            {
+                "identity_provider_reference": {
+                    "kind": "identity_provider",
+                    "uuid": config,
+                }
+            }
+        )
+        payload["spec"]["resources"].pop("directory_service_user")
+        return payload, None

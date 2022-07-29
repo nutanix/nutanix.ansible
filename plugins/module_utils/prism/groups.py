@@ -13,7 +13,13 @@ class Groups(Prism):
         super(Groups, self).__init__(module, resource_type=resource_type)
 
     def get_uuid(
-        self, value, key="name", entity_type="", raise_error=True, no_response=False
+        self,
+        value,
+        key="name",
+        data=None,
+        entity_type="",
+        raise_error=True,
+        no_response=False,
     ):
         data = {
             "entity_type": entity_type,

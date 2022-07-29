@@ -17,7 +17,8 @@
         
     - name: List VPC using name filter criteria
       ntnx_vpcs_info:
-        filter: "name=={{ vpc_name }}"
+        filter:
+          name: "{{ vpc_name }}"
         kind: vpc
       register: result
       ignore_errors: True

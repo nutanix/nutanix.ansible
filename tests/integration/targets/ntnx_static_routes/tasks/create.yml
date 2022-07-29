@@ -17,8 +17,13 @@
         next_hop:
           external_subnet_ref:
             uuid: "{{ external_nat_subnet.uuid }}"
+    wait: True
   register: result
   
+- set_fact: 
+    d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
+    d2: "{{ result.response.status.resources.static_routes_list[1].destination }}"
+
 - name: Update static routes list Status
   assert:
     that:
@@ -26,10 +31,9 @@
       - result.response.status.state == 'COMPLETE'
       - result.changed == true
       - result.response.status.resources.static_routes_list[0]["is_active"] == true
-      - result.response.status.resources.static_routes_list[0]["destination"] == "10.2.2.0/24"
+      - ("{{d1}}" == "10.2.2.0/24" and "{{d2}}" == "10.2.3.0/24") or ("{{d2}}" == "10.2.2.0/24" and "{{d1}}" == "10.2.3.0/24")
       - result.response.status.resources.static_routes_list[0]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
       - result.response.status.resources.static_routes_list[1]["is_active"] == true
-      - result.response.status.resources.static_routes_list[1]["destination"] == "10.2.3.0/24"
       - result.response.status.resources.static_routes_list[1]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
       - result.response.status.resources.default_route["is_active"] == true
       - result.response.status.resources.default_route["destination"] == "0.0.0.0/0"

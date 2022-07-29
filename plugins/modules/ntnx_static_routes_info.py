@@ -167,7 +167,7 @@ vpc_uuid:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.static_routes import StaticRoutes  # noqa: E402
+from ..module_utils.prism.static_routes import StaticRoute  # noqa: E402
 
 
 def get_module_spec():
@@ -181,7 +181,7 @@ def get_module_spec():
 
 def get_static_routes(module, result):
     vpc_uuid = module.params["vpc_uuid"]
-    static_routes = StaticRoutes(module)
+    static_routes = StaticRoute(module)
     result["response"] = static_routes.get_static_routes(vpc_uuid)
     result["vpc_uuid"] = vpc_uuid
 

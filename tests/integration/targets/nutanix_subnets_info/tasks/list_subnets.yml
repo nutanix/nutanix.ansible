@@ -5,10 +5,6 @@
   register: result
   ignore_errors: True
 
-- name: Show result
-  debug:
-    msg: "{{ result.response.entities | map(attribute='status.name') }}"
-
 - name: Listing Status
   assert:
     that:
@@ -38,10 +34,6 @@
     kind: subnet
   register: result
   ignore_errors: True
-
-- name: Show result
-  debug:
-    msg: "{{ result.response.entities | map(attribute='status.name') }}"
 
 - name: Listing Status
   assert:
