@@ -1,4 +1,6 @@
 ---
+- set_fact:
+    vpc_uuids: []
 - name: Inputs vpcs task
   include_tasks: vpc.yml
   with_items:

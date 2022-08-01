@@ -19,6 +19,8 @@
     - include_role:
         name: vpc
     - include_role:
+        name: static_route
+    - include_role:
         name: overlay_subnet
     - include_role:
         name: vm
