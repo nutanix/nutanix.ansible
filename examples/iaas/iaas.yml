@@ -10,6 +10,9 @@
       nutanix_username: <user>
       nutanix_password: <pass>
       validate_certs: false
+  vars:
+    cluster:
+      name: auto_cluster_prod_1a642ea0a5c3
   tasks:
     - include_role:
         name: external_subnet
