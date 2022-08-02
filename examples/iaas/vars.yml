@@ -14,24 +14,24 @@ vpc_names: ["Prod", "Dev"]
 domain_search: ["calm.nutanix.com", "eng.nutanix.com"]
 dns_servers: ["8.8.8.8", "8.8.8.4"]
 domain_name: "calm.nutanix.com"
-Prod-SubnetA:
-    name: Prod-SubnetA
+Prod_SubnetA:
+    name: Prod_SubnetA
     vpc_name: Prod
     nip: 10.1.1.0
     prefix: 24
     gip: 10.1.1.1
     sip: 10.1.1.2
     eip: 10.1.1.5
-Prod-SubnetB:
-    name: Prod-SubnetB
+Prod_SubnetB:
+    name: Prod_SubnetB
     vpc_name: Prod
     nip: 10.1.2.0
     prefix: 24
     gip: 10.1.2.1
     sip: 10.1.2.2
     eip: 10.1.2.5
-Dev-SubnetA:
-    name: Dev-SubnetA
+Dev_SubnetA:
+    name: Dev_SubnetA
     vpc_name:  Dev
     nip: 10.1.1.0
     prefix: 24
@@ -39,8 +39,8 @@ Dev-SubnetA:
     sip: 10.1.1.2
     eip: 10.1.1.5
 
-Dev-SubnetB:
-    name: Dev-SubnetB
+Dev_SubnetB:
+    name: Dev_SubnetB
     vpc_name:  Dev
     nip: 10.1.2.0
     prefix: 24

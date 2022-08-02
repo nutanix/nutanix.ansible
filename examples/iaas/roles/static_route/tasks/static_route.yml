@@ -11,4 +11,4 @@
     register: static_route
   - debug:
       msg: 
-        - "uuid: {{ static_route.metadata.uuid }}"
+        - "uuid: {{ static_route.response.metadata.uuid }}"
