@@ -1,0 +1,49 @@
+---
+cluster:
+  name: auto_cluster_prod_f34ce3677ecf
+external_subnet:
+  name: Ext-Nat
+  vlan_id: 102
+  ip: 10.44.3.192
+  prefix: 27
+  gip: 10.44.3.193
+  sip: 10.44.3.198
+  eip: 10.44.3.207
+  eNat: True
+vpc_names: ["Prod","Dev"]
+domain_search: ["calm.nutanix.com", "eng.nutanix.com"]
+dns_servers: ["8.8.8.8", "8.8.8.4"]
+domain_name: "calm.nutanix.com"
+Prod-SubnetA:
+    name: Prod-SubnetA
+    vpc_name: Prod
+    nip: 10.1.1.0
+    prefix: 24
+    gip: 10.1.1.1
+    sip: 10.1.1.2
+    eip: 10.1.1.5
+Prod-SubnetB:
+    name: Prod-SubnetB
+    vpc_name: Prod
+    nip: 10.1.2.0
+    prefix: 24
+    gip: 10.1.2.1
+    sip: 10.1.2.2
+    eip: 10.1.2.5
+Dev-SubnetA:
+    name: Dev-SubnetA
+    vpc_name:  Dev
+    nip: 10.1.1.0
+    prefix: 24
+    gip: 10.1.1.1
+    sip: 10.1.1.2
+    eip: 10.1.1.5
+
+Dev-SubnetB:
+    name: Dev-SubnetB
+    vpc_name:  Dev
+    nip: 10.1.2.0
+    prefix: 24
+    gip: 10.1.2.1
+    sip: 10.1.2.2
+    eip: 10.1.2.5

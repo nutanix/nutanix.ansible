@@ -2,11 +2,11 @@
 - name: Inputs for overlay subnets
   include_tasks: overlay_subnet.yml
   with_items:
-      - { name: Prod-SubnetA, vpc_name: Prod, nip: 10.1.1.0, prefix: 24, gip: 10.1.1.1, sip: 10.1.1.2, eip: 10.1.1.5,
-          domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
-      - { name: Prod-SubnetB, vpc_name: Prod, nip: 10.1.2.0, prefix: 24, gip: 10.1.2.1, sip: 10.1.2.2, eip: 10.1.2.5,
-          domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
-      - { name: Dev-SubnetA, vpc_name:  Dev, nip: 10.1.1.0, prefix: 24, gip: 10.1.1.1, sip: 10.1.1.2, eip: 10.1.1.5,
-          domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
-      - { name: Dev-SubnetB, vpc_name:  Dev, nip: 10.1.2.0, prefix: 24, gip: 10.1.2.1, sip: 10.1.2.2, eip: 10.1.2.5,
-          domain_name: "calm.nutanix.com", dns_servers: ["8.8.8.8", "8.8.8.4"], domain_search: ["calm.nutanix.com", "eng.nutanix.com"] }
+      - { name: "{{Prod-SubnetA.name}}", vpc_name: "{{Prod-SubnetA.vpc_name}}", nip: "{{Prod-SubnetA.nip}}", prefix: "{{Prod-SubnetA.prefix}}", gip: "{{Prod-SubnetA.gip}}", sip: "{{Prod-SubnetA.sip}}", eip: "{{Prod-SubnetA.eip}}",
+          domain_name: "{{domain_name}}", dns_servers: "{{dns_servers}}", domain_search: "{{domain_search}}" }
+      - { name: "{{Prod-SubnetB.name}}", vpc_name: "{{Prod-SubnetB.vpc_name}}", nip: "{{Prod-SubnetB.nip}}", prefix: "{{Prod-SubnetB.prefix}}", gip: "{{Prod-SubnetB.gip}}", sip: "{{Prod-SubnetB.sip}}", eip: "{{Prod-SubnetB.eip}}",
+          domain_name: "{{domain_name}}", dns_servers: "{{dns_servers}}", domain_search: "{{domain_search}}" }
+      - { name: "{{Dev-SubnetA.name}}", vpc_name:  "{{Dev-SubnetA.vpc_name}}", nip: "{{Dev-SubnetA.nip}}", prefix: "{{Dev-SubnetA.prefix}}", gip: "{{Dev-SubnetA.gip}}", sip: "{{Dev-SubnetA.sip}}", eip: "{{Dev-SubnetA.eip}}",
+          domain_name: "{{domain_name}}", dns_servers: "{{dns_servers}}", domain_search: "{{domain_search}}" }
+      - { name: "{{Dev-SubnetB.name}}", vpc_name:  "{{Dev-SubnetB.vpc_name}}", nip: "{{Dev-SubnetB.nip}}", prefix: "{{Dev-SubnetB.prefix}}", gip: "{{Dev-SubnetB.gip}}", sip: "{{Dev-SubnetB.sip}}", eip: "{{Dev-SubnetB.eip}}",
+          domain_name: "{{domain_name}}", dns_servers: "{{dns_servers}}", domain_search: "{{domain_search}}" }
