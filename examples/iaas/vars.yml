@@ -10,7 +10,7 @@ external_subnet:
   sip: 10.44.3.198
   eip: 10.44.3.207
   eNat: True
-vpc_names: ["Prod","Dev"]
+vpc_names: ["Prod", "Dev"]
 domain_search: ["calm.nutanix.com", "eng.nutanix.com"]
 dns_servers: ["8.8.8.8", "8.8.8.4"]
 domain_name: "calm.nutanix.com"
