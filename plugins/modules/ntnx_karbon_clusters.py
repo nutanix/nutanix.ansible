@@ -178,7 +178,7 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     resource_spec = dict(
-        num_instances=dict(type="int", default=1),
+        num_instances=dict(type="int"),
         cpu=dict(type="int", default=4),
         memory_gb=dict(type="int", default=8),
         disk_gb=dict(type="int", default=120),
@@ -200,10 +200,9 @@ def get_module_spec():
         flash_mode=dict(type="bool"),
     )
     custom_node_spec = dict(
-        etcd=dict(type="dict", options=resource_spec),
-        masters=dict(type="dict", options=resource_spec),
-        control_plane_virtual_ip=dict(type="str"),
-        workers=dict(type="dict", options=resource_spec),
+        etcd=dict(type="dict", apply_defaults=True, options=resource_spec),
+        masters=dict(type="dict", apply_defaults=True, options=resource_spec),
+        workers=dict(type="dict", apply_defaults=True, options=resource_spec),
     )
     module_args = dict(
         name=dict(type="str"),
@@ -218,7 +217,8 @@ def get_module_spec():
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         cni=dict(type="dict", options=cni_spec),
-        custom_node_configs=dict(type="dict", options=custom_node_spec),
+        custom_node_configs=dict(type="dict", apply_defaults=True, options=custom_node_spec),
+        control_plane_virtual_ip=dict(type="str"),
         storage_class=dict(type="dict", options=storage_class_spec),
     )
 
@@ -294,7 +294,6 @@ def run_module():
                 "node_subnet",
                 "cni",
                 "storage_class",
-                "custom_node_configs",
             ),
         ],
     )

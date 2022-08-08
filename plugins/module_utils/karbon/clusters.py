@@ -60,7 +60,8 @@ class Cluster(Karbon):
         return payload, None
 
     def _build_spec_node_configs(self, payload, config):
-        control_plane_virtual_ip = config.pop("control_plane_virtual_ip", None)
+        self.type_is_dev = self.module.params.get("cluster_type") != "PROD"
+        control_plane_virtual_ip = self.module.params.get("control_plane_virtual_ip", None)
         for key, value in config.items():
 
             spec_key = "{0}_config".format(key)
@@ -70,10 +71,10 @@ class Cluster(Karbon):
 
             payload[spec_key]["node_pools"] = [node_pool]
             if spec_key == "masters_config":
-                if value["num_instances"] > 1:
+                if node_pool["num_instances"] > 1:
 
                     if not control_plane_virtual_ip:
-                        err = "control_plane_virtual_ip is required if the number of master nodes is two"
+                        err = "control_plane_virtual_ip is required if the number of master nodes is 2 or cluster_type is 'PROD'."
                         return None, err
 
                     payload[spec_key].pop("single_master_config")
@@ -125,8 +126,7 @@ class Cluster(Karbon):
             if error:
                 return None, error
 
-        return {
-            "num_instances": config.get("num_instances"),
+        node = {
             "name": "{0}_{1}_pool".format(
                 self.module.params.get("name"), resource_type
             ),
@@ -138,7 +138,11 @@ class Cluster(Karbon):
                 "network_uuid": self.subnet_uuid,
                 "prism_element_cluster_uuid": self.cluster_uuid,
             },
-        }, None
+        }
+        num_instances = config.get("num_instances", 1 if self.type_is_dev else 3 if resource_type != "master" else 2)
+        node["num_instances"] = num_instances
+
+        return node, None
 
     @staticmethod
     def _validate_resources(resources, resource_type):
@@ -146,7 +150,7 @@ class Cluster(Karbon):
         min_memory = 8
         min_disk_size = 120
         err = "{0} cannot be less then {1}"
-        if resource_type == "master" and resources["num_instances"] not in [1, 2]:
+        if resource_type == "master" and resources.get("num_instances") and resources["num_instances"] not in [1, 2]:
             return None, "value of masters.num_instances must be 1 or 2"
         if resources["cpu"] < min_cpu:
             return None, err.format("cpu", min_cpu)
