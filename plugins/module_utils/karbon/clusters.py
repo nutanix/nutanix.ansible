@@ -21,10 +21,8 @@ class Cluster(Karbon):
             "name": self._build_spec_name,
             "k8s_version": self._build_spec_k8s_version,
             "cni": self._build_spec_cni,
-            "etcd": self._build_spec_etcd,
-            "masters": self._build_spec_masters,
+            "custom_node_configs": self._build_spec_node_configs,
             "storage_class": self._build_spec_storage_class,
-            "workers": self._build_spec_workers,
         }
 
     def _get_default_spec(self):
@@ -61,18 +59,28 @@ class Cluster(Karbon):
         payload["cni_config"] = cni
         return payload, None
 
-    def _build_spec_etcd(self, payload, config):
-        node_pool, err = self._generate_resource_spec(config, "etcd")
-        if err:
-            return None, err
-        payload["etcd_config"] = {"node_pools": [node_pool]}
-        return payload, None
+    def _build_spec_node_configs(self, payload, config):
+        control_plane_virtual_ip = config.pop("control_plane_virtual_ip", None)
+        for key, value in config.items():
 
-    def _build_spec_masters(self, payload, config):
-        node_pool, err = self._generate_resource_spec(config, "master")
-        if err:
-            return None, err
-        payload["masters_config"]["node_pools"] = [node_pool]
+            spec_key = "{0}_config".format(key)
+            node_pool, err = self._generate_resource_spec(value, key if key[-1] != "s" else key[:-1:])
+            if err:
+                return None, err
+
+            payload[spec_key]["node_pools"] = [node_pool]
+            if spec_key == "masters_config":
+                if value["num_instances"] > 1:
+
+                    if not control_plane_virtual_ip:
+                        err = "control_plane_virtual_ip is required if the number of master nodes is two"
+                        return None, err
+
+                    payload[spec_key].pop("single_master_config")
+                    payload[spec_key]["active_passive_config"] = {
+                        "external_ipv4_address": control_plane_virtual_ip
+                    }
+
         return payload, None
 
     def _build_spec_storage_class(self, payload, config):
@@ -99,14 +107,11 @@ class Cluster(Karbon):
         payload["storage_class_config"] = storage_class
         return payload, None
 
-    def _build_spec_workers(self, payload, config):
-        node_pool, err = self._generate_resource_spec(config, "worker")
+    def _generate_resource_spec(self, config, resource_type):
+
+        config, err = self._validate_resources(config, resource_type)
         if err:
             return None, err
-        payload["workers_config"] = {"node_pools": [node_pool]}
-        return payload, None
-
-    def _generate_resource_spec(self, config, resource_type):
 
         if not hasattr(self, "subnet_uuid") and self.module.params.get("node_subnet"):
             subnet_ref = self.module.params.get("node_subnet")
@@ -122,7 +127,7 @@ class Cluster(Karbon):
 
         return {
             "num_instances": config.get("num_instances"),
-            "name": "{0}962424e56137{1}_pool".format(
+            "name": "{0}_{1}_pool".format(
                 self.module.params.get("name"), resource_type
             ),
             "node_os_version": self.module.params.get("host_os"),
@@ -134,3 +139,19 @@ class Cluster(Karbon):
                 "prism_element_cluster_uuid": self.cluster_uuid,
             },
         }, None
+
+    @staticmethod
+    def _validate_resources(resources, resource_type):
+        min_cpu = 4
+        min_memory = 8
+        min_disk_size = 120
+        err = "{0} cannot be less then {1}"
+        if resource_type == "master" and resources["num_instances"] not in [1, 2]:
+            return None, "value of masters.num_instances must be 1 or 2"
+        if resources["cpu"] < min_cpu:
+            return None, err.format("cpu", min_cpu)
+        if resources["memory_gb"] < min_memory:
+            return None, err.format("memory_gb", min_memory)
+        if resources["disk_gb"] < min_disk_size:
+            return None, err.format("disk_gb", min_disk_size)
+        return resources, None

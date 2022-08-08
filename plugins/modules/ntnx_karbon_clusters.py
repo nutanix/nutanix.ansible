@@ -178,10 +178,10 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     resource_spec = dict(
-        num_instances=dict(type="int", required=True),
-        cpu=dict(type="int", required=True),
-        memory_gb=dict(type="int", required=True),
-        disk_gb=dict(type="int", required=True),
+        num_instances=dict(type="int", default=1),
+        cpu=dict(type="int", default=4),
+        memory_gb=dict(type="int", default=8),
+        disk_gb=dict(type="int", default=120),
     )
 
     cni_spec = dict(
@@ -194,16 +194,21 @@ def get_module_spec():
     storage_class_spec = dict(
         default_storage_class=dict(type="bool"),
         name=dict(type="str", required=True),
-        reclaim_policy=dict(type="str"),
+        reclaim_policy=dict(type="str", choices=["ext4", "Delete"]),
         storage_container=dict(type="str", required=True),
         file_system=dict(type="str", choices=["ext4", "xfs"]),
         flash_mode=dict(type="bool"),
     )
-
+    custom_node_spec = dict(
+        etcd=dict(type="dict", options=resource_spec),
+        masters=dict(type="dict", options=resource_spec),
+        control_plane_virtual_ip=dict(type="str"),
+        workers=dict(type="dict", options=resource_spec),
+    )
     module_args = dict(
         name=dict(type="str"),
         cluster_uuid=dict(type="str"),
-        # type=dict(type="str", required=True),
+        cluster_type=dict(type="str", choices=["DEV", "PROD"]),
         cluster=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
@@ -213,10 +218,8 @@ def get_module_spec():
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         cni=dict(type="dict", options=cni_spec),
-        etcd=dict(type="dict", options=resource_spec),
-        masters=dict(type="dict", options=resource_spec),
+        custom_node_configs=dict(type="dict", options=custom_node_spec),
         storage_class=dict(type="dict", options=storage_class_spec),
-        workers=dict(type="dict", options=resource_spec),
     )
 
     return module_args
@@ -276,8 +279,10 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        mutually_exclusive=[("cluster_type", "custom_node_configs")],
         required_if=[
             ("state", "present", ("name", "cluster_uuid"), True),
+            ("state", "present", ("cluster_type", "custom_node_configs"), True),
             ("state", "absent", ("cluster_uuid",)),
         ],
         required_together=[
@@ -288,10 +293,8 @@ def run_module():
                 "host_os",
                 "node_subnet",
                 "cni",
-                "etcd",
-                "masters",
                 "storage_class",
-                "workers",
+                "custom_node_configs",
             ),
         ],
     )
