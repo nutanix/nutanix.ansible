@@ -6,9 +6,9 @@ __metaclass__ = type
 
 from copy import deepcopy
 
-from .karbon import Karbon
-from ..prism.subnets import get_subnet_uuid
 from ..prism.clusters import get_cluster_uuid
+from ..prism.subnets import get_subnet_uuid
+from .karbon import Karbon
 
 
 class Cluster(Karbon):
@@ -28,20 +28,20 @@ class Cluster(Karbon):
         }
 
     def _get_default_spec(self):
-        return deepcopy({
-            "name": "",
-            "metadata": {
-                "api_version": "v1.0.0"
-            },
-            "version": "",
-            "cni_config": {},
-            "etcd_config": {},
-            "masters_config": {
-                "single_master_config": {},
-            },
-            "storage_class_config": {},
-            "workers_config": {}
-        })
+        return deepcopy(
+            {
+                "name": "",
+                "metadata": {"api_version": "v1.0.0"},
+                "version": "",
+                "cni_config": {},
+                "etcd_config": {},
+                "masters_config": {
+                    "single_master_config": {},
+                },
+                "storage_class_config": {},
+                "workers_config": {},
+            }
+        )
 
     def _build_spec_name(self, payload, value):
         payload["name"] = value
@@ -56,7 +56,7 @@ class Cluster(Karbon):
             "node_cidr_mask_size": config["node_cidr_mask_size"],
             "service_ipv4_cidr": config["service_ipv4_cidr"],
             "pod_ipv4_cidr": config["pod_ipv4_cidr"],
-            "flannel_config": config.get("flannel_config", {})
+            "flannel_config": config.get("flannel_config", {}),
         }
         payload["cni_config"] = cni
         return payload, None
@@ -93,8 +93,8 @@ class Cluster(Karbon):
                 "password": self.module.params.get("nutanix_password"),
                 "storage_container": config["storage_container"],
                 "file_system": config.get("file_system"),
-                "flash_mode": config.get("flash_mode")
-            }
+                "flash_mode": config.get("flash_mode"),
+            },
         }
         payload["storage_class_config"] = storage_class
         return payload, None
@@ -121,14 +121,16 @@ class Cluster(Karbon):
                 return None, error
 
         return {
-                   "num_instances": config.get("num_instances"),
-                   "name": "{0}962424e56137{1}_pool".format(self.module.params.get('name'), resource_type),
-                   "node_os_version": self.module.params.get('host_os'),
-                   "ahv_config": {
-                       "cpu": config.get("cpu"),
-                       "memory_mib": config.get("memory_gb") * 1024,
-                       "disk_mib": config.get("disk_gb") * 1024,
-                       "network_uuid": self.subnet_uuid,
-                       "prism_element_cluster_uuid": self.cluster_uuid
-                   }
-               }, None
+            "num_instances": config.get("num_instances"),
+            "name": "{0}962424e56137{1}_pool".format(
+                self.module.params.get("name"), resource_type
+            ),
+            "node_os_version": self.module.params.get("host_os"),
+            "ahv_config": {
+                "cpu": config.get("cpu"),
+                "memory_mib": config.get("memory_gb") * 1024,
+                "disk_mib": config.get("disk_gb") * 1024,
+                "network_uuid": self.subnet_uuid,
+                "prism_element_cluster_uuid": self.cluster_uuid,
+            },
+        }, None

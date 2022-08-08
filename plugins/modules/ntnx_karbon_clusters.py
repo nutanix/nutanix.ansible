@@ -12,16 +12,150 @@ DOCUMENTATION = r"""
 module: ntnx_karbon_clusters
 short_description: category module which supports pc category management CRUD operations
 version_added: 1.5.0
-description: "Create, Update, Delete categories"
+description: "Create, Update, Delete clusters"
 options:
-
+    name:
+        type: str
+        description: Unique name of the k8s cluster.
+    cluster_uuid:
+        type: str
+        description: Cluster UUID
+    cluster:
+        type: dict
+        description: write
+        suboptions:
+            name:
+                type: str
+                description: Cluster name
+            uuid:
+                type: str
+                description: Cluster UUID
+    k8s_version:
+        type: str
+        description: K8s version of the cluster.
+    node_subnet:
+        type: dict
+        description: write
+        suboptions:
+            name:
+                type: str
+                description: write
+            uuid:
+                type: str
+                description: write
+    host_os:
+        type: str
+        description: The version of the node OS image.
+    cni:
+        type: dict
+        description: K8s cluster networking configuration. The flannel or the calico configuration needs to be provided.
+        suboptions:
+            node_cidr_mask_size:
+                type: int
+                description: The size of the subnet from the pod_ipv4_cidr assigned to each host. A value of 24 would allow up to 255 pods per node.
+            service_ipv4_cidr:
+                type: str
+                description: Classless inter-domain routing (CIDR) for k8s services in the cluster.
+            pod_ipv4_cidr:
+                type: str
+                description: CIDR for pods in the cluster.
+            flannel_config:
+                type: dict
+                description: Configuration of the flannel container network interface (CNI) provider.
+    etcd:
+        type: dict
+        description: Configuration of the etcd cluster.
+        suboptions:
+            num_instances:
+                type: int
+                description: Number of nodes in the node pool.
+                required: true
+            cpu:
+                type: int
+                description: The number of VCPUs allocated for each VM on the PE cluster.
+                required: true
+            disk_gb:
+                type: int
+                description: Size of local storage for each VM on the PE cluster in GiB.
+                required: true
+            memory_gb:
+                type: int
+                description: Memory allocated for each VM on the PE cluster in GiB.
+                required: true
+    masters:
+        type: dict
+        description:
+            - "Configuration of master nodes. Providing one of the following configurations is required:
+              single master, active-passive or the external load-balancer."
+        suboptions:
+            num_instances:
+                type: int
+                description: Number of nodes in the node pool.
+                required: true
+            cpu:
+                type: int
+                description: The number of VCPUs allocated for each VM on the PE cluster.
+                required: true
+            disk_gb:
+                type: int
+                description: Size of local storage for each VM on the PE cluster in GiB.
+                required: true
+            memory_gb:
+                type: int
+                description: Memory allocated for each VM on the PE cluster in GiB.
+                required: true
+    workers:
+        type: dict
+        description: Configuration of the worker nodes.
+        suboptions:
+            num_instances:
+                type: int
+                description: Number of nodes in the node pool.
+                required: true
+            cpu:
+                type: int
+                description: The number of VCPUs allocated for each VM on the PE cluster.
+                required: true
+            disk_gb:
+                type: int
+                description: Size of local storage for each VM on the PE cluster in GiB.
+                required: true
+            memory_gb:
+                type: int
+                description: Memory allocated for each VM on the PE cluster in GiB.
+                required: true
+    storage_class:
+        type: dict
+        description: write
+        suboptions:
+            default_storage_class:
+                type: bool
+                description: K8 uses the default storage class when the persistent volume claim (PVC) create request does not specify a storage class to use for the new persistent volume (PV).
+            name:
+                type: str
+                description: The name of the storage class.
+                required: true
+            reclaim_policy:
+                type: str
+                description: Reclaim policy for persistent volumes provisioned using the specified storage class.
+            storage_container:
+                type: str
+                description: Name of the storage container the storage container uses to provision volumes.
+                required: true
+            flash_mode:
+                type: bool
+                description: boolean to enable flash mode
+            file_system:
+                type: str
+                description: Karbon uses either the ext4 or xfs file-system on the volume disk.
+                choices: ["ext4", "xfs"]
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
 author:
- - Prem Karat (@premkarat)
- - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
- - Alaa Bishtawi (@alaa-bish)
+    - Prem Karat (@premkarat)
+    - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+    - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
@@ -148,11 +282,18 @@ def run_module():
         ],
         required_together=[
             (
-                "name", "cluster", "k8s_version",
-                "host_os", "node_subnet", "cni",
-                "etcd", "masters", "storage_class",
-                "workers"),
-        ]
+                "name",
+                "cluster",
+                "k8s_version",
+                "host_os",
+                "node_subnet",
+                "cni",
+                "etcd",
+                "masters",
+                "storage_class",
+                "workers",
+            ),
+        ],
     )
     utils.remove_param_with_none_value(module.params)
     result = {
