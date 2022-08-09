@@ -196,10 +196,10 @@ def get_module_spec():
     )
 
     cni_spec = dict(
-        node_cidr_mask_size=dict(type="int"),
-        service_ipv4_cidr=dict(type="str"),
-        pod_ipv4_cidr=dict(type="str"),
-        flannel_config=dict(type="dict"),
+        node_cidr_mask_size=dict(type="int", default=24),
+        service_ipv4_cidr=dict(type="str", required=True),
+        pod_ipv4_cidr=dict(type="str", required=True),
+        network_provider=dict(type="str", choices=["Calico", "Flannel"], default="Flannel"),
     )
 
     storage_class_spec = dict(
@@ -227,7 +227,7 @@ def get_module_spec():
         node_subnet=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
-        cni=dict(type="dict", options=cni_spec),
+        cni=dict(type="dict", apply_defaults=True, options=cni_spec),
         custom_node_configs=dict(
             type="dict", apply_defaults=True, options=custom_node_spec
         ),
@@ -240,9 +240,6 @@ def get_module_spec():
 
 def create_cluster(module, result):
     cluster = Cluster(module)
-    # name = module.params["name"]
-    # if cluster.get_uuid(name):
-    #     module.fail_json(msg="Cluster with given name already exists", **result)
 
     spec, error = cluster.get_spec()
     if error:
