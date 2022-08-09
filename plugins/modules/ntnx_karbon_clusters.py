@@ -20,6 +20,10 @@ options:
     cluster_uuid:
         type: str
         description: Cluster UUID
+    cluster_type:
+        type: str
+        choices: ["DEV", "PROD"]
+        description: write
     cluster:
         type: dict
         description: write
@@ -62,75 +66,81 @@ options:
             flannel_config:
                 type: dict
                 description: Configuration of the flannel container network interface (CNI) provider.
-    etcd:
+    custom_node_configs:
         type: dict
-        description: Configuration of the etcd cluster.
+        description: write
         suboptions:
-            num_instances:
-                type: int
-                description: Number of nodes in the node pool.
-                required: true
-            cpu:
-                type: int
-                description: The number of VCPUs allocated for each VM on the PE cluster.
-                required: true
-            disk_gb:
-                type: int
-                description: Size of local storage for each VM on the PE cluster in GiB.
-                required: true
-            memory_gb:
-                type: int
-                description: Memory allocated for each VM on the PE cluster in GiB.
-                required: true
-    masters:
-        type: dict
-        description:
-            - "Configuration of master nodes. Providing one of the following configurations is required:
-              single master, active-passive or the external load-balancer."
-        suboptions:
-            num_instances:
-                type: int
-                description: Number of nodes in the node pool.
-                required: true
-            cpu:
-                type: int
-                description: The number of VCPUs allocated for each VM on the PE cluster.
-                required: true
-            disk_gb:
-                type: int
-                description: Size of local storage for each VM on the PE cluster in GiB.
-                required: true
-            memory_gb:
-                type: int
-                description: Memory allocated for each VM on the PE cluster in GiB.
-                required: true
-    workers:
-        type: dict
-        description: Configuration of the worker nodes.
-        suboptions:
-            num_instances:
-                type: int
-                description: Number of nodes in the node pool.
-                required: true
-            cpu:
-                type: int
-                description: The number of VCPUs allocated for each VM on the PE cluster.
-                required: true
-            disk_gb:
-                type: int
-                description: Size of local storage for each VM on the PE cluster in GiB.
-                required: true
-            memory_gb:
-                type: int
-                description: Memory allocated for each VM on the PE cluster in GiB.
-                required: true
+            etcd:
+                type: dict
+                description: Configuration of the etcd cluster.
+                suboptions:
+                    num_instances:
+                        type: int
+                        description: Number of nodes in the node pool.
+                    cpu:
+                        type: int
+                        description: The number of VCPUs allocated for each VM on the PE cluster.
+                        default: 4
+                    disk_gb:
+                        type: int
+                        description: Size of local storage for each VM on the PE cluster in GiB.
+                        default: 120
+                    memory_gb:
+                        type: int
+                        description: Memory allocated for each VM on the PE cluster in GiB.
+                        default: 8
+            masters:
+                type: dict
+                description:
+                    - "Configuration of master nodes. Providing one of the following configurations is required:
+                    single master, active-passive or the external load-balancer."
+                suboptions:
+                    num_instances:
+                        type: int
+                        description: Number of nodes in the node pool.
+                    cpu:
+                        type: int
+                        description: The number of VCPUs allocated for each VM on the PE cluster.
+                        default: 4
+                    disk_gb:
+                        type: int
+                        description: Size of local storage for each VM on the PE cluster in GiB.
+                        default: 120
+                    memory_gb:
+                        type: int
+                        description: Memory allocated for each VM on the PE cluster in GiB.
+                        default: 8
+            workers:
+                type: dict
+                description: Configuration of the worker nodes.
+                suboptions:
+                    num_instances:
+                        type: int
+                        description: Number of nodes in the node pool.
+                    cpu:
+                        type: int
+                        description: The number of VCPUs allocated for each VM on the PE cluster.
+                        default: 4
+                    disk_gb:
+                        type: int
+                        description: Size of local storage for each VM on the PE cluster in GiB.
+                        default: 120
+                    memory_gb:
+                        type: int
+                        description: Memory allocated for each VM on the PE cluster in GiB.
+                        default: 8
+    control_plane_virtual_ip:
+        type: str
+        description: write
     storage_class:
         type: dict
         description: write
         suboptions:
             default_storage_class:
                 type: bool
-                description: K8 uses the default storage class when the persistent volume claim (PVC) create request does not specify a storage class to use for the new persistent volume (PV).
+                description:
+                    - K8 uses the default storage class when the persistent volume claim (PVC)
+                      create request does not specify a storage class to use for the new persistent volume (PV).
             name:
                 type: str
                 description: The name of the storage class.
@@ -138,6 +148,7 @@ options:
             reclaim_policy:
                 type: str
                 description: Reclaim policy for persistent volumes provisioned using the specified storage class.
+                choices: ["ext4", "Delete"]
             storage_container:
                 type: str
                 description: Name of the storage container the storage container uses to provision volumes.
@@ -217,7 +228,9 @@ def get_module_spec():
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         cni=dict(type="dict", options=cni_spec),
-        custom_node_configs=dict(type="dict", apply_defaults=True, options=custom_node_spec),
+        custom_node_configs=dict(
+            type="dict", apply_defaults=True, options=custom_node_spec
+        ),
         control_plane_virtual_ip=dict(type="str"),
         storage_class=dict(type="dict", options=storage_class_spec),
     )

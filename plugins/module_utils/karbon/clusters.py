@@ -61,11 +61,15 @@ class Cluster(Karbon):
 
     def _build_spec_node_configs(self, payload, config):
         self.type_is_dev = self.module.params.get("cluster_type") != "PROD"
-        control_plane_virtual_ip = self.module.params.get("control_plane_virtual_ip", None)
+        control_plane_virtual_ip = self.module.params.get(
+            "control_plane_virtual_ip", None
+        )
         for key, value in config.items():
 
             spec_key = "{0}_config".format(key)
-            node_pool, err = self._generate_resource_spec(value, key if key[-1] != "s" else key[:-1:])
+            node_pool, err = self._generate_resource_spec(
+                value, key if key[-1] != "s" else key[:-1:]
+            )
             if err:
                 return None, err
 
@@ -139,7 +143,10 @@ class Cluster(Karbon):
                 "prism_element_cluster_uuid": self.cluster_uuid,
             },
         }
-        num_instances = config.get("num_instances", 1 if self.type_is_dev else 3 if resource_type != "master" else 2)
+        num_instances = config.get(
+            "num_instances",
+            1 if self.type_is_dev else 3 if resource_type != "master" else 2,
+        )
         node["num_instances"] = num_instances
 
         return node, None
@@ -150,7 +157,11 @@ class Cluster(Karbon):
         min_memory = 8
         min_disk_size = 120
         err = "{0} cannot be less then {1}"
-        if resource_type == "master" and resources.get("num_instances") and resources["num_instances"] not in [1, 2]:
+        if (
+            resource_type == "master"
+            and resources.get("num_instances")
+            and resources["num_instances"] not in [1, 2]
+        ):
             return None, "value of masters.num_instances must be 1 or 2"
         if resources["cpu"] < min_cpu:
             return None, err.format("cpu", min_cpu)
