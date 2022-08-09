@@ -58,12 +58,8 @@ class Cluster(Karbon):
         provider = config.get("network_provider")
         if provider == "Calico":
             cni["calico_config"] = {
-                                       "ip_pool_configs": [
-                                           {
-                                               "cidr": config["pod_ipv4_cidr"]
-                                           }
-                                       ]
-                                   }
+                "ip_pool_configs": [{"cidr": config["pod_ipv4_cidr"]}]
+            }
         elif provider == "Flannel":
             cni["flannel_config"] = {}
         payload["cni_config"] = cni
@@ -168,15 +164,15 @@ class Cluster(Karbon):
         min_disk_size = 120
         err = "{0} cannot be less then {1}"
         if (
-                resource_type == "master"
-                and resources.get("num_instances")
-                and resources["num_instances"] not in [1, 2]
+            resource_type == "master"
+            and resources.get("num_instances")
+            and resources["num_instances"] not in [1, 2]
         ):
             return None, "value of masters.num_instances must be 1 or 2"
         elif (
-                resource_type == "etcd"
-                and resources.get("num_instances")
-                and resources["num_instances"] not in [1, 3, 5]
+            resource_type == "etcd"
+            and resources.get("num_instances")
+            and resources["num_instances"] not in [1, 3, 5]
         ):
             return None, "value of etcd.num_instances must be 1, 3 or 5"
         if resources["cpu"] < min_cpu:

@@ -56,16 +56,21 @@ options:
         suboptions:
             node_cidr_mask_size:
                 type: int
+                default: 24
                 description: The size of the subnet from the pod_ipv4_cidr assigned to each host. A value of 24 would allow up to 255 pods per node.
             service_ipv4_cidr:
                 type: str
+                required: true
                 description: Classless inter-domain routing (CIDR) for k8s services in the cluster.
             pod_ipv4_cidr:
                 type: str
+                required: true
                 description: CIDR for pods in the cluster.
-            flannel_config:
-                type: dict
-                description: Configuration of the flannel container network interface (CNI) provider.
+            network_provider:
+                type: str
+                choices: ["Calico", "Flannel"]
+                default: "Flannel"
+                description: write
     custom_node_configs:
         type: dict
         description: write
@@ -199,7 +204,9 @@ def get_module_spec():
         node_cidr_mask_size=dict(type="int", default=24),
         service_ipv4_cidr=dict(type="str", required=True),
         pod_ipv4_cidr=dict(type="str", required=True),
-        network_provider=dict(type="str", choices=["Calico", "Flannel"], default="Flannel"),
+        network_provider=dict(
+            type="str", choices=["Calico", "Flannel"], default="Flannel"
+        ),
     )
 
     storage_class_spec = dict(
