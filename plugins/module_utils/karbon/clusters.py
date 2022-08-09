@@ -14,8 +14,7 @@ from .karbon import Karbon
 class Cluster(Karbon):
     kind = "cluster"
 
-    def __init__(self, module):
-        resource_type = "/clusters"
+    def __init__(self, module, resource_type="/v1/k8s/clusters"):
         super(Cluster, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
