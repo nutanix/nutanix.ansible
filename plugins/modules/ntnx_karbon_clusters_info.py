@@ -5,6 +5,8 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+from copy import deepcopy
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -140,7 +142,7 @@ def get_clusters(module, result):
 
 
 def run_module():
-    info_module = BaseInfoModule.__new__()
+    info_module = deepcopy(BaseInfoModule)
     info_module.info_argument_spec = {}
     module = info_module(
         argument_spec=get_module_spec(),
