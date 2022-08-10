@@ -234,7 +234,7 @@ def get_module_spec():
         node_subnet=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
-        cni=dict(type="dict", apply_defaults=True, options=cni_spec),
+        cni=dict(type="dict", options=cni_spec),
         custom_node_configs=dict(
             type="dict", apply_defaults=True, options=custom_node_spec
         ),
@@ -298,7 +298,7 @@ def run_module():
         supports_check_mode=True,
         mutually_exclusive=[("cluster_type", "custom_node_configs")],
         required_if=[
-            ("state", "present", ("name", "cluster_uuid"), True),
+            ("state", "present", ("name",)),
             ("state", "present", ("cluster_type", "custom_node_configs"), True),
             ("state", "absent", ("cluster_uuid",)),
         ],
