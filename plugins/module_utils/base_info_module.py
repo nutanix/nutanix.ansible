@@ -17,7 +17,7 @@ class BaseInfoModule(BaseModule):
         custom_filter=dict(type="dict"),
     )
 
-    def __init__(self,skip_info_args=False, **kwargs):
+    def __init__(self, skip_info_args=False, **kwargs):
         self.argument_spec = deepcopy(BaseModule.argument_spec)
         self.argument_spec.pop("state")
         self.argument_spec.pop("wait")
