@@ -78,7 +78,7 @@ RETURN = r"""
     ]
 """
 
-from ..module_utils.base_module import BaseModule
+from ..module_utils.base_info_module import BaseInfoModule
 from ..module_utils.karbon.clusters import Cluster  # noqa: E402
 
 
@@ -108,7 +108,9 @@ def get_clusters(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    info_module = BaseInfoModule.__new__()
+    info_module.info_argument_spec = {}
+    module = info_module(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
     )
