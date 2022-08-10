@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_clusters_info
 short_description: cluster  info module
-version_added: 1.0.0
+version_added: 1.5.0
 description: 'Get cluster info'
 options:
       cluster_name:
@@ -26,7 +26,7 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List clusters 
+  - name: List clusters
     ntnx_karbon_clusters_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
@@ -45,37 +45,71 @@ EXAMPLES = r"""
 
 """
 RETURN = r"""
-    [
-        {
-            "cni_config": {
+cni_config:
+  description: Container networking interface (CNI) information.
+  returned: always
+  type: dict
+  sample:
+    {
                 "flannel_config": null,
                 "node_cidr_mask_size": 24,
                 "pod_ipv4_cidr": "172.20.0.0/16",
                 "service_ipv4_cidr": "172.19.0.0/16"
-            },
-            "etcd_config": {
+            }
+etcd_config:
+  description: Etcd configuration information.
+  returned: always
+  type: dict
+  sample: {
                 "node_pools": [
                     "test-module21_etcd_pool"
                 ]
-            },
-            "kubeapi_server_ipv4_address": "10.44.78.171",
-            "master_config": {
+            }
+kubeapi_server_ipv4_address:
+    description: IPV4 address of the API server.
+    returned: always
+    type: str
+    sample: "10.44.78.171"
+master_config:
+    description: Configuration of master nodes.
+    returned: always
+    type: dict
+    sample: {
                 "deployment_type": "single-master",
                 "node_pools": [
                     "test-module21_master_pool"
                 ]
-            },
-            "name": "test-module21",
-            "status": "kActive",
-            "uuid": "70a9ca27-80c6-4bd1-5600-3764a5265ebd",
-            "version": "1.19.8-0",
-            "worker_config": {
+            }
+name:
+    description: K8s cluster name.
+    returned: always
+    type: str
+    sample: "test-module21"
+status:
+    description: K8s cluster status.
+    returned: always
+    type: str
+    sample: "kActive"
+uuid:
+    description: The universally unique identifier (UUID) of the k8s cluster.
+    returned: always
+    type: str
+    sample: "70a9ca27-80c6-4bd1-5600-3764a5265ebd"
+version:
+    description: K8s version of the cluster.
+    returned: always
+    type: str
+    sample: "1.19.8-0"
+worker_config:
+    description: Worker configuration information.
+    returned: always
+    type: dict
+    sample: {
                 "node_pools": [
                     "test-module21_worker_pool"
                 ]
             }
-        }
-    ]
+
 """
 
 from ..module_utils.base_info_module import BaseInfoModule
@@ -84,9 +118,7 @@ from ..module_utils.karbon.clusters import Cluster  # noqa: E402
 
 def get_module_spec():
 
-    module_args = dict(
-        cluster_name=dict(type="str")
-    )
+    module_args = dict(cluster_name=dict(type="str"))
 
     return module_args
 
