@@ -212,7 +212,7 @@ def get_module_spec():
     storage_class_spec = dict(
         default_storage_class=dict(type="bool"),
         name=dict(type="str", required=True),
-        reclaim_policy=dict(type="str", choices=["ext4", "Delete"]),
+        reclaim_policy=dict(type="str", choices=["Retain", "Delete"]),
         storage_container=dict(type="str", required=True),
         file_system=dict(type="str", choices=["ext4", "xfs"]),
         flash_mode=dict(type="bool"),
