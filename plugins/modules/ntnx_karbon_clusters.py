@@ -17,9 +17,6 @@ options:
     name:
         type: str
         description: Unique name of the k8s cluster.
-    cluster_uuid:
-        type: str
-        description: Cluster UUID
     cluster_type:
         type: str
         choices: ["DEV", "PROD"]
@@ -224,7 +221,6 @@ def get_module_spec():
     )
     module_args = dict(
         name=dict(type="str"),
-        cluster_uuid=dict(type="str"),
         cluster_type=dict(type="str", choices=["DEV", "PROD"]),
         cluster=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
@@ -266,28 +262,27 @@ def create_cluster(module, result):
     if module.params.get("wait"):
         task = Task(module)
         task.wait_for_completion(task_uuid)
-        resp = cluster.read(cluster_uuid)
+        resp = cluster.read(resp["cluster_name"])
 
     result["response"] = resp
 
 
 def delete_cluster(module, result):
-    cluster_uuid = module.params["cluster_uuid"]
-    if not cluster_uuid:
-        result["error"] = "Missing parameter cluster_uuid in playbook"
+    cluster_name = module.params["name"]
+    if not cluster_name:
+        result["error"] = "Missing parameter name in playbook"
         module.fail_json(msg="Failed deleting cluster", **result)
 
     cluster = Cluster(module)
-    resp = cluster.delete(cluster_uuid)
+    resp = cluster.delete(cluster_name)
     result["changed"] = True
-    result["cluster_uuid"] = cluster_uuid
+    result["cluster_name"] = cluster_name
     task_uuid = resp["task_uuid"]
     result["task_uuid"] = task_uuid
 
     if module.params.get("wait"):
         task = Task(module)
-        task.wait_for_completion(task_uuid)
-        resp = cluster.read(cluster_uuid)
+        resp = task.wait_for_completion(task_uuid)
 
     result["response"] = resp
 
@@ -298,13 +293,10 @@ def run_module():
         supports_check_mode=True,
         mutually_exclusive=[("cluster_type", "custom_node_configs")],
         required_if=[
-            ("state", "present", ("name",)),
             ("state", "present", ("cluster_type", "custom_node_configs"), True),
-            ("state", "absent", ("cluster_uuid",)),
         ],
         required_together=[
             (
-                "name",
                 "cluster",
                 "k8s_version",
                 "host_os",

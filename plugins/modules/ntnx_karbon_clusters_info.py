@@ -118,7 +118,11 @@ from ..module_utils.karbon.clusters import Cluster  # noqa: E402
 
 def get_module_spec():
 
-    module_args = dict(cluster_name=dict(type="str"))
+    module_args = dict(
+        cluster_name=dict(type="str"),
+        fetch_ssh_credentials=dict(type="bool"),
+        fetch_kubeconfig=dict(type="bool"),
+    )
 
     return module_args
 
@@ -126,7 +130,15 @@ def get_module_spec():
 def get_cluster(module, result):
     cluster = Cluster(module)
     cluster_name = module.params.get("cluster_name")
-    resp = cluster.read(cluster_name)
+    fetch_ssh_credentials = module.params.get("fetch_ssh_credentials")
+    fetch_kubeconfig = module.params.get("fetch_kubeconfig")
+    endpoint = None
+    if fetch_ssh_credentials:
+        endpoint = "ssh"
+    elif fetch_kubeconfig:
+        endpoint = "kubeconfig"
+
+    resp = cluster.read(cluster_name, endpoint=endpoint)
 
     result["response"] = resp
 
@@ -144,6 +156,12 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,
+        mutually_exclusive=[("fetch_ssh_credentials", "fetch_kubeconfig")],
+        required_if=[
+            ("fetch_ssh_credentials", True, ("cluster_name",)),
+            ("fetch_kubeconfig", True, ("cluster_name",)),
+        ],
+
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("cluster_name"):
