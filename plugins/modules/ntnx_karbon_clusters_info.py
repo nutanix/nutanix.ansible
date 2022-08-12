@@ -112,7 +112,7 @@ worker_config:
 
 """
 
-from ..module_utils.base_info_module import BaseInfoModule
+from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.karbon.clusters import Cluster  # noqa: E402
 
 
@@ -161,7 +161,6 @@ def run_module():
             ("fetch_ssh_credentials", True, ("cluster_name",)),
             ("fetch_kubeconfig", True, ("cluster_name",)),
         ],
-
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("cluster_name"):

@@ -32,9 +32,7 @@ class Cluster(Karbon):
                 "version": "",
                 "cni_config": {},
                 "etcd_config": {},
-                "masters_config": {
-                    "single_master_config": {},
-                },
+                "masters_config": {"single_master_config": {}},
                 "storage_class_config": {},
                 "workers_config": {},
             }

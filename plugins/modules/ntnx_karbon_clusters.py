@@ -294,24 +294,14 @@ def run_module():
         mutually_exclusive=[("cluster_type", "custom_node_configs")],
         required_if=[
             ("state", "present", ("cluster_type", "custom_node_configs"), True),
+            ("state", "present", ("node_subnet", "storage_class")),
         ],
         required_together=[
-            (
-                "cluster",
-                "k8s_version",
-                "host_os",
-                "node_subnet",
-                "cni",
-                "storage_class",
-            ),
+            ("cluster", "k8s_version", "host_os", "node_subnet", "cni", "storage_class")
         ],
     )
     utils.remove_param_with_none_value(module.params)
-    result = {
-        "response": {},
-        "error": None,
-        "changed": False,
-    }
+    result = {"response": {}, "error": None, "changed": False}
     state = module.params["state"]
     if state == "present":
         create_cluster(module, result)
