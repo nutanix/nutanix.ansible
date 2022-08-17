@@ -1,0 +1,100 @@
+---
+- name: create k8s cluster
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:        
+  - set_fact:
+      cluster:
+        name: <cluster_name>
+        uuid: <cluster_uuid>
+      node_subnet:
+        name: <subnet_name>
+        uuid: <subnet_uuid>
+      storage_class:
+        storage_container: <container_name>
+      cni:
+        node_cidr_mask_size: 24
+        service_ipv4_cidr: "172.19.0.0/16"
+        pod_ipv4_cidr: "172.20.0.0/16"
+      karbon_name:  test-module21
+      k8s_version: "1.19.8-0"
+      host_os: "ntnx-1.0"
+
+  #############################
+  - name: create  DEV cluster with Flannel network provider
+    ntnx_karbon_clusters:
+      cluster:
+        uuid: "{{cluster.uuid}}"
+      name: "{{karbon_name}}"
+      k8s_version: "{{k8s_version}}"
+      host_os: "{{host_os}}"
+      node_subnet:
+        name: "{{node_subnet.name}}"
+      cluster_type: DEV
+      cni:
+        node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+        service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+        pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+        network_provider: Flannel
+      storage_class:
+        default_storage_class: True
+        name: test-storage-class
+        reclaim_policy: Delete
+        storage_container: "{{storage_class.storage_container}}"
+        file_system: ext4
+        flash_mode: False
+    register: result
+  
+  - name: delete  dev cluster
+    ntnx_karbon_clusters:
+      state: absent
+      name: "{{result.response.name}}"
+    register: result
+
+  - name: create  DEV cluster with Calico network provider
+    ntnx_karbon_clusters:
+      cluster:
+        name: "{{cluster.name}}"
+      name: "{{karbon_name}}"
+      k8s_version: "{{k8s_version}}"
+      host_os: "{{host_os}}"
+      node_subnet:
+        uuid: "{{node_subnet.uuid}}"
+      cni:
+        node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+        service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+        pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+        network_provider: Calico
+      custom_node_configs:
+        etcd:
+          num_instances: 1
+          cpu: 4
+          memory_gb: 8
+          disk_gb: 120
+        masters:
+          num_instances: 1
+          cpu: 4
+          memory_gb: 8
+          disk_gb: 120
+        workers:
+          num_instances: 1
+          cpu: 8
+          memory_gb: 8
+          disk_gb: 120
+      storage_class:
+        default_storage_class: True
+        name: test-storage-class
+        reclaim_policy: Retain
+        storage_container: "{{storage_class.storage_container}}"
+        file_system: xfs
+        flash_mode: true
+    register: result

@@ -1,0 +1,209 @@
+---
+- debug:
+    msg: Start negative test cases for  ntnx_karbon_clusters
+#############################
+- name: create cluster with disk_gb size less than minimum
+  ntnx_karbon_clusters:
+    cluster:
+      name: "{{cluster.name}}"
+    name: "{{karbon_name}}"
+    k8s_version: "{{k8s_version}}"
+    host_os: "{{host_os}}"
+    node_subnet:
+      uuid: "{{node_subnet.uuid}}"
+    cni:
+      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+      pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+      network_provider: Calico
+    custom_node_configs:
+      etcd:
+        num_instances: 1
+        cpu: 4
+        memory_gb: 8
+        disk_gb: 80
+    storage_class:
+      default_storage_class: True
+      name: test-storage-class
+      reclaim_policy: Retain
+      storage_container: "{{storage_class.storage_container}}"
+      file_system: xfs
+      flash_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response == {}
+      - result.changed == false
+      - result.failed == true
+      - result.error == "disk_gb cannot be less then 120"
+      - result.msg == "Failed generating create cluster spec"
+    fail_msg: " Fail: cluster creaeted with wrong disk_gb size less than minimum"
+    success_msg: " Pass:  Retunred as expected"
+#############################
+- name: create cluster with cpu less than minimum
+  ntnx_karbon_clusters:
+    cluster:
+      name: "{{cluster.name}}"
+    name: "{{karbon_name}}"
+    k8s_version: "{{k8s_version}}"
+    host_os: "{{host_os}}"
+    node_subnet:
+      uuid: "{{node_subnet.uuid}}"
+    cni:
+      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+      pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+      network_provider: Calico
+    custom_node_configs:
+      etcd:
+        num_instances: 1
+        cpu: 3
+        memory_gb: 8
+        disk_gb: 120
+    storage_class:
+      default_storage_class: True
+      name: test-storage-class
+      reclaim_policy: Retain
+      storage_container: "{{storage_class.storage_container}}"
+      file_system: xfs
+      flash_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response == {}
+      - result.changed == false
+      - result.failed == true
+      - result.error == "cpu cannot be less then 4"
+      - result.msg == "Failed generating create cluster spec"
+    fail_msg: " Fail: cluster creaeted with  cpu  less than minimum"
+    success_msg: " Pass:  Retunred as expected"
+#############################
+- name: create cluster with memory_gb  less than minimum
+  ntnx_karbon_clusters:
+    cluster:
+      name: "{{cluster.name}}"
+    name: "{{karbon_name}}"
+    k8s_version: "{{k8s_version}}"
+    host_os: "{{host_os}}"
+    node_subnet:
+      uuid: "{{node_subnet.uuid}}"
+    cni:
+      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+      pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+      network_provider: Calico
+    custom_node_configs:
+      etcd:
+        num_instances: 1
+        cpu: 4
+        memory_gb: 7
+        disk_gb: 120
+    storage_class:
+      default_storage_class: True
+      name: test-storage-class
+      reclaim_policy: Retain
+      storage_container: "{{storage_class.storage_container}}"
+      file_system: xfs
+      flash_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response == {}
+      - result.changed == false
+      - result.failed == true
+      - result.error == "memory_gb cannot be less then 8"
+      - result.msg == "Failed generating create cluster spec"
+    fail_msg: " Fail: cluster creaeted with  memory_gb size  less than minimum"
+    success_msg: " Pass:  Retunred as expected"
+#############################
+- name: create cluster with wrong num_instances for master nodes
+  ntnx_karbon_clusters:
+    cluster:
+      name: "{{cluster.name}}"
+    name: "{{karbon_name}}"
+    k8s_version: "{{k8s_version}}"
+    host_os: "{{host_os}}"
+    node_subnet:
+      uuid: "{{node_subnet.uuid}}"
+    cni:
+      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+      pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+      network_provider: Calico
+    custom_node_configs:
+      masters:
+        num_instances: 3
+        cpu: 4
+        memory_gb: 8
+        disk_gb: 120
+    storage_class:
+      default_storage_class: True
+      name: test-storage-class
+      reclaim_policy: Retain
+      storage_container: "{{storage_class.storage_container}}"
+      file_system: xfs
+      flash_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response == {}
+      - result.changed == false
+      - result.failed == true
+      - result.error ==  "value of masters.num_instances must be 1 or 2"
+      - result.msg == "Failed generating create cluster spec"
+    fail_msg: " Fail: cluster creaeted with wrong num_instances for master nodes"
+    success_msg: " Pass:  Retunred as expected"
+#############################
+- name: create cluster with wrong num_instances for etcd nodes
+  ntnx_karbon_clusters:
+    cluster:
+      name: "{{cluster.name}}"
+    name: "{{karbon_name}}"
+    k8s_version: "{{k8s_version}}"
+    host_os: "{{host_os}}"
+    node_subnet:
+      uuid: "{{node_subnet.uuid}}"
+    cni:
+      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+      pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+      network_provider: Calico
+    custom_node_configs:
+      etcd:
+        num_instances: 2
+        cpu: 4
+        memory_gb: 8
+        disk_gb: 120
+    storage_class:
+      default_storage_class: True
+      name: test-storage-class
+      reclaim_policy: Retain
+      storage_container: "{{storage_class.storage_container}}"
+      file_system: xfs
+      flash_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response == {}
+      - result.changed == false
+      - result.failed == true
+      - result.error ==  "value of etcd.num_instances must be 1, 3 or 5"
+      - result.msg == "Failed generating create cluster spec"
+    fail_msg: " Fail: cluster creaeted with wrong num_instances for etcd nodes"
+    success_msg: " Pass:  Retunred as expected"
+#############################

@@ -1,0 +1,172 @@
+---
+- debug:
+    msg: Start testing ntnx_karbon_clusters
+#############################
+
+- name:  Verify check mode for ntnx_karbon_clusters
+  ntnx_karbon_clusters:
+    cluster:
+      uuid: "{{cluster.uuid}}"
+    name: "{{karbon_name}}"
+    k8s_version: "{{k8s_version}}"
+    host_os: "{{host_os}}"
+    node_subnet:
+      name: "{{node_subnet.name}}"
+    cluster_type: DEV
+    cni:
+      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+      pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+      network_provider: Flannel
+    storage_class:
+      default_storage_class: True
+      name: test-storage-class
+      reclaim_policy: Delete
+      storage_container: "{{storage_class.storage_container}}"
+      file_system: ext4
+      flash_mode: False
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{karbon_name}}"
+      - result.response.cni_config.node_cidr_mask_size == {{cni.node_cidr_mask_size}}
+      - result.response.cni_config.pod_ipv4_cidr == "{{cni.pod_ipv4_cidr}}"
+      - result.response.cni_config.service_ipv4_cidr ==  "{{cni.service_ipv4_cidr}}"
+    success_msg: "Success: check mode spec returned  as expected"
+    fail_msg: "Check mode for ntnx_karbon_clusters failed"
+#############################     
+- name: create  DEV cluster with Flannel network provider
+  ntnx_karbon_clusters:
+    cluster:
+      uuid: "{{cluster.uuid}}"
+    name: "{{karbon_name}}"
+    k8s_version: "{{k8s_version}}"
+    host_os: "{{host_os}}"
+    node_subnet:
+      name: "{{node_subnet.name}}"
+    cluster_type: DEV
+    cni:
+      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+      pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+      network_provider: Flannel
+    storage_class:
+      default_storage_class: True
+      name: test-storage-class
+      reclaim_policy: Delete
+      storage_container: "{{storage_class.storage_container}}"
+      file_system: ext4
+      flash_mode: False
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.cluster_uuid is defined
+      - result.response.name == "{{karbon_name}}"
+      - result.response.cni_config.node_cidr_mask_size == {{cni.node_cidr_mask_size}}
+      - result.response.cni_config.pod_ipv4_cidr == "{{cni.pod_ipv4_cidr}}"
+      - result.response.cni_config.service_ipv4_cidr ==  "{{cni.service_ipv4_cidr}}"
+    fail_msg: " Fail: unable to  create  DEV cluster with Flannel network provider"
+    success_msg: " Pass:  create  DEV cluster with Flannel network provider succesfully "
+#############################
+- name: delete  dev cluster  with Flannel network provider
+  ntnx_karbon_clusters:
+    state: absent
+    name: "{{result.response.name}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: " Fail: unable to delete  dev cluster  with Flannel network provider"
+    success_msg: " Pass: delete  dev cluster  with Flannel network provider finished succesfully"
+#############################
+- name: create  DEV cluster with Calico network provider
+  ntnx_karbon_clusters:
+    cluster:
+      name: "{{cluster.name}}"
+    name: "{{karbon_name}}"
+    k8s_version: "{{k8s_version}}"
+    host_os: "{{host_os}}"
+    node_subnet:
+      uuid: "{{node_subnet.uuid}}"
+    cni:
+      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
+      pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
+      network_provider: Calico
+    custom_node_configs:
+      etcd:
+        num_instances: 1
+        cpu: 4
+        memory_gb: 8
+        disk_gb: 120
+      masters:
+        num_instances: 1
+        cpu: 4
+        memory_gb: 8
+        disk_gb: 120
+      workers:
+        num_instances: 1
+        cpu: 8
+        memory_gb: 8
+        disk_gb: 120
+    storage_class:
+      default_storage_class: True
+      name: test-storage-class
+      reclaim_policy: Retain
+      storage_container: "{{storage_class.storage_container}}"
+      file_system: xfs
+      flash_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.cluster_uuid is defined
+      - result.response.name == "{{karbon_name}}"
+      - result.response.cni_config.node_cidr_mask_size == {{cni.node_cidr_mask_size}}
+      - result.response.cni_config.calico_config.ip_pool_configs[0].cidr == "{{cni.pod_ipv4_cidr}}"
+      - result.response.cni_config.service_ipv4_cidr == "{{cni.service_ipv4_cidr}}"
+      - result.response.cni_config.pod_ipv4_cidr == "{{cni.pod_ipv4_cidr}}"
+    fail_msg: " Fail: unable to create  DEV cluster with Calico network provider "
+    success_msg: " Pass: create  DEV cluster with Calico network provider finished succesfully"
+#############################
+- name: delete  dev cluster
+  ntnx_karbon_clusters:
+    state: absent
+    name: "{{result.response.name}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: " Fail: unable to delete  dev cluster  with Calico network provider"
+    success_msg: " Pass: delete  dev cluster  with Calico network provider finished succesfully"
+#############################

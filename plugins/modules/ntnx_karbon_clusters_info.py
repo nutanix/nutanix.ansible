@@ -18,6 +18,12 @@ options:
         description:
             - cluster name
         type: str
+      fetch_ssh_credentials:
+        type: bool
+        description: write
+      fetch_kubeconfig:
+        type: bool
+        description: write
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
 author:
@@ -43,6 +49,25 @@ EXAMPLES = r"""
       cluster_name: "cluster-name"
     register: result
 
+  - name:  Get clusters with ssh credential
+    ntnx_karbon_clusters_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      cluster_name: "cluster-name"
+      fetch_ssh_credentials: true
+    register: result
+
+  - name:  Get clusters with kubeconfig
+    ntnx_karbon_clusters_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      cluster_name: "cluster-name"
+      fetch_kubeconfig: true
+    register: result
 """
 RETURN = r"""
 cni_config:
@@ -94,7 +119,7 @@ uuid:
     description: The universally unique identifier (UUID) of the k8s cluster.
     returned: always
     type: str
-    sample: "70a9ca27-80c6-4bd1-5600-3764a5265ebd"
+    sample: "00000000-0000-0000-0000-000000000000"
 version:
     description: K8s version of the cluster.
     returned: always
@@ -109,7 +134,28 @@ worker_config:
                     "test-module21_worker_pool"
                 ]
             }
-
+kube_config:
+    description: write
+    returned: if fetch_kubeconfig is true
+    type: str
+certificate:
+    description: ssh certifcate
+    returned: if fetch_ssh_credentials is true
+    type: str
+expiry_time:
+    description: expire time for certificate
+    returned: if fetch_ssh_credentials is true
+    type: str
+    sample: "2022-08-16T06:33:18.000Z"
+private_key:
+    description: user private key
+    returned: if fetch_ssh_credentials is true
+    type: str
+username:
+    description: name
+    returned: if fetch_ssh_credentials is true
+    type: str
+    sample: admin
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402

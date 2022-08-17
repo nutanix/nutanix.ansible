@@ -126,6 +126,8 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_images_info | List existing images. |
 | ntnx_image_placement_policy | Create, update or delete a image placement policy. |
 | ntnx_image_placement_policies_info | List existing image placement policies. |
+| ntnx_karbon_clusters | Create, Delete k8s clusters |
+| ntnx_karbon_clusters_info | Get cluster info. |
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
 | ntnx_permissions_info | List permissions info |

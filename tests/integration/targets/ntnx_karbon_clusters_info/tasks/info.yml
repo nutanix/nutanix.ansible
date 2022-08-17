@@ -1,0 +1,110 @@
+---
+- debug:
+    msg: Start testing ntnx_karbon_clusters_info
+####################################################
+- name: create  DEV cluster with Flannel network provider
+  ntnx_karbon_clusters:
+    cluster:
+      uuid: "{{cluster.uuid}}"
+    name: test-module21
+    k8s_version: "1.19.8-0"
+    host_os: "ntnx-1.0"
+    node_subnet:
+      name: "{{node_subnet.name}}"
+    cluster_type: DEV
+    cni:
+      node_cidr_mask_size: 24
+      service_ipv4_cidr: "172.19.0.0/16"
+      pod_ipv4_cidr: "172.20.0.0/16"
+      network_provider: Flannel
+    storage_class:
+      default_storage_class: True
+      name: test-storage-class
+      reclaim_policy: Delete
+      storage_container: "{{storage_class.storage_container}}"
+      file_system: ext4
+      flash_mode: False
+  register: cluster
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - cluster.response is defined
+      - cluster.changed == true
+      - cluster.failed == false
+      - cluster.cluster_uuid is defined
+      - cluster.response.name == "test-module21"
+      - cluster.response.cni_config.node_cidr_mask_size == 24
+      - cluster.response.cni_config.pod_ipv4_cidr == "172.20.0.0/16"
+      - cluster.response.cni_config.service_ipv4_cidr == "172.19.0.0/16"
+    fail_msg: " Fail: unable to  create  DEV cluster with Flannel network provider"
+    success_msg: " Pass:  create  DEV cluster with Flannel network provider succesfully "
+####################################################
+- name: test getting  dev cluster using name 
+  ntnx_karbon_clusters_info:
+    cluster_name: "{{cluster.response.name}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{cluster.response.name}}"
+    fail_msg: " Fail: Unable to get particular Cluster "
+    success_msg: " Pass: Cluster info obtained successfully  "
+####################################################
+- name: test getting cluster with ssh config using cluster name
+  ntnx_karbon_clusters_info:
+    cluster_name: "{{cluster.response.name}}"
+    fetch_ssh_credentials: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.certificate is defined
+    fail_msg: " Fail: Unable to get particular Cluster and it's ssh config "
+    success_msg: " Pass: Cluster info obtained successfully with it's ssh config  "
+####################################################
+- name: test getting cluster with kubeconfig config using cluster name
+  ntnx_karbon_clusters_info:
+    cluster_name: "{{cluster.response.name}}"
+    fetch_kubeconfig: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.kube_config is defined
+    fail_msg: " Fail: Unable to get particular Cluster and it's kube config "
+    success_msg: " Pass: Cluster info obtained successfully with it's kube config  "
+####################################################
+- name: delete  dev cluster  
+  ntnx_karbon_clusters:
+    state: absent
+    name: "{{cluster.response.name}}"
+  register: result
+  ignore_errors: true
+  
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: " Fail: unable to delete  dev cluster  "
+    success_msg: " Pass: delete  dev cluster finished succesfully  "
+####################################################

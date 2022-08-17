@@ -1,0 +1,7 @@
+cni:
+  node_cidr_mask_size: 24
+  service_ipv4_cidr: "172.19.0.0/16"
+  pod_ipv4_cidr: "172.20.0.0/16"
+karbon_name:  test-module21
+k8s_version: "1.19.8-0"
+host_os: "ntnx-1.0"

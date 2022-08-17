@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_clusters
-short_description: category module which supports pc category management CRUD operations
+short_description: Create, Delete a k8s cluster with the provided configuration.
 version_added: 1.5.0
-description: "Create, Update, Delete clusters"
+description: "Create, Delete clusters"
 options:
     name:
         type: str
@@ -20,10 +20,10 @@ options:
     cluster_type:
         type: str
         choices: ["DEV", "PROD"]
-        description: write
+        description: cluster type for development or production
     cluster:
         type: dict
-        description: write
+        description: k8s cluster  details
         suboptions:
             name:
                 type: str
@@ -36,14 +36,14 @@ options:
         description: K8s version of the cluster.
     node_subnet:
         type: dict
-        description: write
+        description: Configuration of the node pools that the nodes in the etcd,workers,master cluster belong to
         suboptions:
             name:
                 type: str
-                description: write
+                description: Subnet name
             uuid:
                 type: str
-                description: write
+                description: Subnet UUID
     host_os:
         type: str
         description: The version of the node OS image.
@@ -67,7 +67,7 @@ options:
                 type: str
                 choices: ["Calico", "Flannel"]
                 default: "Flannel"
-                description: write
+                description: Configuration of the network provider
     custom_node_configs:
         type: dict
         description: write
@@ -136,7 +136,7 @@ options:
         description: write
     storage_class:
         type: dict
-        description: write
+        description: storage class config
         suboptions:
             default_storage_class:
                 type: bool
@@ -150,7 +150,7 @@ options:
             reclaim_policy:
                 type: str
                 description: Reclaim policy for persistent volumes provisioned using the specified storage class.
-                choices: ["ext4", "Delete"]
+                choices: ["Retain", "Delete"]
             storage_container:
                 type: str
                 description: Name of the storage container the storage container uses to provision volumes.
@@ -172,11 +172,141 @@ author:
 """
 
 EXAMPLES = r"""
+  - name: create  DEV cluster with Flannel network provider
+    ntnx_karbon_clusters:
+      cluster:
+        uuid: "00000000-0000-0000-0000-000000000000"
+      name: test-module21
+      k8s_version: "1.19.8-0"
+      host_os: "ntnx-1.0"
+      node_subnet:
+        name: "vlan.800"
+      cluster_type: DEV
+      cni:
+        node_cidr_mask_size: 24
+        service_ipv4_cidr: "172.19.0.0/16"
+        pod_ipv4_cidr: "172.20.0.0/16"
+        network_provider: Flannel
+      storage_class:
+        default_storage_class: True
+        name: test-storage-class
+        reclaim_policy: Delete
+        storage_container: "default-container-48394901932577"
+        file_system: ext4
+        flash_mode: False
+    register: result
 
+  - name: delete cluster
+    ntnx_karbon_clusters:
+      state: absent
+      name: "{{cluster_name}"
+    register: result
+
+  - name: create  DEV cluster with Calico network provider
+    ntnx_karbon_clusters:
+      cluster:
+        name: auto_cluster_prod_f34ce3677ecf
+      name: test-module21
+      k8s_version: "1.19.8-0"
+      host_os: "ntnx-1.0"
+      node_subnet:
+        uuid: "00000000-0000-0000-0000-000000000000"
+      cni:
+        node_cidr_mask_size: 24
+        service_ipv4_cidr: "172.19.0.0/16"
+        pod_ipv4_cidr: "172.20.0.0/16"
+        network_provider: Calico
+      custom_node_configs:
+        etcd:
+          num_instances: 1
+          cpu: 4
+          memory_gb: 8
+          disk_gb: 120
+        masters:
+          num_instances: 1
+          cpu: 4
+          memory_gb: 8
+          disk_gb: 120
+        workers:
+          num_instances: 1
+          cpu: 8
+          memory_gb: 8
+          disk_gb: 120
+      storage_class:
+        default_storage_class: True
+        name: test-storage-class
+        reclaim_policy: Retain
+        storage_container: "default-container-48394901932577"
+        file_system: xfs
+        flash_mode: true
+    register: result
 """
 
 RETURN = r"""
-
+cni_config:
+  description: Container networking interface (CNI) information.
+  returned: always
+  type: dict
+  sample:
+    {
+                "flannel_config": null,
+                "node_cidr_mask_size": 24,
+                "pod_ipv4_cidr": "172.20.0.0/16",
+                "service_ipv4_cidr": "172.19.0.0/16"
+            }
+etcd_config:
+  description: Etcd configuration information.
+  returned: always
+  type: dict
+  sample: {
+                "node_pools": [
+                    "test-module21_etcd_pool"
+                ]
+            }
+kubeapi_server_ipv4_address:
+    description: IPV4 address of the API server.
+    returned: always
+    type: str
+    sample: "10.44.78.171"
+master_config:
+    description: Configuration of master nodes.
+    returned: always
+    type: dict
+    sample: {
+                "deployment_type": "single-master",
+                "node_pools": [
+                    "test-module21_master_pool"
+                ]
+            }
+name:
+    description: K8s cluster name.
+    returned: always
+    type: str
+    sample: "test-module21"
+status:
+    description: K8s cluster status.
+    returned: always
+    type: str
+    sample: "kActive"
+uuid:
+    description: The universally unique identifier (UUID) of the k8s cluster.
+    returned: always
+    type: str
+    sample: "00000000-0000-0000-0000-000000000000"
+version:
+    description: K8s version of the cluster.
+    returned: always
+    type: str
+    sample: "1.19.8-0"
+worker_config:
+    description: Worker configuration information.
+    returned: always
+    type: dict
+    sample: {
+                "node_pools": [
+                    "test-module21_worker_pool"
+                ]
+            }
 """
 
 from ..module_utils import utils  # noqa: E402
@@ -291,7 +421,6 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[("cluster_type", "custom_node_configs")],
         required_if=[
             ("state", "present", ("cluster_type", "custom_node_configs"), True),
             ("state", "present", ("node_subnet", "storage_class")),
