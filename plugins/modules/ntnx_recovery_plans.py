@@ -34,6 +34,8 @@ def get_module_spec():
         uuid = dict(type="str", required=False),
         name = dict(type="str", required=False)
     )
+
+    # TO-DO : enable_script_exec for script run enable for NGT installed VMs
     stage = dict(
         vms = dict(type="list", elements="dict", options=entity_spec, mutually_exclusive=[("name", "uuid")], required=False),
         categories = dict(type="dict", required=False),
@@ -53,10 +55,11 @@ def get_module_spec():
         test=dict(type="dict", option=network, required=False),
         prod=dict(type="dict", option=network, required=False),
     )
+
+    # TO-DO: Test Custom IP mappings and add spec according to them
     network_mapping = dict(
-        primary_site = dict(type="dict", options=site_network, required=True),
-        recovery_site = dict(type="dict", options=site_network, required=True),
-        are_networks_stretched = dict(type="bool", required=False)
+        primary = dict(type="dict", options=site_network, required=True),
+        recovery = dict(type="dict", options=site_network, required=True),
     )
     module_args = dict(
         name = dict(type="str", required=False),
@@ -64,7 +67,8 @@ def get_module_spec():
         stages = dict(type="list", elements="dict", options=stage, required=False),
         primary_location = dict(type="dict", options=availability_zone, required=False),
         recovery_location = dict(type="dict", options=availability_zone, required=False),
-        network_mappings = dict(type="list", elements="dict", options=network_mapping, required=False)
+        network_mappings = dict(type="list", elements="dict", options=network_mapping, required=False),
+        network_type = dict(type="str", choices=["stretch", "non_stretch"], required=True)
     )
     return module_args
 

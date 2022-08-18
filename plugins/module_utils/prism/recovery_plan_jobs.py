@@ -7,17 +7,14 @@ from .prism import Prism
 __metaclass__ = type
 
 
-class RecoveryPlan(Prism):
+class RecoveryPlanJob(Prism):
     def __init__(self, module):
-        resource_type = "/recovery_plans"
-        super(RecoveryPlan, self).__init__(module, resource_type=resource_type)
+        resource_type = "/recovery_plan_job"
+        super(RecoveryPlanJob, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
         }
-
-    def get_associated_entities(self, recovery_plan_uuid):
-        return self.read(uuid=recovery_plan_uuid, endpoint="entities")
 
     def _get_default_spec(self):
         pass

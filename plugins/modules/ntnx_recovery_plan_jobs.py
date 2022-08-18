@@ -42,7 +42,7 @@ def get_module_spec():
         recovery_plan = dict(type="dict", options=entity_spec, mutually_exclusive=[("name", "uuid")], required=False),
         failing_from_zone = dict(type="dict", options=availability_zone, required=False),
         recovery_zone = dict(type="dict", options=availability_zone, required=False),
-        action = dict(type="str", options=["VALIDATE", "MIGRATE", "FAILOVER", "TEST_FAILOVER", "LIVE_MIGRATE", "CLEANUP", "RERUN"], required=False),
+        action = dict(type="str", choices=["VALIDATE", "MIGRATE", "FAILOVER", "TEST_FAILOVER", "LIVE_MIGRATE", "CLEANUP", "RERUN"], required=False),
         recovery_reference_time = dict(type="str", required=False),
         ignore_validation_failures = dict(type="bool", required=False)
     )
