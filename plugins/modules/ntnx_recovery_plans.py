@@ -32,13 +32,17 @@ def get_module_spec():
     
     entity_spec = dict(
         uuid = dict(type="str", required=False),
-        name = dict(type="str", required=False)
+        name = dict(type="str", required=False),
+        enable_script_exec = dict(type="bool", required=False)
     )
-
-    # TO-DO : enable_script_exec for script run enable for NGT installed VMs
+    category = dict(
+        key = dict(type="str", required=False),
+        value = dict(type="str", required=False),
+        enable_script_exec = dict(type="bool", required=False)
+    )
     stage = dict(
         vms = dict(type="list", elements="dict", options=entity_spec, mutually_exclusive=[("name", "uuid")], required=False),
-        categories = dict(type="dict", required=False),
+        categories = dict(type="list", elements="dict", options=category, required=False),
         delay = dict(type="int", required=False)
     )
     availability_zone = dict(
@@ -68,7 +72,7 @@ def get_module_spec():
         primary_location = dict(type="dict", options=availability_zone, required=False),
         recovery_location = dict(type="dict", options=availability_zone, required=False),
         network_mappings = dict(type="list", elements="dict", options=network_mapping, required=False),
-        network_type = dict(type="str", choices=["stretch", "non_stretch"], required=True)
+        network_type = dict(type="str", choices=["STRETCH", "NON_STRETCH"], required=True)
     )
     return module_args
 
