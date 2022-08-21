@@ -241,3 +241,18 @@ class RecoveryPlan(Prism):
             ]
         payload["spec"]["resources"]["parameters"]["availability_zone_list"][recovery_location_index] = spec
         return payload, None
+
+def get_recovery_plan_uuid(config, module):
+    if "name" in config:
+        roles = RecoveryPlan(module)
+        name = config["name"]
+        uuid = roles.get_uuid(name)
+        if not uuid:
+
+            error = "Recovery Plan {0} not found.".format(name)
+            return None, error
+
+    elif "uuid" in config:
+        uuid = config["uuid"]
+
+    return uuid, None
