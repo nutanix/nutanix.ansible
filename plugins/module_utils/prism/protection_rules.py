@@ -20,7 +20,7 @@ class ProtectionRule(Prism):
             "protected_categories": self._build_spec_protected_categories,
             "schedules": self._build_spec_schedules,
         }
-    
+
     def get_affected_entities(self, rule_uuid):
         return self.read(uuid=rule_uuid, endpoint="query_entities")
 
@@ -33,13 +33,13 @@ class ProtectionRule(Prism):
                     "resources": {
                         "availability_zone_connectivity_list": [],
                         "ordered_availability_zone_list": [],
-                        "category_filter":{
+                        "category_filter": {
                             "params": {},
-                            "type": "CATEGORIES_MATCH_ANY"
+                            "type": "CATEGORIES_MATCH_ANY",
                         },
-                        "primary_location_list":[]
-                    }, 
-                    "name": None
+                        "primary_location_list": [],
+                    },
+                    "name": None,
                 },
             }
         )
@@ -52,11 +52,11 @@ class ProtectionRule(Prism):
             "MINUTE": 60,
             "HOUR": 3600,
             "DAY": 86400,
-            "WEEK": 604800
+            "WEEK": 604800,
         }
         if unit not in conversion_multiplier:
             return None, "Invalid unit given for interval conversion to seconds"
-        
+
         return value * conversion_multiplier[unit], None
 
     def _build_spec_name(self, payload, name):
@@ -66,11 +66,11 @@ class ProtectionRule(Prism):
     def _build_spec_desc(self, payload, desc):
         payload["spec"]["description"] = desc
         return payload, None
-    
+
     def _build_spec_start_time(self, payload, start_time):
         payload["spec"]["resources"]["start_time"] = start_time
         return payload, None
-    
+
     def _build_spec_protected_categories(self, payload, categories):
         payload["spec"]["resources"]["category_filter"]["params"] = categories
         return payload, None
@@ -88,41 +88,68 @@ class ProtectionRule(Prism):
         for schedule in schedules:
             if schedule.get("source") and schedule["source"] not in ordered_az_list:
                 ordered_az_list.append(schedule["source"])
-            if schedule.get("destination") and schedule["destination"] not in ordered_az_list:
+            if (
+                schedule.get("destination")
+                and schedule["destination"] not in ordered_az_list
+            ):
                 ordered_az_list.append(schedule["destination"])
         payload["spec"]["resources"]["ordered_availability_zone_list"] = ordered_az_list
-        
+
         if self.module.params.get("primary_site"):
-            payload["spec"]["resources"]["primary_location_list"] = [ordered_az_list.index(self.module.params["primary_site"])]
+            payload["spec"]["resources"]["primary_location_list"] = [
+                ordered_az_list.index(self.module.params["primary_site"])
+            ]
 
         # create availability_zone_connectivity_list from schedules
         for schedule in schedules:
             az_connection_spec = {}
             spec = {}
             if schedule.get("source"):
-                az_connection_spec["source_availability_zone_index"] = ordered_az_list.index(schedule["source"])
+                az_connection_spec[
+                    "source_availability_zone_index"
+                ] = ordered_az_list.index(schedule["source"])
             if schedule.get("destination"):
-                az_connection_spec["destination_availability_zone_index"] = ordered_az_list.index(schedule["destination"])
-            
+                az_connection_spec[
+                    "destination_availability_zone_index"
+                ] = ordered_az_list.index(schedule["destination"])
+
             if schedule["protection_type"] == "ASYNC":
-                if not (schedule.get("rpo") and schedule.get("rpo_unit")) and schedule.get("snapshot_type") and (schedule.get("local_retention_policy") or schedule.get("remote_retention_policy")):
-                    return None, "rpo, rpo_unit, snapshot_type and atleast one policy are required fields for aysynchronous snapshot schedule"
-                
-                spec["recovery_point_objective_secs"], err = self._convert_to_secs(schedule["rpo"], schedule["rpo_unit"])
+                if (
+                    not (schedule.get("rpo") and schedule.get("rpo_unit"))
+                    and schedule.get("snapshot_type")
+                    and (
+                        schedule.get("local_retention_policy")
+                        or schedule.get("remote_retention_policy")
+                    )
+                ):
+                    return (
+                        None,
+                        "rpo, rpo_unit, snapshot_type and atleast one policy are required fields for aysynchronous snapshot schedule",
+                    )
+
+                spec["recovery_point_objective_secs"], err = self._convert_to_secs(
+                    schedule["rpo"], schedule["rpo_unit"]
+                )
                 if err:
                     return None, err
-                
+
                 spec["snapshot_type"] = schedule["snapshot_type"]
                 if schedule.get("local_retention_policy"):
-                    spec["local_snapshot_retention_policy"] = schedule["local_retention_policy"]
+                    spec["local_snapshot_retention_policy"] = schedule[
+                        "local_retention_policy"
+                    ]
                 if schedule.get("remote_retention_policy"):
-                    spec["remote_snapshot_retention_policy"] = schedule["remote_retention_policy"]
+                    spec["remote_snapshot_retention_policy"] = schedule[
+                        "remote_retention_policy"
+                    ]
             else:
                 if schedule.get("auto_suspend_timeout"):
                     spec["auto_suspend_timeout_secs"] = schedule["auto_suspend_timeout"]
                 spec["recovery_point_objective_secs"] = 0
             az_connection_spec["snapshot_schedule_list"] = [spec]
             az_connectivity_list.append(az_connection_spec)
-        
-        payload["spec"]["resources"]["availability_zone_connectivity_list"] = az_connectivity_list
+
+        payload["spec"]["resources"][
+            "availability_zone_connectivity_list"
+        ] = az_connectivity_list
         return payload, None

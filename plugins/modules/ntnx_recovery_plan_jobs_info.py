@@ -38,6 +38,7 @@ def get_recovery_plan_job(module, result):
 
     result["response"] = resp
 
+
 def get_recovery_plan_jobs(module, result):
     recovery_plan_job = RecoveryPlanJob(module)
     spec, error = recovery_plan_job.get_info_spec()

@@ -26,60 +26,76 @@ from ..module_utils.prism.recovery_plans import RecoveryPlan  # noqa: E402
 
 # TO-DO: Add floating IP assignment spec
 def get_module_spec():
-    
+
     vm_spec = dict(
-        uuid = dict(type="str", required=False),
-        name = dict(type="str", required=False),
-        enable_script_exec = dict(type="bool", required=False)
+        uuid=dict(type="str", required=False),
+        name=dict(type="str", required=False),
+        enable_script_exec=dict(type="bool", required=False),
     )
     entity_by_spec = dict(
-        uuid = dict(type="str", required=False),
-        name = dict(type="str", required=False),
+        uuid=dict(type="str", required=False),
+        name=dict(type="str", required=False),
     )
     category = dict(
-        key = dict(type="str", required=False),
-        value = dict(type="str", required=False),
-        enable_script_exec = dict(type="bool", required=False)
+        key=dict(type="str", required=False),
+        value=dict(type="str", required=False),
+        enable_script_exec=dict(type="bool", required=False),
     )
     stage = dict(
-        vms = dict(type="list", elements="dict", options=vm_spec, mutually_exclusive=[("name", "uuid")], required=False),
-        categories = dict(type="list", elements="dict", options=category, required=False),
-        delay = dict(type="int", required=False)
+        vms=dict(
+            type="list",
+            elements="dict",
+            options=vm_spec,
+            mutually_exclusive=[("name", "uuid")],
+            required=False,
+        ),
+        categories=dict(type="list", elements="dict", options=category, required=False),
+        delay=dict(type="int", required=False),
     )
     availability_zone = dict(
-        url = dict(type="str", required=True),
-        cluster = dict(type="str", required=False)
+        url=dict(type="str", required=True), cluster=dict(type="str", required=False)
     )
     custom_ip_config = dict(
-        vm = dict(type="dict", options=entity_by_spec, mutually_exclusive=[("name", "uuid")], required=True),
-        ip = dict(type="str", required=True),
+        vm=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=[("name", "uuid")],
+            required=True,
+        ),
+        ip=dict(type="str", required=True),
     )
-    network=dict(
+    network = dict(
         name=dict(type="str", required=True),
         gateway_ip=dict(type="str", required=False),
         prefix=dict(type="int", required=False),
         external_connectivity_state=dict(type="bool", required=False),
-        custom_ip_conifg = dict(type="list", elements="dict", options=custom_ip_config, required=False)
+        custom_ip_conifg=dict(
+            type="list", elements="dict", options=custom_ip_config, required=False
+        ),
     )
-    site_network=dict(
+    site_network = dict(
         test=dict(type="dict", option=network, required=False),
         prod=dict(type="dict", option=network, required=False),
     )
 
     # TO-DO: Test Custom IP mappings and add spec according to them
     network_mapping = dict(
-        primary = dict(type="dict", options=site_network, required=True),
-        recovery = dict(type="dict", options=site_network, required=True),
+        primary=dict(type="dict", options=site_network, required=True),
+        recovery=dict(type="dict", options=site_network, required=True),
     )
     module_args = dict(
-        plan_uuid = dict(type="str", required=False),
-        name = dict(type="str", required=False),
-        desc = dict(type="str", required=False),
-        stages = dict(type="list", elements="dict", options=stage, required=False),
-        primary_location = dict(type="dict", options=availability_zone, required=False),
-        recovery_location = dict(type="dict", options=availability_zone, required=False),
-        network_mappings = dict(type="list", elements="dict", options=network_mapping, required=False),
-        network_type = dict(type="str", choices=["STRETCH", "NON_STRETCH"], required=True)
+        plan_uuid=dict(type="str", required=False),
+        name=dict(type="str", required=False),
+        desc=dict(type="str", required=False),
+        stages=dict(type="list", elements="dict", options=stage, required=False),
+        primary_location=dict(type="dict", options=availability_zone, required=False),
+        recovery_location=dict(type="dict", options=availability_zone, required=False),
+        network_mappings=dict(
+            type="list", elements="dict", options=network_mapping, required=False
+        ),
+        network_type=dict(
+            type="str", choices=["STRETCH", "NON_STRETCH"], required=True
+        ),
     )
     return module_args
 
@@ -111,24 +127,29 @@ def create_recovery_plan(module, result):
 
     result["response"] = resp
 
+
 def check_recovery_plan_idempotency(old_spec, update_spec):
     # order of elements in availability_zone_list and stages are also significant hence they can be directly compared while comparing first level of fields
     # while each element of network_mappings have to checked as order of mappings is not significant in this case
-    old_ntw_mappings = old_spec["spec"]["resources"]["parameters"]["network_mapping_list"]
-    update_ntw_mappings = update_spec["spec"]["resources"]["parameters"]["network_mapping_list"]
+    old_ntw_mappings = old_spec["spec"]["resources"]["parameters"][
+        "network_mapping_list"
+    ]
+    update_ntw_mappings = update_spec["spec"]["resources"]["parameters"][
+        "network_mapping_list"
+    ]
 
     if len(old_ntw_mappings) != len(update_ntw_mappings):
         return False
     for mapping in update_ntw_mappings:
         if mapping not in old_ntw_mappings:
             return False
-    
+
     # check first level of fields
     if old_spec != update_spec:
         return False
-    
+
     return True
-    
+
 
 def update_recovery_plan(module, result):
     recovery_plan = RecoveryPlan(module)

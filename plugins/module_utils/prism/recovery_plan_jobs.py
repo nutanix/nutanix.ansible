@@ -22,9 +22,7 @@ class RecoveryPlanJob(Prism):
             "recovery_reference_time": self._build_spec_recovery_reference_time,
             "ignore_validation_failures": self._build_spec_ignore_validation_failures,
         }
-        self.action_endpoints = {
-            "CLEANUP": "cleanup"
-        }
+        self.action_endpoints = {"CLEANUP": "cleanup"}
 
     def perform_action_on_existing_job(self, job_uuid, action, spec={}):
         endpoint = "{0}/{1}".format(job_uuid, self.action_endpoints[action])
@@ -38,13 +36,13 @@ class RecoveryPlanJob(Prism):
                 "spec": {
                     "resources": {
                         "execution_parameters": {
-                            "failed_availability_zone_list":[],
-                            "recovery_availability_zone_list":[],
+                            "failed_availability_zone_list": [],
+                            "recovery_availability_zone_list": [],
                             "action_type": None,
                         },
                         "recovery_plan_reference": {},
-                    }, 
-                    "name": None
+                    },
+                    "name": None,
                 },
             }
         )
@@ -59,44 +57,42 @@ class RecoveryPlanJob(Prism):
             return err
         payload["spec"]["resources"]["recovery_plan_reference"] = {
             "uuid": uuid,
-            "kind": "recovery_plan"
+            "kind": "recovery_plan",
         }
         return payload, None
-    
+
     def _build_spec_failed_site(self, payload, failed_site):
-        az_spec = {
-            "availability_zone_url" : failed_site["url"]
-        }
+        az_spec = {"availability_zone_url": failed_site["url"]}
         if failed_site.get("cluster"):
-            az_spec["cluster_reference_list"] = [
-                {
-                    "uuid": failed_site["cluster"]
-                } 
-            ]
-        payload["spec"]["resources"]["execution_parameters"]["failed_availability_zone_list"] = [az_spec]
+            az_spec["cluster_reference_list"] = [{"uuid": failed_site["cluster"]}]
+        payload["spec"]["resources"]["execution_parameters"][
+            "failed_availability_zone_list"
+        ] = [az_spec]
         return payload, None
-    
+
     def _build_spec_recovery_site(self, payload, recovery_site):
-        az_spec = {
-            "availability_zone_url" : recovery_site["url"]
-        }
+        az_spec = {"availability_zone_url": recovery_site["url"]}
         if recovery_site.get("cluster"):
-            az_spec["cluster_reference_list"] = [
-                {
-                    "uuid": recovery_site["cluster"]
-                } 
-            ]
-        payload["spec"]["resources"]["execution_parameters"]["recovery_availability_zone_list"] = [az_spec]
+            az_spec["cluster_reference_list"] = [{"uuid": recovery_site["cluster"]}]
+        payload["spec"]["resources"]["execution_parameters"][
+            "recovery_availability_zone_list"
+        ] = [az_spec]
         return payload, None
-    
+
     def _build_spec_action(self, payload, action):
         payload["spec"]["resources"]["execution_parameters"]["action_type"] = action
         return payload, None
 
     def _build_spec_recovery_reference_time(self, payload, recovery_reference_time):
-        payload["spec"]["resources"]["execution_parameters"]["recovery_reference_time"] = recovery_reference_time
+        payload["spec"]["resources"]["execution_parameters"][
+            "recovery_reference_time"
+        ] = recovery_reference_time
         return payload, None
 
-    def _build_spec_ignore_validation_failures(self, payload, ignore_validation_failures):
-        payload["spec"]["resources"]["execution_parameters"]["should_continue_on_validation_failure"] = ignore_validation_failures
+    def _build_spec_ignore_validation_failures(
+        self, payload, ignore_validation_failures
+    ):
+        payload["spec"]["resources"]["execution_parameters"][
+            "should_continue_on_validation_failure"
+        ] = ignore_validation_failures
         return payload, None

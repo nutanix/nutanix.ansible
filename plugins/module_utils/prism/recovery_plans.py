@@ -19,7 +19,7 @@ class RecoveryPlan(Prism):
             "primary_location": self._build_spec_primary_location,
             "recovery_location": self._build_spec_recovery_location,
             "stages": self._build_spec_stages,
-            "network_mappings": self._build_spec_network_mappings
+            "network_mappings": self._build_spec_network_mappings,
         }
 
     def get_associated_entities(self, recovery_plan_uuid):
@@ -34,14 +34,12 @@ class RecoveryPlan(Prism):
                     "resources": {
                         "parameters": {
                             "network_mapping_list": [],
-                            "availability_zone_list": [
-                                {}, {}
-                            ],
-                            "primary_location_index": 0
+                            "availability_zone_list": [{}, {}],
+                            "primary_location_index": 0,
                         },
                         "stage_list": [],
-                    }, 
-                    "name": None
+                    },
+                    "name": None,
                 },
             }
         )
@@ -53,54 +51,44 @@ class RecoveryPlan(Prism):
     def _build_spec_desc(self, payload, desc):
         payload["spec"]["description"] = desc
         return payload, None
-    
+
     def _build_spec_stages(self, payload, stages):
         stage_list = []
         for stage in stages:
             stage_spec = {
-                "stage_work":{
-                    "recover_entities":{
-                        "entity_info_list": None
-                    }
-                }
+                "stage_work": {"recover_entities": {"entity_info_list": None}}
             }
             stage_entities = []
             for vm in stage.get("vms", []):
                 vm_ref, err = get_vm_reference_spec(vm, self.module)
                 if err:
                     return None, err
-                vm_spec = {
-                    "any_entity_reference": vm_ref
-                }
+                vm_spec = {"any_entity_reference": vm_ref}
                 if vm.get("enable_script_exec"):
                     vm_spec["script_list"] = [
-                        {
-                            "enable_script_exec": vm["enable_script_exec"]
-                        }
+                        {"enable_script_exec": vm["enable_script_exec"]}
                     ]
                 stage_entities.append(vm_spec)
 
             for category in stage.get("categories"):
-                category_spec = {
-                    "categories": {
-                        category["key"]: category["value"]
-                    }
-                }
+                category_spec = {"categories": {category["key"]: category["value"]}}
                 if category.get("enable_script_exec"):
                     category_spec["script_list"] = [
-                        {
-                            "enable_script_exec": category["enable_script_exec"]
-                        }
+                        {"enable_script_exec": category["enable_script_exec"]}
                     ]
                 stage_entities.append(category_spec)
-            stage_spec["stage_work"]["recover_entities"]["entity_info_list"] = stage_entities
+            stage_spec["stage_work"]["recover_entities"][
+                "entity_info_list"
+            ] = stage_entities
             if stage.get("delay"):
                 stage_spec["delay_time_secs"] = stage["delay"]
             stage_list.append(stage_spec)
         payload["spec"]["resources"]["stage_list"] = stage_list
         return payload, None
 
-    def _build_network_mapping_spec(self, config, network_type, are_network_stretched=False):
+    def _build_network_mapping_spec(
+        self, config, network_type, are_network_stretched=False
+    ):
         ntw_spec = {}
         custom_ip_specs = []
         if config.get("custom_ip_config") and not are_network_stretched:
@@ -110,11 +98,7 @@ class RecoveryPlan(Prism):
                     return None, err
                 custom_ip_spec = {
                     "vm_reference": vm_ref,
-                    "ip_config_list": [
-                        {
-                            "ip_address": ip_config["ip"]
-                        }
-                    ]
+                    "ip_config_list": [{"ip_address": ip_config["ip"]}],
                 }
                 custom_ip_specs.append(custom_ip_spec)
 
@@ -124,8 +108,10 @@ class RecoveryPlan(Prism):
         if config.get("prefix"):
             subnet_spec["prefix_length"] = int(config["prefix"])
         if config.get("external_connectivity_state"):
-            subnet_spec["external_connectivity_state"] = config["external_connectivity_state"]
-        
+            subnet_spec["external_connectivity_state"] = config[
+                "external_connectivity_state"
+            ]
+
         if network_type == "test":
             if custom_ip_specs:
                 ntw_spec["test_ip_assignment_list"] = custom_ip_specs
@@ -146,8 +132,6 @@ class RecoveryPlan(Prism):
 
         return ntw_spec
 
-        
-
     def _build_spec_network_mappings(self, payload, network_mappings):
 
         # apply this settings to all network mappings
@@ -164,83 +148,104 @@ class RecoveryPlan(Prism):
             }
             if self.module.params["primary_location"].get("cluster"):
                 primary_location["cluster_reference_list"] = [
-                    {
-                        "uuid": self.module.params["primary_location"]["cluster"]
-                    }
+                    {"uuid": self.module.params["primary_location"]["cluster"]}
                 ]
         else:
-            primary_location_index = payload["spec"]["resources"]["parameters"]["primary_location_index"]
-            primary_location = payload["spec"]["resources"]["parameters"]["availability_zone_list"][primary_location_index]
-        
+            primary_location_index = payload["spec"]["resources"]["parameters"][
+                "primary_location_index"
+            ]
+            primary_location = payload["spec"]["resources"]["parameters"][
+                "availability_zone_list"
+            ][primary_location_index]
+
         if self.module.params.get("recovery_location", {}).get("url"):
             recovery_location = {
                 "availability_zone_url": self.module.params["recovery_location"]["url"]
             }
             if self.module.params["recovery_location"].get("cluster"):
                 recovery_location["cluster_reference_list"] = [
-                    {
-                        "uuid": self.module.params["recovery_location"]["cluster"]
-                    }
+                    {"uuid": self.module.params["recovery_location"]["cluster"]}
                 ]
         else:
-            recovery_location_index = payload["spec"]["resources"]["parameters"]["primary_location_index"] ^ 1
-            recovery_location = payload["spec"]["resources"]["parameters"]["availability_zone_list"][recovery_location_index]
-        
+            recovery_location_index = (
+                payload["spec"]["resources"]["parameters"]["primary_location_index"] ^ 1
+            )
+            recovery_location = payload["spec"]["resources"]["parameters"][
+                "availability_zone_list"
+            ][recovery_location_index]
+
         network_mapping_specs = []
         for ntw in network_mappings:
             spec = {}
             primary_site_ntw_spec = {}
             recovery_site_ntw_spec = {}
             if ntw["primary"].get("test"):
-                primary_site_ntw_spec.update(self._build_network_mapping_spec(ntw["primary"]["test"], "test", are_network_stretched))
+                primary_site_ntw_spec.update(
+                    self._build_network_mapping_spec(
+                        ntw["primary"]["test"], "test", are_network_stretched
+                    )
+                )
 
             if ntw["primary"].get("prod"):
-                primary_site_ntw_spec.update(self._build_network_mapping_spec(ntw["primary"]["prod"], "prod", are_network_stretched))
-            
+                primary_site_ntw_spec.update(
+                    self._build_network_mapping_spec(
+                        ntw["primary"]["prod"], "prod", are_network_stretched
+                    )
+                )
+
             if ntw["recovery"].get("test"):
-                recovery_site_ntw_spec.update(self._build_network_mapping_spec(ntw["recovery"]["test"], "test", are_network_stretched))
-            
+                recovery_site_ntw_spec.update(
+                    self._build_network_mapping_spec(
+                        ntw["recovery"]["test"], "test", are_network_stretched
+                    )
+                )
+
             if ntw["recovery"].get("prod"):
-                recovery_site_ntw_spec.update(self._build_network_mapping_spec(ntw["recovery"]["prod"], "prod", are_network_stretched))
-                
-            
+                recovery_site_ntw_spec.update(
+                    self._build_network_mapping_spec(
+                        ntw["recovery"]["prod"], "prod", are_network_stretched
+                    )
+                )
+
             primary_site_ntw_spec.update(primary_location)
             recovery_site_ntw_spec.update(recovery_location)
 
-            spec["are_networks_stretched"]=are_network_stretched  
-            spec["availability_zone_network_mapping_list"] = [primary_site_ntw_spec, recovery_site_ntw_spec]
+            spec["are_networks_stretched"] = are_network_stretched
+            spec["availability_zone_network_mapping_list"] = [
+                primary_site_ntw_spec,
+                recovery_site_ntw_spec,
+            ]
             network_mapping_specs.append(spec)
 
-        payload["spec"]["resources"]["parameters"]["network_mapping_list"] = network_mapping_specs
+        payload["spec"]["resources"]["parameters"][
+            "network_mapping_list"
+        ] = network_mapping_specs
         return payload, None
 
     def _build_spec_primary_location(self, payload, primary_location):
-        primary_location_index = payload["spec"]["resources"]["parameters"]["primary_location_index"]
-        spec = {
-            "availability_zone_url": primary_location["url"]
-        }
+        primary_location_index = payload["spec"]["resources"]["parameters"][
+            "primary_location_index"
+        ]
+        spec = {"availability_zone_url": primary_location["url"]}
         if primary_location.get("cluster"):
-            spec["cluster_reference_list"] = [
-                {
-                    "uuid": primary_location["cluster"]
-                }
-            ]
-        payload["spec"]["resources"]["parameters"]["availability_zone_list"][primary_location_index] = spec
+            spec["cluster_reference_list"] = [{"uuid": primary_location["cluster"]}]
+        payload["spec"]["resources"]["parameters"]["availability_zone_list"][
+            primary_location_index
+        ] = spec
         return payload, None
 
     def _build_spec_recovery_location(self, payload, recovery_location):
-        recovery_location_index = payload["spec"]["resources"]["parameters"]["primary_location_index"] ^ 1
-        spec = {
-            "availability_zone_url": recovery_location["url"]
-        }
+        recovery_location_index = (
+            payload["spec"]["resources"]["parameters"]["primary_location_index"] ^ 1
+        )
+        spec = {"availability_zone_url": recovery_location["url"]}
         if recovery_location.get("cluster"):
-            spec["cluster_reference_list"] = [
-                {
-                    "uuid": recovery_location["cluster"]
-                }
-            ]
-        payload["spec"]["resources"]["parameters"]["availability_zone_list"][recovery_location_index] = spec
+            spec["cluster_reference_list"] = [{"uuid": recovery_location["cluster"]}]
+        payload["spec"]["resources"]["parameters"]["availability_zone_list"][
+            recovery_location_index
+        ] = spec
         return payload, None
+
 
 def get_recovery_plan_uuid(config, module):
     if "name" in config:

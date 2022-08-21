@@ -469,6 +469,7 @@ def get_vm_uuid(config, module):
 
     return uuid, None
 
+
 def get_vm_reference_spec(config, module):
     uuid = config.get("uuid", "")
     name = config.get("name", "")
@@ -482,11 +483,6 @@ def get_vm_reference_spec(config, module):
         uuid, err = get_vm_uuid(config, module)
         if err:
             return None, err
-    
-    vm_ref_spec = {
-        "kind" : "vm",
-        "name" : name,
-        "uuid" : uuid
-    }
-    return vm_ref_spec, None
 
+    vm_ref_spec = {"kind": "vm", "name": name, "uuid": uuid}
+    return vm_ref_spec, None

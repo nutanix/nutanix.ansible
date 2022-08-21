@@ -41,8 +41,9 @@ def get_protection_rule(module, result):
 
     result["response"] = {
         "rules_info": resp,
-        "rules_affected_entities": affected_entities
+        "rules_affected_entities": affected_entities,
     }
+
 
 def get_protection_rules(module, result):
     protection_rule = ProtectionRule(module)

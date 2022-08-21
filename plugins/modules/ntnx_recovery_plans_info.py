@@ -41,8 +41,9 @@ def get_recovery_plan(module, result):
 
     result["response"] = {
         "recovery_plan_info": resp,
-        "associated_entities": associated_entities
+        "associated_entities": associated_entities,
     }
+
 
 def get_recovery_plans(module, result):
     recovery_plan = RecoveryPlan(module)
