@@ -116,6 +116,10 @@ def check_rule_idempotency(rule_spec, update_spec):
         if schedule not in rule_spec["spec"]["resources"]["availability_zone_connectivity_list"]:
             return False
     
+    # check first level of entities if update is required (for fields like name and desc)
+    if rule_spec != update_spec:
+        return False
+
     return True
 
 def update_protection_rule(module, result):

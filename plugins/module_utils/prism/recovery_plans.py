@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
-from ..prism.vms import get_vm_uuid
+from ..prism.vms import get_vm_reference_spec
 from .prism import Prism
 
 __metaclass__ = type
@@ -57,17 +57,20 @@ class RecoveryPlan(Prism):
     def _build_spec_stages(self, payload, stages):
         stage_list = []
         for stage in stages:
-            stage_spec = {}
+            stage_spec = {
+                "stage_work":{
+                    "recover_entities":{
+                        "entity_info_list": None
+                    }
+                }
+            }
             stage_entities = []
-            for vm in stages.get("vms", []):
-                uuid, err = get_vm_uuid(vm, self.module)
+            for vm in stage.get("vms", []):
+                vm_ref, err = get_vm_reference_spec(vm, self.module)
                 if err:
                     return None, err
                 vm_spec = {
-                    "any_entity_reference":{
-                        "kind": "vm",
-                        "uuid": uuid
-                    }
+                    "any_entity_reference": vm_ref
                 }
                 if vm.get("enable_script_exec"):
                     vm_spec["script_list"] = [
@@ -77,7 +80,7 @@ class RecoveryPlan(Prism):
                     ]
                 stage_entities.append(vm_spec)
 
-            for category in stages.get("categories"):
+            for category in stage.get("categories"):
                 category_spec = {
                     "categories": {
                         category["key"]: category["value"]
@@ -92,17 +95,64 @@ class RecoveryPlan(Prism):
                 stage_entities.append(category_spec)
             stage_spec["stage_work"]["recover_entities"]["entity_info_list"] = stage_entities
             if stage.get("delay"):
-                stage_spec["delay"] = stage["delay"]
+                stage_spec["delay_time_secs"] = stage["delay"]
             stage_list.append(stage_spec)
         payload["spec"]["resources"]["stage_list"] = stage_list
         return payload, None
 
+    def _build_network_mapping_spec(self, config, network_type, are_network_stretched=False):
+        ntw_spec = {}
+        custom_ip_specs = []
+        if config.get("custom_ip_config") and not are_network_stretched:
+            for ip_config in config["custom_ip_config"]:
+                vm_ref, err = get_vm_reference_spec(ip_config["vm"], self.module)
+                if err:
+                    return None, err
+                custom_ip_spec = {
+                    "vm_reference": vm_ref,
+                    "ip_config_list": [
+                        {
+                            "ip_address": ip_config["ip"]
+                        }
+                    ]
+                }
+                custom_ip_specs.append(custom_ip_spec)
+
+        subnet_spec = {}
+        if config.get("gateway_ip"):
+            subnet_spec["gateway_ip"] = config["gateway_ip"]
+        if config.get("prefix"):
+            subnet_spec["prefix_length"] = int(config["prefix"])
+        if config.get("external_connectivity_state"):
+            subnet_spec["external_connectivity_state"] = config["external_connectivity_state"]
+        
+        if network_type == "test":
+            if custom_ip_specs:
+                ntw_spec["test_ip_assignment_list"] = custom_ip_specs
+            ntw_spec["test_network"] = {
+                "name": config["name"],
+            }
+            if subnet_spec:
+                ntw_spec["test_network"]["subnet_list"] = [subnet_spec]
+
+        else:
+            if custom_ip_specs:
+                ntw_spec["recovery_ip_assignment_list"] = custom_ip_specs
+            ntw_spec["recovery_network"] = {
+                "name": config["name"],
+            }
+            if subnet_spec:
+                ntw_spec["recovery_network"]["subnet_list"] = [subnet_spec]
+
+        return ntw_spec
+
+        
+
     def _build_spec_network_mappings(self, payload, network_mappings):
-        network_mappings = []
 
         # apply this settings to all network mappings
         are_network_stretched = False
-        if self.moudule.params["network_type"] == "STRETCH":
+        if self.module.params["network_type"] == "STRETCH":
             are_network_stretched = True
 
         # create primary and recovery location spec to be used in each network mappings
@@ -136,47 +186,32 @@ class RecoveryPlan(Prism):
             recovery_location_index = payload["spec"]["resources"]["parameters"]["primary_location_index"] ^ 1
             recovery_location = payload["spec"]["resources"]["parameters"]["availability_zone_list"][recovery_location_index]
         
+        network_mapping_specs = []
         for ntw in network_mappings:
             spec = {}
-            primary_ntw_spec = {}
-            recovery_ntw_spec = {}
+            primary_site_ntw_spec = {}
+            recovery_site_ntw_spec = {}
             if ntw["primary"].get("test"):
-                subnet_spec = deepcopy(ntw["primary"]["test"])
-                primary_ntw_spec["test_network"] = {
-                    "name": ntw["primary"]["test"]["name"], 
-                    "subnet_list": [subnet_spec.pop("name")]
-                }
+                primary_site_ntw_spec.update(self._build_network_mapping_spec(ntw["primary"]["test"], "test", are_network_stretched))
 
             if ntw["primary"].get("prod"):
-                subnet_spec = deepcopy(ntw["primary"]["prod"])
-                primary_ntw_spec["recovery_network"] = {
-                    "name": ntw["primary"]["prod"]["name"], 
-                    "subnet_list": [subnet_spec.pop("name")]
-                }
+                primary_site_ntw_spec.update(self._build_network_mapping_spec(ntw["primary"]["prod"], "prod", are_network_stretched))
             
             if ntw["recovery"].get("test"):
-                subnet_spec = deepcopy(ntw["recovery"]["test"])
-                recovery_ntw_spec["test_network"] = {
-                    "name": ntw["recovery"]["test"]["name"], 
-                    "subnet_list": [subnet_spec.pop("name")]
-                }
+                recovery_site_ntw_spec.update(self._build_network_mapping_spec(ntw["recovery"]["test"], "test", are_network_stretched))
             
             if ntw["recovery"].get("prod"):
-                subnet_spec = deepcopy(ntw["recovery"]["prod"])
-                recovery_ntw_spec["recovery_network"] = {
-                    "name": ntw["recovery"]["prod"]["name"], 
-                    "subnet_list": [subnet_spec.pop("name")]
-                }
+                recovery_site_ntw_spec.update(self._build_network_mapping_spec(ntw["recovery"]["prod"], "prod", are_network_stretched))
                 
             
-            primary_ntw_spec.update(primary_location)
-            recovery_ntw_spec.update(recovery_location)
+            primary_site_ntw_spec.update(primary_location)
+            recovery_site_ntw_spec.update(recovery_location)
 
             spec["are_networks_stretched"]=are_network_stretched  
-            spec["availability_zone_network_mapping_list"] = [primary_ntw_spec, recovery_ntw_spec]
-            network_mappings.append(spec)
+            spec["availability_zone_network_mapping_list"] = [primary_site_ntw_spec, recovery_site_ntw_spec]
+            network_mapping_specs.append(spec)
 
-        payload["spec"]["resources"]["parameters"]["network_mapping_list"] = network_mappings
+        payload["spec"]["resources"]["parameters"]["network_mapping_list"] = network_mapping_specs
         return payload, None
 
     def _build_spec_primary_location(self, payload, primary_location):

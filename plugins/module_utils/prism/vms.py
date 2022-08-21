@@ -468,3 +468,25 @@ def get_vm_uuid(config, module):
         uuid = config.get("uuid")
 
     return uuid, None
+
+def get_vm_reference_spec(config, module):
+    uuid = config.get("uuid", "")
+    name = config.get("name", "")
+    if ("name" not in config) and ("uuid" not in config):
+        return None, "Provide name or uuid for building vm reference spec"
+    elif "name" not in config:
+        vm = VM(module)
+        resp = vm.read(config["uuid"])
+        name = resp["status"]["name"]
+    elif "uuid" not in config:
+        uuid, err = get_vm_uuid(config, module)
+        if err:
+            return None, err
+    
+    vm_ref_spec = {
+        "kind" : "vm",
+        "name" : name,
+        "uuid" : uuid
+    }
+    return vm_ref_spec, None
+
