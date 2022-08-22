@@ -79,9 +79,9 @@ def get_module_spec():
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
         start_time=dict(type="str", required=False),
-        schedules=dict(type="list", elements="dict", options=schedule, required=True),
-        protected_categories=dict(type="dict", required=True),
-        primary_site=dict(type="dict", options=availability_zone, required=True),
+        schedules=dict(type="list", elements="dict", options=schedule, required=False),
+        protected_categories=dict(type="dict", required=False),
+        primary_site=dict(type="dict", options=availability_zone, required=False),
     )
     return module_args
 

@@ -12,6 +12,7 @@ action_groups:
   - ntnx_pbrs
   - ntnx_roles
   - ntnx_projects
+  - ntnx_protection_rules
   - ntnx_security_rules
   - ntnx_service_groups
   - ntnx_static_routes
