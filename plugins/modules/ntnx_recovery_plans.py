@@ -77,11 +77,33 @@ def get_module_spec():
         test=dict(type="dict", option=network, required=False),
         prod=dict(type="dict", option=network, required=False),
     )
-
-    # TO-DO: Test Custom IP mappings and add spec according to them
     network_mapping = dict(
         primary=dict(type="dict", options=site_network, required=True),
         recovery=dict(type="dict", options=site_network, required=True),
+    )
+    floating_ip_config = dict(
+        ip=dict(type="str", required=True),
+        allocate_dynamically=dict(type="bool", required=False),
+    )
+    vm_nic_info = dict(
+        uuid=dict(type="str", required=True), ip=dict(type="str", required=False)
+    )
+    vm_ip_assignment_config = dict(
+        vm=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=[("name", "uuid")],
+            required=True,
+        ),
+        vm_nic_info=dict(type="dict", options=vm_nic_info, required=True),
+        test_ip_config=dict(type="dict", options=floating_ip_config, required=False),
+        prod_ip_config=dict(type="dict", options=floating_ip_config, required=False),
+    )
+    floating_ip_assignment = dict(
+        availability_zone_url=dict(type="str", required=True),
+        vm_ip_assignments=dict(
+            type="list", elements="dict", options=vm_ip_assignment_config, required=True
+        ),
     )
     module_args = dict(
         plan_uuid=dict(type="str", required=False),
@@ -94,7 +116,10 @@ def get_module_spec():
             type="list", elements="dict", options=network_mapping, required=False
         ),
         network_type=dict(
-            type="str", choices=["STRETCH", "NON_STRETCH"], required=True
+            type="str", choices=["STRETCH", "NON_STRETCH"], required=False
+        ),
+        floating_ip_assignments=dict(
+            type="list", elements="dict", options=floating_ip_assignment, required=False
         ),
     )
     return module_args
@@ -142,6 +167,20 @@ def check_recovery_plan_idempotency(old_spec, update_spec):
         return False
     for mapping in update_ntw_mappings:
         if mapping not in old_ntw_mappings:
+            return False
+
+    # comparing floating IP assignments
+    old_ip_assignments = old_spec["spec"]["resources"]["parameters"].get(
+        "floating_ip_assignment_list", []
+    )
+    update_ip_assignments = update_spec["spec"]["resources"]["parameters"].get(
+        "floating_ip_assignment_list", []
+    )
+
+    if len(old_ip_assignments) != len(update_ip_assignments):
+        return False
+    for config in update_ip_assignments:
+        if config not in old_ip_assignments:
             return False
 
     # check first level of fields
@@ -203,11 +242,17 @@ def delete_recovery_plan(module, result):
 
 
 def run_module():
+
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("plan_uuid", "name"), True),
+            ("state", "present", ("name", "plan_uuid"), True),
+            ("state", "present", ("stages", "plan_uuid"), True),
+            ("state", "present", ("primary_location", "plan_uuid"), True),
+            ("state", "present", ("recovery_location", "plan_uuid"), True),
+            ("state", "present", ("network_mappings", "plan_uuid"), True),
+            ("state", "present", ("network_type", "plan_uuid"), True),
             ("state", "absent", ("plan_uuid",)),
         ],
     )

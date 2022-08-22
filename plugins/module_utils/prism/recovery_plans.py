@@ -20,6 +20,7 @@ class RecoveryPlan(Prism):
             "recovery_location": self._build_spec_recovery_location,
             "stages": self._build_spec_stages,
             "network_mappings": self._build_spec_network_mappings,
+            "floating_ip_assignments": self._build_spec_floating_ip_assignments,
         }
 
     def get_associated_entities(self, recovery_plan_uuid):
@@ -34,6 +35,7 @@ class RecoveryPlan(Prism):
                     "resources": {
                         "parameters": {
                             "network_mapping_list": [],
+                            "floating_ip_assignment_list": [],
                             "availability_zone_list": [{}, {}],
                             "primary_location_index": 0,
                         },
@@ -58,6 +60,8 @@ class RecoveryPlan(Prism):
             stage_spec = {
                 "stage_work": {"recover_entities": {"entity_info_list": None}}
             }
+
+            # for each stage add all vms and categories
             stage_entities = []
             for vm in stage.get("vms", []):
                 vm_ref, err = get_vm_reference_spec(vm, self.module)
@@ -77,12 +81,15 @@ class RecoveryPlan(Prism):
                         {"enable_script_exec": category["enable_script_exec"]}
                     ]
                 stage_entities.append(category_spec)
+            
             stage_spec["stage_work"]["recover_entities"][
                 "entity_info_list"
             ] = stage_entities
+            
             if stage.get("delay"):
                 stage_spec["delay_time_secs"] = stage["delay"]
             stage_list.append(stage_spec)
+        
         payload["spec"]["resources"]["stage_list"] = stage_list
         return payload, None
 
@@ -91,6 +98,8 @@ class RecoveryPlan(Prism):
     ):
         ntw_spec = {}
         custom_ip_specs = []
+
+        # set custom IP mappings for vms
         if config.get("custom_ip_config") and not are_network_stretched:
             for ip_config in config["custom_ip_config"]:
                 vm_ref, err = get_vm_reference_spec(ip_config["vm"], self.module)
@@ -102,6 +111,7 @@ class RecoveryPlan(Prism):
                 }
                 custom_ip_specs.append(custom_ip_spec)
 
+        # subnet related details for particular network
         subnet_spec = {}
         if config.get("gateway_ip"):
             subnet_spec["gateway_ip"] = config["gateway_ip"]
@@ -112,6 +122,7 @@ class RecoveryPlan(Prism):
                 "external_connectivity_state"
             ]
 
+        # add to respective network config as per test or prod network
         if network_type == "test":
             if custom_ip_specs:
                 ntw_spec["test_ip_assignment_list"] = custom_ip_specs
@@ -134,7 +145,7 @@ class RecoveryPlan(Prism):
 
     def _build_spec_network_mappings(self, payload, network_mappings):
 
-        # apply this settings to all network mappings
+        # set flag to apply this settings to all network mappings
         are_network_stretched = False
         if self.module.params["network_type"] == "STRETCH":
             are_network_stretched = True
@@ -177,6 +188,8 @@ class RecoveryPlan(Prism):
         network_mapping_specs = []
         for ntw in network_mappings:
             spec = {}
+
+            # add primary and recovery site networks each having test and production(also called recovery networks)
             primary_site_ntw_spec = {}
             recovery_site_ntw_spec = {}
             if ntw["primary"].get("test"):
@@ -227,8 +240,10 @@ class RecoveryPlan(Prism):
             "primary_location_index"
         ]
         spec = {"availability_zone_url": primary_location["url"]}
+        
         if primary_location.get("cluster"):
             spec["cluster_reference_list"] = [{"uuid": primary_location["cluster"]}]
+        
         payload["spec"]["resources"]["parameters"]["availability_zone_list"][
             primary_location_index
         ] = spec
@@ -239,11 +254,71 @@ class RecoveryPlan(Prism):
             payload["spec"]["resources"]["parameters"]["primary_location_index"] ^ 1
         )
         spec = {"availability_zone_url": recovery_location["url"]}
+        
         if recovery_location.get("cluster"):
             spec["cluster_reference_list"] = [{"uuid": recovery_location["cluster"]}]
+        
         payload["spec"]["resources"]["parameters"]["availability_zone_list"][
             recovery_location_index
         ] = spec
+        return payload, None
+
+    def _build_spec_floating_ip_assignments(self, payload, floating_ip_assignments):
+        floating_ip_assignment_specs = []
+        for config in floating_ip_assignments:
+            floating_ip_assignment_spec = {}
+            floating_ip_assignment_spec["availability_zone_url"] = config[
+                "availability_zone_url"
+            ]
+            vm_ip_assignment_specs = []
+            for ip_spec in config["vm_ip_assignments"]:
+                ip_assignment_spec = {}
+
+                # add vm reference
+                vm_ref, err = get_vm_reference_spec(ip_spec["vm"], self.module)
+                if err:
+                    return None, err
+                ip_assignment_spec["vm_reference"] = vm_ref
+
+                # add nic info
+                ip_assignment_spec["vm_nic_information"] = {
+                    "uuid": ip_spec["vm_nic_info"]["uuid"]
+                }
+                if ip_spec["vm_nic_info"].get("ip"):
+                    ip_assignment_spec["vm_nic_information"]["ip"] = ip_spec[
+                        "vm_nic_info"
+                    ]["ip"]
+
+                # test floating ip config
+                if ip_spec.get("test_ip_config"):
+                    ip_assignment_spec["test_floating_ip_config"] = {
+                        "ip": ip_spec["test_ip_config"]["ip"]
+                    }
+                    if ip_spec["test_ip_config"].get("allocate_dynamically"):
+                        ip_assignment_spec["test_floating_ip_config"][
+                            "should_allocate_dynamically"
+                        ] = ip_spec["test_ip_config"]["allocate_dynamically"]
+
+                # recovery floating ip config
+                if ip_spec.get("prod_ip_config"):
+                    ip_assignment_spec["recovery_floating_ip_config"] = {
+                        "ip": ip_spec["prod_ip_config"]["ip"]
+                    }
+                    if ip_spec["prod_ip_config"].get("allocate_dynamically"):
+                        ip_assignment_spec["recovery_floating_ip_config"][
+                            "should_allocate_dynamically"
+                        ] = ip_spec["prod_ip_config"]["allocate_dynamically"]
+                
+                vm_ip_assignment_specs.append(ip_assignment_spec)
+            
+            floating_ip_assignment_spec[
+                "vm_ip_assignment_list"
+            ] = vm_ip_assignment_specs
+            floating_ip_assignment_specs.append(floating_ip_assignment_spec)
+
+        payload["spec"]["resources"]["parameters"][
+            "floating_ip_assignment_list"
+        ] = floating_ip_assignment_specs
         return payload, None
 
 

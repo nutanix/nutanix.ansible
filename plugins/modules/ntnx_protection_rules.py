@@ -213,6 +213,9 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "present", ("name", "rule_uuid"), True),
+            ("state", "present", ("schedules", "rule_uuid"), True),
+            ("state", "present", ("protected_categories", "rule_uuid"), True),
+            ("state", "present", ("primary_site", "rule_uuid"), True),
             ("state", "absent", ("rule_uuid",)),
         ],
     )

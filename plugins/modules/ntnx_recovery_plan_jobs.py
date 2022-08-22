@@ -38,7 +38,7 @@ def get_module_spec():
     )
     module_args = dict(
         name=dict(type="str", required=False),
-        recovery_plan_job_uuid=dict(type="str", required=False),
+        job_uuid=dict(type="str", required=False),
         recovery_plan=dict(
             type="dict",
             options=entity_spec,
@@ -107,7 +107,7 @@ def create_job(module, result):
         result["error"] = error
         module.fail_json(msg="Failed creating recovery plan job", **result)
 
-    result["recovery_plan_job_uuid"] = job_uuid
+    result["job_uuid"] = job_uuid
     resp = recovery_plan_job.read(job_uuid)
     resp["response"] = resp
     resp["changed"] = True
@@ -123,10 +123,10 @@ def create_job(module, result):
 
 def perform_action_on_job(module, result):
     recovery_plan_job = RecoveryPlanJob(module)
-    job_uuid = module.params.get("recovery_plan_job_uuid")
+    job_uuid = module.params.get("job_uuid")
     if not job_uuid:
         module.fail_json(
-            msg="recovery_plan_job_uuid is a required field for 'CLEANUP' and 'RERUN' action",
+            msg="job_uuid is a required field for 'CLEANUP' and 'RERUN' action",
             **result,
         )
 
@@ -151,7 +151,7 @@ def perform_action_on_job(module, result):
             msg="Failed performing action on existing recovery plan job", **result
         )
 
-    result["recovery_plan_job_uuid"] = job_uuid
+    result["job_uuid"] = job_uuid
     resp = recovery_plan_job.read(job_uuid)
     resp["response"] = resp
     resp["changed"] = True
@@ -170,19 +170,19 @@ def run_module():
     # we only need recovery plan job's uuid for cleanup and rerun actions
     # hence blocking other fields when recovery plan job uuid is given
     mutually_exclusive_list = [
-        ("recovery_plan_job_uuid", "recovery_plan"),
-        ("recovery_plan_job_uuid", "recovery_reference_time"),
-        ("recovery_plan_job_uuid", "failed_site"),
-        ("recovery_plan_job_uuid", "recovery_site"),
-        ("recovery_plan_job_uuid", "name"),
-        ("recovery_plan_job_uuid", "ignore_validation_failures"),
+        ("job_uuid", "recovery_plan"),
+        ("job_uuid", "recovery_reference_time"),
+        ("job_uuid", "failed_site"),
+        ("job_uuid", "recovery_site"),
+        ("job_uuid", "name"),
+        ("job_uuid", "ignore_validation_failures"),
     ]
     required_if_list = (
         [
-            ("state", "present", ("name", "recovery_plan_job_uuid"), True),
-            ("state", "present", ("recovery_plan", "recovery_plan_job_uuid"), True),
-            ("state", "present", ("failed_site", "recovery_plan_job_uuid"), True),
-            ("state", "present", ("recovery_site", "recovery_plan_job_uuid"), True),
+            ("state", "present", ("name", "job_uuid"), True),
+            ("state", "present", ("recovery_plan", "job_uuid"), True),
+            ("state", "present", ("failed_site", "job_uuid"), True),
+            ("state", "present", ("recovery_site", "job_uuid"), True),
         ],
     )
     module = BaseModule(
@@ -196,7 +196,7 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
-        "recovery_plan_job_uuid": None,
+        "job_uuid": None,
     }
     if module.params["action"] in allowed_actions_on_recovery_plan_job:
         perform_action_on_job(module, result)
