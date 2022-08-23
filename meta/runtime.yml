@@ -33,6 +33,8 @@ action_groups:
   - ntnx_pbrs_info
   - ntnx_permissions_info
   - ntnx_projects_info
+  - ntnx_recovery_plans
+  - ntnx_recovery_plan_jobs
   - ntnx_roles_info
   - ntnx_security_rules_info
   - ntnx_service_groups_info

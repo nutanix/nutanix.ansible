@@ -314,10 +314,9 @@ class Entity(object):
     def _fetch_url(
         self, url, method, data=None, raise_error=True, no_response=False, timeout=30
     ):
-
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
-        if self.headers["Content-Type"] == "application/json":
-            data = self.module.jsonify(data) if data else None
+        if self.headers["Content-Type"] == "application/json" and data is not None:
+            data = self.module.jsonify(data)
 
         resp, info = fetch_url(
             self.module,
@@ -349,6 +348,8 @@ class Entity(object):
                     status_code=status_code,
                     error=err,
                     response=resp_json,
+                    data=data,
+                    before=before
                 )
 
             if no_response:

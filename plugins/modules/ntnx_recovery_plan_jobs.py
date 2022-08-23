@@ -115,10 +115,23 @@ def create_job(module, result):
     if module.params.get("wait"):
         task = Task(module)
         task.wait_for_completion(task_uuid, raise_error=False)
+        
+        # get job status
         job_uuid, err = get_recovery_plan_job_uuid(module, task_uuid)
-        resp = recovery_plan_job.read(job_uuid)
-
-    result["response"] = resp
+        if err:
+            result["error"] = error
+            module.fail_json(msg="Failed creating recovery plan job", **result)
+        job_status = recovery_plan_job.read(job_uuid)
+        
+        # get overall task status
+        task_status = task.read(task_uuid)
+        if task_status["status"] == "FAILED":
+            result["error"] = job_status
+            module.fail_json(
+                msg="Recovery plan job failed", **result
+            )  
+        result["response"] = job_status
+        result["changed"] = True
 
 
 def perform_action_on_job(module, result):
@@ -159,10 +172,28 @@ def perform_action_on_job(module, result):
     if module.params.get("wait"):
         task = Task(module)
         task.wait_for_completion(task_uuid, raise_error=False)
+        
+        # get job status
         job_uuid, err = get_recovery_plan_job_uuid(module, task_uuid)
-        resp = recovery_plan_job.read(job_uuid)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed performing action on existing recovery plan job", **result
+        )
 
-    result["response"] = resp
+        job_status = recovery_plan_job.read(job_uuid)
+            
+        # get overall task status
+        task_status = task.read(task_uuid)
+        if task_status["status"] == "FAILED":
+           result["error"] = job_status
+           module.fail_json(
+             msg="Recovery plan job failed", **result
+           )  
+        result["response"] = job_status
+        result["changed"] = True
+
+    
 
 
 def run_module():

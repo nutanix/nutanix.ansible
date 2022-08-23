@@ -24,9 +24,10 @@ class RecoveryPlanJob(Prism):
         }
         self.action_endpoints = {"CLEANUP": "cleanup"}
 
-    def perform_action_on_existing_job(self, job_uuid, action, spec={}):
+    def perform_action_on_existing_job(self, job_uuid, action):
         endpoint = "{0}/{1}".format(job_uuid, self.action_endpoints[action])
-        return self.create(data=spec, endpoint=endpoint)
+        data = {}
+        return self.create(data=data, endpoint=endpoint)
 
     def _get_default_spec(self):
         return deepcopy(
@@ -54,7 +55,7 @@ class RecoveryPlanJob(Prism):
     def _build_spec_recovery_plan(self, payload, recovery_plan):
         uuid, err = get_recovery_plan_uuid(recovery_plan, self.module)
         if err:
-            return err
+            return None, err
         payload["spec"]["resources"]["recovery_plan_reference"] = {
             "uuid": uuid,
             "kind": "recovery_plan",
