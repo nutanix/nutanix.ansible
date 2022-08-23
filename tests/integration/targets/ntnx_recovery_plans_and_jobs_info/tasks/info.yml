@@ -265,7 +265,7 @@
       - result.failed == false
       - result.response.entities | length == 2
     fail_msg: "Unable to list recovery plan jobs using length and offset"
-    success_msg: "protection recovery plan jobs listed successfully using length and offset"
+    success_msg: "recovery plan jobs listed successfully using length and offset"
 
 
 ################################################## Delete recovery plans #########################################################
