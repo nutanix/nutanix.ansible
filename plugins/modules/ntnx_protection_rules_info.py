@@ -7,7 +7,29 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+
 DOCUMENTATION = r"""
+---
+module: ntnx_protection_rules_info
+short_description: protection rule info module
+version_added: 1.5.0
+description: 'Get protection rule  info'
+options:
+    kind:
+      description:
+        - The kind name
+      type: str
+      default: protection_rule
+    rule_uuid:
+        description:
+            - protection rule UUID
+        type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_info
+author:
+ - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
 """

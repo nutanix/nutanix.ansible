@@ -1,6 +1,7 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 from copy import deepcopy
 
 from ..prism.vms import get_vm_reference_spec
@@ -81,15 +82,15 @@ class RecoveryPlan(Prism):
                         {"enable_script_exec": category["enable_script_exec"]}
                     ]
                 stage_entities.append(category_spec)
-            
+
             stage_spec["stage_work"]["recover_entities"][
                 "entity_info_list"
             ] = stage_entities
-            
+
             if stage.get("delay"):
                 stage_spec["delay_time_secs"] = stage["delay"]
             stage_list.append(stage_spec)
-        
+
         payload["spec"]["resources"]["stage_list"] = stage_list
         return payload, None
 
@@ -240,10 +241,10 @@ class RecoveryPlan(Prism):
             "primary_location_index"
         ]
         spec = {"availability_zone_url": primary_location["url"]}
-        
+
         if primary_location.get("cluster"):
             spec["cluster_reference_list"] = [{"uuid": primary_location["cluster"]}]
-        
+
         payload["spec"]["resources"]["parameters"]["availability_zone_list"][
             primary_location_index
         ] = spec
@@ -254,10 +255,10 @@ class RecoveryPlan(Prism):
             payload["spec"]["resources"]["parameters"]["primary_location_index"] ^ 1
         )
         spec = {"availability_zone_url": recovery_location["url"]}
-        
+
         if recovery_location.get("cluster"):
             spec["cluster_reference_list"] = [{"uuid": recovery_location["cluster"]}]
-        
+
         payload["spec"]["resources"]["parameters"]["availability_zone_list"][
             recovery_location_index
         ] = spec
@@ -308,9 +309,9 @@ class RecoveryPlan(Prism):
                         ip_assignment_spec["recovery_floating_ip_config"][
                             "should_allocate_dynamically"
                         ] = ip_spec["prod_ip_config"]["allocate_dynamically"]
-                
+
                 vm_ip_assignment_specs.append(ip_assignment_spec)
-            
+
             floating_ip_assignment_spec[
                 "vm_ip_assignment_list"
             ] = vm_ip_assignment_specs

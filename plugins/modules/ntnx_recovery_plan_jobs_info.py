@@ -7,7 +7,29 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+
 DOCUMENTATION = r"""
+---
+module: ntnx_recovery_plan_jobs_info
+short_description: recovery plan jobs info module
+version_added: 1.5.0
+description: 'Get recovery plan jobs info'
+options:
+    kind:
+      description:
+        - The kind name
+      type: str
+      default: recovery_plan_job
+    job_uuid:
+        description:
+            - recovery plan job  UUID
+        type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_info
+author:
+ - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
 """
