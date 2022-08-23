@@ -1,0 +1,183 @@
+- debug:
+    msg: start testing ntnx_protection_rules_info
+
+##################################################
+- name: Create protection rule with async schedule
+  ntnx_protection_rules:
+    state: present
+    wait: True
+    name: test-ansible-info-1
+    desc: test-ansible-desc-1
+    protected_categories:
+      Environment:
+        - Staging
+    primary_site:
+      availability_zone_url: "{{dr.primary_az_url}}"
+    schedules:
+      - source:
+            availability_zone_url: "{{dr.primary_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        protection_type: ASYNC
+        rpo: 1
+        rpo_unit: HOUR
+        snapshot_type: "CRASH_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          rollup_retention_policy:
+            snapshot_interval_type: HOURLY
+            multiple: 2
+
+      - source:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.primary_az_url}}"
+        protection_type: ASYNC
+        rpo: 1
+        rpo_unit: HOUR
+        snapshot_type: "CRASH_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 2
+        remote_retention_policy:
+          num_snapshots: 1
+  register: rule_1
+
+- name: Create protection rule with async schedule
+  ntnx_protection_rules:
+    state: present
+    wait: True
+    name: test-ansible-info-2
+    desc: test-ansible-desc-2
+    protected_categories:
+      Environment:
+        - Testing
+    primary_site:
+      availability_zone_url: "{{dr.primary_az_url}}"
+    schedules:
+      - source:
+            availability_zone_url: "{{dr.primary_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        protection_type: ASYNC
+        rpo: 1
+        rpo_unit: HOUR
+        snapshot_type: "CRASH_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          rollup_retention_policy:
+            snapshot_interval_type: HOURLY
+            multiple: 1
+
+      - source:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.primary_az_url}}"
+        protection_type: ASYNC
+        rpo: 1
+        rpo_unit: HOUR
+        snapshot_type: "CRASH_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          num_snapshots: 1
+  register: rule_2
+
+##################################################
+
+- name: List all Protection rules
+  ntnx_protection_rules_info:
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.metadata.total_matches > 0
+      - result.response.entities | length > 0
+    fail_msg: "Unable to list all protection rules"
+    success_msg: "protection rule info obtained successfully"
+
+- set_fact:
+    test_rule_name: "{{result.response.entities.1.status.name}}"
+- set_fact:
+    test_rule_uuid: "{{result.response.entities.1.metadata.uuid}}"
+
+################################################## 
+
+- name: List protection rule using uuid criteria
+  ntnx_protection_rules_info:
+    rule_uuid: "{{ test_rule_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.rule_info.status.name == "{{ test_rule_name }}"
+      - result.response.rule_info.metadata.uuid == "{{ test_rule_uuid }}"
+      - result.response.rule_affected_entities.entity_list[0]["vm_reference"] is defined
+      - result.response.rule_info.metadata.kind == "protection_rule"
+    fail_msg: "Unable to list rule using uuid"
+    success_msg: "rule info obtained successfully"
+
+################################################## 
+
+- name: List protection rules using filter criteria
+  ntnx_protection_rules_info:
+    filter: 
+      name: "{{ test_rule_name }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities[0].status.name == "{{ test_rule_name }}"
+      - result.response.metadata.kind == "protection_rule"
+      - result.response.metadata.total_matches == 1
+    fail_msg: "Unable to list protection rules using filter"
+    success_msg: "protection rule info obtained successfully"
+
+################################################## 
+
+- name: List rules using length and offset
+  ntnx_protection_rules_info:
+    length: 1
+    offset: 1
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities | length == 1
+    fail_msg: "Unable to list protection rules using length and offset"
+    success_msg: "protection rules listed successfully using length and offset"
+
+##################################################
+
+- name: Delete created protection policy
+  ntnx_protection_rules:
+    state: absent
+    wait: True
+    rule_uuid: "{{ rule_1.rule_uuid }}"
+  register: result
+
+- name: Delete created protection policy
+  ntnx_protection_rules:
+    state: absent
+    wait: True
+    rule_uuid: "{{ rule_2.rule_uuid }}"
+  register: result

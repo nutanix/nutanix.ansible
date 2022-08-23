@@ -19,7 +19,7 @@ options:
         - The kind name
       type: str
       default: recovery_plan
-    recovery_plan_uuid:
+    plan_uuid:
         description:
             - recovery plan UUID
         type: str
@@ -45,7 +45,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
-        recovery_plan_uuid=dict(type="str"),
+        plan_uuid=dict(type="str"),
         kind=dict(type="str", default="recovery_plan"),
         sort_order=dict(type="str", choices=["ASCENDING", "DESCENDING"]),
         sort_attribute=dict(type="str"),
@@ -56,7 +56,7 @@ def get_module_spec():
 
 def get_recovery_plan(module, result):
     recovery_plan = RecoveryPlan(module)
-    uuid = module.params.get("recovery_plan_uuid")
+    uuid = module.params.get("plan_uuid")
     resp = recovery_plan.read(uuid)
 
     # get all associated entities
@@ -87,7 +87,7 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("recovery_plan_uuid"):
+    if module.params.get("plan_uuid"):
         get_recovery_plan(module, result)
     else:
         get_recovery_plans(module, result)

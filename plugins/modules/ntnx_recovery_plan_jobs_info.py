@@ -55,7 +55,7 @@ def get_module_spec():
 
 def get_recovery_plan_job(module, result):
     recovery_plan_job = RecoveryPlanJob(module)
-    uuid = module.params.get("recovery_plan_uuid")
+    uuid = module.params.get("job_uuid")
     resp = recovery_plan_job.read(uuid)
 
     result["response"] = resp

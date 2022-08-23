@@ -172,6 +172,10 @@
       nutanix_password: "{{ password }}"
       validate_certs: False
       name: "{{dr_vm_name}}"
+      categories:
+        Environment:
+          - Staging
+          - Testing
       cluster:
         uuid: "{{ cluster.uuid }}"
       networks:

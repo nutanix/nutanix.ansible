@@ -348,8 +348,6 @@ class Entity(object):
                     status_code=status_code,
                     error=err,
                     response=resp_json,
-                    data=data,
-                    before=before
                 )
 
             if no_response:

@@ -62,8 +62,8 @@ def get_protection_rule(module, result):
     affected_entities = protection_rule.get_affected_entities(rule_uuid)
 
     result["response"] = {
-        "rules_info": resp,
-        "rules_affected_entities": affected_entities,
+        "rule_info": resp,
+        "rule_affected_entities": affected_entities,
     }
 
 

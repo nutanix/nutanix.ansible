@@ -103,7 +103,7 @@
     fail_msg: 'Unable to create recovery plan check mode spec'
     success_msg: 'Recovery plan check mode spec created successfully'
 
-- name: Create recovery plan with networks and 2 stages
+- name: Create recovery plan with networks and 1 stage
   ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp
