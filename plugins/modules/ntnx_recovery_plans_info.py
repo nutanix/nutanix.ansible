@@ -8,11 +8,34 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_recovery_plans_info
+short_description: recovery plan info module
+version_added: 1.5.0
+description: 'Get recovery plan info'
+options:
+    kind:
+      description:
+        - The kind name
+      type: str
+      default: recovery_plan
+    recovery_plan_uuid:
+        description:
+            - recovery plan UUID
+        type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_info
+author:
+ - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
 """
 RETURN = r"""
+
 """
+
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.prism.recovery_plans import RecoveryPlan  # noqa: E402

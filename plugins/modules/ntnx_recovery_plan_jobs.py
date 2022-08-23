@@ -4,28 +4,123 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-import time
 
 __metaclass__ = type
 allowed_actions_on_recovery_plan_job = ["CLEANUP"]
 
-
 DOCUMENTATION = r"""
+module: ntnx_recovery_plan_jobs
+short_description: Create a Recovery Plan Job for a Recovery Plan with associated metadata
+version_added: 1.5.0
+description: Create a Recovery Plan Job for a Recovery Plan with associated metadata
+options:
+  name:
+    description: Recovery Plan Job name.
+    type: str
+    required: false
+  job_uuid:
+    description: recovery_plan_job uuid
+    type: str
+    required: false
+  recovery_plan:
+    description: The reference to a recovery_plan
+    type: dict
+    required: false
+    suboptions:
+      name:
+        description: recovery plan name
+        type: str
+        required: false
+      uuid:
+        description: recovery plan UUID
+        type: str
+        required: false
+  failed_site:
+    description: Availability Zones that have failed.
+    type: dict
+    required: false
+    suboptions:
+      url:
+        description: URL of the Availability Zone.
+        type: str
+        required: true
+      cluster:
+        description: >-
+          cluster references. This is applicable only in scenario where failed
+          and recovery clusters both are managed by the same Availability Zone.
+        type: str
+        required: false
+  recovery_site:
+    description: Availability Zones wherein entities need to be recovered.
+    type: dict
+    required: false
+    suboptions:
+      url:
+        description: URL of the Availability Zone.
+        type: str
+        required: true
+      cluster:
+        description: >-
+          cluster references. This is applicable only in scenario where failed
+          and recovery clusters both are managed by the same Availability Zone.
+        type: str
+        required: false
+  action:
+    description: >-
+      Type of action performed by the Recovery Plan Job. VALIDATE - Performs the
+      validation of the Recovery Plan. The validation includes checks for the
+      presence of entities, networks, categories etc. referenced in the Recovery
+      Plan. MIGRATE - VM would be powered off on the sourece before migrating it
+      to the recovery Availability Zone. FAILOVER - Restore the entity from the
+      recovery points on the recovery Availability Zone. TEST_FAILOVER - Same as
+      FAILOVER but on a test network. LIVE_MIGRATE - Migrate without powering
+      off the VM.
+    type: str
+    required: true
+    choices:
+      - VALIDATE
+      - MIGRATE
+      - FAILOVER
+      - TEST_FAILOVER
+      - LIVE_MIGRATE
+      - CLEANUP
+  recovery_reference_time:
+    description: >-
+      Time with respect to which Recovery Plan Job has to be executed. This time
+      will be used as reference time with respect to which latest snapshot will
+      have to be restored in case of failover. For example, if failover is
+      required to be done using snapshot created on or before yesterday '2:00'
+      PM, then recovery_reference_time will be set to this time.
+    type: str
+    required: false
+  ignore_validation_failures:
+    description: >-
+      Whether to ignore the validation failures(e.g. Network mapping is missing
+      for some networks on failed Availability Zone, Virtual network missing.)
+      for the Recovery Plan actions MIGRATE, FAILOVER, TEST_FAILOVER and execute
+      the Recovery Plan.
+    type: bool
+    required: false
+extends_documentation_fragment:
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_operations
 author:
- - Prem Karat (@premkarat)
- - Pradeepsingh Bhati (@bhati-pradeep)
+  - Prem Karat (@premkarat)
+  - Pradeepsingh Bhati (@bhati-pradeep)
 """
+
 
 EXAMPLES = r"""
 """
 
 RETURN = r"""
 """
+import time  # noqa: E402
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.recovery_plan_jobs import RecoveryPlanJob  # noqa: E402
+from ..module_utils.prism.tasks import Task  # noqa: E402
 
 
 # TO-DO: Add floating IP assignment spec
@@ -177,14 +272,12 @@ def run_module():
         ("job_uuid", "name"),
         ("job_uuid", "ignore_validation_failures"),
     ]
-    required_if_list = (
-        [
-            ("state", "present", ("name", "job_uuid"), True),
-            ("state", "present", ("recovery_plan", "job_uuid"), True),
-            ("state", "present", ("failed_site", "job_uuid"), True),
-            ("state", "present", ("recovery_site", "job_uuid"), True),
-        ],
-    )
+    required_if_list = [
+        ("state", "present", ("name", "job_uuid"), True),
+        ("state", "present", ("recovery_plan", "job_uuid"), True),
+        ("state", "present", ("failed_site", "job_uuid"), True),
+        ("state", "present", ("recovery_site", "job_uuid"), True),
+    ]
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,

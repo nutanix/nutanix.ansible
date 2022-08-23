@@ -8,9 +8,369 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+module: ntnx_recovery_plans
+short_description: module which supports recovery_plans CRUD operations
+version_added: 1.5.0
+description: "Create, Update, Delete Recovery Plan"
+options:
+  plan_uuid:
+    description: recovery_plan uuid
+    type: str
+    required: false
+  name:
+    description: Recovery Plan name
+    type: str
+    required: false
+  desc:
+    description: A description or user annotation for the Recovery Plan.
+    type: str
+    required: false
+  stages:
+    type: list
+    elements: dict
+    description: Input for the stages of the Recovery Plan. Each stage will perform a predefined type of task. For example, a stage can perform the recovery of the entities specified in a stage.
+    required: false
+    suboptions:
+      vms:
+        type: list
+        elements: dict
+        description: write
+        required: false
+        suboptions:
+          uuid:
+            description: write
+            type: str
+            required: false
+          name:
+            description: write
+            type: str
+            required: false
+          enable_script_exec:
+            description: write
+            type: bool
+            required: false
+      categories:
+        type: list
+        elements: dict
+        description: Categories for filtering entities.
+        required: false
+        suboptions:
+          key:
+            description: write
+            type: str
+            required: false
+          value:
+            description: write
+            type: str
+            required: false
+          enable_script_exec:
+            description: write
+            type: bool
+            required: false
+      delay:
+        description: Amount of time in seconds to delay the execution of next stage after execution of current stage.
+        type: int
+        required: false
+  primary_location:
+    description: write
+    type: dict
+    required: false
+    suboptions:
+      url:
+        description: write
+        type: str
+        required: true
+      cluster:
+        description: write
+        type: str
+        required: false
+  recovery_location:
+    description: write
+    type: dict
+    required: false
+    suboptions:
+      url:
+        description: write
+        type: str
+        required: true
+      cluster:
+        description: write
+        type: str
+        required: false
+  network_mappings:
+    type: list
+    elements: dict
+    description: write
+    required: false
+    suboptions:
+      primary:
+        description: write
+        type: dict
+        required: true
+        suboptions:
+          test:
+            description: write
+            type: dict
+            required: false
+            suboptions:
+              name:
+                description: write
+                type: str
+                required: true
+              gateway_ip:
+                description: write
+                type: str
+                required: false
+              prefix:
+                description: write
+                type: int
+                required: false
+              external_connectivity_state:
+                description: write
+                type: bool
+                required: false
+              custom_ip_conifg:
+                description: write
+                type: list
+                elements: dict
+                required: false
+                suboptions:
+                  vm:
+                    description: write
+                    type: dict
+                    required: true
+                    suboptions:
+                      name:
+                        description: write
+                        type: dict
+                        required: false
+                      uuid:
+                        description: write
+                        type: dict
+                        required: false
+                  ip:
+                    description: write
+                    type: str
+                    required: true
+          prod:
+            description: write
+            type: dict
+            required: false
+            suboptions:
+              name:
+                description: write
+                type: str
+                required: true
+              gateway_ip:
+                description: write
+                type: str
+                required: false
+              prefix:
+                description: write
+                type: int
+                required: false
+              external_connectivity_state:
+                description: write
+                type: bool
+                required: false
+              custom_ip_conifg:
+                description: write
+                type: list
+                elements: dict
+                required: false
+                suboptions:
+                  vm:
+                    description: write
+                    type: dict
+                    required: true
+                    suboptions:
+                      name:
+                        description: write
+                        type: dict
+                        required: false
+                      uuid:
+                        description: write
+                        type: dict
+                        required: false
+                  ip:
+                    description: write
+                    type: str
+                    required: true
+      recovery:
+        description: Network configuration to be used for performing network mapping and IP preservation/mapping on Recovery Plan execution.
+        type: dict
+        required: true
+        suboptions:
+          test:
+            description: Network configuration to be used for performing network mapping and IP preservation/mapping on Recovery Plan execution.
+            type: dict
+            required: false
+            suboptions:
+              name:
+                description: Name of the network.
+                type: str
+                required: true
+              gateway_ip:
+                description: Gateway IP address for the subnet.
+                type: str
+                required: false
+              prefix:
+                description: Prefix length for the subnet.
+                type: int
+                required: false
+              external_connectivity_state:
+                description: External connectivity state of the subnet. This is applicable only for the subnet to be created in public cloud Availability Zone.
+                type: bool
+                required: false
+              custom_ip_conifg:
+                description: write
+                type: list
+                elements: dict
+                required: false
+                suboptions:
+                  vm:
+                    description: write
+                    type: dict
+                    required: true
+                    suboptions:
+                      name:
+                        description: write
+                        type: dict
+                        required: false
+                      uuid:
+                        description: write
+                        type: dict
+                        required: false
+                  ip:
+                    description: write
+                    type: str
+                    required: true
+          prod:
+            description: write
+            type: dict
+            required: false
+            suboptions:
+              name:
+                description: write
+                type: str
+                required: true
+              gateway_ip:
+                description: write
+                type: str
+                required: false
+              prefix:
+                description: write
+                type: int
+                required: false
+              external_connectivity_state:
+                description: write
+                type: bool
+                required: false
+              custom_ip_conifg:
+                description: write
+                type: list
+                elements: dict
+                required: false
+                suboptions:
+                  vm:
+                    description: write
+                    type: dict
+                    required: true
+                    suboptions:
+                      name:
+                        description: write
+                        type: dict
+                        required: false
+                      uuid:
+                        description: write
+                        type: dict
+                        required: false
+                  ip:
+                    description: write
+                    type: str
+                    required: true
+  network_type:
+    description: write
+    type: str
+    required: false
+    choices:
+      - STRETCH
+      - NON_STRETCH
+  floating_ip_assignments:
+    type: list
+    elements: dict
+    description: Floating IP assignment for VMs upon recovery in an Availability Zone. This is applicable only for the public cloud Availability Zones.
+    required: false
+    suboptions:
+      availability_zone_url:
+        description: URL of the Availability Zone.
+        type: str
+        required: true
+      vm_ip_assignments:
+        description: IP assignment for VMs upon recovery in the specified Availability Zone.
+        type: list
+        elements: dict
+        required: true
+        suboptions:
+          vm:
+            description: The reference to a vm
+            type: dict
+            required: true
+            suboptions:
+                          name:
+                            description: VM name
+                            type: str
+                            required: false
+                          uuid:
+                            description: VM UUID
+                            type: str
+                            required: false
+          vm_nic_info:
+            description: Information about vnic to which floating IP has to be assigned.
+            type: dict
+            required: true
+            suboptions:
+                          ip:
+                            description: IP address associated with vnic for which floating IP has to be assigned on failover.
+                            type: str
+                            required: false
+                          uuid:
+                            description: Uuid of the vnic of the VM to which floating IP has to be assigned.
+                            type: str
+                            required: true
+
+          test_ip_config:
+            description: Configuration for assigning floating IP to a VM on the execution of the Recovery Plan.
+            type: dict
+            required: false
+            suboptions:
+                          ip:
+                            description: IP to be assigned to VM, in case of failover.
+                            type: str
+                            required: true
+                          allocate_dynamically:
+                            description: Whether to allocate the floating IPs for the VMs dynamically.
+                            type: bool
+                            required: false
+          prod_ip_config:
+            description: Configuration for assigning floating IP to a VM on the execution of the Recovery Plan.
+            type: dict
+            required: false
+            suboptions:
+                          ip:
+                            description: IP to be assigned to VM, in case of failover.
+                            type: str
+                            required: true
+                          allocate_dynamically:
+                            description: Whether to allocate the floating IPs for the VMs dynamically.
+                            type: bool
+                            required: false
+extends_documentation_fragment:
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_operations
 author:
- - Prem Karat (@premkarat)
- - Pradeepsingh Bhati (@bhati-pradeep)
+  - Prem Karat (@premkarat)
+  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
@@ -21,10 +381,12 @@ RETURN = r"""
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.recovery_plans import RecoveryPlan  # noqa: E402
+from ..module_utils.prism.tasks import Task  # noqa: E402
 
 # TO-DO: Add floating IP assignment spec
+
+
 def get_module_spec():
 
     vm_spec = dict(
@@ -37,7 +399,7 @@ def get_module_spec():
         name=dict(type="str", required=False),
     )
     category = dict(
-        key=dict(type="str", required=False),
+        key=dict(type="str", required=False, no_log=True),
         value=dict(type="str", required=False),
         enable_script_exec=dict(type="bool", required=False),
     )
