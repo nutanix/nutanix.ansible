@@ -626,8 +626,14 @@ def create_recovery_plan(module, result):
 
 
 def check_recovery_plan_idempotency(old_spec, update_spec):
-    # order of elements in availability_zone_list and stages are also significant hence they can be directly compared while comparing first level of fields
-    # while each element of network_mappings have to checked as order of mappings is not significant in this case
+
+    if old_spec["spec"]["name"] != update_spec["spec"]["name"]:
+        return False
+
+    if old_spec["spec"]["description"] != update_spec["spec"]["description"]:
+        return False
+
+    # each element of network_mappings have to checked as order of mappings is not significant in this case
     old_ntw_mappings = old_spec["spec"]["resources"]["parameters"][
         "network_mapping_list"
     ]
@@ -655,8 +661,18 @@ def check_recovery_plan_idempotency(old_spec, update_spec):
         if config not in old_ip_assignments:
             return False
 
-    # check first level of fields
-    if old_spec != update_spec:
+    # comparing availibility zones
+    if (
+        old_spec["spec"]["resources"]["parameters"]["availability_zone_list"]
+        != update_spec["spec"]["resources"]["parameters"]["availability_zone_list"]
+    ):
+        return False
+
+    # comparing stage list
+    if (
+        old_spec["spec"]["resources"]["stage_list"]
+        != update_spec["spec"]["resources"]["stage_list"]
+    ):
         return False
 
     return True

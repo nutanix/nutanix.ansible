@@ -153,7 +153,7 @@
   ntnx_recovery_plan_jobs:
     nutanix_host: "{{recovery_site_ip}}"
     state: "present"
-    name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false) }}"
+    name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
     recovery_plan:
       name: "{{recovery_plan1.response.status.name}}"
     failed_site:
@@ -168,7 +168,7 @@
   ntnx_recovery_plan_jobs:
     nutanix_host: "{{recovery_site_ip}}"
     state: "present"
-    name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false) }}"
+    name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
     recovery_plan:
       name: "{{recovery_plan2.response.status.name}}"
     failed_site:

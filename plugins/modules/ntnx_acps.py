@@ -376,9 +376,56 @@ def create_acp(module, result):
         result["response"] = resp
 
 
+def check_acp_idempotency(old_spec, update_spec):
+
+    if old_spec["spec"]["name"] != update_spec["spec"]["name"]:
+        return False
+
+    if old_spec["spec"].get("description") != update_spec["spec"].get("description"):
+        return False
+
+    # check role
+    if old_spec["spec"]["resources"].get("role_reference", {}).get(
+        "uuid"
+    ) != update_spec["spec"]["resources"].get("role_reference", {}).get("uuid"):
+        return False
+
+    # check user user
+    old_users = utils.extract_uuids_from_references_list(
+        old_spec["spec"]["resources"].get("user_reference_list", [])
+    )
+    new_users = utils.extract_uuids_from_references_list(
+        update_spec["spec"]["resources"].get("user_reference_list", [])
+    )
+    if old_users != new_users:
+        return False
+
+    # check user groups
+    old_usergroups = utils.extract_uuids_from_references_list(
+        old_spec["spec"]["resources"].get("user_group_reference_list", [])
+    )
+    new_usergroups = utils.extract_uuids_from_references_list(
+        update_spec["spec"]["resources"].get("user_group_reference_list", [])
+    )
+    if old_usergroups != new_usergroups:
+        return False
+
+    # check context list
+    old_context_list = (
+        old_spec["spec"]["resources"].get("filter_list", {}).get("context_list")
+    )
+    update_context_list = (
+        update_spec["spec"]["resources"].get("filter_list", {}).get("context_list")
+    )
+    for context in old_context_list:
+        if context not in update_context_list:
+            return False
+
+    return True
+
+
 def update_acp(module, result):
     acp_uuid = module.params["acp_uuid"]
-    state = module.params.get("state")
 
     acp = ACP(module)
     resp = acp.read(acp_uuid)
@@ -396,7 +443,7 @@ def update_acp(module, result):
         result["response"] = spec
         return
 
-    if utils.check_for_idempotency(spec, resp, state=state):
+    if check_acp_idempotency(resp, spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change")
 

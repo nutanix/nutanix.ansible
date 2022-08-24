@@ -230,6 +230,27 @@ def create_role(module, result):
     result["response"] = resp
 
 
+def check_roles_idempotency(old_spec, update_spec):
+
+    if old_spec["spec"]["name"] != update_spec["spec"]["name"]:
+        return False
+
+    if old_spec["spec"].get("description") != update_spec["spec"].get("description"):
+        return False
+
+    # check permission uuids
+    old_permissions = utils.extract_uuids_from_references_list(
+        old_spec["spec"]["resources"].get("permission_reference_list", [])
+    )
+    new_permissions = utils.extract_uuids_from_references_list(
+        update_spec["spec"]["resources"].get("permission_reference_list", [])
+    )
+    if old_permissions != new_permissions:
+        return False
+
+    return True
+
+
 def update_role(module, result):
     roles = Role(module)
     role_uuid = module.params.get("role_uuid")
@@ -245,7 +266,7 @@ def update_role(module, result):
         module.fail_json(msg="Failed generating Role update spec", **result)
 
     # check for idempotency
-    if resp == update_spec:
+    if check_roles_idempotency(resp, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 

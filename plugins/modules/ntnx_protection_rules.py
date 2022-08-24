@@ -451,6 +451,13 @@ def create_protection_rule(module, result):
 
 
 def check_rule_idempotency(rule_spec, update_spec):
+
+    if rule_spec["spec"]["name"] != update_spec["spec"]["name"]:
+      return False
+
+    if rule_spec["spec"].get("description") != update_spec["spec"].get("description"):
+      return False
+
     # check if primary location is updated
     if rule_spec["spec"]["resources"].get("primary_location_list") != update_spec[
         "spec"
@@ -487,10 +494,6 @@ def check_rule_idempotency(rule_spec, update_spec):
             not in rule_spec["spec"]["resources"]["availability_zone_connectivity_list"]
         ):
             return False
-
-    # check first level of entities if update is required (for fields like name and desc)
-    if rule_spec != update_spec:
-        return False
 
     return True
 
