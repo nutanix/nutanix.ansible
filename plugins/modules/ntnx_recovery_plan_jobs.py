@@ -10,16 +10,18 @@ allowed_actions_on_recovery_plan_job = ["CLEANUP"]
 
 DOCUMENTATION = r"""
 module: ntnx_recovery_plan_jobs
-short_description: Create a Recovery Plan Job for a Recovery Plan with associated metadata
+short_description: Create/Run recovery plan jobs related to recovery plan
 version_added: 1.5.0
-description: Create a Recovery Plan Job for a Recovery Plan with associated metadata
+description: Create/Run recovery plan jobs related to recovery plan
 options:
   name:
     description: Recovery Plan Job name.
     type: str
-    required: false
+    required: true
   job_uuid:
-    description: recovery_plan_job uuid
+    description:
+      - recovery_plan_job uuid
+      - only required for running cleanup for Test Failover jobs
     type: str
     required: false
   recovery_plan:
@@ -28,11 +30,15 @@ options:
     required: false
     suboptions:
       name:
-        description: recovery plan name
+        description:
+          - recovery plan name
+          - mutually exclusive with C(uuid)
         type: str
         required: false
       uuid:
-        description: recovery plan UUID
+        description:
+          - recovery plan UUID
+          - mutually exclusive with C(name)
         type: str
         required: false
   failed_site:
@@ -74,7 +80,7 @@ options:
       to the recovery Availability Zone. FAILOVER - Restore the entity from the
       recovery points on the recovery Availability Zone. TEST_FAILOVER - Same as
       FAILOVER but on a test network. LIVE_MIGRATE - Migrate without powering
-      off the VM.
+      off the VM. CLEANUP - for cleaning entities created usnig test failover
     type: str
     required: true
     choices:
@@ -111,6 +117,56 @@ author:
 
 
 EXAMPLES = r"""
+- name: Run Test Failover without ignoring validation failures
+  ntnx_recovery_plan_jobs:
+    nutanix_host: "{{recovery_site_ip}}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    state: "present"
+    name: test-failover-with-errors
+    recovery_plan:
+      name: "{{recovery_plan.response.status.name}}"
+    failed_site:
+      url: "{{primary_az_url}}"
+    recovery_site:
+      url: "{{dr.recovery_az_url}}"
+    action: TEST_FAILOVER
+  ignore_errors: true
+  no_log: true
+
+  register: result
+
+- name: Run Test Failover ignoring validation failures
+  ntnx_recovery_plan_jobs:
+    nutanix_host: "{{recovery_site_ip}}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    state: "present"
+    name: test-failover
+    recovery_plan:
+      uuid: "{{recovery_plan.plan_uuid}}"
+    failed_site:
+      url: "{{primary_az_url}}"
+    recovery_site:
+      url: "{{recovery_az_url}}"
+    action: TEST_FAILOVER
+    ignore_validation_failures: true
+
+  register: test_failover_job
+
+- name: Run Cleanup
+  ntnx_recovery_plan_jobs:
+    job_uuid: "{{test_failover_job.job_uuid}}"
+    nutanix_host: "{{recovery_site_ip}}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    state: "present"
+    action: CLEANUP
+  register: result
+
 """
 
 RETURN = r"""
@@ -210,21 +266,19 @@ def create_job(module, result):
     if module.params.get("wait"):
         task = Task(module)
         task.wait_for_completion(task_uuid, raise_error=False)
-        
+
         # get job status
         job_uuid, err = get_recovery_plan_job_uuid(module, task_uuid)
         if err:
             result["error"] = error
             module.fail_json(msg="Failed creating recovery plan job", **result)
         job_status = recovery_plan_job.read(job_uuid)
-        
+
         # get overall task status
         task_status = task.read(task_uuid)
         if task_status["status"] == "FAILED":
             result["error"] = job_status
-            module.fail_json(
-                msg="Recovery plan job failed", **result
-            )  
+            module.fail_json(msg="Recovery plan job failed", **result)
         result["response"] = job_status
         result["changed"] = True
 
@@ -267,28 +321,24 @@ def perform_action_on_job(module, result):
     if module.params.get("wait"):
         task = Task(module)
         task.wait_for_completion(task_uuid, raise_error=False)
-        
+
         # get job status
         job_uuid, err = get_recovery_plan_job_uuid(module, task_uuid)
         if err:
             result["error"] = err
             module.fail_json(
                 msg="Failed performing action on existing recovery plan job", **result
-        )
+            )
 
         job_status = recovery_plan_job.read(job_uuid)
-            
+
         # get overall task status
         task_status = task.read(task_uuid)
         if task_status["status"] == "FAILED":
-           result["error"] = job_status
-           module.fail_json(
-             msg="Recovery plan job failed", **result
-           )  
+            result["error"] = job_status
+            module.fail_json(msg="Recovery plan job failed", **result)
         result["response"] = job_status
         result["changed"] = True
-
-    
 
 
 def run_module():

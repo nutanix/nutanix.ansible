@@ -31,6 +31,23 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
+- name: List all recovery plans
+  ntnx_recovery_plans_info:
+    nutanix_host: "{{ recovery_site_ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  ignore_errors: True
+
+- name: List recovery plans using uuid criteria
+  ntnx_recovery_plans_info:
+    nutanix_host: "{{ recovery_site_ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    plan_uuid: "{{ plan_uuid }}"
+  register: result
 """
 RETURN = r"""
 

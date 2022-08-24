@@ -66,6 +66,7 @@ def intersection(first_obj, second_obj):
             intersection(item, second_obj)
     return False
 
+
 def convert_to_secs(value, unit):
     """
     This routine converts given value to time interval into seconds as per unit

@@ -32,6 +32,25 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
+
+- name: List all Protection rules
+  ntnx_protection_rules_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  ignore_errors: True
+
+- name: List protection rule using uuid criteria
+  ntnx_protection_rules_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    rule_uuid: "{{ test_rule_uuid }}"
+  register: result
+
 """
 RETURN = r"""
 """

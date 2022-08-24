@@ -14,7 +14,9 @@ version_added: 1.5.0
 description: 'module for create, update and delete protection rule'
 options:
   rule_uuid:
-    description: protection_rule uuid
+    description:
+      - protection_rule uuid
+      - required for update and delete
     type: str
     required: false
   start_time:
@@ -29,7 +31,9 @@ options:
     type: str
     required: false
   name:
-    description: Protection Rule name
+    description:
+      - Protection Rule name
+      - required for creation
     type: str
     required: false
   desc:
@@ -37,11 +41,16 @@ options:
     type: str
     required: false
   protected_categories:
-    description: Categories for the protection_rule. This allows assigning one value of a key to any entity. Changes done in this will be reflected in the categories_mapping field.
+    description:
+      - Categories for the protection_rule. This allows assigning one value of a key to any entity. Changes done in this will be reflected in the categories_mapping field.
+      - required for creation
+
     type: dict
     required: true
   primary_site:
-    description:  it constitutes the primary locations of this Protection Rule.
+    description:
+      - it constitutes the primary location of this Protection Rule.
+      - required for creation
     type: dict
     required: true
     suboptions:
@@ -54,18 +63,21 @@ options:
         type: str
         required: false
   schedules:
-    description: write
+    description:
+      - List of schedules between sites
+      - required for creation
+      - During update it will override the existing schedules with given list.
     type: list
     elements: dict
-    required: true
+    required: false
     suboptions:
       source:
-        description: write
+        description: This represents the availability zone from where the entity will be replicated
         type: dict
         required: false
         suboptions:
           availability_zone_url:
-            description: This represents the availability zone where the entity needs to be replicated to.
+            description: availability zone url
             type: str
             required: true
           cluster_uuid:
@@ -73,16 +85,16 @@ options:
             type: str
             required: false
       destination:
-        description: write
+        description: This represents the availability zone to where the entity will be replicated
         type: dict
         required: false
         suboptions:
           availability_zone_url:
-            description: write
+            description: availability zone url
             type: str
             required: true
           cluster_uuid:
-            description: write
+            description: cluster UUID
             type: str
             required: false
       protection_type:
@@ -93,15 +105,21 @@ options:
           - SYNC
           - ASYNC
       auto_suspend_timeout:
-        description: Auto suspend timeout in case of connection failure between the sites. If not set, then policy will not be suspended in case of site connection failure.
+        description:
+          - Auto suspend timeout in case of connection failure between the sites. If not set, then policy will not be suspended in case of site connection failure.
+          - unit is secs.
         type: int
         required: false
       rpo:
-        description: write
+        description:
+          - recovery point objective as per C(rpo_unit)
+          - required for ASYNC schedule
         type: int
         required: false
       rpo_unit:
-        description: write
+        description:
+          - unit for rpo
+          - required for ASYNC schedule
         type: str
         required: false
         choices:
@@ -110,23 +128,27 @@ options:
           - DAY
           - WEEK
       snapshot_type:
-        description: Crash consistent or Application Consistent snapshot
+        description:
+          - Crash consistent or Application Consistent snapshot
+          - required for ASYNC schedule
         type: str
         required: false
         choices:
           - CRASH_CONSISTENT
           - APPLICATION_CONSISTENT
       local_retention_policy:
-        description: write
+        description:
+          - retention policy for snapshots locally
+          - required for ASYNC schedule
         type: dict
         required: false
         suboptions:
           num_snapshots:
-            description: Number of snapshots need to be retained. This will be set in case of linear snapshot retention.
+            description: Number of snapshots need to be retained. This will be set in case of ASYNC snapshot retention.
             type: int
             required: false
           rollup_retention_policy:
-            description: write
+            description: policy for rollup retention
             type: dict
             required: false
             suboptions:
@@ -150,7 +172,7 @@ options:
                   - YEARLY
       remote_retention_policy:
         description: >-
-          This describes the snapshot retention policy for this availability
+          This describes the snapshot retention policy for destination availability
           zone. This translates into how many snapshots taken as part of this
           protection rule need to be retained on this availability zone.
         type: dict
@@ -191,10 +213,143 @@ extends_documentation_fragment:
 author:
   - Prem Karat (@premkarat)
   - Pradeepsingh Bhati (@bhati-pradeep)
-
 """
 
 EXAMPLES = r"""
+- name: Create protection rule with sync schedule
+  ntnx_protection_rules:
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    wait: True
+    name: test-ansible
+    desc: test-ansible-desc
+    protected_categories:
+      Environment:
+        - Dev
+        - Staging
+    primary_site:
+      availability_zone_url: "{{dr.primary_az_url}}"
+    schedules:
+      - source:
+          availability_zone_url: "{{primary_az_url}}"
+        destination:
+          availability_zone_url: "{{recovery_az_url}}"
+        protection_type: SYNC
+        auto_suspend_timeout: 20
+      - source:
+          availability_zone_url: "{{recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{primary_az_url}}"
+        protection_type: SYNC
+        auto_suspend_timeout: 10
+  register: result
+
+- name: Create protection rule with async schedule
+  ntnx_protection_rules:
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    wait: True
+    name: test-ansible
+    desc: test-ansible-desc
+    protected_categories:
+      Environment:
+        - Dev
+        - Staging
+    primary_site:
+      availability_zone_url: "{{primary_az_url}}"
+    schedules:
+      - source:
+            availability_zone_url: "{{primary_az_url}}"
+        destination:
+          availability_zone_url: "{{recovery_az_url}}"
+        protection_type: ASYNC
+        rpo: 1
+        rpo_unit: HOUR
+        snapshot_type: "CRASH_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          rollup_retention_policy:
+            snapshot_interval_type: HOURLY
+            multiple: 2
+
+      - source:
+          availability_zone_url: "{{recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{primary_az_url}}"
+        protection_type: ASYNC
+        rpo: 1
+        rpo_unit: HOUR
+        snapshot_type: "CRASH_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 2
+        remote_retention_policy:
+          num_snapshots: 1
+  register: result
+
+- name: Update previously created protection policy
+  ntnx_protection_rules:
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    wait: True
+    rule_uuid: "{{rule_uuid}}"
+    name: test-ansible-updated
+    desc: test-ansible-desc-updated
+    protected_categories:
+      Environment:
+        - Production
+    primary_site:
+      availability_zone_url: "{{primary_az_url}}"
+    schedules:
+      - source:
+            availability_zone_url: "{{primary_az_url}}"
+        destination:
+          availability_zone_url: "{{recovery_az_url}}"
+        protection_type: ASYNC
+        rpo: 2
+        rpo_unit: DAY
+        snapshot_type: "APPLICATION_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          rollup_retention_policy:
+            snapshot_interval_type: YEARLY
+            multiple: 2
+
+      - source:
+          availability_zone_url: "{{recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{primary_az_url}}"
+        protection_type: ASYNC
+        rpo: 2
+        rpo_unit: DAY
+        snapshot_type: "APPLICATION_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          num_snapshots: 2
+  register: result
+
+- name: Delete created protection policy
+  ntnx_protection_rules:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    wait: True
+    rule_uuid: "{{ rule_uuid }}"
+  register: result
+
 """
 
 RETURN = r"""
@@ -202,7 +357,7 @@ RETURN = r"""
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.protection_rules import ProtectionRule
+from ..module_utils.prism.protection_rules import ProtectionRule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 
 

@@ -22,31 +22,40 @@ options:
     type: str
     required: false
   desc:
-    description: A description or user annotation for the Recovery Plan.
+    description: A description for the Recovery Plan.
     type: str
     required: false
   stages:
     type: list
     elements: dict
-    description: Input for the stages of the Recovery Plan. Each stage will perform a predefined type of task. For example, a stage can perform the recovery of the entities specified in a stage.
+    description:
+      - Input for the stages of the Recovery Plan. Each stage will perform a predefined type of task. For example, a stage can perform the recovery of the entities specified in a stage.
+      - During update it given stages will override all existing stages
     required: false
     suboptions:
       vms:
         type: list
         elements: dict
-        description: write
+        description: vms to be recovered in current stage
         required: false
         suboptions:
           uuid:
-            description: write
+            description:
+              - uuid of vm
+              - mutually exclusive with C(name)
             type: str
             required: false
           name:
-            description: write
+            description:
+              - name of vm
+              - mutually exclusive with C(uuid)
             type: str
             required: false
           enable_script_exec:
-            description: write
+            description:
+              - this will enable scripts execution post recovery for vm
+              - Nutanix Guest Tools must be installed on the VMs to enable scripts.
+
             type: bool
             required: false
       categories:
@@ -56,15 +65,17 @@ options:
         required: false
         suboptions:
           key:
-            description: write
+            description: category key
             type: str
             required: false
           value:
-            description: write
+            description: category value
             type: str
             required: false
           enable_script_exec:
-            description: write
+            description:
+              - this will enable scripts execution post recovery for vm
+              - Nutanix Guest Tools must be installed on the VMs to enable scripts.
             type: bool
             required: false
       delay:
@@ -72,225 +83,244 @@ options:
         type: int
         required: false
   primary_location:
-    description: write
+    description: primary site
     type: dict
     required: false
     suboptions:
       url:
-        description: write
+        description: availability zone url
         type: str
         required: true
       cluster:
-        description: write
+        description: specific cluster uuid
         type: str
         required: false
   recovery_location:
-    description: write
+    description: recovery site
     type: dict
     required: false
     suboptions:
       url:
-        description: write
+        description: availability zone url
         type: str
         required: true
       cluster:
-        description: write
+        description: specific cluster uuid
         type: str
         required: false
   network_mappings:
     type: list
     elements: dict
-    description: write
+    description:
+      - list of network mappings
+      - during update given list will override all existing network mappings
     required: false
     suboptions:
       primary:
-        description: write
+        description: primary site networks for particular mapping
         type: dict
         required: true
         suboptions:
           test:
-            description: write
+            description: Test network
             type: dict
             required: false
             suboptions:
               name:
-                description: write
+                description: name of subnet
                 type: str
                 required: true
               gateway_ip:
-                description: write
+                description: gateway ip of subnet incase of IPAM
                 type: str
                 required: false
               prefix:
-                description: write
+                description: network prefix for subnet
                 type: int
                 required: false
               external_connectivity_state:
-                description: write
+                description: if external connectivity is enabled
                 type: bool
                 required: false
               custom_ip_conifg:
-                description: write
+                description: configure custom ip assignment for vm after recovery
                 type: list
                 elements: dict
                 required: false
                 suboptions:
                   vm:
-                    description: write
+                    description: vm spec
                     type: dict
                     required: true
                     suboptions:
-                      name:
-                        description: write
-                        type: dict
-                        required: false
-                      uuid:
-                        description: write
-                        type: dict
-                        required: false
+                    uuid:
+                      description:
+                        - uuid of vm
+                        - mutually exclusive with C(name)
+                      type: str
+                      required: false
+                    name:
+                      description:
+                        - name of vm
+                        - mutually exclusive with C(uuid)
+                      type: str
+                      required: false
                   ip:
-                    description: write
+                    description: ip address to be assigned to vm
                     type: str
                     required: true
           prod:
-            description: write
+            description: production network
             type: dict
             required: false
             suboptions:
               name:
-                description: write
+                description: name of subnet
                 type: str
                 required: true
               gateway_ip:
-                description: write
+                description: gateway ip of subnet incase of IPAM
                 type: str
                 required: false
               prefix:
-                description: write
+                description: network prefix for subnet
                 type: int
                 required: false
               external_connectivity_state:
-                description: write
+                description: if external connectivity is enabled
                 type: bool
                 required: false
               custom_ip_conifg:
-                description: write
+                description: configure custom ip assignment for vm after recovery
                 type: list
                 elements: dict
                 required: false
                 suboptions:
                   vm:
-                    description: write
+                    description: vm spec
                     type: dict
                     required: true
                     suboptions:
-                      name:
-                        description: write
-                        type: dict
-                        required: false
-                      uuid:
-                        description: write
-                        type: dict
-                        required: false
+                    uuid:
+                      description:
+                        - uuid of vm
+                        - mutually exclusive with C(name)
+                      type: str
+                      required: false
+                    name:
+                      description:
+                        - name of vm
+                        - mutually exclusive with C(uuid)
+                      type: str
+                      required: false
                   ip:
-                    description: write
+                    description: ip address to be assigned to vm
                     type: str
                     required: true
       recovery:
         description: Network configuration to be used for performing network mapping and IP preservation/mapping on Recovery Plan execution.
+        description: primary site networks for particular mapping
         type: dict
         required: true
         suboptions:
           test:
-            description: Network configuration to be used for performing network mapping and IP preservation/mapping on Recovery Plan execution.
+            description: Test network
             type: dict
             required: false
             suboptions:
               name:
-                description: Name of the network.
+                description: name of subnet
                 type: str
                 required: true
               gateway_ip:
-                description: Gateway IP address for the subnet.
+                description: gateway ip of subnet incase of IPAM
                 type: str
                 required: false
               prefix:
-                description: Prefix length for the subnet.
+                description: network prefix for subnet
                 type: int
                 required: false
               external_connectivity_state:
-                description: External connectivity state of the subnet. This is applicable only for the subnet to be created in public cloud Availability Zone.
+                description: if external connectivity is enabled
                 type: bool
                 required: false
               custom_ip_conifg:
-                description: write
+                description: configure custom ip assignment for vm after recovery
                 type: list
                 elements: dict
                 required: false
                 suboptions:
                   vm:
-                    description: write
+                    description: vm spec
                     type: dict
                     required: true
                     suboptions:
-                      name:
-                        description: write
-                        type: dict
-                        required: false
-                      uuid:
-                        description: write
-                        type: dict
-                        required: false
+                    uuid:
+                      description:
+                        - uuid of vm
+                        - mutually exclusive with C(name)
+                      type: str
+                      required: false
+                    name:
+                      description:
+                        - name of vm
+                        - mutually exclusive with C(uuid)
+                      type: str
+                      required: false
                   ip:
-                    description: write
+                    description: ip address to be assigned to vm
                     type: str
                     required: true
           prod:
-            description: write
+            description: production network
             type: dict
             required: false
             suboptions:
               name:
-                description: write
+                description: name of subnet
                 type: str
                 required: true
               gateway_ip:
-                description: write
+                description: gateway ip of subnet incase of IPAM
                 type: str
                 required: false
               prefix:
-                description: write
+                description: network prefix for subnet
                 type: int
                 required: false
               external_connectivity_state:
-                description: write
+                description: if external connectivity is enabled
                 type: bool
                 required: false
               custom_ip_conifg:
-                description: write
+                description: configure custom ip assignment for vm after recovery
                 type: list
                 elements: dict
                 required: false
                 suboptions:
                   vm:
-                    description: write
+                    description: vm spec
                     type: dict
                     required: true
                     suboptions:
-                      name:
-                        description: write
-                        type: dict
-                        required: false
-                      uuid:
-                        description: write
-                        type: dict
-                        required: false
+                    uuid:
+                      description:
+                        - uuid of vm
+                        - mutually exclusive with C(name)
+                      type: str
+                      required: false
+                    name:
+                      description:
+                        - name of vm
+                        - mutually exclusive with C(uuid)
+                      type: str
+                      required: false
                   ip:
-                    description: write
+                    description: ip address to be assigned to vm
                     type: str
                     required: true
   network_type:
-    description: write
+    description: network type
     type: str
     required: false
     choices:
@@ -317,54 +347,58 @@ options:
             type: dict
             required: true
             suboptions:
-                          name:
-                            description: VM name
-                            type: str
-                            required: false
-                          uuid:
-                            description: VM UUID
-                            type: str
-                            required: false
+              name:
+                description:
+                  - VM name
+                  - mutually exclusive with C(uuid)
+                type: str
+                required: false
+              uuid:
+                description:
+                  - VM UUID
+                  - mutually exclusive with C(name)
+                type: str
+                required: false
           vm_nic_info:
             description: Information about vnic to which floating IP has to be assigned.
             type: dict
             required: true
             suboptions:
-                          ip:
-                            description: IP address associated with vnic for which floating IP has to be assigned on failover.
-                            type: str
-                            required: false
-                          uuid:
-                            description: Uuid of the vnic of the VM to which floating IP has to be assigned.
-                            type: str
-                            required: true
+              ip:
+                description: IP address associated with vnic for which floating IP has to be assigned on failover.
+                type: str
+                required: false
+              uuid:
+                description: Uuid of the vnic of the VM to which floating IP has to be assigned.
+                type: str
+                required: true
 
           test_ip_config:
             description: Configuration for assigning floating IP to a VM on the execution of the Recovery Plan.
             type: dict
             required: false
             suboptions:
-                          ip:
-                            description: IP to be assigned to VM, in case of failover.
-                            type: str
-                            required: true
-                          allocate_dynamically:
-                            description: Whether to allocate the floating IPs for the VMs dynamically.
-                            type: bool
-                            required: false
+              ip:
+                description: IP to be assigned to VM, in case of failover.
+                type: str
+                required: true
+              allocate_dynamically:
+                description: Whether to allocate the floating IPs for the VMs dynamically.
+                type: bool
+                required: false
           prod_ip_config:
             description: Configuration for assigning floating IP to a VM on the execution of the Recovery Plan.
             type: dict
             required: false
             suboptions:
-                          ip:
-                            description: IP to be assigned to VM, in case of failover.
-                            type: str
-                            required: true
-                          allocate_dynamically:
-                            description: Whether to allocate the floating IPs for the VMs dynamically.
-                            type: bool
-                            required: false
+              ip:
+                description: IP to be assigned to VM, in case of failover.
+                type: str
+                required: true
+              allocate_dynamically:
+                description: Whether to allocate the floating IPs for the VMs dynamically.
+                type: bool
+                required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations
@@ -374,6 +408,83 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create recovery plan
+  ntnx_recovery_plans:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    state: "present"
+    name: test-integration-rp-updated
+    desc: test-integration-rp-desc-updated
+    stages:
+      - vms:
+          - name: "{{dr_vm_name}}"
+            enable_script_exec: true
+        categories:
+          - key: Environment
+            value: Production
+            enable_script_exec: true
+        delay: 2
+      - categories:
+          - key: Environment
+            value: Dev
+    primary_location:
+      url: "{{primary_az_url}}"
+    recovery_location:
+      url: "{{recovery_az_url}}"
+    network_type: NON_STRETCH
+    network_mappings:
+      - primary:
+          test:
+            name: "{{static.name}}"
+            gateway_ip: "{{static.gateway_ip}}"
+            prefix: "{{static.network_prefix}}"
+          prod:
+            name: "{{static.name}}"
+            gateway_ip: "{{static.gateway_ip}}"
+            prefix: "{{static.network_prefix}}"
+        recovery:
+          test:
+            name: "{{dr.recovery_site_network}}"
+          prod:
+            name: "{{dr.recovery_site_network}}"
+
+- name: Update stage categories
+  check_mode: yes
+  ntnx_recovery_plans:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    plan_uuid: "{{plan_uuid}}"
+    state: "present"
+    name: test-integration-rp-updated
+    desc: test-integration-rp-desc-updated
+    stages:
+      - vms:
+          - name: "{{dr_vm_name}}"
+            enable_script_exec: true
+        categories:
+          - key: Environment
+            value: Staging
+            enable_script_exec: true
+        delay: 2
+      - categories:
+          - key: Environment
+            value: Testing
+
+- name: Delete created recovery plans
+  ntnx_recovery_plans:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    wait: True
+    plan_uuid: "{{ recovery_plan2.plan_uuid }}"
+  register: result
+
 """
 
 RETURN = r"""
@@ -384,9 +495,8 @@ from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.recovery_plans import RecoveryPlan  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 
-# TO-DO: Add floating IP assignment spec
 
-
+# TO-DO: Test floating IP assignments
 def get_module_spec():
 
     vm_spec = dict(
