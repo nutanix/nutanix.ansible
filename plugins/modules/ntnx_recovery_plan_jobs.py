@@ -230,7 +230,6 @@ def create_job(module, result):
 
 
 def perform_action_on_job(module, result):
-    recovery_plan_job = RecoveryPlanJob(module)
     job_uuid = module.params.get("job_uuid")
     if not job_uuid:
         module.fail_json(
@@ -250,6 +249,7 @@ def perform_action_on_job(module, result):
         result["response"] = {}
         return
 
+    recovery_plan_job = RecoveryPlanJob(module)
     resp = recovery_plan_job.perform_action_on_existing_job(job_uuid, action)
     task_uuid = resp["task_uuid"]
     job_uuid, error = get_recovery_plan_job_uuid(module, task_uuid)

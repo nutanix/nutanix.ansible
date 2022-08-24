@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
+from ..utils import convert_to_secs
 from .prism import Prism
 
 __metaclass__ = type
@@ -43,21 +44,6 @@ class ProtectionRule(Prism):
                 },
             }
         )
-
-    def _convert_to_secs(self, value, unit):
-        """
-        This routin converts given value to time interval into seconds as per unit
-        """
-        conversion_multiplier = {
-            "MINUTE": 60,
-            "HOUR": 3600,
-            "DAY": 86400,
-            "WEEK": 604800,
-        }
-        if unit not in conversion_multiplier:
-            return None, "Invalid unit given for interval conversion to seconds"
-
-        return value * conversion_multiplier[unit], None
 
     def _build_spec_name(self, payload, name):
         payload["spec"]["name"] = name
@@ -127,7 +113,7 @@ class ProtectionRule(Prism):
                         "rpo, rpo_unit, snapshot_type and atleast one policy are required fields for aysynchronous snapshot schedule",
                     )
 
-                spec["recovery_point_objective_secs"], err = self._convert_to_secs(
+                spec["recovery_point_objective_secs"], err = convert_to_secs(
                     schedule["rpo"], schedule["rpo_unit"]
                 )
                 if err:

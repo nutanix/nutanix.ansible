@@ -65,3 +65,18 @@ def intersection(first_obj, second_obj):
         for item in first_obj:
             intersection(item, second_obj)
     return False
+
+def convert_to_secs(value, unit):
+    """
+    This routine converts given value to time interval into seconds as per unit
+    """
+    conversion_multiplier = {
+        "MINUTE": 60,
+        "HOUR": 3600,
+        "DAY": 86400,
+        "WEEK": 604800,
+    }
+    if unit not in conversion_multiplier:
+        return None, "Invalid unit given for interval conversion to seconds"
+
+    return value * conversion_multiplier[unit], None
