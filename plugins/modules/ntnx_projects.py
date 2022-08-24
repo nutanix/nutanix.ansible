@@ -243,9 +243,9 @@ from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.projects import Project  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
-    strip_extra_attrs,
-    remove_param_with_none_value,
     extract_uuids_from_references_list,
+    remove_param_with_none_value,
+    strip_extra_attrs,
 )
 
 
