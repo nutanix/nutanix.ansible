@@ -3,7 +3,9 @@
 # Copyright: (c) 2021 [Balu George, Prem Karat]
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+
 from __future__ import absolute_import, division, print_function
+import re
 
 __metaclass__ = type
 
@@ -68,6 +70,13 @@ DOCUMENTATION = r"""
             type: str
             env:
                 - name: GROUP_CATEGORY
+        vm_filter:
+            description:
+                - Filter to match vm name
+            default: vm_filter
+            type: str
+            env:
+                - name: VM_FILTER
     notes: "null"
     requirements: "null"
 """
@@ -81,7 +90,7 @@ from ..module_utils.prism import vms  # noqa: E402
 
 
 class Mock_Module:
-    def __init__(self, host, port, username, password, validate_certs=False, group_category='ansible_group'):
+    def __init__(self, host, port, username, password, validate_certs=False, group_category='ansible_group', vm_filter=''):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
             "nutanix_host": host,
@@ -90,6 +99,7 @@ class Mock_Module:
             "nutanix_password": password,
             "validate_certs": validate_certs,
             "group_category": group_category,
+            "vm_filter": vm_filter,
         }
 
     def jsonify(self, data):
@@ -125,6 +135,10 @@ class InventoryModule(BaseInventoryPlugin):
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
         self.group_category = self.get_option("group_category")
+        self.vm_filter = self.get_option("vm_filter")
+
+        if self.vm_filter != "":
+          vm_filter_re = re.compile(self.vm_filter, re.IGNORECASE)
 
         module = Mock_Module(
             self.nutanix_hostname,
@@ -133,6 +147,7 @@ class InventoryModule(BaseInventoryPlugin):
             self.nutanix_password,
             self.validate_certs,
             self.group_category,
+            self.vm_filter,
         )
         vm = vms.VM(module)
         resp, status_code = vm.list(self.data)
@@ -148,12 +163,16 @@ class InventoryModule(BaseInventoryPlugin):
             "boot_config",
             "guest_customization",
         ]
+        # vm_filter_re = re.compile(self.vm_filter, re.IGNORECASE)
 
         for entity in resp["entities"]:
             cluster = entity["status"]["cluster_reference"]["name"]
             vm_name = entity["status"]["name"]
             vm_uuid = entity["metadata"]["uuid"]
             vm_ip = None
+
+            if self.vm_filter != "" and vm_filter_re.search(vm_name) is None:
+              continue
 
             # Get VM IP
             nic_count = 0
