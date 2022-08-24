@@ -453,10 +453,10 @@ def create_protection_rule(module, result):
 def check_rule_idempotency(rule_spec, update_spec):
 
     if rule_spec["spec"]["name"] != update_spec["spec"]["name"]:
-      return False
+        return False
 
     if rule_spec["spec"].get("description") != update_spec["spec"].get("description"):
-      return False
+        return False
 
     # check if primary location is updated
     if rule_spec["spec"]["resources"].get("primary_location_list") != update_spec[
