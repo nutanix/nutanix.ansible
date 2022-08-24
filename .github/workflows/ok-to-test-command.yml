@@ -39,6 +39,7 @@ jobs:
           export NUTANIX_HOST=${{ secrets.PC_IP }}
           export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
           export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
+          export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
           args="${{ github.event.client_payload.slash_command.args.all }}"
           flag=""
           if [ "$args" = "allow-disabled" ]
