@@ -42,9 +42,11 @@ options:
     required: false
   protected_categories:
     description:
-      - Categories for the protection_rule. This allows assigning one value of a key to any entity. Changes done in this will be reflected in the categories_mapping field.
+      - >-
+        Categories for the protection_rule. This allows assigning one value of a
+        key to any entity. Changes done in this will be reflected in the
+        categories_mapping field.
       - required for creation
-
     type: dict
     required: true
   primary_site:
@@ -52,10 +54,12 @@ options:
       - it constitutes the primary location of this Protection Rule.
       - required for creation
     type: dict
-    required: true
+    required: false
     suboptions:
       availability_zone_url:
-        description: This represents the source availability zone where the entity is running.
+        description: >-
+          This represents the source availability zone where the entity is
+          running.
         type: str
         required: true
       cluster_uuid:
@@ -72,7 +76,9 @@ options:
     required: false
     suboptions:
       source:
-        description: This represents the availability zone from where the entity will be replicated
+        description: >-
+          This represents the availability zone from where the entity will be
+          replicated
         type: dict
         required: false
         suboptions:
@@ -85,7 +91,9 @@ options:
             type: str
             required: false
       destination:
-        description: This represents the availability zone to where the entity will be replicated
+        description: >-
+          This represents the availability zone to where the entity will be
+          replicated
         type: dict
         required: false
         suboptions:
@@ -106,7 +114,10 @@ options:
           - ASYNC
       auto_suspend_timeout:
         description:
-          - Auto suspend timeout in case of connection failure between the sites. If not set, then policy will not be suspended in case of site connection failure.
+          - >-
+            Auto suspend timeout in case of connection failure between the
+            sites. If not set, then policy will not be suspended in case of site
+            connection failure.
           - unit is secs.
         type: int
         required: false
@@ -144,7 +155,9 @@ options:
         required: false
         suboptions:
           num_snapshots:
-            description: Number of snapshots need to be retained. This will be set in case of ASYNC snapshot retention.
+            description: >-
+              Number of snapshots need to be retained. This will be set in case
+              of ASYNC snapshot retention.
             type: int
             required: false
           rollup_retention_policy:
@@ -172,9 +185,10 @@ options:
                   - YEARLY
       remote_retention_policy:
         description: >-
-          This describes the snapshot retention policy for destination availability
-          zone. This translates into how many snapshots taken as part of this
-          protection rule need to be retained on this availability zone.
+          This describes the snapshot retention policy for destination
+          availability zone. This translates into how many snapshots taken as
+          part of this protection rule need to be retained on this availability
+          zone.
         type: dict
         required: false
         suboptions:
@@ -393,7 +407,7 @@ def get_module_spec():
         ),
         snapshot_type=dict(
             type="str",
-            choice=["CRASH_CONSISTENT", "APPLICATION_CONSISTENT"],
+            choices=["CRASH_CONSISTENT", "APPLICATION_CONSISTENT"],
             required=False,
         ),
         local_retention_policy=dict(

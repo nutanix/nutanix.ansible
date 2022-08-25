@@ -17,7 +17,7 @@ options:
   name:
     description: Recovery Plan Job name.
     type: str
-    required: true
+    required: false
   job_uuid:
     description:
       - recovery_plan_job uuid

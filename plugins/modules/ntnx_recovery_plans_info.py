@@ -23,6 +23,11 @@ options:
         description:
             - recovery plan UUID
         type: str
+    sort_order:
+        description:
+            - The sort order in which results are returned
+        type: str
+        choices: ["ASCENDING", "DESCENDING"]
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info
