@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 module: ntnx_recovery_plans
 short_description: module which supports recovery_plans CRUD operations
 version_added: 1.5.0
-description: "Create, Update, Delete Recovery Plan"
+description: 'Create, Update, Delete Recovery Plan'
 options:
   plan_uuid:
     description: recovery_plan uuid
@@ -29,7 +29,10 @@ options:
     type: list
     elements: dict
     description:
-      - Input for the stages of the Recovery Plan. Each stage will perform a predefined type of task. For example, a stage can perform the recovery of the entities specified in a stage.
+      - >-
+        Input for the stages of the Recovery Plan. Each stage will perform a
+        predefined type of task. For example, a stage can perform the recovery
+        of the entities specified in a stage.
       - During update it given stages will override all existing stages
     required: false
     suboptions:
@@ -54,8 +57,9 @@ options:
           enable_script_exec:
             description:
               - this will enable scripts execution post recovery for vm
-              - Nutanix Guest Tools must be installed on the VMs to enable scripts.
-
+              - >-
+                Nutanix Guest Tools must be installed on the VMs to enable
+                scripts.
             type: bool
             required: false
       categories:
@@ -75,11 +79,15 @@ options:
           enable_script_exec:
             description:
               - this will enable scripts execution post recovery for vm
-              - Nutanix Guest Tools must be installed on the VMs to enable scripts.
+              - >-
+                Nutanix Guest Tools must be installed on the VMs to enable
+                scripts.
             type: bool
             required: false
       delay:
-        description: Amount of time in seconds to delay the execution of next stage after execution of current stage.
+        description: >-
+          Amount of time in seconds to delay the execution of next stage after
+          execution of current stage.
         type: int
         required: false
   primary_location:
@@ -153,18 +161,18 @@ options:
                     type: dict
                     required: true
                     suboptions:
-                    uuid:
-                      description:
-                        - uuid of vm
-                        - mutually exclusive with C(name)
-                      type: str
-                      required: false
-                    name:
-                      description:
-                        - name of vm
-                        - mutually exclusive with C(uuid)
-                      type: str
-                      required: false
+                      uuid:
+                        description:
+                          - uuid of vm
+                          - mutually exclusive with C(name)
+                        type: str
+                        required: false
+                      name:
+                        description:
+                          - name of vm
+                          - mutually exclusive with C(uuid)
+                        type: str
+                        required: false
                   ip:
                     description: ip address to be assigned to vm
                     type: str
@@ -201,25 +209,28 @@ options:
                     type: dict
                     required: true
                     suboptions:
-                    uuid:
-                      description:
-                        - uuid of vm
-                        - mutually exclusive with C(name)
-                      type: str
-                      required: false
-                    name:
-                      description:
-                        - name of vm
-                        - mutually exclusive with C(uuid)
-                      type: str
-                      required: false
+                      uuid:
+                        description:
+                          - uuid of vm
+                          - mutually exclusive with C(name)
+                        type: str
+                        required: false
+                      name:
+                        description:
+                          - name of vm
+                          - mutually exclusive with C(uuid)
+                        type: str
+                        required: false
                   ip:
                     description: ip address to be assigned to vm
                     type: str
                     required: true
       recovery:
-        description: Network configuration to be used for performing network mapping and IP preservation/mapping on Recovery Plan execution.
-        description: primary site networks for particular mapping
+        description:
+          - >-
+            Network configuration to be used for performing network mapping and
+            IP preservation/mapping on Recovery Plan execution.
+          - primary site networks for particular mapping
         type: dict
         required: true
         suboptions:
@@ -303,18 +314,18 @@ options:
                     type: dict
                     required: true
                     suboptions:
-                    uuid:
-                      description:
-                        - uuid of vm
-                        - mutually exclusive with C(name)
-                      type: str
-                      required: false
-                    name:
-                      description:
-                        - name of vm
-                        - mutually exclusive with C(uuid)
-                      type: str
-                      required: false
+                      uuid:
+                        description:
+                          - uuid of vm
+                          - mutually exclusive with C(name)
+                        type: str
+                        required: false
+                      name:
+                        description:
+                          - name of vm
+                          - mutually exclusive with C(uuid)
+                        type: str
+                        required: false
                   ip:
                     description: ip address to be assigned to vm
                     type: str
@@ -329,7 +340,9 @@ options:
   floating_ip_assignments:
     type: list
     elements: dict
-    description: Floating IP assignment for VMs upon recovery in an Availability Zone. This is applicable only for the public cloud Availability Zones.
+    description: >-
+      Floating IP assignment for VMs upon recovery in an Availability Zone. This
+      is applicable only for the public cloud Availability Zones.
     required: false
     suboptions:
       availability_zone_url:
@@ -337,7 +350,9 @@ options:
         type: str
         required: true
       vm_ip_assignments:
-        description: IP assignment for VMs upon recovery in the specified Availability Zone.
+        description: >-
+          IP assignment for VMs upon recovery in the specified Availability
+          Zone.
         type: list
         elements: dict
         required: true
@@ -365,21 +380,26 @@ options:
             required: true
             suboptions:
               ip:
-                description: IP address associated with vnic for which floating IP has to be assigned on failover.
+                description: >-
+                  IP address associated with vnic for which floating IP has to
+                  be assigned on failover.
                 type: str
                 required: false
               uuid:
-                description: Uuid of the vnic of the VM to which floating IP has to be assigned.
+                description: >-
+                  Uuid of the vnic of the VM to which floating IP has to be
+                  assigned.
                 type: str
                 required: true
-
           test_ip_config:
-            description: Configuration for assigning floating IP to a VM on the execution of the Recovery Plan.
+            description: >-
+              Configuration for assigning floating IP to a VM on the execution
+              of the Recovery Plan.
             type: dict
             required: false
             suboptions:
               ip:
-                description: IP to be assigned to VM, in case of failover.
+                description: 'IP to be assigned to VM, in case of failover.'
                 type: str
                 required: true
               allocate_dynamically:
@@ -387,12 +407,14 @@ options:
                 type: bool
                 required: false
           prod_ip_config:
-            description: Configuration for assigning floating IP to a VM on the execution of the Recovery Plan.
+            description: >-
+              Configuration for assigning floating IP to a VM on the execution
+              of the Recovery Plan.
             type: dict
             required: false
             suboptions:
               ip:
-                description: IP to be assigned to VM, in case of failover.
+                description: 'IP to be assigned to VM, in case of failover.'
                 type: str
                 required: true
               allocate_dynamically:

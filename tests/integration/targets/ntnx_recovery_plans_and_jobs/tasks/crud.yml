@@ -690,4 +690,3 @@
 
     fail_msg: "recovery plan delete failed"
     success_msg: "recovery plan deleted successfully"
-
