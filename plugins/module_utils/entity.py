@@ -329,39 +329,57 @@ class Entity(object):
         )
 
         status_code = info.get("status")
-        body = resp.read() if resp else info.get("body")
-        while True:
-            try:
-                resp_json = json.loads(to_text(body)) if body else None
-            except ValueError:
-                resp_json = None
-            except IncompleteRead:
-                continue
+        
+        body = None
 
-            if not raise_error:
-                return resp_json
+        # buffer size with ref. to max read size of http.client.HTTPResponse.read() defination
+        buffer_size = 65536
+        if not resp:
+            # get body containing error
+            body = info.get("body")
+        else:
+            # incase resp body size is > 65536, read() will fail due to http.client.IncompleteRead exception which eventually closes connection and can't read response further.
+            # so here we read all content in chunks (of size < 65536) and combine data at last to get final response
+            resp_chunk = None
+            resp_chunks = []
+            while True:       
+                resp_chunk = resp.read(buffer_size)
+                if resp_chunk:
+                    resp_chunks.append(to_text(resp_chunk.decode('utf-8')))
+                else:
+                    break
 
-            if status_code >= 300:
-                err = info.get("msg", "Status code != 2xx")
-                self.module.fail_json(
-                    msg="Failed fetching URL: {0}".format(url),
-                    status_code=status_code,
-                    error=err,
-                    response=resp_json,
-                )
+            body = ''.join(resp_chunks)
 
-            if no_response:
-                return {"status_code": status_code}
+        try:
+            resp_json = json.loads(to_text(body)) if body else None
+        except ValueError:
+            resp_json =  None
 
-            if not resp_json:
-                self.module.fail_json(
-                    msg="Failed to convert API response to json",
-                    status_code=status_code,
-                    error=body,
-                    response=resp_json,
-                )
-
+        if not raise_error:
             return resp_json
+
+        if status_code >= 300:
+            err = info.get("msg", "Status code != 2xx")
+            self.module.fail_json(
+                msg="Failed fetching URL: {0}".format(url),
+                status_code=status_code,
+                error=err,
+                response=resp_json,
+            )
+
+        if no_response:
+            return {"status_code": status_code}
+
+        if not resp_json:
+            self.module.fail_json(
+                msg="Failed to convert API response to json",
+                status_code=status_code,
+                error=body,
+                response=resp_json,
+            )
+
+        return resp_json
 
     # upload file in chunks to the given url
     def _upload_file(
