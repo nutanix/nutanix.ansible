@@ -82,20 +82,19 @@
     fail_msg: "Unable to list users using length and offset"
     success_msg: "users listed successfully using length and offset"
 ##################################################
-# skip test due to technical bug
-# - name: List users using ascending name sorting
-#   ntnx_users_info:
-#     sort_order: "ASCENDING"
-#     sort_attribute: "name"
-#     kind: user
-#   register: result
-#   ignore_errors: True
+- name: List users using ascending name sorting
+  ntnx_users_info:
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+    kind: user
+  register: result
+  ignore_errors: True
 
-# - name: Listing Status
-#   assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == false
-#       - result.failed ==false
-#     fail_msg: "Unable to list users using ascending name sorting"
-#     success_msg: "users listed successfully using ascending name sorting"
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed ==false
+    fail_msg: "Unable to list users using ascending name sorting"
+    success_msg: "users listed successfully using ascending name sorting"

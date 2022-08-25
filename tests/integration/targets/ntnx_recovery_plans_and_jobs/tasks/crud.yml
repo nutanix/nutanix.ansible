@@ -13,7 +13,7 @@
                   "availability_zone_url": "{{dr.recovery_az_url}}"
               }
             ]
-    expected_network_mapping_list: [
+    expected_network_mapping_list_for_check_mode: [
                             {
                                 "are_networks_stretched": True,
                                 "availability_zone_network_mapping_list": [
@@ -38,12 +38,123 @@
                                 ]
                             }
                         ]
+    expected_network_mapping_list: [
+                            {
+                                "are_networks_stretched": False,
+                                "availability_zone_network_mapping_list": [
+                                    {
+                                        "availability_zone_url": "{{dr.primary_az_url}}",
+                                        "recovery_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "{{dr.recovery_ip2}}"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "{{dr_vm_name}}",
+                                                    "uuid": "{{dr_vm.uuid}}"
+                                                }
+                                            }
+                                        ],
+                                        "recovery_network": {
+                                            "name": "{{network.dhcp.name}}",
+                                            "subnet_list": [
+                                                {
+                                                    "external_connectivity_state": "DISABLED",
+                                                    "gateway_ip": "{{dr.gateway_ip}}",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        },
+                                        "test_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "{{dr.recovery_ip1}}"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "{{dr_vm_name}}",
+                                                    "uuid": "{{dr_vm.uuid}}"
+                                                }
+                                            }
+                                        ],
+                                        "test_network": {
+                                            "name": "{{network.dhcp.name}}",
+                                            "subnet_list": [
+                                                {
+                                                    "external_connectivity_state": "DISABLED",
+                                                    "gateway_ip": "{{dr.gateway_ip}}",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "availability_zone_url": "{{dr.recovery_az_url}}",
+                                        "recovery_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "{{dr.recovery_ip2}}"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "{{dr_vm_name}}",
+                                                    "uuid": "{{dr_vm.uuid}}"
+                                                }
+                                            }
+                                        ],
+                                        "recovery_network": {
+                                            "name": "{{dr.recovery_site_network}}",
+                                            "subnet_list": [
+                                                {
+                                                    "external_connectivity_state": "DISABLED",
+                                                    "gateway_ip": "{{dr.gateway_ip}}",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        },
+                                        "test_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "{{dr.recovery_ip1}}"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "{{dr_vm_name}}",
+                                                    "uuid": "{{dr_vm.uuid}}"
+                                                }
+                                            }
+                                        ],
+                                        "test_network": {
+                                            "name": "{{dr.recovery_site_network}}",
+                                            "subnet_list": [
+                                                {
+                                                    "external_connectivity_state": "DISABLED",
+                                                    "gateway_ip": "{{dr.gateway_ip}}",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
     expected_stage_work_0: {
                                 "recover_entities": {
                                     "entity_info_list": [
                                         {
-                                            "categories": {
-                                                "Environment": "Dev"
+                                            "any_entity_reference": {
+                                                "kind": "vm",
+                                                "name": "{{dr_vm_name}}",
+                                                "uuid": "{{dr_vm.uuid}}"
                                             },
                                             "script_list": [
                                                 {
@@ -55,16 +166,15 @@
                                 }
                             }
 
-- name: Create checkmode spec for recovery plan with networks and 1 stage
+- name: Create checkmode spec for recovery plan with networks and 2 stage
   check_mode: yes
   ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp
     desc: test-integration-rp-desc
     stages:
-      - categories:
-          - key: Environment
-            value: Dev
+      - vms:
+          - name: "{{dr_vm_name}}"
             enable_script_exec: true
         delay: 10
     primary_location:
@@ -86,7 +196,6 @@
   register: result
 
 
-
 - name: Checkmode spec assert
   assert:
     that:
@@ -99,37 +208,60 @@
       - result.response.spec.resources.stage_list[0]["delay_time_secs"] == 10
       - result.response.spec.resources.stage_list[0]["stage_work"] == expected_stage_work_0
       - result.response.spec.resources.parameters.availability_zone_list == expected_availability_zone_list
-      - result.response.spec.resources.parameters.network_mapping_list == expected_network_mapping_list
+      - result.response.spec.resources.parameters.network_mapping_list == expected_network_mapping_list_for_check_mode
     fail_msg: 'Unable to create recovery plan check mode spec'
     success_msg: 'Recovery plan check mode spec created successfully'
 
-- name: Create recovery plan with networks and 1 stage
+- name: Create recovery plan with networks and 2 stage
   ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp
     desc: test-integration-rp-desc
     stages:
-      - categories:
-          - key: Environment
-            value: Dev
+      - vms:
+          - name: "{{dr_vm_name}}"
             enable_script_exec: true
         delay: 10
     primary_location:
       url: "{{dr.primary_az_url}}"
     recovery_location:
       url: "{{dr.recovery_az_url}}"
-    network_type: STRETCH
+    network_type: NON_STRETCH
     network_mappings:
       - primary:
           test:
             name: "{{network.dhcp.name}}"
+            gateway_ip: "{{dr.gateway_ip}}"
+            prefix: "{{dr.prefix}}"
+            custom_ip_config:
+              - vm:
+                  name: "{{dr_vm_name}}"
+                ip: "{{dr.recovery_ip1}}"
           prod:
             name: "{{network.dhcp.name}}"
+            gateway_ip: "{{dr.gateway_ip}}"
+            prefix: "{{dr.prefix}}"
+            custom_ip_config:
+              - vm:
+                  name: "{{dr_vm_name}}"
+                ip: "{{dr.recovery_ip2}}"
         recovery:
           test:
             name: "{{dr.recovery_site_network}}"
+            gateway_ip: "{{dr.gateway_ip}}"
+            prefix: "{{dr.prefix}}"
+            custom_ip_config:
+              - vm:
+                  name: "{{dr_vm_name}}"
+                ip: "{{dr.recovery_ip1}}"
           prod:
             name: "{{dr.recovery_site_network}}"
+            gateway_ip: "{{dr.gateway_ip}}"
+            prefix: "{{dr.prefix}}"
+            custom_ip_config:
+              - vm:
+                  name: "{{dr_vm_name}}"
+                ip: "{{dr.recovery_ip2}}"
 
   register: result
 
@@ -282,7 +414,7 @@
                                 }
                             }
         
-- name: Checkmode spec for Update recovery plan. Add another stage, vm and update networks.
+- name: Checkmode spec for Update recovery plan. Update networks and stages.
   check_mode: yes
   ntnx_recovery_plans:
     plan_uuid: "{{plan_uuid}}"

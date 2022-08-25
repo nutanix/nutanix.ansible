@@ -44,7 +44,7 @@
 - name: List user_groups using filter criteria
   ntnx_user_groups_info:
     filter: 
-      name: "{{ test_user_group_name }}"
+      group_name: "{{ test_user_group_name }}"
   register: result
   ignore_errors: True
 
@@ -82,20 +82,19 @@
     fail_msg: "Unable to list user groups using length and offset"
     success_msg: "user groups listed successfully using length and offset"
 ##################################################
-# commenting due to technical issues
-# - name: List user groups using ascending name sorting
-#   ntnx_user_groups_info:
-#     sort_order: "ASCENDING"
-#     sort_attribute: "group_name"
-#     kind: user_group
-#   register: result
-#   ignore_errors: True
+- name: List user groups using ascending name sorting
+  ntnx_user_groups_info:
+    sort_order: "ASCENDING"
+    sort_attribute: "group_name"
+    kind: user_group
+  register: result
+  ignore_errors: True
 
-# - name: Listing Status
-#   assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == false
-#       - result.failed == false
-#     fail_msg: "Unable to list user groups using ascending name sorting"
-#     success_msg: "user groups listed successfully using ascending name sorting"
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "Unable to list user groups using ascending name sorting"
+    success_msg: "user groups listed successfully using ascending name sorting"

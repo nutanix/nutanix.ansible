@@ -412,10 +412,10 @@ def check_acp_idempotency(old_spec, update_spec):
 
     # check context list
     old_context_list = (
-        old_spec["spec"]["resources"].get("filter_list", {}).get("context_list")
+        old_spec["spec"]["resources"].get("filter_list", {}).get("context_list", [])
     )
     update_context_list = (
-        update_spec["spec"]["resources"].get("filter_list", {}).get("context_list")
+        update_spec["spec"]["resources"].get("filter_list", {}).get("context_list", [])
     )
     for context in old_context_list:
         if context not in update_context_list:

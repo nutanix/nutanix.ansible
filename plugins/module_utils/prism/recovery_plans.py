@@ -75,7 +75,7 @@ class RecoveryPlan(Prism):
                     ]
                 stage_entities.append(vm_spec)
 
-            for category in stage.get("categories"):
+            for category in stage.get("categories", []):
                 category_spec = {"categories": {category["key"]: category["value"]}}
                 if category.get("enable_script_exec"):
                     category_spec["script_list"] = [

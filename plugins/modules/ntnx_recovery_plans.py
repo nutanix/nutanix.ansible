@@ -142,7 +142,7 @@ options:
                 description: if external connectivity is enabled
                 type: bool
                 required: false
-              custom_ip_conifg:
+              custom_ip_config:
                 description: configure custom ip assignment for vm after recovery
                 type: list
                 elements: dict
@@ -190,7 +190,7 @@ options:
                 description: if external connectivity is enabled
                 type: bool
                 required: false
-              custom_ip_conifg:
+              custom_ip_config:
                 description: configure custom ip assignment for vm after recovery
                 type: list
                 elements: dict
@@ -244,7 +244,7 @@ options:
                 description: if external connectivity is enabled
                 type: bool
                 required: false
-              custom_ip_conifg:
+              custom_ip_config:
                 description: configure custom ip assignment for vm after recovery
                 type: list
                 elements: dict
@@ -292,7 +292,7 @@ options:
                 description: if external connectivity is enabled
                 type: bool
                 required: false
-              custom_ip_conifg:
+              custom_ip_config:
                 description: configure custom ip assignment for vm after recovery
                 type: list
                 elements: dict
@@ -541,13 +541,13 @@ def get_module_spec():
         gateway_ip=dict(type="str", required=False),
         prefix=dict(type="int", required=False),
         external_connectivity_state=dict(type="bool", required=False),
-        custom_ip_conifg=dict(
+        custom_ip_config=dict(
             type="list", elements="dict", options=custom_ip_config, required=False
         ),
     )
     site_network = dict(
-        test=dict(type="dict", option=network, required=False),
-        prod=dict(type="dict", option=network, required=False),
+        test=dict(type="dict", options=network, required=False),
+        prod=dict(type="dict", options=network, required=False),
     )
     network_mapping = dict(
         primary=dict(type="dict", options=site_network, required=True),
