@@ -2,10 +2,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-try:
-    from http.client import IncompleteRead
-except ImportError:
-    from httplib import IncompleteRead  # python2
 
 __metaclass__ = type
 
@@ -329,7 +325,7 @@ class Entity(object):
         )
 
         status_code = info.get("status")
-        
+
         body = None
 
         # buffer size with ref. to max read size of http.client.HTTPResponse.read() defination
@@ -342,19 +338,19 @@ class Entity(object):
             # so here we read all content in chunks (of size < 65536) and combine data at last to get final response
             resp_chunk = None
             resp_chunks = []
-            while True:       
+            while True:
                 resp_chunk = resp.read(buffer_size)
                 if resp_chunk:
-                    resp_chunks.append(to_text(resp_chunk.decode('utf-8')))
+                    resp_chunks.append(to_text(resp_chunk.decode("utf-8")))
                 else:
                     break
 
-            body = ''.join(resp_chunks)
+            body = "".join(resp_chunks)
 
         try:
             resp_json = json.loads(to_text(body)) if body else None
         except ValueError:
-            resp_json =  None
+            resp_json = None
 
         if not raise_error:
             return resp_json
