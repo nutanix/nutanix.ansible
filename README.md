@@ -8,15 +8,17 @@ It is designed keeping simplicity as the core value. Hence it is
 1. Easy to use
 2. Easy to develop
 
+Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
+
 # Version compatibility
 
 ## Ansible
-> This collection has been tested against following versions: 
+This collection has been tested against following versions: 
   1. ansible==5.0.1
   2. ansible-core==2.12.3
 
 ## Python
-> This collection requires Python 2.7 or greater
+This collection requires Python 2.7 or greater
 
 ## Prism Cenral
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
