@@ -48,7 +48,7 @@ options:
         categories_mapping field.
       - required for creation
     type: dict
-    required: true
+    required: false
   primary_site:
     description:
       - it constitutes the primary location of this Protection Rule.

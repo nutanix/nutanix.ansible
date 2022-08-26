@@ -266,18 +266,18 @@ options:
                     type: dict
                     required: true
                     suboptions:
-                    uuid:
-                      description:
-                        - uuid of vm
-                        - mutually exclusive with C(name)
-                      type: str
-                      required: false
-                    name:
-                      description:
-                        - name of vm
-                        - mutually exclusive with C(uuid)
-                      type: str
-                      required: false
+                      uuid:
+                        description:
+                          - uuid of vm
+                          - mutually exclusive with C(name)
+                        type: str
+                        required: false
+                      name:
+                        description:
+                          - name of vm
+                          - mutually exclusive with C(uuid)
+                        type: str
+                        required: false
                   ip:
                     description: ip address to be assigned to vm
                     type: str
