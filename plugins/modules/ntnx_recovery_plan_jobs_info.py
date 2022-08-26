@@ -59,14 +59,14 @@ EXAMPLES = r"""
 """
 RETURN = r"""
 api_version:
-  description: 
+  description:
     - API Version of the Nutanix v3 API framework.
     - only when when job info is obtained using uuid
   returned: always
   type: str
   sample: "3.1"
 metadata:
-  description: 
+  description:
     - The recovery plan jobs's kind metadata
     - only when when job info is obtained using uuid
   returned: always
