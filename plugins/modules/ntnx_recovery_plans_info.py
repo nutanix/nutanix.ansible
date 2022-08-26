@@ -336,7 +336,6 @@ recovery_plan_info:
                     "state": "COMPLETE"
                 }
             }
-        }
 """
 
 

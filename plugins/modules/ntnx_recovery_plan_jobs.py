@@ -335,7 +335,7 @@ status:
                                 }
                             ],
                             "impact_message_list": ["xx", "xx"],
-                            "message": "VMs are not protected by any Protection Policy for replication to recovery Availability Zone Local AZ and will be brought on best effort basis.",
+                            "message": "xyz",
                             "validation_type": "ENTITY"
                         },
                         {
@@ -348,14 +348,14 @@ status:
                             ],
                             "cause_and_resolution_message_list": [
                                 {
-                                    "cause": "NGT is not installed in the Guest VM or the version of NGT installed in the Guest VM does not support script execution.",
+                                    "cause": "xyz",
                                     "resolution_list": ["xx", "xx"]
                                 }
                             ],
                             "impact_message_list": [
                                 "The post recovery script execution will fail."
                             ],
-                            "message": "VM has post recovery script execution enabled but either NGT is not installed in the Guest VM or the version of NGT installed in the Guest VM does not support script execution.",
+                            "message": "xyz",
                             "validation_type": "ENTITY"
                         },
                         {
@@ -373,7 +373,7 @@ status:
                                 }
                             ],
                             "impact_message_list": [
-                                "Only the first instance of the entity will be considered for recovery. Instances found in subsequent stages will be skipped."
+                                "xyz"
                             ],
                             "message": "Duplicate instances exist for one or more of the entities in the Recovery Plan.",
                             "validation_type": "ENTITY"
@@ -382,7 +382,7 @@ status:
                             "affected_any_reference_list": [],
                             "cause_and_resolution_message_list": [
                                 {
-                                    "cause": "Explicitly specified VMs in the stage might have been deleted. Categories specified in the stage might not have any entities to recover.",
+                                    "cause": "xyz",
                                     "resolution_list": ["xx", "xx"]
                                 }
                             ],

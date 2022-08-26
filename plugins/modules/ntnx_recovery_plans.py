@@ -536,6 +536,7 @@ metadata:
                 "spec_version": 0,
                 "uuid": "730d6bc5-a243-4b24-80e1-07a795de94a4"
             }
+          }
 spec:
   description: An intentful representation of a recovery plan spec
   returned: always
