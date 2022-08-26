@@ -510,6 +510,365 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The recovery plan's kind metadata
+  returned: always
+  type: dict
+  sample: {
+            "api_version": "3.1",
+            "metadata": {
+                "categories": {},
+                "categories_mapping": {},
+                "creation_time": "2022-08-26T11:28:03Z",
+                "kind": "recovery_plan",
+                "last_update_time": "2022-08-26T11:28:06Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_hash": "00000000000000000000000000000000000000000000000000",
+                "spec_version": 0,
+                "uuid": "730d6bc5-a243-4b24-80e1-07a795de94a4"
+            }
+spec:
+  description: An intentful representation of a recovery plan spec
+  returned: always
+  type: dict
+  sample: {
+                "description": "recovery plan desc",
+                "name": "example-rp",
+                "resources": {
+                    "parameters": {
+                        "availability_zone_list": [
+                            {
+                                "availability_zone_url": "az1-url"
+                            },
+                            {
+                                "availability_zone_url": "az2-url"
+                            }
+                        ],
+                        "floating_ip_assignment_list": [],
+                        "network_mapping_list": [
+                            {
+                                "are_networks_stretched": false,
+                                "availability_zone_network_mapping_list": [
+                                    {
+                                        "availability_zone_url": "az1-url",
+                                        "recovery_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "cutom_ip_1"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "sdasdsd-490b-498a-a51c-2a13c38582cc"
+                                                }
+                                            }
+                                        ],
+                                        "recovery_network": {
+                                            "name": "vlan1",
+                                            "subnet_list": [
+                                                {
+                                                    "gateway_ip": "xx.xx.xx.xx",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        },
+                                        "test_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "xx.xx.xx.xx"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "df5bad89-490b-498a-a51c-2a13c38582cc"
+                                                }
+                                            }
+                                        ],
+                                        "test_network": {
+                                            "name": "vlan1",
+                                            "subnet_list": [
+                                                {
+                                                    "gateway_ip": "xx.xx.xx.xx",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "availability_zone_url": "az2-url",
+                                        "recovery_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "xx.xx.xx.xx"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "dasdsdsd-490b-498a-a51c-2a13c38582cc"
+                                                }
+                                            }
+                                        ],
+                                        "recovery_network": {
+                                            "name": "vlan1",
+                                            "subnet_list": [
+                                                {
+                                                    "gateway_ip": "xx.xx.xx.xx",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        },
+                                        "test_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "xx.xx.xx.xx"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "asdasds-490b-498a-a51c-2a13c38582cc"
+                                                }
+                                            }
+                                        ],
+                                        "test_network": {
+                                            "name": "vlan1",
+                                            "subnet_list": [
+                                                {
+                                                    "gateway_ip": "xx.xx.xx.xx",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        "primary_location_index": 0
+                    },
+                    "stage_list": [
+                        {
+                            "delay_time_secs": 10,
+                            "stage_uuid": "20967cc9-0dce-4e4c-86db-c27556137efd",
+                            "stage_work": {
+                                "recover_entities": {
+                                    "entity_info_list": [
+                                        {
+                                            "any_entity_reference": {
+                                                "kind": "vm",
+                                                "name": "test-check",
+                                                "uuid": "asdasdasd-490b-498a-a51c-2a13c38582cc"
+                                            },
+                                            "script_list": [
+                                                {
+                                                    "enable_script_exec": true
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+status:
+  description: An intentful representation of a recovery plan status
+  returned: always
+  type: dict
+  sample: {
+                "description": "recovery plan desc",
+                "execution_context": {
+                    "task_uuid": [
+                        "e459dd06-7cf2-45f1-9f1f-04482b0e5a0a"
+                    ]
+                },
+                "latest_test_time": "",
+                "latest_validation_time": "",
+                "name": "example-rp",
+                "recovery_availability_zone_order_list": [
+                    {
+                        "availability_zone_order_list": [
+                            [
+                                {
+                                    "availability_zone_url": "az1-url"
+                                },
+                                {
+                                    "availability_zone_url": "az2-url"
+                                }
+                            ]
+                        ],
+                        "availability_zone_url": "az1-url"
+                    }
+                ],
+                "resources": {
+                    "parameters": {
+                        "availability_zone_list": [
+                            {
+                                "availability_zone_url": "az1-url"
+                            },
+                            {
+                                "availability_zone_url": "az2-url"
+                            }
+                        ],
+                        "network_mapping_list": [
+                            {
+                                "are_networks_stretched": false,
+                                "availability_zone_network_mapping_list": [
+                                    {
+                                        "availability_zone_url": "az1-url",
+                                        "recovery_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "xx.xx.xx.xx"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "asdasds-490b-498a-a51c-2a13c38582cc"
+                                                }
+                                            }
+                                        ],
+                                        "recovery_network": {
+                                            "name": "vlan1",
+                                            "subnet_list": [
+                                                {
+                                                    "external_connectivity_state": "DISABLED",
+                                                    "gateway_ip": "xx.xx.xx.xx",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        },
+                                        "test_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "xx.xx.xx.xx"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "asdasds-490b-498a-a51c-2a13c38582cc"
+                                                }
+                                            }
+                                        ],
+                                        "test_network": {
+                                            "name": "vlan1",
+                                            "subnet_list": [
+                                                {
+                                                    "external_connectivity_state": "DISABLED",
+                                                    "gateway_ip": "xx.xx.xx.xx",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "availability_zone_url": "az2-url",
+                                        "recovery_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "xx.xx.xx.xx"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "adasds-490b-498a-a51c-2a13c38582cc"
+                                                }
+                                            }
+                                        ],
+                                        "recovery_network": {
+                                            "name": "vlan1",
+                                            "subnet_list": [
+                                                {
+                                                    "external_connectivity_state": "DISABLED",
+                                                    "gateway_ip": "xx.xx.xx.xx",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        },
+                                        "test_ip_assignment_list": [
+                                            {
+                                                "ip_config_list": [
+                                                    {
+                                                        "ip_address": "xx.xx.xx.xx"
+                                                    }
+                                                ],
+                                                "vm_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "adasds-490b-498a-a51c-2a13c38582cc"
+                                                }
+                                            }
+                                        ],
+                                        "test_network": {
+                                            "name": "vlan1",
+                                            "subnet_list": [
+                                                {
+                                                    "external_connectivity_state": "DISABLED",
+                                                    "gateway_ip": "xx.xx.xx.xx",
+                                                    "prefix_length": 24
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
+                        "primary_location_index": 0
+                    },
+                    "stage_list": [
+                        {
+                            "delay_time_secs": 10,
+                            "stage_uuid": "626eeb24-fd45-426e-90de-6535f8a6b59c",
+                            "stage_work": {
+                                "recover_entities": {
+                                    "entity_info_list": [
+                                        {
+                                            "any_entity_reference": {
+                                                "kind": "vm",
+                                                "name": "test-check",
+                                                "uuid": "asdasd-490b-498a-a51c-2a13c38582cc"
+                                            },
+                                            "script_list": [
+                                                {
+                                                    "enable_script_exec": true
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "state": "COMPLETE"
+            }
+plan_uuid:
+  description: The created recovery plan's uuid
+  returned: always
+  type: str
+  sample: "cccccc01-4232-4ba8-a125-a2478f9383a9"
 """
 
 from ..module_utils import utils  # noqa: E402
