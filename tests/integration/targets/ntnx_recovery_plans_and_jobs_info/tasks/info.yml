@@ -1,0 +1,285 @@
+- debug:
+    msg: start testing ntnx_recovery_plans_info
+
+##################################################
+- name: Create recovery plan with network
+  ntnx_recovery_plans:
+    state: "present"
+    name: test-integration-rp-1
+    desc: test-integration-rp-desc
+    stages:
+      - categories:
+          - key: Environment
+            value: Testing
+            enable_script_exec: true
+        delay: 10
+    primary_location:
+      url: "{{dr.primary_az_url}}"
+    recovery_location:
+      url: "{{dr.recovery_az_url}}"
+    network_type: NON_STRETCH
+    network_mappings:
+      - primary:
+          test:
+            name: "{{network.dhcp.name}}"
+          prod:
+            name: "{{network.dhcp.name}}"
+        recovery:
+          test:
+            name: "{{dr.recovery_site_network}}"
+          prod:
+            name: "{{dr.recovery_site_network}}"
+
+  register: recovery_plan1
+
+- name: Create recovery plan with networks
+  ntnx_recovery_plans:
+    state: "present"
+    name: test-integration-rp-2
+    desc: test-integration-rp-desc
+    stages:
+      - categories:
+          - key: Environment
+            value: Staging
+            enable_script_exec: true
+        delay: 10
+    primary_location:
+      url: "{{dr.primary_az_url}}"
+    recovery_location:
+      url: "{{dr.recovery_az_url}}"
+    network_type: NON_STRETCH
+    network_mappings:
+      - primary:
+          test:
+            name: "{{network.dhcp.name}}"
+          prod:
+            name: "{{network.dhcp.name}}"
+        recovery:
+          test:
+            name: "{{dr.recovery_site_network}}"
+          prod:
+            name: "{{dr.recovery_site_network}}"
+
+  register: recovery_plan2
+
+##################################################
+
+- name: List all Recovery plans
+  ntnx_recovery_plans_info:
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.metadata.total_matches > 0
+      - result.response.entities | length > 0
+    fail_msg: "Unable to list all recovery plan"
+    success_msg: "recovery plans info obtained successfully"
+
+- set_fact:
+    test_plan_name: "{{result.response.entities.1.status.name}}"
+- set_fact:
+    test_plan_uuid: "{{result.response.entities.1.metadata.uuid}}"
+
+################################################## 
+
+- name: List recovery plans using uuid criteria
+  ntnx_recovery_plans_info:
+    plan_uuid: "{{ test_plan_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.recovery_plan_info.status.name == "{{ test_plan_name }}"
+      - result.response.recovery_plan_info.metadata.uuid == "{{ test_plan_uuid }}"
+      - result.response.associated_entities.entities_per_availability_zone_list is defined
+      - result.response.recovery_plan_info.metadata.kind == "recovery_plan"
+    fail_msg: "Unable to list plans using uuid"
+    success_msg: "recovery plan info obtained successfully"
+
+################################################## 
+
+- name: List recovery plans using filter criteria
+  ntnx_recovery_plans_info:
+    filter: 
+      name: "{{ test_plan_name }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities[0].status.name == "{{ test_plan_name }}"
+      - result.response.metadata.kind == "recovery_plan"
+      - result.response.metadata.total_matches == 1
+    fail_msg: "Unable to list recovery plan using filter"
+    success_msg: "recovery plan info obtained successfully"
+
+################################################## 
+
+- name: List recovery plan using length and offset
+  ntnx_recovery_plans_info:
+    length: 1
+    offset: 1
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities | length == 1
+    fail_msg: "Unable to list recovery plans using length and offset"
+    success_msg: "protection recovery plans listed successfully using length and offset"
+
+################################################## Recovery plan jobs info test #########################################################
+
+- debug:
+    msg: start testing ntnx_recovery_plan_jobs_info
+
+- name: Run validation job, eventually will fail due to some tech issues but can be used for info tests.
+  ntnx_recovery_plan_jobs:
+    nutanix_host: "{{recovery_site_ip}}"
+    state: "present"
+    name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+    recovery_plan:
+      name: "{{recovery_plan1.response.status.name}}"
+    failed_site:
+      url: "{{dr.primary_az_url}}"
+    recovery_site:
+      url: "{{dr.recovery_az_url}}"
+    action: VALIDATE
+  ignore_errors: true
+  no_log: true
+
+- name: Run validation job, eventually will fail due to some tech issues but can be used for info tests.
+  ntnx_recovery_plan_jobs:
+    nutanix_host: "{{recovery_site_ip}}"
+    state: "present"
+    name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+    recovery_plan:
+      name: "{{recovery_plan2.response.status.name}}"
+    failed_site:
+      url: "{{dr.primary_az_url}}"
+    recovery_site:
+      url: "{{dr.recovery_az_url}}"
+    action: VALIDATE
+  ignore_errors: true
+  no_log: true
+  register: test_job
+
+################################################## 
+
+- name: List all recovery plan jobs
+  ntnx_recovery_plan_jobs_info:
+    nutanix_host: "{{recovery_site_ip}}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.metadata.total_matches > 0
+      - result.response.entities | length > 0
+    fail_msg: "Unable to list all recovery plan jobs"
+    success_msg: "recovery plans jobs info obtained successfully"
+
+- set_fact:
+    test_job_name: "{{result.response.entities.1.status.name}}"
+- set_fact:
+    test_job_uuid: "{{result.response.entities.1.metadata.uuid}}"
+- set_fact:
+    test_job_name_1: "{{ test_job.error.status.name }}"
+
+################################################## 
+
+- name: List recovery plan jobs using uuid criteria
+  ntnx_recovery_plan_jobs_info:
+    nutanix_host: "{{recovery_site_ip}}"
+    job_uuid: "{{ test_job_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.status.name == "{{ test_job_name }}"
+      - result.response.metadata.uuid == "{{ test_job_uuid }}"
+      - result.response.metadata.kind == "recovery_plan_job"
+    fail_msg: "Unable to list jobs using uuid"
+    success_msg: "recovery plan jobs info obtained successfully"
+
+################################################## 
+
+- name: List recovery plan jobs using filter criteria
+  ntnx_recovery_plan_jobs_info:
+    nutanix_host: "{{recovery_site_ip}}"
+    filter: 
+      name: "{{ test_job_name_1 }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities[0].status.name == "{{ test_job_name_1 }}"
+      - result.response.metadata.kind == "recovery_plan_job"
+      - result.response.metadata.total_matches == 1
+    fail_msg: "Unable to list recovery plan job using filter"
+    success_msg: "recovery plan job info obtained successfully"
+
+################################################## 
+
+- name: List recovery plan job using length and offset
+  ntnx_recovery_plan_jobs_info:
+    nutanix_host: "{{recovery_site_ip}}"
+    length: 2
+    offset: 1
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities | length == 2
+    fail_msg: "Unable to list recovery plan jobs using length and offset"
+    success_msg: "recovery plan jobs listed successfully using length and offset"
+
+
+################################################## Delete recovery plans #########################################################
+
+- name: Delete created recovery plans
+  ntnx_recovery_plans:
+    state: absent
+    wait: True
+    plan_uuid: "{{ recovery_plan1.plan_uuid }}"
+  register: result
+
+- name: Delete created recovery plans
+  ntnx_recovery_plans:
+    state: absent
+    wait: True
+    plan_uuid: "{{ recovery_plan2.plan_uuid }}"
+  register: result

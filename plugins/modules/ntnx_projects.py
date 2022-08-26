@@ -239,10 +239,14 @@ project_uuid:
   sample: "df78c7800-4232-4ba8-a125-a2478f9383a9"
 """
 
-from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.projects import Project  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.utils import (  # noqa: E402
+    extract_uuids_from_references_list,
+    remove_param_with_none_value,
+    strip_extra_attrs,
+)
 
 
 def get_module_spec():
@@ -309,6 +313,74 @@ def create_project(module, result):
     result["response"] = resp
 
 
+def check_project_idempotency(old_spec, update_spec):
+    """
+    Check every individual entities for similarity
+    """
+
+    if old_spec["spec"]["name"] != update_spec["spec"]["name"]:
+        return False
+
+    if old_spec["spec"].get("description") != update_spec["spec"].get("description"):
+        return False
+
+    # check quota
+    if old_spec["spec"]["resources"].get("resource_domain") != update_spec["spec"][
+        "resources"
+    ].get("resource_domain"):
+        return False
+
+    # check default subnet reference
+    if old_spec["spec"]["resources"].get("default_subnet_reference", {}).get(
+        "uuid"
+    ) != update_spec["spec"]["resources"].get("default_subnet_reference", {}).get(
+        "uuid"
+    ):
+        return False
+
+    # check cluster
+    old_clusters = extract_uuids_from_references_list(
+        old_spec["spec"]["resources"].get("cluster_reference_list", [])
+    )
+    new_clusters = extract_uuids_from_references_list(
+        update_spec["spec"]["resources"].get("cluster_reference_list", [])
+    )
+    if old_clusters != new_clusters:
+        return False
+
+    # check subnets
+    old_subnets = extract_uuids_from_references_list(
+        old_spec["spec"]["resources"].get("subnet_reference_list", [])
+    )
+    new_subnets = extract_uuids_from_references_list(
+        update_spec["spec"]["resources"].get("subnet_reference_list", [])
+    )
+    if old_subnets != new_subnets:
+        return False
+
+    # check users
+    old_users = extract_uuids_from_references_list(
+        old_spec["spec"]["resources"].get("user_reference_list", [])
+    )
+    new_users = extract_uuids_from_references_list(
+        update_spec["spec"]["resources"].get("user_reference_list", [])
+    )
+    if old_users != new_users:
+        return False
+
+    # check user groups
+    old_usergroups = extract_uuids_from_references_list(
+        old_spec["spec"]["resources"].get("external_user_group_reference_list", [])
+    )
+    new_usergroups = extract_uuids_from_references_list(
+        update_spec["spec"]["resources"].get("external_user_group_reference_list", [])
+    )
+    if old_usergroups != new_usergroups:
+        return False
+
+    return True
+
+
 def update_project(module, result):
     uuid = module.params["project_uuid"]
     if not uuid:
@@ -318,7 +390,7 @@ def update_project(module, result):
 
     projects = Project(module)
     resp = projects.read(uuid)
-    utils.strip_extra_attrs(resp["status"], resp["spec"])
+    strip_extra_attrs(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
 
     update_spec, error = projects.get_spec(resp)
@@ -327,7 +399,7 @@ def update_project(module, result):
         module.fail_json(msg="Failed generating project update spec", **result)
 
     # check for idempotency
-    if resp == update_spec:
+    if check_project_idempotency(resp, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to update.")
 
@@ -374,7 +446,7 @@ def run_module():
             ("state", "absent", ("project_uuid",)),
         ],
     )
-    utils.remove_param_with_none_value(module.params)
+    remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "project_uuid": None}
     if module.params["state"] == "present":
         if module.params.get("project_uuid"):

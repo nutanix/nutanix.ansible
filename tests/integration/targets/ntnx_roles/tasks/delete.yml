@@ -1,6 +1,6 @@
 ---
 - debug:
-    msg: start ntnx_roles create tests
+    msg: start ntnx_roles delete tests
 
 - name: Get Some permissions for test
   ntnx_permissions_info:

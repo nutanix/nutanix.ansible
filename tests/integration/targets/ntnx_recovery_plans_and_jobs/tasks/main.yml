@@ -6,4 +6,4 @@
         nutanix_password: "{{ password }}"
         validate_certs: "{{ validate_certs }}"
   block:
-        - import_tasks: "users_info.yml"
+        - import_tasks: "crud.yml"

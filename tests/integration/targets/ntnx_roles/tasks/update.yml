@@ -1,6 +1,6 @@
 ---
 - debug:
-    msg: start ntnx_roles create tests
+    msg: start ntnx_roles update tests
 
 - name: Get Some permissions for test
   ntnx_permissions_info:
@@ -20,7 +20,7 @@
 - name: Create role with permissions
   ntnx_roles:
     state: present
-    name: test-ansible-role-2
+    name: test-ansible-role-3
     desc: test-ansible-role-3-desc
     permissions:
       - name: "{{ test_permission_1_name }}"
@@ -43,8 +43,8 @@
   ntnx_roles:
     state: present
     role_uuid: "{{test_role.role_uuid}}"
-    name: test-ansible-role-2-updated
-    desc: test-ansible-role-2-desc-updated
+    name: test-ansible-role-3-updated
+    desc: test-ansible-role-3-desc-updated
     permissions:
       - uuid: "{{ test_permission_3_uuid }}"
     wait: true
@@ -57,8 +57,8 @@
       - result.role_uuid is defined
       - result.response.status.state == 'COMPLETE'
       - result.changed == True
-      - result.response.status.name == "test-ansible-role-2-updated"
-      - result.response.status.description == "test-ansible-role-2-desc-updated"
+      - result.response.status.name == "test-ansible-role-3-updated"
+      - result.response.status.description == "test-ansible-role-3-desc-updated"
       - result.response.status.resources.permission_reference_list[0]["uuid"] == "{{ test_permission_3_uuid }}"
       - result.response.status.resources.permission_reference_list | length == 1
 
@@ -71,8 +71,8 @@
   ntnx_roles:
     state: present
     role_uuid: "{{test_role.role_uuid}}"
-    name: test-ansible-role-2-updated
-    desc: test-ansible-role-2-desc-updated
+    name: test-ansible-role-3-updated
+    desc: test-ansible-role-3-desc-updated
     permissions:
       - uuid: "{{ test_permission_3_uuid }}"
     wait: true
@@ -95,8 +95,8 @@
   ntnx_roles:
     state: present
     role_uuid: "{{test_role.role_uuid}}"
-    name: test-ansible-role-2
-    desc: test-ansible-role-2-desc
+    name: test-ansible-role-3
+    desc: test-ansible-role-3-desc
     permissions:
       - uuid: "{{ test_permission_1_uuid }}"
     wait: true
@@ -107,8 +107,8 @@
     that:
       - result.response is defined
       - result.changed == False
-      - result.response.spec.name == "test-ansible-role-2"
-      - result.response.spec.description == "test-ansible-role-2-desc"
+      - result.response.spec.name == "test-ansible-role-3"
+      - result.response.spec.description == "test-ansible-role-3-desc"
       - result.response.spec.resources.permission_reference_list[0]["uuid"] == "{{ test_permission_1_uuid }}"
       - result.response.spec.resources.permission_reference_list | length == 1
 
