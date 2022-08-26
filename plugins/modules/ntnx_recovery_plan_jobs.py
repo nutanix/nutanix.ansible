@@ -286,18 +286,16 @@ def create_job(module, result):
 def perform_action_on_job(module, result):
     job_uuid = module.params.get("job_uuid")
     if not job_uuid:
-        module.fail_json(
-            msg="job_uuid is a required field for 'CLEANUP' and 'RERUN' action",
-            **result,
-        )
+        err_msg = "job_uuid is a required field for 'CLEANUP' and 'RERUN' action"
+        module.fail_json(msg=err_msg, **result)
 
     action = module.params["action"]
 
     if action not in allowed_actions_on_recovery_plan_job:
-        module.fail_json(
-            msg="Only 'CLEANUP' action can be performed on existing recovery plan jobs",
-            **result,
+        err_msg = (
+            "Only 'CLEANUP' action can be performed on existing recovery plan jobs"
         )
+        module.fail_json(msg=err_msg, **result)
 
     if module.check_mode:
         result["response"] = {}
