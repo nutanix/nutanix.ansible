@@ -334,8 +334,9 @@ class Entity(object):
             # get body containing error
             body = info.get("body")
         else:
-            # incase resp body size is > 65536, read() will fail due to http.client.IncompleteRead exception which eventually closes connection and can't read response further.
-            # so here we read all content in chunks (of size < 65536) and combine data at last to get final response
+            # For case when response body size is > 65536, read() will fail due to http.client.IncompleteRead exception
+            # This eventually closes connection and can't read response further.
+            # So here we read all content in chunks (of size < 65536) and combine data at last to get final response.
             resp_chunk = None
             resp_chunks = []
             while True:
