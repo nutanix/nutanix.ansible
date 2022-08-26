@@ -23,6 +23,7 @@
     fail_msg: "fail: user created whil check mode on"
     success_msg: "pass: returned as expected"
 
+
 #################################################
 - name: create local user
   ntnx_users:
