@@ -137,7 +137,7 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_protection_rules_info | Get pc protection rules info. |
 | ntnx_recovery_plans | create, update and delete pc recovery plans |
 | ntnx_recovery_plans_info | Get pc recovery plans info. |
-| ntnx_recovery_plan_jobs | create and perform action pc recovery plan jobs |
+| ntnx_recovery_plan_jobs | create and perform action on pc recovery plans |
 | ntnx_recovery_plan_jobs_info | Get pc recovery plan jobs info. |
 | ntnx_roles | Create, Update, Delete Nutanix roles |
 | ntnx_roles_info | Get roles info. |
