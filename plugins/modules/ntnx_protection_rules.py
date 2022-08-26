@@ -367,6 +367,176 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The protection policy metadata
+  returned: always
+  type: dict
+  sample:  {
+                "categories": {},
+                "categories_mapping": {},
+                "creation_time": "2022-08-26T07:06:25Z",
+                "kind": "protection_rule",
+                "last_update_time": "2022-08-26T07:06:26Z",
+                "owner_reference": {
+                    "kind": "user",
+                    "name": "admin",
+                    "uuid": "00000000-0000-0000-0000-000000000000"
+                },
+                "spec_hash": "00000000000000000000000000000000000000000000000000",
+                "spec_version": 0,
+                "uuid": "ccccccc-24ea-43cc-a779-8620d08de1ad"
+            }
+spec:
+  description: An intentful representation of a protection rule spec
+  returned: always
+  type: dict
+  sample: {
+                "description": "test-ansible-desc",
+                "name": "test-ansible",
+                "resources": {
+                    "availability_zone_connectivity_list": [
+                        {
+                            "destination_availability_zone_index": 1,
+                            "snapshot_schedule_list": [
+                                {
+                                    "local_snapshot_retention_policy": {
+                                        "num_snapshots": 1
+                                    },
+                                    "recovery_point_objective_secs": 3600,
+                                    "remote_snapshot_retention_policy": {
+                                        "rollup_retention_policy": {
+                                            "multiple": 2,
+                                            "snapshot_interval_type": "HOURLY"
+                                        }
+                                    },
+                                    "snapshot_type": "CRASH_CONSISTENT"
+                                }
+                            ],
+                            "source_availability_zone_index": 0
+                        },
+                        {
+                            "destination_availability_zone_index": 0,
+                            "snapshot_schedule_list": [
+                                {
+                                    "local_snapshot_retention_policy": {
+                                        "num_snapshots": 2
+                                    },
+                                    "recovery_point_objective_secs": 3600,
+                                    "remote_snapshot_retention_policy": {
+                                        "num_snapshots": 1
+                                    },
+                                    "snapshot_type": "CRASH_CONSISTENT"
+                                }
+                            ],
+                            "source_availability_zone_index": 1
+                        }
+                    ],
+                    "category_filter": {
+                        "params": {
+                            "Environment": [
+                                "Dev",
+                                "Staging"
+                            ]
+                        },
+                        "type": "CATEGORIES_MATCH_ANY"
+                    },
+                    "ordered_availability_zone_list": [
+                        {
+                            "availability_zone_url": "az1-url"
+                        },
+                        {
+                            "availability_zone_url": "az2-url"
+                        }
+                    ],
+                    "primary_location_list": [
+                        0
+                    ]
+                }
+            }
+status:
+  description: An intentful representation of a protection policy status
+  returned: always
+  type: dict
+  sample:  {
+                "description": "test-ansible-desc",
+                "execution_context": {
+                    "task_uuid": [
+                        "asdse03b4-e272-45df-93eb-afe0749b761b"
+                    ]
+                },
+                "name": "test-ansible",
+                "resources": {
+                    "availability_zone_connectivity_list": [
+                        {
+                            "destination_availability_zone_index": 1,
+                            "snapshot_schedule_list": [
+                                {
+                                    "local_snapshot_retention_policy": {
+                                        "num_snapshots": 1
+                                    },
+                                    "recovery_point_objective_secs": 3600,
+                                    "remote_snapshot_retention_policy": {
+                                        "rollup_retention_policy": {
+                                            "multiple": 2,
+                                            "snapshot_interval_type": "HOURLY"
+                                        }
+                                    },
+                                    "snapshot_type": "CRASH_CONSISTENT"
+                                }
+                            ],
+                            "source_availability_zone_index": 0
+                        },
+                        {
+                            "destination_availability_zone_index": 0,
+                            "snapshot_schedule_list": [
+                                {
+                                    "local_snapshot_retention_policy": {
+                                        "num_snapshots": 2
+                                    },
+                                    "recovery_point_objective_secs": 3600,
+                                    "remote_snapshot_retention_policy": {
+                                        "num_snapshots": 1
+                                    },
+                                    "snapshot_type": "CRASH_CONSISTENT"
+                                }
+                            ],
+                            "source_availability_zone_index": 1
+                        }
+                    ],
+                    "category_filter": {
+                        "params": {
+                            "Environment": [
+                                "Dev",
+                                "Staging"
+                            ]
+                        },
+                        "type": "CATEGORIES_MATCH_ANY"
+                    },
+                    "ordered_availability_zone_list": [
+                        {
+                            "availability_zone_url": "az1-url"
+                        },
+                        {
+                            "availability_zone_url": "az2-url"
+                        }
+                    ],
+                    "primary_location_list": [
+                        0
+                    ],
+                    "start_time": ""
+                },
+                "state": "COMPLETE"
+            }
+rule_uuid:
+  description: The created protection rule uuid
+  returned: always
+  type: str
+  sample: "ccccccc-24ea-43cc-a779-8620d08de1ad"
 """
 
 from ..module_utils import utils  # noqa: E402

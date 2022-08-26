@@ -27,6 +27,8 @@ It is designed keeping simplicity as the core value. Hence it is
 
 > For the 1.4.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
 
+> For the 1.5.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4.0.2 and pc2022.1.0.2.
+
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
 
@@ -131,6 +133,12 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_permissions_info | List permissions info |
 | ntnx_projects | create, update and delete pc projects |
 | ntnx_projects_info | Get projects info. |
+| ntnx_protection_rules | create, update and delete pc protection rules |
+| ntnx_protection_rules_info | Get pc protection rules info. |
+| ntnx_recovery_plans | create, update and delete pc recovery plans |
+| ntnx_recovery_plans_info | Get pc recovery plans info. |
+| ntnx_recovery_plan_jobs | create and perform action pc recovery plan jobs |
+| ntnx_recovery_plan_jobs_info | Get pc recovery plan jobs info. |
 | ntnx_roles | Create, Update, Delete Nutanix roles |
 | ntnx_roles_info | Get roles info. |
 | ntnx_security_rules | Create, update or delete a Security Rule. |

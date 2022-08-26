@@ -1,3 +1,17 @@
+## v1.5.0 (26 Aug 2022)
+
+**Features**
+
+**Prism Central Disaster Recovery**
+- Ansible module for Protection Rules
+- Ansible info module for Protection Rules
+- Ansible module for Recovery Plans
+- Ansible info module Recovery Plans
+- Ansible module for Recovery Plan Jobs
+- Ansible info module Recovery Plan Jobs
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.4.0...v1.5.0)
+
 ## v1.4.0 (28 July 2022)
 
 **Features**
