@@ -391,7 +391,7 @@
                                         },
                                         {
                                             "categories": {
-                                                "Environment": "Production"
+                                                "Environment": "Staging"
                                             },
                                             "script_list": [
                                                 {
@@ -427,7 +427,7 @@
             enable_script_exec: true
         categories:
           - key: Environment
-            value: Production
+            value: Staging
             enable_script_exec: true
         delay: 2
       - categories:
@@ -486,7 +486,7 @@
             enable_script_exec: true
         categories:
           - key: Environment
-            value: Production
+            value: Staging
             enable_script_exec: true
         delay: 2
       - categories:
@@ -512,7 +512,6 @@
             name: "{{dr.recovery_site_network}}"
           prod:
             name: "{{dr.recovery_site_network}}"
-
   register: recovery_plan
 
 - name: Update status
@@ -547,7 +546,7 @@
             enable_script_exec: true
         categories:
           - key: Environment
-            value: Production
+            value: Staging
             enable_script_exec: true
         delay: 2
       - categories:
