@@ -6,9 +6,9 @@
     - nutanix.ncp    
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: 10.44.77.27
-      nutanix_username: admin
-      nutanix_password: Nutanix.123
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
       validate_certs: false
   tasks:
     - name: Include vars file
