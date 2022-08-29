@@ -170,6 +170,250 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
+api_version:
+  description: API Version of the Nutanix v3 API framework.
+  returned: always
+  type: str
+  sample: "3.1"
+metadata:
+  description: The recovery plan jobs's kind metadata
+  returned: always
+  type: dict
+  sample: {
+                "kind": "recovery_plan_job",
+                "name": "test-failover-123",
+                "uuid": "adasds-d541-4df8-ab0e-53b2b62519b3"
+            }
+status:
+  description: An intentful job and its execution status of a recovery plan job
+  returned: always
+  type: dict
+  sample: {
+                "end_time": "2022-08-26T11:35:49Z",
+                "execution_status": {
+                    "operation_status": {
+                        "percentage_complete": 100,
+                        "status": "COMPLETED"
+                    },
+                    "percentage_complete": 100,
+                    "postprocessing_status": {
+                        "percentage_complete": 100,
+                        "status": "COMPLETED"
+                    },
+                    "preprocessing_status": {
+                        "percentage_complete": 100,
+                        "status": "COMPLETED"
+                    },
+                    "status": "COMPLETED_WITH_WARNING"
+                },
+                "name": "test-failover-123",
+                "recovery_plan_specification": {
+                    "description": "recovery plan desc updated",
+                    "name": "example-rp-updated",
+                    "resources": {
+                        "parameters": {
+                            "availability_zone_list": [
+                                {
+                                    "availability_zone_url": "az1-url"
+                                },
+                                {
+                                    "availability_zone_url":"az2-url"
+                                }
+                            ],
+                            "network_mapping_list": [
+                                {
+                                    "are_networks_stretched": false,
+                                    "availability_zone_network_mapping_list": [
+                                        {
+                                            "availability_zone_url": "az1-url",
+                                            "recovery_network": {
+                                                "name": "vlan"
+                                            },
+                                            "test_network": {
+                                                "name": "vlan"
+                                            }
+                                        },
+                                        {
+                                            "availability_zone_url":"az2-url",
+                                            "recovery_network": {
+                                                "name": "vlan"
+                                            },
+                                            "test_network": {
+                                                "name": "vlan"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            "primary_location_index": 0
+                        },
+                        "stage_list": [
+                            {
+                                "delay_time_secs": 2,
+                                "stage_uuid": "3aa0a257-ca5d-4a17-b19f-36918cfa7dd0",
+                                "stage_work": {
+                                    "recover_entities": {
+                                        "entity_info_list": [
+                                            {
+                                                "any_entity_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "asdasds-490b-498a-a51c-2a13c38582cc"
+                                                },
+                                                "script_list": [
+                                                    {
+                                                        "enable_script_exec": true
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "categories": {
+                                                    "Environment": "Staging"
+                                                },
+                                                "script_list": [
+                                                    {
+                                                        "enable_script_exec": true
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                "stage_uuid": "e9bb2595-9bc7-4630-a87c-8499203d8c23",
+                                "stage_work": {
+                                    "recover_entities": {
+                                        "entity_info_list": [
+                                            {
+                                                "categories": {
+                                                    "Environment": "Dev"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "resources": {
+                    "execution_parameters": {
+                        "action_type": "MIGRATE",
+                        "failed_availability_zone_list": [
+                            {
+                                "availability_zone_url": "az1-url"
+                            }
+                        ],
+                        "recovery_availability_zone_list": [
+                            {
+                                "availability_zone_url":"az2-url"
+                            }
+                        ]
+                    },
+                    "recovery_plan_reference": {
+                        "kind": "recovery_plan",
+                        "uuid": "adasdsd-9afe-477d-90c3-8cd6bec88b2d"
+                    }
+                },
+                "start_time": "2022-08-26T11:33:51Z",
+                "validation_information": {
+                    "errors_list": [],
+                    "warnings_list": [
+                        {
+                            "affected_any_reference_list": [
+                                {
+                                    "kind": "vm",
+                                    "name": "test-check",
+                                    "uuid": "asdasds-490b-498a-a51c-2a13c38582cc"
+                                }
+                            ],
+                            "cause_and_resolution_message_list": [
+                                {
+                                    "cause": "VMs are unprotected.",
+                                    "resolution_list": ["xx", "xx"]
+                                }
+                            ],
+                            "impact_message_list": ["xx", "xx"],
+                            "message": "xyz",
+                            "validation_type": "ENTITY"
+                        },
+                        {
+                            "affected_any_reference_list": [
+                                {
+                                    "kind": "vm",
+                                    "name": "test-check",
+                                    "uuid": "dasdadasd-490b-498a-a51c-2a13c38582cc"
+                                }
+                            ],
+                            "cause_and_resolution_message_list": [
+                                {
+                                    "cause": "xyz",
+                                    "resolution_list": ["xx", "xx"]
+                                }
+                            ],
+                            "impact_message_list": [
+                                "The post recovery script execution will fail."
+                            ],
+                            "message": "xyz",
+                            "validation_type": "ENTITY"
+                        },
+                        {
+                            "affected_any_reference_list": [
+                                {
+                                    "kind": "vm",
+                                    "name": "test-check",
+                                    "uuid": "adssasd-490b-498a-a51c-2a13c38582cc"
+                                }
+                            ],
+                            "cause_and_resolution_message_list": [
+                                {
+                                    "cause": "Entities might also be present as part of a category specified in the Recovery Plan.",
+                                    "resolution_list": ["xx", "xx"]
+                                }
+                            ],
+                            "impact_message_list": [
+                                "xyz"
+                            ],
+                            "message": "Duplicate instances exist for one or more of the entities in the Recovery Plan.",
+                            "validation_type": "ENTITY"
+                        },
+                        {
+                            "affected_any_reference_list": [],
+                            "cause_and_resolution_message_list": [
+                                {
+                                    "cause": "xyz",
+                                    "resolution_list": ["xx", "xx"]
+                                }
+                            ],
+                            "impact_message_list": [
+                                "No entity will be recovered for stage 2"
+                            ],
+                            "message": "No entity found for recovery for a stage 2.",
+                            "validation_type": "ENTITY"
+                        },
+                        {
+                            "affected_any_reference_list": [],
+                            "cause_and_resolution_message_list": [
+                                {
+                                    "cause": "The categories might no longer be in use.",
+                                    "resolution_list": ["xx", "xx"]
+                                }
+                            ],
+                            "impact_message_list": [
+                                "No entities will be recovered for these categories."
+                            ],
+                            "message": "xxxxxxx",
+                            "validation_type": "CATEGORY"
+                        }
+                    ]
+                }
+            }
+job_uuid:
+  description: The created recovery plan job's uuid
+  returned: always
+  type: str
+  sample: "cccccc01-4232-4ba8-a125-a2478f9383a9"
 """
 import time  # noqa: E402
 

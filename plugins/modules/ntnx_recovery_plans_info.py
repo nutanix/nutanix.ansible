@@ -55,7 +55,287 @@ EXAMPLES = r"""
   register: result
 """
 RETURN = r"""
-
+associated_entities:
+  description:
+    - associated entities to recovery plan
+    - only obtained when uuid is used for getting info of recovery plan
+  returned: always
+  type: dict
+  sample: {
+                "entities_per_availability_zone_list": [
+                    {
+                        "availability_zone_order_list": [
+                            {
+                                "availability_zone_list": [
+                                    {
+                                        "availability_zone_url": "az1-url"
+                                    },
+                                    {
+                                        "availability_zone_url": "az2-url"
+                                    }
+                                ]
+                            }
+                        ],
+                        "availability_zone_url": "az1-url",
+                        "entity_list": [
+                            {
+                                "any_entity_reference": {
+                                    "kind": "vm",
+                                    "name": "test-check-63",
+                                    "uuid": "da240e012e-d099-4acd-a8b0-ee33f4d45a25"
+                                },
+                                "is_recovery_point": false,
+                                "recovery_availability_zone_order_index": 0
+                            },
+                            {
+                                "any_entity_reference": {
+                                    "kind": "vm",
+                                    "name": "integration_test_dr_vm",
+                                    "uuid": "da76qwe13-4ad0-4231-b376-16b3fa2da0cf"
+                                },
+                                "is_recovery_point": true,
+                                "recovery_availability_zone_order_index": 0
+                            },
+                            {
+                                "any_entity_reference": {
+                                    "kind": "vm",
+                                    "name": "integration_test_dr_vm",
+                                    "uuid": "da76qwe13-4ad0-4231-b376-16b3fa2da0cf"
+                                },
+                                "is_recovery_point": false,
+                                "recovery_availability_zone_order_index": 0
+                            }
+                        ]
+                    }
+                ]
+            }
+recovery_plan_info:
+  description:
+    - recovery plan intent response
+    - only obtained when uuid is used for getting info of recovery plan
+  returned: always
+  type: dict
+  sample: {
+                "api_version": "3.1",
+                "metadata": {
+                    "categories": {},
+                    "categories_mapping": {},
+                    "creation_time": "2022-08-26T11:16:33Z",
+                    "kind": "recovery_plan",
+                    "last_update_time": "2022-08-26T11:16:48Z",
+                    "owner_reference": {
+                        "kind": "user",
+                        "name": "admin",
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec_hash": "00000000000000000000000000000000000000000000000000",
+                    "spec_version": 1,
+                    "uuid": "4312fc47-6d3a-44df-bb64-d17e095203f2"
+                },
+                "spec": {
+                    "description": "recovery plan desc updated",
+                    "name": "example-rp-updated",
+                    "resources": {
+                        "parameters": {
+                            "availability_zone_list": [
+                                {
+                                    "availability_zone_url": "az1-url"
+                                },
+                                {
+                                    "availability_zone_url": "az2-url"
+                                }
+                            ],
+                            "network_mapping_list": [
+                                {
+                                    "are_networks_stretched": false,
+                                    "availability_zone_network_mapping_list": [
+                                        {
+                                            "availability_zone_url": "az1-url",
+                                            "recovery_network": {
+                                                "name": "vlan1"
+                                            },
+                                            "test_network": {
+                                                "name": "vlan1"
+                                            }
+                                        },
+                                        {
+                                            "availability_zone_url": "az2-url",
+                                            "recovery_network": {
+                                                "name": "vlan1"
+                                            },
+                                            "test_network": {
+                                                "name": "vlan2"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            "primary_location_index": 0
+                        },
+                        "stage_list": [
+                            {
+                                "delay_time_secs": 2,
+                                "stage_uuid": "da6a7469-2b6a-4b69-a181-53814fb08e0b",
+                                "stage_work": {
+                                    "recover_entities": {
+                                        "entity_info_list": [
+                                            {
+                                                "any_entity_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "asdsadsd-7c0e-4214-9785-6949a2c7369a"
+                                                },
+                                                "script_list": [
+                                                    {
+                                                        "enable_script_exec": true
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "categories": {
+                                                    "Environment": "Staging"
+                                                },
+                                                "script_list": [
+                                                    {
+                                                        "enable_script_exec": true
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                "stage_uuid": "ad914f0a-1ec3-4eb1-a8ce-ce6de230477f",
+                                "stage_work": {
+                                    "recover_entities": {
+                                        "entity_info_list": [
+                                            {
+                                                "categories": {
+                                                    "Environment": "Dev"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "status": {
+                    "description": "recovery plan desc updated",
+                    "execution_context": {
+                        "task_uuid": [
+                            "946336ac-9ee9-4df2-bfe2-7e9ff4f3ce25"
+                        ]
+                    },
+                    "latest_test_time": "",
+                    "latest_validation_time": "",
+                    "name": "example-rp-updated",
+                    "recovery_availability_zone_order_list": [
+                        {
+                            "availability_zone_order_list": [
+                                [
+                                    {
+                                        "availability_zone_url": "az1-url"
+                                    },
+                                    {
+                                        "availability_zone_url": "az2-url"
+                                    }
+                                ]
+                            ],
+                            "availability_zone_url": "az1-url"
+                        }
+                    ],
+                    "resources": {
+                        "parameters": {
+                            "availability_zone_list": [
+                                {
+                                    "availability_zone_url": "az1-url"
+                                },
+                                {
+                                    "availability_zone_url": "az2-url"
+                                }
+                            ],
+                            "network_mapping_list": [
+                                {
+                                    "are_networks_stretched": false,
+                                    "availability_zone_network_mapping_list": [
+                                        {
+                                            "availability_zone_url": "az1-url",
+                                            "recovery_network": {
+                                                "name": "vlan1"
+                                            },
+                                            "test_network": {
+                                                "name": "vlan1"
+                                            }
+                                        },
+                                        {
+                                            "availability_zone_url": "az2-url",
+                                            "recovery_network": {
+                                                "name": "vlan1"
+                                            },
+                                            "test_network": {
+                                                "name": "vlan1"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            "primary_location_index": 0
+                        },
+                        "stage_list": [
+                            {
+                                "delay_time_secs": 2,
+                                "stage_uuid": "da6a7469-2b6a-4b69-a181-53814fb08e0b",
+                                "stage_work": {
+                                    "recover_entities": {
+                                        "entity_info_list": [
+                                            {
+                                                "any_entity_reference": {
+                                                    "kind": "vm",
+                                                    "name": "test-check",
+                                                    "uuid": "asasda-7c0e-4214-9785-6949a2c7369a"
+                                                },
+                                                "script_list": [
+                                                    {
+                                                        "enable_script_exec": true
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "categories": {
+                                                    "Environment": "Staging"
+                                                },
+                                                "script_list": [
+                                                    {
+                                                        "enable_script_exec": true
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                "stage_uuid": "ad914f0a-1ec3-4eb1-a8ce-ce6de230477f",
+                                "stage_work": {
+                                    "recover_entities": {
+                                        "entity_info_list": [
+                                            {
+                                                "categories": {
+                                                    "Environment": "Dev"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    "state": "COMPLETE"
+                }
+            }
 """
 
 

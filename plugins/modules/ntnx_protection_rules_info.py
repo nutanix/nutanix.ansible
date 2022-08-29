@@ -58,6 +58,175 @@ EXAMPLES = r"""
 
 """
 RETURN = r"""
+rule_affected_entities:
+  description:
+    - affected entities to protection policy
+    - only obtained when uuid is used for getting info of protection policy
+  returned: always
+  type: dict
+  sample: {
+                "entity_list": [
+                    {
+                        "vm_reference": {
+                            "kind": "vm",
+                            "name": "test-check",
+                            "uuid": "asdasds-490b-498a-a51c-2a13c38582cc"
+                        }
+                    }
+                ]
+            }
+rule_info:
+  description:
+    - intent response of protection policy
+    - only obtained when uuid is used for getting info of protection policy
+  returned: always
+  type: dict
+  sample: {
+                "api_version": "3.1",
+                "metadata": {
+                    "categories": {},
+                    "categories_mapping": {},
+                    "creation_time": "2022-08-26T10:56:08Z",
+                    "kind": "protection_rule",
+                    "last_update_time": "2022-08-26T12:02:42Z",
+                    "owner_reference": {
+                        "kind": "user",
+                        "name": "admin",
+                        "uuid": "00000000-0000-0000-0000-000000000000"
+                    },
+                    "spec_hash": "00000000000000000000000000000000000000000000000000",
+                    "spec_version": 1,
+                    "uuid": "asdasasdda-7a99-43ea-b49e-9120f955a518"
+                },
+                "spec": {
+                    "name": "test-check",
+                    "resources": {
+                        "availability_zone_connectivity_list": [
+                            {
+                                "destination_availability_zone_index": 1,
+                                "snapshot_schedule_list": [
+                                    {
+                                        "local_snapshot_retention_policy": {
+                                            "num_snapshots": 1
+                                        },
+                                        "recovery_point_objective_secs": 3600,
+                                        "remote_snapshot_retention_policy": {
+                                            "num_snapshots": 1
+                                        },
+                                        "snapshot_type": "CRASH_CONSISTENT"
+                                    }
+                                ],
+                                "source_availability_zone_index": 0
+                            },
+                            {
+                                "destination_availability_zone_index": 0,
+                                "snapshot_schedule_list": [
+                                    {
+                                        "local_snapshot_retention_policy": {
+                                            "num_snapshots": 1
+                                        },
+                                        "recovery_point_objective_secs": 3600,
+                                        "remote_snapshot_retention_policy": {
+                                            "num_snapshots": 1
+                                        },
+                                        "snapshot_type": "CRASH_CONSISTENT"
+                                    }
+                                ],
+                                "source_availability_zone_index": 1
+                            }
+                        ],
+                        "category_filter": {
+                            "params": {
+                                "Environment": [
+                                    "Staging"
+                                ]
+                            },
+                            "type": "CATEGORIES_MATCH_ANY"
+                        },
+                        "ordered_availability_zone_list": [
+                            {
+                                "availability_zone_url": "az1-url",
+                                "cluster_uuid": "c1uuid"
+                            },
+                            {
+                                "availability_zone_url": "az2-url",
+                                "cluster_uuid": "c2uuid"
+                            }
+                        ],
+                        "primary_location_list": [
+                            0
+                        ]
+                    }
+                },
+                "status": {
+                    "description": "",
+                    "execution_context": {
+                        "task_uuid": [
+                            "asdasd-8d8d-4dc9-87ad-5e66530bcfab"
+                        ]
+                    },
+                    "name": "test-check",
+                    "resources": {
+                        "availability_zone_connectivity_list": [
+                            {
+                                "destination_availability_zone_index": 1,
+                                "snapshot_schedule_list": [
+                                    {
+                                        "local_snapshot_retention_policy": {
+                                            "num_snapshots": 1
+                                        },
+                                        "recovery_point_objective_secs": 3600,
+                                        "remote_snapshot_retention_policy": {
+                                            "num_snapshots": 1
+                                        },
+                                        "snapshot_type": "CRASH_CONSISTENT"
+                                    }
+                                ],
+                                "source_availability_zone_index": 0
+                            },
+                            {
+                                "destination_availability_zone_index": 0,
+                                "snapshot_schedule_list": [
+                                    {
+                                        "local_snapshot_retention_policy": {
+                                            "num_snapshots": 1
+                                        },
+                                        "recovery_point_objective_secs": 3600,
+                                        "remote_snapshot_retention_policy": {
+                                            "num_snapshots": 1
+                                        },
+                                        "snapshot_type": "CRASH_CONSISTENT"
+                                    }
+                                ],
+                                "source_availability_zone_index": 1
+                            }
+                        ],
+                        "category_filter": {
+                            "params": {
+                                "Environment": [
+                                    "Staging"
+                                ]
+                            },
+                            "type": "CATEGORIES_MATCH_ANY"
+                        },
+                        "ordered_availability_zone_list": [
+                            {
+                                "availability_zone_url": "az1-url",
+                                "cluster_uuid": "c1uuid"
+                            },
+                            {
+                                "availability_zone_url": "az2-url",
+                                "cluster_uuid": "c2uuid"
+                            }
+                        ],
+                        "primary_location_list": [
+                            0
+                        ],
+                        "start_time": ""
+                    },
+                    "state": "COMPLETE"
+                }
+            }
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
