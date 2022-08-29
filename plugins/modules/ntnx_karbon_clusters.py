@@ -337,12 +337,12 @@ def get_module_spec():
     )
 
     storage_class_spec = dict(
-        default_storage_class=dict(type="bool"),
+        default_storage_class=dict(type="bool", default=True),
         name=dict(type="str", required=True),
-        reclaim_policy=dict(type="str", choices=["Retain", "Delete"]),
+        reclaim_policy=dict(type="str", choices=["Retain", "Delete"], default="Delete"),
         storage_container=dict(type="str", required=True),
-        file_system=dict(type="str", choices=["ext4", "xfs"]),
-        flash_mode=dict(type="bool"),
+        file_system=dict(type="str", choices=["ext4", "xfs"], default="ext4"),
+        flash_mode=dict(type="bool", default=False),
     )
     custom_node_spec = dict(
         etcd=dict(type="dict", apply_defaults=True, options=resource_spec),
