@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_registries_info
 short_description: registry  info module
-version_added: 1.5.0
+version_added: 1.6.0
 description: 'Get registry info'
 options:
       registry_name:

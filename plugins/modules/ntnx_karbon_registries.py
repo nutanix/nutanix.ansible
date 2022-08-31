@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_registries
 short_description: Create, Delete a k8s registry with the provided configuration.
-version_added: 1.5.0
+version_added: 1.6.0
 description: "Create, Delete registries"
 options:
     name:
@@ -60,7 +60,7 @@ def get_module_spec():
         name=dict(type="str"),
         cert=dict(type="str"),
         username=dict(type="str"),
-        password=dict(type="str"),
+        password=dict(type="str", no_log=True),
         url=dict(type="str"),
         port=dict(type="int"),
     )
@@ -119,7 +119,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "absent", ("registry_type",)),
+            ("state", "absent", ("name",)),
         ],
     )
     utils.remove_param_with_none_value(module.params)

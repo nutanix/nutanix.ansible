@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_clusters
 short_description: Create, Delete a k8s cluster with the provided configuration.
-version_added: 1.5.0
+version_added: 1.6.0
 description: "Create, Delete clusters"
 options:
     name:
@@ -140,6 +140,7 @@ options:
         suboptions:
             default_storage_class:
                 type: bool
+                default: true
                 description:
                     - K8 uses the default storage class when the persistent volume claim (PVC)
                       create request does not specify a storage class to use for the new persistent volume (PV).
@@ -149,6 +150,7 @@ options:
                 required: true
             reclaim_policy:
                 type: str
+                default: Delete
                 description: Reclaim policy for persistent volumes provisioned using the specified storage class.
                 choices: ["Retain", "Delete"]
             storage_container:
@@ -157,9 +159,11 @@ options:
                 required: true
             flash_mode:
                 type: bool
+                default: false
                 description: boolean to enable flash mode
             file_system:
                 type: str
+                default: ext4
                 description: Karbon uses either the ext4 or xfs file-system on the volume disk.
                 choices: ["ext4", "xfs"]
 extends_documentation_fragment:

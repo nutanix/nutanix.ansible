@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_clusters_info
 short_description: cluster  info module
-version_added: 1.5.0
+version_added: 1.6.0
 description: 'Get cluster info'
 options:
       cluster_name:

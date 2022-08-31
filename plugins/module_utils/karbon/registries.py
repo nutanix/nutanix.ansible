@@ -6,8 +6,6 @@ __metaclass__ = type
 
 from copy import deepcopy
 
-from ..prism.clusters import get_cluster_uuid
-from ..prism.subnets import get_subnet_uuid
 from .karbon import Karbon
 
 
