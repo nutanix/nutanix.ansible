@@ -81,16 +81,7 @@ def create_registry(module, result):
         return
 
     resp = registry.create(spec)
-    registry_uuid = resp["registry_uuid"]
-    task_uuid = resp["task_uuid"]
-    result["registry_uuid"] = registry_uuid
     result["changed"] = True
-
-    if module.params.get("wait"):
-        task = Task(module)
-        task.wait_for_completion(task_uuid)
-        resp = registry.read(resp["registry_name"])
-
     result["response"] = resp
 
 
@@ -103,14 +94,6 @@ def delete_registry(module, result):
     registry = Registry(module)
     resp = registry.delete(registry_name)
     result["changed"] = True
-    result["registry_name"] = registry_name
-    task_uuid = resp["task_uuid"]
-    result["task_uuid"] = task_uuid
-
-    if module.params.get("wait"):
-        task = Task(module)
-        resp = task.wait_for_completion(task_uuid)
-
     result["response"] = resp
 
 
