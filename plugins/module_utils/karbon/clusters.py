@@ -105,8 +105,8 @@ class Cluster(Karbon):
             "reclaim_policy": config.get("reclaim_policy"),
             "volumes_config": {
                 "prism_element_cluster_uuid": self.cluster_uuid,
-                "username": self.module.params.get("nutanix_username"),
-                "password": self.module.params.get("nutanix_password"),
+                "username": config["nutanix_cluster_username"],
+                "password": config["nutanix_cluster_password"],
                 "storage_container": config["storage_container"],
                 "file_system": config.get("file_system"),
                 "flash_mode": config.get("flash_mode"),

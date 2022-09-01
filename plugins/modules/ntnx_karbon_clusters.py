@@ -343,6 +343,8 @@ def get_module_spec():
     storage_class_spec = dict(
         default_storage_class=dict(type="bool", default=True),
         name=dict(type="str", required=True),
+        nutanix_cluster_username=dict(type="str", required=True),
+        nutanix_cluster_password=dict(type="str", no_log=True, required=True),
         reclaim_policy=dict(type="str", choices=["Retain", "Delete"], default="Delete"),
         storage_container=dict(type="str", required=True),
         file_system=dict(type="str", choices=["ext4", "xfs"], default="ext4"),
