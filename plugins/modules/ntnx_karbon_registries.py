@@ -56,12 +56,12 @@ from ..module_utils.karbon.registries import Registry  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
-        name=dict(type="str"),
+        name=dict(type="str", required=True),
         cert=dict(type="str"),
         username=dict(type="str"),
         password=dict(type="str", no_log=True),
-        url=dict(type="str"),
-        port=dict(type="int"),
+        url=dict(type="str", required=True),
+        port=dict(type="int", default=5000),
     )
 
     return module_args

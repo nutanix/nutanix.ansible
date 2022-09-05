@@ -155,7 +155,7 @@ class Cluster(Karbon):
         return node, None
 
     @staticmethod
-    def _validate_resources(resources, resource_type):
+    def validate_resources(resources, resource_type):
         min_cpu = 4
         min_memory = 8
         min_disk_size = 120

@@ -364,7 +364,7 @@ def get_module_spec():
         workers=dict(type="dict", apply_defaults=True, options=resource_spec),
     )
     module_args = dict(
-        name=dict(type="str"),
+        name=dict(type="str", required=True),
         cluster_type=dict(type="str", choices=["DEV", "PROD"]),
         cluster=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
