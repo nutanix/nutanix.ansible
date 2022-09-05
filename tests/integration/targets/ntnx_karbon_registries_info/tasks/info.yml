@@ -1,0 +1,31 @@
+---
+- debug:
+    msg: "start ntnx_karbon_registries_info tests"
+
+- name: test getting all registers
+  ntnx_karbon_registries_info:
+  register: registers
+  
+- name: check listing status
+  assert:
+    that:
+      - registers.response is defined
+      - registers.failed == false
+      - registers.changed == false
+    fail_msg: "Unable to list all registers"
+    success_msg: "registers listed successfully"
+################################################################
+- name: test getting particular register using name
+  ntnx_karbon_registries_info:
+      registry_name: "{{ registers.response[0].name }}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.uuid == "{{ registers.response[0].uuid }}"
+      - result.response.name == "{{ registers.response[0].name }}"
+      - result.response.endpoint == "{{ registers.response[0].endpoint }}"
+    fail_msg: "Unable to get particular register"
+    success_msg: "register info obtained successfully"

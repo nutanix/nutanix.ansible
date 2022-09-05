@@ -60,6 +60,11 @@ uuid:
     returned: always
     type: str
     sample: "00000000-0000-0000-0000-000000000000"
+endpoint:
+    description: "Endpoint of the private registry in format url:port. Example: prod-user-registry:5000"
+    returned: always
+    type: str
+    sample: "xxx.xxx.xxx.xxx:5000"
 """
 
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402

@@ -138,6 +138,14 @@ options:
         type: dict
         description: storage class config
         suboptions:
+            nutanix_cluster_username:
+                type: str
+                description: cluster username
+                required: true
+            nutanix_cluster_password:
+                type: str
+                description: cluster password
+                required: true
             default_storage_class:
                 type: bool
                 default: true
