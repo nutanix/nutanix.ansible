@@ -17,6 +17,7 @@ options:
     name:
         type: str
         description: Unique name of the k8s cluster.
+        required: true
     cluster_type:
         type: str
         choices: ["DEV", "PROD"]
