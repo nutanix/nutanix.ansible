@@ -1,6 +1,6 @@
 ---
 - debug:
-    msg: Start testing ntnx_karbon_clusters
+    msg: Start testing ntnx_karbon_clusters and ntnx_karbon_clusters_info
 #############################
 
 - name:  Verify check mode for ntnx_karbon_clusters
@@ -141,6 +141,28 @@
       storage_container: "{{storage_class.storage_container}}"
       file_system: xfs
       flash_mode: true
+  register: karbon_cluster
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - karbon_cluster.response is defined
+      - karbon_cluster.changed == true
+      - karbon_cluster.failed == false
+      - karbon_cluster.cluster_uuid is defined
+      - karbon_cluster.response.name == "{{karbon_name}}"
+      - karbon_cluster.response.cni_config.node_cidr_mask_size == {{cni.node_cidr_mask_size}}
+      - karbon_cluster.response.cni_config.calico_config.ip_pool_configs[0].cidr == "{{cni.pod_ipv4_cidr}}"
+      - karbon_cluster.response.cni_config.service_ipv4_cidr == "{{cni.service_ipv4_cidr}}"
+      - karbon_cluster.response.cni_config.pod_ipv4_cidr == "{{cni.pod_ipv4_cidr}}"
+    fail_msg: " Fail: unable to create  DEV cluster with Calico network provider "
+    success_msg: " Pass: create  DEV cluster with Calico network provider finished succesfully"
+#############################
+
+- name: test getting  dev cluster using name 
+  ntnx_karbon_clusters_info:
+    cluster_name: "{{karbon_cluster.response.name}}"
   register: result
   ignore_errors: true
 
@@ -148,21 +170,51 @@
   assert:
     that:
       - result.response is defined
-      - result.changed == true
+      - result.changed == false
       - result.failed == false
-      - result.cluster_uuid is defined
-      - result.response.name == "{{karbon_name}}"
-      - result.response.cni_config.node_cidr_mask_size == {{cni.node_cidr_mask_size}}
-      - result.response.cni_config.calico_config.ip_pool_configs[0].cidr == "{{cni.pod_ipv4_cidr}}"
-      - result.response.cni_config.service_ipv4_cidr == "{{cni.service_ipv4_cidr}}"
-      - result.response.cni_config.pod_ipv4_cidr == "{{cni.pod_ipv4_cidr}}"
-    fail_msg: " Fail: unable to create  DEV cluster with Calico network provider "
-    success_msg: " Pass: create  DEV cluster with Calico network provider finished succesfully"
+      - result.response.name == "{{karbon_cluster.response.name}}"
+    fail_msg: " Fail: Unable to get particular Cluster "
+    success_msg: " Pass: Cluster info obtained successfully  "
+
+####################################################
+- name: test getting cluster with ssh config using cluster name
+  ntnx_karbon_clusters_info:
+    cluster_name: "{{karbon_cluster.response.name}}"
+    fetch_ssh_credentials: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.certificate is defined
+    fail_msg: " Fail: Unable to get particular Cluster and it's ssh config "
+    success_msg: " Pass: Cluster info obtained successfully with it's ssh config  "
+####################################################
+- name: test getting cluster with kubeconfig config using cluster name
+  ntnx_karbon_clusters_info:
+    cluster_name: "{{karbon_cluster.response.name}}"
+    fetch_kubeconfig: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.kube_config is defined
+    fail_msg: " Fail: Unable to get particular Cluster and it's kube config "
+    success_msg: " Pass: Cluster info obtained successfully with it's kube config  "
 #############################
 - name: delete  dev cluster
   ntnx_karbon_clusters:
     state: absent
-    name: "{{result.response.name}}"
+    name: "{{karbon_cluster.response.name}}"
   register: result
   ignore_errors: true
 
