@@ -65,3 +65,30 @@ def intersection(first_obj, second_obj):
         for item in first_obj:
             intersection(item, second_obj)
     return False
+
+
+def convert_to_secs(value, unit):
+    """
+    This routine converts given value to time interval into seconds as per unit
+    """
+    conversion_multiplier = {
+        "MINUTE": 60,
+        "HOUR": 3600,
+        "DAY": 86400,
+        "WEEK": 604800,
+    }
+    if unit not in conversion_multiplier:
+        return None, "Invalid unit given for interval conversion to seconds"
+
+    return value * conversion_multiplier[unit], None
+
+
+def extract_uuids_from_references_list(reference_lists):
+    """
+    This routine extracts uuids from list of references to entities
+    returns: set of uuids
+    """
+    uuids = set()
+    for spec in reference_lists:
+        uuids.add(spec["uuid"])
+    return uuids

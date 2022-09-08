@@ -1,0 +1,168 @@
+######## Description ###########
+# Tasks done by this playbook:
+#   1. Create synchronous protection policy and asynchronous protection policy
+#   2. Update protection policy
+#   3. Get created protection plans info and associated entities
+#   4. Delete protection plan from primary site.
+#################################
+
+
+- name: PC DR
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+  - name: Create protection rule with synchronous schedule
+    ntnx_protection_rules:
+      nutanix_host: "<pc-ip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      state: present
+      wait: True
+      name: test-ansible
+      desc: test-ansible-desc
+      protected_categories:
+        Environment:
+          - Dev
+          - Staging
+      primary_site:
+        availability_zone_url: "<primary-az-url>"
+      schedules:
+        - source:
+            availability_zone_url: "<primary-az-url>"
+          destination:
+            availability_zone_url: "<recovery-az-url>"
+          protection_type: SYNC
+          auto_suspend_timeout: 20
+        - source:
+            availability_zone_url: "<recovery-az-url>"
+          destination:
+            availability_zone_url: "<primary-az-url>"
+          protection_type: SYNC
+          auto_suspend_timeout: 10
+    register: pr
+
+  - name: delete the protection rule
+    ntnx_protection_rules:
+      nutanix_host: "<pc-ip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      state: "absent"
+      rule_uuid: "{{pr.rule_uuid}}"
+
+  - name: Create protection rule with async schedule
+    ntnx_protection_rules:
+      nutanix_host: "<pc-ip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      state: present
+      wait: True
+      name: test-ansible-1
+      desc: test-ansible-desc-1
+      protected_categories:
+        Environment:
+          - Dev
+          - Testing
+      primary_site:
+        availability_zone_url: "<primary-az-url>"
+      schedules:
+        - source:
+              availability_zone_url: "<primary-az-url>"
+          destination:
+            availability_zone_url: "<recovery-az-url>"
+          protection_type: ASYNC
+          rpo: 1
+          rpo_unit: HOUR
+          snapshot_type: "CRASH_CONSISTENT"
+          local_retention_policy:
+            num_snapshots: 1
+          remote_retention_policy:
+            rollup_retention_policy:
+              snapshot_interval_type: HOURLY
+              multiple: 2
+
+        - source:
+            availability_zone_url: "<recovery-az-url>"
+          destination:
+            availability_zone_url: "<primary-az-url>"
+          protection_type: ASYNC
+          rpo: 1
+          rpo_unit: HOUR
+          snapshot_type: "CRASH_CONSISTENT"
+          local_retention_policy:
+            num_snapshots: 2
+          remote_retention_policy:
+            num_snapshots: 1
+    register: result
+  
+  - name: Update previously created protection policy
+    ntnx_protection_rules:
+      nutanix_host: "<pc-ip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      state: present
+      wait: True
+      rule_uuid: "{{result.rule_uuid}}"
+      name: test-ansible-updated
+      desc: test-ansible-desc-updated
+      protected_categories:
+        Environment:
+          - Testing
+      primary_site:
+        availability_zone_url: "<primary-az-url>"
+      schedules:
+        - source:
+              availability_zone_url: "<primary-az-url>"
+          destination:
+            availability_zone_url: "<recovery-az-url>"
+          protection_type: ASYNC
+          rpo: 2
+          rpo_unit: DAY
+          snapshot_type: "APPLICATION_CONSISTENT"
+          local_retention_policy:
+            num_snapshots: 1
+          remote_retention_policy:
+            rollup_retention_policy:
+              snapshot_interval_type: YEARLY
+              multiple: 2
+
+        - source:
+            availability_zone_url: "<recovery-az-url>"
+          destination:
+            availability_zone_url: "<primary-az-url>"
+          protection_type: ASYNC
+          rpo: 2
+          rpo_unit: DAY
+          snapshot_type: "APPLICATION_CONSISTENT"
+          local_retention_policy:
+            num_snapshots: 1
+          remote_retention_policy:
+            num_snapshots: 2
+    register: pr
+  
+  - name: Get protection policy info and its associated vms info
+    ntnx_protection_rules_info:
+      nutanix_host: "<pc-ip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      rule_uuid: "{{pr.rule_uuid}}"
+    register: result
+
+  - debug:
+      msg: "{{result}}"
+
+  - name: delete the protection rule
+    ntnx_protection_rules:
+      nutanix_host: "<pc-ip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      state: "absent"
+      rule_uuid: "{{pr.rule_uuid}}"
+  

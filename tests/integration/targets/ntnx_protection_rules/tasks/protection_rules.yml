@@ -1,0 +1,360 @@
+---
+- debug:
+    msg: Start testing protection policies crud tests
+
+############################################################### CREATE Protection Policy tests ###########################################################################################
+- name: Create protection rule with synchronous schedule and check mode
+  check_mode: yes
+  ntnx_protection_rules:
+    state: present
+    wait: True
+    name: test-ansible
+    desc: test-ansible-desc
+    protected_categories:
+      Environment:
+        - Dev
+        - Staging
+    primary_site:
+      availability_zone_url: "{{dr.primary_az_url}}"
+    schedules:
+      - source:
+          availability_zone_url: "{{dr.primary_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        protection_type: SYNC
+        auto_suspend_timeout: 20
+      - source:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.primary_az_url}}"
+        protection_type: SYNC
+        auto_suspend_timeout: 10
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.spec.description == "test-ansible-desc"
+      - result.response.spec.name == "test-ansible"
+      - result.response.spec.resources.ordered_availability_zone_list[0]["availability_zone_url"] == "{{dr.primary_az_url}}"
+      - result.response.spec.resources.ordered_availability_zone_list[1]["availability_zone_url"] == "{{dr.recovery_az_url}}"
+      - result.response.spec.resources.category_filter.params["Environment"] == ["Dev", "Staging"]
+      - result.response.spec.resources.availability_zone_connectivity_list[0]["destination_availability_zone_index"] == 1
+      - result.response.spec.resources.availability_zone_connectivity_list[0]["source_availability_zone_index"] == 0
+      - result.response.spec.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["auto_suspend_timeout_secs"] == 20
+      - result.response.spec.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 0
+      - result.response.spec.resources.availability_zone_connectivity_list[1]["destination_availability_zone_index"] == 0
+      - result.response.spec.resources.availability_zone_connectivity_list[1]["source_availability_zone_index"] == 1
+      - result.response.spec.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["auto_suspend_timeout_secs"] == 10
+      - result.response.spec.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 0
+      
+    fail_msg: "Unable to create spec for protection rule with synchronous schedule with check mode"
+    success_msg: "Protection policy with with synchronous schedule spec generated using check mode"
+
+##########################################################################################################################################################
+
+- name: Create protection rule with sync schedule
+  ntnx_protection_rules:
+    state: present
+    wait: True
+    name: test-ansible
+    desc: test-ansible-desc
+    protected_categories:
+      Environment:
+        - Dev
+        - Staging
+    primary_site:
+      availability_zone_url: "{{dr.primary_az_url}}"
+    schedules:
+      - source:
+          availability_zone_url: "{{dr.primary_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        protection_type: SYNC
+        auto_suspend_timeout: 20
+      - source:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.primary_az_url}}"
+        protection_type: SYNC
+        auto_suspend_timeout: 10
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.rule_uuid == result.response.metadata.uuid
+      - result.changed == true
+      - result.failed == false
+      - result.response.status.description == "test-ansible-desc"
+      - result.response.status.name == "test-ansible"
+      - result.response.status.resources.ordered_availability_zone_list[0]["availability_zone_url"] == "{{dr.primary_az_url}}"
+      - result.response.status.resources.ordered_availability_zone_list[1]["availability_zone_url"] == "{{dr.recovery_az_url}}"
+      - result.response.status.resources.category_filter.params["Environment"] == ["Dev", "Staging"]
+      - result.response.status.resources.availability_zone_connectivity_list[0]["destination_availability_zone_index"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[0]["source_availability_zone_index"] == 0
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["auto_suspend_timeout_secs"] == 20
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 0
+      - result.response.status.resources.availability_zone_connectivity_list[1]["destination_availability_zone_index"] == 0
+      - result.response.status.resources.availability_zone_connectivity_list[1]["source_availability_zone_index"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["auto_suspend_timeout_secs"] == 10
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 0
+      
+    fail_msg: "Unable to create protection rule with synchronous schedule"
+    success_msg: "Protection policy with with synchronous schedule created successfully"
+
+
+- name: Delete created protection policy inorder to avoid conflict in further tests
+  ntnx_protection_rules:
+    state: absent
+    wait: True
+    rule_uuid: "{{ result.rule_uuid }}"
+  register: result
+
+
+##########################################################################################################################################################
+
+
+- name: Create protection rule with async schedule
+  ntnx_protection_rules:
+    state: present
+    wait: True
+    name: test-ansible
+    desc: test-ansible-desc
+    protected_categories:
+      Environment:
+        - Dev
+        - Staging
+    primary_site:
+      availability_zone_url: "{{dr.primary_az_url}}"
+    schedules:
+      - source:
+            availability_zone_url: "{{dr.primary_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        protection_type: ASYNC
+        rpo: 1
+        rpo_unit: HOUR
+        snapshot_type: "CRASH_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          rollup_retention_policy:
+            snapshot_interval_type: HOURLY
+            multiple: 2
+
+      - source:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.primary_az_url}}"
+        protection_type: ASYNC
+        rpo: 1
+        rpo_unit: HOUR
+        snapshot_type: "CRASH_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 2
+        remote_retention_policy:
+          num_snapshots: 1
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.rule_uuid == result.response.metadata.uuid
+      - result.changed == true
+      - result.failed == false
+      - result.response.status.description == "test-ansible-desc"
+      - result.response.status.name == "test-ansible"
+      - result.response.status.resources.ordered_availability_zone_list[0]["availability_zone_url"] == "{{dr.primary_az_url}}"
+      - result.response.status.resources.ordered_availability_zone_list[1]["availability_zone_url"] == "{{dr.recovery_az_url}}"
+      - result.response.status.resources.category_filter.params["Environment"] == ["Dev", "Staging"]
+      - result.response.status.resources.availability_zone_connectivity_list[0]["destination_availability_zone_index"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[0]["source_availability_zone_index"] == 0
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["snapshot_type"] == "CRASH_CONSISTENT"
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 3600
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["local_snapshot_retention_policy"]["num_snapshots"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["rollup_retention_policy"]["snapshot_interval_type"] == "HOURLY"
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["rollup_retention_policy"]["multiple"] == 2
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["snapshot_type"] == "CRASH_CONSISTENT"
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 3600
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["local_snapshot_retention_policy"]["num_snapshots"] == 2
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["num_snapshots"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[1]["destination_availability_zone_index"] == 0
+      - result.response.status.resources.availability_zone_connectivity_list[1]["source_availability_zone_index"] == 1
+
+    fail_msg: "Unable to create protection rule with asynchronous schedule"
+    success_msg: "Protection policy with with asynchronous schedule created successfully"
+
+
+############################################################## UPDATE Protection Policy Tests ##################################################################
+
+- name: Update previously created protection policy
+  ntnx_protection_rules:
+    state: present
+    wait: True
+    rule_uuid: "{{result.rule_uuid}}"
+    name: test-ansible-updated
+    desc: test-ansible-desc-updated
+    protected_categories:
+      Environment:
+        - Production
+    primary_site:
+      availability_zone_url: "{{dr.primary_az_url}}"
+    schedules:
+      - source:
+            availability_zone_url: "{{dr.primary_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        protection_type: ASYNC
+        rpo: 2
+        rpo_unit: DAY
+        snapshot_type: "APPLICATION_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          rollup_retention_policy:
+            snapshot_interval_type: YEARLY
+            multiple: 2
+
+      - source:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.primary_az_url}}"
+        protection_type: ASYNC
+        rpo: 2
+        rpo_unit: DAY
+        snapshot_type: "APPLICATION_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          num_snapshots: 2
+  register: result
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.rule_uuid == result.response.metadata.uuid
+      - result.changed == true
+      - result.failed == false
+      - result.response.status.description == "test-ansible-desc-updated"
+      - result.response.status.name == "test-ansible-updated"
+      - result.response.status.resources.ordered_availability_zone_list[0]["availability_zone_url"] == "{{dr.primary_az_url}}"
+      - result.response.status.resources.ordered_availability_zone_list[1]["availability_zone_url"] == "{{dr.recovery_az_url}}"
+      - result.response.status.resources.category_filter.params["Environment"] == ["Production"]
+      - result.response.status.resources.availability_zone_connectivity_list[0]["destination_availability_zone_index"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[0]["source_availability_zone_index"] == 0
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["snapshot_type"] == "APPLICATION_CONSISTENT"
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 172800
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["local_snapshot_retention_policy"]["num_snapshots"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["rollup_retention_policy"]["snapshot_interval_type"] == "YEARLY"
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["rollup_retention_policy"]["multiple"] == 2
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["snapshot_type"] == "APPLICATION_CONSISTENT"
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 172800
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["local_snapshot_retention_policy"]["num_snapshots"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["num_snapshots"] == 2
+      - result.response.status.resources.availability_zone_connectivity_list[1]["destination_availability_zone_index"] == 0
+      - result.response.status.resources.availability_zone_connectivity_list[1]["source_availability_zone_index"] == 1
+
+    fail_msg: "Unable to update protection rule with asynchronous schedule"
+    success_msg: "Protection policy with with asynchronous schedule updated successfully"
+
+##################################################################################################################################################################
+
+- name: Idempotency Check
+  ntnx_protection_rules:
+    state: present
+    wait: True
+    rule_uuid: "{{result.rule_uuid}}"
+    name: test-ansible-updated
+    desc: test-ansible-desc-updated
+    protected_categories:
+      Environment:
+        - Production
+    primary_site:
+      availability_zone_url: "{{dr.primary_az_url}}"
+    schedules:
+      - source:
+            availability_zone_url: "{{dr.primary_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        protection_type: ASYNC
+        rpo: 2
+        rpo_unit: DAY
+        snapshot_type: "APPLICATION_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          rollup_retention_policy:
+            snapshot_interval_type: YEARLY
+            multiple: 2
+
+      - source:
+          availability_zone_url: "{{dr.recovery_az_url}}"
+        destination:
+          availability_zone_url: "{{dr.primary_az_url}}"
+        protection_type: ASYNC
+        rpo: 2
+        rpo_unit: DAY
+        snapshot_type: "APPLICATION_CONSISTENT"
+        local_retention_policy:
+          num_snapshots: 1
+        remote_retention_policy:
+          num_snapshots: 2
+  register: temp_result
+
+- name: idempotency check status
+  assert: 
+    that:
+      - temp_result.changed == False
+      - temp_result.failed == False
+      - "'Nothing to change' in temp_result.msg"
+
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+##################################################################################################################################################################
+
+
+- name: Check Mode while update
+  check_mode: yes
+  ntnx_protection_rules:
+    state: present
+    wait: True
+    rule_uuid: "{{result.rule_uuid}}"
+    name: test-ansible-updated-check-mode
+    desc: test-ansible-desc-updated
+  register: temp_result
+
+- name: Check mode Status
+  assert:
+    that:
+      - temp_result.response is defined
+      - temp_result.changed == false
+      - temp_result.response.spec.name == "test-ansible-updated-check-mode"    
+    fail_msg: "Unable to generate update spec using check mode"
+    success_msg: "Protection policy update spec generated succesfully"
+
+
+############################################################## DELETE Protection Policy Tests ##################################################################
+
+- name: Delete created protection policy
+  ntnx_protection_rules:
+    state: absent
+    wait: True
+    rule_uuid: "{{ result.rule_uuid }}"
+  register: result
+
+- name: delete Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.response.status == 'SUCCEEDED'
+
+    fail_msg: "protection policy delete failed"
+    success_msg: "protection policy deleted successfully"

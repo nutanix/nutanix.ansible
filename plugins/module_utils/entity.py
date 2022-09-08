@@ -2,11 +2,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-try:
-    from http.client import IncompleteRead
-except ImportError:
-    from httplib import IncompleteRead  # python2
-
 __metaclass__ = type
 
 import copy
@@ -314,10 +309,9 @@ class Entity(object):
     def _fetch_url(
         self, url, method, data=None, raise_error=True, no_response=False, timeout=30
     ):
-
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
-        if self.headers["Content-Type"] == "application/json":
-            data = self.module.jsonify(data) if data else None
+        if self.headers["Content-Type"] == "application/json" and data is not None:
+            data = self.module.jsonify(data)
 
         resp, info = fetch_url(
             self.module,
@@ -330,39 +324,58 @@ class Entity(object):
         )
 
         status_code = info.get("status")
-        body = resp.read() if resp else info.get("body")
-        while True:
-            try:
-                resp_json = json.loads(to_text(body)) if body else None
-            except ValueError:
-                resp_json = None
-            except IncompleteRead:
-                continue
 
-            if not raise_error:
-                return resp_json
+        body = None
 
-            if status_code >= 300:
-                err = info.get("msg", "Status code != 2xx")
-                self.module.fail_json(
-                    msg="Failed fetching URL: {0}".format(url),
-                    status_code=status_code,
-                    error=err,
-                    response=resp_json,
-                )
+        # buffer size with ref. to max read size of http.client.HTTPResponse.read() defination
+        buffer_size = 65536
+        if not resp:
+            # get body containing error
+            body = info.get("body")
+        else:
+            # For case when response body size is > 65536, read() will fail due to http.client.IncompleteRead exception
+            # This eventually closes connection and can't read response further.
+            # So here we read all content in chunks (of size < 65536) and combine data at last to get final response.
+            resp_chunk = None
+            resp_chunks = []
+            while True:
+                resp_chunk = resp.read(buffer_size)
+                if resp_chunk:
+                    resp_chunks.append(to_text(resp_chunk.decode("utf-8")))
+                else:
+                    break
 
-            if no_response:
-                return {"status_code": status_code}
+            body = "".join(resp_chunks)
 
-            if not resp_json:
-                self.module.fail_json(
-                    msg="Failed to convert API response to json",
-                    status_code=status_code,
-                    error=body,
-                    response=resp_json,
-                )
+        try:
+            resp_json = json.loads(to_text(body)) if body else None
+        except ValueError:
+            resp_json = None
 
+        if not raise_error:
             return resp_json
+
+        if status_code >= 300:
+            err = info.get("msg", "Status code != 2xx")
+            self.module.fail_json(
+                msg="Failed fetching URL: {0}".format(url),
+                status_code=status_code,
+                error=err,
+                response=resp_json,
+            )
+
+        if no_response:
+            return {"status_code": status_code}
+
+        if not resp_json:
+            self.module.fail_json(
+                msg="Failed to convert API response to json",
+                status_code=status_code,
+                error=body,
+                response=resp_json,
+            )
+
+        return resp_json
 
     # upload file in chunks to the given url
     def _upload_file(

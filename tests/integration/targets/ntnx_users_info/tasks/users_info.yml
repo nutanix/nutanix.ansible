@@ -64,7 +64,7 @@
 
 - name: List users using length and offset
   ntnx_users_info:
-    length: 1
+    length: 2
     offset: 1
   register: result
   ignore_errors: True
@@ -75,22 +75,26 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
+      - result.response.entities is defined
+      - result.response.metadata.total_matches > 0
+      - result.response.metadata.length == 2
+
     fail_msg: "Unable to list users using length and offset"
     success_msg: "users listed successfully using length and offset"
 ##################################################
-- name: List users using ascending name sorting
-  ntnx_users_info:
-    sort_order: "ASCENDING"
-    sort_attribute: "name"
-    kind: user
-  register: result
-  ignore_errors: True
+# - name: List users using ascending name sorting
+#   ntnx_users_info:
+#     sort_order: "ASCENDING"
+#     sort_attribute: "name"
+#     kind: user
+#   register: result
+#   ignore_errors: True
 
-- name: Listing Status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed ==false
-    fail_msg: "Unable to list users using ascending name sorting"
-    success_msg: "users listed successfully using ascending name sorting"
+# - name: Listing Status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.failed ==false
+#     fail_msg: "Unable to list users using ascending name sorting"
+#     success_msg: "users listed successfully using ascending name sorting"

@@ -39,6 +39,7 @@ jobs:
           export NUTANIX_HOST=${{ secrets.PC_IP }}
           export NUTANIX_PASSWORD=${{ secrets.PC_PASSWORD }}
           export NUTANIX_USERNAME=${{ secrets.PC_USERNAME }}
+          export NUTANIX_DR_SITE=${{ secrets.NUTANIX_DR_SITE }}
           args="${{ github.event.client_payload.slash_command.args.all }}"
           flag=""
           if [ "$args" = "allow-disabled" ]
@@ -51,7 +52,7 @@ jobs:
           ansible-playbook tests/integration/targets/prepare_env/tasks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/tasks/prepare_fc_env.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/tasks/prepare_foundation_env.yml
-          ansible-test integration --python ${{ matrix.python-version }} --coverage $flag
+          ansible-test integration --continue-on-error --python ${{ matrix.python-version }} --coverage $flag
           ansible-test coverage report > coverage.txt
           ansible-playbook tests/integration/targets/prepare_env/tasks/cleanup.yml
           ansible-playbook tests/integration/targets/prepare_foundation_env/tasks/cleanup.yml

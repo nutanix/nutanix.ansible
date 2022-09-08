@@ -2,6 +2,22 @@
 - debug:
     msg: "start ntnx_acps_info tests"
 
+- set_fact:
+    acp_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+
+- name: Create min ACP for update
+  ntnx_acps:
+    state: present
+    wait: true
+    name: "{{acp_name}}"
+    role:
+      uuid: '{{ acp.role.uuid }}'
+  register: acps
+
+- set_fact:
+    todelete: '{{ todelete + [  acps["response"]["metadata"]["uuid"] ] }}'
+
+
 - name: test getting all acp's
   ntnx_acps_info:
     kind: access_control_policy
@@ -9,14 +25,14 @@
     offset: 1
     sort_order: "ASCENDING"
     sort_attribute: "name"
-  register: acps
+  register: result
 
 - name: check listing status
   assert:
     that:
-      - acps.response is defined
-      - acps.changed == false
-      - acps.failed == false
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
     fail_msg: "Unable to list all acps"
     success_msg: "acps listed successfully"
 ################################################################
@@ -24,9 +40,8 @@
 - name: test getting particular acp using filter
   ntnx_acps_info:
     filter:
-      name: "{{ acps.response.entities.0.status.name }}"
+      name: "{{ acp_name }}"
   register: result
-
 
 - name: check listing status
   assert:
@@ -34,7 +49,7 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.entities[0].metadata.uuid == '{{ acps.response.entities.0.metadata.uuid }}'
+      - result.response.entities[0].metadata.uuid == '{{ acps.response.metadata.uuid }}'
     fail_msg: "Unable to get particular acp using filter"
     success_msg: "acp info obtained successfully using filter"
 
@@ -42,7 +57,7 @@
 
 - name: test getting particular acp using uuid
   ntnx_acps_info:
-    acp_uuid: '{{ acps.response.entities.0.metadata.uuid }}'
+    acp_uuid: '{{ acps.response.metadata.uuid }}'
   register: result
 
 - name: check listing status
@@ -51,6 +66,18 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.status.name == '{{ acps.response.entities.0.status.name }}'
+      - result.response.status.name == '{{ acp_name }}'
     fail_msg: "Unable to get particular acp using uuid"
     success_msg: "acp info obtained successfully using uuid"
+
+- name: cleanup created entities
+  ntnx_acps:
+    state: absent
+    acp_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+
+- set_fact:
+    todelete: []

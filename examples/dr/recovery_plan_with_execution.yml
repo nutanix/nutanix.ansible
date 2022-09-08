@@ -1,0 +1,180 @@
+######## Description ###########
+# Tasks done by this playbook:
+#   1. Create Recovery plan using ntnx_recovery_plans
+#   2. Update  recovery plan stages and networks
+#   3. Get created recovery plan info and affected entities
+#   4. Use this info to run test failover on recovery site using ntnx_recovery_plan_jobs
+#   5. Run cleanup of vms created by test failover on recovery site
+#   6. Get final status of both recovery plan jobs using info module
+#   7. Delete recovery plan from primary site.
+#################################
+- name: PC DR
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+################################# Create recovery plans using ntnx_recovery_plans #############
+  - name: Create recovery plan with custom ip network mapping
+    ntnx_recovery_plans:
+      nutanix_host: "<pcip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      state: "present"
+      name: example-rp
+      desc: recovery plan desc
+      stages:
+        - vms:
+            - name: "test-check"
+              enable_script_exec: true
+          delay: 10
+      primary_location:
+        url: "<primary-site-url>"
+      recovery_location:
+        url: "<recovery-site-url>"
+      network_type: NON_STRETCH
+      network_mappings:
+        - primary:
+            test:
+              name: "<subnet-name>"
+              gateway_ip: "xx.xx.xx.xx"
+              prefix: "24"
+              custom_ip_config:
+                - vm:
+                    name: "test-check"
+                  ip: "xx.xx.xx.xx"
+            prod:
+              name: "<subnet-name>"
+              gateway_ip: "xx.xx.xx.xx"
+              prefix: "24"
+              custom_ip_config:
+                - vm:
+                    name: "test-check"
+                  ip: "xx.xx.xx.xx"
+          recovery:
+            test:
+              name: "<subnet-name>"
+              gateway_ip: "xx.xx.xx.xx"
+              prefix: "24"
+              custom_ip_config:
+                - vm:
+                    name: "test-check"
+                  ip: "xx.xx.xx.xx"
+            prod:
+              name: "<subnet-name>"
+              gateway_ip: "xx.xx.xx.xx"
+              prefix: "24"
+              custom_ip_config:
+                - vm:
+                    name: "test-check"
+                  ip: "xx.xx.xx.xx"
+    register: result
+
+
+  - debug:
+      msg: "{{result}}"
+
+
+  - name: Update recovery plan by adding more stages and remove custom IP to enable dynamic IP allocation
+    ntnx_recovery_plans:
+      plan_uuid: "{{result.plan_uuid}}"
+      nutanix_host: "<pcip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      state: "present"
+      name: example-rp-updated
+      desc: recovery plan desc updated
+      stages:
+      - vms:
+          - name: "test-check"
+            enable_script_exec: true
+        categories:
+          - key: Environment
+            value: Staging
+            enable_script_exec: true
+        delay: 2
+      - categories:
+          - key: Environment
+            value: Dev
+      primary_location:
+        url: "<primary-site-url>"
+      recovery_location:
+        url: "<recovery-site-url>"
+      network_type: NON_STRETCH
+      network_mappings:
+        - primary:
+            test:
+              name: "<subnet-name>"
+            prod:
+              name: "<subnet-name>"
+          recovery:
+            test:
+              name: "<subnet-name>"
+            prod:
+              name: "<subnet-name>"
+    register: recovery_plan
+
+
+#################################### Lets recover the vms on recovery site using ntnx_recovery_plan_jobs ################
+
+  - name: recovery plan info and its affected entities get
+    ntnx_recovery_plans_info:
+      nutanix_host: "<pcip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      plan_uuid: "{{recovery_plan.plan_uuid}}"
+    register: recovery_plan_info
+
+  - debug:
+      msg: "{{recovery_plan_info}}"
+
+  # We can also perform FAILOVER, LIVE_MIGRATE and FAILOVER here
+  - name: Run migrate (planned failover)
+    ntnx_recovery_plan_jobs:
+      nutanix_host: "<pc-ip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      state: "present"
+      name: test-failover-123
+      recovery_plan:
+        uuid: "{{recovery_plan.plan_uuid}}"
+      failed_site:
+        url: "<primary-site-url>"
+      recovery_site:
+        url: "<recovery-site-url>"
+      action: MIGRATE
+      ignore_validation_failures: true
+    register: migrate_job
+
+  - debug:
+      msg: "{{migrate_job}}"
+
+  - name: Get recovery plan job status using info module
+    ntnx_recovery_plan_jobs_info:
+      nutanix_host: "<pc-ip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      job_uuid: "{{migrate_job.job_uuid}}"
+    register: result
+    ignore_errors: True
+
+  - debug:
+      msg: "{{result}}"
+
+  ###################################### delete the recovery plan #################
+
+  - name: Delete recovery plan
+    ntnx_recovery_plans:
+      nutanix_host: "<pc-ip>"
+      nutanix_username: "<pc-username>"
+      nutanix_password: "<pc-password>"
+      validate_certs: false
+      job_uuid: "{{migrate_job.job_uuid}}"
+      plan_uuid: "{{recovery_plan.plan_uuid}}"
+      state: "absent"
+    register: result

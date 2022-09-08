@@ -8,15 +8,17 @@ It is designed keeping simplicity as the core value. Hence it is
 1. Easy to use
 2. Easy to develop
 
+Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
+
 # Version compatibility
 
 ## Ansible
-> This collection has been tested against following versions: 
+This collection has been tested against following versions: 
   1. ansible==5.0.1
   2. ansible-core==2.12.3
 
 ## Python
-> This collection requires Python 2.7 or greater
+This collection requires Python 2.7 or greater
 
 ## Prism Cenral
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
@@ -26,6 +28,8 @@ It is designed keeping simplicity as the core value. Hence it is
 > For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
 
 > For the 1.4.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
+
+> For the 1.5.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4.0.2 and pc2022.1.0.2.
 
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
@@ -135,6 +139,12 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_permissions_info | List permissions info |
 | ntnx_projects | create, update and delete pc projects |
 | ntnx_projects_info | Get projects info. |
+| ntnx_protection_rules | create, update and delete pc protection rules |
+| ntnx_protection_rules_info | Get pc protection rules info. |
+| ntnx_recovery_plans | create, update and delete pc recovery plans |
+| ntnx_recovery_plans_info | Get pc recovery plans info. |
+| ntnx_recovery_plan_jobs | create and perform action on pc recovery plans |
+| ntnx_recovery_plan_jobs_info | Get pc recovery plan jobs info. |
 | ntnx_roles | Create, Update, Delete Nutanix roles |
 | ntnx_roles_info | Get roles info. |
 | ntnx_security_rules | Create, update or delete a Security Rule. |

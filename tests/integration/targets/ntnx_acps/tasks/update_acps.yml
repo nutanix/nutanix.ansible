@@ -1,9 +1,14 @@
 ---
-- name: Create min ACP
+
+- set_fact:
+    acp_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+    acp_name_updated: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+
+- name: Create min ACP for update
   ntnx_acps:
     state: present
     wait: true
-    name: integration-test-acp-update1
+    name: "{{acp_name}}"
     role:
       uuid: '{{ acp.role.uuid }}'
   register: setup_acp
@@ -13,7 +18,7 @@
     that:
       - setup_acp.response is defined
       - setup_acp.response.status.state == 'COMPLETE'
-      - setup_acp.response.spec.name == 'integration-test-acp-update1'
+      - setup_acp.response.spec.name == "{{acp_name}}"
       - setup_acp.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
     fail_msg: "Unable to create ACP for update tests"
     success_msg: "ACP created successfully for update tests"
@@ -27,7 +32,7 @@
   ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
-    name: integration-test-acp-update1
+    name: "{{acp_name}}"
     role:
       uuid: '{{ acp.role.uuid }}'
   register: result
@@ -47,7 +52,7 @@
   ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
-    name: integration-test-acp-after-update1
+    name: "{{acp_name_updated}}"
     desc: "description after update"
     filters:
       - scope_filter:
@@ -70,7 +75,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.name == 'integration-test-acp-after-update1'
+      - result.response.status.name == "{{acp_name_updated}}"
       - result.response.status.description == 'description after update'
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.operator == "IN"
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.left_hand_side.entity_type == "ALL"
@@ -80,6 +85,41 @@
       - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.right_hand_side.uuid_list.0 == "{{ project.uuid }}"
     fail_msg: "Fail: Unable to update ACP"
     success_msg: "Pass: ACP with given update spec updated successfully"
+
+
+########################################################################################
+
+- name: Update name, desc and filters
+  ntnx_acps:
+    state: present
+    acp_uuid: "{{ setup_acp.acp_uuid }}"
+    name: "{{acp_name_updated}}"
+    desc: "description after update"
+    filters:
+      - scope_filter:
+          - 
+            lhs: PROJECT
+            operator: IN
+            rhs:
+              uuid_list:
+                - "{{ project.uuid }}"
+        entity_filter:
+          - 
+            lhs: ALL
+            operator: IN
+            rhs:
+              collection: ALL
+  register: result
+
+- name: check idempotency status
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - "'Nothing to change' in result.msg"
+    fail_msg: "Fail: ACP got updated"
+    success_msg: "Pass: ACP update skipped succesfully due to no changes in spec"
+
 
 ########################################### Cleanup ###################################################
 
