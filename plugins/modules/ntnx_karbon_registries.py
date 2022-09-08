@@ -17,6 +17,7 @@ options:
     name:
         type: str
         description: Unique name of the k8s registry.
+        required: true
     cert:
         type: str
         description: Certificate of the private registry in format of base64-encoded byte array.
@@ -32,7 +33,7 @@ options:
     port:
         type: int
         description: Port of the private registry.
-
+        default: 5000
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -60,7 +61,7 @@ def get_module_spec():
         cert=dict(type="str"),
         username=dict(type="str"),
         password=dict(type="str", no_log=True),
-        url=dict(type="str", required=True),
+        url=dict(type="str"),
         port=dict(type="int", default=5000),
     )
 
