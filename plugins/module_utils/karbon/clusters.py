@@ -134,7 +134,7 @@ class Cluster(Karbon):
                 return None, error
 
         node = {
-            "name": "{0}_{1}_pool".format(
+            "name": "{0}-{1}-pool".format(
                 self.module.params.get("name"), resource_type
             ),
             "node_os_version": self.module.params.get("host_os"),
