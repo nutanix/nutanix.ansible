@@ -1,6 +1,10 @@
 ---
 - debug:
     msg: Start negative test cases for  ntnx_karbon_clusters
+
+- set_fact:
+    karbon_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+
 #############################
 - name: create cluster with disk_gb size less than minimum
   ntnx_karbon_clusters:
@@ -10,7 +14,7 @@
     k8s_version: "{{k8s_version}}"
     host_os: "{{host_os}}"
     node_subnet:
-      uuid: "{{node_subnet.uuid}}"
+      uuid: "{{network.dhcp.uuid}}"
     cni:
       node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
@@ -28,7 +32,7 @@
       default_storage_class: True
       name: test-storage-class
       reclaim_policy: Retain
-      storage_container: "{{storage_class.storage_container}}"
+      storage_container: "{{storage_container.name}}"
       file_system: xfs
       flash_mode: true
   register: result
@@ -53,7 +57,7 @@
     k8s_version: "{{k8s_version}}"
     host_os: "{{host_os}}"
     node_subnet:
-      uuid: "{{node_subnet.uuid}}"
+      uuid: "{{network.dhcp.uuid}}"
     cni:
       node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
@@ -71,7 +75,7 @@
       default_storage_class: True
       name: test-storage-class
       reclaim_policy: Retain
-      storage_container: "{{storage_class.storage_container}}"
+      storage_container: "{{storage_container.name}}"
       file_system: xfs
       flash_mode: true
   register: result
@@ -96,7 +100,7 @@
     k8s_version: "{{k8s_version}}"
     host_os: "{{host_os}}"
     node_subnet:
-      uuid: "{{node_subnet.uuid}}"
+      uuid: "{{network.dhcp.uuid}}"
     cni:
       node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
@@ -114,7 +118,7 @@
       default_storage_class: True
       name: test-storage-class
       reclaim_policy: Retain
-      storage_container: "{{storage_class.storage_container}}"
+      storage_container: "{{storage_container.name}}"
       file_system: xfs
       flash_mode: true
   register: result
@@ -139,7 +143,7 @@
     k8s_version: "{{k8s_version}}"
     host_os: "{{host_os}}"
     node_subnet:
-      uuid: "{{node_subnet.uuid}}"
+      uuid: "{{network.dhcp.uuid}}"
     cni:
       node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
@@ -157,7 +161,7 @@
       default_storage_class: True
       name: test-storage-class
       reclaim_policy: Retain
-      storage_container: "{{storage_class.storage_container}}"
+      storage_container: "{{storage_container.name}}"
       file_system: xfs
       flash_mode: true
   register: result
@@ -182,7 +186,7 @@
     k8s_version: "{{k8s_version}}"
     host_os: "{{host_os}}"
     node_subnet:
-      uuid: "{{node_subnet.uuid}}"
+      uuid: "{{network.dhcp.uuid}}"
     cni:
       node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
@@ -200,7 +204,7 @@
       default_storage_class: True
       name: test-storage-class
       reclaim_policy: Retain
-      storage_container: "{{storage_class.storage_container}}"
+      storage_container: "{{storage_container.name}}"
       file_system: xfs
       flash_mode: true
   register: result
