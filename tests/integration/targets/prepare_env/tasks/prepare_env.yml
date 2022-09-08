@@ -8,18 +8,18 @@
   tasks:
   - name: include var file
     include_vars: ../vars/main.yml
-  # - set_fact:
-  #     ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
-  #     username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
-  #     password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}" 
-  # - name: Insert credentials  block to vars
-  #   blockinfile:
-  #     path: ../vars/main.yml
-  #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 0"
-  #     block: |
-  #       ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
-  #       username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
-  #       password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}" 
+  - set_fact:
+      ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
+      username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
+      password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}" 
+  - name: Insert credentials  block to vars
+    blockinfile:
+      path: ../vars/main.yml
+      marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 0"
+      block: |
+        ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
+        username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
+        password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}" 
   # - name: create external subnet with NAT
   #   ntnx_subnets:
   #     state: present
