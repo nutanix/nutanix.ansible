@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_registries
-short_description: Create, Delete a k8s registry with the provided configuration.
+short_description: Create and delete the private registry entry in Karbon.
 version_added: 1.6.0
-description: "Create, Delete registries"
+description: "Create and delete the private registry entry in Karbon with the provided configuration."
 options:
     name:
         type: str
