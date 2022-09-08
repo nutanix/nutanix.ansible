@@ -3,7 +3,7 @@
     msg: Start negative test cases for  ntnx_karbon_clusters
 
 - set_fact:
-    karbon_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+    karbon_name: "test-module22"
 
 #############################
 - name: create cluster with disk_gb size less than minimum
