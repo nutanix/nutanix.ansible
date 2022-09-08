@@ -3,7 +3,7 @@
     msg: Start testing ntnx_karbon_clusters and ntnx_karbon_clusters_info
 
 - set_fact:
-    karbon_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+    karbon_name:  "test-module21" #"{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
 
 #############################
 - name:  Verify check mode for PROD karbon cluster 
@@ -92,8 +92,7 @@
   register: result
   check_mode: true
   ignore_errors: true
-- debug:
-    var: result
+
 - name: Creation Status
   assert:
     that:
