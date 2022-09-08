@@ -117,7 +117,7 @@ class Cluster(Karbon):
 
     def _generate_resource_spec(self, config, resource_type):
 
-        config, err = self._validate_resources(config, resource_type)
+        config, err = self.validate_resources(config, resource_type)
         if err:
             return None, err
 
