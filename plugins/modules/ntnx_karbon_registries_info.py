@@ -92,8 +92,19 @@ def get_registry(module, result):
 def get_registries(module, result):
     registry = Registry(module)
 
-    resp = registry.read()
+    # If there is no registries,
+    # response will be empty list causing error in entity class
+    # so do status code checks here incase of other failures.
+    # During failures response is of type dict else its list
+    resp = registry.read(raise_error=False)
+    if isinstance(resp, dict) and resp.get("code") >= 300:
+        result["error"] = resp.get("message")
+        result["changed"] = False
+        result["response"] = None
+        module.fail_json(msg="Failed getting registries info", **result)
 
+    if not resp:
+        resp = []
     result["response"] = resp
 
 
