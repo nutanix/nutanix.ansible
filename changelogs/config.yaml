@@ -29,4 +29,3 @@ sections:
   - Known Issues
 title: Nutanix.Ncp
 trivial_section_name: trivial
-use_fqcn: true
