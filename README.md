@@ -50,6 +50,11 @@ Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main
 
 Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc
 
+## Karbon
+> For the 1.6.0 release of the ansible plugin, it will have N-2 compatibility with the Karbon. This release was tested against Karbon versions v2.3.0, v2.4.0 and v2.5.0 
+
+Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
+
 # Installing the collection
 **Prerequisite**
 

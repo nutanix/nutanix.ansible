@@ -1,3 +1,15 @@
+## v1.6.0 (9 Aug 2022)
+
+**Features**
+
+**Karbon**
+- Ansible module for Karbon Clusters
+- Ansible info module for Karbon Clusters (with kubeconfig and ssh config)
+- Ansible module for Karbon Private Registry
+- Ansible info module Karbon Private Registry
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.5.0...v1.6.0)
+
 ## v1.5.0 (26 Aug 2022)
 
 **Features**
