@@ -17,9 +17,10 @@ class BaseInfoModule(BaseModule):
         custom_filter=dict(type="dict"),
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, skip_info_args=False, **kwargs):
         self.argument_spec = deepcopy(BaseModule.argument_spec)
         self.argument_spec.pop("state")
         self.argument_spec.pop("wait")
-        self.argument_spec.update(self.info_argument_spec)
+        if not skip_info_args:
+            self.argument_spec.update(self.info_argument_spec)
         super(BaseInfoModule, self).__init__(**kwargs)

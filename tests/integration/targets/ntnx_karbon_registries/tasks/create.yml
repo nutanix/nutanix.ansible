@@ -1,0 +1,105 @@
+---
+
+- debug:
+    msg: "start ntnx_karbon_registries tests"
+
+- name: Generate random registry_name 
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+
+- set_fact:
+    registry_name: "{{random_name[0]}}"
+
+
+- name: create registry with check_mode
+  ntnx_karbon_registries:
+    name: "{{registry_name}}"
+    url: "{{url}}"
+  register: result
+  ignore_errors: True
+  check_mode: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{registry_name}}"
+      - result.response.url == "{{url}}"
+    success_msg: ' Success: returned response as expected '
+    fail_msg: ' Fail: create registry with check_mode  '
+    ################################################################
+- name: create registry
+  ntnx_karbon_registries:
+    name: "{{registry_name}}"
+    url: "{{url}}"
+    port: 5000
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.name == "{{registry_name}}"
+      - result.response.uuid is defined
+    fail_msg: "Fail: Unable to create registery"
+    success_msg: "Pass: create registry finished succesfully"
+    ################################################################
+- name: delete registry
+  ntnx_karbon_registries:
+    name: "{{registry_name}}"
+    state: absent
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.registry_name == "{{registry_name}}"
+    fail_msg: "Fail: Unable to delete created registry"
+    success_msg: "Pass: delete registry finished succesfully"
+
+  ################################################################
+
+- name: create registry with username and password
+  ntnx_karbon_registries:
+    name: "{{registry_name}}"
+    url: "{{url}}"
+    username: test
+    password: test
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.uuid is defined
+    fail_msg: "Fail: unable to create registry with username and password"
+    success_msg: "Pass: create registry with username and password finished succesfully"
+    ###############################################################
+- name: delete registry
+  ntnx_karbon_registries:
+    name: "{{registry_name}}"
+    state: absent
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - "'{{registry_name}}' in result.response.registry_name"
+    fail_msg: "Fail: unable to delete created registry with username and password"
+    success_msg: "Pass: delete registry finished succesfully"

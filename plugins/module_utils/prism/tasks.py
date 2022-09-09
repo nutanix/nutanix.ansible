@@ -40,7 +40,7 @@ class Task(Prism):
                     break
                 self.module.fail_json(
                     msg=response["error_detail"],
-                    status_code=response["error_code"],
+                    status_code=response.get("error_code"),
                     error=response["error_detail"],
                     response=response,
                 )

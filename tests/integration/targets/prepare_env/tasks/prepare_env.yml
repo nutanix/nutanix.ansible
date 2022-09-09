@@ -11,8 +11,7 @@
   - set_fact:
       ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
       username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
-      password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
-      recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')}}"
+      password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}" 
   - name: Insert credentials  block to vars
     blockinfile:
       path: ../vars/main.yml
@@ -20,8 +19,7 @@
       block: |
         ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
         username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
-        password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
-        recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')  }}" 
+        password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}" 
   - name: create external subnet with NAT
     ntnx_subnets:
       state: present
@@ -106,10 +104,6 @@
           static:
             name: "{{static_subnet_name}}"
             uuid: "{{result.subnet_uuid}}"
-            network_ip: 10.30.30.0
-            network_prefix: 24
-            gateway_ip: 10.30.30.254
-
   - name: include var file
     include_vars: ../vars/main.yml
   - name:  create overlay Subnet with minimum requirements
@@ -138,6 +132,7 @@
             name: "{{overlay_subnet.name}}"
             uuid: "{{result.subnet_uuid}}"
 
+
   - name: create VM with overlay subnet
     ntnx_vms:
       state: present
@@ -164,48 +159,16 @@
             name: "{{vm_name}}"
             uuid: "{{result.vm_uuid}}"
 
-  - name: create VM with static subnet for dr tests
-    ntnx_vms:
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      name: "{{dr_vm_name}}"
-      categories:
-        Environment:
-          - Staging
-          - Testing
-      cluster:
-        uuid: "{{ cluster.uuid }}"
-      networks:
-          - is_connected: true
-            subnet: 
-              name: "{{static_subnet_name}}"
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-    register: result
-
-  - name: Insert vm configuration block to var file
-    blockinfile:
-      path: ../vars/main.yml
-      marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
-      block: |
-          dr_vm:
-            name: "{{dr_vm_name}}"
-            uuid: "{{result.vm_uuid}}"
-
   - name: Downloading disk image for image related tests
     get_url:
       url: "{{ disk_image.url }}"
       dest: "{{ disk_image.dest }}"
 
-  # - name: create address group for network security policy related tests
-  #   ntnx_address_groups:
-  #     state: present
-  #     name: dest
-  #     desc: dest
-  #     subnets:
-  #       - network_ip: "10.1.1.0"
-  #         network_prefix: 24
+  - name: create address group for network security policy related tests
+    ntnx_address_groups:
+      state: present
+      name: dest
+      desc: dest
+      subnets:
+        - network_ip: "10.1.1.0"
+          network_prefix: 24

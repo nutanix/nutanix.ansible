@@ -50,6 +50,11 @@ Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main
 
 Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc
 
+## Karbon
+> For the 1.6.0 release of the ansible plugin, it will have N-2 compatibility with the Karbon. This release was tested against Karbon versions v2.3.0, v2.4.0 and v2.5.0 
+
+Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
+
 # Installing the collection
 **Prerequisite**
 
@@ -130,6 +135,10 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_images_info | List existing images. |
 | ntnx_image_placement_policy | Create, update or delete a image placement policy. |
 | ntnx_image_placement_policies_info | List existing image placement policies. |
+| ntnx_karbon_clusters | Create, Delete k8s clusters |
+| ntnx_karbon_clusters_info | Get clusters info. |
+| ntnx_karbon_registries | Create, Delete a karbon private registry entry |
+| ntnx_karbon_registries_info | Get karbon private registry registry info. |
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
 | ntnx_permissions_info | List permissions info |

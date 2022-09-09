@@ -1,0 +1,33 @@
+---
+- name: get k8s cluster info
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:        
+  - set_fact:
+      cluster_name: <cluster_name>
+
+  - name: test getting cluster using name 
+    ntnx_karbon_clusters_info:
+      cluster_name: "{{cluster_name}}"
+    register: result
+
+  - name: test getting cluster with ssh config using cluster name
+    ntnx_karbon_clusters_info:
+      cluster_name: "{{cluster_name}}"
+      fetch_ssh_credentials: true
+    register: result
+
+  - name: test getting cluster with kubeconfig config using cluster name
+    ntnx_karbon_clusters_info:
+      cluster_name: "{{cluster_name}}"
+      fetch_kubeconfig: true
+    register: result
