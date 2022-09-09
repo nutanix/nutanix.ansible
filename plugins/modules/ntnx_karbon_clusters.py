@@ -201,6 +201,8 @@ EXAMPLES = r"""
         pod_ipv4_cidr: "172.20.0.0/16"
         network_provider: Flannel
       storage_class:
+        nutanix_cluster_password: "{{nutanix_cluster_password}}"
+        nutanix_cluster_username: "{{nutanix_cluster_username}}"
         default_storage_class: True
         name: test-storage-class
         reclaim_policy: Delete
@@ -246,12 +248,57 @@ EXAMPLES = r"""
           memory_gb: 8
           disk_gb: 120
       storage_class:
+        nutanix_cluster_password: "{{nutanix_cluster_password}}"
+        nutanix_cluster_username: "{{nutanix_cluster_username}}"
         default_storage_class: True
         name: test-storage-class
         reclaim_policy: Retain
         storage_container: "default-container-48394901932577"
         file_system: xfs
         flash_mode: true
+    register: result
+
+  - name:  create prod cluster
+    ntnx_karbon_clusters:
+      cluster:
+        uuid: "{{cluster.uuid}}"
+      name: "{{karbon_name}}"
+      k8s_version: "{{k8s_version}}"
+      host_os: "{{host_os}}"
+      node_subnet:
+        name: "{{node_subnet.name}}"
+      cluster_type: PROD
+      cni:
+        node_cidr_mask_size: 24
+        service_ipv4_cidr: "172.19.0.0/16"
+        pod_ipv4_cidr: "172.20.0.0/16"
+        network_provider: Flannel
+      storage_class:
+        nutanix_cluster_password: "{{nutanix_cluster_password}}"
+        nutanix_cluster_username: "{{nutanix_cluster_username}}"
+        default_storage_class: True
+        name: test-storage-class
+        reclaim_policy: Delete
+        storage_container: "{{storage_container.name}}"
+        file_system: ext4
+        flash_mode: False
+      control_plane_virtual_ip: "{{control_plane_virtual_ip}}"
+      custom_node_configs:
+        etcd:
+          num_instances: 1
+          cpu: 4
+          memory_gb: 8
+          disk_gb: 240
+        masters:
+          num_instances: 1
+          cpu: 4
+          memory_gb: 8
+          disk_gb: 240
+        workers:
+          num_instances: 1
+          cpu: 8
+          memory_gb: 8
+          disk_gb: 240
     register: result
 """
 
