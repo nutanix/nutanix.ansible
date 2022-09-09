@@ -1,5 +1,5 @@
 ---
-- name: create k8s cluster
+- name: get k8s cluster info
   hosts: localhost
   gather_facts: false
   collections:
@@ -15,7 +15,7 @@
   - set_fact:
       cluster_name: <cluster_name>
 
-  - name: test getting   cluster using name 
+  - name: test getting cluster using name 
     ntnx_karbon_clusters_info:
       cluster_name: "{{cluster_name}}"
     register: result
