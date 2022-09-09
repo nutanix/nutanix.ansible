@@ -1,0 +1,11 @@
+ancestor: null
+releases:
+  1.6.0:
+    changes:
+      minor_changes:
+        - ntnx_karbon_clusters - Added new module for creating and deleting karbon clusters
+        - ntnx_karbon_clusters_info - Added new module for getting cluster info, ssh config and kube config of cluster.
+        - ntnx_karbon_registries - Added new module for adding and deleting private registry to/from karbon
+        - ntnx_karbon_registries_info - Added new module for getting info of karbon private registries
+    release_date: '2020-09-09'
+  
