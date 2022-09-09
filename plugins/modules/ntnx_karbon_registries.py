@@ -44,9 +44,44 @@ author:
 """
 
 EXAMPLES = r"""
+  - name: create registry
+    ntnx_karbon_registries:
+      name: "{{registry_name}}"
+      url: "{{url}}"
+      port: "{{port_number}}"
+    register: result
+
+  - name: delete registry
+    ntnx_karbon_registries:
+      name: "{{registry_name}}"
+      state: absent
+    register: result
+
+  - name: create registry with username and password
+    ntnx_karbon_registries:
+      name: "{{registry_name}}"
+      url: "{{url}}"
+      username: "{{username}}"
+      password: "{{password}}"
+    register: result
 """
 
 RETURN = r"""
+name:
+    description: K8s registry name.
+    returned: always
+    type: str
+    sample: "test-module21"
+uuid:
+    description: The universally unique identifier (UUID) of the k8s registry.
+    returned: always
+    type: str
+    sample: "00000000-0000-0000-0000-000000000000"
+endpoint:
+    description: "Endpoint of the private registry in format url:port. Example: prod-user-registry:5000"
+    returned: always
+    type: str
+    sample: "xxx.xxx.xxx.xxx:5000"
 """
 
 from ..module_utils import utils  # noqa: E402
