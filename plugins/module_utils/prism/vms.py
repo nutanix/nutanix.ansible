@@ -248,8 +248,14 @@ class VM(Prism):
                 elif network.get("subnet", {}).get("name"):
                     name = network["subnet"]["name"]
 
-                    # consider cluster as well to get correct subnet
-                    cluster_uuid, err = get_cluster_uuid(self.module.params.get("cluster"), self.module)
+                    # consider cluster as well to get subnet from given cluster only
+                    cluster_ref = None
+                    if self.module.params.get("cluster"):
+                        cluster_ref = self.module.params["cluster"]
+                    else:
+                        cluster_ref = payload["spec"]["cluster_reference"]
+
+                    cluster_uuid, err = get_cluster_uuid(cluster_ref, self.module)
                     if err:
                         return None, err
 
