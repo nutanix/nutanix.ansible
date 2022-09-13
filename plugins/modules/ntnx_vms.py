@@ -59,16 +59,43 @@ options:
     type: list
     elements: dict
     suboptions:
-      uuid:
+      subnet:
         description:
-          - Disk's uuid
-        type: str
-      state:
+          - Name or UUID of the subnet to which the VM should be connnected
+        type: dict
+        suboptions:
+          name:
+            description:
+              - Subnet Name
+              - Mutually exclusive with C(uuid)
+            type: str
+          uuid:
+            description:
+              - Subnet UUID
+              - Mutually exclusive with C(name)
+            type: str
+      private_ip:
         description:
-          - Disk's state to delete it
+          - Optionally assign static IP to the VM
         type: str
-        choices:
-          - absent
+        required: false
+      mac_address:
+        description:
+          - Optionally assign a MAC Address to the VM
+        type: str
+        required: false
+      is_connected:
+        description:
+          - Connect or disconnect the VM to the subnet
+        type: bool
+        required: false
+        default: true
+  disks:
+    description:
+      - List of disks attached to the VM
+    type: list
+    elements: dict
+    suboptions:
       type:
         description:
           - CDROM or DISK
@@ -755,6 +782,15 @@ def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
 
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+
+    network_spec = dict(
+        subnet=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        private_ip=dict(type="str", required=False),
+        mac_address=dict(type="str", required=False),
+        is_connected=dict(type="bool", default=True),
+    )
 
     disk_spec = dict(
         type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),

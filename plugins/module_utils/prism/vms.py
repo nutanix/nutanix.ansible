@@ -239,6 +239,9 @@ class VM(Prism):
             if network.get("private_ip"):
                 nic["ip_endpoint_list"] = [{"ip": network["private_ip"]}]
 
+            if network.get("mac_address"):
+                nic["mac_address"] = network["mac_address"]
+
             nic["is_connected"] = network["is_connected"]
             if network.get("subnet"):
 
