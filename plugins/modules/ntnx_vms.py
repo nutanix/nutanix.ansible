@@ -756,6 +756,15 @@ def get_module_spec():
 
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
+    network_spec = dict(
+        subnet=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        private_ip=dict(type="str", required=False),
+        mac_address=dict(type="str", required=False),
+        is_connected=dict(type="bool", default=True),
+    )
+
     disk_spec = dict(
         type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
         uuid=dict(type="str"),
