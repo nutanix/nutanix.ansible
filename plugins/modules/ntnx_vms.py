@@ -756,7 +756,6 @@ def get_module_spec():
 
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
-
     disk_spec = dict(
         type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
         uuid=dict(type="str"),
