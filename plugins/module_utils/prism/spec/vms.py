@@ -18,6 +18,7 @@ class DefaultVMSpec:
         subnet=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
+        mac_address=dict(type="str", required=False),
         private_ip=dict(type="str", required=False),
         is_connected=dict(type="bool", default=True),
     )
