@@ -93,6 +93,7 @@ class InventoryModule(BaseInventoryPlugin):
     """Nutanix VM dynamic invetory module for ansible"""
 
     NAME = "nutanix.ncp.ntnx_prism_vm_inventory"
+    max_length = 500
 
     def verify_file(self, path):
         """Verify inventory configuration file"""
@@ -126,7 +127,20 @@ class InventoryModule(BaseInventoryPlugin):
             self.validate_certs,
         )
         vm = vms.VM(module)
-        resp = vm.list(self.data)
+        if self.data["length"] > self.max_length:
+            resp = {"entities": []}
+            total_length = self.data["length"]
+            while True:
+                self.data["length"] = self.max_length
+                sub_resp = vm.list(self.data)
+                resp["entities"].append(sub_resp["entities"])
+                total_length -= self.max_length
+                if total_length <= 0:
+                    break
+                self.data["length"] = total_length if total_length < self.max_length else self.max_length
+                self.data["offset"] += self.max_length
+        else:
+            resp = vm.list(self.data)
         keys_to_strip_from_resp = [
             "disk_list",
             "vnuma_config",
