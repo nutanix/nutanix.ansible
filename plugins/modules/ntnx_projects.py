@@ -252,12 +252,64 @@ from ..module_utils.utils import (  # noqa: E402
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+
+    saml_user_group_spec = dict(
+        idp_uuid=dict(type="str", required=True),
+        group_name=dict(type="str", required=True),
+    )
+
     resource_limit = dict(
         resource_type=dict(
             type="str", required=True, choices=["VCPUS", "MEMORY", "STORAGE"]
         ),
         limit=dict(type="int", required=True),
     )
+
+    user = dict(
+        uuid=dict(type="str"),
+        principal_name=dict(type="str"),
+        username=dict(type="str"),
+        directory_service_uuid=dict(type="str"),
+        identity_provider_uuid=dict(type="str"),
+    )
+    user_mutually_exclusive = [
+        ("principal_name", "uuid"),
+        ("username", "uuid"),
+        ("directory_service_uuid", "uuid"),
+        ("identity_provider_uuid", "uuid"),
+    ]
+
+    user_group = dict(
+        uuid=dict(type="str"),
+        distinguished_name=dict(type="str"),
+        idp=dict(type="dict", options=saml_user_group_spec),
+    )
+    user_group_mutually_exclusive = [
+        ("distinguished_name", "uuid"),
+        ("idp", "uuid"),
+    ]
+
+    role_mapping = dict(
+        user=dict(
+            type="dict",
+            options=user,
+            mutually_exclusive=user_mutually_exclusive,
+            required=False,
+        ),
+        user_group=dict(
+            type="dict",
+            options=user_group,
+            mutually_exclusive=user_group_mutually_exclusive,
+            required=False,
+        ),
+        role=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+    )
+
     module_args = dict(
         name=dict(type="str", required=False),
         project_uuid=dict(type="str", required=False),
@@ -281,6 +333,13 @@ def get_module_spec():
         clusters=dict(type="list", elements="str", required=False),
         users=dict(type="list", elements="str", required=False),
         external_user_groups=dict(type="list", elements="str", required=False),
+        role_mappings=dict(
+            type="list",
+            elements="dict",
+            options=role_mapping,
+            mutually_exclusive=[("user", "user_group")],
+            required=False,
+        ),
     )
     return module_args
 

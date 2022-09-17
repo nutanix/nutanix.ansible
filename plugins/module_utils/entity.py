@@ -207,9 +207,17 @@ class Entity(object):
 
         return resp
 
-    def get_spec(self, old_spec=None):
+    # argument params can be used to override module.params to create spec
+    def get_spec(self, old_spec=None, params=None):
         spec = copy.deepcopy(old_spec) or self._get_default_spec()
-        for ansible_param, ansible_config in self.module.params.items():
+
+        ansible_params = None
+        if params:
+            ansible_params = params
+        else:
+            ansible_params = self.module.params
+
+        for ansible_param, ansible_config in ansible_params.items():
             build_spec_method = self.build_spec_methods.get(ansible_param)
             if build_spec_method and ansible_config:
                 spec, error = build_spec_method(spec, ansible_config)
