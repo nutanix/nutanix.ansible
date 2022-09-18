@@ -1,0 +1,46 @@
+---
+- name: Static Routes  playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      set_fact:
+        vpc_uuid: ""
+        vpn_uuid: ""
+        external_nat_subnet:
+          name: ""
+          uuid:  ""
+
+    - name: create static routes and default static routes with external nat subnet
+      ntnx_static_routes:
+        vpc_uuid: "{{ vpc_uuid }}"
+        static_routes:
+          - destination: "0.0.0.0/0"
+            next_hop:
+              external_subnet_ref:
+                name: "{{ external_nat_subnet.name }}"
+          - destination: "10.2.2.0/24"
+            next_hop:
+              external_subnet_ref:
+                uuid: "{{ external_nat_subnet.uuid }}"
+          - destination: "10.2.3.0/24"
+            next_hop:
+              external_subnet_ref:
+                uuid: "{{ external_nat_subnet.uuid }}"
+          - destination: "10.2.4.0/24"
+            next_hop:
+              vpn_connection_ref:
+                uuid: "{{ vpn_uuid }}"
+
+    - name: remove all routes excluding dynamic and local routes
+      ntnx_static_routes:
+        vpc_uuid: "{{ vpc_uuid }}"
+        remove_all_routes: true
