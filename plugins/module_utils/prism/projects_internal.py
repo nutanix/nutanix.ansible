@@ -10,7 +10,7 @@ from .acps import ACP
 from .idempotence_identifiers import IdempotenceIdenitifiers
 from .roles import get_role_uuid
 from .user_groups import UserGroup
-from users import User
+from .users import User
 from .clusters import Cluster
 from .prism import Prism
 from .subnets import Subnet, get_subnet_uuid
@@ -19,8 +19,14 @@ __metaclass__ = type
 
 
 class ProjectsInternal(Prism):
-    def __init__(self, module, uuid=None):
-        self.project_uuid = uuid
+    
+    project_uuid = ""
+
+    def __init__(self, module, uuid = None):
+
+        if uuid:
+            self.project_uuid = uuid
+
         resource_type = "/projects_internal"
         super(ProjectsInternal, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
@@ -35,11 +41,16 @@ class ProjectsInternal(Prism):
             "role_mappings": self._build_spec_role_mappings,
         }
 
+    def create(self, data=None, endpoint=None, query=None, method="POST", raise_error=True, no_response=False, timeout=30):
+        if data["metadata"].get("uuid"):
+            data["metadata"]["uuid"] = self.project_uuid
+        return super().create(data, endpoint, query, method, raise_error, no_response, timeout)
+
     def _get_default_spec(self):
         return deepcopy(
             {
                 "api_version": "3.1.0",
-                "metadata": {"kind": "project"},
+                "metadata": {"kind": "project", "uuid": None},
                 "spec": {
                     "project_detail": {
                         "name": None,
@@ -182,6 +193,15 @@ class ProjectsInternal(Prism):
         return name_uuid_map, None
 
     def _build_spec_role_mappings(self, payload, role_mappings):
+
+        if not self.project_uuid:
+            return None, "Set ProjectsInternal.project_uuid for generating role mapping spec in project"
+
+        payload["spec"]["project_detail"]["resources"]["user_reference_list"] = []
+        payload["spec"]["project_detail"]["resources"]["user_groups_reference_list"] = []
+        
+        # Create new user and user groups config if required
+        # users_groups_name_uuid_map will help in acp creation
         users_groups_name_uuid_map, err = self._build_spec_user_and_user_groups_list(payload, role_mappings)
         if err:
             return None, err
@@ -228,15 +248,18 @@ class ProjectsInternal(Prism):
                     "kind": "user"
                 }
                 role_user_groups_map[role_uuid]["users"].append(user_ref)
+                payload["spec"]["project_detail"]["resources"]["user_reference_list"].append(user_ref)
             else:
                 user_group_ref = {
                     "uuid": role_mapping["user_group"].get("uuid", users_groups_name_uuid_map[role_mapping["user_group"].get("distinguished_name")]),
                     "kind": "user_group"
                 }
-                role_user_groups_map[role_uuid]["users"].append(user_group_ref)
+                role_user_groups_map[role_uuid]["user_group"].append(user_group_ref)
+                payload["spec"]["project_detail"]["resources"]["user_groups_reference_list"].append(user_group_ref)
+
 
         _acp = ACP(self.module)
-
+        
         # first check existing acps of project if UPDATE/DELETE of acp is required
         for acp in payload["spec"]["access_control_policy_list"]:
 

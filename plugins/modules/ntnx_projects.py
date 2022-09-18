@@ -5,6 +5,10 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+
+from ..module_utils.prism.idempotence_identifiers import IdempotenceIdenitifiers
+from ..module_utils.prism.projects_internal import ProjectsInternal
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -345,7 +349,18 @@ def get_module_spec():
 
 
 def create_project(module, result):
-    projects = Project(module)
+
+    projects = None
+    if module.params.get("role_mappings"):
+
+        # generate new uuid for project
+        ii = IdempotenceIdenitifiers(module)
+        uuids = ii.get_idempotent_uuids()
+        projects = ProjectsInternal(module, uuid = uuids[0])
+
+    else:
+        projects = Project(module)
+
     name = module.params["name"]
     if projects.get_uuid(name):
         module.fail_json(msg="Project with given name already exists", **result)
@@ -439,7 +454,6 @@ def check_project_idempotency(old_spec, update_spec):
 
     return True
 
-
 def update_project(module, result):
     uuid = module.params["project_uuid"]
     if not uuid:
@@ -447,8 +461,19 @@ def update_project(module, result):
         module.fail_json(msg="Failed updating project", **result)
     result["project_uuid"] = uuid
 
-    projects = Project(module)
+    projects = None
+    if module.params.get("role_mapping"):
+        projects = ProjectsInternal(module, uuid)
+    else:
+        projects = Project(module)
+ 
     resp = projects.read(uuid)
+
+    # handle cases for projects_internal based status and spec differences
+    if isinstance(projects, ProjectsInternal):
+        resp["status"]["project_details"] = resp["status"].pop("project_status")
+        resp["status"]["access_control_policy_list"] = resp["spec"]["access_control_policy_list"]
+
     strip_extra_attrs(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
 
@@ -500,6 +525,10 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        mutually_exclusive = [
+            ("users", "role_mappings"),
+            ("external_user_groups", "role_mappings")
+        ],
         required_if=[
             ("state", "present", ("project_uuid", "name"), True),
             ("state", "absent", ("project_uuid",)),
