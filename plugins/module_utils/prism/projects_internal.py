@@ -244,15 +244,25 @@ class ProjectsInternal(Prism):
             
             # Add user/user_group references to particular role 
             if role_mapping.get("user"):
+                uuid = ""
+                if role_mapping["user"].get("uuid"):
+                    uuid = role_mapping["user"]["uuid"]
+                else:
+                    uuid = new_users_groups_name_uuid_map[role_mapping["user"].get("principal_name")]
                 user_ref = {
-                    "uuid": role_mapping["user"].get("uuid", new_users_groups_name_uuid_map[role_mapping["user"].get("principal_name")]),
+                    "uuid": uuid,
                     "kind": "user"
                 }
                 role_user_groups_map[role_uuid]["users"].append(user_ref)
                 payload["spec"]["project_detail"]["resources"]["user_reference_list"].append(user_ref)
             else:
+                uuid = ""
+                if role_mapping["user_group"].get("uuid"):
+                    uuid = role_mapping["user_group"]["uuid"]
+                else:
+                    uuid = new_users_groups_name_uuid_map[role_mapping["user_group"].get("distinguished_name")]
                 user_group_ref = {
-                    "uuid": role_mapping["user_group"].get("uuid", new_users_groups_name_uuid_map[role_mapping["user_group"].get("distinguished_name")]),
+                    "uuid": uuid,
                     "kind": "user_group"
                 }
                 role_user_groups_map[role_uuid]["user_group"].append(user_group_ref)
