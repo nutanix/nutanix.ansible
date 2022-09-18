@@ -337,6 +337,7 @@ def get_module_spec():
         clusters=dict(type="list", elements="str", required=False),
         users=dict(type="list", elements="str", required=False),
         external_user_groups=dict(type="list", elements="str", required=False),
+        collaboration=dict(type="bool", required=False),
         role_mappings=dict(
             type="list",
             elements="dict",
@@ -533,6 +534,7 @@ def run_module():
             ("state", "present", ("project_uuid", "name"), True),
             ("state", "absent", ("project_uuid",)),
         ],
+        required_together=[("role_mappings", "collaboration")],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "project_uuid": None}

@@ -153,6 +153,8 @@ class ProjectsInternal(Prism):
 
     # Build user and user groups create config to add them to PC
     def _build_spec_user_and_user_groups_list(self, payload, role_mappings):
+
+        # This spec is only configured when new users and user groups are needed to create in pc
         new_uuids_required = 0
         for role_mapping in role_mappings:
             if not role_mapping.get("user", {}).get("uuid"):
@@ -171,16 +173,15 @@ class ProjectsInternal(Prism):
         user_groups = []
         name_uuid_map = {}
         for role_mapping in role_mappings:
-            if not role_mapping.get("user", {}).get("uuid"):
+            if role_mapping.get("user") and not role_mapping["user"].get("uuid"):
                 user = _user.get_spec(params = role_mapping["user"])
                 user["user"] = user.pop("spec")
                 user["metadata"]["uuid"] = new_uuid_list.pop()
                 user["operation"] = "ADD"
                 users.append(user)
                 name_uuid_map[role_mapping.get("principal_name", role_mapping["username"])] = user["metadata"]["uuid"]
-                
 
-            elif not role_mapping.get("user_group", {}).get("uuid"):
+            if role_mapping.get("user_group") and not role_mapping["user_group"].get("uuid"):
                 user_group = _user_group.get_spec(params = role_mapping["user"])
                 user_group["user_group"] = user_group.pop("spec")
                 user_group["metadata"]["uuid"] = new_uuid_list.pop()
@@ -201,8 +202,8 @@ class ProjectsInternal(Prism):
         payload["spec"]["project_detail"]["resources"]["user_groups_reference_list"] = []
         
         # Create new user and user groups config if required
-        # users_groups_name_uuid_map will help in acp creation
-        users_groups_name_uuid_map, err = self._build_spec_user_and_user_groups_list(payload, role_mappings)
+        # new_users_groups_name_uuid_map will help in acp creation
+        new_users_groups_name_uuid_map, err = self._build_spec_user_and_user_groups_list(payload, role_mappings)
         if err:
             return None, err
         
@@ -244,14 +245,14 @@ class ProjectsInternal(Prism):
             # Add user/user_group references to particular role 
             if role_mapping.get("user"):
                 user_ref = {
-                    "uuid": role_mapping["user"].get("uuid", users_groups_name_uuid_map[role_mapping["user"].get("principal_name")]),
+                    "uuid": role_mapping["user"].get("uuid", new_users_groups_name_uuid_map[role_mapping["user"].get("principal_name")]),
                     "kind": "user"
                 }
                 role_user_groups_map[role_uuid]["users"].append(user_ref)
                 payload["spec"]["project_detail"]["resources"]["user_reference_list"].append(user_ref)
             else:
                 user_group_ref = {
-                    "uuid": role_mapping["user_group"].get("uuid", users_groups_name_uuid_map[role_mapping["user_group"].get("distinguished_name")]),
+                    "uuid": role_mapping["user_group"].get("uuid", new_users_groups_name_uuid_map[role_mapping["user_group"].get("distinguished_name")]),
                     "kind": "user_group"
                 }
                 role_user_groups_map[role_uuid]["user_group"].append(user_group_ref)
@@ -280,7 +281,7 @@ class ProjectsInternal(Prism):
         # iterate for remaining role uuids in role_user_groups_map to create new acps for them
         for role_uuid, val in role_user_groups_map.items():
             acp = self._get_project_new_acp_spec()
-            acp["acp"]["resources"]["name"] = "ansible-{0}".format(uuid.uuid4())
+            acp["acp"]["resources"]["name"] = "ansible-{0}".format(str(uuid.uuid4()))
             acp["acp"]["resources"]["role_reference"] = {
                 "kind": "role",
                 "uuid": role_uuid

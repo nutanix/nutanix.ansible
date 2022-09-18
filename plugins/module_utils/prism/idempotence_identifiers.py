@@ -16,7 +16,7 @@ class IdempotenceIdenitifiers(Prism):
         if count < 1:
             return []
         spec = {
-            "client_identifier" : uuid.uuid4(),
+            "client_identifier" : str(uuid.uuid4()),
             "count": count
         }
         resp = self.create(spec)
