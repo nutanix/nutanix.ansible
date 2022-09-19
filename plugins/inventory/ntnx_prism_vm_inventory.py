@@ -5,6 +5,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+from copy import deepcopy
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -129,11 +131,11 @@ class InventoryModule(BaseInventoryPlugin):
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
         if self.data["length"] > self.max_length:
-            spec = self.data.copy()
+            spec = deepcopy(self.data)
             resp = {"entities": []}
-            total_length = self.data["length"]
+            total_length = spec["length"]
+            spec["length"] = self.max_length
             while True:
-                spec["length"] = self.max_length
                 sub_resp = vm.list(spec)
                 resp["entities"].extend(sub_resp["entities"])
                 total_length -= self.max_length
