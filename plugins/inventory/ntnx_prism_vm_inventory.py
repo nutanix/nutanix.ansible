@@ -127,6 +127,7 @@ class InventoryModule(BaseInventoryPlugin):
             self.validate_certs,
         )
         vm = vms.VM(module)
+        self.data["offset"]=self.data.get("offset", 0)
         if self.data["length"] > self.max_length:
             resp = {"entities": []}
             total_length = self.data["length"]
