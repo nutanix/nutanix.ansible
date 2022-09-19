@@ -40,12 +40,14 @@ class ACP(Prism):
         }
         return cluster_access_spec
 
-    def _get_project_access_spec(self, project_uuids):
+    def _get_project_access_spec(self, project_uuids, scope_level = False):
         project_access_spec = {
             "operator": "IN",
             "right_hand_side": {"uuid_list": project_uuids},
             "left_hand_side": {"entity_type": "project"},
         }
+        if scope_level:
+            project_access_spec["left_hand_side"] = "PROJECT"
         return project_access_spec
 
 
@@ -120,15 +122,12 @@ class ACP(Prism):
         payload["spec"]["resources"]["filter_list"] = {"context_list": filter_list}
         return payload, None
 
-    def build_role_permissions_based_context(self, role):
-        uuid, err = get_role_uuid(role, self.module)
-        if err:
-            None, err
+    def build_role_permissions_based_context(self, role_uuid):
         
         # get assigned permission name for given role
         role = Role(self.module)
-        role_info = role.read(uuid)
-        role_permissions = (role_info["state"]["resources"]).get("permission_reference_list", [])
+        role_info = role.read(role_uuid)
+        role_permissions = (role_info["status"]["resources"]).get("permission_reference_list", [])
         role_permissions_names = []
         for permission in role_permissions:
             if permission.get("name"):
@@ -152,10 +151,14 @@ class ACP(Prism):
         
         
     def build_role_based_filter_list(self, role, project_uuids, cluster_uuids=None, collab=False):
-        if not role.get("name") or not role.get("uuid"):
-            return None, "Prove role name or uuid for creating custom acp filter list"
+        if not role.get("name") and not role.get("uuid"):
+            return None, "Provide role name or uuid for creating custom acp filter list"
 
-        project_access_config = self._get_project_access_spec(project_uuids)
+        role_uuid, err = get_role_uuid(role, self.module)
+        if err:
+            return None, err
+
+        project_scope_level_access_config = self._get_project_access_spec(project_uuids, scope_level=True)
 
         # ACP context list consists of:
         # 1. Collaboration based project access
@@ -169,7 +172,7 @@ class ACP(Prism):
         else:
             collab_access = "SELF_OWNED"
         collab_context = {
-                "scope_filter_expression_list": [deepcopy(project_access_config)],
+                "scope_filter_expression_list": [deepcopy(project_scope_level_access_config)],
                 "entity_filter_expression_list": [
                     {
                       "operator": "IN",
@@ -185,7 +188,7 @@ class ACP(Prism):
     
         # default context containing entity access expressions in give project scope needs to be added for all roles
         default_context = {
-            "scope_filter_expression_list": [deepcopy(project_access_config)],
+            "scope_filter_expression_list": [deepcopy(project_scope_level_access_config)],
             "entity_filter_expression_list": deepcopy(CONSTANTS.EntityFilterExpressionList.DEFAULT)
         }
 
@@ -196,7 +199,7 @@ class ACP(Prism):
             role_based_context = {
                 "entity_filter_expression_list": deepcopy(CONSTANTS.EntityFilterExpressionList.PROJECT_ADMIN)
             }
-            role_based_context["entity_filter_expression_list"].append(deepcopy(project_access_config))
+            role_based_context["entity_filter_expression_list"].append(self._get_project_access_spec(project_uuids))
         
         elif role.get("name") == "Developer":
             role_based_context = {
@@ -214,7 +217,7 @@ class ACP(Prism):
             }
         
         else:
-            role_based_context = self.build_custom_role_based_context
+            role_based_context = self.build_role_permissions_based_context(role_uuid)
 
         # scope is global for role based entity access
         role_based_context["scope_filter_expression_list"] = []
@@ -227,4 +230,4 @@ class ACP(Prism):
         filter_list = {
             "context_list" : [collab_context, role_based_context, default_context]
         }
-        return filter_list
+        return filter_list, None

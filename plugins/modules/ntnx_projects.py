@@ -382,8 +382,23 @@ def create_project(module, result):
 
     if module.params.get("wait"):
         task = Task(module)
-        task.wait_for_completion(task_uuid)
+        task_status = task.wait_for_completion(task_uuid, raise_error=False)
         resp = projects.read(project_uuid)
+        if task_status.get("status", "") == "FAILED":
+            if task_status.get("error_detail"):
+                module.fail_json(
+                    msg=task_status["error_detail"],
+                    status_code=task_status.get("error_code"),
+                    error="Error creating project",
+                    response=task_status,
+                )
+            else:
+                module.fail_json(
+                    msg=resp["status"]["message_list"],
+                    error="Error creating project. Project is in {0} state".format(resp["status"]["state"]),
+                    response=resp,
+                )
+
 
     result["response"] = resp
 
