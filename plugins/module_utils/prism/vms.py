@@ -10,13 +10,13 @@ from copy import deepcopy
 
 from ansible.module_utils.basic import _load_params
 
-from .clusters import Cluster
+from .clusters import Cluster, get_cluster_uuid
 from .groups import get_entity_uuid
 from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
 from .spec.categories_mapping import CategoriesMapping
-from .subnets import Subnet
+from .subnets import get_subnet_uuid
 
 
 class VM(Prism):
@@ -249,12 +249,26 @@ class VM(Prism):
                     uuid = network["subnet"]["uuid"]
 
                 elif network.get("subnet", {}).get("name"):
-                    subnet = Subnet(self.module)
                     name = network["subnet"]["name"]
-                    uuid = subnet.get_uuid(name)
-                    if not uuid:
-                        error = "Subnet {0} not found.".format(name)
-                        return None, error
+
+                    # consider cluster as well to get subnet from given cluster only
+                    cluster_ref = None
+                    if self.module.params.get("cluster"):
+                        cluster_ref = self.module.params["cluster"]
+                    else:
+                        cluster_ref = payload["spec"]["cluster_reference"]
+
+                    cluster_uuid, err = get_cluster_uuid(cluster_ref, self.module)
+                    if err:
+                        return None, err
+
+                    config = {
+                        "name": name,
+                        "cluster_uuid": cluster_uuid
+                    }
+                    uuid, err = get_subnet_uuid(config, self.module)
+                    if err:
+                        return None, err
 
                 nic["subnet_reference"]["uuid"] = uuid
 
