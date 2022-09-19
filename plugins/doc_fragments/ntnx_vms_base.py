@@ -90,6 +90,11 @@ options:
           - Optionally assign static IP to the VM
         type: str
         required: false
+      mac_address:
+        description:
+          - Optionally assign a MAC Address to the VM
+        type: str
+        required: false
       is_connected:
         description:
           - Connect or disconnect the VM to the subnet
