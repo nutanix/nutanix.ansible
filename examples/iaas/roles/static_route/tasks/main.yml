@@ -1,0 +1,6 @@
+---
+- name: Inputs for static routes task
+  include_tasks: static_route.yml
+  with_items:
+    - { vpc_uuid: "{{vpc_uuids[0]}}", subnet_name: "{{external_subnet.name}}", destination: "10.2.2.0/24"}
+    - { vpc_uuid: "{{vpc_uuids[1]}}", subnet_name: "{{external_subnet.name}}", destination: "10.2.3.0/24"}

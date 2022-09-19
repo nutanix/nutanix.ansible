@@ -5,7 +5,7 @@
     name: "{{ item.name }}"
     desc: "{{ item.desc }}"
     cluster:
-      name: auto_cluster_prod_1a642ea0a5c3
+      name: "{{ cluster.name }}"
     networks:
       - is_connected: "{{ item.is_connected }}"
         subnet:

@@ -11,5 +11,8 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
+    - name: Include vars file
+      include_vars:
+        file: vars.yml
     - include_role:
         name: pbr

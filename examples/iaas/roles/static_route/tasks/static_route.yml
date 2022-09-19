@@ -1,0 +1,14 @@
+---
+  - name: Create static route
+    ntnx_static_routes:
+      state: present
+      vpc_uuid: "{{ item.vpc_uuid }}"
+      static_routes:
+        - destination: "{{ item.destination }}"
+          next_hop:
+            external_subnet_ref:
+              name: "{{ item.subnet_name }}"
+    register: static_route
+  - debug:
+      msg: 
+        - "uuid: {{ static_route.response.metadata.uuid }}"
