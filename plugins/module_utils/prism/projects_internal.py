@@ -157,9 +157,9 @@ class ProjectsInternal(Prism):
         # This spec is only configured when new users and user groups are needed to create in pc
         new_uuids_required = 0
         for role_mapping in role_mappings:
-            if not role_mapping.get("user", {}).get("uuid"):
+            if role_mapping.get("user") and not role_mapping["user"].get("uuid"):
                 new_uuids_required+=1
-            elif not role_mapping.get("user_group", {}).get("uuid"):
+            if role_mapping.get("user_group") and not role_mapping["user_group"].get("uuid"):
                 new_uuids_required+=1
 
         ii = IdempotenceIdenitifiers(self.module)  
