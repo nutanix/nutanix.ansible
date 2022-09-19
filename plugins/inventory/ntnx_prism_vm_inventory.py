@@ -134,7 +134,7 @@ class InventoryModule(BaseInventoryPlugin):
             while True:
                 self.data["length"] = self.max_length
                 sub_resp = vm.list(self.data)
-                resp["entities"].append(sub_resp["entities"])
+                resp["entities"].extend(sub_resp["entities"])
                 total_length -= self.max_length
                 if total_length <= 0:
                     break
