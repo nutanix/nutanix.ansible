@@ -127,19 +127,20 @@ class InventoryModule(BaseInventoryPlugin):
             self.validate_certs,
         )
         vm = vms.VM(module)
-        self.data["offset"]=self.data.get("offset", 0)
+        self.data["offset"] = self.data.get("offset", 0)
         if self.data["length"] > self.max_length:
+            spec = self.data.copy()
             resp = {"entities": []}
             total_length = self.data["length"]
             while True:
-                self.data["length"] = self.max_length
-                sub_resp = vm.list(self.data)
+                spec["length"] = self.max_length
+                sub_resp = vm.list(spec)
                 resp["entities"].extend(sub_resp["entities"])
                 total_length -= self.max_length
                 if total_length <= 0:
                     break
-                self.data["length"] = total_length if total_length < self.max_length else self.max_length
-                self.data["offset"] += self.max_length
+                spec["length"] = total_length if total_length < self.max_length else self.max_length
+                spec["offset"] += self.max_length
         else:
             resp = vm.list(self.data)
         keys_to_strip_from_resp = [
