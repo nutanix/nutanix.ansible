@@ -45,6 +45,35 @@ class VM(Prism):
             "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
         }
 
+    def list(
+        self,
+        data=None,
+        endpoint=None,
+        use_base_url=False,
+        raise_error=True,
+        no_response=False,
+        timeout=30,
+        max_length=500,
+    ):
+
+        if data.get("length", 0) > max_length:
+            spec = deepcopy(data)
+            resp = {"entities": []}
+            total_length = spec["length"]
+            spec["length"] = max_length
+            while True:
+                sub_resp = super(VM, self).list(spec)
+                resp["entities"].extend(sub_resp["entities"])
+                total_length -= max_length
+                if total_length <= 0:
+                    break
+                spec["length"] = total_length if total_length < max_length else max_length
+                spec["offset"] += max_length
+        else:
+            resp = super(VM, self).list(data)
+
+        return resp
+
     @staticmethod
     def is_on(payload):
         return True if payload["spec"]["resources"]["power_state"] == "ON" else False

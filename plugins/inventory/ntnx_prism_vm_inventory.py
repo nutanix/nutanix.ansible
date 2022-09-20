@@ -95,7 +95,6 @@ class InventoryModule(BaseInventoryPlugin):
     """Nutanix VM dynamic invetory module for ansible"""
 
     NAME = "nutanix.ncp.ntnx_prism_vm_inventory"
-    max_length = 500
 
     def verify_file(self, path):
         """Verify inventory configuration file"""
@@ -130,21 +129,7 @@ class InventoryModule(BaseInventoryPlugin):
         )
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
-        if self.data["length"] > self.max_length:
-            spec = deepcopy(self.data)
-            resp = {"entities": []}
-            total_length = spec["length"]
-            spec["length"] = self.max_length
-            while True:
-                sub_resp = vm.list(spec)
-                resp["entities"].extend(sub_resp["entities"])
-                total_length -= self.max_length
-                if total_length <= 0:
-                    break
-                spec["length"] = total_length if total_length < self.max_length else self.max_length
-                spec["offset"] += self.max_length
-        else:
-            resp = vm.list(self.data)
+        resp = vm.list(self.data)
         keys_to_strip_from_resp = [
             "disk_list",
             "vnuma_config",
@@ -180,6 +165,7 @@ class InventoryModule(BaseInventoryPlugin):
             self.inventory.add_host(vm_name, group=cluster)
             self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
             self.inventory.set_variable(vm_name, "uuid", vm_uuid)
+            self.inventory.set_variable(vm_name, "name", vm_name)
 
             # Add hostvars
             for key in keys_to_strip_from_resp:
