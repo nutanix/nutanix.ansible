@@ -6,7 +6,7 @@
     - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: <host_ip>
+      nutanix_host: <pc_ip>
       nutanix_username: <user>
       nutanix_password: <pass>
       validate_certs: false
