@@ -74,7 +74,6 @@ class VM(Prism):
                 )
                 spec["offset"] += max_length
 
-            resp["metadata"] = {}
             resp["metadata"] = data
             resp["metadata"]["total_matches"] = total_matches
             resp["metadata"]["length"] = len(resp["entities"])
