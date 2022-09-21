@@ -55,23 +55,31 @@ class VM(Prism):
         timeout=30,
         max_length=500,
     ):
-
         if data.get("length", 0) > max_length:
             spec = deepcopy(data)
             resp = {"entities": []}
+            total_matches = None
             total_length = spec["length"]
             spec["length"] = max_length
+            spec["offset"] = spec.get("offset", 0)
             while True:
                 sub_resp = super(VM, self).list(spec)
                 resp["entities"].extend(sub_resp["entities"])
+                total_matches = sub_resp["metadata"].get("total_matches")
                 total_length -= max_length
                 if total_length <= 0:
                     break
-                spec["length"] = total_length if total_length < max_length else max_length
+                spec["length"] = (
+                    total_length if total_length < max_length else max_length
+                )
                 spec["offset"] += max_length
+
+            resp["metadata"] = {}
+            resp["metadata"] = data
+            resp["metadata"]["total_matches"] = total_matches
+            resp["metadata"]["length"] = len(resp["entities"])
         else:
             resp = super(VM, self).list(data)
-
         return resp
 
     @staticmethod
