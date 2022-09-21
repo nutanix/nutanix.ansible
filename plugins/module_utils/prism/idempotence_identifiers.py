@@ -7,17 +7,17 @@ __metaclass__ = type
 from .prism import Prism
 import uuid
 
+
 class IdempotenceIdenitifiers(Prism):
     def __init__(self, module):
         resource_type = "/idempotence_identifiers"
-        super(IdempotenceIdenitifiers, self).__init__(module, resource_type=resource_type)
+        super(IdempotenceIdenitifiers, self).__init__(
+            module, resource_type=resource_type
+        )
 
     def get_idempotent_uuids(self, count=1):
         if count < 1:
             return []
-        spec = {
-            "client_identifier" : str(uuid.uuid4()),
-            "count": count
-        }
+        spec = {"client_identifier": str(uuid.uuid4()), "count": count}
         resp = self.create(spec)
         return resp["uuid_list"]

@@ -4,6 +4,7 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+from copy import deepcopy
 
 
 from ..module_utils.prism.idempotence_identifiers import IdempotenceIdenitifiers
@@ -357,7 +358,7 @@ def create_project(module, result):
         # generate new uuid for project
         ii = IdempotenceIdenitifiers(module)
         uuids = ii.get_idempotent_uuids()
-        projects = ProjectsInternal(module, uuid = uuids[0])
+        projects = ProjectsInternal(module, uuid=uuids[0])
 
     else:
         projects = Project(module)
@@ -395,10 +396,11 @@ def create_project(module, result):
             else:
                 module.fail_json(
                     msg=resp["status"]["message_list"],
-                    error="Error creating project. Project is in {0} state".format(resp["status"]["state"]),
+                    error="Error creating project. Project is in {0} state".format(
+                        resp["status"]["state"]
+                    ),
                     response=resp,
                 )
-
 
     result["response"] = resp
 
@@ -407,68 +409,130 @@ def check_project_idempotency(old_spec, update_spec):
     """
     Check every individual entities for similarity
     """
+    old_spec = deepcopy(old_spec)
+    update_spec = deepcopy(update_spec)
 
-    if old_spec["spec"]["name"] != update_spec["spec"]["name"]:
+    # If creation of new users and user list is required
+    if update_spec["spec"].get("users_list") or update_spec["spec"].get(
+        "user_groups_list"
+    ):
         return False
 
-    if old_spec["spec"].get("description") != update_spec["spec"].get("description"):
+    # We compare role mapping between new acps and old acps to check idempotency
+    # Only clusters(checked further), role to users/usergroups mapping or new acp creation should trigger update
+    if update_spec["spec"].get("access_control_policy_list"):
+        old_role_user_user_group_map = {}
+        updated_role_user_user_group_map = {}
+
+        for acp in update_spec["spec"].get("access_control_policy_list", {}):
+
+            # Update should be done for this operations
+            if acp["operation"] == "DELETE" or acp["operation"] == "ADD":
+                return False
+
+            users = []
+            user_groups = []
+            for user in acp["acp"]["resources"]["user_reference_list"]:
+                users.append(user["uuid"])
+            for ug in acp["acp"]["resources"]["user_group_reference_list"]:
+                user_groups.append(ug["uuid"])
+
+            # sort to maintain similar order while comparing
+            users.sort()
+            user_groups.sort()
+            updated_role_user_user_group_map[
+                acp["acp"]["resources"]["role_reference"]["uuid"]
+            ] = {"users": users, "user_groups": user_groups}
+
+        for acp in old_spec["spec"].get("access_control_policy_list", {}):
+
+            users = []
+            user_groups = []
+            for user in acp["acp"]["resources"]["user_reference_list"]:
+                users.append(user["uuid"])
+            for ug in acp["acp"]["resources"]["user_group_reference_list"]:
+                user_groups.append(ug["uuid"])
+
+            # sort to maintain similar order while comparing
+            users.sort()
+            user_groups.sort()
+            old_role_user_user_group_map[
+                acp["acp"]["resources"]["role_reference"]["uuid"]
+            ] = {"users": users, "user_groups": user_groups}
+
+        if old_role_user_user_group_map != updated_role_user_user_group_map:
+            return False
+
+    if old_spec["spec"].get("project_detail"):
+        old_spec = old_spec["spec"]["project_detail"]
+    else:
+        old_spec = old_spec["spec"]
+
+    if update_spec["spec"].get("project_detail"):
+        update_spec = update_spec["spec"]["project_detail"]
+    else:
+        update_spec = update_spec["spec"]
+
+    if old_spec["name"] != update_spec["name"]:
+        return False
+
+    if old_spec.get("description") != update_spec.get("description"):
         return False
 
     # check quota
-    if old_spec["spec"]["resources"].get("resource_domain") != update_spec["spec"][
-        "resources"
-    ].get("resource_domain"):
+    if old_spec["resources"].get("resource_domain") != update_spec["resources"].get(
+        "resource_domain"
+    ):
         return False
 
     # check default subnet reference
-    if old_spec["spec"]["resources"].get("default_subnet_reference", {}).get(
+    if old_spec["resources"].get("default_subnet_reference", {}).get(
         "uuid"
-    ) != update_spec["spec"]["resources"].get("default_subnet_reference", {}).get(
-        "uuid"
-    ):
+    ) != update_spec["resources"].get("default_subnet_reference", {}).get("uuid"):
         return False
 
     # check cluster
     old_clusters = extract_uuids_from_references_list(
-        old_spec["spec"]["resources"].get("cluster_reference_list", [])
+        old_spec["resources"].get("cluster_reference_list", [])
     )
     new_clusters = extract_uuids_from_references_list(
-        update_spec["spec"]["resources"].get("cluster_reference_list", [])
+        update_spec["resources"].get("cluster_reference_list", [])
     )
     if old_clusters != new_clusters:
         return False
 
     # check subnets
     old_subnets = extract_uuids_from_references_list(
-        old_spec["spec"]["resources"].get("subnet_reference_list", [])
+        old_spec["resources"].get("subnet_reference_list", [])
     )
     new_subnets = extract_uuids_from_references_list(
-        update_spec["spec"]["resources"].get("subnet_reference_list", [])
+        update_spec["resources"].get("subnet_reference_list", [])
     )
     if old_subnets != new_subnets:
         return False
 
     # check users
     old_users = extract_uuids_from_references_list(
-        old_spec["spec"]["resources"].get("user_reference_list", [])
+        old_spec["resources"].get("user_reference_list", [])
     )
     new_users = extract_uuids_from_references_list(
-        update_spec["spec"]["resources"].get("user_reference_list", [])
+        update_spec["resources"].get("user_reference_list", [])
     )
     if old_users != new_users:
         return False
 
     # check user groups
     old_usergroups = extract_uuids_from_references_list(
-        old_spec["spec"]["resources"].get("external_user_group_reference_list", [])
+        old_spec["resources"].get("external_user_group_reference_list", [])
     )
     new_usergroups = extract_uuids_from_references_list(
-        update_spec["spec"]["resources"].get("external_user_group_reference_list", [])
+        update_spec["resources"].get("external_user_group_reference_list", [])
     )
     if old_usergroups != new_usergroups:
         return False
 
     return True
+
 
 def update_project(module, result):
     uuid = module.params["project_uuid"]
@@ -478,17 +542,19 @@ def update_project(module, result):
     result["project_uuid"] = uuid
 
     projects = None
-    if module.params.get("role_mapping"):
+    if module.params.get("role_mappings"):
         projects = ProjectsInternal(module, uuid)
     else:
         projects = Project(module)
- 
+
     resp = projects.read(uuid)
 
     # handle cases for projects_internal based status and spec differences
     if isinstance(projects, ProjectsInternal):
-        resp["status"]["project_details"] = resp["status"].pop("project_status")
-        resp["status"]["access_control_policy_list"] = resp["spec"]["access_control_policy_list"]
+        resp["status"]["project_detail"] = resp["status"].pop("project_status")
+        resp["status"]["access_control_policy_list"] = resp["spec"][
+            "access_control_policy_list"
+        ]
 
     strip_extra_attrs(resp["status"], resp["spec"])
     resp["spec"] = resp.pop("status")
@@ -498,22 +564,38 @@ def update_project(module, result):
         result["error"] = error
         module.fail_json(msg="Failed generating project update spec", **result)
 
+    if module.check_mode:
+        result["response"] = update_spec
+        return
+
     # check for idempotency
     if check_project_idempotency(resp, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to update.")
-
-    if module.check_mode:
-        result["response"] = update_spec
-        return
 
     resp = projects.update(update_spec, uuid=uuid)
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
         task = Task(module)
-        task.wait_for_completion(task_uuid)
+        task_status = task.wait_for_completion(task_uuid)
         resp = projects.read(uuid)
+        if task_status.get("status", "") == "FAILED":
+            if task_status.get("error_detail"):
+                module.fail_json(
+                    msg=task_status["error_detail"],
+                    status_code=task_status.get("error_code"),
+                    error="Error creating project",
+                    response=task_status,
+                )
+            else:
+                module.fail_json(
+                    msg=resp["status"]["message_list"],
+                    error="Error creating project. Project is in {0} state".format(
+                        resp["status"]["state"]
+                    ),
+                    response=resp,
+                )
 
     result["changed"] = True
     result["response"] = resp
@@ -541,9 +623,9 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive = [
+        mutually_exclusive=[
             ("users", "role_mappings"),
-            ("external_user_groups", "role_mappings")
+            ("external_user_groups", "role_mappings"),
         ],
         required_if=[
             ("state", "present", ("project_uuid", "name"), True),

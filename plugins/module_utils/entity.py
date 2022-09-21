@@ -207,7 +207,7 @@ class Entity(object):
 
         return resp
 
-    # argument params can be used to override module.params to create spec
+    # "params" can be used to override module.params to create spec by other modules backened
     def get_spec(self, old_spec=None, params=None):
         spec = copy.deepcopy(old_spec) or self._get_default_spec()
 

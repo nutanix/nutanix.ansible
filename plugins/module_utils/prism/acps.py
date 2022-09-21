@@ -10,6 +10,7 @@ from .prism import Prism
 from .roles import Role, get_role_uuid
 from ..constants import ACP as CONSTANTS
 
+
 class ACP(Prism):
     def __init__(self, module):
         resource_type = "/access_control_policies"
@@ -40,7 +41,7 @@ class ACP(Prism):
         }
         return cluster_access_spec
 
-    def _get_project_access_spec(self, project_uuids, scope_level = False):
+    def _get_project_access_spec(self, project_uuids, scope_level=False):
         project_access_spec = {
             "operator": "IN",
             "right_hand_side": {"uuid_list": project_uuids},
@@ -49,7 +50,6 @@ class ACP(Prism):
         if scope_level:
             project_access_spec["left_hand_side"] = "PROJECT"
         return project_access_spec
-
 
     def _build_spec_name(self, payload, name):
         payload["spec"]["name"] = name
@@ -123,18 +123,22 @@ class ACP(Prism):
         return payload, None
 
     def build_role_permissions_based_context(self, role_uuid):
-        
+
         # get assigned permission name for given role
         role = Role(self.module)
         role_info = role.read(role_uuid)
-        role_permissions = (role_info["status"]["resources"]).get("permission_reference_list", [])
+        role_permissions = (role_info["status"]["resources"]).get(
+            "permission_reference_list", []
+        )
         role_permissions_names = []
         for permission in role_permissions:
             if permission.get("name"):
                 role_permissions_names.append(permission["name"])
-        
+
         # Get predefined premissions to entity access expressions from constants
-        expressions_dict = CONSTANTS.EntityFilterExpressionList.PERMISSION_TO_EXPRESSION_MAP
+        expressions_dict = (
+            CONSTANTS.EntityFilterExpressionList.PERMISSION_TO_EXPRESSION_MAP
+        )
         permission_names = expressions_dict.keys()
 
         # Add entity access expressions based on permissions assigned to role
@@ -143,14 +147,12 @@ class ACP(Prism):
             if permission in role_permissions_names:
                 entity_expressions.append(deepcopy(expressions_dict[permission]))
 
-        context = {
-            "entity_filter_expression_list": entity_expressions
-        }
+        context = {"entity_filter_expression_list": entity_expressions}
         return context
 
-        
-        
-    def build_role_based_filter_list(self, role, project_uuids, cluster_uuids=None, collab=False):
+    def build_role_based_filter_list(
+        self, role, project_uuids, cluster_uuids=None, collab=False
+    ):
         if not role.get("name") and not role.get("uuid"):
             return None, "Provide role name or uuid for creating custom acp filter list"
 
@@ -158,7 +160,9 @@ class ACP(Prism):
         if err:
             return None, err
 
-        project_scope_level_access_config = self._get_project_access_spec(project_uuids, scope_level=True)
+        project_scope_level_access_config = self._get_project_access_spec(
+            project_uuids, scope_level=True
+        )
 
         # ACP context list consists of:
         # 1. Collaboration based project access
@@ -172,50 +176,62 @@ class ACP(Prism):
         else:
             collab_access = "SELF_OWNED"
         collab_context = {
-                "scope_filter_expression_list": [deepcopy(project_scope_level_access_config)],
-                "entity_filter_expression_list": [
-                    {
-                      "operator": "IN",
-                      "left_hand_side": {
-                        "entity_type": collab_access
-                      },
-                      "right_hand_side": {
-                        "collection": collab_access
-                      }
-                    }
-                ]
-            }
-    
+            "scope_filter_expression_list": [
+                deepcopy(project_scope_level_access_config)
+            ],
+            "entity_filter_expression_list": [
+                {
+                    "operator": "IN",
+                    "left_hand_side": {"entity_type": collab_access},
+                    "right_hand_side": {"collection": collab_access},
+                }
+            ],
+        }
+
         # default context containing entity access expressions in give project scope needs to be added for all roles
         default_context = {
-            "scope_filter_expression_list": [deepcopy(project_scope_level_access_config)],
-            "entity_filter_expression_list": deepcopy(CONSTANTS.EntityFilterExpressionList.DEFAULT)
+            "scope_filter_expression_list": [
+                deepcopy(project_scope_level_access_config)
+            ],
+            "entity_filter_expression_list": deepcopy(
+                CONSTANTS.EntityFilterExpressionList.DEFAULT
+            ),
         }
 
         # role based entity access expressions context based on the permissions it have
         role_based_context = {}
         if role.get("name") == "Project Admin":
-            
+
             role_based_context = {
-                "entity_filter_expression_list": deepcopy(CONSTANTS.EntityFilterExpressionList.PROJECT_ADMIN)
+                "entity_filter_expression_list": deepcopy(
+                    CONSTANTS.EntityFilterExpressionList.PROJECT_ADMIN
+                )
             }
-            role_based_context["entity_filter_expression_list"].append(self._get_project_access_spec(project_uuids))
-        
+            role_based_context["entity_filter_expression_list"].append(
+                self._get_project_access_spec(project_uuids)
+            )
+
         elif role.get("name") == "Developer":
             role_based_context = {
-                "entity_filter_expression_list": deepcopy(CONSTANTS.EntityFilterExpressionList.DEVELOPER)
+                "entity_filter_expression_list": deepcopy(
+                    CONSTANTS.EntityFilterExpressionList.DEVELOPER
+                )
             }
-        
+
         elif role.get("name") == "Consumer":
             role_based_context = {
-                "entity_filter_expression_list": deepcopy(CONSTANTS.EntityFilterExpressionList.CONSUMER)
+                "entity_filter_expression_list": deepcopy(
+                    CONSTANTS.EntityFilterExpressionList.CONSUMER
+                )
             }
-        
+
         elif role.get("name") == "Operator":
             role_based_context = {
-                "entity_filter_expression_list": deepcopy(CONSTANTS.EntityFilterExpressionList.OPERATOR)
+                "entity_filter_expression_list": deepcopy(
+                    CONSTANTS.EntityFilterExpressionList.OPERATOR
+                )
             }
-        
+
         else:
             role_based_context = self.build_role_permissions_based_context(role_uuid)
 
@@ -224,10 +240,11 @@ class ACP(Prism):
 
         # give access to project based whitelisted clusters
         if cluster_uuids:
-            role_based_context["entity_filter_expression_list"].append(self._get_cluster_access_spec(cluster_uuids))
-        
+            role_based_context["entity_filter_expression_list"].append(
+                self._get_cluster_access_spec(cluster_uuids)
+            )
 
         filter_list = {
-            "context_list" : [collab_context, role_based_context, default_context]
+            "context_list": [collab_context, role_based_context, default_context]
         }
         return filter_list, None

@@ -2,163 +2,160 @@ class ACP:
     class EntityFilterExpressionList:
         PROJECT_ADMIN = [
             {
-                "operator": "IN",
                 "left_hand_side": {"entity_type": "image"},
-                "right_hand_side": {"collection": "ALL"},
-            },
-            {
-                "operator": "IN",
-                "left_hand_side": {"entity_type": "marketplace_item"},
-                "right_hand_side": {"collection": "SELF_OWNED"},
-            },
-            {
                 "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
-                "left_hand_side": {"entity_type": "directory_service"},
             },
             {
-                "operator": "IN",
-                "right_hand_side": {"collection": "ALL"},
-                "left_hand_side": {"entity_type": "role"},
-            },
-            {
-                "operator": "IN",
-                "right_hand_side": {"collection": "ALL"},
-                "left_hand_side": {"entity_type": "user"},
-            },
-            {
-                "operator": "IN",
-                "right_hand_side": {"collection": "ALL"},
-                "left_hand_side": {"entity_type": "user_group"},
-            },
-            {
-                "operator": "IN",
-                "left_hand_side": {"entity_type": "environment"},
-                "right_hand_side": {"collection": "SELF_OWNED"},
-            },
-            {
-                "operator": "IN",
-                "right_hand_side": {"collection": "ALL"},
                 "left_hand_side": {"entity_type": "app_icon"},
-            },
-            {
                 "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
+            },
+            {
                 "left_hand_side": {"entity_type": "category"},
-            },
-            {
-                "operator": "IN",
-                "left_hand_side": {"entity_type": "app_task"},
-                "right_hand_side": {"collection": "SELF_OWNED"},
-            },
-            {
-                "operator": "IN",
-                "left_hand_side": {"entity_type": "app_variable"},
-                "right_hand_side": {"collection": "SELF_OWNED"},
-            },
-            {
                 "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
+            },
+            {
+                "left_hand_side": {"entity_type": "environment"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "SELF_OWNED"},
+            },
+            {
+                "left_hand_side": {"entity_type": "marketplace_item"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "SELF_OWNED"},
+            },
+            {
+                "left_hand_side": {"entity_type": "user"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "ALL"},
+            },
+            {
+                "left_hand_side": {"entity_type": "user_group"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "ALL"},
+            },
+            {
+                "left_hand_side": {"entity_type": "role"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "ALL"},
+            },
+            {
+                "left_hand_side": {"entity_type": "directory_service"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "ALL"},
+            },
+            {
                 "left_hand_side": {"entity_type": "identity_provider"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "ALL"},
             },
             {
+                "left_hand_side": {"entity_type": "app_task"},
                 "operator": "IN",
+                "right_hand_side": {"collection": "SELF_OWNED"},
+            },
+            {
+                "left_hand_side": {"entity_type": "app_variable"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "SELF_OWNED"},
+            },
+            {
                 "left_hand_side": {"entity_type": "vm_recovery_point"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
             },
             {
-                "operator": "IN",
                 "left_hand_side": {"entity_type": "virtual_network"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
-            }
+            },
         ]
-
         DEVELOPER = [
             {
-                "operator": "IN",
                 "left_hand_side": {"entity_type": "image"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
             },
             {
-                "operator": "IN",
-                "left_hand_side": {"entity_type": "marketplace_item"},
-                "right_hand_side": {"collection": "SELF_OWNED"},
-            },
-            {
-                "operator": "IN",
-                "right_hand_side": {"collection": "ALL"},
                 "left_hand_side": {"entity_type": "app_icon"},
-            },
-            {
                 "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
+            },
+            {
                 "left_hand_side": {"entity_type": "category"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "ALL"},
             },
             {
+                "left_hand_side": {"entity_type": "environment"},
                 "operator": "IN",
+                "right_hand_side": {"collection": "SELF_OWNED"},
+            },
+            {
+                "left_hand_side": {"entity_type": "marketplace_item"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "SELF_OWNED"},
+            },
+            {
                 "left_hand_side": {"entity_type": "app_task"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "SELF_OWNED"},
             },
             {
-                "operator": "IN",
                 "left_hand_side": {"entity_type": "app_variable"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "SELF_OWNED"},
             },
-            {
-                "operator": "IN",
-                "left_hand_side": {"entity_type": "vm_recovery_point"},
-                "right_hand_side": {"collection": "ALL"},
-            },
-            {
-                "operator": "IN",
-                "left_hand_side": {"entity_type": "virtual_network"},
-                "right_hand_side": {"collection": "ALL"},
-            }
         ]
-
         CONSUMER = [
             {
-                "operator": "IN",
                 "left_hand_side": {"entity_type": "image"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
             },
             {
-                "operator": "IN",
-                "left_hand_side": {"entity_type": "marketplace_item"},
-                "right_hand_side": {"collection": "SELF_OWNED"},
-            },
-            {
-                "operator": "IN",
-                "right_hand_side": {"collection": "ALL"},
                 "left_hand_side": {"entity_type": "app_icon"},
-            },
-            {
                 "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
+            },
+            {
                 "left_hand_side": {"entity_type": "category"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "ALL"},
             },
             {
+                "left_hand_side": {"entity_type": "environment"},
                 "operator": "IN",
+                "right_hand_side": {"collection": "SELF_OWNED"},
+            },
+            {
+                "left_hand_side": {"entity_type": "marketplace_item"},
+                "operator": "IN",
+                "right_hand_side": {"collection": "SELF_OWNED"},
+            },
+            {
                 "left_hand_side": {"entity_type": "app_task"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "SELF_OWNED"},
             },
             {
-                "operator": "IN",
                 "left_hand_side": {"entity_type": "app_variable"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "SELF_OWNED"},
             },
             {
-                "operator": "IN",
                 "left_hand_side": {"entity_type": "vm_recovery_point"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
             },
             {
-                "operator": "IN",
                 "left_hand_side": {"entity_type": "virtual_network"},
+                "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
-            }
+            },
         ]
-
         OPERATOR = [
             {
                 "operator": "IN",
@@ -173,6 +170,11 @@ class ACP:
             {
                 "operator": "IN",
                 "left_hand_side": {"entity_type": "vm_recovery_point"},
+                "right_hand_side": {"collection": "ALL"},
+            },
+            {
+                "operator": "IN",
+                "left_hand_side": {"entity_type": "virtual_network"},
                 "right_hand_side": {"collection": "ALL"},
             },
         ]
