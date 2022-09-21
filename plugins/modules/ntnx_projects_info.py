@@ -5,6 +5,8 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+from ..module_utils.prism.projects_internal import ProjectsInternal
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -152,6 +154,7 @@ status:
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.prism.projects import Project  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.prism.projects_internal import ProjectsInternal # noqa: E402
 
 
 def get_module_spec():
@@ -161,6 +164,7 @@ def get_module_spec():
         kind=dict(type="str", default="project"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
+        include_acps=dict(type="bool", default=False),
     )
 
     return module_args
@@ -171,6 +175,10 @@ def get_project(module, result):
     uuid = module.params.get("project_uuid")
     resp = projects.read(uuid)
     result["response"] = resp
+    if module.params.get("include_acps", False):
+        _projects = ProjectsInternal(module)
+        resp = _projects.read(uuid)
+        result["response"]["acps"] = resp["spec"]["access_control_policy_list"]
 
 
 def get_projects(module, result):
