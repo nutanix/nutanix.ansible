@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -130,6 +131,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.validate_certs,
         )
         vm = vms.VM(module)
+        self.data["offset"] = self.data.get("offset", 0)
         resp = vm.list(self.data)
         keys_to_strip_from_resp = [
             "disk_list",
@@ -166,6 +168,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.inventory.add_host(vm_name, group=cluster)
             self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
             self.inventory.set_variable(vm_name, "uuid", vm_uuid)
+            self.inventory.set_variable(vm_name, "name", vm_name)
 
             # Add hostvars
             for key in keys_to_strip_from_resp:
