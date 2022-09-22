@@ -6,9 +6,9 @@ __metaclass__ = type
 
 from copy import deepcopy
 
+from ..constants import ACP as CONSTANTS
 from .prism import Prism
 from .roles import Role, get_role_uuid
-from ..constants import ACP as CONSTANTS
 
 
 class ACP(Prism):
