@@ -244,7 +244,16 @@ class Entity(object):
         entities = resp.get("entities") if resp else None
         if entities:
             for entity in entities:
-                if entity["spec"]["name"] == value:
+                
+                name = ""
+                if entity.get("spec", {}).get("name"):
+                    name = entity["spec"]["name"]
+                elif entity.get("status", {}).get("name"):
+                    name = entity["status"]["name"]
+                else:
+                    continue
+                
+                if name == value:
                     return entity["metadata"]["uuid"]
         return None
 

@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 import uuid as _uuid
 
-
+from .accounts import Account, get_account_uuid
 from .acps import ACP
 from .idempotence_identifiers import IdempotenceIdenitifiers
 from .roles import get_role_uuid
@@ -38,6 +38,8 @@ class ProjectsInternal(Prism):
             "default_subnet": self._build_spec_default_subnet,
             "subnets": self._build_spec_subnets,
             "role_mappings": self._build_spec_role_mappings,
+            "accounts": self._build_spec_accounts
+
         }
 
     def create(
@@ -147,6 +149,16 @@ class ProjectsInternal(Prism):
         ] = subnet_reference_specs
         return payload, None
 
+    def _build_spec_accounts(self, payload, account_ref_list):
+        account_reference_specs = []
+        for ref in account_ref_list:
+            uuid, err = get_account_uuid(ref, self.module)
+            if err:
+                return None, err
+            account_reference_specs.append(Account.build_account_reference_spec(uuid))
+        payload["spec"]["resources"]["account_reference_list"] = account_reference_specs
+        return payload, None
+
     # Build user and user groups create config to add them to PC
     def _build_spec_user_and_user_groups_list(self, payload, role_mappings):
 
@@ -230,7 +242,13 @@ class ProjectsInternal(Prism):
             return None, err
 
         collab = self.module.params["collaboration"]
-        cluster_uuids = self.module.params["clusters"]
+        cluster_uuids = []
+        if self.module.params.get("clusters"):
+            cluster_uuids = self.module.params.get("clusters")
+        elif payload["spec"]["project_detail"]["resources"]["cluster_reference_list"]: 
+            for cluster in payload["spec"]["project_detail"]["resources"]["cluster_reference_list"]:
+                cluster_uuids.append(cluster["uuid"])
+
 
         # One ACP is required for each role and associated user/user groups
         # If there is an exiting ACP for a role in project, UPDATE  or DELETE it as per given role_mapping
