@@ -33,7 +33,7 @@ author:
 EXAMPLES = r"""
 - name: List all permissions
   ntnx_permissions_info:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
@@ -42,7 +42,7 @@ EXAMPLES = r"""
 - name: List permission using uuid criteria
   ntnx_permissions_info:
     permission_uuid: "{{ test_permission_uuid }}"
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
@@ -50,7 +50,7 @@ EXAMPLES = r"""
 
 - name: List permissions using filter criteria
   ntnx_permissions_info:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false

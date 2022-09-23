@@ -20,7 +20,7 @@ This collection has been tested against following versions:
 ## Python
 This collection requires Python 2.7 or greater
 
-## Prism Cenral
+## Prism Central
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
 
 > For the 1.2.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.5.
@@ -37,6 +37,8 @@ This collection requires Python 2.7 or greater
 2. Adding cluster references in projects module (ntnx_projects) is supported for PC versions >= pc.2022.1
 
 3. For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding Identity Provider (IdP) & Organizational Unit (OU) based users/groups are supported for PC versions >= pc.2022.1
+
+4. Provide cluster uuid for referencing cluster in various modules (eg. ntnx_vms, ntnx_subnets, etc.). Usage of name is not recommended due to a known issue.
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
@@ -93,7 +95,7 @@ For example, the playbook for iaas.yml is as follows:
     - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: <host_ip>
+      nutanix_host: <pc_ip>
       nutanix_username: <user>
       nutanix_password: <pass>
       validate_certs: true
@@ -214,7 +216,7 @@ We glady welcome contributions from the community. From updating the documentati
   collections:
     - nutanix.ncp
   vars:
-      nutanix_host: <host_ip>
+      nutanix_host: <pc_ip>
       nutanix_username: <user>
       nutanix_password: <pass>
       validate_certs: true

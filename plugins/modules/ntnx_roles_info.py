@@ -33,7 +33,7 @@ author:
 EXAMPLES = r"""
 - name: List all roles
   ntnx_roles_info:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
@@ -41,7 +41,7 @@ EXAMPLES = r"""
 
 - name: List role using uuid criteria
   ntnx_roles_info:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
@@ -50,7 +50,7 @@ EXAMPLES = r"""
 
 - name: List roles using filter criteria
   ntnx_roles_info:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
