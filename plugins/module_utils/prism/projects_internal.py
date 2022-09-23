@@ -2,18 +2,18 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from copy import deepcopy
 import uuid as _uuid
+from copy import deepcopy
 
 from .accounts import Account, get_account_uuid
 from .acps import ACP
+from .clusters import Cluster
 from .idempotence_identifiers import IdempotenceIdenitifiers
+from .prism import Prism
 from .roles import get_role_uuid
+from .subnets import Subnet, get_subnet_uuid
 from .user_groups import UserGroup
 from .users import User
-from .clusters import Cluster
-from .prism import Prism
-from .subnets import Subnet, get_subnet_uuid
 
 __metaclass__ = type
 

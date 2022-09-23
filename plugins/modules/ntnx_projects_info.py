@@ -5,15 +5,13 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from ..module_utils.prism.projects_internal import ProjectsInternal
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
 module: ntnx_projects_info
 short_description: projects info module
-version_added: 1.4.0
+version_added: 1.7.0
 description: 'Get projects info'
 options:
     kind:
@@ -25,6 +23,11 @@ options:
         description:
             - project UUID
         type: str
+    include_acps:
+        description:
+            - write
+        type: bool
+        default: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info
@@ -150,11 +153,10 @@ status:
             }
 """
 
-
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.prism.projects import Project  # noqa: E402
+from ..module_utils.prism.projects_internal import ProjectsInternal  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.prism.projects_internal import ProjectsInternal # noqa: E402
 
 
 def get_module_spec():

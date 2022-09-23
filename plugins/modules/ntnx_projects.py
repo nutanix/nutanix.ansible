@@ -4,18 +4,13 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-from copy import deepcopy
-
-
-from ..module_utils.prism.idempotence_identifiers import IdempotenceIdenitifiers
-from ..module_utils.prism.projects_internal import ProjectsInternal
 
 __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_projects
 short_description: module for create, update and delete pc projects
-version_added: 1.4.0
+version_added: 1.7.0
 description: "module for create, update and delete pc projects"
 options:
     wait:
@@ -113,6 +108,86 @@ options:
         required: false
         type: list
         elements: str
+    collaboration:
+        description:
+            - write
+        type: bool
+    role_mappings:
+        description:
+            - write
+        required: false
+        type: list
+        elements: dict
+        suboptions:
+            user:
+                description:
+                    - write
+                required: false
+                type: dict
+                suboptions:
+                    uuid:
+                        description:
+                            - write
+                        type: str
+                    principal_name:
+                        description:
+                            - write
+                        type: str
+                    username:
+                        description:
+                            - write
+                        type: str
+                    directory_service_uuid:
+                        description:
+                            - write
+                        type: str
+                    identity_provider_uuid:
+                        description:
+                            - write
+                        type: str
+            user_group:
+                description:
+                    - write
+                required: false
+                type: dict
+                suboptions:
+                    uuid:
+                        description:
+                            - write
+                        type: str
+                    distinguished_name:
+                        description:
+                            - write
+                        type: str
+                    idp:
+                        description:
+                            - write
+                        type: dict
+                        suboptions:
+                            idp_uuid:
+                                description:
+                                    - write
+                                type: str
+                                required: true
+                            group_name:
+                                description:
+                                    - write
+                                type: str
+                                required: true
+            role:
+                description:
+                    - write
+                required: true
+                type: dict
+                suboptions:
+                            name:
+                                description:
+                                    - write
+                                type: str
+                            uuid:
+                                description:
+                                    - write
+                                type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -243,9 +318,14 @@ project_uuid:
   type: str
   sample: "df78c7800-4232-4ba8-a125-a2478f9383a9"
 """
+from copy import deepcopy  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.prism.idempotence_identifiers import (  # noqa: E402
+    IdempotenceIdenitifiers,
+)
 from ..module_utils.prism.projects import Project  # noqa: E402
+from ..module_utils.prism.projects_internal import ProjectsInternal  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
     extract_uuids_from_references_list,
