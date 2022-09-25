@@ -298,10 +298,7 @@ class VM(Prism):
                     if err:
                         return None, err
 
-                    config = {
-                        "name": name,
-                        "cluster_uuid": cluster_uuid
-                    }
+                    config = {"name": name, "cluster_uuid": cluster_uuid}
                     uuid, err = get_subnet_uuid(config, self.module)
                     if err:
                         return None, err
