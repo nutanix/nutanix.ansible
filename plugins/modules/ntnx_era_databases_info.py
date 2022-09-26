@@ -24,7 +24,6 @@ options:
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_info
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)

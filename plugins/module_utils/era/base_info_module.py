@@ -8,7 +8,6 @@ __metaclass__ = type
 
 
 class BaseEraInfoModule(BaseInfoModule):
-
     def __init__(self, **kwargs):
         super(BaseEraInfoModule, self).__init__(**kwargs)
         self.argument_spec.pop("nutanix_port")
