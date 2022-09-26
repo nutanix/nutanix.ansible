@@ -48,6 +48,8 @@
     resource_limits:
       - resource_type: MEMORY
         limit: 2046
+    tunnels:
+      - "random-24fd-48d7-92e0-5a5adcde1138"
   register: result
   ignore_errors: true
 
@@ -64,13 +66,14 @@
       - result.response.spec.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
       - result.response.spec.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
       - result.response.spec.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
+      - result.response.spec.resources.tunnel_reference_list[0].uuid == "random-24fd-48d7-92e0-5a5adcde1138"
 
     fail_msg: "Check mode response for update is incorrect"
     success_msg: "Check mode response for update verified successfully"
 
 #################################################################
 
-- name: Update project
+- name: Update project. Change subnets, users, quotas and add vpcs
   ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
@@ -87,6 +90,10 @@
     resource_limits:
       - resource_type: STORAGE
         limit: 2046
+    accounts:
+      - uuid: "{{accounts[0].uuid}}"
+    vpcs:
+      - uuid: "{{vpc.uuid}}"
   register: result
   ignore_errors: true
 
@@ -104,6 +111,8 @@
       - result.response.status.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
       - result.response.status.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
       - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
+      - result.response.status.resources.vpc_reference_list[0].uuid == "{{ vpc.uuid }}"
+      - result.response.status.resources.account_reference_list[0].uuid == "{{ accounts[0].uuid }}"
 
     fail_msg: "Project update failed"
     success_msg: "Project updated successfully"
@@ -125,6 +134,10 @@
     resource_limits:
       - resource_type: STORAGE
         limit: 2046
+    accounts:
+      - name: "{{accounts[0].name}}"
+    vpcs:
+      - uuid: "{{vpc.uuid}}"
   register: result
   ignore_errors: true
 
