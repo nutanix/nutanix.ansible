@@ -5,7 +5,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -121,7 +120,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
         # Determines if composed variables or groups using nonexistent variables is an error
-        strict = self.get_option('strict')
+        strict = self.get_option("strict")
 
         module = Mock_Module(
             self.nutanix_hostname,
@@ -181,10 +180,24 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 self.inventory.set_variable(vm_name, key, value)
 
             # Add variables created by the user's Jinja2 expressions to the host
-            self._set_composite_vars(self.get_option('compose'), entity["status"]["resources"], vm_name, strict=strict)
+            self._set_composite_vars(
+                self.get_option("compose"),
+                entity["status"]["resources"],
+                vm_name,
+                strict=strict,
+            )
 
             # The following two methods combine the provided variables dictionary with the latest host variables
             # Using these methods after _set_composite_vars() allows groups to be created with the composed variables
-            self._add_host_to_composed_groups(self.get_option('groups'), entity["status"]["resources"], vm_name, strict=strict)
-            self._add_host_to_keyed_groups(self.get_option('keyed_groups'), entity["status"]["resources"], vm_name, strict=strict)
-
+            self._add_host_to_composed_groups(
+                self.get_option("groups"),
+                entity["status"]["resources"],
+                vm_name,
+                strict=strict,
+            )
+            self._add_host_to_keyed_groups(
+                self.get_option("keyed_groups"),
+                entity["status"]["resources"],
+                vm_name,
+                strict=strict,
+            )

@@ -11,21 +11,20 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_era_databases_info
 short_description: database  info module
-version_added: 1.6.0
+version_added: 1.7.0
 description: 'Get database info'
 options:
-      database_name:
+      db_name:
         description:
             - database name
         type: str
-      fetch_ssh_credentials:
-        type: bool
-        description: write
-      fetch_kubeconfig:
-        type: bool
-        description: write
+      db_id:
+        description:
+            - database id
+        type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_info
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
