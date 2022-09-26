@@ -171,7 +171,7 @@ def get_module_spec():
 
 
 def get_database(module, result):
-    database = Database(module)
+    database = Database(module, resource_type="/v0.8/databases")
     if module.params.get("db_name"):
         db_name = module.params["db_name"]
         db_option = "{0}/{1}".format("name", db_name)
@@ -196,6 +196,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,
+        mutually_exclusive=[("db_name", "db_id")],
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("db_name") or module.params.get("db_id"):
