@@ -10,6 +10,8 @@ from .clusters import Cluster
 from .prism import Prism
 from .subnets import Subnet, get_subnet_uuid
 from .accounts import Account, get_account_uuid
+from .vpcs import Vpc, get_vpc_uuid
+
 
 
 class Project(Prism):
@@ -25,7 +27,9 @@ class Project(Prism):
             "subnets": self._build_spec_subnets,
             "users": self._build_spec_user_reference_list,
             "external_user_groups": self._build_spec_external_user_group_reference_list,
-            "accounts": self._build_spec_accounts
+            "accounts": self._build_spec_accounts,
+            "vpcs": self._build_spec_vpcs,
+            "tunnels": self._build_spec_tunnels
         }
 
     def _get_default_spec(self):
@@ -89,6 +93,28 @@ class Project(Prism):
             account_reference_specs.append(Account.build_account_reference_spec(uuid))
         payload["spec"]["resources"]["account_reference_list"] = account_reference_specs
         return payload, None
+    
+    def _build_spec_vpcs(self, payload, vpc_ref_list):
+        vpc_reference_specs = []
+        for ref in vpc_ref_list:
+            uuid, err = get_vpc_uuid(ref, self.module)
+            if err:
+                return None, err
+            vpc_reference_specs.append(Vpc.build_vpc_reference_spec(uuid))
+        payload["spec"]["resources"]["vpc_reference_list"] = vpc_reference_specs
+        return payload, None
+
+    def _build_spec_tunnels(self, payload, tunnel_ref_list):
+        tunnel_reference_specs = []
+        for uuid in tunnel_ref_list:
+            spec = {
+                "uuid": uuid,
+                "kind": "tunnel"
+            }
+            tunnel_reference_specs.append(spec)
+        payload["spec"]["resources"]["tunnel_reference_list"] = tunnel_reference_specs
+        return payload, None
+
 
     def _build_spec_user_reference_list(self, payload, users):
         user_reference_specs = []

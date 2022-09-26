@@ -10,6 +10,7 @@ from .prism import Prism
 
 
 class Vpc(Prism):
+    kind = "vpc"
     def __init__(self, module):
         resource_type = "/vpcs"
         super(Vpc, self).__init__(module, resource_type=resource_type)
@@ -76,6 +77,11 @@ class Vpc(Prism):
 
     def _get_routable_ip_spec(self, ip, prefix):
         return deepcopy({"ip": ip, "prefix_length": prefix})
+
+    @classmethod
+    def build_vpc_reference_spec(cls, uuid):
+        spec = {"kind": cls.kind, "uuid": uuid}
+        return spec
 
 
 # Helper functions

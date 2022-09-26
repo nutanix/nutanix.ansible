@@ -14,6 +14,8 @@ from .roles import get_role_uuid
 from .subnets import Subnet, get_subnet_uuid
 from .user_groups import UserGroup
 from .users import User
+from .vpcs import Vpc, get_vpc_uuid
+
 
 __metaclass__ = type
 
@@ -38,8 +40,9 @@ class ProjectsInternal(Prism):
             "default_subnet": self._build_spec_default_subnet,
             "subnets": self._build_spec_subnets,
             "role_mappings": self._build_spec_role_mappings,
-            "accounts": self._build_spec_accounts
-
+            "accounts": self._build_spec_accounts,
+            "vpcs": self._build_spec_vpcs,
+            "tunnels": self._build_spec_tunnels
         }
 
     def create(
@@ -157,6 +160,27 @@ class ProjectsInternal(Prism):
                 return None, err
             account_reference_specs.append(Account.build_account_reference_spec(uuid))
         payload["spec"]["resources"]["account_reference_list"] = account_reference_specs
+        return payload, None
+
+    def _build_spec_vpcs(self, payload, vpc_ref_list):
+        vpc_reference_specs = []
+        for ref in vpc_ref_list:
+            uuid, err = get_vpc_uuid(ref, self.module)
+            if err:
+                return None, err
+            vpc_reference_specs.append(Vpc.build_vpc_reference_spec(uuid))
+        payload["spec"]["project_detail"]["resources"]["vpc_reference_list"] = vpc_reference_specs
+        return payload, None
+    
+    def _build_spec_tunnels(self, payload, tunnel_ref_list):
+        tunnel_reference_specs = []
+        for uuid in tunnel_ref_list:
+            spec = {
+                "uuid": uuid,
+                "kind": "tunnel"
+            }
+            tunnel_reference_specs.append(spec)
+        payload["spec"]["project_detail"]["resources"]["tunnel_reference_list"] = tunnel_reference_specs
         return payload, None
 
     # Build user and user groups create config to add them to PC

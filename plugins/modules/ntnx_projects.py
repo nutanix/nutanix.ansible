@@ -415,6 +415,13 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
+        vpcs=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
         accounts=dict(
             type="list",
             elements="dict",
@@ -423,6 +430,7 @@ def get_module_spec():
             required=False,
         ),
         clusters=dict(type="list", elements="str", required=False),
+        tunnels=dict(type="list", elements="str", required=False),
         users=dict(type="list", elements="str", required=False),
         external_user_groups=dict(type="list", elements="str", required=False),
         collaboration=dict(type="bool", required=False),
