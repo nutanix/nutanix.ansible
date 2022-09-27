@@ -158,7 +158,9 @@ class ProjectsInternal(Prism):
             if err:
                 return None, err
             account_reference_specs.append(Account.build_account_reference_spec(uuid))
-        payload["spec"]["project_detail"]["resources"]["account_reference_list"] = account_reference_specs
+        payload["spec"]["project_detail"]["resources"][
+            "account_reference_list"
+        ] = account_reference_specs
         return payload, None
 
     def _build_spec_vpcs(self, payload, vpc_ref_list):
@@ -168,9 +170,11 @@ class ProjectsInternal(Prism):
             if err:
                 return None, err
             vpc_reference_specs.append(Vpc.build_vpc_reference_spec(uuid))
-        payload["spec"]["project_detail"]["resources"]["vpc_reference_list"] = vpc_reference_specs
+        payload["spec"]["project_detail"]["resources"][
+            "vpc_reference_list"
+        ] = vpc_reference_specs
         return payload, None
-    
+
     # Build user and user groups create config to add them to PC
     def _build_spec_user_and_user_groups_list(self, payload, role_mappings):
 
@@ -195,8 +199,11 @@ class ProjectsInternal(Prism):
         # get uuids for user groups
         new_uuid_list = ii.get_idempotent_uuids(new_uuids_required)
         if len(new_uuid_list) < new_uuids_required:
-            return None, "Required count of new uuids for user groups: {0}, got {1}".format(
-                new_uuids_required, len(new_uuid_list)
+            return (
+                None,
+                "Required count of new uuids for user groups: {0}, got {1}".format(
+                    new_uuids_required, len(new_uuid_list)
+                ),
             )
 
         # get uuids for users
@@ -215,7 +222,7 @@ class ProjectsInternal(Prism):
         # first add user uuids to name_uuid_map
         for user in user_name_uuid_list:
             # there is just one k-v in dictionary
-            for k, v  in user.items():
+            for k, v in user.items():
                 name_uuid_map[k] = v
 
         for role_mapping in role_mappings:
@@ -252,8 +259,28 @@ class ProjectsInternal(Prism):
         payload["spec"]["user_group_list"] = user_groups
         return name_uuid_map, None
 
-    def _build_spec_role_mappings(self, payload, role_mappings):
+    # this routine will return list of cluster uuids to be added/preset in project
+    def _get_cluster_uuids(self, payload):
+        cluster_uuids = []
+        if self.module.params.get("clusters"):
+            cluster_uuids = self.module.params.get("clusters")
+        elif payload["spec"]["project_detail"]["resources"].get(
+            "cluster_reference_list"
+        ):
+            for cluster in payload["spec"]["project_detail"]["resources"][
+                "cluster_reference_list"
+            ]:
+                cluster_uuids.append(cluster["uuid"])
+        return cluster_uuids
 
+    def _build_spec_role_mappings(self, payload, role_mappings):
+        """
+        High level logic for acp create/update/delete:
+        - One ACP is required for each role and associated user/user groups
+        - If there is an exiting ACP for a role in project, UPDATE  or DELETE it as per given role_mapping
+        - For UPDATE, we modify the users, user groups and filter list for that role
+        - If there is no ACP for a given role in projects, create a new ACP for that role
+        """
         if not self.project_uuid:
             return (
                 None,
@@ -275,20 +302,10 @@ class ProjectsInternal(Prism):
             return None, err
 
         collab = self.module.params["collaboration"]
-        cluster_uuids = []
-        if self.module.params.get("clusters"):
-            cluster_uuids = self.module.params.get("clusters")
-        elif payload["spec"]["project_detail"]["resources"].get("cluster_reference_list"): 
-            for cluster in payload["spec"]["project_detail"]["resources"]["cluster_reference_list"]:
-                cluster_uuids.append(cluster["uuid"])
-
-
-        # One ACP is required for each role and associated user/user groups
-        # If there is an exiting ACP for a role in project, UPDATE  or DELETE it as per given role_mapping
-        # If there is no ACP for a given role in projects, create a new ACP for that role
+        cluster_uuids = self._get_cluster_uuids(payload)
 
         # Create role_user_groups_map for role_uuid -> users and user_groups references
-        # Maintain role_name_uuid_map to store uuid of role and save get uuid api calls
+        # Maintain role_name_uuid_map to store uuid of role and save list calls for uuids
         role_name_uuid_map = {}
         role_user_groups_map = {}
         for role_mapping in role_mappings:
@@ -348,7 +365,9 @@ class ProjectsInternal(Prism):
 
         _acp = ACP(self.module)
 
-        # first check existing acps of project if UPDATE/DELETE of acp is required
+        # First check existing acps of project w.r.t to role mapping, if UPDATE/DELETE of acp is required
+        # Incase its a UPDATE acp for role we pop the entry from role_user_groups_map,
+        # so that we are left with roles for which new acps are to be created.
         for acp in payload["spec"]["access_control_policy_list"]:
 
             # if acp for role is required then UPDATE(users, user groups and context) else DELETE acp

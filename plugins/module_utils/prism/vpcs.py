@@ -11,6 +11,7 @@ from .prism import Prism
 
 class Vpc(Prism):
     kind = "vpc"
+
     def __init__(self, module):
         resource_type = "/vpcs"
         super(Vpc, self).__init__(module, resource_type=resource_type)

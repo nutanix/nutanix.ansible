@@ -244,7 +244,7 @@ class Entity(object):
         entities = resp.get("entities") if resp else None
         if entities:
             for entity in entities:
-                
+
                 name = ""
                 if entity.get("spec", {}).get("name"):
                     name = entity["spec"]["name"]
@@ -252,7 +252,7 @@ class Entity(object):
                     name = entity["status"]["name"]
                 else:
                     continue
-                
+
                 if name == value:
                     return entity["metadata"]["uuid"]
         return None
