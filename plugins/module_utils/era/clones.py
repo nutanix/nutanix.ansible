@@ -9,7 +9,6 @@ from .era import Era
 
 
 class Clone(Era):
-    kind = "registry"
 
     def __init__(self, module, resource_type="/v0.9/clones"):
         super(Clone, self).__init__(module, resource_type=resource_type)

@@ -8,7 +8,7 @@ __metaclass__ = type
 from .era import Era
 
 
-class Database(Era):
+class TM(Era):
 
-    def __init__(self, module, resource_type="/v0.9/databases"):
-        super(Database, self).__init__(module, resource_type=resource_type)
+    def __init__(self, module, resource_type="/v0.9/tms"):
+        super(TM, self).__init__(module, resource_type=resource_type)

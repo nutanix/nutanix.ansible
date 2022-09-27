@@ -9,18 +9,18 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_era_databases_info
-short_description: database  info module
+module: ntnx_era_tms_info
+short_description: tm  info module
 version_added: 1.7.0
-description: 'Get database info'
+description: 'Get tm info'
 options:
-      db_name:
+      tm_name:
         description:
-            - database name
+            - tm name
         type: str
-      db_id:
+      tm_id:
         description:
-            - database id
+            - tm id
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
@@ -30,67 +30,68 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List databases
-    ntnx_era_databases_info:
+  - name: List tms
+    ntnx_era_tms_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
     register: result
 
-  - name: Get databases using name
-    ntnx_databases_info:
+  - name: Get tm using name
+    ntnx_tms_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      db_name: "database-name"
+      tm_name: "tm-name"
     register: result
 
-  - name: Get databases using id
-    ntnx_databases_info:
+  - name: Get tm using id
+    ntnx_tms_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
-      db_id: "database-id"
+      tm_id: "tm-id"
     register: result
 
 """
 RETURN = r"""
+
 """
 
 from ..module_utils.era.base_info_module import BaseEraInfoModule  # noqa: E402
-from ..module_utils.era.databases import Database  # noqa: E402
+from ..module_utils.era.time_machines import TM  # noqa: E402
 
 
 def get_module_spec():
 
     module_args = dict(
-        db_name=dict(type="str"),
-        db_id=dict(type="str"),
+        tm_name=dict(type="str"),
+        tm_id=dict(type="str"),
     )
 
     return module_args
 
 
-def get_database(module, result):
-    database = Database(module, resource_type="/v0.8/databases")
+def get_tm(module, result):
+    tm = TM(module)
     if module.params.get("db_name"):
         db_name = module.params["db_name"]
         db_option = "{0}/{1}".format("name", db_name)
     else:
         db_option = "{0}".format(module.params["db_id"])
 
-    resp = database.read(db_option)
+    resp = tm.read(db_option)
 
     result["response"] = resp
 
 
-def get_databases(module, result):
-    database = Database(module)
+def get_tms(module, result):
+    tm = TM(module)
 
-    resp = database.read()
+    resp = tm.read()
 
     result["response"] = resp
 
@@ -100,13 +101,13 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,
-        mutually_exclusive=[("db_name", "db_id")],
+        mutually_exclusive=[("tm_name", "tm_id")],
     )
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("db_name") or module.params.get("db_id"):
-        get_database(module, result)
+    if module.params.get("tm_name") or module.params.get("tm_id"):
+        get_tm(module, result)
     else:
-        get_databases(module, result)
+        get_tms(module, result)
     module.exit_json(**result)
 
 
