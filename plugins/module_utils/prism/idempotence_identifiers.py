@@ -22,3 +22,8 @@ class IdempotenceIdenitifiers(Prism):
         spec = {"client_identifier": str(uuid.uuid4()), "count": count}
         resp = self.create(spec)
         return resp["uuid_list"]
+    
+    # this func requests for UUID5 algo uuids used for users creation in projects
+        spec = {"name_list": name_list}
+        resp = self.create(spec, endpoint="salted")
+        return resp["name_uuid_list"]

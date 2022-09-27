@@ -42,7 +42,6 @@ class ProjectsInternal(Prism):
             "role_mappings": self._build_spec_role_mappings,
             "accounts": self._build_spec_accounts,
             "vpcs": self._build_spec_vpcs,
-            "tunnels": self._build_spec_tunnels
         }
 
     def create(
@@ -159,7 +158,7 @@ class ProjectsInternal(Prism):
             if err:
                 return None, err
             account_reference_specs.append(Account.build_account_reference_spec(uuid))
-        payload["spec"]["resources"]["account_reference_list"] = account_reference_specs
+        payload["spec"]["project_detail"]["resources"]["account_reference_list"] = account_reference_specs
         return payload, None
 
     def _build_spec_vpcs(self, payload, vpc_ref_list):
@@ -172,35 +171,39 @@ class ProjectsInternal(Prism):
         payload["spec"]["project_detail"]["resources"]["vpc_reference_list"] = vpc_reference_specs
         return payload, None
     
-    def _build_spec_tunnels(self, payload, tunnel_ref_list):
-        tunnel_reference_specs = []
-        for uuid in tunnel_ref_list:
-            spec = {
-                "uuid": uuid,
-                "kind": "tunnel"
-            }
-            tunnel_reference_specs.append(spec)
-        payload["spec"]["project_detail"]["resources"]["tunnel_reference_list"] = tunnel_reference_specs
-        return payload, None
-
     # Build user and user groups create config to add them to PC
     def _build_spec_user_and_user_groups_list(self, payload, role_mappings):
 
         # This spec is only configured when new users and user groups are needed to create in pc
+        # for user groups random uuid from server is used (new_uuids_required will track that)
+        # for users, specific uuids are required from server which always remains same for same user
         new_uuids_required = 0
+        user_names = []
         for role_mapping in role_mappings:
             if role_mapping.get("user") and not role_mapping["user"].get("uuid"):
-                new_uuids_required += 1
+                name = role_mapping["user"].get("username") or role_mapping["user"].get(
+                    "principal_name"
+                )
+                user_names.append(name)
             if role_mapping.get("user_group") and not role_mapping["user_group"].get(
                 "uuid"
             ):
                 new_uuids_required += 1
 
         ii = IdempotenceIdenitifiers(self.module)
+
+        # get uuids for user groups
         new_uuid_list = ii.get_idempotent_uuids(new_uuids_required)
         if len(new_uuid_list) < new_uuids_required:
-            return None, "Required count of new uuids: {0}, got {1}".format(
+            return None, "Required count of new uuids for user groups: {0}, got {1}".format(
                 new_uuids_required, len(new_uuid_list)
+            )
+
+        # get uuids for users
+        user_name_uuid_list = ii.get_salted_uuids(user_names)
+        if len(user_names) != len(user_name_uuid_list):
+            return None, "Required count of uuids for users: {0}, got {1}".format(
+                user_names, len(user_name_uuid_list)
             )
 
         _user = User(self.module)
@@ -208,19 +211,25 @@ class ProjectsInternal(Prism):
         users = []
         user_groups = []
         name_uuid_map = {}
+
+        # first add user uuids to name_uuid_map
+        for user in user_name_uuid_list:
+            # there is just one k-v in dictionary
+            for k, v  in user.items():
+                name_uuid_map[k] = v
+
         for role_mapping in role_mappings:
             if role_mapping.get("user") and not role_mapping["user"].get("uuid"):
                 user, err = _user.get_spec(params=role_mapping["user"])
-                if err:
-                    return None, err
-                user["user"] = user.pop("spec")
-                user["metadata"]["uuid"] = new_uuid_list.pop()
-                user["operation"] = "ADD"
-                users.append(user)
                 name = role_mapping["user"].get("username") or role_mapping["user"].get(
                     "principal_name"
                 )
-                name_uuid_map[name] = user["metadata"]["uuid"]
+                if err:
+                    return None, err
+                user["user"] = user.pop("spec")
+                user["metadata"]["uuid"] = name_uuid_map[name]
+                user["operation"] = "ADD"
+                users.append(user)
 
             if role_mapping.get("user_group") and not role_mapping["user_group"].get(
                 "uuid"
@@ -269,7 +278,7 @@ class ProjectsInternal(Prism):
         cluster_uuids = []
         if self.module.params.get("clusters"):
             cluster_uuids = self.module.params.get("clusters")
-        elif payload["spec"]["project_detail"]["resources"]["cluster_reference_list"]: 
+        elif payload["spec"]["project_detail"]["resources"].get("cluster_reference_list"): 
             for cluster in payload["spec"]["project_detail"]["resources"]["cluster_reference_list"]:
                 cluster_uuids.append(cluster["uuid"])
 

@@ -430,7 +430,6 @@ def get_module_spec():
             required=False,
         ),
         clusters=dict(type="list", elements="str", required=False),
-        tunnels=dict(type="list", elements="str", required=False),
         users=dict(type="list", elements="str", required=False),
         external_user_groups=dict(type="list", elements="str", required=False),
         collaboration=dict(type="bool", required=False),
@@ -459,8 +458,14 @@ def create_project(module, result):
         projects = Project(module)
 
     name = module.params["name"]
-    if projects.get_uuid(name):
-        module.fail_json(msg="Project with given name already exists", **result)
+    if isinstance(projects, Project):
+        if projects.get_uuid(name):
+            module.fail_json(msg="Project with given name already exists", **result)
+    else:
+        # projects_internal doesn't allow list call
+        _projects = Project(module)
+        if _projects.get_uuid(name):
+            module.fail_json(msg="Project with given name already exists", **result)
 
     spec, error = projects.get_spec()
     if error:
@@ -486,7 +491,7 @@ def create_project(module, result):
                     msg=task_status["error_detail"],
                     status_code=task_status.get("error_code"),
                     error="Error creating project",
-                    response=task_status,
+                    response=task_status
                 )
             else:
                 module.fail_json(
@@ -494,7 +499,7 @@ def create_project(module, result):
                     error="Error creating project. Project is in {0} state".format(
                         resp["status"]["state"]
                     ),
-                    response=resp,
+                    response=resp
                 )
 
     result["response"] = resp
@@ -697,7 +702,7 @@ def update_project(module, result):
 
 
 def delete_project(module, result):
-    uuid = module.params["project_uuid"]
+    uuid = module.params.get("project_uuid")
     if not uuid:
         result["error"] = "Missing parameter project_uuid"
         module.fail_json(msg="Failed deleting Project", **result)

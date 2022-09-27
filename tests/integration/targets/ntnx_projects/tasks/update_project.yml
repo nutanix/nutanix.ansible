@@ -48,8 +48,6 @@
     resource_limits:
       - resource_type: MEMORY
         limit: 2046
-    tunnels:
-      - "random-24fd-48d7-92e0-5a5adcde1138"
   register: result
   ignore_errors: true
 
@@ -66,7 +64,6 @@
       - result.response.spec.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
       - result.response.spec.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
       - result.response.spec.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
-      - result.response.spec.resources.tunnel_reference_list[0].uuid == "random-24fd-48d7-92e0-5a5adcde1138"
 
     fail_msg: "Check mode response for update is incorrect"
     success_msg: "Check mode response for update verified successfully"

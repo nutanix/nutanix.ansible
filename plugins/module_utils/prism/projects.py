@@ -28,8 +28,7 @@ class Project(Prism):
             "users": self._build_spec_user_reference_list,
             "external_user_groups": self._build_spec_external_user_group_reference_list,
             "accounts": self._build_spec_accounts,
-            "vpcs": self._build_spec_vpcs,
-            "tunnels": self._build_spec_tunnels
+            "vpcs": self._build_spec_vpcs
         }
 
     def _get_default_spec(self):
@@ -103,18 +102,6 @@ class Project(Prism):
             vpc_reference_specs.append(Vpc.build_vpc_reference_spec(uuid))
         payload["spec"]["resources"]["vpc_reference_list"] = vpc_reference_specs
         return payload, None
-
-    def _build_spec_tunnels(self, payload, tunnel_ref_list):
-        tunnel_reference_specs = []
-        for uuid in tunnel_ref_list:
-            spec = {
-                "uuid": uuid,
-                "kind": "tunnel"
-            }
-            tunnel_reference_specs.append(spec)
-        payload["spec"]["resources"]["tunnel_reference_list"] = tunnel_reference_specs
-        return payload, None
-
 
     def _build_spec_user_reference_list(self, payload, users):
         user_reference_specs = []
