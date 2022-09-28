@@ -221,17 +221,9 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_cluster(self, payload, param):
-        if "name" in param:
-            cluster = Cluster(self.module)
-            name = param["name"]
-            uuid = cluster.get_uuid(name)
-            if not uuid:
-                error = "Cluster {0} not found.".format(name)
-                return None, error
-
-        elif "uuid" in param:
-            uuid = param["uuid"]
-
+        uuid, err = get_cluster_uuid(param, self.module)
+        if err:
+            return err
         payload["spec"]["cluster_reference"]["uuid"] = uuid
         return payload, None
 
@@ -254,6 +246,19 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_networks(self, payload, networks):
+        # consider cluster as well to get subnet from given cluster only
+        cluster_ref = None
+        if self.module.params.get("cluster"):
+            cluster_ref = self.module.params["cluster"]
+        elif payload["spec"].get("cluster_reference"):
+            cluster_ref = payload["spec"]["cluster_reference"]
+
+        cluster_uuid = ""
+        if cluster_ref:
+            cluster_uuid, err = get_cluster_uuid(cluster_ref, self.module)
+            if err:
+                return None, err
+
         nics = []
         for network in networks:
             if network.get("uuid"):
@@ -286,17 +291,6 @@ class VM(Prism):
 
                 elif network.get("subnet", {}).get("name"):
                     name = network["subnet"]["name"]
-
-                    # consider cluster as well to get subnet from given cluster only
-                    cluster_ref = None
-                    if self.module.params.get("cluster"):
-                        cluster_ref = self.module.params["cluster"]
-                    else:
-                        cluster_ref = payload["spec"]["cluster_reference"]
-
-                    cluster_uuid, err = get_cluster_uuid(cluster_ref, self.module)
-                    if err:
-                        return None, err
 
                     config = {"name": name, "cluster_uuid": cluster_uuid}
                     uuid, err = get_subnet_uuid(config, self.module)
