@@ -223,7 +223,7 @@ class VM(Prism):
     def _build_spec_cluster(self, payload, param):
         uuid, err = get_cluster_uuid(param, self.module)
         if err:
-            return err
+            return None, err
         payload["spec"]["cluster_reference"]["uuid"] = uuid
         return payload, None
 
