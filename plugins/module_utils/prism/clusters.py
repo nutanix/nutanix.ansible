@@ -18,25 +18,18 @@ class Cluster(Prism):
         self,
     ):
         name_uuid_map = {}
-        max_length = 500
-        data = {"offset": 0}
-        while True:
-            data["length"] = max_length
-            resp = self.list(data=data)
-            for cluster in resp.get("entities", []):
-                name = ""
-                if cluster.get("spec", {}).get("name"):
-                    name = cluster["spec"]["name"]
-                elif cluster.get("status", {}).get("name"):
-                    name = cluster["status"]["name"]
-                else:
-                    continue
+        data = {"kind": self.kind}
+        resp = self.list(data=data)
+        for cluster in resp.get("entities", []):
+            name = ""
+            if cluster.get("spec", {}).get("name"):
+                name = cluster["spec"]["name"]
+            elif cluster.get("status", {}).get("name"):
+                name = cluster["status"]["name"]
+            else:
+                continue
 
-                name_uuid_map[name] = cluster["metadata"]["uuid"]
-
-            data["offset"] = data["offset"] + max_length
-            if data["offset"] > resp["metadata"]["total_matches"]:
-                break
+            name_uuid_map[name] = cluster["metadata"]["uuid"]
         return name_uuid_map
 
     @classmethod
