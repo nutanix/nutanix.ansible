@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_projects_info
 short_description: projects info module
-version_added: 1.4.0
+version_added: 1.7.0
 description: 'Get projects info'
 options:
     kind:
@@ -23,6 +23,11 @@ options:
         description:
             - project UUID
         type: str
+    include_acps:
+        description:
+            - write
+        type: bool
+        default: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info
@@ -148,9 +153,9 @@ status:
             }
 """
 
-
 from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.prism.projects import Project  # noqa: E402
+from ..module_utils.prism.projects_internal import ProjectsInternal  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -161,6 +166,7 @@ def get_module_spec():
         kind=dict(type="str", default="project"),
         sort_order=dict(type="str"),
         sort_attribute=dict(type="str"),
+        include_acps=dict(type="bool", default=False),
     )
 
     return module_args
@@ -171,6 +177,10 @@ def get_project(module, result):
     uuid = module.params.get("project_uuid")
     resp = projects.read(uuid)
     result["response"] = resp
+    if module.params.get("include_acps", False):
+        _projects = ProjectsInternal(module)
+        resp = _projects.read(uuid)
+        result["response"]["acps"] = resp["spec"]["access_control_policy_list"]
 
 
 def get_projects(module, result):

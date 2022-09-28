@@ -9,6 +9,8 @@ __metaclass__ = type
 from .clusters import Cluster
 from .prism import Prism
 from .subnets import Subnet, get_subnet_uuid
+from .accounts import Account, get_account_uuid
+from .vpcs import Vpc, get_vpc_uuid
 
 
 class Project(Prism):
@@ -24,6 +26,8 @@ class Project(Prism):
             "subnets": self._build_spec_subnets,
             "users": self._build_spec_user_reference_list,
             "external_user_groups": self._build_spec_external_user_group_reference_list,
+            "accounts": self._build_spec_accounts,
+            "vpcs": self._build_spec_vpcs,
         }
 
     def _get_default_spec(self):
@@ -76,6 +80,26 @@ class Project(Prism):
                 return None, err
             subnet_reference_specs.append(Subnet.build_subnet_reference_spec(uuid))
         payload["spec"]["resources"]["subnet_reference_list"] = subnet_reference_specs
+        return payload, None
+
+    def _build_spec_accounts(self, payload, account_ref_list):
+        account_reference_specs = []
+        for ref in account_ref_list:
+            uuid, err = get_account_uuid(ref, self.module)
+            if err:
+                return None, err
+            account_reference_specs.append(Account.build_account_reference_spec(uuid))
+        payload["spec"]["resources"]["account_reference_list"] = account_reference_specs
+        return payload, None
+
+    def _build_spec_vpcs(self, payload, vpc_ref_list):
+        vpc_reference_specs = []
+        for ref in vpc_ref_list:
+            uuid, err = get_vpc_uuid(ref, self.module)
+            if err:
+                return None, err
+            vpc_reference_specs.append(Vpc.build_vpc_reference_spec(uuid))
+        payload["spec"]["resources"]["vpc_reference_list"] = vpc_reference_specs
         return payload, None
 
     def _build_spec_user_reference_list(self, payload, users):
