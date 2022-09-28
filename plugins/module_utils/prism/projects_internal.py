@@ -16,7 +16,6 @@ from .user_groups import UserGroup
 from .users import User
 from .vpcs import Vpc, get_vpc_uuid
 
-
 __metaclass__ = type
 
 
