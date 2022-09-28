@@ -10,7 +10,7 @@ from copy import deepcopy
 
 from ansible.module_utils.basic import _load_params
 
-from .clusters import Cluster, get_cluster_uuid
+from .clusters import get_cluster_uuid
 from .groups import get_entity_uuid
 from .images import get_image_uuid
 from .prism import Prism

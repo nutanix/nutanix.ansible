@@ -19,9 +19,7 @@ class Cluster(Prism):
     ):
         name_uuid_map = {}
         max_length = 500
-        data = {
-            "offset": 0
-        }
+        data = {"offset": 0}
         while True:
             data["length"] = max_length
             resp = self.list(data=data)
@@ -35,7 +33,7 @@ class Cluster(Prism):
                     continue
 
                 name_uuid_map[name] = cluster["metadata"]["uuid"]
-            
+
             data["offset"] = data["offset"] + max_length
             if data["offset"] > resp["metadata"]["total_matches"]:
                 break
@@ -45,7 +43,6 @@ class Cluster(Prism):
     def build_cluster_reference_spec(cls, uuid):
         spec = {"kind": cls.kind, "uuid": uuid}
         return spec
-    
 
 
 # Helper functions
