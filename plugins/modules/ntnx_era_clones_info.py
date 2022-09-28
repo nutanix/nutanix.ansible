@@ -14,11 +14,11 @@ short_description: clone  info module
 version_added: 1.7.0
 description: 'Get clone info'
 options:
-      db_name:
+      clone_name:
         description:
             - clone name
         type: str
-      db_id:
+      clone_id:
         description:
             - clone id
         type: str
