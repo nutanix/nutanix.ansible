@@ -38,8 +38,6 @@ This collection requires Python 2.7 or greater
 
 3. For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding Identity Provider (IdP) & Organizational Unit (OU) based users/groups are supported for PC versions >= pc.2022.1
 
-4. Provide cluster uuid for referencing cluster in various modules (eg. ntnx_vms, ntnx_subnets, etc.). Usage of name is not recommended due to a known issue.
-
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
 ## Foundation
