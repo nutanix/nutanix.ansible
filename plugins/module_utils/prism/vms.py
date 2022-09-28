@@ -296,9 +296,11 @@ class VM(Prism):
                             cluster_uuid = cluster_name_uuid_map.get(
                                 network["subnet"]["cluster"]["name"]
                             )
-                        
+
                             if not cluster_uuid:
-                                return None, "Cluster {0} not found".format(network["subnet"]["cluster"]["name"])
+                                return None, "Cluster {0} not found".format(
+                                    network["subnet"]["cluster"]["name"]
+                                )
                         config["cluster_uuid"] = cluster_uuid
 
                     uuid, err = get_subnet_uuid(config, self.module)
