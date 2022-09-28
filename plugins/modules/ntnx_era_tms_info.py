@@ -77,13 +77,13 @@ def get_module_spec():
 
 def get_tm(module, result):
     tm = TM(module)
-    if module.params.get("db_name"):
-        db_name = module.params["db_name"]
-        db_option = "{0}/{1}".format("name", db_name)
+    if module.params.get("tm_name"):
+        tm_name = module.params["tm_name"]
+        tm_option = "{0}/{1}".format("name", tm_name)
     else:
-        db_option = "{0}".format(module.params["db_id"])
+        tm_option = "{0}".format(module.params["tm_id"])
 
-    resp = tm.read(db_option)
+    resp = tm.read(tm_option)
 
     result["response"] = resp
 

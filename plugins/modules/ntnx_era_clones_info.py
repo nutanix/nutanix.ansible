@@ -76,13 +76,13 @@ def get_module_spec():
 
 def get_clone(module, result):
     clone = Clone(module, resource_type="/v0.8/clones")
-    if module.params.get("db_name"):
-        db_name = module.params["db_name"]
-        db_option = "{0}/{1}".format("name", db_name)
+    if module.params.get("clone_name"):
+        clone_name = module.params["clone_name"]
+        clone_option = "{0}/{1}".format("name", clone_name)
     else:
-        db_option = "{0}".format(module.params["db_id"])
+        clone_option = "{0}".format(module.params["clone_id"])
 
-    resp = clone.read(db_option)
+    resp = clone.read(clone_option)
 
     result["response"] = resp
 
