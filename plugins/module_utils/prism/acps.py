@@ -137,7 +137,7 @@ class ACP(Prism):
 
         # Get predefined premissions to entity access expressions from constants
         expressions_dict = (
-            CONSTANTS.EntityFilterExpressionList.PERMISSION_TO_EXPRESSION_MAP
+            CONSTANTS.EntityFilterExpressionList.PERMISSION_TO_ACCESS_MAP
         )
         permission_names = expressions_dict.keys()
 

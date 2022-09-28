@@ -205,7 +205,7 @@ class ACP:
             },
         ]
 
-        PERMISSION_TO_EXPRESSION_MAP = {
+        PERMISSION_TO_ACCESS_MAP = {
             "View_Image": {
                 "operator": "IN",
                 "left_hand_side": {"entity_type": "image"},
