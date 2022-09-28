@@ -10,7 +10,7 @@ from copy import deepcopy
 
 from ansible.module_utils.basic import _load_params
 
-from .clusters import get_cluster_uuid
+from .clusters import Cluster, get_cluster_uuid
 from .groups import get_entity_uuid
 from .images import get_image_uuid
 from .prism import Prism
@@ -223,7 +223,7 @@ class VM(Prism):
     def _build_spec_cluster(self, payload, param):
         uuid, err = get_cluster_uuid(param, self.module)
         if err:
-            return err
+            return None, err
         payload["spec"]["cluster_reference"]["uuid"] = uuid
         return payload, None
 
@@ -246,18 +246,7 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_networks(self, payload, networks):
-        # consider cluster as well to get subnet from given cluster only
-        cluster_ref = None
-        if self.module.params.get("cluster"):
-            cluster_ref = self.module.params["cluster"]
-        elif payload["spec"].get("cluster_reference"):
-            cluster_ref = payload["spec"]["cluster_reference"]
-
-        cluster_uuid = ""
-        if cluster_ref:
-            cluster_uuid, err = get_cluster_uuid(cluster_ref, self.module)
-            if err:
-                return None, err
+        cluster_name_uuid_map = {}
 
         nics = []
         for network in networks:
@@ -290,9 +279,28 @@ class VM(Prism):
                     uuid = network["subnet"]["uuid"]
 
                 elif network.get("subnet", {}).get("name"):
-                    name = network["subnet"]["name"]
+                    config = {"name": network["subnet"]["name"]}
+                    uuid = ""
 
-                    config = {"name": name, "cluster_uuid": cluster_uuid}
+                    # check if cluster given for filtering subnet
+                    cluster_uuid = ""
+                    if network.get("subnet", {}).get("cluster"):
+                        if network["subnet"]["cluster"].get("uuid"):
+                            cluster_uuid = network["subnet"]["cluster"].get("uuid")
+                        else:
+                            if not cluster_name_uuid_map:
+                                cluster = Cluster(self.module)
+                                cluster_name_uuid_map = (
+                                    cluster.get_all_clusters_name_uuid_map()
+                                )
+                            cluster_uuid = cluster_name_uuid_map.get(
+                                network["subnet"]["cluster"]["name"]
+                            )
+                        
+                            if not cluster_uuid:
+                                return None, "Cluster {0} not found".format(network["subnet"]["cluster"]["name"])
+                        config["cluster_uuid"] = cluster_uuid
+
                     uuid, err = get_subnet_uuid(config, self.module)
                     if err:
                         return None, err
