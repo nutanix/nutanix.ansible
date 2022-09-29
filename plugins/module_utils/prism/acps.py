@@ -158,6 +158,12 @@ class ACP(Prism):
         if err:
             return None, err
 
+        role_name = role.get("name")
+        if not role_name:
+            _role = Role(self.module)
+            resp = _role.read(uuid=role_uuid)
+            role_name = resp["status"]["name"]
+
         project_scope_level_access_config = self._get_project_access_spec(
             project_uuids, scope_level=True
         )
@@ -198,7 +204,7 @@ class ACP(Prism):
 
         # role based entity access expressions context based on the permissions it have
         role_based_context = {}
-        if role.get("name") == "Project Admin":
+        if role_name == "Project Admin":
 
             role_based_context = {
                 "entity_filter_expression_list": deepcopy(
@@ -209,21 +215,21 @@ class ACP(Prism):
                 self._get_project_access_spec(project_uuids)
             )
 
-        elif role.get("name") == "Developer":
+        elif role_name == "Developer":
             role_based_context = {
                 "entity_filter_expression_list": deepcopy(
                     CONSTANTS.EntityFilterExpressionList.DEVELOPER
                 )
             }
 
-        elif role.get("name") == "Consumer":
+        elif role_name == "Consumer":
             role_based_context = {
                 "entity_filter_expression_list": deepcopy(
                     CONSTANTS.EntityFilterExpressionList.CONSUMER
                 )
             }
 
-        elif role.get("name") == "Operator":
+        elif role_name == "Operator":
             role_based_context = {
                 "entity_filter_expression_list": deepcopy(
                     CONSTANTS.EntityFilterExpressionList.OPERATOR
