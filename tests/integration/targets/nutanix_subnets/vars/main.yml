@@ -19,7 +19,7 @@ dhcp_settings:
   
 dhcp_server_address: 192.168.0.35
 external_nat_subnet:
-  vlan_id: 201
+  vlan_id: 205
   gateway_ip_address: 10.44.3.193
   network_prefix: 27
   network_ip: 10.44.3.192
@@ -31,7 +31,7 @@ external_nat_subnet:
     end_address: 10.44.3.217
 
 external_nonat_subnet:
-  vlan_id: 202
+  vlan_id: 206
   gateway_ip_address: 10.44.3.225
   network_prefix: 27
   network_ip: 10.44.3.224
