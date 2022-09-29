@@ -25,7 +25,7 @@ options:
         type: str
     include_acps:
         description:
-            - write
+            - set it to include acps in response while getting project using uuid
         type: bool
         default: false
 extends_documentation_fragment:

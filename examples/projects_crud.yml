@@ -25,6 +25,10 @@
         resource_limits:
           - resource_type: STORAGE
             limit: 2046000
+        vpcs:
+          - name: <vpc1-name>
+        accounts:
+          - name: <account-name>
       register: project1
   
     - name: update project
