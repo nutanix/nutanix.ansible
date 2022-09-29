@@ -41,11 +41,13 @@ This collection requires Python 2.7 or greater
 3. For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding Identity Provider (IdP) & Organizational Unit (OU) based users/groups are supported for PC versions >= pc.2022.1
 
 #### v1.7.0 additions:
-1. Added capability to add cluster reference while using vlan subnet name in vms to pull subnet uuid from particular subnet. Checkout vm.yml example for same.
+1. Added functionality to add cluster reference while using vlan subnet name in vms to pull subnet info from particular cluster. Checkout vm.yml example for same.
 
-2. Added capability to configure role mappings, collaboration, new user/user groups, vpcs and accounts in ntnx_projects. Checkout projects_with_role_mapping.yml example for same.
+2. Added functionality to configure role mappings, collaboration, new user/user groups, vpcs and accounts in ntnx_projects. Checkout projects_with_role_mapping.yml example for same.
 
-3. Now inventory can fetch 500+ entities.
+3. Added constructed inventory feature to inventory module to construct custom vars and groups based on existing inventory.
+
+4. Now inventory module can fetch 500+ entities.
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
