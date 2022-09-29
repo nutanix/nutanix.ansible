@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 module: ntnx_projects
 short_description: module for create, update and delete pc projects
-version_added: 1.7.0
+version_added: 1.4.0
 description: "module for create, update and delete pc projects"
 options:
     wait:

@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_projects_info
 short_description: projects info module
-version_added: 1.7.0
+version_added: 1.4.0
 description: 'Get projects info'
 options:
     kind:
