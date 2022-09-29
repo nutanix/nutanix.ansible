@@ -87,6 +87,38 @@ options:
                     - subnet UUID
                     - Mutually exclusive with C(name)
                 type: str
+    accounts:
+        description: list of accounts to be added in project
+        type: list
+        elements: dict
+        required: false
+        suboptions:
+            name:
+                description:
+                    - account name
+                    - Mutually exclusive with C(uuid)
+                type: str
+            uuid:
+                description:
+                    - account UUID
+                    - Mutually exclusive with C(name)
+                type: str
+    vpcs:
+        description: list of vpcs to be added in project
+        type: list
+        elements: dict
+        required: false
+        suboptions:
+            name:
+                description:
+                    - vpc name
+                    - Mutually exclusive with C(uuid)
+                type: str
+            uuid:
+                description:
+                    - vpc UUID
+                    - Mutually exclusive with C(name)
+                type: str
     users:
         description:
             - list of uuid of users to be added in project
@@ -110,84 +142,88 @@ options:
         elements: str
     collaboration:
         description:
-            - write
+            - to enable collaboration or not for users in projects
+            - required together with C(role_mappings)
         type: bool
+        required: false
     role_mappings:
         description:
-            - write
+            - role mappings between users/user_groups and roles
         required: false
         type: list
         elements: dict
         suboptions:
             user:
                 description:
-                    - write
+                    - user to be added
                 required: false
                 type: dict
                 suboptions:
                     uuid:
                         description:
-                            - write
+                            - give uuid of existing users
                         type: str
                     principal_name:
                         description:
-                            - write
+                            - principal name if new user needs to be created out of it
                         type: str
                     username:
                         description:
-                            - write
+                            - username if new user needs to be created out of it
                         type: str
                     directory_service_uuid:
                         description:
-                            - write
+                            - directory_service_uuid if new user needs to be created out of it
                         type: str
                     identity_provider_uuid:
                         description:
-                            - write
+                            - identity_provider_uuid if new user needs to be created out of it
                         type: str
             user_group:
                 description:
-                    - write
+                    - user group details
                 required: false
                 type: dict
                 suboptions:
                     uuid:
                         description:
-                            - write
+                            - give uuid of existing user group
                         type: str
                     distinguished_name:
                         description:
-                            - write
+                            - distinguished_name if new user group needs to be created out of it
                         type: str
                     idp:
                         description:
-                            - write
+                            - idp if new user group needs to be created out of it
                         type: dict
                         suboptions:
                             idp_uuid:
                                 description:
-                                    - write
+                                    - idp uuid
                                 type: str
                                 required: true
                             group_name:
                                 description:
-                                    - write
+                                    - group name for idp
                                 type: str
                                 required: true
             role:
                 description:
-                    - write
+                    - role details
                 required: true
                 type: dict
                 suboptions:
-                            name:
-                                description:
-                                    - write
-                                type: str
-                            uuid:
-                                description:
-                                    - write
-                                type: str
+                    name:
+                        description:
+                            - role name
+                            - Mutually exclusive with C(uuid)
+                        type: str
+                    uuid:
+                        description:
+                            - role UUID
+                            - Mutually exclusive with C(name)
+                        type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations

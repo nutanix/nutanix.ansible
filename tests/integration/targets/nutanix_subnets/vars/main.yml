@@ -1,4 +1,4 @@
-vlan_subnets_ids: [204, 206, 207, 208, 209, 210]
+vlan_subnets_ids: [221, 222, 223, 224, 225, 226]
 ip_address_management:
   network_ip: 192.168.0.0
   network_prefix: 24

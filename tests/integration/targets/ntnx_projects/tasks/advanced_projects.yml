@@ -312,4 +312,3 @@
 
 - set_fact:
     todelete: []
-
