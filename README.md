@@ -13,7 +13,7 @@ Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the
 # Version compatibility
 
 ## Ansible
-This collection has been tested against following versions: 
+This collection and examples has been tested against following versions :
   1. ansible==5.0.1
   2. ansible-core==2.12.3
 
