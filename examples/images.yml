@@ -1,0 +1,84 @@
+---
+- name: Images playbook
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <host_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      set_fact:
+        image_uuid: ""
+        source_path: ""
+        source_uri: ""
+        clusters_name:  ""
+  
+    - name: create image from local workstation
+      ntnx_images:
+        state: "present"
+        source_path: "{{source_path}}"
+        clusters:
+          - name: "{{clusters_name}}"
+        categories:
+          AppFamily:
+            - Backup
+        checksum:
+          checksum_algorithm: SHA_1
+          checksum_value: 44610efd741a3ab4a548a81ea94869bb8b692977
+        name: "ansible-test-with-categories-mapping"
+        desc: "description"
+        image_type: "ISO_IMAGE"
+        version:
+          product_name: "test"
+          product_version: "1.2.0"
+        wait: true
+
+    - name: create image from with source as remote server file location
+      ntnx_images:
+        state: "present"
+        source_uri: "{{source_uri}}"
+        clusters:
+          - name: "{{clusters_name}}"
+        categories:
+          AppFamily:
+            - Backup
+        checksum:
+          checksum_algorithm: SHA_1
+          checksum_value: 44610efd741a3ab4a548a81ea94869bb8b692977
+        name: "ansible-test-with-categories-mapping"
+        desc: "description"
+        image_type: "DISK_IMAGE"
+        version:
+          product_name: "test"
+          product_version: "1.2.0"
+        wait: true
+
+    - name: override categories of existing image
+      ntnx_images:
+        state: "present"
+        image_uuid: "{{image-uuid}}"
+        categories:
+          AppTier:
+            - Default
+          AppFamily:
+            - Backup
+        wait: true
+
+    - name: dettach all categories from existing image
+      ntnx_images:
+        state: "present"
+        image_uuid: "00000000-0000-0000-0000-000000000000"
+        remove_categories: true
+        wait: true
+
+    - name: delete existing image
+      ntnx_images:
+        state: "absent"
+        image_uuid: "00000000-0000-0000-0000-000000000000"
+        wait: true
+        

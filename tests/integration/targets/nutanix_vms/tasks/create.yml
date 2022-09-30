@@ -391,10 +391,14 @@
       networks:
         - is_connected: true
           subnet:
-            uuid: "{{ network.dhcp.uuid }}"
+            name: "{{ network.dhcp.name }}"
+            cluster:
+              name: "{{ cluster.name }}"
         - is_connected: true
           subnet:
             uuid: "{{ static.uuid }}"
+            cluster:
+              uuid: "{{ cluster.uuid }}"
       disks:
         - type: DISK
           size_gb: 1

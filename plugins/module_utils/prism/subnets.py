@@ -154,7 +154,24 @@ def get_subnet_uuid(config, module):
     if "name" in config or "subnet_name" in config:
         subnet = Subnet(module)
         name = config.get("name") or config.get("subnet_name")
-        uuid = subnet.get_uuid(name)
+        uuid = ""
+
+        # incase subnet of particular cluster is needed
+        if config.get("cluster_uuid"):
+            filter_spec = {"filter": "{0}=={1}".format("name", name)}
+            resp = subnet.list(data=filter_spec)
+            entities = resp.get("entities") if resp else None
+            if entities:
+                for entity in entities:
+                    if (
+                        entity["status"].get("cluster_reference", {}).get("uuid")
+                        == config["cluster_uuid"]
+                    ):
+                        uuid = entity["metadata"]["uuid"]
+                        break
+        else:
+            uuid = subnet.get_uuid(name)
+
         if not uuid:
             error = "Subnet {0} not found.".format(name)
             return None, error

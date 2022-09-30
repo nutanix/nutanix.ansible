@@ -1,6 +1,8 @@
 ---
+- set_fact:
+    vpc_uuids: []
 - name: Inputs vpcs task
   include_tasks: vpc.yml
   with_items:
-    - { name: Prod, subnet_name: Ext-Nat}
-    - { name: Dev, subnet_name: Ext-Nat}
+    - { name: "{{vpc_names[0]}}", subnet_name: "{{external_subnet.name}}"}
+    - { name: "{{vpc_names[1]}}", subnet_name: "{{external_subnet.name}}"}

@@ -10,3 +10,5 @@
     msg:
         - "name: {{ vpc.response.status.name }}"
         - "uuid: {{ vpc.vpc_uuid }}"
+- set_fact:
+    vpc_uuids: "{{ vpc_uuids + [ vpc.vpc_uuid ] }}"

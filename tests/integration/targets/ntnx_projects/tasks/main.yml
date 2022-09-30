@@ -9,3 +9,4 @@
         - import_tasks: "create_project.yml"
         - import_tasks: "delete_project.yml"
         - import_tasks: "update_project.yml"
+        - import_tasks: "advanced_projects.yml"

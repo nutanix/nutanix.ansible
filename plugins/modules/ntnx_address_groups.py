@@ -70,7 +70,7 @@ author:
 EXAMPLES = r"""
 - name: Create address group
   ntnx_address_groups:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     state: present
@@ -85,7 +85,7 @@ EXAMPLES = r"""
 
 - name: delete address group
   ntnx_address_groups:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     state: absent

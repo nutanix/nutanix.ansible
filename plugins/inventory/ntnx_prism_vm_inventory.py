@@ -63,12 +63,14 @@ DOCUMENTATION = r"""
                 - name: VALIDATE_CERTS
     notes: "null"
     requirements: "null"
+    extends_documentation_fragment:
+        - constructed
 """
 
 import json  # noqa: E402
 import tempfile  # noqa: E402
 
-from ansible.plugins.inventory import BaseInventoryPlugin  # noqa: E402
+from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
 from ..module_utils.prism import vms  # noqa: E402
 
@@ -89,7 +91,7 @@ class Mock_Module:
         return json.dumps(data)
 
 
-class InventoryModule(BaseInventoryPlugin):
+class InventoryModule(BaseInventoryPlugin, Constructable):
     """Nutanix VM dynamic invetory module for ansible"""
 
     NAME = "nutanix.ncp.ntnx_prism_vm_inventory"
@@ -117,6 +119,8 @@ class InventoryModule(BaseInventoryPlugin):
         self.nutanix_port = self.get_option("nutanix_port")
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
+        # Determines if composed variables or groups using nonexistent variables is an error
+        strict = self.get_option("strict")
 
         module = Mock_Module(
             self.nutanix_hostname,
@@ -126,6 +130,7 @@ class InventoryModule(BaseInventoryPlugin):
             self.validate_certs,
         )
         vm = vms.VM(module)
+        self.data["offset"] = self.data.get("offset", 0)
         resp = vm.list(self.data)
         keys_to_strip_from_resp = [
             "disk_list",
@@ -162,6 +167,7 @@ class InventoryModule(BaseInventoryPlugin):
             self.inventory.add_host(vm_name, group=cluster)
             self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
             self.inventory.set_variable(vm_name, "uuid", vm_uuid)
+            self.inventory.set_variable(vm_name, "name", vm_name)
 
             # Add hostvars
             for key in keys_to_strip_from_resp:
@@ -172,3 +178,26 @@ class InventoryModule(BaseInventoryPlugin):
 
             for key, value in entity["status"]["resources"].items():
                 self.inventory.set_variable(vm_name, key, value)
+
+            # Add variables created by the user's Jinja2 expressions to the host
+            self._set_composite_vars(
+                self.get_option("compose"),
+                entity["status"]["resources"],
+                vm_name,
+                strict=strict,
+            )
+
+            # The following two methods combine the provided variables dictionary with the latest host variables
+            # Using these methods after _set_composite_vars() allows groups to be created with the composed variables
+            self._add_host_to_composed_groups(
+                self.get_option("groups"),
+                entity["status"]["resources"],
+                vm_name,
+                strict=strict,
+            )
+            self._add_host_to_keyed_groups(
+                self.get_option("keyed_groups"),
+                entity["status"]["resources"],
+                vm_name,
+                strict=strict,
+            )
