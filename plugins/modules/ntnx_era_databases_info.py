@@ -39,7 +39,7 @@ EXAMPLES = r"""
     register: result
 
   - name: Get databases using name
-    ntnx_databases_info:
+    ntnx_era_databases_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -48,7 +48,7 @@ EXAMPLES = r"""
     register: result
 
   - name: Get databases using id
-    ntnx_databases_info:
+    ntnx_era_databases_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"

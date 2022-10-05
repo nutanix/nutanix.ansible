@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_era_db_servers_info
-short_description: database  info module
+short_description: database server  info module
 version_added: 1.7.0
-description: 'Get database info'
+description: 'Get database server info'
 options:
       server_name:
         description:
@@ -43,7 +43,7 @@ EXAMPLES = r"""
     register: result
 
   - name: Get db_servers using name
-    ntnx_db_servers_info:
+    ntnx_era_db_servers_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -52,7 +52,7 @@ EXAMPLES = r"""
     register: result
 
   - name: Get db_servers using id
-    ntnx_db_servers_info:
+    ntnx_era_db_servers_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -61,7 +61,7 @@ EXAMPLES = r"""
     register: result
 
   - name: Get db_servers using id
-    ntnx_db_servers_info:
+    ntnx_era_db_servers_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -88,8 +88,8 @@ def get_module_spec():
     return module_args
 
 
-def get_database(module, result):
-    database = DBServers(module, resource_type="/v0.8/dbservers")
+def get_db_server(module, result):
+    db_server = DBServers(module, resource_type="/v0.8/dbservers")
     if module.params.get("server_name"):
         db_name = module.params["server_name"]
         db_option = "{0}/{1}".format("name", db_name)
@@ -99,15 +99,15 @@ def get_database(module, result):
     else:
         db_option = "{0}".format(module.params["server_id"])
 
-    resp = database.read(db_option, raise_error=False)
+    resp = db_server.read(db_option, raise_error=False)
 
     result["response"] = resp
 
 
 def get_db_servers(module, result):
-    database = DBServers(module)
+    db_server = DBServers(module)
 
-    resp = database.read()
+    resp = db_server.read()
 
     result["response"] = resp
 
@@ -121,7 +121,7 @@ def run_module():
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("server_name") or module.params.get("server_id") or module.params.get("server_ip"):
-        get_database(module, result)
+        get_db_server(module, result)
     else:
         get_db_servers(module, result)
     module.exit_json(**result)

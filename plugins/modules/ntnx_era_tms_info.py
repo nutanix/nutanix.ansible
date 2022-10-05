@@ -39,7 +39,7 @@ EXAMPLES = r"""
     register: result
 
   - name: Get tm using name
-    ntnx_tms_info:
+    ntnx_era_tms_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -48,7 +48,7 @@ EXAMPLES = r"""
     register: result
 
   - name: Get tm using id
-    ntnx_tms_info:
+    ntnx_era_tms_info:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
