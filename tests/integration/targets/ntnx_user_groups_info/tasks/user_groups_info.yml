@@ -44,7 +44,7 @@
 - name: List user_groups using filter criteria
   ntnx_user_groups_info:
     filter: 
-      name: "{{ test_user_group_name }}"
+      group_name: "{{ test_user_group_name }}"
   register: result
   ignore_errors: True
 

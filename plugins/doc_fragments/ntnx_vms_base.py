@@ -85,6 +85,22 @@ options:
               - Subnet UUID
               - Mutually exclusive with C(name)
             type: str
+          cluster:
+            description:
+              - Name or UUID of the cluster from which subnet will be queried for subnet name given
+            type: dict
+            required: false
+            suboptions:
+              name:
+                description:
+                  - Cluster Name
+                  - Mutually exclusive with C(uuid)
+                type: str
+              uuid:
+                description:
+                  - Cluster UUID
+                  - Mutually exclusive with C(name)
+                type: str
       private_ip:
         description:
           - Optionally assign static IP to the VM

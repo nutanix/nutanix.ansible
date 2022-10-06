@@ -2,15 +2,33 @@
   debug:
     msg: "Start ntnx_project_info tests"
 
-- name: Create Project with minimal spec
-  ntnx_projects:
-    name: "test-ansible-project-7"
-  register: project_1
-  ignore_errors: true
+- name: Generate random project_name 
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- set_fact:
+    suffix_name: "ansible-role-mapping"
+
+- set_fact:
+    project1_name: "{{random_name}}{{suffix_name}}1"
+    project2_name: "{{random_name}}{{suffix_name}}2"
+
 
 - name: Create Project with minimal spec
   ntnx_projects:
-    name: "test-ansible-project-8"
+    name: "{{project1_name}}"
+  register: project_1
+  ignore_errors: true
+
+- name: Create Project with role mappings
+  ntnx_projects:
+    name: "{{project2_name}}"
+    collaboration: True
+    role_mappings:
+      - role: 
+          name: "{{roles[0]}}"
+        user:
+          uuid: "{{users[0]}}"
   register: project_2
   ignore_errors: true
 
@@ -25,7 +43,7 @@
 - name: List project using name filter criteria
   ntnx_projects_info:
     filter:
-      name: "test-ansible-project-7"
+      name: "{{project1_name}}"
   register: result
   ignore_errors: True
 
@@ -33,7 +51,7 @@
   assert:
     that:
       - result.response is defined
-      - result.response.entities[0].status.name == "test-ansible-project-7"
+      - result.response.entities[0].status.name == "{{project1_name}}"
     fail_msg: "Unable to list projects using filter"
     success_msg: "Project info obtained successfully"
 
@@ -64,9 +82,29 @@
   assert:
     that:
       - result.response is defined
-      - result.response.status.name == "{{ project_2.response.status.name }}"
+      - result.response.status.name == "{{ project2_name }}"
       - result.response.metadata.kind == "project"
     fail_msg: "Unable to list projects using uuid"
+    success_msg: "Project info obtained successfully"
+
+################################################## 
+
+- name: List project using project uuid criteria including acps
+  ntnx_projects_info:
+    project_uuid: "{{ project_2.project_uuid }}"
+    include_acps: True
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.name == "{{ project2_name }}"
+      - result.response.acps is defined 
+      - result.response.acps | length == 1
+      - result.response.metadata.kind == "project"
+    fail_msg: "Unable to list projects with acps using uuid"
     success_msg: "Project info obtained successfully"
 
 ################################################## 

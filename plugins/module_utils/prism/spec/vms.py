@@ -11,12 +11,18 @@ class DefaultVMSpec:
     mutually_exclusive = [("name", "uuid")]
 
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-
+    subnet_spec = dict(
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+        cluster=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+    )
     network_spec = dict(
         uuid=dict(type="str"),
         state=dict(type="str", choices=["absent"]),
         subnet=dict(
-            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+            type="dict", options=subnet_spec, mutually_exclusive=mutually_exclusive
         ),
         mac_address=dict(type="str", required=False),
         private_ip=dict(type="str", required=False),

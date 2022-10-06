@@ -15,6 +15,14 @@
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: False
+  # - name: Delete DR VM
+  #   ntnx_vms:
+  #     vm_uuid: '{{dr_vm.uuid }}'
+  #     state: absent
+  #     nutanix_host: "{{ ip }}"
+  #     nutanix_username: "{{ username }}"
+  #     nutanix_password: "{{ password }}"
+  #     validate_certs: False
   - name: Delete overlay
     ntnx_subnets:
       state: absent

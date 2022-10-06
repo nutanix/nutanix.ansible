@@ -13,14 +13,14 @@ Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the
 # Version compatibility
 
 ## Ansible
-This collection has been tested against following versions: 
+This collection and examples has been tested against following versions :
   1. ansible==5.0.1
   2. ansible-core==2.12.3
 
 ## Python
 This collection requires Python 2.7 or greater
 
-## Prism Cenral
+## Prism Central
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
 
 > For the 1.2.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.5.
@@ -31,12 +31,23 @@ This collection requires Python 2.7 or greater
 
 > For the 1.5.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4.0.2 and pc2022.1.0.2.
 
+> For the 1.7.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4 and pc2022.1.0.2.
+
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
 
 2. Adding cluster references in projects module (ntnx_projects) is supported for PC versions >= pc.2022.1
 
 3. For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding Identity Provider (IdP) & Organizational Unit (OU) based users/groups are supported for PC versions >= pc.2022.1
+
+#### v1.7.0 additions:
+1. Added functionality to add cluster reference while using vlan subnet name in vms to pull subnet info from particular cluster. Checkout vm.yml example for same.
+
+2. Added functionality to configure role mappings, collaboration, new user/user groups, vpcs and accounts in ntnx_projects. Checkout projects_with_role_mapping.yml example for same.
+
+3. Added constructed inventory feature to inventory module to construct custom vars and groups based on existing inventory.
+
+4. Now inventory module can fetch 500+ entities.
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
@@ -93,7 +104,7 @@ For example, the playbook for iaas.yml is as follows:
     - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: <host_ip>
+      nutanix_host: <pc_ip>
       nutanix_username: <user>
       nutanix_password: <pass>
       validate_certs: true
@@ -214,7 +225,7 @@ We glady welcome contributions from the community. From updating the documentati
   collections:
     - nutanix.ncp
   vars:
-      nutanix_host: <host_ip>
+      nutanix_host: <pc_ip>
       nutanix_username: <user>
       nutanix_password: <pass>
       validate_certs: true

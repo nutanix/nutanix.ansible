@@ -2,10 +2,22 @@
 - debug:
     msg: start ntnx_address_groups create tests
 
+- name: Generate random project_name 
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- set_fact:
+    suffix_name: "ansible-ag"
+
+- set_fact:
+    ag1: "{{random_name}}{{suffix_name}}1"
+    ag2: "{{random_name}}{{suffix_name}}2"
+
+
 - name: Create address group
   ntnx_address_groups:
     state: present
-    name: test-ansible-group-1
+    name: "{{ag1}}"
     desc: test-ansible-group-1-desc
     subnets:
       - network_ip: "10.1.1.0"
@@ -20,7 +32,7 @@
       - result.response is defined
       - result.address_group_uuid is defined
       - result.changed == True
-      - result.response.name == "test-ansible-group-1"
+      - result.response.name == "{{ag1}}"
       - result.response.description == "test-ansible-group-1-desc"
       - result.response.ip_address_block_list[0].ip == "10.1.1.0"
       - result.response.ip_address_block_list[1].ip == "10.1.2.2"
@@ -38,7 +50,7 @@
 - name: Check if address group with existing name fails or not
   ntnx_address_groups:
     state: present
-    name: test-ansible-group-1
+    name: "{{ag1}}"
     subnets:
       - network_ip: "10.1.1.0"
         network_prefix: 24
@@ -59,7 +71,7 @@
   check_mode: yes
   ntnx_address_groups:
     state: present
-    name: test-ansible-address-group-2
+    name: "{{ag2}}"
     desc: test-ansible-address-group-2-desc
     subnets:
       - network_ip: "10.1.1.0"
@@ -73,7 +85,7 @@
     that:
       - result.response is defined
       - result.changed == False
-      - result.response.name == "test-ansible-address-group-2"
+      - result.response.name == "{{ag2}}"
       - result.response.description == "test-ansible-address-group-2-desc"
       - result.response.ip_address_block_list[0].ip == "10.1.1.0"
       - result.response.ip_address_block_list[1].ip == "10.1.2.2"

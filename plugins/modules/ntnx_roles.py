@@ -71,7 +71,7 @@ EXAMPLES = r"""
 
 - name: Create roles with permissions
   ntnx_roles:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
@@ -87,7 +87,7 @@ EXAMPLES = r"""
 
 - name: delete role
   ntnx_roles:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false

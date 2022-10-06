@@ -164,7 +164,7 @@ def get_subnet_uuid(config, module):
             if entities:
                 for entity in entities:
                     if (
-                        entity["status"]["cluster_reference"]["uuid"]
+                        entity["status"].get("cluster_reference", {}).get("uuid")
                         == config["cluster_uuid"]
                     ):
                         uuid = entity["metadata"]["uuid"]
