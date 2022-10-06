@@ -22,6 +22,20 @@ options:
         description:
             - profile id
         type: str
+      profile_type:
+        description:
+            - profile type
+        type: str
+        choices: ["Software", "Compute", "Network", "Database_Parameter"]
+      version_id:
+        description:
+            - vrsion id
+        type: str
+      latest_version:
+        description:
+            - wheater the lastet version of profile or no
+        type: bool
+        default: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
 author:
@@ -69,10 +83,11 @@ def get_module_spec():
     module_args = dict(
         profile_name=dict(type="str"),
         profile_id=dict(type="str"),
-        profile_type=dict(type="str", choices=["Software", "Compute", "Network", "Database_Parameter"]),
+        profile_type=dict(
+            type="str", choices=["Software", "Compute", "Network", "Database_Parameter"]
+        ),
         version_id=dict(type="str"),
         latest_version=dict(type="bool", default=False),
-
     )
 
     return module_args
@@ -103,7 +118,9 @@ def get_profiles(module, result):
 
 def get_profiles_version(module, result):
     profile = Profile(module)
-    endpoint = "{0}/versions/{1}".format(module.params["profile_id"], module.params.get("version_id") or "latest")
+    endpoint = "{0}/versions/{1}".format(
+        module.params["profile_id"], module.params.get("version_id") or "latest"
+    )
 
     resp = profile.read(endpoint=endpoint)
 
@@ -121,12 +138,15 @@ def run_module():
         ],
         required_by={"version_id": "profile_id"},
         required_if=[("latest_version", True, ("profile_id",))],
-
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("version_id") or module.params.get("latest_version"):
         get_profiles_version(module, result)
-    elif module.params.get("profile_name") or module.params.get("profile_id") or module.params.get("profile_type"):
+    elif (
+        module.params.get("profile_name")
+        or module.params.get("profile_id")
+        or module.params.get("profile_type")
+    ):
         get_profiles_used_query(module, result)
     else:
         get_profiles(module, result)

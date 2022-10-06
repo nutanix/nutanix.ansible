@@ -1,0 +1,48 @@
+---
+- debug:
+    msg: Start testing ntnx_era_tms_info
+
+- name: List all era tms
+  ntnx_era_tms_info:
+  register: tms
+
+- name: check listing status
+  assert:
+    that:
+      - tms.response is defined
+      - tms.failed == false
+      - tms.changed == false
+    fail_msg: "Unable to list all era tms"
+    success_msg: "era tms listed successfully"
+################################################################
+- name: get era tms using it's name  
+  ntnx_era_tms_info:
+    tm_name: "{{tms.response[0].name}}"
+  register: result
+
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response[0].id == "{{tms.response[0].id}}"
+    fail_msg: "Unable to get era tms using it's name  "
+    success_msg: "get  era tms using it's name  successfully"
+################################################################
+- name: List tms use id
+  ntnx_era_tms_info:
+    tm_id: "{{tms.response[0].id}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{tms.response[0].name}}"
+    fail_msg: "Unable to get era tms using it's id  "
+    success_msg: "get  era tms using it's id  successfully"
+################################################################

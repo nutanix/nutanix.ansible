@@ -1,0 +1,47 @@
+---
+- debug:
+    msg: Start testing ntnx_era_slas_info
+
+- name: List all era slas
+  ntnx_era_slas_info:
+  register: slas
+
+- name: check listing status
+  assert:
+    that:
+      - slas.response is defined
+      - slas.failed == false
+      - slas.changed == false
+    fail_msg: "Unable to list all era slas"
+    success_msg: "era slas listed successfully"
+################################################################
+- name: get era slas using it's name  
+  ntnx_era_slas_info:
+    sla_name: "{{slas.response[0].name}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{slas.response[0].name}}"
+    fail_msg: "Unable to get era slas using it's name  "
+    success_msg: "get  era slas using it's name  successfully"
+################################################################
+- name: List slas use id
+  ntnx_era_slas_info:
+    sla_id: "{{slas.response[0].id}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{slas.response[0].name}}"
+    fail_msg: "Unable to get era slas using it's id  "
+    success_msg: "get  era slas using it's id  successfully"
+################################################################

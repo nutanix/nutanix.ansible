@@ -120,7 +120,11 @@ def run_module():
         mutually_exclusive=[("server_name", "server_id", "server_ip")],
     )
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("server_name") or module.params.get("server_id") or module.params.get("server_ip"):
+    if (
+        module.params.get("server_name")
+        or module.params.get("server_id")
+        or module.params.get("server_ip")
+    ):
         get_db_server(module, result)
     else:
         get_db_servers(module, result)

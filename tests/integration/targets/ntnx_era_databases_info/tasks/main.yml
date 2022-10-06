@@ -1,0 +1,9 @@
+---
+- module_defaults:
+    group/nutanix.ncp.ntnx:
+        nutanix_host: "{{ era_pc }}"
+        nutanix_username: "{{ era_username }}"
+        nutanix_password: "{{ era_password }}"
+        validate_certs: "{{ validate_certs }}"
+  block:
+        - import_tasks: "info.yml"
