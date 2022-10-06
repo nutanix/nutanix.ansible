@@ -6,7 +6,7 @@
     - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: <host_ip>
+      nutanix_host: <pc_ip>
       nutanix_username: <user>
       nutanix_password: <pass>
       validate_certs: false
@@ -32,6 +32,10 @@
         - is_connected: True
           subnet:
             name: "{{ subnet_name }}"
+            # mention cluster only when there are multiple subnets with same name accross clusters
+            # and subnet name is set above
+            cluster:
+              name: "{{cluster_name}}"
       disks:
         - type: "DISK"
           size_gb: 30

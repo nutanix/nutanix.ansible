@@ -13,13 +13,36 @@
       - result.response is defined
       - result.response.metadata.total_matches > 0
       - result.response.entities | length > 0
+
     fail_msg: "Unable to list all permissions"
     success_msg: "permissions info obtained successfully"
 
+##################################################
+
 - set_fact:
-    test_permission_name: "{{result.response.entities.1.status.name}}"
+    test_permission_name: "Create_Playbook"
+
+- name: List permissions using filter criteria
+  ntnx_permissions_info:
+    filter: 
+      name: "{{ test_permission_name }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities[0].status.name == "{{ test_permission_name }}"
+      - result.response.metadata.kind == "permission"
+      - result.response.metadata.total_matches == 1
+    fail_msg: "Unable to list permissions using filter"
+    success_msg: "permission info obtained successfully"
+
 - set_fact:
-    test_permission_uuid: "{{result.response.entities.1.metadata.uuid}}"
+    test_permission_uuid: "{{result.response.entities.0.metadata.uuid}}"
 
 ################################################## 
 
@@ -40,26 +63,6 @@
     fail_msg: "Unable to list permission using uuid"
     success_msg: "permission info obtained successfully"
 
-################################################## 
-
-- name: List permissions using filter criteria
-  ntnx_permissions_info:
-    filter: 
-      name: "{{ test_permission_name }}"
-  register: result
-  ignore_errors: True
-
-- name: Listing Status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response.entities[0].status.name == "{{ test_permission_name }}"
-      - result.response.metadata.kind == "permission"
-      - result.response.metadata.total_matches == 1
-    fail_msg: "Unable to list permissions using filter"
-    success_msg: "permission info obtained successfully"
 
 ################################################## 
 

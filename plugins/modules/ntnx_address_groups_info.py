@@ -33,7 +33,7 @@ author:
 EXAMPLES = r"""
 - name: List all address groups
   ntnx_address_groups_info:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
@@ -41,7 +41,7 @@ EXAMPLES = r"""
 
 - name: List address groups using uuid criteria
   ntnx_address_groups_info:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     address_group_uuid: "<uuid>"
@@ -49,7 +49,7 @@ EXAMPLES = r"""
 
 - name: List address groups using filter criteria
   ntnx_address_groups_info:
-    nutanix_host: <host_ip>
+    nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     filter:
