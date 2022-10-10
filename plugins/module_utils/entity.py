@@ -90,6 +90,7 @@ class Entity(object):
         raise_error=True,
         no_response=False,
         timeout=30,
+        method="PUT"
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -98,7 +99,7 @@ class Entity(object):
             url = self._build_url_with_query(url, query)
         return self._fetch_url(
             url,
-            method="PUT",
+            method=method,
             data=data,
             raise_error=raise_error,
             no_response=no_response,
