@@ -22,10 +22,7 @@ class DBServers(NutanixDatabase):
         raise_error=True,
         no_response=False,
     ):
-        query = {
-            "value-type": key,
-            "value": value
-        }
+        query = {"value-type": key, "value": value}
         resp = self.read(query=query, raise_error=False)
 
         if not resp:

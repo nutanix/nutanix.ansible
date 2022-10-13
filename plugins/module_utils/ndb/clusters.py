@@ -9,7 +9,6 @@ from .nutanix_database import NutanixDatabase
 
 
 class Cluster(NutanixDatabase):
-
     def __init__(self, module):
         resource_type = "/clusters"
         super(Cluster, self).__init__(module, resource_type=resource_type)

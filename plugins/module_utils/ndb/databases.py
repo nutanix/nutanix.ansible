@@ -26,7 +26,7 @@ class Database(NutanixDatabase):
             "db_params_profile": self._build_spec_db_params_profile,
             "db_vm": self._build_spec_db_vm,
             "time_machine": self._build_spec_time_machine,
-            "postgress": self._build_spec_postgress,
+            "postgres": self._build_spec_postgres,
             "tags": self._build_spec_tags,
         }
 
@@ -39,15 +39,12 @@ class Database(NutanixDatabase):
         raise_error=True,
         no_response=False,
     ):
-        query = {
-            "value-type": key,
-            "value": value
-        }
+        query = {"value-type": key, "value": value}
         resp = self.read(query=query, raise_error=False)
 
         if not resp:
             return None, "Database instance with name {0} not found.".format(value)
-        elif resp.get("errorCode"):
+        elif isinstance(resp, dict) and resp.get("errorCode"):
             self.module.fail_json(
                 msg="Failed fetching Database instance",
                 error=resp.get("message"),
@@ -57,12 +54,35 @@ class Database(NutanixDatabase):
         uuid = resp[0]["id"]
         return uuid, None
 
-    def create(self, data=None, endpoint=None, query=None, method="POST", raise_error=True, no_response=False, timeout=30):
+    def create(
+        self,
+        data=None,
+        endpoint=None,
+        query=None,
+        method="POST",
+        raise_error=True,
+        no_response=False,
+        timeout=30,
+    ):
         endpoint = "provision"
-        return super().create(data, endpoint, query, method, raise_error, no_response, timeout)
-    
-    def update(self, data=None, uuid=None, endpoint=None, query=None, raise_error=True, no_response=False, timeout=30, method="PATCH"):
-        return super().update(data, uuid, endpoint, query, raise_error, no_response, timeout, method)
+        return super().create(
+            data, endpoint, query, method, raise_error, no_response, timeout
+        )
+
+    def update(
+        self,
+        data=None,
+        uuid=None,
+        endpoint=None,
+        query=None,
+        raise_error=True,
+        no_response=False,
+        timeout=30,
+        method="PATCH",
+    ):
+        return super().update(
+            data, uuid, endpoint, query, raise_error, no_response, timeout, method
+        )
 
     def _get_default_spec(self):
         return deepcopy(
@@ -81,29 +101,35 @@ class Database(NutanixDatabase):
                 "nodeCount": 1,
                 "clustered": False,
                 "autoTuneStagingDrive": True,
-                "tags": []
+                "tags": [],
             }
         )
-    
-    def get_update_spec(self):
-        return deepcopy(
+
+    def get_default_update_spec(self, override_spec=None):
+        spec = deepcopy(
             {
                 "name": None,
                 "description": None,
                 "tags": [],
                 "resetTags": True,
                 "resetName": True,
-                "resetDescription": True
+                "resetDescription": True,
             }
         )
-    
-    def get_delete_spec(self):
+        if override_spec:
+            for key in spec.keys():
+                if override_spec.get(key):
+                    spec[key] = deepcopy(override_spec[key])
+
+        return spec
+
+    def get_default_delete_spec(self):
         return deepcopy(
             {
                 "delete": False,
                 "remove": False,
-                "deleteTimeMachine": False, 
-                "deleteLogicalCluster": True
+                "deleteTimeMachine": False,
+                "deleteLogicalCluster": True,
             }
         )
 
@@ -112,11 +138,11 @@ class Database(NutanixDatabase):
         return payload, None
 
     def _build_spec_desc(self, payload, desc):
-        payload["description"] = desc
+        payload["databaseDescription"] = desc
         return payload, None
 
     def _build_spec_auto_tune_staging_drive(self, payload, value):
-        payload["autoTuneStagingDrive"] = payload["auto_tune_staging_drive"]
+        payload["autoTuneStagingDrive"] = value
         return payload, None
 
     def _build_spec_db_params_profile(self, payload, db_params_profile):
@@ -152,7 +178,7 @@ class Database(NutanixDatabase):
 
             # set software profile
             uuid, err = get_profile_uuid(
-                self.module, "Software", vm_config["compute_profile"]
+                self.module, "Software", vm_config["software_profile"]
             )
             if err:
                 return None, err
@@ -164,7 +190,7 @@ class Database(NutanixDatabase):
 
             # set network prfile
             uuid, err = get_profile_uuid(
-                self.module, "Network", vm_config["compute_profile"]
+                self.module, "Network", vm_config["network_profile"]
             )
             if err:
                 return None, err
@@ -176,6 +202,7 @@ class Database(NutanixDatabase):
                     "networkProfileId": uuid,
                 }
             ]
+            payload["networkProfileId"] = uuid
 
             # set cluster config
             uuid, err = get_cluster_uuid(self.module, vm_config["cluster"])
@@ -186,6 +213,7 @@ class Database(NutanixDatabase):
             # set other params
             payload["sshPublicKey"] = vm_config["pub_ssh_key"]
             payload["vmPassword"] = vm_config["password"]
+            payload["createDbserver"] = True
             return payload, None
 
     def _build_spec_time_machine(self, payload, time_machine):
@@ -194,7 +222,9 @@ class Database(NutanixDatabase):
         uuid, err = get_sla_uuid(self.module, time_machine["sla"])
         if err:
             return None, err
-        payload["time_machine"]["slaId"] = uuid
+
+        time_machine_spec = {}
+        time_machine_spec["slaId"] = uuid
 
         schedule = time_machine.get("schedule")
         schedule_spec = {}
@@ -202,7 +232,7 @@ class Database(NutanixDatabase):
 
             time = schedule["daily"].split(":")
             if len(time) != 3:
-                return None, "Dail snapshot schedule not in HH:MM:SS format."
+                return None, "Daily snapshot schedule not in HH:MM:SS format."
 
             schedule_spec["snapshotTimeOfDay"] = {
                 "hours": int(time[0]),
@@ -222,7 +252,7 @@ class Database(NutanixDatabase):
                 "dayOfMonth": schedule["monthly"],
             }
 
-            # set quaterly and yearly as they are dependent on quaterly and yearly
+            # set quaterly and yearly as they are dependent on monthly
             if schedule.get("quaterly"):
                 schedule_spec["quartelySchedule"] = {
                     "enabled": True,
@@ -231,7 +261,7 @@ class Database(NutanixDatabase):
                 }
 
             if schedule.get("yearly"):
-                schedule_spec["quartelySchedule"] = {
+                schedule_spec["yearlySchedule"] = {
                     "enabled": True,
                     "month": schedule["yearly"],
                     "dayOfMonth": schedule.get("monthly"),
@@ -244,40 +274,43 @@ class Database(NutanixDatabase):
                 "snapshotsPerDay": schedule.get("snapshots_per_day"),
             }
 
-        payload["time_machine"]["schedule"] = schedule_spec
-        payload["time_machine"]["name"] = time_machine["name"]
-        payload["time_machine"]["description"] = time_machine.get("desc", "")
-        payload["time_machine"]["autoTuneLogDrive"] = time_machine.get(
-            "auto_tune_log_drive"
-        )
+        time_machine_spec["schedule"] = schedule_spec
+        time_machine_spec["name"] = time_machine["name"]
+        time_machine_spec["description"] = time_machine.get("desc", "")
+        time_machine_spec["autoTuneLogDrive"] = time_machine.get("auto_tune_log_drive")
+        payload["timeMachineInfo"] = time_machine_spec
         return payload, None
 
-    def _build_spec_postgress(self, payload, postgress):
+    def _build_spec_postgres(self, payload, postgres):
         action_arguments = []
-        fields = [
-            "listener_port",
-            "auto_tune_staging_drive",
-            "allocate_pg_hugepage",
-            "cluster_database",
-            "auth_method",
-            "db_password",
-            "pre_create_script",
-            "post_create_script",
-        ]
-        for field in fields:
-            spec = {"name": field, "value": postgress.get(field)}
+
+        # fields to their defaults maps
+        fields = {
+            "listener_port": "",
+            "auto_tune_staging_drive": False,
+            "allocate_pg_hugepage": False,
+            "cluster_database": False,
+            "auth_method": "",
+            "db_password": "",
+            "pre_create_script": "",
+            "post_create_script": "",
+        }
+
+        # create action arguments
+        for key, value in fields.items():
+            spec = {"name": key, "value": postgres.get(key, value)}
             action_arguments.append(spec)
 
         # handle scenariors where display names are diff
         action_arguments.append(
-            {"name": "database_names", "value": postgress.get("db_name")}
+            {"name": "database_names", "value": postgres.get("db_name")}
         )
         action_arguments.append(
-            {"name": "database_size", "value": postgress.get("db_size")}
+            {"name": "database_size", "value": str(postgres.get("db_size"))}
         )
 
         payload["actionArguments"] = action_arguments
-        payload["database_type"] = NDB_CONSTANTS.DatabaseTypes.POSTGRESS
+        payload["databaseType"] = NDB_CONSTANTS.DatabaseTypes.POSTGRES
         return payload, None
 
     def _build_spec_tags(self, payload, tags):
@@ -290,3 +323,4 @@ class Database(NutanixDatabase):
             spec = {"tagId": name_uuid_map[name], "tagName": name, "value": val}
             specs.append(spec)
         payload["tags"] = specs
+        return payload, None

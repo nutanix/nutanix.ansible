@@ -28,13 +28,16 @@ class Entity(object):
         self,
         module,
         resource_type,
+        host_ip,
         scheme="https",
         cookies=None,
         additional_headers=None,
+        port=None,
+        credentials=None,
     ):
         self.module = module
-        self.base_url = self._build_url(module, scheme, resource_type)
-        self.headers = self._build_headers(module, additional_headers)
+        self.base_url = self._build_url(scheme, resource_type, host_ip, port)
+        self.headers = self._build_headers(additional_headers, credentials)
         self.cookies = cookies
 
     def create(
@@ -90,7 +93,7 @@ class Entity(object):
         raise_error=True,
         no_response=False,
         timeout=30,
-        method="PUT"
+        method="PUT",
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -288,10 +291,8 @@ class Entity(object):
 
         return spec, None
 
-    def _build_url(self, module, scheme, resource_type):
-        host = module.params.get("nutanix_host")
-        url = "{proto}://{host}".format(proto=scheme, host=host)
-        port = module.params.get("nutanix_port")
+    def _build_url(self, scheme, resource_type, host_ip, port=None):
+        url = "{proto}://{host}".format(proto=scheme, host=host_ip)
         if port:
             url += ":{0}".format(port)
         if resource_type.startswith("/"):
@@ -300,12 +301,17 @@ class Entity(object):
             url += "/{0}".format(resource_type)
         return url
 
-    def _build_headers(self, module, additional_headers):
+    def _build_headers(self, additional_headers, credentials=None):
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         if additional_headers:
             headers.update(additional_headers)
-        usr = module.params.get("nutanix_username")
-        pas = module.params.get("nutanix_password")
+
+        usr = ""
+        pas = ""
+        if credentials:
+            usr = credentials.get("username")
+            pas = credentials.get("password")
+
         if usr and pas:
             cred = "{0}:{1}".format(usr, pas)
             try:

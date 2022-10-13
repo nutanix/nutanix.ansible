@@ -281,7 +281,7 @@ class ACP:
 
 class NDB:
     class DatabaseTypes:
-        POSTGRESS = "postgress_database"
+        POSTGRES = "postgres_database"
 
     class StatusCodes:
         SUCCESS = "5"

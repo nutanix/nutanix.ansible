@@ -12,11 +12,10 @@ from ..constants import NDB
 
 
 class Operation(NutanixDatabase):
-
     def __init__(self, module):
         resource_type = "/operations"
         super(Operation, self).__init__(module, resource_type=resource_type)
-    
+
     def wait_for_completion(self, uuid, raise_error=True):
         delay = 30
         timeout = time.time() + self.module.params["timeout"]

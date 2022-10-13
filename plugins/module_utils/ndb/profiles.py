@@ -20,8 +20,8 @@ class Profile(NutanixDatabase):
             return None, "{0} is not a valid type. Allowed types are {1}".format(
                 type, self.types
             )
-        endpoint = "{0}/{1}".format(type, name)
-        resp = self.read(endpoint=endpoint)
+        query = {"type": type, "name": name}
+        resp = self.read(query=query)
         uuid = resp.get("id")
         return uuid
 
@@ -34,8 +34,16 @@ class Profile(NutanixDatabase):
         no_response=False,
         timeout=30,
     ):
-        query = {"id": uuid}
-        return super().read(uuid=None, query=query)
+        if uuid:
+            query = {"id": uuid}
+        return super().read(
+            uuid=None,
+            endpoint=endpoint,
+            query=query,
+            raise_error=raise_error,
+            no_response=no_response,
+            timeout=timeout,
+        )
 
 
 # helper functions
@@ -49,8 +57,6 @@ def get_profile_uuid(module, type, config):
     elif config.get("uuid"):
         uuid = config["uuid"]
     else:
-        error = "db_params_profile config {0} doesn't have name or uuid key".format(
-            config
-        )
+        error = "Profile config {0} doesn't have name or uuid key".format(config)
         return error, None
     return uuid, None
