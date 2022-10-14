@@ -230,7 +230,7 @@ def update_instance(module, result):
 
     if check_for_idempotency(old_spec, update_spec):
         result["skipped"] = True
-        module.exit_json(msg="Nothing to update.")
+        module.exit_json(msg="Nothing to change.")
 
     resp = _databases.update(data=update_spec, uuid=uuid)
     result["response"] = resp
