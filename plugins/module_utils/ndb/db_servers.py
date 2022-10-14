@@ -27,7 +27,7 @@ class DBServers(NutanixDatabase):
 
         if not resp:
             return None, "DB server vm with name {0} not found.".format(value)
-        elif resp.get("errorCode"):
+        elif isinstance(resp, dict) and resp.get("errorCode"):
             self.module.fail_json(
                 msg="Failed fetching DB server VM",
                 error=resp.get("message"),

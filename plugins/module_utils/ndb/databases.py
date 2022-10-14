@@ -165,6 +165,7 @@ class Database(NutanixDatabase):
             payload["createDbserver"] = False
             payload["dbserverId"] = uuid
             payload["nodes"] = [{"properties": [], "dbserverId": uuid}]
+
         else:
             vm_config = db_vm["create_new_server"]
 
@@ -214,7 +215,8 @@ class Database(NutanixDatabase):
             payload["sshPublicKey"] = vm_config["pub_ssh_key"]
             payload["vmPassword"] = vm_config["password"]
             payload["createDbserver"] = True
-            return payload, None
+
+        return payload, None
 
     def _build_spec_time_machine(self, payload, time_machine):
 

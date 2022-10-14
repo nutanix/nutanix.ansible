@@ -140,6 +140,7 @@ class Entity(object):
         raise_error=True,
         no_response=False,
         timeout=30,
+        data=None,
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -149,6 +150,7 @@ class Entity(object):
         return self._fetch_url(
             url,
             method="DELETE",
+            data=data,
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,

@@ -63,3 +63,4 @@ action_groups:
   - ntnx_karbon_clusters_info
   - ntnx_karbon_registries
   - ntnx_karbon_registries_info
+  - ntnx_ndb_databases

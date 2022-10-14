@@ -164,7 +164,7 @@ def create_instance(module, result):
 
     resp = _databases.create(data=spec)
     result["response"] = resp
-    result["uuid"] = resp["entityId"]
+    result["db_uuid"] = resp["entityId"]
     db_uuid = resp["entityId"]
 
     if module.params.get("wait"):
@@ -234,7 +234,7 @@ def update_instance(module, result):
 
     resp = _databases.update(data=update_spec, uuid=uuid)
     result["response"] = resp
-    result["uuid"] = uuid
+    result["db_uuid"] = uuid
     result["changed"] = True
 
 
@@ -260,7 +260,7 @@ def delete_instance(module, result):
         result["response"] = spec
         return
 
-    resp = _databases.delete(uuid)
+    resp = _databases.delete(uuid, data=spec)
 
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]
@@ -290,7 +290,7 @@ def run_module():
         supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None, "uuid": None}
+    result = {"changed": False, "error": None, "response": None, "db_uuid": None}
     if module.params["state"] == "present":
         if module.params.get("db_uuid"):
             update_instance(module, result)
