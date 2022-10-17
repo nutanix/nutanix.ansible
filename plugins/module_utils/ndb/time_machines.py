@@ -10,5 +10,5 @@ from .nutanix_database import NutanixDatabase
 
 class TM(NutanixDatabase):
     def __init__(self, module):
-        resource_type="/tms"
+        resource_type = "/tms"
         super(TM, self).__init__(module, resource_type=resource_type)

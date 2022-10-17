@@ -4,13 +4,13 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
+from ..constants import NDB as NDB_CONSTANTS
 from .clusters import get_cluster_uuid
 from .db_servers import get_db_server_uuid
-from .slas import get_sla_uuid
-from .tags import Tag
 from .nutanix_database import NutanixDatabase
 from .profiles import Profile, get_profile_uuid
-from ..constants import NDB as NDB_CONSTANTS
+from .slas import get_sla_uuid
+from .tags import Tag
 
 __metaclass__ = type
 

@@ -4,8 +4,6 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-from copy import deepcopy
-import time
 
 __metaclass__ = type
 
@@ -17,11 +15,13 @@ EXAMPLES = r"""
 
 RETURN = r"""
 """
+import time  # noqa: E402
+from copy import deepcopy  # noqa: E402
 
-from ..module_utils.ndb.databases import Database
-from ..module_utils.ndb.operations import Operation
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.utils import (
+from ..module_utils.ndb.databases import Database  # noqa: E402
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.utils import (  # noqa: E402
     check_for_idempotency,
     remove_param_with_none_value,
 )
