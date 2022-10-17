@@ -5,9 +5,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-from .era import Era
+from .nutanix_database import NutanixDatabase
 
 
-class TM(Era):
-    def __init__(self, module, resource_type="/v0.9/tms"):
+class TM(NutanixDatabase):
+    def __init__(self, module):
+        resource_type="/tms"
         super(TM, self).__init__(module, resource_type=resource_type)

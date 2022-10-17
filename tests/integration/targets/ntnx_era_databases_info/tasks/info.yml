@@ -1,9 +1,9 @@
 ---
 - debug:
-    msg: Start testing ntnx_era_databases_info
+    msg: Start testing ntnx_ndb_databases_info
 
 - name: List era databases
-  ntnx_era_databases_info:
+  ntnx_ndb_databases_info:
   register: databases
 
 - name: check listing status
@@ -16,7 +16,7 @@
     success_msg: "era databases listed successfully"
 ################################################################
 - name: Get era databases using its name
-  ntnx_era_databases_info:
+  ntnx_ndb_databases_info:
     db_name: "{{databases.response[0].databaseName}}"
   register: result
 
@@ -31,7 +31,7 @@
     success_msg: "Get era databases using its name finished successfully"
 ################################################################
 - name: Get era databases using its name
-  ntnx_era_databases_info:
+  ntnx_ndb_databases_info:
     db_id: "{{databases.response[0].id}}"
   register: result
 

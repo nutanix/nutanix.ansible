@@ -2,10 +2,10 @@
 
 
 - debug:
-    msg: Start testing ntnx_era_db_servers_info
+    msg: Start testing ntnx_ndb_db_servers_info
 
 - name: List era db_servers
-  ntnx_era_db_servers_info:
+  ntnx_ndb_db_servers_info:
   register: db_servers
 
 
@@ -19,7 +19,7 @@
     success_msg: "era db_servers listed successfully"
 ################################################################
 - name: get era db_servers using it's name
-  ntnx_era_db_servers_info:
+  ntnx_ndb_db_servers_info:
     server_name: "{{db_servers.response[0].name}}"
   register: result
 
@@ -35,7 +35,7 @@
     success_msg: "get era db_server using it's name finished successfully"
 ################################################################
 - name: get era db_servers using it's id
-  ntnx_era_db_servers_info:
+  ntnx_ndb_db_servers_info:
     server_id: "{{db_servers.response[0].id}}"
   register: result
 
@@ -51,7 +51,7 @@
     success_msg: "get era db_server using it's id finished successfully"
 ################################################################
 - name: get era db_servers using ip
-  ntnx_era_db_servers_info:
+  ntnx_ndb_db_servers_info:
     server_ip: "{{db_servers.response[0].ipAddresses[0]}}"
   register: result
 

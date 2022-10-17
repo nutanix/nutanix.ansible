@@ -1,9 +1,9 @@
 ---
 - debug:
-    msg: Start testing ntnx_era_tms_info
+    msg: Start testing ntnx_ndb_tms_info
 
 - name: List all era tms
-  ntnx_era_tms_info:
+  ntnx_ndb_tms_info:
   register: tms
 
 - name: check listing status
@@ -16,7 +16,7 @@
     success_msg: "era tms listed successfully"
 ################################################################
 - name: get era tms using it's name  
-  ntnx_era_tms_info:
+  ntnx_ndb_tms_info:
     tm_name: "{{tms.response[0].name}}"
   register: result
 
@@ -32,7 +32,7 @@
     success_msg: "get  era tms using it's name  successfully"
 ################################################################
 - name: List tms use id
-  ntnx_era_tms_info:
+  ntnx_ndb_tms_info:
     tm_id: "{{tms.response[0].id}}"
   register: result
 

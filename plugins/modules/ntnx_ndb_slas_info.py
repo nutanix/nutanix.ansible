@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_era_slas_info
+module: ntnx_ndb_slas_info
 short_description: sla  info module
 version_added: 1.7.0
 description: 'Get sla info'
@@ -30,38 +30,12 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List slas
-    ntnx_era_slas_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-    register: result
-
-  - name: Get slas using name
-    ntnx_era_slas_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      sla_name: "sla-name"
-    register: result
-
-  - name: Get slas using id
-    ntnx_era_slas_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      sla_id: "sla-id"
-    register: result
-
 """
 RETURN = r"""
 """
 
-from ..module_utils.era.base_info_module import BaseEraInfoModule  # noqa: E402
-from ..module_utils.era.slas import SLA  # noqa: E402
+from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
+from ..module_utils.ndb.slas import SLA  # noqa: E402
 
 
 def get_module_spec():
@@ -96,7 +70,7 @@ def get_slas(module, result):
 
 
 def run_module():
-    module = BaseEraInfoModule(
+    module = NutanixDatabase(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,

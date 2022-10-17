@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_era_tms_info
+module: ntnx_ndb_tms_info
 short_description: tm  info module
 version_added: 1.7.0
 description: 'Get tm info'
@@ -30,39 +30,14 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List tms
-    ntnx_era_tms_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-    register: result
-
-  - name: Get tm using name
-    ntnx_era_tms_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      tm_name: "tm-name"
-    register: result
-
-  - name: Get tm using id
-    ntnx_era_tms_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      tm_id: "tm-id"
-    register: result
 
 """
 RETURN = r"""
 
 """
 
-from ..module_utils.era.base_info_module import BaseEraInfoModule  # noqa: E402
-from ..module_utils.era.time_machines import TM  # noqa: E402
+from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
+from ..module_utils.ndb.time_machines import TM  # noqa: E402
 
 
 def get_module_spec():
@@ -97,7 +72,7 @@ def get_tms(module, result):
 
 
 def run_module():
-    module = BaseEraInfoModule(
+    module = NutanixDatabase(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,

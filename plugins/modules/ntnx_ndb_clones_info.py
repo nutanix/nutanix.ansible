@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_era_clones_info
+module: ntnx_ndb_clones_info
 short_description: clone  info module
 version_added: 1.7.0
 description: 'Get clone info'
@@ -30,38 +30,12 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List clones
-    ntnx_era_clones_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-    register: result
-
-  - name: Get clone using name
-    ntnx_era_clones_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      clone_name: "clone-name"
-    register: result
-
-  - name: Get clone using id
-    ntnx_era_clones_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      clone_id: "clone-id"
-    register: result
-
 """
 RETURN = r"""
 """
 
-from ..module_utils.era.base_info_module import BaseEraInfoModule  # noqa: E402
-from ..module_utils.era.clones import Clone  # noqa: E402
+from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
+from ..module_utils.ndb.clones import Clone  # noqa: E402
 
 
 def get_module_spec():
@@ -75,7 +49,7 @@ def get_module_spec():
 
 
 def get_clone(module, result):
-    clone = Clone(module, resource_type="/v0.8/clones")
+    clone = Clone(module)
     if module.params.get("clone_name"):
         clone_name = module.params["clone_name"]
         clone_option = "{0}/{1}".format("name", clone_name)
@@ -96,7 +70,7 @@ def get_clones(module, result):
 
 
 def run_module():
-    module = BaseEraInfoModule(
+    module = NutanixDatabase(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,

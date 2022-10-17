@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_era_profiles_info
+module: ntnx_ndb_profiles_info
 short_description: profile  info module
 version_added: 1.7.0
 description: 'Get profile info'
@@ -44,38 +44,12 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List profiles
-    ntnx_era_profiles_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-    register: result
-
-  - name: Get profile using name
-    ntnx_era_profiles_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      profile_name: "profile-name"
-    register: result
-
-  - name: Get profile using id
-    ntnx_era_profiles_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      profile_id: "profile-id"
-    register: result
-
 """
 RETURN = r"""
 """
 
-from ..module_utils.era.base_info_module import BaseEraInfoModule  # noqa: E402
-from ..module_utils.era.profiles import Profile  # noqa: E402
+from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
+from ..module_utils.ndb.profiles import Profile  # noqa: E402
 
 
 def get_module_spec():
@@ -128,7 +102,7 @@ def get_profiles_version(module, result):
 
 
 def run_module():
-    module = BaseEraInfoModule(
+    module = NutanixDatabase(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,

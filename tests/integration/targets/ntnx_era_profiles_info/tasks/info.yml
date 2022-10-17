@@ -1,9 +1,9 @@
 ---
 - debug:
-    msg: Start testing ntnx_era_profiles_info
+    msg: Start testing ntnx_ndb_profiles_info
 
 - name: List profiles
-  ntnx_era_profiles_info:
+  ntnx_ndb_profiles_info:
   register: profiles
 
 
@@ -17,7 +17,7 @@
     success_msg: "era profiles listed successfully"
 ################################################################
 - name: List Database_Parameter profiles
-  ntnx_era_profiles_info:
+  ntnx_ndb_profiles_info:
     profile_type: Database_Parameter
   register: result
 
@@ -32,7 +32,7 @@
     success_msg: "Database_Parameter era profiles listed successfully"
 ################################################################
 - name: List Network profiles
-  ntnx_era_profiles_info:
+  ntnx_ndb_profiles_info:
     profile_type: Network
   register: result
 
@@ -47,7 +47,7 @@
     success_msg: "Network era profiles listed successfully"
 ################################################################
 - name: List Compute profiles
-  ntnx_era_profiles_info:
+  ntnx_ndb_profiles_info:
     profile_type: Compute
   register: result
 
@@ -62,7 +62,7 @@
     success_msg: "Compute era profiles listed successfully"
 ################################################################
 - name: List Software profiles
-  ntnx_era_profiles_info:
+  ntnx_ndb_profiles_info:
     profile_type: Software
   register: result
 
@@ -77,7 +77,7 @@
     success_msg: "Software era profiles listed successfully"
 ################################################################
 - name: get era profile using era profile name
-  ntnx_era_profiles_info:
+  ntnx_ndb_profiles_info:
     profile_name: "{{profiles.response[0].name}}" 
   register: result
 
@@ -92,7 +92,7 @@
     success_msg: "get era profile using era profile name finished successfully"
 ################################################################
 - name: List profiles
-  ntnx_era_profiles_info:
+  ntnx_ndb_profiles_info:
     profile_id: "{{profiles.response[0].id}}" 
     latest_version: true
   register: result

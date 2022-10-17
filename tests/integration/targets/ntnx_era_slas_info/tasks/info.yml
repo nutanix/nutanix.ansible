@@ -1,9 +1,9 @@
 ---
 - debug:
-    msg: Start testing ntnx_era_slas_info
+    msg: Start testing ntnx_ndb_slas_info
 
 - name: List all era slas
-  ntnx_era_slas_info:
+  ntnx_ndb_slas_info:
   register: slas
 
 - name: check listing status
@@ -16,7 +16,7 @@
     success_msg: "era slas listed successfully"
 ################################################################
 - name: get era slas using it's name  
-  ntnx_era_slas_info:
+  ntnx_ndb_slas_info:
     sla_name: "{{slas.response[0].name}}"
   register: result
 
@@ -31,7 +31,7 @@
     success_msg: "get  era slas using it's name  successfully"
 ################################################################
 - name: List slas use id
-  ntnx_era_slas_info:
+  ntnx_ndb_slas_info:
     sla_id: "{{slas.response[0].id}}"
   register: result
 

@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_era_db_servers_info
+module: ntnx_ndb_db_servers_info
 short_description: database server  info module
 version_added: 1.7.0
 description: 'Get database server info'
@@ -34,47 +34,12 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List db_servers
-    ntnx_era_db_servers_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-    register: result
-
-  - name: Get db_servers using name
-    ntnx_era_db_servers_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      server_name: "server-name"
-    register: result
-
-  - name: Get db_servers using id
-    ntnx_era_db_servers_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      server_id: "server-id"
-    register: result
-
-  - name: Get db_servers using id
-    ntnx_era_db_servers_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      server_ip: "server-ip"
-    register: result
-
 """
 RETURN = r"""
 """
 
-from ..module_utils.era.base_info_module import BaseEraInfoModule  # noqa: E402
-from ..module_utils.era.db_servers import DBServers  # noqa: E402
+from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
+from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
 
 
 def get_module_spec():
@@ -89,7 +54,7 @@ def get_module_spec():
 
 
 def get_db_server(module, result):
-    db_server = DBServers(module, resource_type="/v0.8/dbservers")
+    db_server = DBServers(module)
     if module.params.get("server_name"):
         db_name = module.params["server_name"]
         db_option = "{0}/{1}".format("name", db_name)
@@ -113,7 +78,7 @@ def get_db_servers(module, result):
 
 
 def run_module():
-    module = BaseEraInfoModule(
+    module = NutanixDatabase(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,
