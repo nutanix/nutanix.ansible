@@ -8,8 +8,223 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-"""
+---
+module: ntnx_ndb_databases
+short_description: write
+version_added: 1.7.0
+description: write
+options:
+  db_uuid:
+    description:
+      - write
+    type: str
+  name:
+    description:
+      - write
+    type: str
+  desc:
+    description:
+      - write
+    type: str
+  db_params_profile:
+    description:
+      - write
+    type: dict
+    suboptions:
+      name:
+        type: str
+        description: write
+      uuid:
+        type: str
+        description: write
+  db_vm:
+    description:
+      - write
+    type: dict
+    suboptions:
+      create_new_server:
+        description:
+          - write
+        type: dict
+        suboptions:
+          name:
+            type: str
+            description: write
+            required: true
+          pub_ssh_key:
+            type: str
+            description: write
+            required: true
+          password:
+            type: str
+            description: write
+            required: true
+          cluster:
+            description:
+              - write
+            type: dict
+            required: true
+            suboptions:
+              name:
+                type: str
+                description: write
+              uuid:
+                type: str
+                description: write
+          software_profile:
+            description:
+              - write
+            type: dict
+            required: true
+            suboptions:
+              name:
+                type: str
+                description: write
+              uuid:
+                type: str
+                description: write
+          network_profile:
+            description:
+              - write
+            type: dict
+            required: true
+            suboptions:
+              name:
+                type: str
+                description: write
+              uuid:
+                type: str
+                description: write
+          compute_profile:
+            description:
+              - write
+            type: dict
+            required: true
+            suboptions:
+              name:
+                type: str
+                description: write
+              uuid:
+                type: str
+                description: write
+      use_registered_server:
+        description:
+          - write
+        type: dict
+        suboptions:
+          name:
+            type: str
+            description: write
+          uuid:
+            type: str
+            description: write
+  time_machine:
+        description:
+          - write
+        type: dict
+        suboptions:
+          name:
+            type: str
+            description: write
+            required: True
+          desc:
+            type: str
+            description: write
+          sla:
+            type: dict
+            description: write
+            required: True
+            suboptions:
+                name:
+                    type: str
+                    description: write
+                uuid:
+                    type: str
+                    description: write
+          schedule:
+                type: dict
+                description: write
+                required: True
+                suboptons:
+                    daily:
+                        type: str
+                        description: write
+                    weekly:
+                        type: str
+                        description: write
+                    monthly:
+                        type: int
+                        description: write
+                    quaterly:
+                        type: str
+                        description: write
+                    yearly:
+                        type: str
+                        description: write
+                    log_catchup:
+                        type: int
+                        description: write
+                        choices: [15, 30, 60, 90, 120]
+                    snapshots_per_day:
+                        type: int
+                        description: write
+                        default: 1
+          auto_tune_log_drive:
+            type: bool
+            default: true
+            description: write
+  postgres:
+    type: dict
+    description: write
+    suboptions:
+                    listener_port:
+                        type: str
+                        description: write
+                        required: true
+                    db_name:
+                        type: int
+                        description: write
+                        required: true
+                    db_password:
+                        type: str
+                        description: write
+                        required: true
+                    auto_tune_staging_drive:
+                        type: bool
+                        default: true
+                        description: write
+                    allocate_pg_hugepage:
+                        type: bool
+                        default: false
+                        description: write
+                    auth_method:
+                        type: str
+                        default: md5
+                        description: write
+                    cluster_database:
+                        type: bool
+                        default: false
+                        description: write
+  tags:
+    type: dict
+    description: write
+  auto_tune_staging_drive:
+    type: bool
+    description: write
+  soft_delete:
+    type: bool
+    description: write
+  delete_time_machine:
+    type: bool
+    description: write
+extends_documentation_fragment:
+#   - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_operations
+author:
+  - Prem Karat (@premkarat)
+  - Pradeepsingh Bhati (@bhati-pradeep)
 
+"""
 EXAMPLES = r"""
 """
 
@@ -38,8 +253,8 @@ def get_module_spec():
 
     new_server = dict(
         name=dict(type="str", required=True),
-        pub_ssh_key=dict(type="str", required=True),
-        password=dict(type="str", required=True),  # Add no log
+        pub_ssh_key=dict(type="str", required=True, no_log=True),
+        password=dict(type="str", required=True, no_log=True),  # Add no log
         cluster=dict(
             type="dict",
             options=entity_by_spec,
@@ -107,7 +322,7 @@ def get_module_spec():
     postgres = dict(
         listener_port=dict(type="str", required=True),
         db_name=dict(type="str", required=True),
-        db_password=dict(type="str", required=True),  # Add no log
+        db_password=dict(type="str", required=True, no_log=True),  # Add no log
         auto_tune_staging_drive=dict(type="bool", default=True, required=False),
         allocate_pg_hugepage=dict(type="bool", default=False, required=False),
         auth_method=dict(type="str", default="md5", required=False),
