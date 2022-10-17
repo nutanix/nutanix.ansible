@@ -277,3 +277,12 @@ class ACP:
                 "right_hand_side": {"collection": "SELF_OWNED"},
             },
         }
+
+
+class NDB:
+    class DatabaseTypes:
+        POSTGRES = "postgres_database"
+
+    class StatusCodes:
+        SUCCESS = "5"
+        FAILURE = "4"

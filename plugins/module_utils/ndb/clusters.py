@@ -8,10 +8,10 @@ __metaclass__ = type
 from .nutanix_database import NutanixDatabase
 
 
-class SLA(NutanixDatabase):
+class Cluster(NutanixDatabase):
     def __init__(self, module):
-        resource_type = "/slas"
-        super(SLA, self).__init__(module, resource_type=resource_type)
+        resource_type = "/clusters"
+        super(Cluster, self).__init__(module, resource_type=resource_type)
 
     def get_uuid(
         self,
@@ -30,14 +30,14 @@ class SLA(NutanixDatabase):
 # helper functions
 
 
-def get_sla_uuid(module, config):
+def get_cluster_uuid(module, config):
     uuid = ""
     if config.get("name"):
-        slas = SLA(module)
-        uuid = slas.get_uuid(config["name"])
+        clusters = Cluster(module)
+        uuid = clusters.get_uuid(config["name"])
     elif config.get("uuid"):
         uuid = config["uuid"]
     else:
-        error = "sla config {0} doesn't have name or uuid key".format(config)
+        error = "cluster config {0} doesn't have name or uuid key".format(config)
         return error, None
     return uuid, None

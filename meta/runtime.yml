@@ -69,3 +69,4 @@ action_groups:
   - ntnx_era_profiles_info
   - ntnx_era_db_servers_info
   - ntnx_era_slas_info
+  - ntnx_ndb_databases
