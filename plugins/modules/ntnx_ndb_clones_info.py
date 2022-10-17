@@ -34,8 +34,8 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
 from ..module_utils.ndb.clones import Clone  # noqa: E402
+from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
 
 
 def get_module_spec():
