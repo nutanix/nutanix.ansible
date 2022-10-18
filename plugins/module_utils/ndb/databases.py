@@ -94,8 +94,11 @@ class Database(NutanixDatabase):
                 return None, "Database with name {0} not found".format(name)
             resp = resp[0]
         else:
-            return None, "Please provide either uuid or name for fetching database details"
-        
+            return (
+                None,
+                "Please provide either uuid or name for fetching database details",
+            )
+
         if isinstance(resp, dict) and resp.get("errorCode"):
             self.module.fail_json(
                 msg="Failed fetching database info",

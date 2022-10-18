@@ -50,8 +50,11 @@ class DBServers(NutanixDatabase):
                 return None, "Database server with {0} {1} not found".format(key, val)
             resp = resp[0]
         else:
-            return None, "Please provide uuid, name or server IP for fetching database server details"
-        
+            return (
+                None,
+                "Please provide uuid, name or server IP for fetching database server details",
+            )
+
         if isinstance(resp, dict) and resp.get("errorCode"):
             self.module.fail_json(
                 msg="Failed fetching database server info",

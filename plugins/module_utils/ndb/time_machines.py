@@ -25,19 +25,22 @@ class TimeMachine(NutanixDatabase):
                 else:
                     tm = None
                     for entity in resp:
-                        if entity["name"]==name:
+                        if entity["name"] == name:
                             tm = entity
                             break
                     if not tm:
                         return None, "Time machine with name {0} not found".format(name)
-                    resp=tm
+                    resp = tm
 
                     # fetch all details using uuid
                     if resp.get("id"):
                         resp = self.read(uuid=resp["id"], raise_error=False)
         else:
-            return None, "Please provide either uuid or name for fetching time machine details"
-        
+            return (
+                None,
+                "Please provide either uuid or name for fetching time machine details",
+            )
+
         if isinstance(resp, dict) and resp.get("errorCode"):
             self.module.fail_json(
                 msg="Failed fetching time machine info",

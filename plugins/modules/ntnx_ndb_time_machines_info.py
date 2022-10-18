@@ -52,7 +52,7 @@ def get_module_spec():
 
 def get_tm(module, result):
     tm = TimeMachine(module)
-    
+
     uuid = module.params.get("uuid")
     name = module.params.get("name")
     resp, err = tm.get_time_machine(uuid=uuid, name=name)

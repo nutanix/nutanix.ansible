@@ -35,7 +35,7 @@ class SLA(NutanixDatabase):
 
         else:
             return None, "Please provide either uuid or name for fetching sla details"
-        
+
         if isinstance(resp, dict) and resp.get("errorCode"):
             self.module.fail_json(
                 msg="Failed fetching sla info",
@@ -43,6 +43,7 @@ class SLA(NutanixDatabase):
                 response=resp,
             )
         return resp, None
+
 
 # helper functions
 

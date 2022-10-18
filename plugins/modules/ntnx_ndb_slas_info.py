@@ -50,7 +50,9 @@ def get_module_spec():
 
 def get_sla(module, result):
     sla = SLA(module)
-    resp, err = sla.get_sla(uuid=module.params.get("uuid"), name=module.params.get("name"))
+    resp, err = sla.get_sla(
+        uuid=module.params.get("uuid"), name=module.params.get("name")
+    )
 
     if err:
         result["error"] = err
