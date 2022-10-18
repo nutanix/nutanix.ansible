@@ -13,6 +13,7 @@
       - profiles.response is defined
       - profiles.failed == false
       - profiles.changed == false
+      - profiles.response | length > 0
     fail_msg: "Unable to list all era profile"
     success_msg: "era profiles listed successfully"
 ################################################################
@@ -78,7 +79,7 @@
 ################################################################
 - name: get era profile using era profile name
   ntnx_ndb_profiles_info:
-    profile_name: "{{profiles.response[0].name}}" 
+    name: "{{profiles.response[0].name}}" 
   register: result
 
 - name: check listing status
@@ -93,7 +94,7 @@
 ################################################################
 - name: List profiles
   ntnx_ndb_profiles_info:
-    profile_id: "{{profiles.response[0].id}}" 
+    uuid: "{{profiles.response[0].id}}" 
     latest_version: true
   register: result
 
@@ -107,3 +108,19 @@
     fail_msg: "Unable to get era profile using era profile id"
     success_msg: "get era profile using era profile id finished successfully"
 ################################################################
+
+
+- name: get era profiles with incorrect name
+  ntnx_ndb_profiles_info:
+    name: "abcd"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"

@@ -15,12 +15,13 @@
       - db_servers.response is defined
       - db_servers.failed == false
       - db_servers.changed == false
+      - db_servers.response | length > 0
     fail_msg: "Unable to list all era db_servers"
     success_msg: "era db_servers listed successfully"
 ################################################################
 - name: get era db_servers using it's name
   ntnx_ndb_db_servers_info:
-    server_name: "{{db_servers.response[0].name}}"
+    name: "{{db_servers.response[0].name}}"
   register: result
 
 - name: check listing status
@@ -30,13 +31,13 @@
       - result.failed == false
       - result.changed == false
       - result.response.id == "{{db_servers.response[0].id}}"
-      - result.response.ip == "{{db_servers.response[0].ipAddresses[0]}}"
+      - result.response.ipAddresses[0] == "{{db_servers.response[0].ipAddresses[0]}}"
     fail_msg: "Unable to get era db_servers using it's name "
     success_msg: "get era db_server using it's name finished successfully"
 ################################################################
 - name: get era db_servers using it's id
   ntnx_ndb_db_servers_info:
-    server_id: "{{db_servers.response[0].id}}"
+    uuid: "{{db_servers.response[0].id}}"
   register: result
 
 - name: check listing status
@@ -46,7 +47,7 @@
       - result.failed == false
       - result.changed == false
       - result.response.name == "{{db_servers.response[0].name}}"
-      - result.response.ip == "{{db_servers.response[0].ipAddresses[0]}}"
+      - result.response.ipAddresses[0] == "{{db_servers.response[0].ipAddresses[0]}}"
     fail_msg: "Unable to get era db_servers using it's id "
     success_msg: "get era db_server using it's id finished successfully"
 ################################################################
@@ -65,4 +66,20 @@
       - result.response.id == "{{db_servers.response[0].id}}"
     fail_msg: "Unable to get era db_servers using it's ip "
     success_msg: "get era db_server using it's ip finished successfully"
+
 ################################################################
+
+- name: get era db_servers with incorrect name
+  ntnx_ndb_db_servers_info:
+    name: "abcd"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"

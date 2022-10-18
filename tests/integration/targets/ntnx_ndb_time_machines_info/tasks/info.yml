@@ -1,9 +1,9 @@
 ---
 - debug:
-    msg: Start testing ntnx_ndb_tms_info
+    msg: Start testing ntnx_ndb_time_machines_info
 
 - name: List all era tms
-  ntnx_ndb_tms_info:
+  ntnx_ndb_time_machines_info:
   register: tms
 
 - name: check listing status
@@ -12,12 +12,13 @@
       - tms.response is defined
       - tms.failed == false
       - tms.changed == false
+      - tms.response | length > 0
     fail_msg: "Unable to list all era tms"
     success_msg: "era tms listed successfully"
 ################################################################
 - name: get era tms using it's name  
-  ntnx_ndb_tms_info:
-    tm_name: "{{tms.response[0].name}}"
+  ntnx_ndb_time_machines_info:
+    name: "{{tms.response[0].name}}"
   register: result
 
 
@@ -27,13 +28,13 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response[0].id == "{{tms.response[0].id}}"
+      - result.response.id == "{{tms.response[0].id}}"
     fail_msg: "Unable to get era tms using it's name  "
     success_msg: "get  era tms using it's name  successfully"
 ################################################################
 - name: List tms use id
-  ntnx_ndb_tms_info:
-    tm_id: "{{tms.response[0].id}}"
+  ntnx_ndb_time_machines_info:
+    uuid: "{{tms.response[0].id}}"
   register: result
 
 - name: check listing status
@@ -46,3 +47,18 @@
     fail_msg: "Unable to get era tms using it's id  "
     success_msg: "get  era tms using it's id  successfully"
 ################################################################
+
+- name: get era timemachine with incorrect name
+  ntnx_ndb_time_machines_info:
+    name: "abcd"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"
