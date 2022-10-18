@@ -23,8 +23,14 @@ class Cluster(NutanixDatabase):
         no_response=False,
     ):
         endpoint = "{0}/{1}".format(key, value)
-        resp = self.read(uuid=None, endpoint=endpoint)
-        return resp["id"]
+        resp = self.read(uuid=None, endpoint=endpoint, raise_error=False)
+        if resp.get("errorCode"):
+            self.module.fail_json(
+                msg="Failed fetching cluster info",
+                error=resp.get("message"),
+                response=resp,
+            )
+        return resp.get("id")
 
     def get_cluster(self, uuid=None, name=None):
         if uuid:

@@ -51,7 +51,7 @@ class Database(NutanixDatabase):
                 response=resp,
             )
 
-        uuid = resp[0]["id"]
+        uuid = resp[0].get("id")
         return uuid, None
 
     def create(

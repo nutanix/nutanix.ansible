@@ -34,7 +34,7 @@ class DBServers(NutanixDatabase):
                 response=resp,
             )
 
-        uuid = resp[0]["id"]
+        uuid = resp[0].get("id")
         return uuid, None
 
     def get_db_server(self, name=None, uuid=None, ip=None):
