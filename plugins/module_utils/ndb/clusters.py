@@ -26,6 +26,32 @@ class Cluster(NutanixDatabase):
         resp = self.read(uuid=None, endpoint=endpoint)
         return resp["id"]
 
+    def get_cluster(self, uuid=None, name=None):
+        if uuid:
+            resp = self.read(uuid=uuid, raise_error=False)
+        elif name:
+            endpoint = "{0}/{1}".format("name", name)
+            resp = self.read(endpoint=endpoint, raise_error=False)
+
+            # we fetch cluster using ID again to get complete info.
+            if resp and not resp.get("errorCode") and resp.get("id"):
+                resp = self.read(uuid=resp["id"])
+
+        else:
+            return (
+                None,
+                "Please provide either uuid or name for fetching cluster details",
+            )
+
+        if isinstance(resp, dict) and resp.get("errorCode"):
+            self.module.fail_json(
+                msg="Failed fetching cluster info",
+                error=resp.get("message"),
+                response=resp,
+            )
+
+        return resp, None
+
 
 # helper functions
 

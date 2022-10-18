@@ -26,6 +26,24 @@ class SLA(NutanixDatabase):
         resp = self.read(uuid=None, endpoint=endpoint)
         return resp["id"]
 
+    def get_sla(self, uuid=None, name=None):
+        if uuid:
+            resp = self.read(uuid=uuid, raise_error=False)
+        elif name:
+            endpoint = "{0}/{1}".format("name", name)
+            resp = self.read(endpoint=endpoint, raise_error=False)
+
+        else:
+            return None, "Please provide either uuid or name for fetching sla details"
+
+        if isinstance(resp, dict) and resp.get("errorCode"):
+            self.module.fail_json(
+                msg="Failed fetching sla info",
+                error=resp.get("message"),
+                response=resp,
+            )
+        return resp, None
+
 
 # helper functions
 

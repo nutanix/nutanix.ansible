@@ -1,0 +1,47 @@
+---
+- debug:
+    msg: Start testing ntnx_ndb_databases_info
+
+- name: List era databases
+  ntnx_ndb_databases_info:
+  register: databases
+
+- name: check listing status
+  assert:
+    that:
+      - databases.response is defined
+      - databases.failed == false
+      - databases.changed == false
+    fail_msg: "Unable to list all era databases"
+    success_msg: "era databases listed successfully"
+################################################################
+- name: Get era databases using its name
+  ntnx_ndb_databases_info:
+    db_name: "{{databases.response[0].databaseName}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.id == "{{databases.response[0].id}}"
+    fail_msg: "Unable to Get era databases using its name"
+    success_msg: "Get era databases using its name finished successfully"
+################################################################
+- name: Get era databases using its name
+  ntnx_ndb_databases_info:
+    db_id: "{{databases.response[0].id}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{databases.response[0].databaseName}}"
+    fail_msg: "Unable to Get era databases using its id"
+    success_msg: "Get era databases using its id finished successfully"
+################################################################
