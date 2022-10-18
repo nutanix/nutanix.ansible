@@ -35,6 +35,10 @@ def get_module_spec():
     )
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+    software_profile=dict(
+        version_id=dict(type="str")
+    )
+    software_profile.update(deepcopy(entity_by_spec))
 
     new_server = dict(
         name=dict(type="str", required=True),
@@ -48,7 +52,7 @@ def get_module_spec():
         ),
         software_profile=dict(
             type="dict",
-            options=entity_by_spec,
+            options=software_profile,
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),

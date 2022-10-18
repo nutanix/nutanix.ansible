@@ -184,10 +184,14 @@ class Database(NutanixDatabase):
             if err:
                 return None, err
 
-            profiles = Profile(self.module)
-            software_profile = profiles.read(uuid)
             payload["softwareProfileId"] = uuid
-            payload["softwareProfileVersionId"] = software_profile["latestVersionId"]
+            if vm_config["software_profile"].get("version_id"):
+                payload["softwareProfileVersionId"] = vm_config["software_profile"]["version_id"]
+            else:
+                profiles = Profile(self.module)
+                software_profile = profiles.read(uuid)
+                payload["softwareProfileId"] = uuid
+                payload["softwareProfileVersionId"] = software_profile["latestVersionId"]
 
             # set network prfile
             uuid, err = get_profile_uuid(
