@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_databases
 short_description: write
-version_added: 1.7.0
+version_added: 1.8.0-beta.1
 description: write
 options:
   db_uuid:
@@ -257,8 +257,8 @@ def get_module_spec():
 
     new_server = dict(
         name=dict(type="str", required=True),
-        pub_ssh_key=dict(type="str", required=True, no_log=True),
-        password=dict(type="str", required=True, no_log=True),  # Add no log
+        pub_ssh_key=dict(type="str", required=True),
+        password=dict(type="str", required=True, no_log=True),
         cluster=dict(
             type="dict",
             options=entity_by_spec,
@@ -326,7 +326,7 @@ def get_module_spec():
     postgres = dict(
         listener_port=dict(type="str", required=True),
         db_name=dict(type="str", required=True),
-        db_password=dict(type="str", required=True, no_log=True),  # Add no log
+        db_password=dict(type="str", required=True, no_log=True),
         auto_tune_staging_drive=dict(type="bool", default=True, required=False),
         allocate_pg_hugepage=dict(type="bool", default=False, required=False),
         auth_method=dict(type="str", default="md5", required=False),

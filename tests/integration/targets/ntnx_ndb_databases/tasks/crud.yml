@@ -12,7 +12,7 @@
 
 # ############################################################################################
 
-- name: Create postgres database instance using with new vm spec using check mode
+- name: Create postgres database instance with new vm spec using check mode
   check_mode: yes
   ntnx_ndb_databases:
     name: "{{db_name}}"
@@ -252,13 +252,78 @@
     fail_msg: "Idempotency check failed"
     success_msg: "Database instance updated call skipped successfully"
 
+#####################################INFO Module tests#######################################################
+
+- debug:
+    msg: Start testing ntnx_ndb_databases_info based on created database
+
+- name: List era databases
+  ntnx_ndb_databases_info:
+  register: databases
+
+- name: check listing status
+  assert:
+    that:
+      - databases.response is defined
+      - databases.failed == false
+      - databases.changed == false
+      - databases.response | length > 0
+    fail_msg: "Unable to list all era databases"
+    success_msg: "era databases listed successfully"
+################################################################
+- name: Get era databases using its name
+  ntnx_ndb_databases_info:
+    name: "{{databases.response[0].databaseName}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.id == "{{databases.response[0].id}}"
+    fail_msg: "Unable to Get era databases using its name"
+    success_msg: "Get era databases using its name finished successfully"
+################################################################
+- name: Get era databases using its name
+  ntnx_ndb_databases_info:
+    uuid: "{{databases.response[0].id}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{databases.response[0].databaseName}}"
+    fail_msg: "Unable to Get era databases using its id"
+    success_msg: "Get era databases using its id finished successfully"
+
+################################################################
+
+- name: get era database with incorrect name
+  ntnx_ndb_databases_info:
+    name: "xxxxxxx"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"
 
 ############################################################################################
 
 - name: delete database
   ntnx_ndb_databases:
     state: "absent"
-    db_uuid: "{{check.db_uuid}}"
+    db_uuid: "{{db.db_uuid}}"
     delete_time_machine: True
     wait: true
 
