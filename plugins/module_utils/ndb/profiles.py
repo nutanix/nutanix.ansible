@@ -35,7 +35,9 @@ class Profile(NutanixDatabase):
         timeout=30,
     ):
         if uuid:
-            query = {"id": uuid}
+            if not query:
+                query = {}
+            query["id"] = uuid
         return super().read(
             uuid=None,
             endpoint=endpoint,
@@ -44,6 +46,48 @@ class Profile(NutanixDatabase):
             no_response=no_response,
             timeout=timeout,
         )
+
+    def get_profile_by_version(self, uuid, version_id="latest"):
+        endpoint = "{0}/versions/{1}".format(uuid, version_id)
+        resp = self.read(endpoint=endpoint, raise_error=False)
+        if isinstance(resp, dict) and resp.get("errorCode"):
+            self.module.fail_json(
+                msg="Failed fetching profile with given version",
+                error=resp.get("message"),
+                response=resp,
+            )
+        return resp
+
+    def get_profiles(self, uuid=None, name=None, type=None):
+        if name or uuid:
+            query = {}
+            if name:
+                query["name"] = name
+            else:
+                query["id"] = uuid
+
+            if type:
+                query["type"] = type
+
+            resp = self.read(query=query, raise_error=False)
+            if isinstance(resp, dict) and resp.get("errorCode"):
+                self.module.fail_json(
+                    msg="Failed fetching pofile info",
+                    error=resp.get("message"),
+                    response=resp,
+                )
+        elif type:
+            query = {"type": type}
+            resp = self.read(query=query)
+            if not resp:
+                return None, "Profiles with type {0} not found".format(type)
+        else:
+            return (
+                None,
+                "Please provide uuid, name or profile type for fetching profile details",
+            )
+
+        return resp, None
 
 
 # helper functions

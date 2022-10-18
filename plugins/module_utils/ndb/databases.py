@@ -4,13 +4,13 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
+from ..constants import NDB as NDB_CONSTANTS
 from .clusters import get_cluster_uuid
 from .db_servers import get_db_server_uuid
-from .slas import get_sla_uuid
-from .tags import Tag
 from .nutanix_database import NutanixDatabase
 from .profiles import Profile, get_profile_uuid
-from ..constants import NDB as NDB_CONSTANTS
+from .slas import get_sla_uuid
+from .tags import Tag
 
 __metaclass__ = type
 
@@ -83,6 +83,30 @@ class Database(NutanixDatabase):
         return super().update(
             data, uuid, endpoint, query, raise_error, no_response, timeout, method
         )
+
+    def get_database(self, name=None, uuid=None):
+        if uuid:
+            resp = self.read(uuid=uuid, raise_error=False)
+        elif name:
+            query = {"value-type": "name", "value": name}
+            resp = self.read(query=query)
+            if not resp:
+                return None, "Database with name {0} not found".format(name)
+            resp = resp[0]
+        else:
+            return (
+                None,
+                "Please provide either uuid or name for fetching database details",
+            )
+
+        if isinstance(resp, dict) and resp.get("errorCode"):
+            self.module.fail_json(
+                msg="Failed fetching database info",
+                error=resp.get("message"),
+                response=resp,
+            )
+
+        return resp, None
 
     def _get_default_spec(self):
         return deepcopy(
