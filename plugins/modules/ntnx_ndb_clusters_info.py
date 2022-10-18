@@ -61,7 +61,7 @@ def get_cluster(module, result):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed fetching cluster", **result)
+        module.fail_json(msg="Failed fetching cluster info", **result)
     result["response"] = resp
 
 

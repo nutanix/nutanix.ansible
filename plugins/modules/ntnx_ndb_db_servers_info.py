@@ -11,14 +11,14 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_db_servers_info
 short_description: database server  info module
-version_added: 1.7.0
+version_added: 1.8.0-beta.1
 description: 'Get database server info'
 options:
-      server_name:
+      name:
         description:
             - server name
         type: str
-      server_id:
+      uuid:
         description:
             - server id
         type: str
@@ -39,14 +39,14 @@ RETURN = r"""
 """
 
 from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
-from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
+from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 
 
 def get_module_spec():
 
     module_args = dict(
-        server_name=dict(type="str"),
-        server_id=dict(type="str"),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
         server_ip=dict(type="str"),
     )
 
@@ -55,16 +55,16 @@ def get_module_spec():
 
 def get_db_server(module, result):
     db_server = DBServers(module)
-    if module.params.get("server_name"):
-        db_name = module.params["server_name"]
-        db_option = "{0}/{1}".format("name", db_name)
-    elif module.params.get("server_ip"):
-        db_ip = module.params["server_ip"]
-        db_option = "{0}/{1}".format("ip", db_ip)
+    if module.params.get("uuid"):
+        resp, err = db_server.get_db_server(uuid=module.params["uuid"])
+    elif module.params.get("name"):
+        resp, err = db_server.get_db_server(name=module.params["name"])
     else:
-        db_option = "{0}".format(module.params["server_id"])
+        resp, err = db_server.get_db_server(ip=module.params["server_ip"])
 
-    resp = db_server.read(db_option, raise_error=False)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed fetching database server info", **result)
 
     result["response"] = resp
 
@@ -78,16 +78,15 @@ def get_db_servers(module, result):
 
 
 def run_module():
-    module = NutanixDatabase(
+    module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        skip_info_args=True,
-        mutually_exclusive=[("server_name", "server_id", "server_ip")],
+        mutually_exclusive=[("name", "uuid", "server_ip")],
     )
     result = {"changed": False, "error": None, "response": None}
     if (
-        module.params.get("server_name")
-        or module.params.get("server_id")
+        module.params.get("name")
+        or module.params.get("uuid")
         or module.params.get("server_ip")
     ):
         get_db_server(module, result)

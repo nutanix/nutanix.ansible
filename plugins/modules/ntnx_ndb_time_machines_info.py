@@ -11,16 +11,16 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_tms_info
 short_description: tm  info module
-version_added: 1.7.0
+version_added: 1.8.0-beta.1
 description: 'Get tm info'
 options:
-      tm_name:
+      name:
         description:
-            - tm name
+            - time machine name
         type: str
-      tm_id:
+      uuid:
         description:
-            - tm id
+            - time machine id
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
@@ -36,35 +36,34 @@ RETURN = r"""
 
 """
 
-from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
-from ..module_utils.ndb.time_machines import TM  # noqa: E402
+from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 
 
 def get_module_spec():
 
     module_args = dict(
-        tm_name=dict(type="str"),
-        tm_id=dict(type="str"),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
     )
 
     return module_args
 
 
 def get_tm(module, result):
-    tm = TM(module)
-    if module.params.get("tm_name"):
-        tm_name = module.params["tm_name"]
-        tm_option = "{0}/{1}".format("name", tm_name)
-    else:
-        tm_option = "{0}".format(module.params["tm_id"])
-
-    resp = tm.read(tm_option)
-
+    tm = TimeMachine(module)
+    
+    uuid = module.params.get("uuid")
+    name = module.params.get("name")
+    resp, err = tm.get_time_machine(uuid=uuid, name=name)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed fetching sla info", **result)
     result["response"] = resp
 
 
 def get_tms(module, result):
-    tm = TM(module)
+    tm = TimeMachine(module)
 
     resp = tm.read()
 
@@ -72,14 +71,13 @@ def get_tms(module, result):
 
 
 def run_module():
-    module = NutanixDatabase(
+    module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        skip_info_args=True,
-        mutually_exclusive=[("tm_name", "tm_id")],
+        mutually_exclusive=[("name", "uuid")],
     )
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("tm_name") or module.params.get("tm_id"):
+    if module.params.get("name") or module.params.get("uuid"):
         get_tm(module, result)
     else:
         get_tms(module, result)

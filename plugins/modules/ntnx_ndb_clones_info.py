@@ -11,14 +11,14 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_clones_info
 short_description: clone  info module
-version_added: 1.7.0
+version_added: 1.8.0-beta.1
 description: 'Get clone info'
 options:
-      clone_name:
+      name:
         description:
             - clone name
         type: str
-      clone_id:
+      uuid:
         description:
             - clone id
         type: str
@@ -35,14 +35,14 @@ RETURN = r"""
 """
 
 from ..module_utils.ndb.clones import Clone  # noqa: E402
-from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
+from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 
 
 def get_module_spec():
 
     module_args = dict(
-        clone_name=dict(type="str"),
-        clone_id=dict(type="str"),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
     )
 
     return module_args
@@ -50,13 +50,16 @@ def get_module_spec():
 
 def get_clone(module, result):
     clone = Clone(module)
-    if module.params.get("clone_name"):
-        clone_name = module.params["clone_name"]
-        clone_option = "{0}/{1}".format("name", clone_name)
+    if module.params.get("name"):
+        name = module.params["name"]
+        resp, err = clone.get_clone(name=name)
     else:
-        clone_option = "{0}".format(module.params["clone_id"])
+        uuid = module.params["uuid"]
+        resp, err = clone.get_clone(uuid=uuid)
 
-    resp = clone.read(clone_option)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed fetching clone info", **result)
 
     result["response"] = resp
 
@@ -70,14 +73,13 @@ def get_clones(module, result):
 
 
 def run_module():
-    module = NutanixDatabase(
+    module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        skip_info_args=True,
-        mutually_exclusive=[("clone_name", "clone_id")],
+        mutually_exclusive=[("name", "uuid")],
     )
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("clone_name") or module.params.get("clone_id"):
+    if module.params.get("name") or module.params.get("uuid"):
         get_clone(module, result)
     else:
         get_clones(module, result)

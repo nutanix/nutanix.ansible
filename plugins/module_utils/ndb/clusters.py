@@ -28,17 +28,17 @@ class Cluster(NutanixDatabase):
 
     def get_cluster(self, uuid=None, name=None):
         if uuid:
-            resp = self.read(uuid=uuid)
+            resp = self.read(uuid=uuid, raise_error=False)
         elif name:
             endpoint = "{0}/{1}".format("name", name)
-            resp = self.read(endpoint=endpoint)
+            resp = self.read(endpoint=endpoint, raise_error=False)
 
             # we fetch cluster using ID again to get complete info.
-            if not resp.get("errorCode") and resp.get("id"):
+            if resp and not resp.get("errorCode") and resp.get("id"):
                 resp = self.read(uuid=resp["id"])
 
         else:
-            return None, "Please provide either uuid or name for fetching cluster"
+            return None, "Please provide either uuid or name for fetching cluster details"
         
         if isinstance(resp, dict) and resp.get("errorCode"):
             self.module.fail_json(

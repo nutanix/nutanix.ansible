@@ -11,14 +11,14 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_databases_info
 short_description: database  info module
-version_added: 1.7.0
+version_added: 1.8.0-beta.1
 description: 'Get database info'
 options:
-      db_name:
+      name:
         description:
             - database name
         type: str
-      db_id:
+      uuid:
         description:
             - database id
         type: str
@@ -35,14 +35,14 @@ RETURN = r"""
 """
 
 from ..module_utils.ndb.databases import Database  # noqa: E402
-from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
+from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 
 
 def get_module_spec():
 
     module_args = dict(
-        db_name=dict(type="str"),
-        db_id=dict(type="str"),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
     )
 
     return module_args
@@ -50,14 +50,16 @@ def get_module_spec():
 
 def get_database(module, result):
     database = Database(module)
-    if module.params.get("db_name"):
-        db_name = module.params["db_name"]
-        db_option = "{0}/{1}".format("name", db_name)
+    if module.params.get("name"):
+        name = module.params["name"]
+        resp, err = database.get_database(name=name)
     else:
-        db_option = "{0}".format(module.params["db_id"])
+        uuid = module.params["uuid"]
+        resp, err = database.get_database(uuid=uuid)
 
-    resp = database.read(db_option)
-
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed fetching database info", **result)
     result["response"] = resp
 
 
@@ -70,14 +72,13 @@ def get_databases(module, result):
 
 
 def run_module():
-    module = NutanixDatabase(
+    module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        skip_info_args=True,
-        mutually_exclusive=[("db_name", "db_id")],
+        mutually_exclusive=[("name", "uuid")],
     )
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("db_name") or module.params.get("db_id"):
+    if module.params.get("name") or module.params.get("uuid"):
         get_database(module, result)
     else:
         get_databases(module, result)

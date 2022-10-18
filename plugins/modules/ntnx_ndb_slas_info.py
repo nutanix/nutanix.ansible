@@ -11,14 +11,14 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_slas_info
 short_description: sla  info module
-version_added: 1.7.0
+version_added: 1.8.0-beta.1
 description: 'Get sla info'
 options:
-      sla_name:
+      name:
         description:
             - sla name
         type: str
-      sla_id:
+      uuid:
         description:
             - sla id
         type: str
@@ -34,15 +34,15 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-from ..module_utils.ndb.nutanix_database import NutanixDatabase  # noqa: E402
+from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.slas import SLA  # noqa: E402
 
 
 def get_module_spec():
 
     module_args = dict(
-        sla_name=dict(type="str"),
-        sla_id=dict(type="str"),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
     )
 
     return module_args
@@ -50,14 +50,11 @@ def get_module_spec():
 
 def get_sla(module, result):
     sla = SLA(module)
-    if module.params.get("sla_name"):
-        sla_name = module.params["sla_name"]
-        sla_option = "{0}/{1}".format("name", sla_name)
-    else:
-        sla_option = "{0}".format(module.params["sla_id"])
+    resp, err = sla.get_sla(uuid=module.params.get("uuid"), name=module.params.get("name"))
 
-    resp = sla.read(sla_option)
-
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed fetching sla info", **result)
     result["response"] = resp
 
 
@@ -70,14 +67,13 @@ def get_slas(module, result):
 
 
 def run_module():
-    module = NutanixDatabase(
+    module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        skip_info_args=True,
-        mutually_exclusive=[("sla_name", "sla_id")],
+        mutually_exclusive=[("name", "uuid")],
     )
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("sla_name") or module.params.get("sla_id"):
+    if module.params.get("name") or module.params.get("uuid"):
         get_sla(module, result)
     else:
         get_slas(module, result)

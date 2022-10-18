@@ -84,6 +84,27 @@ class Database(NutanixDatabase):
             data, uuid, endpoint, query, raise_error, no_response, timeout, method
         )
 
+    def get_database(self, name=None, uuid=None):
+        if uuid:
+            resp = self.read(uuid=uuid, raise_error=False)
+        elif name:
+            query = {"value-type": "name", "value": name}
+            resp = self.read(query=query)
+            if not resp:
+                return None, "Database with name {0} not found".format(name)
+            resp = resp[0]
+        else:
+            return None, "Please provide either uuid or name for fetching database details"
+        
+        if isinstance(resp, dict) and resp.get("errorCode"):
+            self.module.fail_json(
+                msg="Failed fetching database info",
+                error=resp.get("message"),
+                response=resp,
+            )
+
+        return resp, None
+
     def _get_default_spec(self):
         return deepcopy(
             {
