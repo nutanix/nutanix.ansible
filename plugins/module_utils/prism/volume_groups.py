@@ -70,11 +70,13 @@ class VolumeGroup(Prism):
         payload["clusterReference"] = uuid
         return payload, None
 
+
 # Helper functions
 
 
-class VGDisks():
+class VGDisks:
     pass
+
 
 def get_volume_group_uuid(config, module):
     if "name" in config:
