@@ -85,6 +85,7 @@ class Entity(object):
         self,
         data=None,
         uuid=None,
+        method="PUT",
         endpoint=None,
         query=None,
         raise_error=True,
@@ -98,7 +99,7 @@ class Entity(object):
             url = self._build_url_with_query(url, query)
         return self._fetch_url(
             url,
-            method="PUT",
+            method=method,
             data=data,
             raise_error=raise_error,
             no_response=no_response,

@@ -63,6 +63,8 @@ RETURN = r"""
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.volume_groups import VolumeGroup  # noqa: E402
+from ..module_utils.prism.vdisks import VDisks  # noqa: E402
+from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -110,17 +112,28 @@ def create_volume_group(module, result):
         result["response"] = spec
         return
 
-    # attach disks
-    # VGDisks
+    resp = volume_group.create(spec)
+    task_uuid = resp["data"]["extId"][-36:]
+    result["changed"] = True
+    result["response"] = resp
+    result["task_uuid"] = task_uuid
+    wait_for_task_completion(module, result)
+
+    volume_group_uuid = result["volume_group_uuid"]
+    resp = volume_group.read(volume_group_uuid)
+    result["response"] = resp
+    if module.params.get("disks"):
+        vdisk = VDisks()
+        disks_response = []
+        for disk in module.params["disks"]:
+            spec, _ = vdisk.get_spec(module, disk)
+            resp = volume_group.update(spec, volume_group_uuid, method="POST", endpoint="disks")
+            disks_response.append(resp)
+        result["response"]["disks"] = disks_response
+
     # attach vms
 
     # attach clients
-
-    resp = volume_group.create(spec)
-    # volume_group_uuid = resp["uuid"]
-    result["changed"] = True
-    result["response"] = resp
-    # result["volume_group_uuid"] = volume_group_uuid
 
 
 # def update_volume_group(module, result):
@@ -172,6 +185,14 @@ def create_volume_group(module, result):
 #     result["changed"] = True
 #     result["response"] = resp
 #     result["volume_group_uuid"] = volume_group_uuid
+
+
+def wait_for_task_completion(module, result):
+    task = Task(module)
+    task_uuid = result["task_uuid"]
+    resp = task.wait_for_completion(task_uuid)
+    result["response"] = resp
+    result["volume_group_uuid"] = resp["entity_reference_list"][0]["uuid"]
 
 
 def run_module():

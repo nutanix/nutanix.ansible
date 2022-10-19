@@ -73,9 +73,6 @@ class VolumeGroup(Prism):
 # Helper functions
 
 
-class VGDisks():
-    pass
-
 def get_volume_group_uuid(config, module):
     if "name" in config:
         service_group = VolumeGroup(module)
