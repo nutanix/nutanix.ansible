@@ -270,7 +270,7 @@
 ################################################################
 - name: Get era databases using its name
   ntnx_ndb_databases_info:
-    name: "{{databases.response[0].databaseName}}"
+    name: "{{databases.response[0].name}}"
   register: result
 
 - name: check listing status
@@ -294,7 +294,7 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name == "{{databases.response[0].databaseName}}"
+      - result.response.name == "{{databases.response[0].name}}"
     fail_msg: "Unable to Get era databases using its id"
     success_msg: "Get era databases using its id finished successfully"
 
