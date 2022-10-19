@@ -58,6 +58,7 @@
     tags:
       test1: check1
     wait: true
+  no_log: true
   register: db
 
 - set_fact:
@@ -172,6 +173,7 @@
     tags:
       test1: check1
     wait: true
+  no_log: true
   register: db
 
 - name: Verify attributes
@@ -201,6 +203,7 @@
     tags:
       test1: check1_updated
       test2: check2_updated
+  no_log: true
   register: db
 
 - set_fact:
@@ -238,6 +241,7 @@
       test1: check1_updated
       test2: check2_updated
   register: result
+  no_log: true
   ignore_errors: True
 
 - name: idempotency check status
@@ -257,6 +261,7 @@
 - name: List era databases
   ntnx_ndb_databases_info:
   register: databases
+  no_log: true
 
 - name: check listing status
   assert:
@@ -272,6 +277,7 @@
   ntnx_ndb_databases_info:
     name: "{{databases.response[0].name}}"
   register: result
+  no_log: true
 
 - name: check listing status
   assert:
@@ -287,6 +293,7 @@
   ntnx_ndb_databases_info:
     uuid: "{{databases.response[0].id}}"
   register: result
+  no_log: true
 
 - name: check listing status
   assert:
@@ -324,7 +331,7 @@
     db_uuid: "{{db.db_uuid}}"
     delete_time_machine: True
     wait: true
-
+  no_log: true
   register: db
 
 - name: Verify attributes

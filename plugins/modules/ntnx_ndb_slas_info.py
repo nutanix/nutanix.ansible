@@ -58,6 +58,50 @@ EXAMPLES = r"""
 
 """
 RETURN = r"""
+response:
+  description: listing all slas
+  returned: always
+  type: list
+  sample: [
+            {
+                "continuousRetention": 30,
+                "currentActiveFrequency": "CONTINUOUS",
+                "dailyRetention": 90,
+                "dateCreated": "2022-04-08 16:21:51.591815",
+                "dateModified": "2022-04-08 16:21:51.591815",
+                "description": "Out of the box Gold SLA for Era Time Machines.",
+                "id": "50dsad9-db5e-47af-8102-ff9dsad9bd81",
+                "monthlyRetention": 12,
+                "name": "DEFAULT_OOB_GOLD_SLA",
+                "ownerId": "era-internal-user-id",
+                "pitrEnabled": true,
+                "quarterlyRetention": 35,
+                "referenceCount": 1,
+                "systemSla": true,
+                "uniqueName": "DEFAULT_OOB_GOLD_SLA",
+                "weeklyRetention": 16,
+                "yearlyRetention": 0
+            },
+            {
+                "continuousRetention": 14,
+                "currentActiveFrequency": "CONTINUOUS",
+                "dailyRetention": 60,
+                "dateCreated": "2022-04-08 16:21:51.591815",
+                "dateModified": "2022-04-08 16:21:51.591815",
+                "description": "Out of the box Silver SLA for Era Time Machines.",
+                "id": "27dasdd9-db5e-47af-8102-ff9354dsada0",
+                "monthlyRetention": 12,
+                "name": "DEFAULT_OOB_SILVER_SLA",
+                "ownerId": "era-internal-user-id",
+                "pitrEnabled": true,
+                "quarterlyRetention": 0,
+                "referenceCount": 0,
+                "systemSla": true,
+                "uniqueName": "DEFAULT_OOB_SILVER_SLA",
+                "weeklyRetention": 12,
+                "yearlyRetention": 0
+            },
+        ]
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402

@@ -159,7 +159,7 @@
     register: result
     loop: '{{ todelete }}'
   - set_fact:
-      to_delete: []
+      todelete: []
 #################################################################################
   - name: VM with Cluster, Network, Universal time zone, one Disk
     ntnx_vms:
@@ -256,7 +256,7 @@
     register: result
     loop: '{{ todelete }}'
   - set_fact:
-      to_delete: []
+      todelete: []
 ####################################################################################
   - name: VM with all specification
     ntnx_vms:
@@ -360,7 +360,7 @@
     register: result
     loop: '{{ todelete }}'
   - set_fact:
-      to_delete: []
+      todelete: []
 ##################################################################################################
   - name: VM with unmanaged vlan
     ntnx_vms:

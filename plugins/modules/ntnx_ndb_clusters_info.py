@@ -59,6 +59,108 @@ EXAMPLES = r"""
 
 """
 RETURN = r"""
+response:
+  description: listing all clusters
+  returned: always
+  type: list
+  sample:  [
+            {
+                "cloudInfo": null,
+                "cloudType": "NTNX",
+                "dateCreated": "2022-09-30 11:09:58.232685",
+                "dateModified": "2022-10-08 05:20:02.513367",
+                "description": "",
+                "entityCounts": null,
+                "fqdns": null,
+                "healthy": true,
+                "hypervisorType": "AHV",
+                "hypervisorVersion": "6.1",
+                "id": "d7844b99-5a9d-4da7-8e7d-c938499214de",
+                "ipAddresses": [
+                    "000.000.000.000"
+                ],
+                "managementServerInfo": null,
+                "name": "EraCluster",
+                "nxClusterUUID": "4705e777-bfc7-11e4-3507-ac1f6b60292f",
+                "ownerId": "eac70dbf-42fb-468b-9498-949796ca1f73",
+                "password": null,
+                "properties": [
+                    {
+                        "description": null,
+                        "name": "CLUSTER_ID",
+                        "ref_id": null,
+                        "secure": false,
+                        "value": "0005e777-bf47-11e4-3507-ac1f6b60292f::3821212059792582959"
+                    },
+                    {
+                        "description": null,
+                        "name": "CLUSTER_INCARNATION_ID",
+                        "ref_id": null,
+                        "secure": false,
+                        "value": "1661876478172260"
+                    },
+                    {
+                        "description": null,
+                        "name": "ERA_STORAGE_CONTAINER",
+                        "ref_id": null,
+                        "secure": false,
+                        "value": "default-container-75707403530678"
+                    },
+                    {
+                        "description": null,
+                        "name": "MODEL_NAME",
+                        "ref_id": null,
+                        "secure": false,
+                        "value": "NX-1065-G5"
+                    },
+                    {
+                        "description": null,
+                        "name": "ONDEMAND_REPLICATION_SUPPORTED",
+                        "ref_id": null,
+                        "secure": false,
+                        "value": "true"
+                    },
+                    {
+                        "description": null,
+                        "name": "PRISM_VM_LIST_PAGINATION_LIMIT",
+                        "ref_id": null,
+                        "secure": false,
+                        "value": "500"
+                    },
+                    {
+                        "description": null,
+                        "name": "PRISM_VM_LIST_PAGINATION_SIZE",
+                        "ref_id": null,
+                        "secure": false,
+                        "value": "50"
+                    },
+                    {
+                        "description": null,
+                        "name": "RESOURCE_CONFIG",
+                        "ref_id": null,
+                        "secure": false,
+                        "value": "{\"storageThresholdPercentage\":95.0,\"memoryThresholdPercentage\":95.0}"
+                    },
+                    {
+                        "description": null,
+                        "name": "TIMEZONE",
+                        "ref_id": null,
+                        "secure": false,
+                        "value": "UTC"
+                    }
+                ],
+                "referenceCount": 0,
+                "resourceConfig": {
+                    "memoryThresholdPercentage": 95.0,
+                    "storageThresholdPercentage": 95.0
+                },
+                "status": "UP",
+                "uniqueName": "ERACLUSTER",
+                "username": null,
+                "version": "v2"
+            }
+        ]
+
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402

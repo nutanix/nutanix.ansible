@@ -110,6 +110,61 @@ EXAMPLES = r"""
 
 """
 RETURN = r"""
+response:
+  description: list of db_profiles
+  returned: always
+  type: list
+  sample: [
+    {
+        "dbVersion": "ALL",
+        "description": "Default Database Storage Profile",
+        "engineType": "Generic",
+        "id": "a1c3033d-f999-47b2-8565-feced1a33503",
+        "latestVersion": "1.0",
+        "latestVersionId": "a1cdasdd-f999-47b2-8565-feced1a33503",
+        "name": "DB_DEFAULT_STORAGE_PROFILE",
+        "owner": "eacdasbf-22fb-462b-9498-949796ca1f73",
+        "status": "READY",
+        "systemProfile": true,
+        "topology": "ALL",
+        "type": "Storage",
+        "versions": [
+            {
+                "dbVersion": "ALL",
+                "deprecated": false,
+                "description": "Default Database Storage Profile",
+                "engineType": "Generic",
+                "id": "a1c3033d-f999-47b2-8565-feced1a33503",
+                "name": "DB_DEFAULT_STORAGE_PROFILE",
+                "owner": "eacdsaf-22fb-462b-9498-94979dsaf73",
+                "profileId": "a1c30dsa-f999-47b2-8565-fecedsa3503",
+                "properties": [
+                    {
+                        "name": "DEFAULT_CONTAINER",
+                        "secure": false,
+                        "value": ""
+                    },
+                    {
+                        "name": "MAX_VDISK_SIZE",
+                        "secure": false,
+                        "value": "200"
+                    }
+                ],
+                "propertiesMap": {
+                    "DEFAULT_CONTAINER": "",
+                    "MAX_VDISK_SIZE": "200"
+                },
+                "published": true,
+                "status": "READY",
+                "systemProfile": false,
+                "topology": "ALL",
+                "type": "Storage",
+                "version": "1.0",
+                "versionClusterAssociation": []
+            }
+        ]
+    }
+    ]
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
