@@ -30,7 +30,7 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-- name: List all era tms
+- name: List all era time machines
   ntnx_ndb_time_machines_info:
     ndb_host: "<ndb_era_ip>"
     ndb_username: "<ndb_era_username>"
@@ -38,7 +38,7 @@ EXAMPLES = r"""
     validate_certs: false
   register: tms
 
-- name: get era tms using it's name
+- name: get era time machines using it's name
   ntnx_ndb_time_machines_info:
     ndb_host: "<ndb_era_ip>"
     ndb_username: "<ndb_era_username>"
@@ -47,7 +47,7 @@ EXAMPLES = r"""
     name: "test_name"
   register: result
 
-- name: List tms use id
+- name: List time machines use id
   ntnx_ndb_time_machines_info:
     ndb_host: "<ndb_era_ip>"
     ndb_username: "<ndb_era_username>"
