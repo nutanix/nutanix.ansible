@@ -38,10 +38,8 @@ class VolumeGroup(Prism):
         return deepcopy(
             {
                 "name": "",
-                "description": "",
                 "loadBalanceVmAttachments": False,
                 "sharingStatus": "SHARED",
-                "iscsiTargetPrefix": "",
                 "clusterReference": None,
                 "usageType": "USER",
             }
