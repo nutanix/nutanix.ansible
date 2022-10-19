@@ -68,6 +68,7 @@ class VolumeGroup(Prism):
         payload["clusterReference"] = uuid
         return payload, None
 
+
 # Helper functions
 
 

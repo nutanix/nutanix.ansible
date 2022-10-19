@@ -42,7 +42,7 @@ options:
     description: volume_groups description
     type: str
   
-  ...............TODO
+ # ...............TODO
   
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
@@ -95,7 +95,6 @@ def get_module_spec():
         clients=dict(type="list", elements="str"),
         CHAP_auth=dict(type="bool", default=False),
         target_password=dict(type="str", no_log=True),
-
     )
 
     return module_args
