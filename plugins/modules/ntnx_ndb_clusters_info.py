@@ -5,7 +5,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -32,6 +31,32 @@ author:
 """
 
 EXAMPLES = r"""
+- name: List all era clusters
+  ntnx_ndb_clusters_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+  register: clusters
+
+- name: get era clusters using it's name
+  ntnx_ndb_clusters_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+    name: "test_cluster"
+  register: result
+
+- name: List clusters use id
+  ntnx_ndb_clusters_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+    uuid: "<uuid of cluster>"
+  register: result
+
 """
 RETURN = r"""
 """

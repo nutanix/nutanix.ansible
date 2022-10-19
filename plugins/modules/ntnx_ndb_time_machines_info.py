@@ -30,7 +30,31 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
+- name: List all era tms
+  ntnx_ndb_time_machines_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+  register: tms
 
+- name: get era tms using it's name
+  ntnx_ndb_time_machines_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+    name: "test_name"
+  register: result
+
+- name: List tms use id
+  ntnx_ndb_time_machines_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+    uuid: "<uuid of time mashine>"
+  register: result
 """
 RETURN = r"""
 

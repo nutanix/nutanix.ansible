@@ -34,12 +34,46 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
+- name: List era db_servers
+  ntnx_ndb_db_servers_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+  register: db_servers
+
+- name: get era db_servers using it's name
+  ntnx_ndb_db_servers_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+    name: "test_name"
+  register: result
+
+- name: get era db_servers using it's id
+  ntnx_ndb_db_servers_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+    uuid: "<uuid of db_server>"
+  register: result
+
+- name: get era db_servers using ip
+  ntnx_ndb_db_servers_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+    server_ip: "<ip of db_server>"
+  register: result
 """
 RETURN = r"""
 """
 
-from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
 
 
 def get_module_spec():

@@ -38,7 +38,7 @@ EXAMPLES = r"""
     validate_certs: false
   register: clones
 
-- name: get era clones using it's name  
+- name: get era clones using it's name
   ntnx_ndb_clones_info:
     ndb_host: "<ndb_era_ip>"
     ndb_username: "<ndb_era_username>"
@@ -60,8 +60,8 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-from ..module_utils.ndb.clones import Clone  # noqa: E402
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.ndb.clones import Clone  # noqa: E402
 
 
 def get_module_spec():

@@ -30,12 +30,40 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
+
+
+- name: List era databases
+  ntnx_ndb_databases_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+  register: databases
+
+- name: Get era databases using its name
+  ntnx_ndb_databases_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+    name: "test_name"
+  register: result
+
+- name: Get era databases using its uuid
+  ntnx_ndb_databases_info:
+    ndb_host: "<ndb_era_ip>"
+    ndb_username: "<ndb_era_username>"
+    ndb_password: "<ndb_era_password>"
+    validate_certs: false
+    uuid: "<uuid of database>"
+  register: result
+
 """
 RETURN = r"""
 """
 
-from ..module_utils.ndb.databases import Database  # noqa: E402
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.ndb.databases import Database  # noqa: E402
 
 
 def get_module_spec():
