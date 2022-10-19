@@ -225,7 +225,7 @@ options:
         description: enable/disable auto tuning of log drive
   postgres:
     type: dict
-    description: action arguments for postgress type database
+    description: action arguments for postgres type database
     suboptions:
       listener_port:
           type: str
@@ -237,7 +237,7 @@ options:
           required: true
       db_password:
           type: str
-          description: postgress database password
+          description: postgres database password
           required: true
       auto_tune_staging_drive:
           type: bool
@@ -246,7 +246,7 @@ options:
       allocate_pg_hugepage:
           type: bool
           default: false
-          description: enable/disable allocating HugePage in postgress
+          description: enable/disable allocating HugePage in postgres
       auth_method:
           type: str
           default: md5

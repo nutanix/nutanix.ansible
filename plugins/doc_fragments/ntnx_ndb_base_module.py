@@ -15,19 +15,19 @@ class ModuleDocFragment(object):
 options:
     ndb_host:
         description:
-            - ndb era IP address
+            - ndb era server IP address
             - C(ndb_host). If not set then the value of the C(NDB_HOST), environment variable is used.
         type: str
         required: true
     ndb_password:
         description:
-            - ndb era password
+            - ndb era server password
             - C(ndb_password). If not set then the value of the C(NDB_PASSWORD), environment variable is used.
         type: str
         required: true
     ndb_username:
         description:
-            - ndb era username
+            - ndb era server username
             - C(ndb_username). If not set then the value of the C(NDB_username), environment variable is used.
         type: str
         required: true
