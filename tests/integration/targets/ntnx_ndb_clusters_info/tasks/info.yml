@@ -53,6 +53,7 @@
     name: "abcd"
   register: result
   ignore_errors: True
+  no_log: true
 
 - name: check listing status
   assert:
