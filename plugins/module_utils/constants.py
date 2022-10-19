@@ -282,6 +282,7 @@ class ACP:
 class NDB:
 
     OPERATIONS_POLLING_DELAY = 30
+
     class DatabaseTypes:
         POSTGRES = "postgres_database"
 

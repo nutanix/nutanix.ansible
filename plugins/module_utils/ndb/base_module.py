@@ -9,7 +9,9 @@ __metaclass__ = type
 
 class NdbBaseModule(AnsibleModule):
     argument_spec = dict(
-        nutanix_host=dict(type="str", required=True, fallback=(env_fallback, ["NUTANIX_HOST"])),
+        nutanix_host=dict(
+            type="str", required=True, fallback=(env_fallback, ["NUTANIX_HOST"])
+        ),
         nutanix_username=dict(
             type="str", fallback=(env_fallback, ["NUTANIX_USERNAME"]), required=True
         ),
