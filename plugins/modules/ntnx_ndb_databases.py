@@ -340,13 +340,292 @@ EXAMPLES = r"""
         yearly: FEBRUARY
         log_catchup: 30
         snapshots_per_day: 2
-    tags:
-      test1: check1
-    wait: true
   register: db
 """
 
 RETURN = r"""
+response:
+  description: database creation response after provisioning
+  returned: always
+  type: dict
+  sample: {
+            "accessLevel": null,
+            "category": "DB_GROUP_IMPLICIT",
+            "clone": false,
+            "clustered": false,
+            "databaseClusterType": null,
+            "databaseGroupStateInfo": null,
+            "databaseName": "POSTGRES_DATABASE_ANSIBLE",
+            "databaseNodes": [
+                {
+                    "accessLevel": null,
+                    "databaseId": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "databaseStatus": "READY",
+                    "dateCreated": "2022-10-19 18:49:25",
+                    "dateModified": "2022-10-19 18:51:33",
+                    "dbserver": null,
+                    "dbserverId": "0bee18d7-1f7c-4a7b-8d52-cd7f22f3121a",
+                    "description": "postgres_database POSTGRES_DATABASE_ANSIBLE on host 10.51.144.213",
+                    "id": "7228a75f-86d9-4a5b-aa1a-cc52c1fcfce3",
+                    "info": {
+                        "info": {},
+                        "secureInfo": null
+                    },
+                    "metadata": null,
+                    "name": "POSTGRES_DATABASE_ANSIBLE",
+                    "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                    "primary": false,
+                    "properties": [],
+                    "protectionDomain": null,
+                    "protectionDomainId": "d67b312c-6f3a-4322-a9f2-15ec0bdc9dc5",
+                    "softwareInstallationId": "b48c4b34-a6a1-4040-b4df-0bd4ab9c9e2c",
+                    "status": "READY",
+                    "tags": []
+                }
+            ],
+            "databaseStatus": "UNKNOWN",
+            "databases": null,
+            "dateCreated": "2022-10-19 18:26:55",
+            "dateModified": "2022-10-19 18:51:26",
+            "dbserverLogicalClusterId": null,
+            "dbserverlogicalCluster": null,
+            "description": null,
+            "eraCreated": true,
+            "groupInfo": null,
+            "id": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+            "info": {
+                "info": {
+                    "bpg_configs": {
+                        "bpg_db_param": {
+                            "effective_cache_size": "3GB",
+                            "maintenance_work_mem": "512MB",
+                            "max_parallel_workers_per_gather": "2",
+                            "max_worker_processes": "8",
+                            "shared_buffers": "1024MB",
+                            "work_mem": "32MB"
+                        },
+                        "storage": {
+                            "archive_storage": {
+                                "size": 600.0
+                            },
+                            "data_disks": {
+                                "count": 4.0
+                            },
+                            "log_disks": {
+                                "count": 4.0,
+                                "size": 100.0
+                            }
+                        },
+                        "vm_properties": {
+                            "dirty_background_ratio": 5.0,
+                            "dirty_expire_centisecs": 500.0,
+                            "dirty_ratio": 15.0,
+                            "dirty_writeback_centisecs": 100.0,
+                            "nr_hugepages": 118.0,
+                            "overcommit_memory": 1.0,
+                            "swappiness": 0.0
+                        }
+                    }
+                },
+                "secureInfo": {}
+            },
+            "internal": false,
+            "lcmConfig": null,
+            "linkedDatabases": [
+                {
+                    "databaseName": "prad",
+                    "databaseStatus": "READY",
+                    "dateCreated": "2022-10-19 18:48:37",
+                    "dateModified": "2022-10-19 18:48:37",
+                    "description": null,
+                    "id": "6d4da687-a425-43f1-a9df-fa28a6b0af80",
+                    "info": {
+                        "info": {
+                            "created_by": "user"
+                        },
+                        "secureInfo": null
+                    },
+                    "metadata": null,
+                    "metric": null,
+                    "name": "prad",
+                    "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                    "parentDatabaseId": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "parentLinkedDatabaseId": null,
+                    "snapshotId": null,
+                    "status": "READY",
+                    "timeZone": null
+                },
+                {
+                    "databaseName": "postgres",
+                    "databaseStatus": "READY",
+                    "dateCreated": "2022-10-19 18:48:37",
+                    "dateModified": "2022-10-19 18:48:37",
+                    "description": null,
+                    "id": "67314b51-326f-4fc8-a345-668933a18cbd",
+                    "info": {
+                        "info": {
+                            "created_by": "system"
+                        },
+                        "secureInfo": null
+                    },
+                    "metadata": null,
+                    "metric": null,
+                    "name": "postgres",
+                    "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                    "parentDatabaseId": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "parentLinkedDatabaseId": null,
+                    "snapshotId": null,
+                    "status": "READY",
+                    "timeZone": null
+                },
+                {
+                    "databaseName": "template0",
+                    "databaseStatus": "READY",
+                    "dateCreated": "2022-10-19 18:48:37",
+                    "dateModified": "2022-10-19 18:48:37",
+                    "description": null,
+                    "id": "ba4bf273-b5ab-4743-a222-dffa178220f2",
+                    "info": {
+                        "info": {
+                            "created_by": "system"
+                        },
+                        "secureInfo": null
+                    },
+                    "metadata": null,
+                    "metric": null,
+                    "name": "template0",
+                    "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                    "parentDatabaseId": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "parentLinkedDatabaseId": null,
+                    "snapshotId": null,
+                    "status": "READY",
+                    "timeZone": null
+                },
+                {
+                    "databaseName": "template1",
+                    "databaseStatus": "READY",
+                    "dateCreated": "2022-10-19 18:48:37",
+                    "dateModified": "2022-10-19 18:48:37",
+                    "description": null,
+                    "id": "704d8464-d8aa-47ff-8f79-347cfae90abd",
+                    "info": {
+                        "info": {
+                            "created_by": "system"
+                        },
+                        "secureInfo": null
+                    },
+                    "metadata": null,
+                    "metric": null,
+                    "name": "template1",
+                    "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                    "parentDatabaseId": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "parentLinkedDatabaseId": null,
+                    "snapshotId": null,
+                    "status": "READY",
+                    "timeZone": null
+                }
+            ],
+            "metadata": {
+                "baseSizeComputed": false,
+                "capabilityResetTime": null,
+                "createdDbservers": null,
+                "deregisterInfo": null,
+                "deregisteredWithDeleteTimeMachine": false,
+                "info": null,
+                "lastLogCatchUpForRestoreOperationId": null,
+                "lastRefreshTimestamp": null,
+                "lastRequestedRefreshTimestamp": null,
+                "logCatchUpForRestoreDispatched": false,
+                "originalDatabaseName": null,
+                "pitrBased": false,
+                "provisionOperationId": "d9b1924f-a768-4cd8-886b-7a69e61f5b89",
+                "refreshBlockerInfo": null,
+                "registeredDbservers": null,
+                "sanitised": false,
+                "secureInfo": null,
+                "sourceSnapshotId": null,
+                "stateBeforeRefresh": null,
+                "stateBeforeRestore": null,
+                "stateBeforeScaling": null,
+                "tmActivateOperationId": "40d6b3a3-4f57-4c17-9ba2-9279d2f247c2"
+            },
+            "metric": null,
+            "name": "POSTGRES_DATABASE_ANSIBLE",
+            "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+            "parentDatabaseId": null,
+            "parentSourceDatabaseId": null,
+            "parentTimeMachineId": null,
+            "placeholder": false,
+            "properties": [
+                {
+                    "description": null,
+                    "name": "db_parameter_profile_id",
+                    "ref_id": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "secure": false,
+                    "value": "a80ac1fb-8787-4442-8f38-eeb2417a8cbb"
+                },
+                {
+                    "description": null,
+                    "name": "auth",
+                    "ref_id": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "secure": false,
+                    "value": "md5"
+                },
+                {
+                    "description": null,
+                    "name": "AUTO_EXTEND_DB_STAGE",
+                    "ref_id": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "secure": false,
+                    "value": "true"
+                },
+                {
+                    "description": null,
+                    "name": "provisioning_spec",
+                    "ref_id": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "secure": false,
+                    "value": ""
+                },
+                {
+                    "description": null,
+                    "name": "version",
+                    "ref_id": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "secure": false,
+                    "value": "10.4"
+                },
+                {
+                    "description": null,
+                    "name": "vm_ip",
+                    "ref_id": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "secure": false,
+                    "value": "xx.xx.xx.xx"
+                },
+                {
+                    "description": null,
+                    "name": "postgres_software_home",
+                    "ref_id": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "secure": false,
+                    "value": "%2Fusr%2Fpgsql-10.4"
+                },
+                {
+                    "description": null,
+                    "name": "listener_port",
+                    "ref_id": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
+                    "secure": false,
+                    "value": "5432"
+                }
+            ],
+            "status": "READY",
+            "tags": [],
+            "timeMachine": null,
+            "timeMachineId": "be524e70-60ad-4a8c-a0ee-8d72f954d7e6",
+            "timeZone": "UTC",
+            "type": "postgres_database"
+        }
+db_uuid:
+  description: created database UUID
+  returned: always
+  type: str
+  sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
 """
 import time  # noqa: E402
 from copy import deepcopy  # noqa: E402
