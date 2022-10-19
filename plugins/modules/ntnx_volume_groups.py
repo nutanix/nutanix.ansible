@@ -88,9 +88,19 @@ def get_module_spec():
         volume_group_uuid=dict(type="str"),
         flash_mode=dict(type="bool", default=False),
         disks=dict(type="list", elements="dict", options=disk_spec),
-        vms=dict(type="list", elements="str"),
+        vms=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive
+        ),
         load_balance=dict(type="bool", default=False),
-        clients=dict(type="list", elements="str"),
+        clients=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive
+        ),
         CHAP_auth=dict(type="bool", default=False),
         target_password=dict(type="str", no_log=True),
     )
@@ -119,6 +129,8 @@ def create_volume_group(module, result):
     volume_group_uuid = result["volume_group_uuid"]
     resp = volume_group.read(volume_group_uuid)
     result["response"] = resp
+
+    # create disks
     if module.params.get("disks"):
         vdisk = VDisks()
         disks_response = []
@@ -131,8 +143,26 @@ def create_volume_group(module, result):
         result["response"]["disks"] = disks_response
 
     # attach vms
+    if module.params.get("vms"):
+        vms_response = []
+        for vm in module.params["vms"]:
+            spec, _ = volume_group.get_vm_spec(vm)
+            resp = volume_group.update(
+                spec, volume_group_uuid, method="POST", endpoint="$actions/attach-vm"
+            )
+            vms_response.append(resp)
+        result["response"]["vms"] = vms_response
 
     # attach clients
+    if module.params.get("clients"):
+        clients_response = []
+        for client in module.params["clients"]:
+            spec, _ = volume_group.get_client_spec(client)
+            resp = volume_group.update(
+                spec, volume_group_uuid, method="POST", endpoint="/$actions/attach-iscsi-client"
+            )
+            clients_response.append(resp)
+        result["response"]["clients"] = clients_response
 
 
 # def update_volume_group(module, result):

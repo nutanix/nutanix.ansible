@@ -8,7 +8,7 @@ from copy import deepcopy
 
 from .clusters import get_cluster_uuid
 from .prism import Prism
-
+from .vms import get_vm_uuid
 
 class VolumeGroup(Prism):
     __BASEURL__ = "/api/storage/v4.0.a2/config"
@@ -22,6 +22,7 @@ class VolumeGroup(Prism):
             "cluster": self._build_spec_cluster,
             "target_prefix": self._build_spec_target_prefix,
             "load_balance": self._build_spec_load_balance,
+            "flash_mode": self._build_spec_flash_mode,
         }
 
     # def get_uuid(self, value, key="name", raise_error=True, no_response=False):
@@ -61,6 +62,28 @@ class VolumeGroup(Prism):
         payload["loadBalanceVmAttachments"] = value
         return payload, None
 
+    def _build_spec_flash_mode(self, payload, value):
+        payload["storageFeatures"] = {
+            "$objectType": "storage.v4.config.StorageFeatures",
+            "$reserved": {
+                "$fqObjectType": "storage.v4.r0.a2.config.StorageFeatures"
+            },
+            "$unknownFields": {
+
+            },
+            "flashMode": {
+                "$objectType": "storage.v4.config.FlashMode",
+                "$reserved": {
+                    "$fqObjectType": "storage.v4.r0.a2.config.FlashMode"
+                },
+                "$unknownFields": {
+
+                },
+                "isEnabled": True
+            }
+        }
+        return payload, None
+
     def _build_spec_cluster(self, payload, param):
         uuid, err = get_cluster_uuid(param, self.module)
         if err:
@@ -68,7 +91,21 @@ class VolumeGroup(Prism):
         payload["clusterReference"] = uuid
         return payload, None
 
+    def get_vm_spec(self, vm):
+        uuid, error = get_vm_uuid(vm, self.module)
+        if error:
+            return None, error
+        spec = {"extId": uuid}
+        return spec, None
 
+    def get_client_spec(self, client):
+        # uuid, error = get_client_uuid(client, self.module)
+        # if error:
+        #     return None, error
+        spec = {"extId": client["uuid"]}
+        return spec, None
+
+# {"extId":"42a59a22-d821-4db2-b0b9-68f420589bc1"}
 # Helper functions
 
 
