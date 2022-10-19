@@ -10,13 +10,6 @@ class Foundation(Entity):
 
     def __init__(self, module, resource_type, additional_headers=None):
         resource_type = self.__BASEURL__ + resource_type
-        host_ip = module.params.get("nutanix_host")
-        port = module.params.get("nutanix_port")
         super(Foundation, self).__init__(
-            module,
-            resource_type,
-            host_ip,
-            scheme="http",
-            additional_headers=additional_headers,
-            port=port,
+            module, resource_type, scheme="http", additional_headers=additional_headers
         )

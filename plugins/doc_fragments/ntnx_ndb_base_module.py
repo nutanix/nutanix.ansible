@@ -13,22 +13,22 @@ class ModuleDocFragment(object):
     # Plugin options for ntnx ndb
     DOCUMENTATION = r"""
 options:
-    ndb_host:
+    nutanix_host:
         description:
             - ndb era server IP address
-            - C(ndb_host). If not set then the value of the C(NDB_HOST), environment variable is used.
+            - C(nutanix_host). If not set then the value of the C(NUTANIX_HOST), environment variable is used.
         type: str
         required: true
-    ndb_password:
+    nutanix_password:
         description:
             - ndb era server password
-            - C(ndb_password). If not set then the value of the C(NDB_PASSWORD), environment variable is used.
+            - C(nutanix_password). If not set then the value of the C(NUTANIX_PASSWORD), environment variable is used.
         type: str
         required: true
-    ndb_username:
+    nutanix_username:
         description:
             - ndb era server username
-            - C(ndb_username). If not set then the value of the C(NDB_username), environment variable is used.
+            - C(nutanix_username). If not set then the value of the C(NUTANIX_USERNAME), environment variable is used.
         type: str
         required: true
     validate_certs:

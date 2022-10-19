@@ -310,7 +310,7 @@ class Database(NutanixDatabase):
         action_arguments = []
 
         # fields to their defaults maps
-        fields = {
+        args = {
             "listener_port": "",
             "auto_tune_staging_drive": False,
             "allocate_pg_hugepage": False,
@@ -322,7 +322,7 @@ class Database(NutanixDatabase):
         }
 
         # create action arguments
-        for key, value in fields.items():
+        for key, value in args.items():
             spec = {"name": key, "value": postgres.get(key, value)}
             action_arguments.append(spec)
 

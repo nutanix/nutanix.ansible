@@ -36,35 +36,35 @@ author:
 EXAMPLES = r"""
 - name: List era db_servers
   ntnx_ndb_db_servers_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
   register: db_servers
 
 - name: get era db_servers using it's name
   ntnx_ndb_db_servers_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     name: "test_name"
   register: result
 
 - name: get era db_servers using it's id
   ntnx_ndb_db_servers_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     uuid: "<uuid of db_server>"
   register: result
 
 - name: get era db_servers using ip
   ntnx_ndb_db_servers_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     server_ip: "<ip of db_server>"
   register: result

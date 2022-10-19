@@ -17,7 +17,7 @@ class Operation(NutanixDatabase):
         super(Operation, self).__init__(module, resource_type=resource_type)
 
     def wait_for_completion(self, uuid, raise_error=True):
-        delay = 30
+        delay = NDB.OPERATIONS_POLLING_DELAY
         timeout = time.time() + self.module.params["timeout"]
         resp = None
         while True:

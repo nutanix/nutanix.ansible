@@ -32,26 +32,26 @@ author:
 EXAMPLES = r"""
 - name: List all era slas
   ntnx_ndb_slas_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
   register: slas
 
 - name: get era slas using it's name
   ntnx_ndb_slas_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     name: "test_name"
   register: result
 
 - name: List slas use id
   ntnx_ndb_slas_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     uuid: "<uuid of sla>"
   register: result

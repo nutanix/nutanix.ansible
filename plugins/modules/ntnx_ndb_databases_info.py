@@ -34,26 +34,26 @@ EXAMPLES = r"""
 
 - name: List era databases
   ntnx_ndb_databases_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
   register: databases
 
 - name: Get era databases using its name
   ntnx_ndb_databases_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     name: "test_name"
   register: result
 
 - name: Get era databases using its uuid
   ntnx_ndb_databases_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     uuid: "<uuid of database>"
   register: result

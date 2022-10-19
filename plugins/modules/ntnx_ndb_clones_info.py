@@ -32,26 +32,26 @@ author:
 EXAMPLES = r"""
 - name: List all era db clones
   ntnx_ndb_clones_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
   register: clones
 
 - name: get era clones using it's name
   ntnx_ndb_clones_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     name: "test_clone"
   register: result
 
 - name: List clones use id
   ntnx_ndb_clones_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     uuid: "<uuid of clone>"
   register: result

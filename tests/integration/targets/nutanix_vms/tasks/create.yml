@@ -151,6 +151,15 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'  
     when: result.response.status.state == 'COMPLETE'
+
+  - name: Delete all Created VMs 
+    ntnx_vms:
+      state: absent
+      vm_uuid: '{{ item }}'
+    register: result
+    loop: '{{ todelete }}'
+  - set_fact:
+      to_delete: []
 #################################################################################
   - name: VM with Cluster, Network, Universal time zone, one Disk
     ntnx_vms:
@@ -239,6 +248,15 @@
 
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  
+  - name: Delete all Created VMs 
+    ntnx_vms:
+      state: absent
+      vm_uuid: '{{ item }}'
+    register: result
+    loop: '{{ todelete }}'
+  - set_fact:
+      to_delete: []
 ####################################################################################
   - name: VM with all specification
     ntnx_vms:
@@ -334,6 +352,15 @@
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
     when: result.response.status.state == 'COMPLETE'
+
+  - name: Delete all Created VMs 
+    ntnx_vms:
+      state: absent
+      vm_uuid: '{{ item }}'
+    register: result
+    loop: '{{ todelete }}'
+  - set_fact:
+      to_delete: []
 ##################################################################################################
   - name: VM with unmanaged vlan
     ntnx_vms:
