@@ -40,16 +40,10 @@ class Database(NutanixDatabase):
         no_response=False,
     ):
         query = {"value-type": key, "value": value}
-        resp = self.read(query=query, raise_error=False)
+        resp = self.read(query=query)
 
         if not resp:
             return None, "Database instance with name {0} not found.".format(value)
-        elif isinstance(resp, dict) and resp.get("errorCode"):
-            self.module.fail_json(
-                msg="Failed fetching Database instance",
-                error=resp.get("message"),
-                response=resp,
-            )
 
         uuid = resp[0].get("id")
         return uuid, None
@@ -85,25 +79,22 @@ class Database(NutanixDatabase):
         )
 
     def get_database(self, name=None, uuid=None):
+        default_query = {"detailed": True}
         if uuid:
-            resp = self.read(uuid=uuid, raise_error=False)
+            resp = self.read(uuid=uuid, query=default_query)
         elif name:
             query = {"value-type": "name", "value": name}
+            query.update(deepcopy(default_query))
             resp = self.read(query=query)
             if not resp:
                 return None, "Database with name {0} not found".format(name)
-            resp = resp[0]
+            if isinstance(resp, list):
+                resp = resp[0]
+                return resp, None
         else:
             return (
                 None,
                 "Please provide either uuid or name for fetching database details",
-            )
-
-        if isinstance(resp, dict) and resp.get("errorCode"):
-            self.module.fail_json(
-                msg="Failed fetching database info",
-                error=resp.get("message"),
-                response=resp,
             )
 
         return resp, None
@@ -210,12 +201,16 @@ class Database(NutanixDatabase):
 
             payload["softwareProfileId"] = uuid
             if vm_config["software_profile"].get("version_id"):
-                payload["softwareProfileVersionId"] = vm_config["software_profile"]["version_id"]
+                payload["softwareProfileVersionId"] = vm_config["software_profile"][
+                    "version_id"
+                ]
             else:
                 profiles = Profile(self.module)
                 software_profile = profiles.read(uuid)
                 payload["softwareProfileId"] = uuid
-                payload["softwareProfileVersionId"] = software_profile["latestVersionId"]
+                payload["softwareProfileVersionId"] = software_profile[
+                    "latestVersionId"
+                ]
 
             # set network prfile
             uuid, err = get_profile_uuid(

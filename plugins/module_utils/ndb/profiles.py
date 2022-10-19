@@ -49,13 +49,7 @@ class Profile(NutanixDatabase):
 
     def get_profile_by_version(self, uuid, version_id="latest"):
         endpoint = "{0}/versions/{1}".format(uuid, version_id)
-        resp = self.read(endpoint=endpoint, raise_error=False)
-        if isinstance(resp, dict) and resp.get("errorCode"):
-            self.module.fail_json(
-                msg="Failed fetching profile with given version",
-                error=resp.get("message"),
-                response=resp,
-            )
+        resp = self.read(endpoint=endpoint)
         return resp
 
     def get_profiles(self, uuid=None, name=None, type=None):
@@ -69,13 +63,7 @@ class Profile(NutanixDatabase):
             if type:
                 query["type"] = type
 
-            resp = self.read(query=query, raise_error=False)
-            if isinstance(resp, dict) and resp.get("errorCode"):
-                self.module.fail_json(
-                    msg="Failed fetching pofile info",
-                    error=resp.get("message"),
-                    response=resp,
-                )
+            resp = self.read(query=query)
         elif type:
             query = {"type": type}
             resp = self.read(query=query)

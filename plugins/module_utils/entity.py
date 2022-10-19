@@ -382,7 +382,12 @@ class Entity(object):
             return resp_json
 
         if status_code >= 300:
-            err = info.get("msg", "Status code != 2xx")
+            if resp_json.get("message"):  # for ndb apis
+                err = resp_json["message"]
+            elif info.get("msg"):
+                err = info["msg"]
+            else:
+                err = "Status code != 2xx"
             self.module.fail_json(
                 msg="Failed fetching URL: {0}".format(url),
                 status_code=status_code,

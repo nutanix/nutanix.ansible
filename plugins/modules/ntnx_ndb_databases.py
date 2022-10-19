@@ -10,222 +10,340 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_databases
-short_description: write
+short_description: Module for create, update and delete of single instance database
 version_added: 1.8.0-beta.1
-description: write
+description: Module for create, update and delete of single instance database in Nutanix Database Service
 options:
   db_uuid:
     description:
-      - write
+      - uuid for update or delete of database instance
     type: str
   name:
     description:
-      - write
+      - name of database instance
+      - update allowed
     type: str
   desc:
     description:
-      - write
+      - description of database
+      - update allowed
     type: str
   db_params_profile:
     description:
-      - write
+      - DB parameters profile details
     type: dict
     suboptions:
       name:
         type: str
-        description: write
+        description:
+          - name of profile
+          - mutually_exclusive with C(uuid)
       uuid:
         type: str
-        description: write
+        description:
+          - uuid of profile
+          - mutually_exclusive with C(name)
   db_vm:
     description:
-      - write
+      - DB server VM details
     type: dict
     suboptions:
       create_new_server:
         description:
-          - write
+          - details for creating new db server vms
+          - mutually_exclusive with C(use_registered_server)
         type: dict
         suboptions:
           name:
             type: str
-            description: write
+            description: name of vm
             required: true
           pub_ssh_key:
             type: str
-            description: write
+            description: public ssh key for access to vm
             required: true
           password:
             type: str
-            description: write
+            description: set vm era driver user password
             required: true
           cluster:
             description:
-              - write
+              - era cluster details
             type: dict
             required: true
             suboptions:
               name:
                 type: str
-                description: write
+                description:
+                  - name of cluster
+                  - mutually_exclusive with C(uuid)
               uuid:
                 type: str
-                description: write
+                description:
+                  - uuid of cluster
+                  - mutually_exclusive with C(name)
           software_profile:
             description:
-              - write
+              - software profile details
             type: dict
             required: true
             suboptions:
               name:
                 type: str
-                description: write
+                description:
+                  - name of profile
+                  - mutually_exclusive with C(uuid)
               uuid:
                 type: str
-                description: write
+                description:
+                  - uuid of profile
+                  - mutually_exclusive with C(name)
+              version_id:
+                type: str
+                description:
+                  - version id of software profile
+                  - by default latest version will be used
           network_profile:
             description:
-              - write
+              - network profile details
             type: dict
             required: true
             suboptions:
               name:
                 type: str
-                description: write
+                description:
+                  - name of profile
+                  - mutually_exclusive with C(uuid)
               uuid:
                 type: str
-                description: write
+                description:
+                  - uuid of profile
+                  - mutually_exclusive with C(name)
           compute_profile:
             description:
-              - write
+              - compute profile details
             type: dict
             required: true
             suboptions:
               name:
                 type: str
-                description: write
+                description:
+                  - name of profile
+                  - mutually_exclusive with C(uuid)
               uuid:
                 type: str
-                description: write
+                description:
+                  - uuid of profile
+                  - mutually_exclusive with C(name)
       use_registered_server:
         description:
-          - write
+          - registered server details
+          - mutually_exclusive with C(create_new_server)
         type: dict
         suboptions:
           name:
             type: str
-            description: write
+            description:
+              - name of registered vm
+              - mutually_exclusive with C(uuid)
           uuid:
             type: str
-            description: write
+            description:
+              - uuid of registered vm
+              - mutually_exclusive with C(name)
   time_machine:
-        description:
-          - write
+    description:
+      - time machine details
+    type: dict
+    suboptions:
+      name:
+        type: str
+        description: name of time machine
+        required: True
+      desc:
+        type: str
+        description: description of time machine
+      sla:
         type: dict
+        description: sla details
+        required: True
         suboptions:
           name:
             type: str
-            description: write
-            required: True
-          desc:
+            description:
+              - name of sla
+              - mutually_exclusive with C(uuid)
+          uuid:
             type: str
-            description: write
-          sla:
-            type: dict
-            description: write
-            required: True
-            suboptions:
-                name:
-                    type: str
-                    description: write
-                uuid:
-                    type: str
-                    description: write
-          schedule:
-                type: dict
-                description: write
-                required: True
-                suboptons:
-                    daily:
-                        type: str
-                        description: write
-                    weekly:
-                        type: str
-                        description: write
-                    monthly:
-                        type: int
-                        description: write
-                    quaterly:
-                        type: str
-                        description: write
-                    yearly:
-                        type: str
-                        description: write
-                    log_catchup:
-                        type: int
-                        description: write
-                        choices: [15, 30, 60, 90, 120]
-                    snapshots_per_day:
-                        type: int
-                        description: write
-                        default: 1
-          auto_tune_log_drive:
-            type: bool
-            default: true
-            description: write
+            description:
+              - uuid of sla
+              - mutually_exclusive with C(name)
+      schedule:
+          type: dict
+          description: schedule for taking snapshot
+          required: True
+          suboptions:
+            daily:
+                type: str
+                description: daily snapshot time in HH:MM:SS format
+            weekly:
+                type: str
+                description: weekly snapshot day. For Example, "WEDNESDAY"
+            monthly:
+                type: int
+                description: monthly snapshot day in a month
+            quaterly:
+                type: str
+                description:
+                  - quaterly snapshot month
+                  - day of month is set based on C(monthly)
+                  - C(monthly) is required for setting C(quaterly) else it is ignored
+                  - For Example, "JANUARY"
+            yearly:
+                type: str
+                description:
+                  - yearly snapshot month
+                  - day of month is set based on C(monthly)
+                  - C(monthly) is required for setting C(yearly) else it is ignored
+                  - For Example, "JANUARY"
+            log_catchup:
+                type: int
+                description: log catchup intervals in minutes
+                choices:
+                  - 15
+                  - 30
+                  - 60
+                  - 90
+                  - 120
+            snapshots_per_day:
+                type: int
+                description: num of snapshots per day
+                default: 1
+      auto_tune_log_drive:
+        type: bool
+        default: true
+        description: enable/disable auto tuning of log drive
   postgres:
     type: dict
-    description: write
+    description: action arguments for postgress type database
     suboptions:
-                    listener_port:
-                        type: str
-                        description: write
-                        required: true
-                    db_name:
-                        type: int
-                        description: write
-                        required: true
-                    db_password:
-                        type: str
-                        description: write
-                        required: true
-                    auto_tune_staging_drive:
-                        type: bool
-                        default: true
-                        description: write
-                    allocate_pg_hugepage:
-                        type: bool
-                        default: false
-                        description: write
-                    auth_method:
-                        type: str
-                        default: md5
-                        description: write
-                    cluster_database:
-                        type: bool
-                        default: false
-                        description: write
+      listener_port:
+          type: str
+          description: listener port for db
+          required: true
+      db_name:
+          type: str
+          description: initial database name
+          required: true
+      db_password:
+          type: str
+          description: postgress database password
+          required: true
+      auto_tune_staging_drive:
+          type: bool
+          default: true
+          description: enable/disable autotuning of staging drive
+      allocate_pg_hugepage:
+          type: bool
+          default: false
+          description: enable/disable allocating HugePage in postgress
+      auth_method:
+          type: str
+          default: md5
+          description: auth method
+      cluster_database:
+          type: bool
+          default: false
+          description: if clustered database
+      db_size:
+          type: int
+          description: database instance size
+          required: true
+      pre_create_script:
+          type: str
+          description: commands to run before database instance creation
+          required: false
+      post_create_script:
+          type: str
+          description: commands to run after database instance creation
+          required: false
   tags:
     type: dict
-    description: write
+    description:
+      - dict of tag name as key and tag value as value
+      - update allowed
   auto_tune_staging_drive:
     type: bool
-    description: write
+    description:
+      - enable/disable auto tuning of stage drive
+      - enabled by default
   soft_delete:
     type: bool
-    description: write
+    description:
+      - only unregister from era in delete process
+      - if not provided, database instance from db server VM will be deleted
   delete_time_machine:
     type: bool
-    description: write
+    description: delete time machine as well in delete process
+  timeout:
+    description:
+        - timeout for polling database operations in seconds
+        - default is 2100 secs i.e. 35 minutes
+    type: int
+    required: false
+    default: 2100
 extends_documentation_fragment:
-#   - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
 author:
   - Prem Karat (@premkarat)
   - Pradeepsingh Bhati (@bhati-pradeep)
-
 """
+
 EXAMPLES = r"""
+- name: Create postgres database instance using with new vm
+  ntnx_ndb_databases:
+    name: "test"
+
+    db_params_profile:
+      name: "TEST_PROFILE"
+
+    db_vm:
+      create_new_server:
+        name: "test-vm"
+        password: "test-vm-password"
+        cluster:
+          name: "EraCluster"
+        software_profile:
+          name: "TEST_SOFTWARE_PROFILE"
+        network_profile:
+          name: "TEST_NETWORK_PROFILE"
+        compute_profile:
+          name: "TEST_COMPUTE_PROFILE"
+        pub_ssh_key: "<public-ssh-key>"
+
+    postgres:
+      listener_port: "5432"
+      db_name: ansible_test
+      db_password: "postgres-test-password"
+      db_size: 200
+
+    time_machine:
+      name: POSTGRES_SERVER_PRAD_TM_1
+      sla:
+        name: "TEST_SLA"
+      schedule:
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        yearly: FEBRUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+    tags:
+      test1: check1
+    wait: true
+  register: db
 """
 
 RETURN = r"""
@@ -237,7 +355,6 @@ from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.databases import Database  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
-    check_for_idempotency,
     remove_param_with_none_value,
 )
 
@@ -250,14 +367,12 @@ def get_module_spec():
     )
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-    software_profile=dict(
-        version_id=dict(type="str")
-    )
+    software_profile = dict(version_id=dict(type="str"))
     software_profile.update(deepcopy(entity_by_spec))
 
     new_server = dict(
         name=dict(type="str", required=True),
-        pub_ssh_key=dict(type="str", required=True),
+        pub_ssh_key=dict(type="str", required=True, no_log=True),
         password=dict(type="str", required=True, no_log=True),
         cluster=dict(
             type="dict",

@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_ndb_tms_info
+module: ntnx_ndb_time_machines_info
 short_description: tm  info module
 version_added: 1.8.0-beta.1
 description: 'Get tm info'
@@ -23,7 +23,7 @@ options:
             - time machine id
         type: str
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -36,7 +36,7 @@ RETURN = r"""
 
 """
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 
 
@@ -71,7 +71,7 @@ def get_tms(module, result):
 
 
 def run_module():
-    module = NdbBaseModule(
+    module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[("name", "uuid")],

@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_db_servers_info
-short_description: database server  info module
+short_description: database server info module
 version_added: 1.8.0-beta.1
 description: 'Get database server info'
 options:
@@ -24,10 +24,10 @@ options:
         type: str
       server_ip:
         description:
-            - server ip
+            - db server vm ip
         type: str
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -39,7 +39,7 @@ RETURN = r"""
 """
 
 from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 
 
 def get_module_spec():
@@ -78,7 +78,7 @@ def get_db_servers(module, result):
 
 
 def run_module():
-    module = NdbBaseModule(
+    module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[("name", "uuid", "server_ip")],

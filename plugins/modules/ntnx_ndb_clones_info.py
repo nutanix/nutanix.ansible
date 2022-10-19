@@ -23,7 +23,7 @@ options:
             - clone id
         type: str
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -35,7 +35,7 @@ RETURN = r"""
 """
 
 from ..module_utils.ndb.clones import Clone  # noqa: E402
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 
 
 def get_module_spec():
@@ -73,7 +73,7 @@ def get_clones(module, result):
 
 
 def run_module():
-    module = NdbBaseModule(
+    module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[("name", "uuid")],

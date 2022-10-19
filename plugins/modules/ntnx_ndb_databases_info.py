@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_databases_info
-short_description: database  info module
+short_description: database instances info module
 version_added: 1.8.0-beta.1
-description: 'Get database info'
+description: 'Get database instance info'
 options:
       name:
         description:
@@ -23,7 +23,7 @@ options:
             - database id
         type: str
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -35,7 +35,7 @@ RETURN = r"""
 """
 
 from ..module_utils.ndb.databases import Database  # noqa: E402
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 
 
 def get_module_spec():
@@ -72,7 +72,7 @@ def get_databases(module, result):
 
 
 def run_module():
-    module = NdbBaseModule(
+    module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[("name", "uuid")],

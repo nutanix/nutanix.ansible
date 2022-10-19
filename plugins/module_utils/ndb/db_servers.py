@@ -23,16 +23,10 @@ class DBServers(NutanixDatabase):
         no_response=False,
     ):
         query = {"value-type": key, "value": value}
-        resp = self.read(query=query, raise_error=False)
+        resp = self.read(query=query)
 
         if not resp:
             return None, "DB server vm with name {0} not found.".format(value)
-        elif isinstance(resp, dict) and resp.get("errorCode"):
-            self.module.fail_json(
-                msg="Failed fetching DB server VM",
-                error=resp.get("message"),
-                response=resp,
-            )
 
         uuid = resp[0].get("id")
         return uuid, None
@@ -40,7 +34,7 @@ class DBServers(NutanixDatabase):
     def get_db_server(self, name=None, uuid=None, ip=None):
         resp = None
         if uuid:
-            resp = self.read(uuid=uuid, raise_error=False)
+            resp = self.read(uuid=uuid)
         elif name or ip:
             key = "name" if name else "ip"
             val = name if name else ip
@@ -53,13 +47,6 @@ class DBServers(NutanixDatabase):
             return (
                 None,
                 "Please provide uuid, name or server IP for fetching database server details",
-            )
-
-        if isinstance(resp, dict) and resp.get("errorCode"):
-            self.module.fail_json(
-                msg="Failed fetching database server info",
-                error=resp.get("message"),
-                response=resp,
             )
 
         return resp, None

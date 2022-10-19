@@ -15,7 +15,7 @@ class Clone(NutanixDatabase):
 
     def get_clone(self, uuid=None, name=None):
         if uuid:
-            resp = self.read(uuid=uuid, raise_error=False)
+            resp = self.read(uuid=uuid)
         elif name:
             query = {"value-type": "name", "value": name}
             resp = self.read(query=query)
@@ -24,12 +24,5 @@ class Clone(NutanixDatabase):
             resp = resp[0]
         else:
             return None, "Please provide either uuid or name for fetching clone details"
-
-        if isinstance(resp, dict) and resp.get("errorCode"):
-            self.module.fail_json(
-                msg="Failed fetching clone info",
-                error=resp.get("message"),
-                response=resp,
-            )
 
         return resp, None

@@ -15,10 +15,10 @@ class TimeMachine(NutanixDatabase):
 
     def get_time_machine(self, uuid=None, name=None):
         if uuid:
-            resp = self.read(uuid=uuid, raise_error=False)
+            resp = self.read(uuid=uuid)
         elif name:
             endpoint = "{0}/{1}".format("name", name)
-            resp = self.read(endpoint=endpoint, raise_error=False)
+            resp = self.read(endpoint=endpoint)
             if isinstance(resp, list):
                 if not resp:
                     return None, "Time machine with name {0} not found".format(name)
@@ -34,17 +34,10 @@ class TimeMachine(NutanixDatabase):
 
                     # fetch all details using uuid
                     if resp.get("id"):
-                        resp = self.read(uuid=resp["id"], raise_error=False)
+                        resp = self.read(uuid=resp["id"])
         else:
             return (
                 None,
                 "Please provide either uuid or name for fetching time machine details",
-            )
-
-        if isinstance(resp, dict) and resp.get("errorCode"):
-            self.module.fail_json(
-                msg="Failed fetching time machine info",
-                error=resp.get("message"),
-                response=resp,
             )
         return resp, None

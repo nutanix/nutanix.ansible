@@ -33,11 +33,11 @@ options:
         type: str
       latest_version:
         description:
-            - wheater the lastet version of profile or no
+            - whether the lastet version of profile or no
         type: bool
         default: false
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -48,7 +48,7 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 from ..module_utils.ndb.profiles import Profile  # noqa: E402
 
 
@@ -102,7 +102,7 @@ def get_profiles_version(module, result):
 
 
 def run_module():
-    module = NdbBaseModule(
+    module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[

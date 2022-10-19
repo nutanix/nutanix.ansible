@@ -1,4 +1,3 @@
-
 - set_fact:
     db_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
     db_name_updated: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
@@ -8,7 +7,6 @@
 
 - debug:
     msg: "Starting ntnx_ndb_database crud tests"
-
 
 # ############################################################################################
 
@@ -210,7 +208,6 @@
       "test1": "check1_updated",
       "test2": "check2_updated"
     }
-
 
 - name: Verify attributes
   assert:
