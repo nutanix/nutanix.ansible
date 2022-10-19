@@ -300,7 +300,7 @@ class Entity(object):
             url += resource_type
         else:
             url += "/{0}".format(resource_type)
-        return
+        return url
 
     def _build_headers(self, module, additional_headers):
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
