@@ -33,21 +33,13 @@ This collection requires Python 2.7 or greater
 
 > For the 1.7.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4 and pc2022.1.0.2.
 
+> For the 1.8.0-beta.1 release of the ansible plugin it will have N compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2022.6 .
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
 
 2. Adding cluster references in projects module (ntnx_projects) is supported for PC versions >= pc.2022.1
 
 3. For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding Identity Provider (IdP) & Organizational Unit (OU) based users/groups are supported for PC versions >= pc.2022.1
-
-#### v1.7.0 additions:
-1. Added functionality to add cluster reference while using vlan subnet name in vms to pull subnet info from particular cluster. Checkout vm.yml example for same.
-
-2. Added functionality to configure role mappings, collaboration, new user/user groups, vpcs and accounts in ntnx_projects. Checkout projects_with_role_mapping.yml example for same.
-
-3. Added constructed inventory feature to inventory module to construct custom vars and groups based on existing inventory.
-
-4. Now inventory module can fetch 500+ entities.
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
@@ -66,6 +58,16 @@ Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/t
 
 Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
 
+## Nutanix Database Service (ERA)
+> For the 1.8.0-beta.1 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against era versions v2.4.1 and v2.4.0
+
+NDB based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
+
+Nutanix Ansible support for Nutanix Database Service is currently at beta stage.
+
+### Notes:
+1. Currently for ntnx_ndb_databases, creation of only postgres type database instance is tested and offically supported. 
+ 
 # Installing the collection
 **Prerequisite**
 
@@ -150,6 +152,14 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_karbon_clusters_info | Get clusters info. |
 | ntnx_karbon_registries | Create, Delete a karbon private registry entry |
 | ntnx_karbon_registries_info | Get karbon private registry registry info. |
+| ntnx_ndb_databases | Create, Update and Delete single instance database. |
+| ntnx_ndb_databases_info | Get database info. |
+| ntnx_ndb_db_servers_info | Get db servers vm info. |
+| ntnx_ndb_clusters_info | Get clusters info. |
+| ntnx_ndb_slas_info | Get slas info |
+| ntnx_ndb_profiles_info | Get profiles info. |
+| ntnx_ndb_time_machines_info | Get time machines info. |
+| ntnx_ndb_clones_info | Get database clones info. |
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
 | ntnx_permissions_info | List permissions info |
@@ -171,6 +181,10 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_static_routes_info | List existing static routes of a vpc. |
 | ntnx_subnets | Create or delete a Subnet. |
 | ntnx_subnets_info | List existing Subnets. |
+| ntnx_user_groups | Create, Delete user_groups |
+| ntnx_user_groups_info | Get user groups info. |
+| ntnx_users | Create, Delete users |
+| ntnx_users_info | Get users info. |
 | ntnx_vms | Create or delete a VM. |
 | ntnx_vms_clone | Clone VM. |
 | ntnx_vms_ova | Create OVA image from VM. |
@@ -189,10 +203,6 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_foundation_central_api_keys_info | List all the api keys created in Foundation Central. |
 | ntnx_foundation_central_imaged_clusters_info | List all the clusters created using Foundation Central. |
 | ntnx_foundation_central_imaged_nodes_info | List all the nodes registered with Foundation Central. |
-| ntnx_user_groups | Create, Delete user_groups |
-| ntnx_user_groups_info | Get user groups info. |
-| ntnx_users | Create, Delete users |
-| ntnx_users_info | Get users info. |
 
 ## Inventory Plugins
 
