@@ -382,7 +382,7 @@ class Entity(object):
             return resp_json
 
         if status_code >= 300:
-            if resp_json.get("message"):  # for ndb apis
+            if resp_json and resp_json.get("message"):  # for ndb apis
                 err = resp_json["message"]
             elif info.get("msg"):
                 err = info["msg"]
