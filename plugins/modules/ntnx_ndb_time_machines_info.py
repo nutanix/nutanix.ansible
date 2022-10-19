@@ -244,7 +244,7 @@ def get_tm(module, result):
     resp, err = tm.get_time_machine(uuid=uuid, name=name)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed fetching sla info", **result)
+        module.fail_json(msg="Failed fetching time machine info", **result)
     result["response"] = resp
 
 
