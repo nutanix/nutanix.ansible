@@ -6,13 +6,10 @@ __metaclass__ = type
 
 from copy import deepcopy
 
-from .clusters import get_cluster_uuid
 from .groups import get_entity_uuid
-from .prism import Prism
 
 
 class VDisks:
-
     def get_spec(self, module, vdisk):
         payload = self._get_default_spec()
         spec, error = self._build_spec_vdisk(module, payload, vdisk)
@@ -32,8 +29,8 @@ class VDisks:
                     },
                     "$unknownFields": {},
                     "extId": None,
-                    "entityType": "STORAGE_CONTAINER"
-                }
+                    "entityType": "STORAGE_CONTAINER",
+                },
             }
         )
 

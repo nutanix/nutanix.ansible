@@ -41,9 +41,7 @@ options:
   desc:
     description: volume_groups description
     type: str
-  
  # ...............TODO
-  
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -62,9 +60,9 @@ RETURN = r"""
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.volume_groups import VolumeGroup  # noqa: E402
-from ..module_utils.prism.vdisks import VDisks  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.prism.vdisks import VDisks  # noqa: E402
+from ..module_utils.prism.volume_groups import VolumeGroup  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -126,7 +124,9 @@ def create_volume_group(module, result):
         disks_response = []
         for disk in module.params["disks"]:
             spec, _ = vdisk.get_spec(module, disk)
-            resp = volume_group.update(spec, volume_group_uuid, method="POST", endpoint="disks")
+            resp = volume_group.update(
+                spec, volume_group_uuid, method="POST", endpoint="disks"
+            )
             disks_response.append(resp)
         result["response"]["disks"] = disks_response
 
