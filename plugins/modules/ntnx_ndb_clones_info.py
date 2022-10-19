@@ -30,6 +30,32 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
+- name: List all era db clones
+  ntnx_ndb_clones_info:
+    ndb_host: "<era_ip>"
+    ndb_username: "<era_username>"
+    ndb_password: "<era_password>"
+    validate_certs: false
+  register: clones
+
+- name: get era clones using it's name  
+  ntnx_ndb_clones_info:
+    ndb_host: "<era_ip>"
+    ndb_username: "<era_username>"
+    ndb_password: "<era_password>"
+    validate_certs: false
+    name: "test_clone"
+  register: result
+
+- name: List clones use id
+  ntnx_ndb_clones_info:
+    ndb_host: "<era_ip>"
+    ndb_username: "<era_username>"
+    ndb_password: "<era_password>"
+    validate_certs: false
+    uuid: "<uuid of clone>"
+  register: result
+
 """
 RETURN = r"""
 """
