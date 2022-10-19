@@ -46,53 +46,53 @@ author:
 EXAMPLES = r"""
 - name: List profiles
   ntnx_ndb_profiles_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
   register: profiles
 
 - name: List Database_Parameter profiles
   ntnx_ndb_profiles_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     profile_type: Database_Parameter
   register: result
 
 - name: List Network profiles
   ntnx_ndb_profiles_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     profile_type: Network
   register: result
 
 - name: List Compute profiles
   ntnx_ndb_profiles_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     profile_type: Compute
   register: result
 
 - name: List Software profiles
   ntnx_ndb_profiles_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     profile_type: Software
   register: result
 
 - name: get era profile using era profile name
   ntnx_ndb_profiles_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     name: "test_name"
   register: result
@@ -100,9 +100,9 @@ EXAMPLES = r"""
 
 - name: List profiles
   ntnx_ndb_profiles_info:
-    ndb_host: "<ndb_era_ip>"
-    ndb_username: "<ndb_era_username>"
-    ndb_password: "<ndb_era_password>"
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
     validate_certs: false
     uuid: "<uuid of profile>"
     latest_version: true
