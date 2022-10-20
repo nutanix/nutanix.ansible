@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_profiles_info
-short_description: profile  info module
+short_description: info module for ndb profiles
 version_added: 1.8.0-beta.1
 description: 'Get profile info'
 options:

@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_slas_info
-short_description: sla  info module
+short_description: info module for ndb slas
 version_added: 1.8.0-beta.1
 description: 'Get sla info'
 options:

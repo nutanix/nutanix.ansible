@@ -282,3 +282,31 @@ releases:
       - nutanix.ncp.ntnx_prism_vm_inventory - [Imprv] add functionality constructed
         to module inventory [\#235](https://github.com/nutanix/nutanix.ansible/issues/235)
     release_date: '2022-09-30'
+  1.8.0-beta.1:
+    modules:
+    - description: info module for database clones
+      name: ntnx_ndb_clones_info
+      namespace: ''
+    - description: info module for ndb clusters info
+      name: ntnx_ndb_clusters_info
+      namespace: ''
+    - description: Module for create, update and delete of single instance database.
+        Currently, postgres type database is officially supported.
+      name: ntnx_ndb_databases
+      namespace: ''
+    - description: info module for ndb database instances
+      name: ntnx_ndb_databases_info
+      namespace: ''
+    - description: info module for ndb db server vms info
+      name: ntnx_ndb_db_servers_info
+      namespace: ''
+    - description: info module for ndb profiles
+      name: ntnx_ndb_profiles_info
+      namespace: ''
+    - description: info module for ndb slas
+      name: ntnx_ndb_slas_info
+      namespace: ''
+    - description: info module for ndb time machines
+      name: ntnx_ndb_time_machines_info
+      namespace: ''
+    release_date: '2022-10-20'

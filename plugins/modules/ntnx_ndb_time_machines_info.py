@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_time_machines_info
-short_description: tm  info module
+short_description: info module for ndb time machines
 version_added: 1.8.0-beta.1
 description: 'Get tm info'
 options:

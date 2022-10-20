@@ -1,3 +1,19 @@
+## v1.8.0-beta.1 (20 Oct 2022)
+
+**Features**
+
+**Nutanix Database Service (Era)**
+- Ansible module for Single Instance Databases
+- Ansible info module Database Instances
+- Ansible info module NDB Clusters
+- Ansible info module DB server VMs
+- Ansible info module Profiles
+- Ansible info module SLAs
+- Ansible info module Time Machines
+- Ansible info module Database Clones
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.7.0...v1.8.0-beta.1)
+
 ## v1.7.0 (30 Sep 2022)
 
 **Feature:**

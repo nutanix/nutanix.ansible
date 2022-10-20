@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_databases
-short_description: Module for create, update and delete of single instance database
+short_description: Module for create, update and delete of single instance database. Currently, postgres type database is officially supported.
 version_added: 1.8.0-beta.1
 description: Module for create, update and delete of single instance database in Nutanix Database Service
 options:

@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_clones_info
-short_description: clone  info module
+short_description: info module for database clones
 version_added: 1.8.0-beta.1
 description: 'Get clone info'
 options:
