@@ -4,13 +4,13 @@
 
 **Nutanix Database Service (Era)**
 - Ansible module for Single Instance Databases
-- Ansible info module Database Instances
-- Ansible info module NDB Clusters
-- Ansible info module DB server VMs
-- Ansible info module Profiles
-- Ansible info module SLAs
-- Ansible info module Time Machines
-- Ansible info module Database Clones
+- Ansible info module for Database Instances
+- Ansible info module for NDB Clusters
+- Ansible info module for DB server VMs
+- Ansible info module for Profiles
+- Ansible info module for SLAs
+- Ansible info module for Time Machines
+- Ansible info module for Database Clones
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.7.0...v1.8.0-beta.1)
 
