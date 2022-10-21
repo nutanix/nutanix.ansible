@@ -1,0 +1,65 @@
+---
+- debug:
+    msg: Start testing ntnx_ndb_clusters_info
+
+- name: List all era clusters
+  ntnx_ndb_clusters_info:
+  register: clusters
+
+- name: check listing status
+  assert:
+    that:
+      - clusters.response is defined
+      - clusters.failed == false
+      - clusters.changed == false
+      - clusters.response | length > 0
+    fail_msg: "Unable to list all era clusters"
+    success_msg: "era clusters listed successfully"
+################################################################
+- name: get era clusters using it's name  
+  ntnx_ndb_clusters_info:
+    name: "{{clusters.response[0].name}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{clusters.response[0].name}}"
+    fail_msg: "Unable to get era clusters using it's name  "
+    success_msg: "get  era clusters using it's name  successfully"
+################################################################
+- name: List clusters use id
+  ntnx_ndb_clusters_info:
+    uuid: "{{clusters.response[0].id}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{clusters.response[0].name}}"
+    fail_msg: "Unable to get era clusters using it's id  "
+    success_msg: "get  era clusters using it's id  successfully"
+################################################################
+
+
+- name: get era clusters with incorrect name
+  ntnx_ndb_clusters_info:
+    name: "abcd"
+  register: result
+  ignore_errors: True
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"

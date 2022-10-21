@@ -90,6 +90,7 @@ class Entity(object):
         raise_error=True,
         no_response=False,
         timeout=30,
+        method="PUT",
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -98,7 +99,7 @@ class Entity(object):
             url = self._build_url_with_query(url, query)
         return self._fetch_url(
             url,
-            method="PUT",
+            method=method,
             data=data,
             raise_error=raise_error,
             no_response=no_response,
@@ -136,6 +137,7 @@ class Entity(object):
         raise_error=True,
         no_response=False,
         timeout=30,
+        data=None,
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -145,6 +147,7 @@ class Entity(object):
         return self._fetch_url(
             url,
             method="DELETE",
+            data=data,
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
@@ -373,7 +376,12 @@ class Entity(object):
             return resp_json
 
         if status_code >= 300:
-            err = info.get("msg", "Status code != 2xx")
+            if resp_json and resp_json.get("message"):  # for ndb apis
+                err = resp_json["message"]
+            elif info.get("msg"):
+                err = info["msg"]
+            else:
+                err = "Status code != 2xx"
             self.module.fail_json(
                 msg="Failed fetching URL: {0}".format(url),
                 status_code=status_code,
@@ -384,7 +392,7 @@ class Entity(object):
         if no_response:
             return {"status_code": status_code}
 
-        if not resp_json:
+        if resp_json is None:
             self.module.fail_json(
                 msg="Failed to convert API response to json",
                 status_code=status_code,

@@ -1,0 +1,65 @@
+---
+- debug:
+    msg: Start testing ntnx_ndb_slas_info
+
+- name: List all era slas
+  ntnx_ndb_slas_info:
+  register: slas
+
+- name: check listing status
+  assert:
+    that:
+      - slas.response is defined
+      - slas.failed == false
+      - slas.changed == false
+      - slas.response | length > 0
+    fail_msg: "Unable to list all era slas"
+    success_msg: "era slas listed successfully"
+################################################################
+- name: get era slas using it's name  
+  ntnx_ndb_slas_info:
+    name: "{{slas.response[0].name}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{slas.response[0].name}}"
+    fail_msg: "Unable to get era slas using it's name  "
+    success_msg: "get  era slas using it's name  successfully"
+################################################################
+- name: List slas use id
+  ntnx_ndb_slas_info:
+    uuid: "{{slas.response[0].id}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{slas.response[0].name}}"
+    fail_msg: "Unable to get era slas using it's id  "
+    success_msg: "get  era slas using it's id  successfully"
+################################################################
+
+
+- name: get era slas with incorrect name
+  ntnx_ndb_slas_info:
+    name: "abcd"
+  register: result
+  no_log: true
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"
