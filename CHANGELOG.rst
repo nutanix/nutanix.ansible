@@ -5,6 +5,21 @@ Nutanix.Ncp Release Notes
 .. contents:: Topics
 
 
+v1.8.0-beta.1
+=============
+
+New Modules
+-----------
+
+- ntnx_ndb_clones_info - info module for database clones
+- ntnx_ndb_clusters_info - info module for ndb clusters info
+- ntnx_ndb_databases - Module for create, update and delete of single instance database. Currently, postgres type database is officially supported.
+- ntnx_ndb_databases_info - info module for ndb database instances
+- ntnx_ndb_db_servers_info - info module for ndb db server vms info
+- ntnx_ndb_profiles_info - info module for ndb profiles
+- ntnx_ndb_slas_info - info module for ndb slas
+- ntnx_ndb_time_machines_info - info module for ndb time machines
+
 v1.7.0
 ======
 

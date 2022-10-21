@@ -277,3 +277,15 @@ class ACP:
                 "right_hand_side": {"collection": "SELF_OWNED"},
             },
         }
+
+
+class NDB:
+
+    OPERATIONS_POLLING_DELAY = 30
+
+    class DatabaseTypes:
+        POSTGRES = "postgres_database"
+
+    class StatusCodes:
+        SUCCESS = "5"
+        FAILURE = "4"

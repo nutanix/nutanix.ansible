@@ -1,0 +1,60 @@
+---
+- name: Single instance postgres database creation with new db server VM
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-server-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+        
+    - name: Create single instance postgres database
+      ntnx_ndb_databases:
+        
+        name: POSTGRES_DATABASE_ANSIBLE       
+        
+        db_params_profile:
+          name: DEFAULT_POSTGRES_PARAMS
+        
+        db_vm:
+          create_new_server:
+            name: postgres_server_ansible
+            password: temp_password
+            cluster: 
+              name: EraCluster
+            software_profile:
+              name: POSTGRES_10.4_OOB
+            network_profile:
+              name: DEFAULT_OOB_POSTGRESQL_NETWORK
+            compute_profile:
+              name: DEFAULT_OOB_SMALL_COMPUTE
+            pub_ssh_key: "<publickey-for-vm-access>"
+        
+        postgres:
+          listener_port: "5432"
+          db_name: prad
+          db_password: db_password
+          db_size: 200
+
+        time_machine:
+          name: POSTGRES_DATABASE_ANSIBLE_TM
+          sla:
+            name: DEFAULT_OOB_GOLD_SLA
+          schedule: 
+            daily: "11:00:00"
+            weekly: WEDNESDAY
+            monthly: 4
+            quaterly: JANUARY
+            yearly: FEBRUARY
+            log_catchup: 30
+            snapshots_per_day: 2
+
+      register: output
+    
+    - debug:
+        msg: "{{output}}"
