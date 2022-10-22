@@ -85,7 +85,6 @@ class Entity(object):
         self,
         data=None,
         uuid=None,
-        method="PUT",
         endpoint=None,
         query=None,
         raise_error=True,

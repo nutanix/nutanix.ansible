@@ -63,6 +63,7 @@ from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vdisks import VDisks  # noqa: E402
 from ..module_utils.prism.volume_groups import VolumeGroup  # noqa: E402
+from ..module_utils.prism.iscsi_clients import Clients  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -76,6 +77,15 @@ def get_module_spec():
         storage_container=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
+    )
+
+    client_spec = dict(
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+        iqn=dict(type="str"),
+        ip=dict(type="str"),
+        # CHAP_auth=dict(type="bool", default=False),?
+        client_password=dict(type="str", no_log=True),
     )
 
     module_args = dict(
@@ -98,7 +108,7 @@ def get_module_spec():
         clients=dict(
             type="list",
             elements="dict",
-            options=entity_by_spec,
+            options=client_spec,
             mutually_exclusive=mutually_exclusive
         ),
         CHAP_auth=dict(type="bool", default=False),
@@ -157,7 +167,7 @@ def create_volume_group(module, result):
     if module.params.get("clients"):
         clients_response = []
         for client in module.params["clients"]:
-            spec, _ = volume_group.get_client_spec(client)
+            spec, _ = Clients.get_spec(client, module.params.get("CHAP_auth"))
             resp = volume_group.update(
                 spec, volume_group_uuid, method="POST", endpoint="/$actions/attach-iscsi-client"
             )

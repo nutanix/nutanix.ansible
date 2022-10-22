@@ -10,6 +10,7 @@ from .clusters import get_cluster_uuid
 from .prism import Prism
 from .vms import get_vm_uuid
 
+
 class VolumeGroup(Prism):
     __BASEURL__ = "/api/storage/v4.0.a2/config"
 
@@ -105,7 +106,6 @@ class VolumeGroup(Prism):
         spec = {"extId": client["uuid"]}
         return spec, None
 
-# {"extId":"42a59a22-d821-4db2-b0b9-68f420589bc1"}
 # Helper functions
 
 
