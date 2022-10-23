@@ -60,10 +60,10 @@ RETURN = r"""
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
+from ..module_utils.prism.iscsi_clients import Clients  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.prism.vdisks import VDisks  # noqa: E402
 from ..module_utils.prism.volume_groups import VolumeGroup  # noqa: E402
-from ..module_utils.prism.iscsi_clients import Clients  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -102,14 +102,14 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=entity_by_spec,
-            mutually_exclusive=mutually_exclusive
+            mutually_exclusive=mutually_exclusive,
         ),
         load_balance=dict(type="bool", default=False),
         clients=dict(
             type="list",
             elements="dict",
             options=client_spec,
-            mutually_exclusive=mutually_exclusive
+            mutually_exclusive=mutually_exclusive,
         ),
         CHAP_auth=dict(type="bool", default=False),
         target_password=dict(type="str", no_log=True),
@@ -145,7 +145,7 @@ def create_volume_group(module, result):
         vdisk = VDisks()
         disks_response = []
         for disk in module.params["disks"]:
-            spec, _ = vdisk.get_spec(module, disk)
+            spec, err = vdisk.get_spec(module, disk)
             resp = volume_group.update(
                 spec, volume_group_uuid, method="POST", endpoint="disks"
             )
@@ -156,7 +156,7 @@ def create_volume_group(module, result):
     if module.params.get("vms"):
         vms_response = []
         for vm in module.params["vms"]:
-            spec, _ = volume_group.get_vm_spec(vm)
+            spec, err = volume_group.get_vm_spec(vm)
             resp = volume_group.update(
                 spec, volume_group_uuid, method="POST", endpoint="$actions/attach-vm"
             )
@@ -167,9 +167,12 @@ def create_volume_group(module, result):
     if module.params.get("clients"):
         clients_response = []
         for client in module.params["clients"]:
-            spec, _ = Clients.get_spec(client, module.params.get("CHAP_auth"))
+            spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
             resp = volume_group.update(
-                spec, volume_group_uuid, method="POST", endpoint="/$actions/attach-iscsi-client"
+                spec,
+                volume_group_uuid,
+                method="POST",
+                endpoint="/$actions/attach-iscsi-client",
             )
             clients_response.append(resp)
         result["response"]["clients"] = clients_response
