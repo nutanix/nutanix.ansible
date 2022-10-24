@@ -80,11 +80,9 @@ def get_module_spec():
     )
 
     client_spec = dict(
-        name=dict(type="str"),
         uuid=dict(type="str"),
-        iqn=dict(type="str"),
-        ip=dict(type="str"),
-        # CHAP_auth=dict(type="bool", default=False),?
+        iscsi_iqn=dict(type="str"),
+        iscsi_ip=dict(type="str"),
         client_password=dict(type="str", no_log=True),
     )
 
@@ -134,9 +132,9 @@ def create_volume_group(module, result):
     result["changed"] = True
     result["response"] = resp
     result["task_uuid"] = task_uuid
-    wait_for_task_completion(module, result)
-
-    volume_group_uuid = result["volume_group_uuid"]
+    resp = wait_for_task_completion(module, result)
+    volume_group_uuid = resp["entity_reference_list"][0]["uuid"]
+    result["volume_group_uuid"] = volume_group_uuid
     resp = volume_group.read(volume_group_uuid)
     result["response"] = resp
 
@@ -154,26 +152,23 @@ def create_volume_group(module, result):
 
     # attach vms
     if module.params.get("vms"):
-        vms_response = []
         for vm in module.params["vms"]:
             spec, _ = volume_group.get_vm_spec(vm)
-            resp = volume_group.update(
+            volume_group.update(
                 spec, volume_group_uuid, method="POST", endpoint="$actions/attach-vm"
             )
-            vms_response.append(resp)
-        result["response"]["vms"] = vms_response
+        result["response"]["vms"] = volume_group.read(volume_group_uuid, endpoint="/vm-attachments")
 
     # attach clients
     if module.params.get("clients"):
-        clients_response = []
         for client in module.params["clients"]:
             spec, _ = Clients.get_spec(client, module.params.get("CHAP_auth"))
-            resp = volume_group.update(
+            volume_group.update(
                 spec, volume_group_uuid, method="POST", endpoint="/$actions/attach-iscsi-client"
             )
-            clients_response.append(resp)
-        result["response"]["clients"] = clients_response
-
+        result["response"]["clients"] = volume_group.read(
+            volume_group_uuid, endpoint="/iscsi-client-attachments"
+        )
 
 # def update_volume_group(module, result):
 #     volume_group = VolumeGroup(module)
@@ -213,25 +208,41 @@ def create_volume_group(module, result):
 #     result["response"] = resp
 
 
-# def delete_volume_group(module, result):
-#     volume_group_uuid = module.params["volume_group_uuid"]
-#     if not volume_group_uuid:
-#         result["error"] = "Missing parameter volume_group_uuid in playbook"
-#         module.fail_json(msg="Failed deleting volume_groups", **result)
-#
-#     volume_group = VolumeGroup(module)
-#     resp = volume_group.delete(volume_group_uuid, no_response=True)
-#     result["changed"] = True
-#     result["response"] = resp
-#     result["volume_group_uuid"] = volume_group_uuid
+def delete_volume_group(module, result):
+
+    def detach_iscsi_clients():
+        clients_resp = volume_group.read(
+            volume_group_uuid, endpoint="/iscsi-client-attachments"
+        )
+        detached_clients = []
+        for client in clients_resp["data"]:
+            client_uuid = client["extId"]
+            endpoint = "$actions/detach-iscsi-client/{0}".format(client_uuid)
+            detach_resp = volume_group.update(uuid=volume_group_uuid, method="post", endpoint=endpoint)
+            task_uuid = detach_resp["data"]["extId"][-36:]
+            wait_for_task_completion(module, {"task_uuid": task_uuid})
+            detached_clients.append(client_uuid)
+        result["detached_clients"] = detached_clients
+
+    volume_group_uuid = module.params["volume_group_uuid"]
+    if not volume_group_uuid:
+        result["error"] = "Missing parameter volume_group_uuid in playbook"
+        module.fail_json(msg="Failed deleting volume_groups", **result)
+
+    volume_group = VolumeGroup(module)
+    detach_iscsi_clients()
+    resp = volume_group.delete(volume_group_uuid)
+    resp.pop("metadata")
+    result["changed"] = True
+    result["response"] = resp
+    result["volume_group_uuid"] = volume_group_uuid
 
 
 def wait_for_task_completion(module, result):
     task = Task(module)
     task_uuid = result["task_uuid"]
     resp = task.wait_for_completion(task_uuid)
-    result["response"] = resp
-    result["volume_group_uuid"] = resp["entity_reference_list"][0]["uuid"]
+    return resp
 
 
 def run_module():

@@ -22,6 +22,7 @@ class VolumeGroup(Prism):
             "desc": self._build_spec_desc,
             "cluster": self._build_spec_cluster,
             "target_prefix": self._build_spec_target_prefix,
+            "target_password": self._build_spec_target_password,
             "load_balance": self._build_spec_load_balance,
             "flash_mode": self._build_spec_flash_mode,
         }
@@ -57,6 +58,11 @@ class VolumeGroup(Prism):
 
     def _build_spec_target_prefix(self, payload, value):
         payload["iscsiTargetPrefix"] = value
+        return payload, None
+
+    def _build_spec_target_password(self, payload, value):
+        payload["targetSecret"] = value
+        payload["enabledAuthentications"] = "CHAP"
         return payload, None
 
     def _build_spec_load_balance(self, payload, value):

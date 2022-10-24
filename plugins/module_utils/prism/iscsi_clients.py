@@ -6,8 +6,6 @@ __metaclass__ = type
 
 from copy import deepcopy
 
-from .groups import get_entity_uuid
-
 
 class Clients:
 
@@ -22,34 +20,7 @@ class Clients:
     @staticmethod
     def _get_default_spec():
         return deepcopy(
-            {
-                #for iqn
-                "iscsiInitiatorName": "",
-                #for ip
-                "iscsiInitiatorNetworkId": {
-                    "$objectType": "common.v1.config.IPAddressOrFQDN",
-                    "$reserved": {
-                        "$fqObjectType": "common.v1.r0.a3.config.IPAddressOrFQDN"
-                    },
-                    "$unknownFields": {
-
-                    },
-                    "ipv4": {
-                        "$objectType": "common.v1.config.IPv4Address",
-                        "$reserved": {
-                            "$fqObjectType": "common.v1.r0.a3.config.IPv4Address"
-                        },
-                        "$unknownFields": {
-
-                        },
-                        "value": "10.10.20.5"
-                    }
-                },
-                #for uuid
-                "extId": "d70626f2-7575-4773-a5fb-ded32dd208e2",
-                "clientSecret": "",
-                "enabledAuthentications": "NONE" # CHAP/NONE
-            }
+            {"enabledAuthentications": "NONE"}
         )
 
     @staticmethod
@@ -82,7 +53,6 @@ class Clients:
         if chap_auth and iscsi_client.get("client_password"):
             payload["clientSecret"] = iscsi_client["client_password"]
 
-        # if iscsi_client.get("CHAP_auth"):
             payload["enabledAuthentications"] = "CHAP"
 
         return payload, None
