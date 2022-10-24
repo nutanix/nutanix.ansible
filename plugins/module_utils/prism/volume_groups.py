@@ -72,22 +72,14 @@ class VolumeGroup(Prism):
     def _build_spec_flash_mode(self, payload, value):
         payload["storageFeatures"] = {
             "$objectType": "storage.v4.config.StorageFeatures",
-            "$reserved": {
-                "$fqObjectType": "storage.v4.r0.a2.config.StorageFeatures"
-            },
-            "$unknownFields": {
-
-            },
+            "$reserved": {"$fqObjectType": "storage.v4.r0.a2.config.StorageFeatures"},
+            "$unknownFields": {},
             "flashMode": {
                 "$objectType": "storage.v4.config.FlashMode",
-                "$reserved": {
-                    "$fqObjectType": "storage.v4.r0.a2.config.FlashMode"
-                },
-                "$unknownFields": {
-
-                },
-                "isEnabled": True
-            }
+                "$reserved": {"$fqObjectType": "storage.v4.r0.a2.config.FlashMode"},
+                "$unknownFields": {},
+                "isEnabled": True,
+            },
         }
         return payload, None
 
@@ -111,6 +103,7 @@ class VolumeGroup(Prism):
         #     return None, error
         spec = {"extId": client["uuid"]}
         return spec, None
+
 
 # Helper functions
 

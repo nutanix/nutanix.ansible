@@ -32,24 +32,20 @@ class Clients:
             payload["iscsiInitiatorName"] = iscsi_client["iscsi_iqn"]
         elif iscsi_client.get("iscsi_ip"):
             payload["iscsiInitiatorNetworkId"] = {
-                    "$objectType": "common.v1.config.IPAddressOrFQDN",
+                "$objectType": "common.v1.config.IPAddressOrFQDN",
+                "$reserved": {
+                    "$fqObjectType": "common.v1.r0.a3.config.IPAddressOrFQDN"
+                },
+                "$unknownFields": {},
+                "ipv4": {
+                    "$objectType": "common.v1.config.IPv4Address",
                     "$reserved": {
-                        "$fqObjectType": "common.v1.r0.a3.config.IPAddressOrFQDN"
+                        "$fqObjectType": "common.v1.r0.a3.config.IPv4Address"
                     },
-                    "$unknownFields": {
-
-                    },
-                    "ipv4": {
-                        "$objectType": "common.v1.config.IPv4Address",
-                        "$reserved": {
-                            "$fqObjectType": "common.v1.r0.a3.config.IPv4Address"
-                        },
-                        "$unknownFields": {
-
-                        },
-                        "value": iscsi_client["iscsi_ip"]
-                    }
-                }
+                    "$unknownFields": {},
+                    "value": iscsi_client["iscsi_ip"],
+                },
+            }
         if chap_auth and iscsi_client.get("client_password"):
             payload["clientSecret"] = iscsi_client["client_password"]
 
