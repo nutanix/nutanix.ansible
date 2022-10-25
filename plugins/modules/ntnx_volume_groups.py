@@ -215,7 +215,7 @@ def delete_volume_group(module, result):
             volume_group_uuid, endpoint="/iscsi-client-attachments"
         )
         detached_clients = []
-        for client in clients_resp["data"]:
+        for client in clients_resp.get("data", []):
             client_uuid = client["extId"]
             endpoint = "$actions/detach-iscsi-client/{0}".format(client_uuid)
             detach_resp = volume_group.update(uuid=volume_group_uuid, method="post", endpoint=endpoint)
@@ -224,6 +224,20 @@ def delete_volume_group(module, result):
             detached_clients.append(client_uuid)
         result["detached_clients"] = detached_clients
 
+    def detach_vms():
+        vms_resp = volume_group.read(
+            volume_group_uuid, endpoint="/vm-attachments"
+        )
+        detached_vms = []
+        for vm in vms_resp.get("data", []):
+            vm_uuid = vm["extId"]
+            endpoint = "$actions/detach-vm/{0}".format(vm_uuid)
+            detach_resp = volume_group.update(uuid=volume_group_uuid, method="post", endpoint=endpoint)
+            task_uuid = detach_resp["data"]["extId"][-36:]
+            wait_for_task_completion(module, {"task_uuid": task_uuid})
+            detached_vms.append(vm_uuid)
+        result["detached_vms"] = detached_vms
+
     volume_group_uuid = module.params["volume_group_uuid"]
     if not volume_group_uuid:
         result["error"] = "Missing parameter volume_group_uuid in playbook"
@@ -231,6 +245,7 @@ def delete_volume_group(module, result):
 
     volume_group = VolumeGroup(module)
     detach_iscsi_clients()
+    detach_vms()
     resp = volume_group.delete(volume_group_uuid)
     resp.pop("metadata")
     result["changed"] = True
