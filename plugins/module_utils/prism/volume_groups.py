@@ -27,16 +27,6 @@ class VolumeGroup(Prism):
             "flash_mode": self._build_spec_flash_mode,
         }
 
-    # def get_uuid(self, value, key="name", raise_error=True, no_response=False):
-    #     data = {"filter": "{0}=={1}".format(key, value)}
-    #     resp = self.list(data, raise_error=raise_error, no_response=no_response)
-    #     entities = resp.get("entities") if resp else None
-    #     if entities:
-    #         for entity in entities:
-    #             if entity["service_group"]["name"] == value:
-    #                 return entity["uuid"]
-    #     return None
-
     def _get_default_spec(self):
         return deepcopy(
             {

@@ -125,6 +125,7 @@ def create_volume_group(module, result):
 
     if module.check_mode:
         result["response"] = spec
+        result["response"]["vms"] = module.params["vms"]
         return
 
     resp = volume_group.create(spec)
@@ -136,39 +137,43 @@ def create_volume_group(module, result):
     volume_group_uuid = resp["entity_reference_list"][0]["uuid"]
     result["volume_group_uuid"] = volume_group_uuid
     resp = volume_group.read(volume_group_uuid)
-    result["response"] = resp
+    result["response"] = resp.get("data")
 
     # create disks
     if module.params.get("disks"):
-        vdisk = VDisks()
-        disks_response = []
         for disk in module.params["disks"]:
-            spec, err = vdisk.get_spec(module, disk)
-            resp = volume_group.update(
+            spec, err = VDisks.get_spec(module, disk)
+            update_resp = volume_group.update(
                 spec, volume_group_uuid, method="POST", endpoint="disks"
             )
-            disks_response.append(resp)
-        result["response"]["disks"] = disks_response
+            task_uuid = update_resp["data"]["extId"][-36:]
+            wait_for_task_completion(module, {"task_uuid": task_uuid})
+        disks = volume_group.read(volume_group_uuid, endpoint="/disks")
+        result["response"]["disks"] = disks.get("data")
 
     # attach vms
     if module.params.get("vms"):
         for vm in module.params["vms"]:
             spec, err = volume_group.get_vm_spec(vm)
-            volume_group.update(
+            update_resp = volume_group.update(
                 spec, volume_group_uuid, method="POST", endpoint="$actions/attach-vm"
             )
-        result["response"]["vms"] = volume_group.read(volume_group_uuid, endpoint="/vm-attachments")
+            task_uuid = update_resp["data"]["extId"][-36:]
+            wait_for_task_completion(module, {"task_uuid": task_uuid})
+        vms = volume_group.read(volume_group_uuid, endpoint="/vm-attachments")
+        result["response"]["vms"] = vms.get("data")
 
     # attach clients
     if module.params.get("clients"):
         for client in module.params["clients"]:
             spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
-            volume_group.update(
+            update_resp = volume_group.update(
                 spec, volume_group_uuid, method="POST", endpoint="/$actions/attach-iscsi-client"
             )
-        result["response"]["clients"] = volume_group.read(
-            volume_group_uuid, endpoint="/iscsi-client-attachments"
-        )
+            task_uuid = update_resp["data"]["extId"][-36:]
+            wait_for_task_completion(module, {"task_uuid": task_uuid})
+        clients = volume_group.read(volume_group_uuid, endpoint="/iscsi-client-attachments")
+        result["response"]["clients"] = clients.get("data")
 
 # def update_volume_group(module, result):
 #     volume_group = VolumeGroup(module)
@@ -267,6 +272,10 @@ def run_module():
         required_if=[
             ("state", "present", ("name", "volume_group_uuid"), True),
             ("state", "absent", ("volume_group_uuid",)),
+            ("CHAP_auth", True, ("target_password",)),
+        ],
+        mutually_exclusive=[
+            ("vms", "clients")
         ],
     )
     remove_param_with_none_value(module.params)

@@ -10,9 +10,11 @@ from .groups import get_entity_uuid
 
 
 class VDisks:
-    def get_spec(self, module, vdisk):
-        payload = self._get_default_spec()
-        spec, error = self._build_spec_vdisk(module, payload, vdisk)
+
+    @classmethod
+    def get_spec(cls, module, vdisk):
+        payload = cls._get_default_spec()
+        spec, error = cls._build_spec_vdisk(module, payload, vdisk)
         if error:
             return None, error
         return spec, None
