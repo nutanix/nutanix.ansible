@@ -1,6 +1,7 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+from copy import deepcopy
 
 __metaclass__ = type
 
@@ -12,6 +13,11 @@ class SLA(NutanixDatabase):
     def __init__(self, module):
         resource_type = "/slas"
         super(SLA, self).__init__(module, resource_type=resource_type)
+        self.build_spec_methods = {
+            "name": self._build_spec_name,
+            "desc": self._build_spec_desc,
+            "retention": self._build_spec_retention,
+        }
 
     def get_uuid(
         self,
@@ -37,6 +43,50 @@ class SLA(NutanixDatabase):
             return None, "Please provide either uuid or name for fetching sla details"
         return resp, None
 
+    def _get_default_spec(self):
+        return deepcopy(
+            {
+                "name": None,
+                "continuousRetention": 0,
+                "dailyRetention": 0,
+                "weeklyRetention": 0,
+                "monthlyRetention": 0,
+                "quarterlyRetention": 0
+            }
+        )
+    
+    def get_default_update_spec(self):
+        spec = self._get_default_spec()
+        spec["description"] = None
+        return spec
+    
+    def _build_spec_name(self, payload, name):
+        payload["name"] = name
+        return payload, None
+    
+    def _build_spec_desc(self, payload, desc):
+        payload["description"] = desc
+        return payload, None
+    
+    def _build_spec_retention(self, payload, retention):
+
+        # map of module attributes to api attributes
+        retention_types_attr_map = {
+            "continuous_log": "continuousRetention",
+            "daily": "dailyRetention", 
+            "weekly": "weeklyRetention",
+            "monthly": "monthlyRetention", 
+            "quarterly": "quarterlyRetention"
+        }
+
+        # if input given in module then add in api payload
+        for type, api_attr in retention_types_attr_map.items():
+            if retention.get(type):
+                payload[api_attr] = retention[type]
+
+        return payload, None
+    
+    
 
 # helper functions
 

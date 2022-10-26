@@ -1,0 +1,141 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2021, Prem Karat
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
+DOCUMENTATION = r"""
+"""
+
+EXAMPLES = r"""
+"""
+
+RETURN = r"""
+"""
+
+from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.slas import SLA
+from ..module_utils.utils import (remove_param_with_none_value, strip_extra_attrs)
+
+
+def get_module_spec():
+
+    retention = dict(
+        continuous_log = dict(type="int"),
+        daily = dict(type="int"),
+        weekly = dict(type="int"),
+        monthly = dict(type="int"),
+        quarterly = dict(type="int") 
+    )
+    module_args = dict(
+        sla_uuid = dict(type="str"),
+        name = dict(type="str"),
+        desc = dict(type="str"),
+        retention = dict(type="dict", options=retention)
+    )
+    return module_args
+
+
+def create_sla(module, result):
+    sla = SLA(module)
+
+    name = module.params["name"]
+    # TO-DO: implement check if name exists or not
+
+    spec, err = sla.get_spec()
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating create sla spec", **result
+        )
+
+    if module.check_mode:
+        result["response"] = spec
+        return
+
+    resp = sla.create(data=spec)
+    result["response"] = resp
+    result["sla_uuid"] = resp["id"]
+    result["changed"] = True
+
+def update_sla(module, result):
+    _sla = SLA(module)
+
+    uuid = module.params.get("sla_uuid")
+    if not uuid:
+        module.fail_json(msg="uuid is required field for update", **result)
+    
+    sla = _sla.get_sla(uuid=uuid)
+    if sla.get("systemSla"):
+        module.fail_json(msg="system slas update is not allowed", **result)
+    
+    default_update_spec = _sla.get_default_update_spec()
+    strip_extra_attrs(sla, default_update_spec)
+
+    spec = _sla.get_spec(old_spec=sla)
+
+    if module.check_mode:
+        result["response"] = spec
+        return
+    
+    if spec == sla:
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.")
+    
+    resp = _sla.update(data=spec, uuid=uuid)
+    result["response"] = resp
+    result["sla"] = uuid
+    result["changed"] = True
+
+def delete_sla(module, result):
+    _sla = SLA(module)
+
+    uuid = module.params.get("sla_uuid")
+    if not uuid:
+        module.fail_json(msg="uuid is required field for delete", **result)
+    
+    sla = _sla.get_sla(uuid=uuid)
+    if sla.get("systemSla"):
+        module.fail_json(msg="system slas delete is not allowed", **result)
+    
+    resp = _sla.delete(data=sla, uuid=uuid)
+    result["response"] = resp
+    if resp.get("status") != "success":
+        module.fail_json(
+            msg="sla delete failed",
+            response=resp,
+        )
+    result["changed"] = True
+
+
+
+def run_module():
+    module = NdbBaseModule(
+        argument_spec=get_module_spec(),
+        required_if=[
+            ("state", "present", ("name", "sla_uuid"), True),
+            ("state", "absent", ("sla_uuid",)),
+        ],
+        supports_check_mode=True,
+    )
+    remove_param_with_none_value(module.params)
+    result = {"changed": False, "error": None, "response": None, "sla": None}
+    if module.params["state"] == "present":
+        if module.params.get("sla_uuid"):
+            update_sla(module, result)
+        else:
+            create_sla(module, result)
+    else:
+        delete_sla(module, result)
+    module.exit_json(**result)
+
+
+def main():
+    run_module()
+
+
+if __name__ == "__main__":
+    main()
