@@ -29,7 +29,7 @@ class SLA(NutanixDatabase):
         no_response=False,
     ):
         endpoint = "{0}/{1}".format(key, value)
-        resp = self.read(uuid=None, endpoint=endpoint)
+        resp = self.read(uuid=None, endpoint=endpoint, raise_error=raise_error)
         return resp.get("id")
 
     def get_sla(self, uuid=None, name=None):
@@ -51,42 +51,47 @@ class SLA(NutanixDatabase):
                 "dailyRetention": 0,
                 "weeklyRetention": 0,
                 "monthlyRetention": 0,
-                "quarterlyRetention": 0
+                "quarterlyRetention": 0,
             }
         )
-    
+
     def get_default_update_spec(self):
         spec = self._get_default_spec()
         spec["description"] = None
         return spec
-    
+
     def _build_spec_name(self, payload, name):
         payload["name"] = name
         return payload, None
-    
+
     def _build_spec_desc(self, payload, desc):
         payload["description"] = desc
         return payload, None
-    
+
     def _build_spec_retention(self, payload, retention):
 
-        # map of module attributes to api attributes
-        retention_types_attr_map = {
-            "continuous_log": "continuousRetention",
-            "daily": "dailyRetention", 
-            "weekly": "weeklyRetention",
-            "monthly": "monthlyRetention", 
-            "quarterly": "quarterlyRetention"
-        }
+        if retention.get("continuous_log"):
+            payload["continuousRetention"] = retention.get("continuous_log")
 
-        # if input given in module then add in api payload
-        for type, api_attr in retention_types_attr_map.items():
-            if retention.get(type):
-                payload[api_attr] = retention[type]
+        if retention.get("snapshots"):
+
+            # map of module attributes to api attributes
+            snapshot_retention_attr_map = {
+                "daily": "dailyRetention",
+                "weekly": "weeklyRetention",
+                "monthly": "monthlyRetention",
+                "quarterly": "quarterlyRetention",
+            }
+
+            snapshot_retention = retention["snapshots"]
+
+            # if input given in module then add in api payload
+            for attr, api_attr in snapshot_retention_attr_map.items():
+                if snapshot_retention.get(attr) is not None:
+                    payload[api_attr] = snapshot_retention[attr]
 
         return payload, None
-    
-    
+
 
 # helper functions
 

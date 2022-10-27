@@ -18,23 +18,25 @@ RETURN = r"""
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.slas import SLA
-from ..module_utils.utils import (remove_param_with_none_value, strip_extra_attrs)
+from ..module_utils.utils import remove_param_with_none_value, strip_extra_attrs
 
 
 def get_module_spec():
 
+    snapshots = dict(
+        daily=dict(type="int"),
+        weekly=dict(type="int"),
+        monthly=dict(type="int"),
+        quarterly=dict(type="int"),
+    )
     retention = dict(
-        continuous_log = dict(type="int"),
-        daily = dict(type="int"),
-        weekly = dict(type="int"),
-        monthly = dict(type="int"),
-        quarterly = dict(type="int") 
+        continuous_log=dict(type="int"), snapshots=dict(type="dict", option=snapshots)
     )
     module_args = dict(
-        sla_uuid = dict(type="str"),
-        name = dict(type="str"),
-        desc = dict(type="str"),
-        retention = dict(type="dict", options=retention)
+        sla_uuid=dict(type="str"),
+        name=dict(type="str"),
+        desc=dict(type="str"),
+        retention=dict(type="dict", options=retention),
     )
     return module_args
 
@@ -43,14 +45,14 @@ def create_sla(module, result):
     sla = SLA(module)
 
     name = module.params["name"]
-    # TO-DO: implement check if name exists or not
+    uuid = sla.get_uuid(value=name, raise_error=False)
+    if uuid:
+        module.fail_json(msg="sla with given name already exists", **result)
 
     spec, err = sla.get_spec()
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating create sla spec", **result
-        )
+        module.fail_json(msg="Failed generating create sla spec", **result)
 
     if module.check_mode:
         result["response"] = spec
@@ -61,34 +63,43 @@ def create_sla(module, result):
     result["sla_uuid"] = resp["id"]
     result["changed"] = True
 
+
 def update_sla(module, result):
     _sla = SLA(module)
 
     uuid = module.params.get("sla_uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for update", **result)
-    
-    sla = _sla.get_sla(uuid=uuid)
+    result["sla_uuid"] = uuid
+
+    sla, err = _sla.get_sla(uuid=uuid)
+    if err:
+        module.fail_json(msg="Failed fetching sla info", **result)
+
     if sla.get("systemSla"):
         module.fail_json(msg="system slas update is not allowed", **result)
-    
+
     default_update_spec = _sla.get_default_update_spec()
     strip_extra_attrs(sla, default_update_spec)
 
-    spec = _sla.get_spec(old_spec=sla)
+    spec, err = _sla.get_spec(old_spec=sla)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating update sla spec", **result)
 
     if module.check_mode:
         result["response"] = spec
         return
-    
+
     if spec == sla:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
-    
+
     resp = _sla.update(data=spec, uuid=uuid)
     result["response"] = resp
-    result["sla"] = uuid
+    result["sla_uuid"] = uuid
     result["changed"] = True
+
 
 def delete_sla(module, result):
     _sla = SLA(module)
@@ -96,11 +107,14 @@ def delete_sla(module, result):
     uuid = module.params.get("sla_uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
-    
-    sla = _sla.get_sla(uuid=uuid)
+
+    sla, err = _sla.get_sla(uuid=uuid)
+    if err:
+        module.fail_json(msg="Failed fetching sla info", **result)
+
     if sla.get("systemSla"):
         module.fail_json(msg="system slas delete is not allowed", **result)
-    
+
     resp = _sla.delete(data=sla, uuid=uuid)
     result["response"] = resp
     if resp.get("status") != "success":
@@ -109,7 +123,6 @@ def delete_sla(module, result):
             response=resp,
         )
     result["changed"] = True
-
 
 
 def run_module():
@@ -121,8 +134,9 @@ def run_module():
         ],
         supports_check_mode=True,
     )
+
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None, "sla": None}
+    result = {"changed": False, "error": None, "response": None, "sla_uuid": None}
     if module.params["state"] == "present":
         if module.params.get("sla_uuid"):
             update_sla(module, result)
