@@ -63,6 +63,10 @@ class Database(NutanixDatabase):
             data, endpoint, query, method, raise_error, no_response, timeout
         )
 
+    def scale(self, uuid, data):
+        endpoint = "update/extend-storage"
+        return self.update(data, uuid, endpoint=endpoint, method="POST")
+
     def update(
         self,
         data=None,
@@ -147,6 +151,42 @@ class Database(NutanixDatabase):
                 "deleteLogicalCluster": True,
             }
         )
+
+    def _get_default_scaling_spec(self):
+        return deepcopy(
+            {
+                "actionArguments": [
+                    {"name": "working_dir", "value": "/tmp"},
+                ],
+                "applicationType": None,
+            }
+        )
+
+    def _get_action_argument_spec(self, name, value):
+        return deepcopy({"name": name, "value": value})
+
+    def get_scaling_spec(self, config, database_type):
+        spec = self._get_default_scaling_spec()
+
+        spec["applicationType"] = database_type
+
+        spec["actionArguments"].append(
+            self._get_action_argument_spec(
+                "data_storage_size", int(config.get("expand_storage_size"))
+            )
+        )
+        spec["actionArguments"].append(
+            self._get_action_argument_spec(
+                "pre_script_cmd", config.get("pre_expand_cmd")
+            )
+        )
+        spec["actionArguments"].append(
+            self._get_action_argument_spec(
+                "post_script_cmd", config.get("post_expand_cmd")
+            )
+        )
+
+        return spec
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name
