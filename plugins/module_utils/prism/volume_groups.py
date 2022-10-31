@@ -27,13 +27,21 @@ class VolumeGroup(Prism):
             "flash_mode": self._build_spec_flash_mode,
         }
 
-    def attach_vm(self, spec, volume_group_uuid, method="POST", endpoint="$actions/attach-vm"):
+    def attach_vm(
+        self, spec, volume_group_uuid, method="POST", endpoint="$actions/attach-vm"
+    ):
 
         resp = self.update(spec, volume_group_uuid, method=method, endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"][-36:]
         return resp
 
-    def attach_iscsi_client(self, spec, volume_group_uuid, method="POST", endpoint="/$actions/attach-iscsi-client"):
+    def attach_iscsi_client(
+        self,
+        spec,
+        volume_group_uuid,
+        method="POST",
+        endpoint="/$actions/attach-iscsi-client",
+    ):
 
         resp = self.update(spec, volume_group_uuid, method=method, endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"][-36:]
@@ -90,7 +98,9 @@ class VolumeGroup(Prism):
         if value:
             payload["storageFeatures"] = {
                 "$objectType": "storage.v4.config.StorageFeatures",
-                "$reserved": {"$fqObjectType": "storage.v4.r0.a2.config.StorageFeatures"},
+                "$reserved": {
+                    "$fqObjectType": "storage.v4.r0.a2.config.StorageFeatures"
+                },
                 "$unknownFields": {},
                 "flashMode": {
                     "$objectType": "storage.v4.config.FlashMode",
