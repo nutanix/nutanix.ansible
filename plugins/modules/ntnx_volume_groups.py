@@ -154,24 +154,27 @@ def create_volume_group(module, result):
     # attach vms
     if module.params.get("vms"):
         for vm in module.params["vms"]:
+
             spec, err = volume_group.get_vm_spec(vm)
-            update_resp = volume_group.update(
-                spec, volume_group_uuid, method="POST", endpoint="$actions/attach-vm"
-            )
-            task_uuid = update_resp["data"]["extId"][-36:]
+            attach_resp = volume_group.attach_vm(spec, volume_group_uuid)
+
+            task_uuid = attach_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
+
         vms = volume_group.read(volume_group_uuid, endpoint="/vm-attachments")
+
         result["response"]["vms"] = vms.get("data")
 
     # attach clients
     if module.params.get("clients"):
         for client in module.params["clients"]:
+
             spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
-            update_resp = volume_group.update(
-                spec, volume_group_uuid, method="POST", endpoint="/$actions/attach-iscsi-client"
-            )
-            task_uuid = update_resp["data"]["extId"][-36:]
+            attach_resp = volume_group.attach_iscsi_client(spec, volume_group_uuid)
+
+            task_uuid = attach_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
+
         clients = volume_group.read(volume_group_uuid, endpoint="/iscsi-client-attachments")
         result["response"]["clients"] = clients.get("data")
 
@@ -221,12 +224,13 @@ def delete_volume_group(module, result):
         )
         detached_clients = []
         for client in clients_resp.get("data", []):
-            client_uuid = client["extId"]
-            endpoint = "$actions/detach-iscsi-client/{0}".format(client_uuid)
-            detach_resp = volume_group.update(uuid=volume_group_uuid, method="post", endpoint=endpoint)
+
+            detach_resp = volume_group.detach_iscsi_client(volume_group_uuid, client)
+
             task_uuid = detach_resp["data"]["extId"][-36:]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
-            detached_clients.append(client_uuid)
+            detached_clients.append(client["extId"])
+
         result["detached_clients"] = detached_clients
 
     def detach_vms():
@@ -235,12 +239,13 @@ def delete_volume_group(module, result):
         )
         detached_vms = []
         for vm in vms_resp.get("data", []):
-            vm_uuid = vm["extId"]
-            endpoint = "$actions/detach-vm/{0}".format(vm_uuid)
-            detach_resp = volume_group.update(uuid=volume_group_uuid, method="post", endpoint=endpoint)
-            task_uuid = detach_resp["data"]["extId"][-36:]
+
+            detach_resp = volume_group.detach_vm(volume_group_uuid, vm)
+
+            task_uuid = detach_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
-            detached_vms.append(vm_uuid)
+            detached_vms.append(vm["extId"])
+
         result["detached_vms"] = detached_vms
 
     volume_group_uuid = module.params["volume_group_uuid"]
@@ -249,8 +254,10 @@ def delete_volume_group(module, result):
         module.fail_json(msg="Failed deleting volume_groups", **result)
 
     volume_group = VolumeGroup(module)
+
     detach_iscsi_clients()
     detach_vms()
+
     resp = volume_group.delete(volume_group_uuid)
     resp.pop("metadata")
     result["changed"] = True
