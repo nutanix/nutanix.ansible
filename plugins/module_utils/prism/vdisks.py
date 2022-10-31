@@ -10,7 +10,6 @@ from .groups import get_entity_uuid
 
 
 class VDisks:
-
     @classmethod
     def get_spec(cls, module, vdisk):
         payload = cls._get_default_spec()

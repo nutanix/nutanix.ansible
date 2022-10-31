@@ -41,7 +41,92 @@ options:
   desc:
     description: volume_groups description
     type: str
- # ...............TODO
+  cluster:
+    description: write
+    type: dict
+    suboptions:
+          name:
+            description:
+              - Cluster Name
+              - Mutually exclusive with C(uuid)
+            type: str
+          uuid:
+            description:
+              - Cluster UUID
+              - Mutually exclusive with C(name)
+            type: str
+  target_prefix:
+    description: write
+    type: str
+  flash_mode:
+    description: write
+    type: bool
+    default: false
+  disks:
+    description: write
+    type: list
+    elements: dict
+    suboptions:
+        size_gb:
+            description: write
+            type: int
+        storage_container:
+            description: write
+            type: dict
+            suboptions:
+                name:
+                    description:
+                    - Mutually exclusive with C(uuid)
+                    type: str
+                uuid:
+                    description:
+                    - Mutually exclusive with C(name)
+                    type: str
+  vms:
+    description: write
+    type: list
+    elements: dict
+    suboptions:
+                name:
+                    description:
+                    - Mutually exclusive with C(uuid)
+                    type: str
+                uuid:
+                    description:
+                    - Mutually exclusive with C(name)
+                    type: str
+  load_balance:
+    description: write
+    type: bool
+    default: false
+  clients:
+    description: write
+    type: list
+    elements: dict
+    suboptions:
+                iscsi_iqn:
+                    description:
+                    - write
+                    type: str
+                uuid:
+                    description:
+                    - write
+                    type: str
+                iscsi_ip:
+                    description:
+                    - write
+                    type: str
+                client_password:
+                    description:
+                    - write
+                    type: str
+  CHAP_auth:
+    description: write
+    type: bool
+    default: false
+  target_password:
+    description: write
+    type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -107,7 +192,7 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=client_spec,
-            mutually_exclusive=mutually_exclusive,
+            # mutually_exclusive=mutually_exclusive,
         ),
         CHAP_auth=dict(type="bool", default=False),
         target_password=dict(type="str", no_log=True),
@@ -175,8 +260,11 @@ def create_volume_group(module, result):
             task_uuid = attach_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
 
-        clients = volume_group.read(volume_group_uuid, endpoint="/iscsi-client-attachments")
+        clients = volume_group.read(
+            volume_group_uuid, endpoint="/iscsi-client-attachments"
+        )
         result["response"]["clients"] = clients.get("data")
+
 
 # def update_volume_group(module, result):
 #     volume_group = VolumeGroup(module)
@@ -217,7 +305,6 @@ def create_volume_group(module, result):
 
 
 def delete_volume_group(module, result):
-
     def detach_iscsi_clients():
         clients_resp = volume_group.read(
             volume_group_uuid, endpoint="/iscsi-client-attachments"
@@ -234,9 +321,7 @@ def delete_volume_group(module, result):
         result["detached_clients"] = detached_clients
 
     def detach_vms():
-        vms_resp = volume_group.read(
-            volume_group_uuid, endpoint="/vm-attachments"
-        )
+        vms_resp = volume_group.read(volume_group_uuid, endpoint="/vm-attachments")
         detached_vms = []
         for vm in vms_resp.get("data", []):
 
@@ -281,9 +366,7 @@ def run_module():
             ("state", "absent", ("volume_group_uuid",)),
             ("CHAP_auth", True, ("target_password",)),
         ],
-        mutually_exclusive=[
-            ("vms", "clients")
-        ],
+        mutually_exclusive=[("vms", "clients")],
     )
     remove_param_with_none_value(module.params)
     result = {

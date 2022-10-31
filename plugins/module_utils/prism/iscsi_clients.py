@@ -8,7 +8,6 @@ from copy import deepcopy
 
 
 class Clients:
-
     @classmethod
     def get_spec(cls, iscsi_client, chap_auth=False):
         payload = cls._get_default_spec()
@@ -19,9 +18,7 @@ class Clients:
 
     @staticmethod
     def _get_default_spec():
-        return deepcopy(
-            {"enabledAuthentications": "NONE"}
-        )
+        return deepcopy({"enabledAuthentications": "NONE"})
 
     @staticmethod
     def _build_spec_iscsi_client(payload, iscsi_client, chap_auth):
