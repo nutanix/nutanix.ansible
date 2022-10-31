@@ -42,7 +42,7 @@ options:
     description: volume_groups description
     type: str
   cluster:
-    description: write
+    description: Name or UUID of the cluster on which the volume group will be placed
     type: dict
     suboptions:
           name:
@@ -56,31 +56,33 @@ options:
               - Mutually exclusive with C(name)
             type: str
   target_prefix:
-    description: write
+    description:  iSCSI target prefix-name.
     type: str
   flash_mode:
-    description: write
+    description:  if enabled all volume disks of the VG will be pinned to SSD tier.
     type: bool
     default: false
   disks:
-    description: write
+    description:  Volume group disk specification.
     type: list
     elements: dict
     suboptions:
         size_gb:
-            description: write
+            description: The Disk Size in GB.
             type: int
         storage_container:
-            description: write
+            description: Container  on which to create the disk.
             type: dict
             suboptions:
                 name:
                     description:
-                    - Mutually exclusive with C(uuid)
+                        - Storage containter Name
+                        - Mutually exclusive with C(uuid)
                     type: str
                 uuid:
                     description:
-                    - Mutually exclusive with C(name)
+                        - Storage container UUID
+                        - Mutually exclusive with C(name)
                     type: str
   vms:
     description: write
@@ -89,11 +91,13 @@ options:
     suboptions:
                 name:
                     description:
-                    - Mutually exclusive with C(uuid)
+                        - VM name
+                        - Mutually exclusive with C(uuid)
                     type: str
                 uuid:
                     description:
-                    - Mutually exclusive with C(name)
+                        - VM UUID
+                        - Mutually exclusive with C(name)
                     type: str
   load_balance:
     description: write
@@ -121,11 +125,11 @@ options:
                     - write
                     type: str
   CHAP_auth:
-    description: write
+    description: Use Challenge-Handshake Authentication Protocol
     type: bool
     default: false
   target_password:
-    description: write
+    description: CHAP secret
     type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
