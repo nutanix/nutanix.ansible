@@ -26,12 +26,13 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
-        db_uuid = dict(type="str", required=True),
+        db_uuid=dict(type="str", required=True),
         expand_storage_size=dict(type="int", required=True),
         pre_expand_cmd=dict(type="str", required=False),
         post_expand_cmd=dict(type="str", required=False),
     )
     return module_args
+
 
 def scale_db_instance(module, result):
     _databases = Database(module)
@@ -46,8 +47,9 @@ def scale_db_instance(module, result):
     if not database_type:
         module.fail_json(msg="failed fetching database type", **result)
 
-    scale_config = module.params["scale"]
-    spec = _databases.get_scaling_spec(scale_config, database_type)
+    spec = _databases.get_scaling_spec(
+        scale_config=module.params, database_type=database_type
+    )
 
     if module.check_mode:
         result["response"] = spec
@@ -67,6 +69,7 @@ def scale_db_instance(module, result):
     result["changed"] = True
     result["db_uuid"] = uuid
 
+
 def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
@@ -74,7 +77,7 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "db_uuid": None}
-    
+
     scale_db_instance(module, result)
     module.exit_json(**result)
 

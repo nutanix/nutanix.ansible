@@ -165,7 +165,8 @@ class Database(NutanixDatabase):
     def _get_action_argument_spec(self, name, value):
         return deepcopy({"name": name, "value": value})
 
-    def get_scaling_spec(self, config, database_type):
+    def get_scaling_spec(self, scale_config, database_type):
+        config = deepcopy(scale_config)
         spec = self._get_default_scaling_spec()
 
         spec["applicationType"] = database_type
