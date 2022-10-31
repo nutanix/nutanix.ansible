@@ -27,6 +27,32 @@ class VolumeGroup(Prism):
             "flash_mode": self._build_spec_flash_mode,
         }
 
+    def attach_vm(self, spec, volume_group_uuid, method="POST", endpoint="$actions/attach-vm"):
+
+        resp = self.update(spec, volume_group_uuid, method=method, endpoint=endpoint)
+        resp["task_uuid"] = resp["data"]["extId"][-36:]
+        return resp
+
+    def attach_iscsi_client(self, spec, volume_group_uuid, method="POST", endpoint="/$actions/attach-iscsi-client"):
+
+        resp = self.update(spec, volume_group_uuid, method=method, endpoint=endpoint)
+        resp["task_uuid"] = resp["data"]["extId"][-36:]
+        return resp
+
+    def detach_vm(self, volume_group_uuid, vm, method="POST"):
+        vm_uuid = vm["extId"]
+        endpoint = "$actions/detach-vm/{0}".format(vm_uuid)
+        resp = self.update(uuid=volume_group_uuid, method=method, endpoint=endpoint)
+        resp["task_uuid"] = resp["data"]["extId"][-36:]
+        return resp
+
+    def detach_iscsi_client(self, volume_group_uuid, client, method="POST"):
+        client_uuid = client["extId"]
+        endpoint = "$actions/detach-iscsi-client/{0}".format(client_uuid)
+        resp = self.update(uuid=volume_group_uuid, method=method, endpoint=endpoint)
+        resp["task_uuid"] = resp["data"]["extId"][-36:]
+        return resp
+
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -60,17 +86,19 @@ class VolumeGroup(Prism):
         return payload, None
 
     def _build_spec_flash_mode(self, payload, value):
-        payload["storageFeatures"] = {
-            "$objectType": "storage.v4.config.StorageFeatures",
-            "$reserved": {"$fqObjectType": "storage.v4.r0.a2.config.StorageFeatures"},
-            "$unknownFields": {},
-            "flashMode": {
-                "$objectType": "storage.v4.config.FlashMode",
-                "$reserved": {"$fqObjectType": "storage.v4.r0.a2.config.FlashMode"},
+
+        if value:
+            payload["storageFeatures"] = {
+                "$objectType": "storage.v4.config.StorageFeatures",
+                "$reserved": {"$fqObjectType": "storage.v4.r0.a2.config.StorageFeatures"},
                 "$unknownFields": {},
-                "isEnabled": True,
-            },
-        }
+                "flashMode": {
+                    "$objectType": "storage.v4.config.FlashMode",
+                    "$reserved": {"$fqObjectType": "storage.v4.r0.a2.config.FlashMode"},
+                    "$unknownFields": {},
+                    "isEnabled": True,
+                },
+            }
         return payload, None
 
     def _build_spec_cluster(self, payload, param):
@@ -88,9 +116,6 @@ class VolumeGroup(Prism):
         return spec, None
 
     def get_client_spec(self, client):
-        # uuid, error = get_client_uuid(client, self.module)
-        # if error:
-        #     return None, error
         spec = {"extId": client["uuid"]}
         return spec, None
 
