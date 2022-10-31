@@ -726,19 +726,7 @@ def get_module_spec():
     )
     postgres.update(deepcopy(default_db_arguments))
 
-    scale = dict(
-        expand_storage_size=dict(type="int"),
-        pre_expand_cmd=dict(type="str", required=False),
-        post_expand_cmd=dict(type="str", required=False),
-    )
-
     module_args = dict(
-        operation=dict(
-            type="str",
-            choices=[
-                "scale",
-            ],
-        ),
         db_uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
@@ -760,7 +748,6 @@ def get_module_spec():
         auto_tune_staging_drive=dict(type="bool", required=False),
         soft_delete=dict(type="bool", required=False),
         delete_time_machine=dict(type="bool", required=False),
-        scale=dict(type="dict", options=scale, required=False),
     )
     return module_args
 
@@ -831,7 +818,7 @@ def update_instance(module, result):
 
     uuid = module.params.get("db_uuid")
     if not uuid:
-        module.fail_json(msg="db_uuid is required field for update", **result)
+        module.fail_json(msg="uuid is required field for update", **result)
 
     resp = _databases.read(uuid)
     old_spec = _databases.get_default_update_spec(override_spec=resp)
@@ -862,47 +849,12 @@ def update_instance(module, result):
     result["changed"] = True
 
 
-def scale_instance(module, result):
-    _databases = Database(module)
-    uuid = module.params.get("db_uuid")
-    if not uuid:
-        module.fail_json(msg="db_uuid is required field for scaling", **result)
-
-    resp = _databases.read(uuid)
-    result["response"] = resp
-
-    database_type = resp.get("type")
-    if not database_type:
-        module.fail_json(msg="failed fetching database type", **result)
-
-    scale_config = module.params["scale"]
-    spec = _databases.get_scaling_spec(scale_config, database_type)
-
-    if module.check_mode:
-        result["response"] = spec
-        return
-
-    resp = _databases.scale(uuid=uuid, data=spec)
-    result["response"] = resp
-
-    if module.params.get("wait"):
-        ops_uuid = resp["operationId"]
-        time.sleep(5)  # to get operation ID functional
-        operations = Operation(module)
-        operations.wait_for_completion(ops_uuid)
-        resp = _databases.read(uuid)
-        result["response"] = resp
-
-    result["changed"] = True
-    result["db_uuid"] = uuid
-
-
 def delete_instance(module, result):
     _databases = Database(module)
 
     uuid = module.params.get("db_uuid")
     if not uuid:
-        module.fail_json(msg="db_uuid is required field for delete", **result)
+        module.fail_json(msg="uuid is required field for delete", **result)
 
     spec = _databases.get_default_delete_spec()
     if module.params.get("soft_delete"):
@@ -945,7 +897,6 @@ def run_module():
         required_if=[
             ("state", "present", ("name", "db_uuid"), True),
             ("state", "absent", ("db_uuid",)),
-            ("operation", "scale", ("scale", "db_uuid")),
         ],
         supports_check_mode=True,
     )
@@ -953,10 +904,7 @@ def run_module():
     result = {"changed": False, "error": None, "response": None, "db_uuid": None}
     if module.params["state"] == "present":
         if module.params.get("db_uuid"):
-            if module.params.get("operation") == "scale":
-                scale_instance(module, result)
-            else:
-                update_instance(module, result)
+            update_instance(module, result)
         else:
             create_instance(module, result)
     else:
