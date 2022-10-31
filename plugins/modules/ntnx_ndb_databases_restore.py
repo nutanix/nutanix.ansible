@@ -34,7 +34,10 @@ def get_module_spec():
     return module_args
 
 
-# restore database
+# restore database from following:
+# 1. Snapshot UUID
+# 2. Latest snapshot
+# 3. Point in time recovery timestamp
 def restore_database(module, result):
     pass
 
@@ -44,7 +47,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         mutually_exclusive=[("snapshot_uuid", "pitr_timestamp")],
-        required_if=[("state", "present", ("snapshot_uuid", "pitr_timestamp"), True)],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
