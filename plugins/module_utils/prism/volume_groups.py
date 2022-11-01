@@ -27,9 +27,7 @@ class VolumeGroup(Prism):
             "flash_mode": self._build_spec_flash_mode,
         }
 
-    def create_vdisk(
-            self, spec, volume_group_uuid, method="POST", endpoint="disks"
-    ):
+    def create_vdisk(self, spec, volume_group_uuid, method="POST", endpoint="disks"):
 
         resp = self.update(spec, volume_group_uuid, method=method, endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"][-36:]
