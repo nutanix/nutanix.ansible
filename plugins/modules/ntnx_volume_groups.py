@@ -196,7 +196,7 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=client_spec,
-            # mutually_exclusive=mutually_exclusive,
+            mutually_exclusive=[("uuid", "iscsi_iqn", "iscsi_ip")],
         ),
         CHAP_auth=dict(type="bool", default=False),
         target_password=dict(type="str", no_log=True),
@@ -232,11 +232,11 @@ def create_volume_group(module, result):
     if module.params.get("disks"):
         for disk in module.params["disks"]:
             spec, err = VDisks.get_spec(module, disk)
-            update_resp = volume_group.update(
-                spec, volume_group_uuid, method="POST", endpoint="disks"
-            )
-            task_uuid = update_resp["data"]["extId"][-36:]
+            vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
+
+            task_uuid = vdisk_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
+
         disks = volume_group.read(volume_group_uuid, endpoint="/disks")
         result["response"]["disks"] = disks.get("data")
 
@@ -251,7 +251,6 @@ def create_volume_group(module, result):
             wait_for_task_completion(module, {"task_uuid": task_uuid})
 
         vms = volume_group.read(volume_group_uuid, endpoint="/vm-attachments")
-
         result["response"]["vms"] = vms.get("data")
 
     # attach clients
