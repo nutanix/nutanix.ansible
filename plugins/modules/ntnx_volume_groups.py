@@ -214,7 +214,9 @@ def create_volume_group(module, result):
 
     if module.check_mode:
         result["response"] = spec
-        result["response"]["vms"] = module.params["vms"]
+        result["response"]["disks"] = module.params.get("disks")
+        result["response"]["vms"] = module.params.get("vms")
+        result["response"]["clients"] = module.params.get("clients")
         return
 
     resp = volume_group.create(spec)
@@ -232,6 +234,11 @@ def create_volume_group(module, result):
     if module.params.get("disks"):
         for disk in module.params["disks"]:
             spec, err = VDisks.get_spec(module, disk)
+            if err:
+                result["warning"] = "Disk is not created. Error: {0}".format(err)
+                result["skipped"] = True
+                continue
+
             vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
 
             task_uuid = vdisk_resp["task_uuid"]
@@ -245,6 +252,11 @@ def create_volume_group(module, result):
         for vm in module.params["vms"]:
 
             spec, err = volume_group.get_vm_spec(vm)
+            if err:
+                result["warning"] = "VM is not attached. Error: {0}".format(err)
+                result["skipped"] = True
+                continue
+
             attach_resp = volume_group.attach_vm(spec, volume_group_uuid)
 
             task_uuid = attach_resp["task_uuid"]
@@ -258,6 +270,11 @@ def create_volume_group(module, result):
         for client in module.params["clients"]:
 
             spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
+            if err:
+                result["warning"] = "Client is not attached. Error: {0}".format(err)
+                result["skipped"] = True
+                continue
+
             attach_resp = volume_group.attach_iscsi_client(spec, volume_group_uuid)
 
             task_uuid = attach_resp["task_uuid"]

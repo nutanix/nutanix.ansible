@@ -43,9 +43,12 @@ class Clients:
                     "value": iscsi_client["iscsi_ip"],
                 },
             }
-        if chap_auth and iscsi_client.get("client_password"):
-            payload["clientSecret"] = iscsi_client["client_password"]
+        if iscsi_client.get("client_password"):
+            if chap_auth:
+                payload["clientSecret"] = iscsi_client["client_password"]
 
-            payload["enabledAuthentications"] = "CHAP"
-
+                payload["enabledAuthentications"] = "CHAP"
+            else:
+                error = "parameters are required together: CHAP_auth, client_password"
+                return None, error
         return payload, None
