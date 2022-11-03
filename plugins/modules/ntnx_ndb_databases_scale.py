@@ -28,8 +28,8 @@ def get_module_spec():
     module_args = dict(
         db_uuid=dict(type="str", required=True),
         storage_gb=dict(type="int", required=True),
-        pre_update=dict(type="str", required=False),
-        post_update=dict(type="str", required=False),
+        pre_update_cmd=dict(type="str", required=False),
+        post_update_cmd=dict(type="str", required=False),
     )
     return module_args
 

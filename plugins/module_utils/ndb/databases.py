@@ -173,17 +173,17 @@ class Database(NutanixDatabase):
 
         spec["actionArguments"].append(
             self._get_action_argument_spec(
-                "data_storage_size", int(config.get("expand_storage_size"))
+                "data_storage_size", int(config.get("storage_gb"))
             )
         )
         spec["actionArguments"].append(
             self._get_action_argument_spec(
-                "pre_script_cmd", config.get("pre_expand_cmd")
+                "pre_script_cmd", config.get("pre_update_cmd")
             )
         )
         spec["actionArguments"].append(
             self._get_action_argument_spec(
-                "post_script_cmd", config.get("post_expand_cmd")
+                "post_script_cmd", config.get("post_update_cmd")
             )
         )
 
