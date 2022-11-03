@@ -27,9 +27,9 @@ def get_module_spec():
 
     module_args = dict(
         db_uuid=dict(type="str", required=True),
-        expand_storage_size=dict(type="int", required=True),
-        pre_expand_cmd=dict(type="str", required=False),
-        post_expand_cmd=dict(type="str", required=False),
+        storage_gb=dict(type="int", required=True),
+        pre_update=dict(type="str", required=False),
+        post_update=dict(type="str", required=False),
     )
     return module_args
 

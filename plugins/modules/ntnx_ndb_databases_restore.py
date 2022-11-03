@@ -27,7 +27,7 @@ def get_module_spec():
 
     module_args = dict(
         snapshot_uuid=dict(type="str", required=False),
-        pitr_timestamp=dict(type="str", required=False),
+        point_in_time=dict(type="str", required=False),
         db_uuid=dict(type="str", required=True),
         time_zone=dict(type="str", required=False),
     )
