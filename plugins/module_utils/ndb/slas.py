@@ -68,27 +68,27 @@ class SLA(NutanixDatabase):
         payload["description"] = desc
         return payload, None
 
-    def _build_spec_retention(self, payload, retention):
+    def _build_spec_frequency(self, payload, frequency):
 
-        if retention.get("continuous_log"):
-            payload["continuousRetention"] = retention.get("continuous_log")
+        if frequency.get("logs_retention"):
+            payload["continuousRetention"] = frequency.get("logs_retention")
 
-        if retention.get("snapshots"):
+        if frequency.get("snapshots_retention"):
 
             # map of module attributes to api attributes
-            snapshot_retention_attr_map = {
+            snapshots_retention_attr_map = {
                 "daily": "dailyRetention",
                 "weekly": "weeklyRetention",
                 "monthly": "monthlyRetention",
                 "quarterly": "quarterlyRetention",
             }
 
-            snapshot_retention = retention["snapshots"]
+            snapshots_retention = frequency["snapshots_retention"]
 
             # if input given in module then add in api payload
-            for attr, api_attr in snapshot_retention_attr_map.items():
-                if snapshot_retention.get(attr) is not None:
-                    payload[api_attr] = snapshot_retention[attr]
+            for attr, api_attr in snapshots_retention_attr_map.items():
+                if snapshots_retention.get(attr) is not None:
+                    payload[api_attr] = snapshots_retention[attr]
 
         return payload, None
 

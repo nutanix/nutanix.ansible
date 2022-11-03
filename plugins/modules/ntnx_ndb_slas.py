@@ -23,20 +23,21 @@ from ..module_utils.utils import remove_param_with_none_value, strip_extra_attrs
 
 def get_module_spec():
 
-    snapshots = dict(
+    snapshot_retention = dict(
         daily=dict(type="int"),
         weekly=dict(type="int"),
         monthly=dict(type="int"),
         quarterly=dict(type="int"),
     )
-    retention = dict(
-        continuous_log=dict(type="int"), snapshots=dict(type="dict", option=snapshots)
+    frequency = dict(
+        logs_retention=dict(type="int"), 
+        snapshots_retention=dict(type="dict", option=snapshot_retention)
     )
     module_args = dict(
         sla_uuid=dict(type="str"),
         name=dict(type="str"),
         desc=dict(type="str"),
-        retention=dict(type="dict", options=retention),
+        frequency=dict(type="dict", options=frequency),
     )
     return module_args
 
