@@ -644,8 +644,9 @@ def get_module_spec():
     )
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-    software_profile = dict(version_id=dict(type="str"))
-    software_profile.update(deepcopy(entity_by_spec))
+    software_profile = dict(
+        version_id=dict(type="str"), name=dict(type="str"), uuid=dict(type="str")
+    )
 
     new_server = dict(
         name=dict(type="str", required=True),
