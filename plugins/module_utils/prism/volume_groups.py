@@ -27,43 +27,47 @@ class VolumeGroup(Prism):
             "flash_mode": self._build_spec_flash_mode,
         }
 
-    def create_vdisk(self, spec, volume_group_uuid, method="POST", endpoint="disks"):
+    def get_vdisks(self, volume_group_uuid):
+        endpoint = "/disks"
+        return self.read(volume_group_uuid, endpoint=endpoint)
 
-        resp = self.update(spec, volume_group_uuid, method=method, endpoint=endpoint)
+    def get_vms(self, volume_group_uuid):
+        endpoint = "/vm-attachments"
+        return self.read(volume_group_uuid, endpoint=endpoint)
+
+    def get_clients(self, volume_group_uuid):
+        endpoint = "/iscsi-client-attachments"
+        return self.read(volume_group_uuid, endpoint=endpoint)
+
+    def create_vdisk(self, spec, volume_group_uuid):
+        endpoint = "disks"
+        resp = self.update(spec, volume_group_uuid, method="POST", endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"][-36:]
         return resp
 
-    def attach_vm(
-        self, spec, volume_group_uuid, method="POST", endpoint="$actions/attach-vm"
-    ):
-
-        resp = self.update(spec, volume_group_uuid, method=method, endpoint=endpoint)
+    def attach_vm(self, spec, volume_group_uuid):
+        endpoint = "$actions/attach-vm"
+        resp = self.update(spec, volume_group_uuid, method="POST", endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"][-36:]
         return resp
 
-    def attach_iscsi_client(
-        self,
-        spec,
-        volume_group_uuid,
-        method="POST",
-        endpoint="/$actions/attach-iscsi-client",
-    ):
-
-        resp = self.update(spec, volume_group_uuid, method=method, endpoint=endpoint)
+    def attach_iscsi_client(self, spec, volume_group_uuid):
+        endpoint = "/$actions/attach-iscsi-client"
+        resp = self.update(spec, volume_group_uuid, method="POST", endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"][-36:]
         return resp
 
-    def detach_vm(self, volume_group_uuid, vm, method="POST"):
+    def detach_vm(self, volume_group_uuid, vm):
         vm_uuid = vm["extId"]
         endpoint = "$actions/detach-vm/{0}".format(vm_uuid)
-        resp = self.update(uuid=volume_group_uuid, method=method, endpoint=endpoint)
+        resp = self.update(uuid=volume_group_uuid, method="POST", endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"][-36:]
         return resp
 
-    def detach_iscsi_client(self, volume_group_uuid, client, method="POST"):
+    def detach_iscsi_client(self, volume_group_uuid, client):
         client_uuid = client["extId"]
         endpoint = "$actions/detach-iscsi-client/{0}".format(client_uuid)
-        resp = self.update(uuid=volume_group_uuid, method=method, endpoint=endpoint)
+        resp = self.update(uuid=volume_group_uuid, method="POST", endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"][-36:]
         return resp
 
@@ -71,12 +75,17 @@ class VolumeGroup(Prism):
         return deepcopy(
             {
                 "name": "",
-                "loadBalanceVmAttachments": False,
                 "sharingStatus": "SHARED",
-                "clusterReference": None,
                 "usageType": "USER",
             }
         )
+
+    def get_update_spec(self):
+
+        return self.get_spec({
+            "extId": self.module.params["volume_group_uuid"],
+            "sharingStatus": "SHARED",
+        })
 
     def _build_spec_name(self, payload, value):
         payload["name"] = value

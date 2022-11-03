@@ -207,6 +207,10 @@ def get_module_spec():
 
 def create_volume_group(module, result):
     volume_group = VolumeGroup(module)
+    vg_disks = module.params.get("disks")
+    vg_vms = module.params.get("vms")
+    vg_clients = module.params.get("clients")
+
     spec, error = volume_group.get_spec()
     if error:
         result["error"] = error
@@ -214,9 +218,9 @@ def create_volume_group(module, result):
 
     if module.check_mode:
         result["response"] = spec
-        result["response"]["disks"] = module.params.get("disks")
-        result["response"]["vms"] = module.params.get("vms")
-        result["response"]["clients"] = module.params.get("clients")
+        result["response"]["disks"] = vg_disks
+        result["response"]["vms"] = vg_vms
+        result["response"]["clients"] = vg_clients
         return
 
     resp = volume_group.create(spec)
@@ -231,8 +235,8 @@ def create_volume_group(module, result):
     result["response"] = resp.get("data")
 
     # create disks
-    if module.params.get("disks"):
-        for disk in module.params["disks"]:
+    if vg_disks:
+        for disk in vg_disks:
             spec, err = VDisks.get_spec(module, disk)
             if err:
                 result["warning"] = "Disk is not created. Error: {0}".format(err)
@@ -244,12 +248,12 @@ def create_volume_group(module, result):
             task_uuid = vdisk_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
 
-        disks = volume_group.read(volume_group_uuid, endpoint="/disks")
-        result["response"]["disks"] = disks.get("data")
+        disks_resp = volume_group.get_vdisks(volume_group_uuid)
+        result["response"]["disks"] = disks_resp.get("data")
 
     # attach vms
-    if module.params.get("vms"):
-        for vm in module.params["vms"]:
+    if vg_vms:
+        for vm in vg_vms:
 
             spec, err = volume_group.get_vm_spec(vm)
             if err:
@@ -262,12 +266,12 @@ def create_volume_group(module, result):
             task_uuid = attach_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
 
-        vms = volume_group.read(volume_group_uuid, endpoint="/vm-attachments")
-        result["response"]["vms"] = vms.get("data")
+        vms_resp = volume_group.get_vms(volume_group_uuid)
+        result["response"]["vms"] = vms_resp.get("data")
 
     # attach clients
-    if module.params.get("clients"):
-        for client in module.params["clients"]:
+    if vg_clients:
+        for client in vg_clients:
 
             spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
             if err:
@@ -280,79 +284,109 @@ def create_volume_group(module, result):
             task_uuid = attach_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
 
-        clients = volume_group.read(
-            volume_group_uuid, endpoint="/iscsi-client-attachments"
-        )
-        result["response"]["clients"] = clients.get("data")
+        clients_resp = volume_group.get_clients(volume_group_uuid)
+        result["response"]["clients"] = clients_resp.get("data")
 
 
-# def update_volume_group(module, result):
-#     volume_group = VolumeGroup(module)
-#     volume_group_uuid = module.params.get("volume_group_uuid")
-#     if not volume_group_uuid:
-#         result["error"] = "Missing parameter volume_group_uuid in playbook"
-#         module.fail_json(msg="Failed updating volume_group", **result)
-#     result["volume_group_uuid"] = volume_group_uuid
-#
-#     # read the current state of volume_group
-#     resp = volume_group.read(volume_group_uuid)
-#     resp = resp.get("volume_group")
-#
-#     # new spec for updating volume_group
-#     update_spec, error = volume_group.get_spec(resp)
-#     if error:
-#         result["error"] = error
-#         module.fail_json(msg="Failed generating volume_group update spec", **result)
-#
-#     # check for idempotency
-#     if resp == update_spec:
-#         result["skipped"] = True
-#         module.exit_json(
-#             msg="Nothing to change. Refer docs to check for fields which can be updated"
-#         )
-#
-#     if module.check_mode:
-#         result["response"] = update_spec
-#         return
-#
-#     # update volume_group
-#     volume_group.update(update_spec, uuid=volume_group_uuid, no_response=True)
-#
-#     resp = volume_group.read(volume_group_uuid)
-#
-#     result["changed"] = True
-#     result["response"] = resp
+def update_volume_group(module, result):
+    volume_group = VolumeGroup(module)
+    volume_group_uuid = module.params.get("volume_group_uuid")
+    vg_disks = module.params.get("disks")
+    vg_vms = module.params.get("vms")
+    vg_clients = module.params.get("clients")
+    if not volume_group_uuid:
+        result["error"] = "Missing parameter volume_group_uuid in playbook"
+        module.fail_json(msg="Failed updating volume_group", **result)
+    result["volume_group_uuid"] = volume_group_uuid
+
+    # read the current state of volume_group
+    resp = volume_group.read(volume_group_uuid)
+    resp = resp.get("data")
+
+    # new spec for updating volume_group
+    update_spec, error = volume_group.get_update_spec()
+    if error:
+        result["error"] = error
+        module.fail_json(msg="Failed generating volume_group update spec", **result)
+
+    # check for idempotency
+    # def check_volume_groups_idempotency()
+    # if resp == update_spec:
+    #     result["skipped"] = True
+    #     module.exit_json(
+    #         msg="Nothing to change. Refer docs to check for fields which can be updated"
+    #     )
+
+    if module.check_mode:
+        result["response"] = update_spec
+        result["response"]["disks"] = vg_disks
+        result["response"]["vms"] = vg_vms
+        result["response"]["clients"] = vg_clients
+        return
+
+    # update volume_group
+    resp = volume_group.update(update_spec, uuid=volume_group_uuid, method="PATCH")
+    # result["response"] = resp
+    resp = volume_group.read(volume_group_uuid)
+
+    result["changed"] = True
+    result["response"] = resp.get("data")
+
+    # update disks
+    if vg_disks:
+        for disk in vg_disks:
+            spec, err = VDisks.get_spec(module, disk)
+            if err:
+                result["warning"] = "Disk is not created. Error: {0}".format(err)
+                result["skipped"] = True
+                continue
+
+            vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
+
+            task_uuid = vdisk_resp["task_uuid"]
+            wait_for_task_completion(module, {"task_uuid": task_uuid})
+
+        disks_resp = volume_group.get_vdisks(volume_group_uuid)
+        result["response"]["disks"] = disks_resp.get("data")
+
+    # update vms
+    if vg_vms:
+        for vm in vg_vms:
+
+            spec, err = volume_group.get_vm_spec(vm)
+            if err:
+                result["warning"] = "VM is not attached. Error: {0}".format(err)
+                result["skipped"] = True
+                continue
+
+            attach_resp = volume_group.attach_vm(spec, volume_group_uuid)
+
+            task_uuid = attach_resp["task_uuid"]
+            wait_for_task_completion(module, {"task_uuid": task_uuid})
+
+        vms_resp = volume_group.get_vms(volume_group_uuid)
+        result["response"]["vms"] = vms_resp.get("data")
+
+    # update clients
+    if vg_clients:
+        for client in vg_clients:
+
+            spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
+            if err:
+                result["warning"] = "Client is not attached. Error: {0}".format(err)
+                result["skipped"] = True
+                continue
+
+            attach_resp = volume_group.attach_iscsi_client(spec, volume_group_uuid)
+
+            task_uuid = attach_resp["task_uuid"]
+            wait_for_task_completion(module, {"task_uuid": task_uuid})
+
+        clients_resp = volume_group.get_clients(volume_group_uuid)
+        result["response"]["clients"] = clients_resp.get("data")
 
 
 def delete_volume_group(module, result):
-    def detach_iscsi_clients():
-        clients_resp = volume_group.read(
-            volume_group_uuid, endpoint="/iscsi-client-attachments"
-        )
-        detached_clients = []
-        for client in clients_resp.get("data", []):
-
-            detach_resp = volume_group.detach_iscsi_client(volume_group_uuid, client)
-
-            task_uuid = detach_resp["data"]["extId"][-36:]
-            wait_for_task_completion(module, {"task_uuid": task_uuid})
-            detached_clients.append(client["extId"])
-
-        result["detached_clients"] = detached_clients
-
-    def detach_vms():
-        vms_resp = volume_group.read(volume_group_uuid, endpoint="/vm-attachments")
-        detached_vms = []
-        for vm in vms_resp.get("data", []):
-
-            detach_resp = volume_group.detach_vm(volume_group_uuid, vm)
-
-            task_uuid = detach_resp["task_uuid"]
-            wait_for_task_completion(module, {"task_uuid": task_uuid})
-            detached_vms.append(vm["extId"])
-
-        result["detached_vms"] = detached_vms
-
     volume_group_uuid = module.params["volume_group_uuid"]
     if not volume_group_uuid:
         result["error"] = "Missing parameter volume_group_uuid in playbook"
@@ -360,14 +394,46 @@ def delete_volume_group(module, result):
 
     volume_group = VolumeGroup(module)
 
-    detach_iscsi_clients()
-    detach_vms()
+    # detach iscsi_clients
+    clients_resp = volume_group.get_clients(volume_group_uuid)
+    detached_clients = []
+    for client in clients_resp.get("data", []):
+        detach_resp = volume_group.detach_iscsi_client(volume_group_uuid, client)
+
+        task_uuid = detach_resp["task_uuid"]
+        wait_for_task_completion(module, {"task_uuid": task_uuid})
+        detached_clients.append(client["extId"])
+
+    result["detached_clients"] = detached_clients
+
+    # detach vms
+    vms_resp = volume_group.get_vms(volume_group_uuid)
+    detached_vms = []
+    for vm in vms_resp.get("data", []):
+        detach_resp = volume_group.detach_vm(volume_group_uuid, vm)
+
+        task_uuid = detach_resp["task_uuid"]
+        wait_for_task_completion(module, {"task_uuid": task_uuid})
+        detached_vms.append(vm["extId"])
+
+    result["detached_vms"] = detached_vms
 
     resp = volume_group.delete(volume_group_uuid)
     resp.pop("metadata")
     result["changed"] = True
     result["response"] = resp
     result["volume_group_uuid"] = volume_group_uuid
+
+
+def check_volume_groups_idempotency(old_spec, update_spec):
+
+    if old_spec["spec"]["name"] != update_spec["spec"]["name"]:
+        return False
+
+    if old_spec["spec"].get("description") != update_spec["spec"].get("description"):
+        return False
+
+    return True
 
 
 def wait_for_task_completion(module, result):
