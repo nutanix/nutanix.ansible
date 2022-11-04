@@ -310,12 +310,11 @@ def update_volume_group(module, result):
         module.fail_json(msg="Failed generating volume_group update spec", **result)
 
     # check for idempotency
-    # def check_volume_groups_idempotency()
-    # if resp == update_spec:
-    #     result["skipped"] = True
-    #     module.exit_json(
-    #         msg="Nothing to change. Refer docs to check for fields which can be updated"
-    #     )
+    if check_volume_groups_idempotency(resp, update_spec):
+        result["skipped"] = True
+        module.exit_json(
+            msg="Nothing to change. Refer docs to check for fields which can be updated"
+        )
 
     if module.check_mode:
         result["response"] = update_spec
@@ -427,11 +426,9 @@ def delete_volume_group(module, result):
 
 def check_volume_groups_idempotency(old_spec, update_spec):
 
-    if old_spec["spec"]["name"] != update_spec["spec"]["name"]:
-        return False
-
-    if old_spec["spec"].get("description") != update_spec["spec"].get("description"):
-        return False
+    for key, value in update_spec.items():
+        if old_spec.get(key) != value:
+            return False
 
     return True
 
