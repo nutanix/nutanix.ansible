@@ -64,10 +64,15 @@ def create_snapshot(module, result):
             module.fail_json(msg="Failed fetching time machine uuid", **result)
     else:
         database = Database(module)
-        db, err = database.get_database(name=module.params["database"].get("name"), uuid=module.params["database"].get("uuid"))
+        db, err = database.get_database(
+            name=module.params["database"].get("name"),
+            uuid=module.params["database"].get("uuid"),
+        )
         if err:
             result["error"] = err
-            module.fail_json(msg="Failed fetching time machine uuid from database", **result)
+            module.fail_json(
+                msg="Failed fetching time machine uuid from database", **result
+            )
         time_machine_uuid = db["timeMachineId"]
 
     snapshot = Snapshot(module)
@@ -80,24 +85,29 @@ def create_snapshot(module, result):
         result["response"] = spec
         return
 
-    resp = snapshot.create_snapshot(time_machine_uuid,spec)
+    resp = snapshot.create_snapshot(time_machine_uuid, spec)
 
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]
         operations = Operation(module)
-        time.sleep(5) # for getting
+        time.sleep(5)  # for getting
         operations.wait_for_completion(ops_uuid)
-    
+
         # get snapshot info after its finished
-        resp, err = snapshot.get_snapshot(time_machine_uuid=time_machine_uuid, name=module.params.get("name"))
+        resp, err = snapshot.get_snapshot(
+            time_machine_uuid=time_machine_uuid, name=module.params.get("name")
+        )
         if err:
             result["error"] = err
-            module.fail_json(msg="Failed fetching snapshot info post creation", **result)
-        
+            module.fail_json(
+                msg="Failed fetching snapshot info post creation", **result
+            )
+
         result["snapshot_uuid"] = resp["id"]
 
     result["response"] = resp
     result["changed"] = True
+
 
 # Following things can be  updated
 # 1. Expiry
@@ -116,7 +126,7 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive = [("time_machine", "database")]
+        mutually_exclusive=[("time_machine", "database")],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "snapshot_uuid": None}

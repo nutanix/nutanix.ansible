@@ -33,18 +33,19 @@ def get_module_spec():
     )
     return module_args
 
+
 def restore_database(module, result):
     db = Database(module)
     db_uuid = module.params.get("db_uuid")
     if not db_uuid:
         module.fail_json(msg="db_uuid is required field for restoring", **result)
-    
+
     spec = db.get_restore_spec(module.params)
 
     if module.check_mode:
         result["response"] = spec
         return
-    
+
     resp = db.restore(uuid=db_uuid, data=spec)
     result["response"] = resp
 
@@ -58,6 +59,7 @@ def restore_database(module, result):
 
     result["changed"] = True
     result["db_uuid"] = db_uuid
+
 
 def run_module():
     module = NdbBaseModule(

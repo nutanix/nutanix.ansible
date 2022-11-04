@@ -17,7 +17,7 @@ class TimeMachine(NutanixDatabase):
     def log_catchup(self, time_machine_uuid, data):
         endpoint = "{0}/{1}".format(time_machine_uuid, "log-catchups")
         return self.create(data=data, endpoint=endpoint)
-           
+
     def get_time_machine(self, uuid=None, name=None):
         """
         Fetch time machine info based on uuid or name.
@@ -52,7 +52,7 @@ class TimeMachine(NutanixDatabase):
                 "Please provide either uuid or name for fetching time machine details",
             )
         return resp, None
-    
+
     def get_time_machine_uuid(self, config):
         uuid = ""
         if config.get("uuid"):
@@ -64,7 +64,9 @@ class TimeMachine(NutanixDatabase):
                 return None, err
             uuid = tm.get("id")
         else:
-            error = "time machine config {0} doesn't have name or uuid key".format(config)
+            error = "time machine config {0} doesn't have name or uuid key".format(
+                config
+            )
             return None, error
 
         return uuid, None
@@ -74,14 +76,8 @@ class TimeMachine(NutanixDatabase):
             {
                 "forRestore": for_restore,
                 "actionArguments": [
-                    {
-                        "name": "preRestoreLogCatchup",
-                        "value": for_restore
-                    },
-                    {
-                        "name": "switch_log",
-                        "value": True
-                    }
-                ]
+                    {"name": "preRestoreLogCatchup", "value": for_restore},
+                    {"name": "switch_log", "value": True},
+                ],
             }
         )

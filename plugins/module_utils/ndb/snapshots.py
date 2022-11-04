@@ -24,7 +24,7 @@ class Snapshot(NutanixDatabase):
         endpoint = "{0}/{1}".format(time_machine_uuid, "snapshots")
         time_machine = TimeMachine(self.module)
         return time_machine.create(data=data, endpoint=endpoint)
-            
+
     def get_snapshot(self, time_machine_uuid, name):
         snapshot_uuid, err = self.get_snapshot_uuid(time_machine_uuid, name)
         if err:
@@ -44,29 +44,25 @@ class Snapshot(NutanixDatabase):
                         if snapshot.get("name") == name:
                             return snapshot["id"], None
                     break
-        
+
         return None, "Snapshot with name {0} not found".format(name)
 
     def _get_default_spec(self):
-        return deepcopy(
-            {
-                "name": ""
-            }
-        )
+        return deepcopy({"name": ""})
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name
         return payload, None
-    
+
     def _build_spec_expiry(self, payload, expiry):
         if not self.module.params.get("timezone"):
             return None, "timezone is required field for snapshot removal schedule"
-        payload["lcmConfig"]= {
+        payload["lcmConfig"] = {
             "snapshotLCMConfig": {
                 "expiryDetails": {
                     "expiryDateTimezone": self.module.params.get("timezone"),
-                    "expireInDays": int(expiry)
+                    "expireInDays": int(expiry),
                 }
             }
-        }        
+        }
         return payload, None

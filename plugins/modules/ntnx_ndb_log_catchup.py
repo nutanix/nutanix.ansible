@@ -40,9 +40,10 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        for_restore=dict(type="bool", required=False, default=False)
+        for_restore=dict(type="bool", required=False, default=False),
     )
     return module_args
+
 
 def log_catchup(module, result):
     time_machine_uuid = ""
@@ -56,10 +57,15 @@ def log_catchup(module, result):
             module.fail_json(msg="Failed fetching time machine uuid", **result)
     else:
         database = Database(module)
-        db, err = database.get_database(name=module.params["database"].get("name"), uuid=module.params["database"].get("uuid"))
+        db, err = database.get_database(
+            name=module.params["database"].get("name"),
+            uuid=module.params["database"].get("uuid"),
+        )
         if err:
             result["error"] = err
-            module.fail_json(msg="Failed fetching time machine uuid from database", **result)
+            module.fail_json(
+                msg="Failed fetching time machine uuid from database", **result
+            )
         time_machine_uuid = db["timeMachineId"]
 
     for_restore = module.params.get("for_restore")
@@ -67,7 +73,7 @@ def log_catchup(module, result):
     if module.check_mode:
         result["response"] = spec
         return
-    
+
     resp = tm.log_catchup(time_machine_uuid=time_machine_uuid, data=spec)
     result["response"] = resp
 
@@ -79,6 +85,7 @@ def log_catchup(module, result):
         result["response"] = resp
 
     result["changed"] = True
+
 
 def run_module():
     module = NdbBaseModule(
