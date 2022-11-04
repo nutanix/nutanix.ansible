@@ -29,27 +29,44 @@ def get_module_spec():
         snapshot_uuid=dict(type="str", required=False),
         point_in_time=dict(type="str", required=False),
         db_uuid=dict(type="str", required=True),
-        time_zone=dict(type="str", required=False),
+        timezone=dict(type="str", required=True),
     )
     return module_args
 
-
-# restore database from following:
-# 1. Snapshot UUID
-# 2. Latest snapshot
-# 3. Point in time recovery timestamp
 def restore_database(module, result):
-    pass
+    db = Database(module)
+    db_uuid = module.params.get("db_uuid")
+    if not db_uuid:
+        module.fail_json(msg="db_uuid is required field for restoring", **result)
+    
+    spec = db.get_restore_spec(module.params)
 
+    if module.check_mode:
+        result["response"] = spec
+        return
+    
+    resp = db.restore(uuid=db_uuid, data=spec)
+    result["response"] = resp
+
+    if module.params.get("wait"):
+        ops_uuid = resp["operationId"]
+        time.sleep(5)  # to get operation ID functional
+        operations = Operation(module)
+        operations.wait_for_completion(ops_uuid)
+        resp = db.read(db_uuid)
+        result["response"] = resp
+
+    result["changed"] = True
+    result["db_uuid"] = db_uuid
 
 def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[("snapshot_uuid", "pitr_timestamp")],
+        mutually_exclusive=[("snapshot_uuid", "point_in_time")],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "error": None, "response": None, "db_uuid": None}
 
     restore_database(module, result)
 

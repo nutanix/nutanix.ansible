@@ -63,10 +63,6 @@ class Database(NutanixDatabase):
             data, endpoint, query, method, raise_error, no_response, timeout
         )
 
-    def scale(self, uuid, data):
-        endpoint = "update/extend-storage"
-        return self.update(data, uuid, endpoint=endpoint, method="POST")
-
     def update(
         self,
         data=None,
@@ -81,6 +77,14 @@ class Database(NutanixDatabase):
         return super().update(
             data, uuid, endpoint, query, raise_error, no_response, timeout, method
         )
+    
+    def scale(self, uuid, data):
+        endpoint = "update/extend-storage"
+        return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
+    
+    def restore(self, uuid, data):
+        endpoint = "restore"
+        return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
 
     def get_database(self, name=None, uuid=None):
         default_query = {"detailed": True}
@@ -103,27 +107,6 @@ class Database(NutanixDatabase):
 
         return resp, None
 
-    def _get_default_spec(self):
-        return deepcopy(
-            {
-                "databaseType": None,
-                "name": None,
-                "dbParameterProfileId": None,
-                "timeMachineInfo": {
-                    "name": None,
-                    "slaId": None,
-                    "schedule": {},
-                    "autoTuneLogDrive": True,
-                },
-                "actionArguments": [],
-                "nodes": [],
-                "nodeCount": 1,
-                "clustered": False,
-                "autoTuneStagingDrive": True,
-                "tags": [],
-            }
-        )
-
     def get_default_update_spec(self, override_spec=None):
         spec = deepcopy(
             {
@@ -141,6 +124,22 @@ class Database(NutanixDatabase):
                     spec[key] = deepcopy(override_spec[key])
 
         return spec
+    
+    def get_default_restore_spec(self):
+        return deepcopy(
+            {
+                "snapshotId": None,
+                "latestSnapshot": None,
+                "userPitrTimestamp": None,
+                "timeZone": None,
+                "actionArguments": [
+                    {
+                        "name": "sameLocation",
+                        "value": True
+                    }
+                ]
+            }
+        )
 
     def get_default_delete_spec(self):
         return deepcopy(
@@ -151,20 +150,7 @@ class Database(NutanixDatabase):
                 "deleteLogicalCluster": True,
             }
         )
-
-    def _get_default_scaling_spec(self):
-        return deepcopy(
-            {
-                "actionArguments": [
-                    {"name": "working_dir", "value": "/tmp"},
-                ],
-                "applicationType": None,
-            }
-        )
-
-    def _get_action_argument_spec(self, name, value):
-        return deepcopy({"name": name, "value": value})
-
+    
     def get_scaling_spec(self, scale_config, database_type):
         config = deepcopy(scale_config)
         spec = self._get_default_scaling_spec()
@@ -188,6 +174,54 @@ class Database(NutanixDatabase):
         )
 
         return spec
+    
+    def get_restore_spec(self, restore_config):
+        spec = self.get_default_restore_spec()
+        if restore_config.get("snapshot_uuid"):
+            spec["snapshotId"] = restore_config["snapshot_uuid"]
+        elif restore_config.get("point_in_time"):
+            spec["userPitrTimestamp"] = restore_config["point_in_time"]
+        else:
+            spec["latestSnapshot"] = True
+        
+        spec["timeZone"] = restore_config.get("timezone")
+        return spec
+
+
+    def _get_default_spec(self):
+        return deepcopy(
+            {
+                "databaseType": None,
+                "name": None,
+                "dbParameterProfileId": None,
+                "timeMachineInfo": {
+                    "name": None,
+                    "slaId": None,
+                    "schedule": {},
+                    "autoTuneLogDrive": True,
+                },
+                "actionArguments": [],
+                "nodes": [],
+                "nodeCount": 1,
+                "clustered": False,
+                "autoTuneStagingDrive": True,
+                "tags": [],
+            }
+        )
+
+
+    def _get_default_scaling_spec(self):
+        return deepcopy(
+            {
+                "actionArguments": [
+                    {"name": "working_dir", "value": "/tmp"},
+                ],
+                "applicationType": None,
+            }
+        )
+
+    def _get_action_argument_spec(self, name, value):
+        return deepcopy({"name": name, "value": value})
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name

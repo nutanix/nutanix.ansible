@@ -50,5 +50,5 @@ def get_sla_uuid(module, config):
         uuid = config["uuid"]
     else:
         error = "sla config {0} doesn't have name or uuid key".format(config)
-        return error, None
+        return None, error
     return uuid, None
