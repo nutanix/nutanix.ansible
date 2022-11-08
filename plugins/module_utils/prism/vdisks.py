@@ -44,14 +44,14 @@ class VDisks:
                 return None, error
 
             payload["diskDataSourceReference"] = {
-                    "$objectType": "common.v1.config.EntityReference",
-                    "$reserved": {
-                        "$fqObjectType": "common.v1.r0.a3.config.EntityReference"
-                    },
-                    "$unknownFields": {},
-                    "extId": uuid,
-                    "entityType": "STORAGE_CONTAINER",
-                }
+                "$objectType": "common.v1.config.EntityReference",
+                "$reserved": {
+                    "$fqObjectType": "common.v1.r0.a3.config.EntityReference"
+                },
+                "$unknownFields": {},
+                "extId": uuid,
+                "entityType": "STORAGE_CONTAINER",
+            }
         elif vdisk.get("uuid"):
             payload["extId"] = vdisk["uuid"]
 
