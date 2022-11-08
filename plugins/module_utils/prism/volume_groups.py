@@ -99,10 +99,12 @@ class VolumeGroup(Prism):
 
     def get_update_spec(self):
 
-        return self.get_spec({
-            "extId": self.module.params["volume_group_uuid"],
-            "sharingStatus": "SHARED",
-        })
+        return self.get_spec(
+            {
+                "extId": self.module.params["volume_group_uuid"],
+                "sharingStatus": "SHARED",
+            }
+        )
 
     def _build_spec_name(self, payload, value):
         payload["name"] = value
