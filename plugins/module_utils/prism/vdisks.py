@@ -51,7 +51,7 @@ class VDisks:
                     "$unknownFields": {},
                     "extId": uuid,
                     "entityType": "STORAGE_CONTAINER",
-                },
+                }
         elif vdisk.get("uuid"):
             payload["extId"] = vdisk["uuid"]
 
