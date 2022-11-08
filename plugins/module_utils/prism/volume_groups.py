@@ -59,7 +59,9 @@ class VolumeGroup(Prism):
 
     def update_disk(self, spec, volume_group_uuid, disk_uuid):
         endpoint = "disks/{0}".format(disk_uuid)
-        resp = self.update(spec, uuid=volume_group_uuid, method="PATCH", endpoint=endpoint)
+        resp = self.update(
+            spec, uuid=volume_group_uuid, method="PATCH", endpoint=endpoint
+        )
         resp["task_uuid"] = resp["data"]["extId"][-36:]
         return resp
 
