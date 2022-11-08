@@ -23,15 +23,6 @@ class VDisks:
         return deepcopy(
             {
                 "diskSizeBytes": None,
-                "diskDataSourceReference": {
-                    "$objectType": "common.v1.config.EntityReference",
-                    "$reserved": {
-                        "$fqObjectType": "common.v1.r0.a3.config.EntityReference"
-                    },
-                    "$unknownFields": {},
-                    "extId": None,
-                    "entityType": "STORAGE_CONTAINER",
-                },
             }
         )
 
@@ -41,15 +32,27 @@ class VDisks:
         disk_size_bytes = vdisk["size_gb"] * 1024 * 1024 * 1024
 
         payload["diskSizeBytes"] = disk_size_bytes
-        uuid, error = get_entity_uuid(
-            vdisk["storage_container"],
-            module,
-            key="container_name",
-            entity_type="storage_container",
-        )
-        if error:
-            return None, error
 
-        payload["diskDataSourceReference"]["extId"] = uuid
+        if vdisk.get("storage_container"):
+            uuid, error = get_entity_uuid(
+                vdisk["storage_container"],
+                module,
+                key="container_name",
+                entity_type="storage_container",
+            )
+            if error:
+                return None, error
+
+            payload["diskDataSourceReference"] = {
+                    "$objectType": "common.v1.config.EntityReference",
+                    "$reserved": {
+                        "$fqObjectType": "common.v1.r0.a3.config.EntityReference"
+                    },
+                    "$unknownFields": {},
+                    "extId": uuid,
+                    "entityType": "STORAGE_CONTAINER",
+                },
+        elif vdisk.get("uuid"):
+            payload["extId"] = vdisk["uuid"]
 
         return payload, None

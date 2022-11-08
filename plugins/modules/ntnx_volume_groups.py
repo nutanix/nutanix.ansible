@@ -162,13 +162,22 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     disk_spec = dict(
+        state=dict(type="str", choices=["absent"]),
+        uuid=dict(type="str"),
         size_gb=dict(type="int"),
         storage_container=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
     )
 
+    vm_spec = dict(
+        state=dict(type="str", choices=["absent"]),
+        name=dict(type="str"),
+        uuid=dict(type="str"),
+    )
+
     client_spec = dict(
+        state=dict(type="str", choices=["absent"]),
         uuid=dict(type="str"),
         iscsi_iqn=dict(type="str"),
         iscsi_ip=dict(type="str"),
@@ -184,11 +193,20 @@ def get_module_spec():
         target_prefix=dict(type="str"),
         volume_group_uuid=dict(type="str"),
         flash_mode=dict(type="bool", default=False),
-        disks=dict(type="list", elements="dict", options=disk_spec),
+        disks=dict(
+            type="list",
+            elements="dict",
+            options=disk_spec,
+            mutually_exclusive=[
+                ("uuid", "storage_container"),
+                ("state", "size_gb"),
+            ],
+            required_if=[("state", "absent", ("uuid",))],
+        ),
         vms=dict(
             type="list",
             elements="dict",
-            options=entity_by_spec,
+            options=vm_spec,
             mutually_exclusive=mutually_exclusive,
         ),
         load_balance=dict(type="bool", default=False),
@@ -310,7 +328,7 @@ def update_volume_group(module, result):
         module.fail_json(msg="Failed generating volume_group update spec", **result)
 
     # check for idempotency
-    if check_volume_groups_idempotency(resp, update_spec):
+    if check_volume_groups_idempotency(resp, update_spec, volume_group):
         result["skipped"] = True
         module.exit_json(
             msg="Nothing to change. Refer docs to check for fields which can be updated"
@@ -334,13 +352,27 @@ def update_volume_group(module, result):
     # update disks
     if vg_disks:
         for disk in vg_disks:
-            spec, err = VDisks.get_spec(module, disk)
-            if err:
-                result["warning"] = "Disk is not created. Error: {0}".format(err)
-                result["skipped"] = True
-                continue
+            if disk.get("uuid"):
+                disk_uuid = disk["uuid"]
+                if disk.get("state") == "absent":
+                    vdisk_resp = volume_group.delete_disk(volume_group_uuid, disk_uuid)
 
-            vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
+                else:
+                    spec, err = VDisks.get_spec(module, disk)
+                    if err:
+                        result["warning"].append("Disk is not updated. Error: {0}".format(err))
+                        result["skipped"] = True
+                        continue
+                    vdisk_resp = volume_group.update_disk(spec, volume_group_uuid, disk_uuid)
+
+            else:
+                spec, err = VDisks.get_spec(module, disk)
+                if err:
+                    result["warning"].append("Disk is not created. Error: {0}".format(err))
+                    result["skipped"] = True
+                    continue
+
+                vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
 
             task_uuid = vdisk_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
@@ -351,16 +383,22 @@ def update_volume_group(module, result):
     # update vms
     if vg_vms:
         for vm in vg_vms:
+            if vm.get("state") == "absent":
+                vm_resp, err = volume_group.detach_vm(volume_group_uuid, vm)
+                if err:
+                    result["warning"].append("VM is not detached. Error: {0}".format(err))
+                    result["skipped"] = True
+                    continue
+            else:
+                spec, err = volume_group.get_vm_spec(vm)
+                if err:
+                    result["warning"].append("VM is not attached. Error: {0}".format(err))
+                    result["skipped"] = True
+                    continue
 
-            spec, err = volume_group.get_vm_spec(vm)
-            if err:
-                result["warning"] = "VM is not attached. Error: {0}".format(err)
-                result["skipped"] = True
-                continue
+                vm_resp = volume_group.attach_vm(spec, volume_group_uuid)
 
-            attach_resp = volume_group.attach_vm(spec, volume_group_uuid)
-
-            task_uuid = attach_resp["task_uuid"]
+            task_uuid = vm_resp["task_uuid"]
             wait_for_task_completion(module, {"task_uuid": task_uuid})
 
         vms_resp = volume_group.get_vms(volume_group_uuid)
@@ -372,7 +410,7 @@ def update_volume_group(module, result):
 
             spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
             if err:
-                result["warning"] = "Client is not attached. Error: {0}".format(err)
+                result["warning"].append("Client is not attached. Error: {0}".format(err))
                 result["skipped"] = True
                 continue
 
@@ -424,11 +462,33 @@ def delete_volume_group(module, result):
     result["volume_group_uuid"] = volume_group_uuid
 
 
-def check_volume_groups_idempotency(old_spec, update_spec):
+def check_volume_groups_idempotency(old_spec, update_spec, volume_group):
 
     for key, value in update_spec.items():
         if old_spec.get(key) != value:
             return False
+    volume_group_uuid = volume_group.module.params.get("volume_group_uuid")
+    updated_disks = volume_group.module.params.get("disks")
+    updated_vms = volume_group.module.params.get("vms")
+    updated_clients = volume_group.module.params.get("clients")
+
+    if updated_disks:
+    #     vg_disks = volume_group.get_vdisks(volume_group_uuid).get("data")
+    #     for disk in updated_disks:
+    #         if disk not in vg_disks:
+                return False
+
+    if updated_vms:
+        vg_vms = volume_group.get_vms(volume_group_uuid).get("data")
+        for vm in updated_vms:
+            if vm not in vg_vms:
+                return False
+
+    if updated_clients:
+        vg_clients = volume_group.get_clients(volume_group_uuid).get("data")
+        for client in updated_disks:
+            if client not in vg_clients:
+                return False
 
     return True
 
@@ -457,6 +517,7 @@ def run_module():
         "error": None,
         "response": None,
         "volume_group_uuid": None,
+        "warning": []
     }
     state = module.params["state"]
     if state == "absent":

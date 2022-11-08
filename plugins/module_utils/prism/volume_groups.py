@@ -57,12 +57,29 @@ class VolumeGroup(Prism):
         resp["task_uuid"] = resp["data"]["extId"][-36:]
         return resp
 
+    def update_disk(self, spec, volume_group_uuid, disk_uuid):
+        endpoint = "disks/{0}".format(disk_uuid)
+        resp = self.update(spec, uuid=volume_group_uuid, method="PATCH", endpoint=endpoint)
+        resp["task_uuid"] = resp["data"]["extId"][-36:]
+        return resp
+
+    def delete_disk(self, volume_group_uuid, disk_uuid):
+        endpoint = "disks/{0}".format(disk_uuid)
+        resp = self.delete(uuid=volume_group_uuid, endpoint=endpoint)
+        resp["task_uuid"] = resp["data"]["extId"][-36:]
+        return resp
+
     def detach_vm(self, volume_group_uuid, vm):
-        vm_uuid = vm["extId"]
+        if not vm.get("extId"):
+            vm_uuid, error = get_vm_uuid(vm, self.module)
+            if error:
+                return None, error
+        else:
+            vm_uuid = vm["extId"]
         endpoint = "$actions/detach-vm/{0}".format(vm_uuid)
         resp = self.update(uuid=volume_group_uuid, method="POST", endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"][-36:]
-        return resp
+        return resp, None
 
     def detach_iscsi_client(self, volume_group_uuid, client):
         client_uuid = client["extId"]
