@@ -43,7 +43,8 @@ class VDisks:
             if error:
                 return None, error
 
-            payload["diskDataSourceReference"] = {
+            payload["diskDataSourceReference"] = (
+                {
                     "$objectType": "common.v1.config.EntityReference",
                     "$reserved": {
                         "$fqObjectType": "common.v1.r0.a3.config.EntityReference"
@@ -52,6 +53,7 @@ class VDisks:
                     "extId": uuid,
                     "entityType": "STORAGE_CONTAINER",
                 },
+            )
         elif vdisk.get("uuid"):
             payload["extId"] = vdisk["uuid"]
 
