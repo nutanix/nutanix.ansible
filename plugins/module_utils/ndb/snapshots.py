@@ -17,7 +17,7 @@ class Snapshot(NutanixDatabase):
         super(Snapshot, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
-            "expiry": self._build_spec_expiry,
+            "expiry_days": self._build_spec_expiry,
         }
 
     def create_snapshot(self, time_machine_uuid, data):
@@ -46,6 +46,51 @@ class Snapshot(NutanixDatabase):
                     break
 
         return None, "Snapshot with name {0} not found".format(name)
+
+    def rename_snapshot(self, uuid, data):
+        endpoint = "i/{0}".format(uuid)
+        return self.update(data=data, endpoint=endpoint, method="PATCH")
+
+    def update_expiry(self, uuid, data):
+        query = {
+            "set-lcm-config": True
+        }
+        endpoint = "i/{0}".format(uuid)
+        return self.update(data=data, endpoint=endpoint, query=query)
+
+    
+    def remove_expiry(self, uuid, data):
+        endpoint = "i/{0}".format(uuid)
+        query = {
+            "unset-lcm-config": True
+        }
+        return self.update(data=data, endpoint=endpoint, query=query)
+ 
+    def get_expiry_update_spec(self, config):
+        expiry = config.get("expiry_days")
+        timezone = config.get("timezone")
+        spec = {
+            "lcmConfig": {
+                "expiryDetails": {
+                    "expiryDateTimezone": timezone,
+                    "expireInDays": expiry,
+                }
+            }
+        }
+        return spec
+
+    def get_rename_snapshot_spec(self, name):
+        spec = self._get_default_spec()
+        spec["name"] = name
+        spec["resetName"] = True
+        return spec
+    
+    def get_remove_expiry_spec(self, uuid, name):
+        spec = {
+            "id": uuid,
+            "name": name
+        }
+        return spec
 
     def _get_default_spec(self):
         return deepcopy({"name": ""})
