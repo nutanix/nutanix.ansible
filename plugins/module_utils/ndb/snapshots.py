@@ -52,20 +52,15 @@ class Snapshot(NutanixDatabase):
         return self.update(data=data, endpoint=endpoint, method="PATCH")
 
     def update_expiry(self, uuid, data):
-        query = {
-            "set-lcm-config": True
-        }
+        query = {"set-lcm-config": True}
         endpoint = "i/{0}".format(uuid)
         return self.update(data=data, endpoint=endpoint, query=query)
 
-    
     def remove_expiry(self, uuid, data):
         endpoint = "i/{0}".format(uuid)
-        query = {
-            "unset-lcm-config": True
-        }
+        query = {"unset-lcm-config": True}
         return self.update(data=data, endpoint=endpoint, query=query)
- 
+
     def get_expiry_update_spec(self, config):
         expiry = config.get("expiry_days")
         timezone = config.get("timezone")
@@ -84,12 +79,9 @@ class Snapshot(NutanixDatabase):
         spec["name"] = name
         spec["resetName"] = True
         return spec
-    
+
     def get_remove_expiry_spec(self, uuid, name):
-        spec = {
-            "id": uuid,
-            "name": name
-        }
+        spec = {"id": uuid, "name": name}
         return spec
 
     def _get_default_spec(self):

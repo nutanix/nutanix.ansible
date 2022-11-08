@@ -76,8 +76,8 @@ def create_snapshot(module, result):
             )
         time_machine_uuid = db["timeMachineId"]
 
-    snapshot = Snapshot(module)
-    spec, err = snapshot.get_spec()
+    snapshots = Snapshot(module)
+    spec, err = snapshots.get_spec()
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating snapshot create spec", **result)
@@ -86,7 +86,7 @@ def create_snapshot(module, result):
         result["response"] = spec
         return
 
-    resp = snapshot.create_snapshot(time_machine_uuid, spec)
+    resp = snapshots.create_snapshot(time_machine_uuid, spec)
 
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]
@@ -95,7 +95,7 @@ def create_snapshot(module, result):
         operations.wait_for_completion(ops_uuid)
 
         # get snapshot info after its finished
-        resp, err = snapshot.get_snapshot(
+        resp, err = snapshots.get_snapshot(
             time_machine_uuid=time_machine_uuid, name=module.params.get("name")
         )
         if err:
@@ -111,47 +111,48 @@ def create_snapshot(module, result):
 
 
 def verify_snapshot_expiry_idempotency(old_spec, new_spec):
-    if old_spec.get("expireInDays")!=new_spec.get("expireInDays"):
+    if old_spec.get("expireInDays") != new_spec.get("expireInDays"):
         return False
 
-    if old_spec.get("expiryDateTimezone")!=new_spec.get("expiryDateTimezone"):
+    if old_spec.get("expiryDateTimezone") != new_spec.get("expiryDateTimezone"):
         return False
-    
+
     return True
-    
+
 
 def update_snapshot(module, result):
     uuid = module.params.get("snapshot_uuid")
     if not uuid:
         module.fail_json(msg="snapshot_uuid is required field for update", **result)
-    
 
     # get current details of snapshot
     _snapshot = Snapshot(module)
     snapshot = _snapshot.read(uuid=uuid)
 
     # compare and update accordingly
-    updated=False
+    updated = False
 
     # check if rename is required
     if module.params.get("name") and module.params.get("name") != snapshot.get("name"):
         spec = _snapshot.get_rename_snapshot_spec(name=module.params["name"])
         snapshot = _snapshot.rename_snapshot(uuid=uuid, data=spec)
-        updated=True
+        updated = True
 
-    # check if expiry schedule update or removal is required
+    # check if update/removal of expiry schedule is required
     if module.params.get("remove_expiry"):
         spec = _snapshot.get_remove_expiry_spec(uuid=uuid, name=snapshot.get("name"))
         snapshot = _snapshot.remove_expiry(uuid=uuid, data=spec)
-        updated=True
+        updated = True
 
     elif module.params.get("expiry_days"):
         spec = _snapshot.get_expiry_update_spec(config=module.params)
         old_spec = snapshot.get("lcmConfig", {}).get("expiryDetails", {})
-        if verify_snapshot_expiry_idempotency(old_spec, spec["lcmConfig"]["expiryDetails"]):
+        if verify_snapshot_expiry_idempotency(
+            old_spec, spec["lcmConfig"]["expiryDetails"]
+        ):
             snapshot = _snapshot.update_expiry(uuid, spec)
-            updated=True
-        
+            updated = True
+
     if not updated:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
@@ -161,19 +162,39 @@ def update_snapshot(module, result):
     result["changed"] = True
 
 
-
-
 # Delete snapshot
 def delete_snapshot(module, result):
-    pass
+    snapshot_uuid = module.params.get("snapshot_uuid")
+    if not snapshot_uuid:
+        module.fail_json(msg="snapshot_uuid is required field for delete", **result)
+
+    snapshots = Snapshot(module)
+    resp = snapshots.delete(uuid=snapshot_uuid)
+
+    if module.params.get("wait"):
+        ops_uuid = resp["operationId"]
+        operations = Operation(module)
+        time.sleep(3)  # to get ops ID functional
+        resp = operations.wait_for_completion(ops_uuid, delay=2)
+
+    result["response"] = resp
+    result["changed"] = True
 
 
 def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[("time_machine", "database"), ("remove_expiry", "expiry_days"), ("remove_expiry", "timezone")],
-        required_together=[("expiry_days", "timezone")]
+        mutually_exclusive=[
+            ("time_machine", "database"),
+            ("remove_expiry", "expiry_days"),
+            ("remove_expiry", "timezone"),
+        ],
+        required_together=[("expiry_days", "timezone")],
+        required_if=[
+            ("state", "present", ("name", "snapshot_uuid"), True),
+            ("state", "absent", ("snapshot_uuid",)),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "snapshot_uuid": None}
