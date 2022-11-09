@@ -27,8 +27,11 @@ class VolumeGroup(Prism):
             "flash_mode": self._build_spec_flash_mode,
         }
 
-    def get_vdisks(self, volume_group_uuid):
-        endpoint = "/disks"
+    def get_vdisks(self, volume_group_uuid, disk_uuid=None):
+        if disk_uuid:
+            endpoint = "/disks/{0}".format(disk_uuid)
+        else:
+            endpoint = "/disks"
         return self.read(volume_group_uuid, endpoint=endpoint)
 
     def get_vms(self, volume_group_uuid):

@@ -324,6 +324,7 @@ def create_volume_group(module, result):
 
 
 def update_volume_group(module, result):
+    nothing_to_change = True
     volume_group = VolumeGroup(module)
     volume_group_uuid = module.params.get("volume_group_uuid")
     vg_disks = module.params.get("disks")
@@ -345,26 +346,23 @@ def update_volume_group(module, result):
         module.fail_json(msg="Failed generating volume_group update spec", **result)
 
     # check for idempotency
-    if check_volume_groups_idempotency(resp, update_spec, volume_group):
-        result["skipped"] = True
-        module.exit_json(
-            msg="Nothing to change. Refer docs to check for fields which can be updated"
-        )
+    if not check_for_idempotency(resp, update_spec):
 
-    if module.check_mode:
-        result["response"] = update_spec
-        result["response"]["disks"] = vg_disks
-        result["response"]["vms"] = vg_vms
-        result["response"]["clients"] = vg_clients
-        return
+        if module.check_mode:
+            result["response"] = update_spec
+            result["response"]["disks"] = vg_disks
+            result["response"]["vms"] = vg_vms
+            result["response"]["clients"] = vg_clients
+            return
 
-    # update volume_group
-    resp = volume_group.update(update_spec, uuid=volume_group_uuid, method="PATCH")
-    # result["response"] = resp
-    resp = volume_group.read(volume_group_uuid)
-
-    result["changed"] = True
-    result["response"] = resp.get("data")
+        # update volume_group
+        nothing_to_change = False
+        resp = volume_group.update(update_spec, uuid=volume_group_uuid, method="PATCH")
+        # result["response"] = resp
+        resp = volume_group.read(volume_group_uuid)
+        resp.get("data")
+        result["changed"] = True
+    result["response"] = resp
 
     # update disks
     if vg_disks:
@@ -372,21 +370,32 @@ def update_volume_group(module, result):
             if disk.get("uuid"):
                 disk_uuid = disk["uuid"]
                 if disk.get("state") == "absent":
+                    nothing_to_change = False
                     vdisk_resp = volume_group.delete_disk(volume_group_uuid, disk_uuid)
 
                 else:
+                    vdisk = volume_group.get_vdisks(volume_group_uuid, disk_uuid).get("data")
                     spec, err = VDisks.get_spec(module, disk)
                     if err:
+                        nothing_to_change = False
                         result["warning"].append(
                             "Disk is not updated. Error: {0}".format(err)
                         )
                         result["skipped"] = True
                         continue
+                    elif check_for_idempotency(vdisk, spec):
+                        result["warning"].append(
+                            "Nothing to change. Disk: {0}".format(disk_uuid)
+                        )
+                        result["skipped"] = True
+                        continue
+                    nothing_to_change = False
                     vdisk_resp = volume_group.update_disk(
                         spec, volume_group_uuid, disk_uuid
                     )
 
             else:
+                nothing_to_change = False
                 spec, err = VDisks.get_spec(module, disk)
                 if err:
                     result["warning"].append(
@@ -407,6 +416,7 @@ def update_volume_group(module, result):
     if vg_vms:
         for vm in vg_vms:
             if vm.get("state") == "absent":
+                nothing_to_change = False
                 vm_resp, err = volume_group.detach_vm(volume_group_uuid, vm)
                 if err:
                     result["warning"].append(
@@ -423,6 +433,7 @@ def update_volume_group(module, result):
                     result["skipped"] = True
                     continue
 
+                nothing_to_change = False
                 vm_resp = volume_group.attach_vm(spec, volume_group_uuid)
 
             task_uuid = vm_resp["task_uuid"]
@@ -435,6 +446,7 @@ def update_volume_group(module, result):
     if vg_clients:
         for client in vg_clients:
 
+            nothing_to_change = False
             spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
             if err:
                 result["warning"].append(
@@ -443,6 +455,7 @@ def update_volume_group(module, result):
                 result["skipped"] = True
                 continue
 
+            nothing_to_change = False
             attach_resp = volume_group.attach_iscsi_client(spec, volume_group_uuid)
 
             task_uuid = attach_resp["task_uuid"]
@@ -450,6 +463,10 @@ def update_volume_group(module, result):
 
         clients_resp = volume_group.get_clients(volume_group_uuid)
         result["response"]["clients"] = clients_resp.get("data")
+    if nothing_to_change:
+        module.exit_json(
+            msg="Nothing to change. Refer docs to check for fields which can be updated"
+        )
 
 
 def delete_volume_group(module, result):
@@ -491,33 +508,11 @@ def delete_volume_group(module, result):
     result["volume_group_uuid"] = volume_group_uuid
 
 
-def check_volume_groups_idempotency(old_spec, update_spec, volume_group):
+def check_for_idempotency(old_spec, update_spec):
 
     for key, value in update_spec.items():
         if old_spec.get(key) != value:
             return False
-    volume_group_uuid = volume_group.module.params.get("volume_group_uuid")
-    updated_disks = volume_group.module.params.get("disks")
-    updated_vms = volume_group.module.params.get("vms")
-    updated_clients = volume_group.module.params.get("clients")
-
-    if updated_disks:
-        #     vg_disks = volume_group.get_vdisks(volume_group_uuid).get("data")
-        #     for disk in updated_disks:
-        #         if disk not in vg_disks:
-        return False
-
-    if updated_vms:
-        vg_vms = volume_group.get_vms(volume_group_uuid).get("data")
-        for vm in updated_vms:
-            if vm not in vg_vms:
-                return False
-
-    if updated_clients:
-        vg_clients = volume_group.get_clients(volume_group_uuid).get("data")
-        for client in updated_disks:
-            if client not in vg_clients:
-                return False
 
     return True
 
