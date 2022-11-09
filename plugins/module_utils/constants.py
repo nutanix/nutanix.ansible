@@ -286,6 +286,9 @@ class NDB:
     class DatabaseTypes:
         POSTGRES = "postgres_database"
 
+    class ProfileTypes:
+        COMPUTE = "Compute"
+
     class StatusCodes:
         SUCCESS = "5"
         FAILURE = "4"

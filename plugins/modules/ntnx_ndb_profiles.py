@@ -106,7 +106,21 @@ def get_module_spec():
 
 
 def create_profile(module, result):
-    pass
+    profiles = Profile(module)
+
+    spec, err = profiles.get_spec()
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating pbr Spec", **result)
+
+    if module.check_mode:
+        result["response"] = spec
+        return
+
+    resp = profiles.create(data=spec)
+    result["response"] = resp
+    result["changed"] = True
+    result["profile_uuid"] = resp.get("id")
 
 
 def update_profile(module, result):

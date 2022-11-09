@@ -186,7 +186,9 @@ class Database(NutanixDatabase):
 
             # set compute profile
             uuid, err = get_profile_uuid(
-                self.module, "Compute", vm_config["compute_profile"]
+                self.module,
+                NDB_CONSTANTS.ProfileTypes.COMPUTE,
+                vm_config["compute_profile"],
             )
             if err:
                 return None, err
