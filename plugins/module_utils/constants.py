@@ -295,6 +295,9 @@ class NDB:
             "mongodb",
         ]
 
+    class ProfileTypes:
+        COMPUTE = "Compute"
+
     class StatusCodes:
         SUCCESS = "5"
         FAILURE = "4"
