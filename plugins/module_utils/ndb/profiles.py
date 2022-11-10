@@ -9,10 +9,12 @@ __metaclass__ = type
 
 from .nutanix_database import NutanixDatabase
 from ..constants import NDB
+from .clusters import Cluster, get_cluster_uuid
+
 
 
 class Profile(NutanixDatabase):
-    types = ["Database_Parameter", NDB.ProfileTypes.COMPUTE, "Network", "Software"]
+    types = ["Database_Parameter", "Compute", "Network", "Software"]
 
     def __init__(self, module):
         resource_type = "/profiles"
@@ -24,6 +26,7 @@ class Profile(NutanixDatabase):
             "db_params": self._build_spec_db_params,
             "network": self._build_spec_network,
             "software": self._build_spec_software,
+            "database_type": self._build_spec_database_type
         }
 
     def get_profile_uuid(self, type, name):
@@ -92,12 +95,19 @@ class Profile(NutanixDatabase):
         return deepcopy(
             {
                 "type": "",
+                "engineType": "",
                 "systemProfile": False,
                 "properties": [],
                 "name": "",
                 "description": "",
             }
         )
+    
+    def _get_property_spec(self, name, value):
+        return deepcopy({
+            "name": name,
+            "value": value
+        })
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name
@@ -105,6 +115,11 @@ class Profile(NutanixDatabase):
 
     def _build_spec_desc(self, payload, desc):
         payload["description"] = desc
+        return payload, None
+    
+    def _build_spec_database_type(self, payload, type):
+        if not self.module.params.get("compute"):
+            payload["engineType"] = type + "_database"
         return payload, None
 
     def _build_spec_compute(self, payload, compute):
@@ -146,8 +161,64 @@ class Profile(NutanixDatabase):
         return payload, None
 
     def _build_spec_network(self, payload, network):
+        vlans = network.get("vlans", [])
+        payload["properties"] = payload.get("properties", [])
+        if network.get("topology") == "cluster" or len(vlans)>1:
+            payload, err = self._build_spec_multicluster_network_profile(payload, vlans)
+            payload["properties"].append({
+                "name": "NUM_CLUSTERS",
+                "value": len(vlans)
+            })
+        else:
+            payload, err = self._build_spec_single_cluster_network_profile(payload, vlans[0])
+        
+        if err:
+            return None, err
+
+        enable_ip_address_selection = network.get("enable_ip_address_selection", False)
+        payload["properties"].append({
+            "name": "ENABLE_IP_ADDRESS_SELECTION",
+            "value": enable_ip_address_selection
+        })
+
+        topology = network.get("topology")
+        if topology == "all":
+            topology = "ALL"
+        
+        payload["topology"] = topology
+        payload["type"] = NDB.ProfileTypes.NETWORK
+
+
         return payload, None
 
+    def _build_spec_multicluster_network_profile(self, payload, vlans):
+        _clusters = Cluster(self.module)
+        clusters_uuid_name_map = _clusters.get_all_clusters_uuid_name_map()
+
+        for i in range(len(vlans)):
+            cluster_uuid, err = get_cluster_uuid(self.module, vlans[i].get("cluster"))
+            if err:
+                return err
+            payload["properties"].append(self._get_property_spec("VLAN_NAME_"+str(i), vlans[i].get("vlan_name")))
+            payload["properties"].append(self._get_property_spec("CLUSTER_NAME_"+str(i), clusters_uuid_name_map[cluster_uuid]))
+            payload["properties"].append(self._get_property_spec("CLUSTER_ID_"+str(i), cluster_uuid))
+
+        return payload, None
+
+    def _build_spec_single_cluster_network_profile(self, payload, vlan):
+        cluster = vlan.get("cluster")
+        cluster_uuid, err = get_cluster_uuid(self.module, cluster)
+        if err:
+            return None, err
+        payload["properties"] = [self._get_property_spec("VLAN_NAME", vlan.get("vlan_name"))]
+
+        payload["versionClusterAssociation"] = [
+            {
+                "nxClusterId": cluster_uuid
+            }
+        ]
+
+        return payload, None
 
 # helper functions
 
