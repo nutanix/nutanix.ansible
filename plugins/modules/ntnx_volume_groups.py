@@ -374,7 +374,9 @@ def update_volume_group(module, result):
                     vdisk_resp = volume_group.delete_disk(volume_group_uuid, disk_uuid)
 
                 else:
-                    vdisk = volume_group.get_vdisks(volume_group_uuid, disk_uuid).get("data")
+                    vdisk = volume_group.get_vdisks(volume_group_uuid, disk_uuid).get(
+                        "data"
+                    )
                     spec, err = VDisks.get_spec(module, disk)
                     if err:
                         nothing_to_change = False
