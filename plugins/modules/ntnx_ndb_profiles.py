@@ -54,9 +54,9 @@ def get_module_spec():
 
     vlan = dict(
         cluster=dict(
-            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True
         ),
-        vlan_name=dict(type="str"),
+        vlan_name=dict(type="str", required=True),
     )
 
     notes = dict(os=dict(type="str"), db_software=dict(type="str"))
@@ -81,7 +81,8 @@ def get_module_spec():
 
     network = dict(
         topology=dict(type="str", choices=["single", "cluster", "all"]),
-        vlan=dict(type="list", elements="dict", options=vlan),
+        vlans=dict(type="list", elements="dict", options=vlan),
+        enable_ip_address_selection=dict(type="bool"),
     )
 
     software = dict(
