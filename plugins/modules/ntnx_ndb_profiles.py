@@ -28,6 +28,7 @@ def get_module_spec():
     postgres_params = dict(
         max_connections=dict(type="int"),
         max_replication_slots=dict(type="int"),
+        max_locks_per_transaction=dict(type="int"),
         effective_io_concurrency=dict(type="int"),
         timezone=dict(type="str"),
         max_prepared_transactions=dict(type="int"),
@@ -54,7 +55,10 @@ def get_module_spec():
 
     vlan = dict(
         cluster=dict(
-            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
         ),
         vlan_name=dict(type="str", required=True),
     )
