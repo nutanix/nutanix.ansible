@@ -298,6 +298,7 @@ class NDB:
     class ProfileTypes:
         COMPUTE = "Compute"
         NETWORK = "Network"
+        DB_PARAMS = "Database_Parameter"
 
     class StatusCodes:
         SUCCESS = "5"

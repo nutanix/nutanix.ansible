@@ -44,16 +44,16 @@ class Cluster(NutanixDatabase):
             )
 
         return resp, None
-    
+
     def get_all_clusters_uuid_name_map(self):
         resp = self.read()
         uuid_name_map = {}
         if not resp:
             return uuid_name_map
-        
+
         for cluster in resp:
             uuid_name_map[cluster["id"]] = cluster["name"]
-        
+
         return uuid_name_map
 
     def get_all_clusters_name_uuid_map(self):

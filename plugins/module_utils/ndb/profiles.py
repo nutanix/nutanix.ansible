@@ -12,7 +12,6 @@ from ..constants import NDB
 from .clusters import Cluster, get_cluster_uuid
 
 
-
 class Profile(NutanixDatabase):
     types = ["Database_Parameter", "Compute", "Network", "Software"]
 
@@ -26,7 +25,7 @@ class Profile(NutanixDatabase):
             "db_params": self._build_spec_db_params,
             "network": self._build_spec_network,
             "software": self._build_spec_software,
-            "database_type": self._build_spec_database_type
+            "database_type": self._build_spec_database_type,
         }
 
     def get_profile_uuid(self, type, name):
@@ -115,12 +114,9 @@ class Profile(NutanixDatabase):
                 "description": "",
             }
         )
-    
+
     def _get_property_spec(self, name, value):
-        return deepcopy({
-            "name": name,
-            "value": value
-        })
+        return deepcopy({"name": name, "value": value})
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name
@@ -129,7 +125,7 @@ class Profile(NutanixDatabase):
     def _build_spec_desc(self, payload, desc):
         payload["description"] = desc
         return payload, None
-    
+
     def _build_spec_database_type(self, payload, type):
         if not self.module.params.get("compute"):
             payload["engineType"] = type + "_database"
@@ -171,36 +167,57 @@ class Profile(NutanixDatabase):
         return payload, None
 
     def _build_spec_db_params(self, payload, db_params):
+        database_type = self.module.params.get("database_type")
+        if not database_type:
+            return None, "'database_type' is required for creating db params spec"
+
+        properties_spec_builder, err = self._db_params_properties_spec_build_methods(
+            database_type
+        )
+        if err:
+            return None, err
+
+        config = db_params.get(database_type)
+        if not config:
+            return (
+                None,
+                "Database parameters config not found for database type '{0}'".format(
+                    database_type
+                ),
+            )
+
+        payload["properties"] = properties_spec_builder(config)
+        payload["type"] = NDB.ProfileTypes.DB_PARAMS
         return payload, None
 
     def _build_spec_network(self, payload, network):
         vlans = network.get("vlans", [])
         payload["properties"] = payload.get("properties", [])
-        if network.get("topology") == "cluster" or len(vlans)>1:
+        if network.get("topology") == "cluster" or len(vlans) > 1:
             payload, err = self._build_spec_multicluster_network_profile(payload, vlans)
-            payload["properties"].append({
-                "name": "NUM_CLUSTERS",
-                "value": len(vlans)
-            })
+            payload["properties"].append({"name": "NUM_CLUSTERS", "value": len(vlans)})
         else:
-            payload, err = self._build_spec_single_cluster_network_profile(payload, vlans[0])
-        
+            payload, err = self._build_spec_single_cluster_network_profile(
+                payload, vlans[0]
+            )
+
         if err:
             return None, err
 
         enable_ip_address_selection = network.get("enable_ip_address_selection", False)
-        payload["properties"].append({
-            "name": "ENABLE_IP_ADDRESS_SELECTION",
-            "value": enable_ip_address_selection
-        })
+        payload["properties"].append(
+            {
+                "name": "ENABLE_IP_ADDRESS_SELECTION",
+                "value": enable_ip_address_selection,
+            }
+        )
 
         topology = network.get("topology")
         if topology == "all":
             topology = "ALL"
-        
+
         payload["topology"] = topology
         payload["type"] = NDB.ProfileTypes.NETWORK
-
 
         return payload, None
 
@@ -212,9 +229,19 @@ class Profile(NutanixDatabase):
             cluster_uuid, err = get_cluster_uuid(self.module, vlans[i].get("cluster"))
             if err:
                 return err
-            payload["properties"].append(self._get_property_spec("VLAN_NAME_"+str(i), vlans[i].get("vlan_name")))
-            payload["properties"].append(self._get_property_spec("CLUSTER_NAME_"+str(i), clusters_uuid_name_map[cluster_uuid]))
-            payload["properties"].append(self._get_property_spec("CLUSTER_ID_"+str(i), cluster_uuid))
+            payload["properties"].append(
+                self._get_property_spec(
+                    "VLAN_NAME_" + str(i), vlans[i].get("vlan_name")
+                )
+            )
+            payload["properties"].append(
+                self._get_property_spec(
+                    "CLUSTER_NAME_" + str(i), clusters_uuid_name_map[cluster_uuid]
+                )
+            )
+            payload["properties"].append(
+                self._get_property_spec("CLUSTER_ID_" + str(i), cluster_uuid)
+            )
 
         return payload, None
 
@@ -223,15 +250,78 @@ class Profile(NutanixDatabase):
         cluster_uuid, err = get_cluster_uuid(self.module, cluster)
         if err:
             return None, err
-        payload["properties"] = [self._get_property_spec("VLAN_NAME", vlan.get("vlan_name"))]
-
-        payload["versionClusterAssociation"] = [
-            {
-                "nxClusterId": cluster_uuid
-            }
+        payload["properties"] = [
+            self._get_property_spec("VLAN_NAME", vlan.get("vlan_name"))
         ]
 
+        payload["versionClusterAssociation"] = [{"nxClusterId": cluster_uuid}]
+
         return payload, None
+
+    def _db_params_properties_spec_build_methods(self, database_type):
+        """
+        This routine returns properties spec builder method for database parameter profile
+        creation as per database type
+        """
+        methods = {
+            "postgres": self._build_spec_postgres_db_params_properties,
+        }
+        if methods.get(database_type):
+            return methods[database_type], None
+        else:
+            return (
+                None,
+                "Properties spec build method for database type '{0}' not found".format(
+                    database_type
+                ),
+            )
+
+    def _build_spec_postgres_db_params_properties(self, config):
+
+        # map of property key with defaults
+        props = {
+            "max_connections": 100,
+            "max_replication_slots": 10,
+            "effective_io_concurrency": 1,
+            "timezone": "UTC",
+            "max_prepared_transactions": 0,
+            "max_locks_per_transaction": 64,
+            "max_wal_senders": 10,
+            "max_worker_processes": 8,
+            "checkpoint_completion_target": 0.5,
+            "autovacuum": "on",
+            "autovacuum_freeze_max_age": 200000000,
+            "autovacuum_vacuum_threshold": 50,
+            "autovacuum_vacuum_scale_factor": 0.2,
+            "autovacuum_work_mem": -1,
+            "autovacuum_max_workers": 3,
+            "wal_buffers": -1,
+            "synchronous_commit": "on",
+            "random_page_cost": 4,
+            "wal_keep_segments": 700,
+        }
+
+        # map of property key with defaults and units
+        props_with_units = {
+            "min_wal_size": {"default": 80, "unit": "MB"},
+            "max_wal_size": {"default": 1, "unit": "GB"},
+            "checkpoint_timeout": {"default": 5, "unit": "min"},
+            "autovacuum_vacuum_cost_delay": {"default": 2, "unit": "ms"},
+        }
+
+        properties = []
+
+        # add specs for normal properties
+        for prop, default in props.items():
+            properties.append(self._get_property_spec(prop, config.get(prop, default)))
+
+        # add specs for properties with units
+        for prop, val in props_with_units.items():
+            prop_value = str(config.get(prop, val.get(default))) + val.get("unit", "")
+            properties.append(self._get_property_spec(prop, prop_value))
+
+        return properties
+
 
 # helper functions
 
