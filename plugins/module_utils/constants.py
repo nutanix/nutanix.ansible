@@ -290,7 +290,9 @@ class NDB:
         COMPUTE = "Compute"
         NETWORK = "Network"
         DB_PARAMS = "Database_Parameter"
+        SOFTWARE = "Software"
 
     class StatusCodes:
         SUCCESS = "5"
         FAILURE = "4"
+        SKIPPED = "17"
