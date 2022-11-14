@@ -168,6 +168,9 @@ class Profile(NutanixDatabase):
 
         payload["properties"] = properties
         payload["type"] = NDB.ProfileTypes.COMPUTE
+        
+        if payload.get("engineType") is not None:
+            payload.pop("engineType")
 
         return payload, None
 
@@ -415,8 +418,30 @@ class Profile(NutanixDatabase):
             payload["deprecated"] = False
 
         return payload
+    
+    def get_default_compute_profile_update_spec(self):
+        return deepcopy(
+            {
+                "name": "",
+                "description": "",
+                "published": None,
+                "properties": []
+            }
+        )
+    
+    def build_compute_version_update_spec(self, compute, old_spec):
+        payload = deepcopy(old_spec)
+        payload, err = self._build_spec_compute(payload, compute)
+        if err:
+            return None, err
         
-
+        payload.pop("type")
+        
+        if self.module.params.get("publish") is not None:
+            payload["published"] = self.module.params.get("publish")
+        
+        return payload, None
+        
 
 # helper functions
 
