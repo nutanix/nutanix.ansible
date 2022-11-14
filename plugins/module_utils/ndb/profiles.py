@@ -10,7 +10,7 @@ __metaclass__ = type
 from .nutanix_database import NutanixDatabase
 from ..constants import NDB
 from .clusters import Cluster, get_cluster_uuid
-
+from .db_servers import get_db_server_uuid
 
 class Profile(NutanixDatabase):
     types = ["Database_Parameter", "Compute", "Network", "Software"]
@@ -59,6 +59,21 @@ class Profile(NutanixDatabase):
             no_response=no_response,
             timeout=timeout,
         )
+    
+    def create_version(self, uuid, data):
+        endpoint = "versions"
+        resp = self.update(uuid=uuid, endpoint=endpoint, data=data, method="POST")
+        return resp
+    
+    def delete_version(self, profile_uuid, version_uuid):
+        endpoint = "versions/{0}".format(version_uuid)
+        resp = self.delete(uuid=profile_uuid, endpoint=endpoint, data={})
+        return resp
+    
+    def update_version(self, profile_uuid, version_uuid, data):
+        endpoint = "versions/{0}".format(version_uuid)
+        resp = self.update(uuid=profile_uuid, endpoint=endpoint, data=data)
+        return resp
 
     def get_profile_by_version(self, uuid, version_id="latest"):
         endpoint = "{0}/versions/{1}".format(uuid, version_id)
@@ -103,6 +118,12 @@ class Profile(NutanixDatabase):
             name_uuid_map[entity["name"]] = entity["id"]
 
         return name_uuid_map, None
+    def get_update_profile_spec(self, old_spec=None):
+        payload = {}
+        payload["name"] = self.module.params.get("name", old_spec.get("name"))
+        payload["description"] = self.module.params.get("desc", old_spec.get("description"))
+        return payload
+
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -164,6 +185,29 @@ class Profile(NutanixDatabase):
         return payload, None
 
     def _build_spec_software(self, payload, software):
+
+        version_config = software.get("version")
+        properties, err = self._build_software_version_create_properties(version_config, base_version=True)        
+        if err:
+            return None, err
+        
+        payload["properties"] = properties
+        
+        cluster_uuids = []
+        for cluster in software.get("clusters", []):
+            uuid, err = get_cluster_uuid(self.module, cluster)
+            if err:
+                return err
+            cluster_uuids.append(uuid)
+        
+        payload["availableClusterIds"] = cluster_uuids
+
+        payload["type"] = NDB.ProfileTypes.SOFTWARE
+        topology = software.get("topology")
+        if topology == "all":
+            topology = "ALL"
+
+        payload["topology"] = topology
         return payload, None
 
     def _build_spec_db_params(self, payload, db_params):
@@ -321,6 +365,70 @@ class Profile(NutanixDatabase):
             properties.append(self._get_property_spec(prop, prop_value))
 
         return properties
+
+    def _build_software_version_create_properties(self, version, base_version=False):
+        properties = []
+        if base_version:
+            if version.get("name"):
+                properties.append(self._get_property_spec("BASE_PROFILE_VERSION_NAME", version["name"]))
+            if version.get("desc"):
+                properties.append(self._get_property_spec("BASE_PROFILE_VERSION_DESCRIPTION", version["desc"]))
+
+        if version.get("notes", {}).get("os"):
+            properties.append(self._get_property_spec("OS_NOTES", version["notes"]["os"]))
+
+        if version.get("notes", {}).get("db_software"):
+            properties.append(self._get_property_spec("DB_SOFTWARE_NOTES", version["notes"]["db_software"]))
+
+        if version.get("db_server"):
+            uuid, err = get_db_server_uuid(self.module, version["db_server"])
+            if err:
+                return None, err
+            properties.append(self._get_property_spec("SOURCE_DBSERVER_ID", uuid))
+
+        return properties, None
+
+    def build_software_version_create_spec(self, version):
+        payload = self._get_default_spec()
+        
+        if not version.get("db_server") or not version.get("name"):
+            return None, "'db_server' and 'name' are required fields for creating new software profile version."
+        
+        payload["name"] = version["name"]
+        if version.get("desc"):
+            payload["description"] = version["desc"]
+
+        properties, err = self._build_software_version_create_properties(version, base_version=False)
+        if err:
+            return None, err 
+        payload["properties"] = properties
+
+        payload["type"] = NDB.ProfileTypes.SOFTWARE
+
+        payload, err = self._build_spec_database_type(payload, self.module.params.get("database_type"))
+        if err:
+            return err
+        
+        topology = self.module.params["software"].get("topology")
+        if topology == "all":
+            topology = "ALL"
+
+        payload["topology"] = topology
+        return payload, None
+
+    def build_software_version_update_spec(self, version, old_spec):
+        payload = {}
+        payload["name"] = version.get("name", old_spec.get("name"))
+        payload["description"] = version.get("desc", old_spec.get("description", ""))
+        payload["published"] = self.module.params.get("publish", old_spec.get("published"))
+        payload["deprecated"] = version.get("deprecate", old_spec.get("deprecated"))
+
+        # when publishing deprecated field needs to be reset
+        if self.module.params.get("publish"):
+            payload["deprecated"] = False
+
+        return payload
+        
 
 
 # helper functions
