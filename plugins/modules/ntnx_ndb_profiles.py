@@ -5,6 +5,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 import time
+from urllib import response
 
 __metaclass__ = type
 
@@ -20,7 +21,8 @@ RETURN = r"""
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.profiles import Profile
 from ..module_utils.ndb.operations import Operation
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.utils import remove_param_with_none_value, strip_extra_attrs
+from ..module_utils.constants import NDB
 
 
 def get_module_spec():
@@ -133,7 +135,10 @@ def create_profile(module, result):
 
     resp = profiles.create(data=spec)
     result["response"] = resp
-    uuid = resp.get("entityId")
+    if module.params.get("software"):
+        uuid = resp.get("entityId")
+    else:
+        uuid = resp.get("id")
     if not uuid:
         return module.fail_json(msg="Failed fetching uuid post profile creation", **result)
 
@@ -164,7 +169,7 @@ def check_profile_idempotency(old_spec, new_spec):
     
     return True
 
-def check_version_idempotency(old_spec, new_spec):
+def check_software_version_idempotency(old_spec, new_spec):
     if old_spec.get("name") != new_spec.get("name"):
         return False
     if old_spec.get("description") != new_spec.get("description"):
@@ -176,6 +181,25 @@ def check_version_idempotency(old_spec, new_spec):
         return False
     
     return True
+
+def check_compute_version_idempotency(old_spec, new_spec):
+    
+    if old_spec.get("published") != new_spec.get("published"):
+        return False
+    
+    prop_value_map = {}
+    for prop in old_spec.get("properties", []):
+        prop_value_map[prop["name"]] = str(prop["value"])
+
+    for prop in new_spec.get("properties", []):
+        if prop["name"] not in prop_value_map:
+            return False
+        
+        if str(prop["value"])!=prop_value_map[prop["name"]]:
+            return False
+    
+    return True
+
 
 def update_software_versions(module, result, profile_uuid):
     _profiles = Profile(module)
@@ -189,7 +213,7 @@ def update_software_versions(module, result, profile_uuid):
 
             # do ops when required
             resp = None
-            if not check_version_idempotency(old_spec, spec):
+            if not check_software_version_idempotency(old_spec, spec):
                 resp = _profiles.update_version(profile_uuid, version["uuid"], spec)
                 result["response"]["version"] = resp
             
@@ -235,6 +259,30 @@ def update_software_versions(module, result, profile_uuid):
 
     return None
 
+def update_compute_profile(module, result, profile_uuid, old_spec):
+    _profiles = Profile(module)
+    versions = old_spec.get("versions", [])
+    if len(versions) == 0:
+        module.fail_json(msg="Failed fetching latest version of given compute profile", **result)
+
+    # compute profile always have 1 version so we update that as per config given
+    version = versions[0]
+    version_uuid =  version["id"]
+
+    default_spec = _profiles.get_default_compute_profile_update_spec()
+    strip_extra_attrs(version, default_spec, deep=False)
+
+    compute_config = module.params.get("compute", {})
+    spec, err = _profiles.build_compute_version_update_spec(compute_config, version)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating compute profile version update spec", **result)
+
+    if not check_compute_version_idempotency(version, spec):
+        resp = _profiles.update_version(profile_uuid, version_uuid, spec)
+        return resp
+    
+    return None
 
 def update_profile(module, result):
     uuid = module.params.get("profile_uuid")
@@ -249,6 +297,11 @@ def update_profile(module, result):
         result["error"] = err
         module.fail_json(msg="Failed fetching profile info", **result)
     
+    profile_type = profile.get("type")
+    if not profile_type:
+        result["error"] = err
+        module.fail_json(msg="Failed fetching profile's type", **result)
+
     # basic profile update spec
     profile_update_spec = _profiles.get_update_profile_spec(old_spec = profile)
 
@@ -262,11 +315,15 @@ def update_profile(module, result):
         updated = True
     
 
-    # check if properties of any profile or version create/update/delete/deprecate/publish
-    if module.params.get("software"):
+    # Update/delete version of profile if supported or publish/unplublish/deprecate profile
+    resp = None
+    if profile_type == NDB.ProfileTypes.SOFTWARE:
         resp = update_software_versions(module, result, uuid)
-        if resp:
-            updated = True
+
+    elif profile_type == NDB.ProfileTypes.COMPUTE:
+        resp = update_compute_profile(module, result, uuid, profile)
+    if resp:
+        updated=True
 
     if not updated:
         result["skipped"] = True
