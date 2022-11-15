@@ -134,7 +134,10 @@ def create_profile(module, result):
         return
 
     resp = profiles.create(data=spec)
-    result["response"] = resp
+    result["response"] = {
+        "profile": resp
+    }
+
     if module.params.get("software"):
         uuid = resp.get("entityId")
     else:
@@ -157,7 +160,7 @@ def create_profile(module, result):
             result["error"] = err
             module.fail_json(msg="Failed fetching profile info post creation", **result)
         
-        result["response"] = resp
+        result["response"]["profile"] = resp
 
     result["changed"] = True
 
@@ -192,22 +195,26 @@ def check_software_version_idempotency(old_spec, new_spec):
 
 def check_version_idempotency(old_spec, new_spec):
     """
-    This routine is used to check idempotency for compute or db params version update spec
+    This routine is used to check idempotency for compute, db params or network profile version update spec
     """
+    # TO-DO: Optmize/Add Idempotency checks for network profile specific properties
+
     if old_spec.get("published") != new_spec.get("published"):
         return False
     
-    prop_value_map = {}
-    for prop in old_spec.get("properties", []):
-        prop_value_map[prop["name"]] = str(prop["value"])
+    # Decrease in properties can happen as old spec might have server added properties 
+    # which are not required for plugin backened to use/update. So only increase in properties
+    # should always trigger a update call given plugin backened is adding new properties.
+    if len(old_spec.get("properties", [])) < len(new_spec.get("properties", [])):
+        return False
 
-    for prop in new_spec.get("properties", []):
-        if prop["name"] not in prop_value_map:
-            return False
-        
-        if str(prop["value"])!=prop_value_map[prop["name"]]:
-            return False
-    
+    prop_name_value_map = {}
+    for prop in old_spec.get("properties", []):
+        prop_name_value_map[prop["name"]] = str(prop["value"])
+
+    for prop in new_spec.get("properties", []): 
+        if prop["name"] in prop_name_value_map and str(prop["value"])!=prop_name_value_map[prop["name"]]:
+            return False  
     return True
 
 
@@ -275,7 +282,7 @@ def update_software_versions(module, result, profile_uuid):
 
 def update_profile_version(module, result, profile_uuid, profile_config, old_spec):
     """
-    This routine is use to update latest version of compute or db parameters type profile
+    This routine is use to update latest version of compute, db parameters or network type profile
     """
     _profiles = Profile(module)
     versions = old_spec.get("versions", [])
@@ -296,6 +303,10 @@ def update_profile_version(module, result, profile_uuid, profile_config, old_spe
         result["error"] = err
         module.fail_json(msg="Failed generating profile version update spec", **result)
 
+    if module.check_mode:
+        result["new_spec"]=spec
+        result["old_spec"]=version
+        result["compare"]=check_version_idempotency(version, spec)
 
     if not check_version_idempotency(version, spec):
         resp = _profiles.update_version(profile_uuid, version_uuid, spec)
@@ -346,6 +357,14 @@ def update_profile(module, result):
     elif profile_type == NDB.ProfileTypes.DB_PARAMS:
         profile_config = module.params.get("db_params")
         resp = update_profile_version(module, result, uuid, profile_config, profile)
+
+    elif profile_type == NDB.ProfileTypes.NETWORK:
+        profile_config = module.params.get("network")
+        resp = update_profile_version(module, result, uuid, profile_config, profile)
+    
+    else:
+        module.fail_json(msg="Update for profile type '{0}' if not supported".format(profile_type), **result)
+
 
     if resp:
         updated=True

@@ -226,7 +226,7 @@ class Profile(NutanixDatabase):
 
     def _build_spec_network(self, payload, network):
         vlans = network.get("vlans", [])
-        payload["properties"] = payload.get("properties", [])
+        payload["properties"] = []
         if network.get("topology") == "cluster" or len(vlans) > 1:
             payload, err = self._build_spec_multicluster_network_profile(payload, vlans)
             payload["properties"].append({"name": "NUM_CLUSTERS", "value": len(vlans)})
@@ -242,7 +242,7 @@ class Profile(NutanixDatabase):
         payload["properties"].append(
             {
                 "name": "ENABLE_IP_ADDRESS_SELECTION",
-                "value": enable_ip_address_selection,
+                "value": str(enable_ip_address_selection).lower(),
             }
         )
 
@@ -284,6 +284,7 @@ class Profile(NutanixDatabase):
         cluster_uuid, err = get_cluster_uuid(self.module, cluster)
         if err:
             return None, err
+        
         payload["properties"] = [
             self._get_property_spec("VLAN_NAME", vlan.get("vlan_name"))
         ]
@@ -358,7 +359,7 @@ class Profile(NutanixDatabase):
 
             if prop["name"] in config:
 
-                # add unit suffix for user given db parameter
+                # add unit's suffix for user given db parameter
                 val = str(config[prop["name"]]) + props_with_units.get(prop["name"], {}).get("unit", "")
                 prop["value"] = val
                 
@@ -451,24 +452,37 @@ class Profile(NutanixDatabase):
             }
         )
     
-    def build_version_update_spec(self, version_config, old_spec, profile_type):
+    def build_version_update_spec(self, version_config, payload, profile_type):
         """
-        This routine creates spec for update or create version for compute or db parameters
-        profile types
+        This routine creates spec for update or create version for compute, db parameters
+        or network profile types
         """
 
-        payload = deepcopy(old_spec)
+        payload = deepcopy(payload)
 
         err = None
-        if profile_type == NDB.ProfileTypes.COMPUTE:
-            payload, err = self._build_spec_compute(payload, version_config)
-        elif profile_type == NDB.ProfileTypes.DB_PARAMS:
-            payload, err = self._build_spec_db_params(payload, version_config)
 
+        # map of methods as per type for building spec for updating profile version
+        methods = {
+            NDB.ProfileTypes.COMPUTE : self._build_spec_compute,
+            NDB.ProfileTypes.NETWORK: self._build_spec_network,
+            NDB.ProfileTypes.DB_PARAMS: self._build_spec_db_params
+        }
+
+        build_update_version_spec_method = methods[profile_type]
+
+        payload, err = build_update_version_spec_method(payload, version_config)
         if err:
             return None, err
         
-        payload.pop("type")
+
+        # remove not required fields
+        if payload.get("type") is not None:
+            payload.pop("type")
+        if payload.get("topology") is not None:
+            payload.pop("topology")
+        if payload.get("versionClusterAssociation") is not None:
+            payload.pop("versionClusterAssociation")
         
         if self.module.params.get("publish") is not None:
             payload["published"] = self.module.params.get("publish")
