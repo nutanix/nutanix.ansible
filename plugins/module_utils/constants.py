@@ -304,4 +304,4 @@ class NDB:
     class StatusCodes:
         SUCCESS = "5"
         FAILURE = "4"
-        SKIPPED = "17"
+        COMPLETED_WITH_WARNING = "17"

@@ -162,6 +162,10 @@ def create_profile(module, result):
     result["changed"] = True
 
 def check_profile_idempotency(old_spec, new_spec):
+    """
+    This routine is used to check idempotency of a profile
+    """
+
     if old_spec.get("name") != new_spec.get("name"):
         return False
     if old_spec.get("description") != new_spec.get("description"):
@@ -170,6 +174,10 @@ def check_profile_idempotency(old_spec, new_spec):
     return True
 
 def check_software_version_idempotency(old_spec, new_spec):
+    """
+    This routine is used to check idempotency for software profile version
+    """
+
     if old_spec.get("name") != new_spec.get("name"):
         return False
     if old_spec.get("description") != new_spec.get("description"):
@@ -182,8 +190,10 @@ def check_software_version_idempotency(old_spec, new_spec):
     
     return True
 
-def check_compute_version_idempotency(old_spec, new_spec):
-    
+def check_version_idempotency(old_spec, new_spec):
+    """
+    This routine is used to check idempotency for compute or db params version update spec
+    """
     if old_spec.get("published") != new_spec.get("published"):
         return False
     
@@ -202,6 +212,10 @@ def check_compute_version_idempotency(old_spec, new_spec):
 
 
 def update_software_versions(module, result, profile_uuid):
+    """
+    This routine is used to update given version of software profile
+    """
+
     _profiles = Profile(module)
     version = module.params["software"].get("version")
     if version.get("state") == "present":
@@ -259,26 +273,31 @@ def update_software_versions(module, result, profile_uuid):
 
     return None
 
-def update_compute_profile(module, result, profile_uuid, old_spec):
+def update_profile_version(module, result, profile_uuid, profile_config, old_spec):
+    """
+    This routine is use to update latest version of compute or db parameters type profile
+    """
     _profiles = Profile(module)
     versions = old_spec.get("versions", [])
-    if len(versions) == 0:
-        module.fail_json(msg="Failed fetching latest version of given compute profile", **result)
+    profile_type = old_spec["type"]
 
-    # compute profile always have 1 version so we update that as per config given
+    if len(versions) == 0:
+        module.fail_json(msg="Failed fetching latest version of given profile", **result)
+
+    # compute or db parameters profile always have 1 version so we update that as per config given
     version = versions[0]
     version_uuid =  version["id"]
 
-    default_spec = _profiles.get_default_compute_profile_update_spec()
+    default_spec = _profiles.get_default_profile_properties_update_spec()
     strip_extra_attrs(version, default_spec, deep=False)
 
-    compute_config = module.params.get("compute", {})
-    spec, err = _profiles.build_compute_version_update_spec(compute_config, version)
+    spec, err = _profiles.build_version_update_spec(profile_config, version, profile_type=profile_type)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating compute profile version update spec", **result)
+        module.fail_json(msg="Failed generating profile version update spec", **result)
 
-    if not check_compute_version_idempotency(version, spec):
+
+    if not check_version_idempotency(version, spec):
         resp = _profiles.update_version(profile_uuid, version_uuid, spec)
         return resp
     
@@ -321,7 +340,13 @@ def update_profile(module, result):
         resp = update_software_versions(module, result, uuid)
 
     elif profile_type == NDB.ProfileTypes.COMPUTE:
-        resp = update_compute_profile(module, result, uuid, profile)
+        profile_config = module.params.get("compute")
+        resp = update_profile_version(module, result, uuid, profile_config, profile)
+    
+    elif profile_type == NDB.ProfileTypes.DB_PARAMS:
+        profile_config = module.params.get("db_params")
+        resp = update_profile_version(module, result, uuid, profile_config, profile)
+
     if resp:
         updated=True
 
