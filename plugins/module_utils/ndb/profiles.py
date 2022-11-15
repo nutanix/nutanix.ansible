@@ -220,7 +220,7 @@ class Profile(NutanixDatabase):
                 ),
             )
 
-        payload["properties"] = properties_spec_builder(config)
+        payload["properties"] = properties_spec_builder(payload, config)
         payload["type"] = NDB.ProfileTypes.DB_PARAMS
         return payload, None
 
@@ -310,7 +310,12 @@ class Profile(NutanixDatabase):
                 ),
             )
 
-    def _build_spec_postgres_db_params_properties(self, config):
+    def _build_spec_postgres_db_params_properties(self, payload, db_params):
+        """
+        This routine creates db parameters properties spec. Handles both update and create scenarios
+        """
+
+        config = deepcopy(db_params)
 
         # map of property key with defaults
         props = {
@@ -343,16 +348,33 @@ class Profile(NutanixDatabase):
             "autovacuum_vacuum_cost_delay": {"default": 2, "unit": "ms"},
         }
 
-        properties = []
+        properties = payload.get("properties", [])
 
-        # add specs for normal properties
+        # computed_props will track already computed properties for avoiding duplicate entities
+        computed_props = {}
+        
+        # update existing properties with given input db_params config
+        for prop in properties:
+
+            if prop["name"] in config:
+
+                # add unit suffix for user given db parameter
+                val = str(config[prop["name"]]) + props_with_units.get(prop["name"], {}).get("unit", "")
+                prop["value"] = val
+                
+                computed_props[prop["name"]] = True
+                config.pop(prop["name"])
+        
+        # add specs for remaining properties without units
         for prop, default in props.items():
-            properties.append(self._get_property_spec(prop, config.get(prop, default)))
+            if prop not in computed_props:
+                properties.append(self._get_property_spec(prop, config.get(prop, default)))
 
-        # add specs for properties with units
+        # add specs for remaining properties with units
         for prop, val in props_with_units.items():
-            prop_value = str(config.get(prop, val.get(default))) + val.get("unit", "")
-            properties.append(self._get_property_spec(prop, prop_value))
+            if prop not in computed_props:
+                prop_value = str(config.get(prop, val.get(default))) + val.get("unit", "")
+                properties.append(self._get_property_spec(prop, prop_value))
 
         return properties
 
@@ -419,7 +441,7 @@ class Profile(NutanixDatabase):
 
         return payload
     
-    def get_default_compute_profile_update_spec(self):
+    def get_default_profile_properties_update_spec(self):
         return deepcopy(
             {
                 "name": "",
@@ -429,9 +451,20 @@ class Profile(NutanixDatabase):
             }
         )
     
-    def build_compute_version_update_spec(self, compute, old_spec):
+    def build_version_update_spec(self, version_config, old_spec, profile_type):
+        """
+        This routine creates spec for update or create version for compute or db parameters
+        profile types
+        """
+
         payload = deepcopy(old_spec)
-        payload, err = self._build_spec_compute(payload, compute)
+
+        err = None
+        if profile_type == NDB.ProfileTypes.COMPUTE:
+            payload, err = self._build_spec_compute(payload, version_config)
+        elif profile_type == NDB.ProfileTypes.DB_PARAMS:
+            payload, err = self._build_spec_db_params(payload, version_config)
+
         if err:
             return None, err
         
@@ -441,7 +474,7 @@ class Profile(NutanixDatabase):
             payload["published"] = self.module.params.get("publish")
         
         return payload, None
-        
+
 
 # helper functions
 
