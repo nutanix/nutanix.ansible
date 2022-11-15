@@ -102,7 +102,7 @@ def get_module_spec():
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=False,
-        ),    
+        ),
     )
 
     db_params = dict(postgres=dict(type="dict", options=postgres_params))
@@ -134,35 +134,36 @@ def create_profile(module, result):
         return
 
     resp = profiles.create(data=spec)
-    result["response"] = {
-        "profile": resp
-    }
+    result["response"] = {"profile": resp}
 
     if module.params.get("software"):
         uuid = resp.get("entityId")
     else:
         uuid = resp.get("id")
     if not uuid:
-        return module.fail_json(msg="Failed fetching uuid post profile creation", **result)
+        return module.fail_json(
+            msg="Failed fetching uuid post profile creation", **result
+        )
 
     result["profile_uuid"] = uuid
 
     # polling is only required for software profile
     if module.params.get("wait") and module.params.get("software"):
-        
+
         ops_uuid = resp["operationId"]
         operations = Operation(module)
         time.sleep(3)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid, delay=10)
-        
+
         resp, err = profiles.get_profiles(uuid=uuid)
         if err:
             result["error"] = err
             module.fail_json(msg="Failed fetching profile info post creation", **result)
-        
+
         result["response"]["profile"] = resp
 
     result["changed"] = True
+
 
 def check_profile_idempotency(old_spec, new_spec):
     """
@@ -173,8 +174,9 @@ def check_profile_idempotency(old_spec, new_spec):
         return False
     if old_spec.get("description") != new_spec.get("description"):
         return False
-    
+
     return True
+
 
 def check_software_version_idempotency(old_spec, new_spec):
     """
@@ -185,13 +187,14 @@ def check_software_version_idempotency(old_spec, new_spec):
         return False
     if old_spec.get("description") != new_spec.get("description"):
         return False
-    
+
     if old_spec.get("published") != new_spec.get("published"):
         return False
     if old_spec.get("deprecated") != new_spec.get("deprecated"):
         return False
-    
+
     return True
+
 
 def check_version_idempotency(old_spec, new_spec):
     """
@@ -201,8 +204,8 @@ def check_version_idempotency(old_spec, new_spec):
 
     if old_spec.get("published") != new_spec.get("published"):
         return False
-    
-    # Decrease in properties can happen as old spec might have server added properties 
+
+    # Decrease in properties can happen as old spec might have server added properties
     # which are not required for plugin backened to use/update. So only increase in properties
     # should always trigger a update call given plugin backened is adding new properties.
     if len(old_spec.get("properties", [])) < len(new_spec.get("properties", [])):
@@ -212,9 +215,12 @@ def check_version_idempotency(old_spec, new_spec):
     for prop in old_spec.get("properties", []):
         prop_name_value_map[prop["name"]] = str(prop["value"])
 
-    for prop in new_spec.get("properties", []): 
-        if prop["name"] in prop_name_value_map and str(prop["value"])!=prop_name_value_map[prop["name"]]:
-            return False  
+    for prop in new_spec.get("properties", []):
+        if (
+            prop["name"] in prop_name_value_map
+            and str(prop["value"]) != prop_name_value_map[prop["name"]]
+        ):
+            return False
     return True
 
 
@@ -237,33 +243,39 @@ def update_software_versions(module, result, profile_uuid):
             if not check_software_version_idempotency(old_spec, spec):
                 resp = _profiles.update_version(profile_uuid, version["uuid"], spec)
                 result["response"]["version"] = resp
-            
-            result["response"]["version_uuid"]  = version["uuid"]
+
+            result["response"]["version_uuid"] = version["uuid"]
             return resp
-        
+
         else:
             # create new software profile version
             spec, err = _profiles.build_software_version_create_spec(version)
             if err:
                 result["error"] = err
-                module.fail_json(msg="Failed generating software version create spec", **result)
+                module.fail_json(
+                    msg="Failed generating software version create spec", **result
+                )
 
             resp = _profiles.create_version(profile_uuid, data=spec)
             result["response"]["version"] = resp
             version_uuid = resp.get("entityId")
             if not version_uuid:
-                return module.fail_json(msg="Failed fetching uuid post software version creation", **result)
+                return module.fail_json(
+                    msg="Failed fetching uuid post software version creation", **result
+                )
 
             result["version_uuid"] = version_uuid
             if module.params.get("wait"):
-                
+
                 ops_uuid = resp["operationId"]
                 operations = Operation(module)
                 time.sleep(3)  # to get operation ID functional
                 operations.wait_for_completion(ops_uuid, delay=10)
-                
-                resp = _profiles.get_profile_by_version(uuid=profile_uuid, version_id = version_uuid)
-                
+
+                resp = _profiles.get_profile_by_version(
+                    uuid=profile_uuid, version_id=version_uuid
+                )
+
                 result["response"]["version"] = resp
                 return resp
 
@@ -273,12 +285,15 @@ def update_software_versions(module, result, profile_uuid):
         version_uuid = version.get("uuid")
         if not version_uuid:
             module.fail_json(msg="uuid is required field for version delete", **result)
-        
-        resp = _profiles.delete_version(profile_uuid=profile_uuid, version_uuid=version_uuid)
+
+        resp = _profiles.delete_version(
+            profile_uuid=profile_uuid, version_uuid=version_uuid
+        )
         result["response"]["version"] = resp
         return resp
 
     return None
+
 
 def update_profile_version(module, result, profile_uuid, profile_config, old_spec):
     """
@@ -289,30 +304,35 @@ def update_profile_version(module, result, profile_uuid, profile_config, old_spe
     profile_type = old_spec["type"]
 
     if len(versions) == 0:
-        module.fail_json(msg="Failed fetching latest version of given profile", **result)
+        module.fail_json(
+            msg="Failed fetching latest version of given profile", **result
+        )
 
     # compute or db parameters profile always have 1 version so we update that as per config given
     version = versions[0]
-    version_uuid =  version["id"]
+    version_uuid = version["id"]
 
     default_spec = _profiles.get_default_profile_properties_update_spec()
     strip_extra_attrs(version, default_spec, deep=False)
 
-    spec, err = _profiles.build_version_update_spec(profile_config, version, profile_type=profile_type)
+    spec, err = _profiles.build_version_update_spec(
+        profile_config, version, profile_type=profile_type
+    )
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating profile version update spec", **result)
 
     if module.check_mode:
-        result["new_spec"]=spec
-        result["old_spec"]=version
-        result["compare"]=check_version_idempotency(version, spec)
+        result["new_spec"] = spec
+        result["old_spec"] = version
+        result["compare"] = check_version_idempotency(version, spec)
 
     if not check_version_idempotency(version, spec):
         resp = _profiles.update_version(profile_uuid, version_uuid, spec)
         return resp
-    
+
     return None
+
 
 def update_profile(module, result):
     uuid = module.params.get("profile_uuid")
@@ -326,14 +346,14 @@ def update_profile(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed fetching profile info", **result)
-    
+
     profile_type = profile.get("type")
     if not profile_type:
         result["error"] = err
         module.fail_json(msg="Failed fetching profile's type", **result)
 
     # basic profile update spec
-    profile_update_spec = _profiles.get_update_profile_spec(old_spec = profile)
+    profile_update_spec = _profiles.get_update_profile_spec(old_spec=profile)
 
     result["response"] = {}
 
@@ -343,7 +363,6 @@ def update_profile(module, result):
         resp = _profiles.update(data=profile_update_spec, uuid=uuid)
         result["response"]["profile"] = resp
         updated = True
-    
 
     # Update/delete version of profile if supported or publish/unplublish/deprecate profile
     resp = None
@@ -353,7 +372,7 @@ def update_profile(module, result):
     elif profile_type == NDB.ProfileTypes.COMPUTE:
         profile_config = module.params.get("compute")
         resp = update_profile_version(module, result, uuid, profile_config, profile)
-    
+
     elif profile_type == NDB.ProfileTypes.DB_PARAMS:
         profile_config = module.params.get("db_params")
         resp = update_profile_version(module, result, uuid, profile_config, profile)
@@ -361,13 +380,15 @@ def update_profile(module, result):
     elif profile_type == NDB.ProfileTypes.NETWORK:
         profile_config = module.params.get("network")
         resp = update_profile_version(module, result, uuid, profile_config, profile)
-    
-    else:
-        module.fail_json(msg="Update for profile type '{0}' if not supported".format(profile_type), **result)
 
+    else:
+        module.fail_json(
+            msg="Update for profile type '{0}' if not supported".format(profile_type),
+            **result,
+        )
 
     if resp:
-        updated=True
+        updated = True
 
     if not updated:
         result["skipped"] = True
@@ -378,7 +399,8 @@ def update_profile(module, result):
     if not result["response"].get("profile"):
         result["response"]["profile"], err = _profiles.get_profiles(uuid=uuid)
         if err:
-            return module.fail_json(msg="Failed fetching profile info", **result) 
+            return module.fail_json(msg="Failed fetching profile info", **result)
+
 
 def delete_profile(module, result):
     pass
