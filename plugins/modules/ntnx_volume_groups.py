@@ -364,10 +364,10 @@ def update_volume_group(module, result):
 
         # update volume_group
         result["nothing_to_change"] = False
-        resp = volume_group.update(update_spec, uuid=volume_group_uuid, method="PATCH")
-        # result["response"] = resp
+        volume_group.update(update_spec, uuid=volume_group_uuid, method="PATCH")
+
         resp = volume_group.read(volume_group_uuid)
-        resp.get("data")
+        resp = resp.get("data")
     result["response"] = resp
 
     # update disks
