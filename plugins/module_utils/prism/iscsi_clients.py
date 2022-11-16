@@ -41,9 +41,9 @@ class Clients(Prism):
         resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
         return resp
 
-    def get_client_spec(self, iscsi_client, old_spec={}):
+    def get_client_spec(self, iscsi_client, old_spec=None):
         payload = self._get_default_spec()
-        if self.module.params.get("CHAP_auth") == "enable" or old_spec.get(
+        if self.module.params.get("CHAP_auth") == "enable" or old_spec and old_spec.get(
             "enabledAuthentications"
         ):
             chap_auth = True
