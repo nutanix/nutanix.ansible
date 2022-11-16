@@ -403,8 +403,18 @@ def update_profile(module, result):
 
 
 def delete_profile(module, result):
-    pass
+    profiles = Profile(module)
 
+    uuid = module.params.get("profile_uuid")
+    if not uuid:
+        return module.fail_json(msg="'profile_uuid' is a required for deleting profile")
+    
+    resp = profiles.delete(uuid)
+    
+    result["response"] = {
+        "profile": resp
+    }
+    result["changed"] = True
 
 def run_module():
     module = NdbBaseModule(
