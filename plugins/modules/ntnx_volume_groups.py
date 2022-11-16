@@ -143,8 +143,8 @@ options:
                     type: str
   CHAP_auth:
     description: Use Challenge-Handshake Authentication Protocol
-    type: bool
-    default: false
+    type: str
+    choices: ["enable", "disable"]
   target_password:
     description: CHAP secret
     type: str
@@ -372,7 +372,9 @@ def update_volume_group(module, result):
 
     # update disks
     if vg_disks:
-        update_volume_group_disks(module, volume_group, vg_disks, volume_group_uuid, result)
+        update_volume_group_disks(
+            module, volume_group, vg_disks, volume_group_uuid, result
+        )
         disks_resp = volume_group.get_vdisks(volume_group_uuid)
         result["response"]["disks"] = disks_resp.get("data")
 
@@ -384,7 +386,9 @@ def update_volume_group(module, result):
 
     # update clients
     if vg_clients:
-        update_volume_group_clients(module, volume_group, vg_clients, volume_group_uuid, result)
+        update_volume_group_clients(
+            module, volume_group, vg_clients, volume_group_uuid, result
+        )
         clients_resp = volume_group.get_clients(volume_group_uuid)
         result["response"]["clients"] = clients_resp.get("data")
 
@@ -434,7 +438,9 @@ def delete_volume_group(module, result):
     result["volume_group_uuid"] = volume_group_uuid
 
 
-def update_volume_group_disks(module, volume_group, vg_disks, volume_group_uuid, result):
+def update_volume_group_disks(
+    module, volume_group, vg_disks, volume_group_uuid, result
+):
     for disk in vg_disks:
         if disk.get("uuid"):
             disk_uuid = disk["uuid"]
@@ -443,7 +449,9 @@ def update_volume_group_disks(module, volume_group, vg_disks, volume_group_uuid,
                 vdisk_resp = volume_group.delete_disk(volume_group_uuid, disk_uuid)
 
             else:
-                vdisk = volume_group.get_vdisks(volume_group_uuid, disk_uuid).get("data")
+                vdisk = volume_group.get_vdisks(volume_group_uuid, disk_uuid).get(
+                    "data"
+                )
                 spec, err = VDisks.get_spec(module, disk)
                 if err:
                     result["nothing_to_change"] = False
@@ -467,9 +475,7 @@ def update_volume_group_disks(module, volume_group, vg_disks, volume_group_uuid,
             result["nothing_to_change"] = False
             spec, err = VDisks.get_spec(module, disk)
             if err:
-                result["warning"].append(
-                    "Disk is not created. Error: {0}".format(err)
-                )
+                result["warning"].append("Disk is not created. Error: {0}".format(err))
                 result["skipped"] = True
                 continue
             vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
@@ -487,17 +493,13 @@ def update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, res
             result["nothing_to_change"] = False
             vm_resp, err = volume_group.detach_vm(volume_group_uuid, vm)
             if err:
-                result["warning"].append(
-                    "VM is not detached. Error: {0}".format(err)
-                )
+                result["warning"].append("VM is not detached. Error: {0}".format(err))
                 result["skipped"] = True
                 continue
         else:
             spec, err = volume_group.get_vm_spec(vm)
             if err:
-                result["warning"].append(
-                    "VM is not attached. Error: {0}".format(err)
-                )
+                result["warning"].append("VM is not attached. Error: {0}".format(err))
                 result["skipped"] = True
                 continue
 
@@ -508,7 +510,9 @@ def update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, res
         wait_for_task_completion(module, {"task_uuid": task_uuid})
 
 
-def update_volume_group_clients(module, volume_group, vg_clients, volume_group_uuid, result):
+def update_volume_group_clients(
+    module, volume_group, vg_clients, volume_group_uuid, result
+):
     client = Clients(module)
     for vg_client in vg_clients:
 
@@ -516,7 +520,9 @@ def update_volume_group_clients(module, volume_group, vg_clients, volume_group_u
             client_uuid = vg_client["uuid"]
             if vg_client.get("state") == "absent":
                 result["nothing_to_change"] = False
-                client_resp = volume_group.detach_iscsi_client(volume_group_uuid, client_uuid)
+                client_resp = volume_group.detach_iscsi_client(
+                    volume_group_uuid, client_uuid
+                )
 
             else:
                 resp = client.read(client_uuid).get("data")
@@ -535,9 +541,7 @@ def update_volume_group_clients(module, volume_group, vg_clients, volume_group_u
                     result["skipped"] = True
                     continue
                 result["nothing_to_change"] = False
-                client_resp = client.update(
-                    spec, client_uuid, method="PATCH"
-                )
+                client_resp = client.update(spec, client_uuid, method="PATCH")
 
         else:
             result["nothing_to_change"] = False
@@ -591,7 +595,7 @@ def run_module():
         "response": None,
         "volume_group_uuid": None,
         "warning": [],
-        "nothing_to_change": True
+        "nothing_to_change": True,
     }
     state = module.params["state"]
     if state == "absent":

@@ -18,15 +18,15 @@ class Clients(Prism):
         self.build_spec_methods = {}
 
     def update(
-            self,
-            data=None,
-            uuid=None,
-            endpoint=None,
-            query=None,
-            raise_error=True,
-            no_response=False,
-            timeout=30,
-            method="PATCH",
+        self,
+        data=None,
+        uuid=None,
+        endpoint=None,
+        query=None,
+        raise_error=True,
+        no_response=False,
+        timeout=30,
+        method="PATCH",
     ):
         resp = super(Clients, self).update(
             data,
@@ -43,7 +43,9 @@ class Clients(Prism):
 
     def get_client_spec(self, iscsi_client, old_spec={}):
         payload = self._get_default_spec()
-        if self.module.params.get("CHAP_auth") == "enable" or old_spec.get("enabledAuthentications"):
+        if self.module.params.get("CHAP_auth") == "enable" or old_spec.get(
+            "enabledAuthentications"
+        ):
             chap_auth = True
         else:
             chap_auth = False
