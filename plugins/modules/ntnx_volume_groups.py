@@ -233,7 +233,7 @@ def get_module_spec():
             options=client_spec,
             mutually_exclusive=[("uuid", "iscsi_iqn", "iscsi_ip")],
         ),
-        CHAP_auth=dict(type="bool", default=False),
+        CHAP_auth=dict(type="str", choices=["enable", "disable"]),
         target_password=dict(type="str", no_log=True),
     )
 
@@ -306,9 +306,10 @@ def create_volume_group(module, result):
 
     # attach clients
     if vg_clients:
-        for client in vg_clients:
+        client = Clients(module)
+        for vg_client in vg_clients:
 
-            spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
+            spec, err = client.get_client_spec(vg_client)
             if err:
                 result["warning"] = "Client is not attached. Error: {0}".format(err)
                 result["skipped"] = True
@@ -324,7 +325,6 @@ def create_volume_group(module, result):
 
 
 def update_volume_group(module, result):
-    nothing_to_change = True
     volume_group = VolumeGroup(module)
     volume_group_uuid = module.params.get("volume_group_uuid")
     vg_disks = module.params.get("disks")
@@ -345,6 +345,13 @@ def update_volume_group(module, result):
         result["error"] = error
         module.fail_json(msg="Failed generating volume_group update spec", **result)
 
+    if module.check_mode:
+        result["response"] = update_spec
+        result["response"]["disks"] = vg_disks
+        result["response"]["vms"] = vg_vms
+        result["response"]["clients"] = vg_clients
+        return
+
     # check for idempotency
     if not check_for_idempotency(resp, update_spec):
 
@@ -356,119 +363,36 @@ def update_volume_group(module, result):
             return
 
         # update volume_group
-        nothing_to_change = False
+        result["nothing_to_change"] = False
         resp = volume_group.update(update_spec, uuid=volume_group_uuid, method="PATCH")
         # result["response"] = resp
         resp = volume_group.read(volume_group_uuid)
         resp.get("data")
-        result["changed"] = True
     result["response"] = resp
 
     # update disks
     if vg_disks:
-        for disk in vg_disks:
-            if disk.get("uuid"):
-                disk_uuid = disk["uuid"]
-                if disk.get("state") == "absent":
-                    nothing_to_change = False
-                    vdisk_resp = volume_group.delete_disk(volume_group_uuid, disk_uuid)
-
-                else:
-                    vdisk = volume_group.get_vdisks(volume_group_uuid, disk_uuid).get(
-                        "data"
-                    )
-                    spec, err = VDisks.get_spec(module, disk)
-                    if err:
-                        nothing_to_change = False
-                        result["warning"].append(
-                            "Disk is not updated. Error: {0}".format(err)
-                        )
-                        result["skipped"] = True
-                        continue
-                    elif check_for_idempotency(vdisk, spec):
-                        result["warning"].append(
-                            "Nothing to change. Disk: {0}".format(disk_uuid)
-                        )
-                        result["skipped"] = True
-                        continue
-                    nothing_to_change = False
-                    vdisk_resp = volume_group.update_disk(
-                        spec, volume_group_uuid, disk_uuid
-                    )
-
-            else:
-                nothing_to_change = False
-                spec, err = VDisks.get_spec(module, disk)
-                if err:
-                    result["warning"].append(
-                        "Disk is not created. Error: {0}".format(err)
-                    )
-                    result["skipped"] = True
-                    continue
-
-                vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
-
-            task_uuid = vdisk_resp["task_uuid"]
-            wait_for_task_completion(module, {"task_uuid": task_uuid})
-
+        update_volume_group_disks(module, volume_group, vg_disks, volume_group_uuid, result)
         disks_resp = volume_group.get_vdisks(volume_group_uuid)
         result["response"]["disks"] = disks_resp.get("data")
 
     # update vms
     if vg_vms:
-        for vm in vg_vms:
-            if vm.get("state") == "absent":
-                nothing_to_change = False
-                vm_resp, err = volume_group.detach_vm(volume_group_uuid, vm)
-                if err:
-                    result["warning"].append(
-                        "VM is not detached. Error: {0}".format(err)
-                    )
-                    result["skipped"] = True
-                    continue
-            else:
-                spec, err = volume_group.get_vm_spec(vm)
-                if err:
-                    result["warning"].append(
-                        "VM is not attached. Error: {0}".format(err)
-                    )
-                    result["skipped"] = True
-                    continue
-
-                nothing_to_change = False
-                vm_resp = volume_group.attach_vm(spec, volume_group_uuid)
-
-            task_uuid = vm_resp["task_uuid"]
-            wait_for_task_completion(module, {"task_uuid": task_uuid})
-
+        update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, result)
         vms_resp = volume_group.get_vms(volume_group_uuid)
         result["response"]["vms"] = vms_resp.get("data")
 
     # update clients
     if vg_clients:
-        for client in vg_clients:
-
-            nothing_to_change = False
-            spec, err = Clients.get_spec(client, module.params.get("CHAP_auth"))
-            if err:
-                result["warning"].append(
-                    "Client is not attached. Error: {0}".format(err)
-                )
-                result["skipped"] = True
-                continue
-
-            nothing_to_change = False
-            attach_resp = volume_group.attach_iscsi_client(spec, volume_group_uuid)
-
-            task_uuid = attach_resp["task_uuid"]
-            wait_for_task_completion(module, {"task_uuid": task_uuid})
-
+        update_volume_group_clients(module, volume_group, vg_clients, volume_group_uuid, result)
         clients_resp = volume_group.get_clients(volume_group_uuid)
         result["response"]["clients"] = clients_resp.get("data")
-    if nothing_to_change:
+
+    if result.pop("nothing_to_change"):
         module.exit_json(
             msg="Nothing to change. Refer docs to check for fields which can be updated"
         )
+    result["changed"] = True
 
 
 def delete_volume_group(module, result):
@@ -510,10 +434,133 @@ def delete_volume_group(module, result):
     result["volume_group_uuid"] = volume_group_uuid
 
 
+def update_volume_group_disks(module, volume_group, vg_disks, volume_group_uuid, result):
+    for disk in vg_disks:
+        if disk.get("uuid"):
+            disk_uuid = disk["uuid"]
+            if disk.get("state") == "absent":
+                result["nothing_to_change"] = False
+                vdisk_resp = volume_group.delete_disk(volume_group_uuid, disk_uuid)
+
+            else:
+                vdisk = volume_group.get_vdisks(volume_group_uuid, disk_uuid).get("data")
+                spec, err = VDisks.get_spec(module, disk)
+                if err:
+                    result["nothing_to_change"] = False
+                    result["warning"].append(
+                        "Disk is not updated. Error: {0}".format(err)
+                    )
+                    result["skipped"] = True
+                    continue
+                elif check_for_idempotency(vdisk, spec):
+                    result["warning"].append(
+                        "Nothing to change. Disk: {0}".format(disk_uuid)
+                    )
+                    result["skipped"] = True
+                    continue
+                result["nothing_to_change"] = False
+                vdisk_resp = volume_group.update_disk(
+                    spec, volume_group_uuid, disk_uuid
+                )
+
+        else:
+            result["nothing_to_change"] = False
+            spec, err = VDisks.get_spec(module, disk)
+            if err:
+                result["warning"].append(
+                    "Disk is not created. Error: {0}".format(err)
+                )
+                result["skipped"] = True
+                continue
+            vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
+
+        task_uuid = vdisk_resp["task_uuid"]
+        wait_for_task_completion(module, {"task_uuid": task_uuid})
+
+    disks_resp = volume_group.get_vdisks(volume_group_uuid)
+    result["response"]["disks"] = disks_resp.get("data")
+
+
+def update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, result):
+    for vm in vg_vms:
+        if vm.get("state") == "absent":
+            result["nothing_to_change"] = False
+            vm_resp, err = volume_group.detach_vm(volume_group_uuid, vm)
+            if err:
+                result["warning"].append(
+                    "VM is not detached. Error: {0}".format(err)
+                )
+                result["skipped"] = True
+                continue
+        else:
+            spec, err = volume_group.get_vm_spec(vm)
+            if err:
+                result["warning"].append(
+                    "VM is not attached. Error: {0}".format(err)
+                )
+                result["skipped"] = True
+                continue
+
+            result["nothing_to_change"] = False
+            vm_resp = volume_group.attach_vm(spec, volume_group_uuid)
+
+        task_uuid = vm_resp["task_uuid"]
+        wait_for_task_completion(module, {"task_uuid": task_uuid})
+
+
+def update_volume_group_clients(module, volume_group, vg_clients, volume_group_uuid, result):
+    client = Clients(module)
+    for vg_client in vg_clients:
+
+        if vg_client.get("uuid"):
+            client_uuid = vg_client["uuid"]
+            if vg_client.get("state") == "absent":
+                result["nothing_to_change"] = False
+                client_resp = volume_group.detach_iscsi_client(volume_group_uuid, client_uuid)
+
+            else:
+                resp = client.read(client_uuid).get("data")
+                spec, err = client.get_client_spec(vg_client, resp)
+                if err:
+                    result["nothing_to_change"] = False
+                    result["warning"].append(
+                        "Client is not updated. Error: {0}".format(err)
+                    )
+                    result["skipped"] = True
+                    continue
+                elif check_for_idempotency(resp, spec):
+                    result["warning"].append(
+                        "Nothing to change. Client: {0}".format(client_uuid)
+                    )
+                    result["skipped"] = True
+                    continue
+                result["nothing_to_change"] = False
+                client_resp = client.update(
+                    spec, client_uuid, method="PATCH"
+                )
+
+        else:
+            result["nothing_to_change"] = False
+            spec, err = client.get_client_spec(vg_client)
+            if err:
+                result["warning"].append(
+                    "Client is not created. Error: {0}".format(err)
+                )
+                result["skipped"] = True
+                continue
+            client_resp = volume_group.attach_iscsi_client(spec, volume_group_uuid)
+
+        task_uuid = client_resp["task_uuid"]
+        wait_for_task_completion(module, {"task_uuid": task_uuid})
+
+
 def check_for_idempotency(old_spec, update_spec):
 
     for key, value in update_spec.items():
-        if old_spec.get(key) != value:
+        if key == "enabledAuthentications" and value != "NONE":
+            if old_spec.get(key):
+                False
+        elif old_spec.get(key) != value:
             return False
 
     return True
@@ -533,7 +580,7 @@ def run_module():
         required_if=[
             ("state", "present", ("name", "volume_group_uuid"), True),
             ("state", "absent", ("volume_group_uuid",)),
-            ("CHAP_auth", True, ("target_password",)),
+            ("CHAP_auth", "enable", ("target_password",)),
         ],
         mutually_exclusive=[("vms", "clients")],
     )
@@ -544,6 +591,7 @@ def run_module():
         "response": None,
         "volume_group_uuid": None,
         "warning": [],
+        "nothing_to_change": True
     }
     state = module.params["state"]
     if state == "absent":

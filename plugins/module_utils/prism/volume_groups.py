@@ -22,6 +22,7 @@ class VolumeGroup(Prism):
             "desc": self._build_spec_desc,
             "cluster": self._build_spec_cluster,
             "target_prefix": self._build_spec_target_prefix,
+            "CHAP_auth": self._build_spec_chap_auth,
             "target_password": self._build_spec_target_password,
             "load_balance": self._build_spec_load_balance,
             "flash_mode": self._build_spec_flash_mode,
@@ -45,7 +46,7 @@ class VolumeGroup(Prism):
     def create_vdisk(self, spec, volume_group_uuid):
         endpoint = "disks"
         resp = self.update(spec, volume_group_uuid, method="POST", endpoint=endpoint)
-        resp["task_uuid"] = resp["data"]["extId"][-36:]
+        resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
         return resp
 
     def attach_vm(self, spec, volume_group_uuid):
@@ -125,7 +126,13 @@ class VolumeGroup(Prism):
 
     def _build_spec_target_password(self, payload, value):
         payload["targetSecret"] = value
-        payload["enabledAuthentications"] = "CHAP"
+        return payload, None
+
+    def _build_spec_chap_auth(self, payload, value):
+        if value == "enable":
+            payload["enabledAuthentications"] = "CHAP"
+        else:
+            payload["enabledAuthentications"] = "NONE"
         return payload, None
 
     def _build_spec_load_balance(self, payload, value):

@@ -6,12 +6,49 @@ __metaclass__ = type
 
 from copy import deepcopy
 
+from .prism import Prism
 
-class Clients:
-    @classmethod
-    def get_spec(cls, iscsi_client, chap_auth=False):
-        payload = cls._get_default_spec()
-        spec, error = cls._build_spec_iscsi_client(payload, iscsi_client, chap_auth)
+
+class Clients(Prism):
+    __BASEURL__ = "/api/storage/v4.0.a2/config"
+
+    def __init__(self, module):
+        resource_type = "/iscsi-clients"
+        super(Clients, self).__init__(module, resource_type=resource_type)
+        self.build_spec_methods = {}
+
+    def update(
+            self,
+            data=None,
+            uuid=None,
+            endpoint=None,
+            query=None,
+            raise_error=True,
+            no_response=False,
+            timeout=30,
+            method="PATCH",
+    ):
+        resp = super(Clients, self).update(
+            data,
+            uuid,
+            endpoint,
+            query,
+            raise_error,
+            no_response,
+            timeout,
+            method,
+        )
+        resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
+        return resp
+
+    def get_client_spec(self, iscsi_client, old_spec={}):
+        payload = self._get_default_spec()
+        if self.module.params.get("CHAP_auth") == "enable" or old_spec.get("enabledAuthentications"):
+            chap_auth = True
+        else:
+            chap_auth = False
+
+        spec, error = self._build_spec_iscsi_client(payload, iscsi_client, chap_auth)
         if error:
             return None, error
         return spec, None
