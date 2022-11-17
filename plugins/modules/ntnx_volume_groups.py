@@ -425,9 +425,7 @@ def delete_volume_group(module, result):
     for vm in vms_resp.get("data", []):
         detach_resp, err = volume_group.detach_vm(volume_group_uuid, vm)
         if err:
-            result["warning"].append(
-                "VM is not detached. Error: {0}".format(err)
-            )
+            result["warning"].append("VM is not detached. Error: {0}".format(err))
             result["skipped"] = True
             continue
         task_uuid = detach_resp["task_uuid"]
