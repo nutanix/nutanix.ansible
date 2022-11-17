@@ -253,13 +253,10 @@ def create_volume_group(module, result):
 
     if module.check_mode:
         result["response"] = spec
-        result["response"]["disks"] = vg_disks
-        result["response"]["vms"] = vg_vms
-        result["response"]["clients"] = vg_clients
         return
 
     resp = volume_group.create(spec)
-    task_uuid = resp["data"]["extId"][-36:]
+    task_uuid = resp["data"]["extId"].split(":")[1]
     result["changed"] = True
     result["response"] = resp
     result["task_uuid"] = task_uuid
@@ -347,20 +344,10 @@ def update_volume_group(module, result):
 
     if module.check_mode:
         result["response"] = update_spec
-        result["response"]["disks"] = vg_disks
-        result["response"]["vms"] = vg_vms
-        result["response"]["clients"] = vg_clients
         return
 
     # check for idempotency
     if not check_for_idempotency(resp, update_spec):
-
-        if module.check_mode:
-            result["response"] = update_spec
-            result["response"]["disks"] = vg_disks
-            result["response"]["vms"] = vg_vms
-            result["response"]["clients"] = vg_clients
-            return
 
         # update volume_group
         result["nothing_to_change"] = False
