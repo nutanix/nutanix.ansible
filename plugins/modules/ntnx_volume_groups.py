@@ -363,22 +363,25 @@ def update_volume_group(module, result):
         update_volume_group_disks(
             module, volume_group, vg_disks, volume_group_uuid, result
         )
-        disks_resp = volume_group.get_vdisks(volume_group_uuid)
-        result["response"]["disks"] = disks_resp.get("data")
+
+    disks_resp = volume_group.get_vdisks(volume_group_uuid)
+    result["response"]["disks"] = disks_resp.get("data")
 
     # update vms
     if vg_vms:
         update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, result)
-        vms_resp = volume_group.get_vms(volume_group_uuid)
-        result["response"]["vms"] = vms_resp.get("data")
+
+    vms_resp = volume_group.get_vms(volume_group_uuid)
+    result["response"]["vms"] = vms_resp.get("data")
 
     # update clients
     if vg_clients:
         update_volume_group_clients(
             module, volume_group, vg_clients, volume_group_uuid, result
         )
-        clients_resp = volume_group.get_clients(volume_group_uuid)
-        result["response"]["clients"] = clients_resp.get("data")
+
+    clients_resp = volume_group.get_clients(volume_group_uuid)
+    result["response"]["clients"] = clients_resp.get("data")
 
     if result.pop("nothing_to_change"):
         module.exit_json(
