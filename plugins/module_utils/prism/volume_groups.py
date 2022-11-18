@@ -87,8 +87,7 @@ class VolumeGroup(Prism):
         resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
         return resp, None
 
-    def detach_iscsi_client(self, volume_group_uuid, client):
-        client_uuid = client["extId"]
+    def detach_iscsi_client(self, volume_group_uuid, client_uuid):
         endpoint = "$actions/detach-iscsi-client/{0}".format(client_uuid)
         resp = self.update(uuid=volume_group_uuid, method="POST", endpoint=endpoint)
         resp["task_uuid"] = resp["data"]["extId"].split(":")[1]

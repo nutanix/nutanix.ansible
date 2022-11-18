@@ -232,6 +232,7 @@ def get_module_spec():
             elements="dict",
             options=client_spec,
             mutually_exclusive=[("uuid", "iscsi_iqn", "iscsi_ip")],
+            required_if=[("state", "absent", ("uuid",))],
         ),
         CHAP_auth=dict(type="str", choices=["enable", "disable"]),
         target_password=dict(type="str", no_log=True),
@@ -398,11 +399,12 @@ def delete_volume_group(module, result):
     clients_resp = volume_group.get_clients(volume_group_uuid)
     detached_clients = []
     for client in clients_resp.get("data", []):
-        detach_resp = volume_group.detach_iscsi_client(volume_group_uuid, client)
+        client_uuid = client["extId"]
+        detach_resp = volume_group.detach_iscsi_client(volume_group_uuid, client_uuid)
 
         task_uuid = detach_resp["task_uuid"]
         wait_for_task_completion(module, {"task_uuid": task_uuid})
-        detached_clients.append(client["extId"])
+        detached_clients.append(client_uuid)
 
     result["detached_clients"] = detached_clients
 
