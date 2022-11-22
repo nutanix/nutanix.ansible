@@ -41,6 +41,8 @@ def add_database(module, result):
             msg="db_instance_uuid is required field for adding databases to database instance",
             **result,
         )
+    result["db_instance_uuid"] = instance_uuid
+
 
     _databases = Database(module)
     databases = module.params.get("databases")
@@ -54,7 +56,6 @@ def add_database(module, result):
 
     resp = _databases.add_databases(instance_uuid, spec)
     result["response"] = resp
-    result["db_instance_uuid"] = instance_uuid
 
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]
