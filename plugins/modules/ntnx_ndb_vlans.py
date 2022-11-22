@@ -627,12 +627,9 @@ db_uuid:
   type: str
   sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
 """
-import time  # noqa: E402
-from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.vlans import VLAN  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -642,7 +639,6 @@ def get_module_spec():
     ip_pool_spec = dict(start_ip=dict(type="str"), end_ip=dict(type="str"))
 
     module_args = dict(
-
         name=dict(type="str"),
         vlan_type=dict(type="str", choices=["DHCP", "Static"]),
         vlan_uuid=dict(type="str"),
@@ -670,16 +666,12 @@ def create_vlan(module, result):
     name = module.params["name"]
     uuid, err = vlan.get_uuid(name)
     if uuid:
-        module.fail_json(
-            msg="vlan instance with given name already exists", **result
-        )
+        module.fail_json(msg="vlan instance with given name already exists", **result)
 
     spec, err = vlan.get_spec()
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating create vlan instance spec", **result
-        )
+        module.fail_json(msg="Failed generating create vlan instance spec", **result)
 
     if module.check_mode:
         result["response"] = spec
@@ -726,7 +718,7 @@ def check_for_idempotency(old_spec, update_spec):
 
 
 def update_vlan(module, result):
-    _vlan = vlan(module)
+    _vlan = VLAN(module)
 
     uuid = module.params.get("db_uuid")
     if not uuid:
@@ -743,9 +735,7 @@ def update_vlan(module, result):
 
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating update vlan instance spec", **result
-        )
+        module.fail_json(msg="Failed generating update vlan instance spec", **result)
 
     if module.check_mode:
         result["response"] = update_spec

@@ -63,7 +63,7 @@ class VLAN(NutanixDatabase):
                 "type": "",
                 "properties": [],
                 "ipPools": [],
-                "clusterId": "1c42ca25-32f4-42d9-a2bd-6a21f925b725"
+                "clusterId": "1c42ca25-32f4-42d9-a2bd-6a21f925b725",
             }
         )
 
