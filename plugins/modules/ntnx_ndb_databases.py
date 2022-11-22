@@ -647,6 +647,19 @@ def get_module_spec():
     software_profile = dict(version_id=dict(type="str"))
     software_profile.update(deepcopy(entity_by_spec))
 
+    ha_proxy = dict(
+        name=dict(type="str", required=True),
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        provision_virtual_ip=dict(type="str", required=True),
+        write_port=dict(type="str", required=True),
+        read_port=dict(type="str", required=True),
+    )
+
     new_server = dict(
         name=dict(type="str", required=True),
         pub_ssh_key=dict(type="str", required=True, no_log=True),
@@ -687,6 +700,52 @@ def get_module_spec():
         ),
     )
 
+    new_server_cluster_vm = dict(
+        name=dict(type="str", required=True),
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        primary=dict(type="bool", default=False, required=False),
+        failover_mode=dict(type="str", choices=["Automatic", "Manual"], required=True),
+    )
+
+    new_server_cluster = dict(
+        name=dict(type="str", required=True),
+        desc=dict(type="str", required=False),
+        vms=dict(
+            type="list", elements="dict", options=new_server_cluster_vm, required=True
+        ),
+        era_user_password=dict(type="str", required=True, no_log=False),
+        pub_ssh_key=dict(type="str", required=False),
+        software_profile=dict(
+            type="dict",
+            options=software_profile,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        network_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        compute_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        remote_archive_destination=dict(type="str", required=False),
+    )
+
+    # TO-DO: use_registered_clusters for oracle, ms sql, etc.
+    db_server_cluster = dict(
+        create_new_cluster=dict(type="dict", option=new_server_cluster, required=False),
+    )
+
     sla = dict(
         uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
@@ -713,6 +772,12 @@ def get_module_spec():
         ),
         schedule=dict(type="dict", options=schedule, required=True),
         auto_tune_log_drive=dict(type="bool", required=False, default=True),
+        clusters=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
     )
 
     postgres = dict(
@@ -723,6 +788,10 @@ def get_module_spec():
         allocate_pg_hugepage=dict(type="bool", default=False, required=False),
         auth_method=dict(type="str", default="md5", required=False),
         cluster_database=dict(type="bool", default=False, required=False),
+        patroni_cluster_name=dict(type="str", required=True),
+        ha_proxy=dict(type="dict", options=ha_proxy, required=False),
+        enable_synchronous_mode=dict(type="bool", required=True),
+        archive_wal_expire_days=dict(type="str", default="-1", required=False),
     )
     postgres.update(deepcopy(default_db_arguments))
 
@@ -730,6 +799,7 @@ def get_module_spec():
         db_uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
+        high_avalibility=dict(type="bool", default=False, required=False),
         db_params_profile=dict(
             type="dict",
             options=entity_by_spec,
@@ -740,6 +810,11 @@ def get_module_spec():
             type="dict",
             options=db_vm,
             mutually_exclusive=[("create_new_server", "use_registered_server")],
+            required=False,
+        ),
+        db_server_cluster=dict(
+            type="dict",
+            options=db_server_cluster,
             required=False,
         ),
         time_machine=dict(type="dict", options=time_machine, required=False),
@@ -887,6 +962,7 @@ def run_module():
     mutually_exclusive_list = [
         ("db_uuid", "db_params_profile"),
         ("db_uuid", "db_vm"),
+        ("db_server_cluster", "db_vm"),
         ("db_uuid", "postgres"),
         ("db_uuid", "time_machine"),
         ("db_uuid", "auto_tune_staging_drive"),
