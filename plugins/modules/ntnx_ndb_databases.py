@@ -700,7 +700,7 @@ def get_module_spec():
         ),
     )
 
-    new_server_cluster_vm = dict(
+    vm = dict(
         name=dict(type="str", required=True),
         cluster=dict(
             type="dict",
@@ -712,13 +712,13 @@ def get_module_spec():
         failover_mode=dict(type="str", choices=["Automatic", "Manual"], required=True),
     )
 
-    new_server_cluster = dict(
+    new_cluster = dict(
         name=dict(type="str", required=True),
         desc=dict(type="str", required=False),
         vms=dict(
-            type="list", elements="dict", options=new_server_cluster_vm, required=True
+            type="list", elements="dict", options=vm, required=True
         ),
-        era_user_password=dict(type="str", required=True, no_log=False),
+        ndb_user_password=dict(type="str", required=True, no_log=False),
         pub_ssh_key=dict(type="str", required=False),
         software_profile=dict(
             type="dict",
@@ -738,12 +738,12 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        remote_archive_destination=dict(type="str", required=False),
+        archive_log_destination=dict(type="str", required=False),
     )
 
     # TO-DO: use_registered_clusters for oracle, ms sql, etc.
     db_server_cluster = dict(
-        create_new_cluster=dict(type="dict", option=new_server_cluster, required=False),
+        new_cluster=dict(type="dict", option=new_cluster, required=True),
     )
 
     sla = dict(
@@ -799,7 +799,7 @@ def get_module_spec():
         db_uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        high_avalibility=dict(type="bool", default=False, required=False),
+        ha=dict(type="bool", default=False, required=False),
         db_params_profile=dict(
             type="dict",
             options=entity_by_spec,
