@@ -27,9 +27,9 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 def get_module_spec():
 
     module_args = dict(
-        db_instance_uuid = dict(type="str", required=True),
-        database_uuid = dict(type="str", required=False),
-        databases = dict(type="list", elements="str", required=False),
+        db_instance_uuid=dict(type="str", required=True),
+        database_uuid=dict(type="str", required=False),
+        databases=dict(type="list", elements="str", required=False),
     )
     return module_args
 
@@ -37,10 +37,13 @@ def get_module_spec():
 def add_database(module, result):
     instance_uuid = module.params.get("db_instance_uuid")
     if not instance_uuid:
-        return module.fail_json(msg="db_instance_uuid is required field for adding databases to database instance", **result)
-    
+        return module.fail_json(
+            msg="db_instance_uuid is required field for adding databases to database instance",
+            **result,
+        )
+
     _databases = Database(module)
-    databases = module.get("databases")
+    databases = module.params.get("databases")
     if not databases:
         return module.exit_json(msg="No database to add", **result)
 
@@ -49,7 +52,7 @@ def add_database(module, result):
         result["response"] = spec
         return
 
-    resp = _databases.databases(instance_uuid, spec)
+    resp = _databases.add_databases(instance_uuid, spec)
     result["response"] = resp
     result["db_instance_uuid"] = instance_uuid
 
@@ -65,13 +68,18 @@ def add_database(module, result):
 
 
 def remove_database(module, result):
-    instance_uuid = module.params.get("instance_uuid")
+    instance_uuid = module.params.get("db_instance_uuid")
     database_uuid = module.params.get("database_uuid")
     if not database_uuid or not instance_uuid:
-        module.fail_json(msg="database_uuid and instance_uuid are required fields for deleting database from database instance", **result)
+        module.fail_json(
+            msg="database_uuid and instance_uuid are required fields for deleting database from database instance",
+            **result,
+        )
 
     _databases = Database(module)
-    resp = _databases.remove_linked_database(database_uuid=database_uuid, instance_uuid=instance_uuid)
+    resp = _databases.remove_linked_database(
+        database_uuid=database_uuid, instance_uuid=instance_uuid
+    )
     result["response"] = resp
     result["db_instance_uuid"] = instance_uuid
 
@@ -80,6 +88,7 @@ def remove_database(module, result):
         operations = Operation(module)
         time.sleep(3)  # to get ops ID functional
         operations.wait_for_completion(ops_uuid, delay=5)
+        resp = _databases.read(uuid=instance_uuid)
         result["response"] = resp.get("linkedDatabases", [])
 
     result["changed"] = True
@@ -92,7 +101,12 @@ def run_module():
         mutually_exclusive=[("databases", "database_uuid")],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None, "db_instance_uuid": None}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+        "db_instance_uuid": None,
+    }
 
     if module.params["state"] == "present":
         add_database(module, result)
