@@ -85,6 +85,14 @@ class Database(NutanixDatabase):
     def restore(self, uuid, data):
         endpoint = "restore"
         return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
+    
+    def add_databases(self, instance_uuid, data):
+        endpoint = "linked-databases"
+        return self.update(data=data, uuid=instance_uuid, endpoint=endpoint, method="POST")
+    
+    def remove_linked_database(self, database_uuid, instance_uuid):
+        endpoint = "linked-databases/{0}".format(database_uuid)
+        return self.delete(uuid=instance_uuid, endpoint=endpoint)
 
     def get_database(self, name=None, uuid=None):
         default_query = {"detailed": True}
@@ -181,6 +189,19 @@ class Database(NutanixDatabase):
 
         spec["timeZone"] = restore_config.get("timezone")
         return spec
+    
+    def get_add_database_spec(self, database_names):
+        spec = {
+            "databases": []
+        }
+
+        for name in database_names:
+            spec["databases"].append({
+                "databaseName": name
+            })
+        
+        return spec
+
 
     def _get_default_spec(self):
         return deepcopy(
