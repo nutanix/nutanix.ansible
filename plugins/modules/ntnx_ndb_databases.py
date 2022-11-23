@@ -656,8 +656,8 @@ def get_module_spec():
             required=True,
         ),
         provision_virtual_ip=dict(type="str", required=True),
-        write_port=dict(type="str", required=True),
-        read_port=dict(type="str", required=True),
+        write_port=dict(type="str", default="5000", required=False),
+        read_port=dict(type="str", default="5001", required=False),
     )
 
     new_server = dict(
@@ -708,8 +708,9 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        primary=dict(type="bool", default=False, required=False),
-        failover_mode=dict(type="str", choices=["Automatic", "Manual"], required=True),
+        role=dict(type="str", choices=["Primary", "Secondary"], required=True),
+        failover_mode=dict(type="str", choices=["Automatic", "Manual"], default="Automatic", required=False),
+        node_type=dict(type="str", choices=["database"], default="database", required=False)
     )
 
     new_cluster = dict(
@@ -773,7 +774,8 @@ def get_module_spec():
         schedule=dict(type="dict", options=schedule, required=True),
         auto_tune_log_drive=dict(type="bool", required=False, default=True),
         clusters=dict(
-            type="dict",
+            type="list",
+            element="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=True,
@@ -792,6 +794,8 @@ def get_module_spec():
         ha_proxy=dict(type="dict", options=ha_proxy, required=False),
         enable_synchronous_mode=dict(type="bool", required=True),
         archive_wal_expire_days=dict(type="str", default="-1", required=False),
+        backup_policy=dict(type="str", choices=["primary_only"], default="primary_only", required=False),
+        failover_mode=dict(type="str", choices=["automatic"], default="automatic", required=False)
     )
     postgres.update(deepcopy(default_db_arguments))
 
@@ -799,7 +803,7 @@ def get_module_spec():
         db_uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        ha=dict(type="bool", default=False, required=False),
+        ha_instance=dict(type="bool", default=False, required=False),
         db_params_profile=dict(
             type="dict",
             options=entity_by_spec,
