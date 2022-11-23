@@ -44,16 +44,15 @@ class VLAN(NutanixDatabase):
     def get_vlan(self, name=None, uuid=None):
         default_query = {"detailed": True}
         if uuid:
-            resp = self.read(uuid=uuid, query=default_query)
+            query = {"id": uuid}
+            query.update(deepcopy(default_query))
+            resp = self.read(query=query)
         elif name:
-            query = {"value-type": "name", "value": name}
+            query = {"name": name}
             query.update(deepcopy(default_query))
             resp = self.read(query=query)
             if not resp:
                 return None, "vlan with name {0} not found".format(name)
-            if isinstance(resp, list):
-                resp = resp[0]
-                return resp, None
         else:
             return (
                 None,
