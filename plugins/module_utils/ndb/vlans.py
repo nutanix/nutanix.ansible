@@ -117,7 +117,7 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _build_spec_ip_pool(self, payload, params):
-        ip_pool = {"startIP": params["start_ip"], "endIP":  params["end_ip"]}
+        ip_pool = {"startIP": params["start_ip"], "endIP": params["end_ip"]}
         payload["ipPools"].append(ip_pool)
         return payload, None
 
@@ -134,7 +134,9 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _build_spec_secondary_dns(self, payload, secondary_dns):
-        payload["properties"].append({"name": "VLAN_SECONDARY_DNS", "value": secondary_dns})
+        payload["properties"].append(
+            {"name": "VLAN_SECONDARY_DNS", "value": secondary_dns}
+        )
         return payload, None
 
     def _build_spec_dns_domain(self, payload, dns_domain):
