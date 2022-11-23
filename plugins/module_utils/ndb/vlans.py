@@ -133,23 +133,33 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _build_spec_subnet_mask(self, payload, subnet_mask):
-        old_property = self.get_property_by_name("VLAN_SUBNET_MASK", payload["properties"])
+        old_property = self.get_property_by_name(
+            "VLAN_SUBNET_MASK", payload["properties"]
+        )
         if old_property:
             old_property["value"] = subnet_mask
         else:
-            payload["properties"].append({"name": "VLAN_SUBNET_MASK", "value": subnet_mask})
+            payload["properties"].append(
+                {"name": "VLAN_SUBNET_MASK", "value": subnet_mask}
+            )
         return payload, None
 
     def _build_spec_primary_dns(self, payload, primary_dns):
-        old_property = self.get_property_by_name("VLAN_PRIMARY_DNS", payload["properties"])
+        old_property = self.get_property_by_name(
+            "VLAN_PRIMARY_DNS", payload["properties"]
+        )
         if old_property:
             old_property["value"] = primary_dns
         else:
-            payload["properties"].append({"name": "VLAN_PRIMARY_DNS", "value": primary_dns})
+            payload["properties"].append(
+                {"name": "VLAN_PRIMARY_DNS", "value": primary_dns}
+            )
         return payload, None
 
     def _build_spec_secondary_dns(self, payload, secondary_dns):
-        old_property = self.get_property_by_name("VLAN_SECONDARY_DNS", payload["properties"])
+        old_property = self.get_property_by_name(
+            "VLAN_SECONDARY_DNS", payload["properties"]
+        )
         if old_property:
             old_property["value"] = secondary_dns
         else:
@@ -159,12 +169,20 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _build_spec_dns_domain(self, payload, dns_domain):
-        old_property = self.get_property_by_name("VLAN_DNS_DOMAIN", payload["properties"])
+        old_property = self.get_property_by_name(
+            "VLAN_DNS_DOMAIN", payload["properties"]
+        )
         if old_property:
             old_property["value"] = dns_domain
-            raise ValueError(payload["properties"], old_property, old_property in payload["properties"])
+            raise ValueError(
+                payload["properties"],
+                old_property,
+                old_property in payload["properties"],
+            )
         else:
-            payload["properties"].append({"name": "VLAN_DNS_DOMAIN", "value": dns_domain})
+            payload["properties"].append(
+                {"name": "VLAN_DNS_DOMAIN", "value": dns_domain}
+            )
         return payload, None
 
     def get_property_by_name(self, name, properties):
