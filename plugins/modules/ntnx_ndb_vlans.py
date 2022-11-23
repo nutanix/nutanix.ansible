@@ -23,6 +23,59 @@ options:
       - name of vlan instance
       - update allowed
     type: str
+  vlan_type:
+    description:
+      - write
+    type: str
+    choices: ["DHCP", "Static"]
+  cluster:
+        description:
+          - write
+        type: dict
+        suboptions:
+          name:
+            description:
+              - Cluster Name
+              - Mutually exclusive with C(uuid)
+            type: str
+          uuid:
+            description:
+              - Cluster UUID
+              - Mutually exclusive with C(name)
+            type: str
+  gateway:
+    description:
+      - write
+    type: str
+  subnet_mask:
+    description:
+      - write
+    type: str
+  primary_dns:
+    description:
+      - write
+    type: str
+  secondary_dns:
+    description:
+      - write
+    type: str
+  dns_domain:
+    description:
+      - write
+    type: str
+  ip_pool:
+        description:
+          - write
+        type: dict
+        suboptions:
+            start_ip:
+                description:
+                - write
+                type: str
+            end_ip:
+                description:
+                - write
+                type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
