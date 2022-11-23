@@ -17,12 +17,13 @@ class VLAN(NutanixDatabase):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "vlan_type": self._build_spec_type,
-            "ip_pool": self._build_spec_ip_pool,
+            "ip_pools": self._build_spec_ip_pools,
             "gateway": self._build_spec_gateway,
             "subnet_mask": self._build_spec_subnet_mask,
             "primary_dns": self._build_spec_primary_dns,
             "secondary_dns": self._build_spec_secondary_dns,
             "dns_domain": self._build_spec_dns_domain,
+            "cluster": self._build_spec_cluster,
         }
 
     def get_uuid(
@@ -90,16 +91,6 @@ class VLAN(NutanixDatabase):
 
         return spec
 
-    def get_default_delete_spec(self):
-        return deepcopy(
-            {
-                "delete": False,
-                "remove": False,
-                "deleteTimeMachine": False,
-                "deleteLogicalCluster": True,
-            }
-        )
-
     def _build_spec_name(self, payload, name):
         payload["name"] = name
         return payload, None
@@ -109,20 +100,26 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _build_spec_cluster(self, payload, param):
-        uuid, err = get_cluster_uuid(param, self.module)
+        uuid, err = get_cluster_uuid(config=param, module=self.module)
         if err:
             return None, err
         payload["clusterId"] = uuid
         return payload, None
 
-    def _build_spec_ip_pool(self, payload, params):
-        ip_pool = {"startIP": params["start_ip"], "endIP": params["end_ip"]}
-        if payload.get("ipPools"):
-            payload["ipPools"].append(ip_pool)
-        else:
-            payload["ipPools"] = []
-            payload["ipPools"].append(ip_pool)
+    def _build_spec_ip_pools(self, payload, ip_pools):
+        ip_pools_spec = []
+        for ip_pool in ip_pools:
+            ip_pool = {"startIP": ip_pool["start_ip"], "endIP": ip_pool["end_ip"]}
+            ip_pools_spec.append(ip_pool)
+        payload["ipPools"] = ip_pools_spec
         return payload, None
+
+    def _build_spec_remove_ip_pools(self, ip_pools):
+        payload = {"ipPools": []}
+        for ip_pool_uuid in ip_pools:
+            ip_pool = {"id": ip_pool_uuid}
+            payload["ipPools"].append(ip_pool)
+        return payload
 
     def _build_spec_gateway(self, payload, gateway):
         old_property = self.get_property_by_name("VLAN_GATEWAY", payload["properties"])
@@ -174,11 +171,6 @@ class VLAN(NutanixDatabase):
         )
         if old_property:
             old_property["value"] = dns_domain
-            raise ValueError(
-                payload["properties"],
-                old_property,
-                old_property in payload["properties"],
-            )
         else:
             payload["properties"].append(
                 {"name": "VLAN_DNS_DOMAIN", "value": dns_domain}
@@ -190,3 +182,13 @@ class VLAN(NutanixDatabase):
             if property["name"] == name:
                 return property
         return None
+
+    def add_ip_pools(self, vlan_uuid, ip_pools):
+        spec, err = self._build_spec_ip_pools({}, ip_pools)
+        endpoint = "ip-pool"
+        return self.update(uuid=vlan_uuid, data=spec, endpoint=endpoint, method="POST")
+
+    def remove_ip_pools(self, vlan_uuid, ip_pools):
+        spec = self._build_spec_remove_ip_pools(ip_pools)
+        endpoint = "ip-pool"
+        return self.delete(uuid=vlan_uuid, data=spec, endpoint=endpoint)

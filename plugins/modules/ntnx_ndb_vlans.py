@@ -122,11 +122,13 @@ def get_module_spec():
         cluster=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
-        ip_pool=dict(
-            type="dict",
+        ip_pools=dict(
+            type="list",
+            elements="dict",
             options=ip_pool_spec,
             required_together=[("start_ip", "end_ip")],
         ),
+        remove_ip_pools=dict(type="list", elements="str"),
         gateway=dict(type="str"),
         subnet_mask=dict(type="str"),
         primary_dns=dict(type="str"),
@@ -164,6 +166,8 @@ def update_vlan(module, result):
     vlan = VLAN(module)
 
     uuid = module.params.get("vlan_uuid")
+    ip_pools = module.params.pop("ip_pools", None)
+    remove_ip_pools = module.params.pop("remove_ip_pools", None)
     if not uuid:
         module.fail_json(msg="vlan_uuid is required field for update", **result)
 
@@ -181,11 +185,18 @@ def update_vlan(module, result):
         result["response"] = update_spec
         return
 
-    if check_for_idempotency(old_spec, update_spec):
+    if check_for_idempotency(old_spec, update_spec) and not remove_ip_pools and not ip_pools:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
     resp = vlan.update(data=update_spec, uuid=uuid)
+
+    if remove_ip_pools:
+        vlan.remove_ip_pools(vlan_uuid=uuid, ip_pools=remove_ip_pools)
+    if ip_pools:
+        resp = vlan.add_ip_pools(vlan_uuid=uuid, ip_pools=ip_pools)
+
+
     result["response"] = resp
     result["vlan_uuid"] = uuid
     result["changed"] = True
@@ -215,7 +226,7 @@ def check_for_idempotency(old_spec, update_spec):
 
 def run_module():
     mutually_exclusive_list = [
-        ("vlan_uuid", ""),
+        ("vlan_uuid", "name"),
     ]
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
@@ -224,6 +235,7 @@ def run_module():
             ("state", "present", ("name", "vlan_uuid"), True),
             ("state", "absent", ("vlan_uuid",)),
         ],
+        required_by={"remove_ip_pools": "vlan_uuid"},
         supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
