@@ -41,12 +41,14 @@ class VLAN(NutanixDatabase):
         uuid = resp.get("id")
         return uuid, None
 
-    def get_vlan(self, name=None, uuid=None):
-        default_query = {"detailed": True}
+    def get_vlan(self, name=None, uuid=None, detailed=True):
+        default_query = {"detailed": detailed}
         if uuid:
             query = {"id": uuid}
             query.update(deepcopy(default_query))
             resp = self.read(query=query)
+            if not resp:
+                return None, "vlan with uuid {0} not found".format(uuid)
         elif name:
             query = {"name": name}
             query.update(deepcopy(default_query))
@@ -68,19 +70,17 @@ class VLAN(NutanixDatabase):
                 "type": "",
                 "properties": [],
                 "ipPools": [],
-                "clusterId": "1c42ca25-32f4-42d9-a2bd-6a21f925b725",
+                "clusterId": "",
             }
         )
 
     def get_default_update_spec(self, override_spec=None):
         spec = deepcopy(
             {
-                "name": None,
-                "description": None,
-                "tags": [],
-                "resetTags": True,
-                "resetName": True,
-                "resetDescription": True,
+                "name": "",
+                "type": "",
+                "properties": [],
+                "clusterId": "",
             }
         )
         if override_spec:
@@ -117,27 +117,58 @@ class VLAN(NutanixDatabase):
 
     def _build_spec_ip_pool(self, payload, params):
         ip_pool = {"startIP": params["start_ip"], "endIP": params["end_ip"]}
-        payload["ipPools"].append(ip_pool)
+        if payload.get("ipPools"):
+            payload["ipPools"].append(ip_pool)
+        else:
+            payload["ipPools"] = []
+            payload["ipPools"].append(ip_pool)
         return payload, None
 
     def _build_spec_gateway(self, payload, gateway):
-        payload["properties"].append({"name": "VLAN_GATEWAY", "value": gateway})
+        old_property = self.get_property_by_name("VLAN_GATEWAY", payload["properties"])
+        if old_property:
+            old_property["value"] = gateway
+        else:
+            payload["properties"].append({"name": "VLAN_GATEWAY", "value": gateway})
         return payload, None
 
     def _build_spec_subnet_mask(self, payload, subnet_mask):
-        payload["properties"].append({"name": "VLAN_SUBNET_MASK", "value": subnet_mask})
+        old_property = self.get_property_by_name("VLAN_SUBNET_MASK", payload["properties"])
+        if old_property:
+            old_property["value"] = subnet_mask
+        else:
+            payload["properties"].append({"name": "VLAN_SUBNET_MASK", "value": subnet_mask})
         return payload, None
 
     def _build_spec_primary_dns(self, payload, primary_dns):
-        payload["properties"].append({"name": "VLAN_PRIMARY_DNS", "value": primary_dns})
+        old_property = self.get_property_by_name("VLAN_PRIMARY_DNS", payload["properties"])
+        if old_property:
+            old_property["value"] = primary_dns
+        else:
+            payload["properties"].append({"name": "VLAN_PRIMARY_DNS", "value": primary_dns})
         return payload, None
 
     def _build_spec_secondary_dns(self, payload, secondary_dns):
-        payload["properties"].append(
-            {"name": "VLAN_SECONDARY_DNS", "value": secondary_dns}
-        )
+        old_property = self.get_property_by_name("VLAN_SECONDARY_DNS", payload["properties"])
+        if old_property:
+            old_property["value"] = secondary_dns
+        else:
+            payload["properties"].append(
+                {"name": "VLAN_SECONDARY_DNS", "value": secondary_dns}
+            )
         return payload, None
 
     def _build_spec_dns_domain(self, payload, dns_domain):
-        payload["properties"].append({"name": "VLAN_DNS_DOMAIN", "value": dns_domain})
+        old_property = self.get_property_by_name("VLAN_DNS_DOMAIN", payload["properties"])
+        if old_property:
+            old_property["value"] = dns_domain
+            raise ValueError(payload["properties"], old_property, old_property in payload["properties"])
+        else:
+            payload["properties"].append({"name": "VLAN_DNS_DOMAIN", "value": dns_domain})
         return payload, None
+
+    def get_property_by_name(self, name, properties):
+        for property in properties:
+            if property["name"] == name:
+                return property
+        return None

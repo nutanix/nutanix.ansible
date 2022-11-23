@@ -157,57 +157,21 @@ def create_vlan(module, result):
     result["response"] = resp
     vlan_uuid = resp["id"]
     result["vlan_uuid"] = vlan_uuid
-    #
-    # if module.params.get("wait"):
-    #     ops_uuid = resp["operationId"]
-    #     operations = Operation(module)
-    #     time.sleep(5)  # to get operation ID functional
-    #     operations.wait_for_completion(ops_uuid)
-    #     resp = vlan.read(vlan_uuid)
-    #     result["response"] = resp
-
     result["changed"] = True
 
 
-def check_for_idempotency(old_spec, update_spec):
-    if (
-        old_spec["name"] != update_spec["name"]
-        or old_spec["description"] != update_spec["description"]
-    ):
-        return False
-
-    if len(old_spec["tags"]) != len(update_spec["tags"]):
-        return False
-
-    old_tag_values = {}
-    new_tag_values = {}
-    for i in range(len(old_spec["tags"])):
-        old_tag_values[old_spec["tags"][i]["tagName"]] = old_spec["tags"][i]["value"]
-        new_tag_values[update_spec["tags"][i]["tagName"]] = update_spec["tags"][i][
-            "value"
-        ]
-
-    if old_tag_values != new_tag_values:
-        return False
-
-    return True
-
-
 def update_vlan(module, result):
-    _vlan = VLAN(module)
+    vlan = VLAN(module)
 
-    uuid = module.params.get("db_uuid")
+    uuid = module.params.get("vlan_uuid")
     if not uuid:
-        module.fail_json(msg="uuid is required field for update", **result)
+        module.fail_json(msg="vlan_uuid is required field for update", **result)
 
-    resp = _vlan.read(uuid)
-    old_spec = _vlan.get_default_update_spec(override_spec=resp)
+    resp, err = vlan.get_vlan(uuid=uuid, detailed=False)
 
-    update_spec, err = _vlan.get_spec(old_spec=old_spec)
+    old_spec = vlan.get_default_update_spec(override_spec=resp)
 
-    # due to field name changes
-    if update_spec.get("vlanDescription"):
-        update_spec["description"] = update_spec.pop("vlanDescription")
+    update_spec, err = vlan.get_spec(old_spec=old_spec)
 
     if err:
         result["error"] = err
@@ -221,7 +185,7 @@ def update_vlan(module, result):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-    resp = _vlan.update(data=update_spec, uuid=uuid)
+    resp = vlan.update(data=update_spec, uuid=uuid)
     result["response"] = resp
     result["vlan_uuid"] = uuid
     result["changed"] = True
@@ -232,18 +196,21 @@ def delete_vlan(module, result):
 
     uuid = module.params.get("vlan_uuid")
     if not uuid:
-        module.fail_json(msg="uuid is required field for delete", **result)
+        module.fail_json(msg="vlan_uuid is required field for delete", **result)
 
     resp = vlan.delete(uuid)
 
-    # if module.params.get("wait"):
-    #     ops_uuid = resp["operationId"]
-    #     time.sleep(5)  # to get operation ID functional
-    #     operations = Operation(module)
-    #     resp = operations.wait_for_completion(ops_uuid)
-
     result["response"] = resp
     result["changed"] = True
+
+
+def check_for_idempotency(old_spec, update_spec):
+
+    for key, value in update_spec.items():
+        if old_spec.get(key) != value:
+            return False
+
+    return True
 
 
 def run_module():
