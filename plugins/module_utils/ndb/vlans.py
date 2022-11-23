@@ -17,6 +17,12 @@ class VLAN(NutanixDatabase):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "vlan_type": self._build_spec_type,
+            "ip_pool": self._build_spec_ip_pool,
+            "gateway": self._build_spec_gateway,
+            "subnet_mask": self._build_spec_subnet_mask,
+            "primary_dns": self._build_spec_primary_dns,
+            "secondary_dns": self._build_spec_secondary_dns,
+            "dns_domain": self._build_spec_dns_domain,
         }
 
     def get_uuid(
@@ -110,10 +116,27 @@ class VLAN(NutanixDatabase):
         payload["clusterId"] = uuid
         return payload, None
 
-    def _build_spec_ip_pools(self, payload, params):
-        pools = []
-        for ip_pool in params["ip_pools"]:
-            range = {"range": ip_pool["start_ip"] + " " + ip_pool["end_ip"]}
-            pools.append(range)
-        payload["ipPools"] = pools
+    def _build_spec_ip_pool(self, payload, params):
+        ip_pool = {"startIP": params["start_ip"], "endIP":  params["end_ip"]}
+        payload["ipPools"].append(ip_pool)
+        return payload, None
+
+    def _build_spec_gateway(self, payload, gateway):
+        payload["properties"].append({"name": "VLAN_GATEWAY", "value": gateway})
+        return payload, None
+
+    def _build_spec_subnet_mask(self, payload, subnet_mask):
+        payload["properties"].append({"name": "VLAN_SUBNET_MASK", "value": subnet_mask})
+        return payload, None
+
+    def _build_spec_primary_dns(self, payload, primary_dns):
+        payload["properties"].append({"name": "VLAN_PRIMARY_DNS", "value": primary_dns})
+        return payload, None
+
+    def _build_spec_secondary_dns(self, payload, secondary_dns):
+        payload["properties"].append({"name": "VLAN_SECONDARY_DNS", "value": secondary_dns})
+        return payload, None
+
+    def _build_spec_dns_domain(self, payload, dns_domain):
+        payload["properties"].append({"name": "VLAN_DNS_DOMAIN", "value": dns_domain})
         return payload, None
