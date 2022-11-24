@@ -655,7 +655,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        provision_virtual_ip=dict(type="str", required=True),
+        provision_virtual_ip=dict(type="bool", default=True, required=False),
         write_port=dict(type="str", default="5000", required=False),
         read_port=dict(type="str", default="5001", required=False),
     )
@@ -700,7 +700,7 @@ def get_module_spec():
         ),
     )
 
-    vm = dict(
+    cluster_vm = dict(
         name=dict(type="str", required=True),
         cluster=dict(
             type="dict",
@@ -717,7 +717,7 @@ def get_module_spec():
         name=dict(type="str", required=True),
         desc=dict(type="str", required=False),
         vms=dict(
-            type="list", elements="dict", options=vm, required=True
+            type="list", elements="dict", options=cluster_vm, required=True
         ),
         ndb_user_password=dict(type="str", required=True, no_log=False),
         pub_ssh_key=dict(type="str", required=False),
@@ -739,12 +739,18 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
+        ndb_cluster = dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
         archive_log_destination=dict(type="str", required=False),
     )
 
     # TO-DO: use_registered_clusters for oracle, ms sql, etc.
     db_server_cluster = dict(
-        new_cluster=dict(type="dict", option=new_cluster, required=True),
+        new_cluster=dict(type="dict", options=new_cluster, required=True),
     )
 
     sla = dict(
@@ -790,12 +796,13 @@ def get_module_spec():
         allocate_pg_hugepage=dict(type="bool", default=False, required=False),
         auth_method=dict(type="str", default="md5", required=False),
         cluster_database=dict(type="bool", default=False, required=False),
-        patroni_cluster_name=dict(type="str", required=True),
+        patroni_cluster_name=dict(type="str", required=False),
         ha_proxy=dict(type="dict", options=ha_proxy, required=False),
-        enable_synchronous_mode=dict(type="bool", required=True),
+        enable_synchronous_mode=dict(type="bool", default=False, required=False),
         archive_wal_expire_days=dict(type="str", default="-1", required=False),
-        backup_policy=dict(type="str", choices=["primary_only"], default="primary_only", required=False),
-        failover_mode=dict(type="str", choices=["automatic"], default="automatic", required=False)
+        backup_policy=dict(type="str", choices=["prefer_secondary", "primary_only", "secondary_only"], default="primary_only", required=False),
+        failover_mode=dict(type="str", choices=["Automatic", "Manual"], default="Automatic", required=False),
+        enable_peer_auth=dict(type="bool", default=False, required=False)
     )
     postgres.update(deepcopy(default_db_arguments))
 
@@ -980,6 +987,7 @@ def run_module():
         ],
         supports_check_mode=True,
     )
+
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "db_uuid": None}
     if module.params["state"] == "present":

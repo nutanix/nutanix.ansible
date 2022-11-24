@@ -263,38 +263,61 @@ class Database(NutanixDatabase):
             if not db_server_cluster.get("new_cluster").get("name"):
                 return None, "'name' is required for new db servers cluster"
 
-            server_cluster_config = db_server_cluster["new_cluster"]
-            vms = server_cluster_config.get("vms", [])
+            create_config = db_server_cluster["new_cluster"]
+            vms = create_config.get("vms", [])
             if len(vms)<1:
                 return None, "Atleast one vm is required for creating cluster of database servers"
 
             # get compute profile
             compute_profile_uuid, err = get_profile_uuid(
-                self.module, "Compute", server_cluster_config["compute_profile"]
+                self.module, "Compute", create_config["compute_profile"]
             )
             if err:
                 return None, err
             
             # get network prfile
             network_profile_uuid, err = get_profile_uuid(
-                self.module, "Network", server_cluster_config["network_profile"]
+                self.module, "Network", create_config["network_profile"]
             )
             if err:
                 return None, err
             
             # get archive log destination link
-            archive_log_destination = server_cluster_config.get("archive_log_destination", "")
+            archive_log_destination = create_config.get("archive_log_destination", "")
 
 
             # get cluster uuid map to assign cluster uuid for each node vm
             clusters = Cluster(self.module)
             clusters_name_uuid_map = clusters.get_all_clusters_name_uuid_map()
 
+            # set ndb cluster which will handle provisioning tasks
+            ndb_cluster = create_config.get("ndb_cluster")
+            if not ndb_cluster:
+                return None, "ndb_cluster is required for creating db server cluster"
+            
+            uuid = ""
+            if ndb_cluster.get("name"):
+                if clusters_name_uuid_map.get(ndb_cluster["name"]):
+                    uuid = clusters_name_uuid_map[ndb_cluster["name"]]
+                else:
+                    return None, "NDB cluster with name '{0}' not found".format(ndb_cluster["name"])
+
+            elif ndb_cluster.get("uuid"):
+                uuid = ndb_cluster["uuid"]
+            
+            payload["nxClusterId"] = uuid
+                
+            # add specs for db server vm
             nodes = payload.get("nodes", [])
             for vm in vms:
                 spec = {
                     "properties": []
                 }
+
+                if vm.get("name"):
+                    spec["vmName"] = vm["name"]
+                else:
+                    return None, "vm name is required for creating db server vm"
 
                 # set vm properties
                 if vm.get("role", False):
@@ -313,22 +336,22 @@ class Database(NutanixDatabase):
                 spec["computeProfileId"] = compute_profile_uuid
 
                 # set cluster uuid using clusters_name_uuid_map
-                if server_cluster_config.get("cluster"):
+                if vm.get("cluster"):
                     
                     uuid = ""
-                    if server_cluster_config["cluster"].get("name"):
-                        if clusters_name_uuid_map.get(server_cluster_config["cluster"]["name"]):
-                            uuid = clusters_name_uuid_map[server_cluster_config["cluster"]["name"]]
+                    if vm["cluster"].get("name"):
+                        if clusters_name_uuid_map.get(vm["cluster"]["name"]):
+                            uuid = clusters_name_uuid_map[vm["cluster"]["name"]]
                         else:
-                            return None, "NDB cluster with name '{0}' not found".format(server_cluster_config["cluster"]["name"])
+                            return None, "NDB cluster with name '{0}' not found".format(vm["cluster"]["name"])
 
-                    elif server_cluster_config["cluster"].get("uuid"):
-                        uuid = server_cluster_config["cluster"]["uuid"]
+                    elif vm["cluster"].get("uuid"):
+                        uuid = vm["cluster"]["uuid"]
                     
                     spec["nxClusterId"] = uuid
                     
                 else:
-                    return None, "Cluster details is required for every db server vm node"
+                    return None, "Cluster info is required for every db server vm node"
                 
                 nodes.append(spec)
                 
@@ -338,21 +361,25 @@ class Database(NutanixDatabase):
             payload["clustered"] = True
 
             # set software profile
-            payload, err = self._build_spec_software_profile(payload, server_cluster_config["software_profile"])
+            payload, err = self._build_spec_software_profile(payload, create_config["software_profile"])
             if err:
                 return None, err
             
-            # set ssh key and vm password
-            if server_cluster_config.get("pub_ssh_key"):
-                payload["sshPublicKey"] = server_cluster_config["pub_ssh_key"]
+            # set network and compute profile for server cluster
+            payload["networkProfileId"] = network_profile_uuid
+            payload["computeProfileId"] = compute_profile_uuid
             
-            if server_cluster_config.get("ndb_user_password"):
-                payload["vmPassword"] = server_cluster_config["ndb_user_password"]
-
+            # set ssh key and vm password
+            if create_config.get("pub_ssh_key"):
+                payload["sshPublicKey"] = create_config["pub_ssh_key"]
+            
+            if create_config.get("ndb_user_password"):
+                payload["vmPassword"] = create_config["ndb_user_password"]
+            
             # set required action arguments
             action_arguments = payload.get("actionArguments", [])
-            action_arguments.append(self._get_properties_spec("cluster_name", server_cluster_config.get("name")))
-            action_arguments.append(self._get_properties_spec("cluster_description", server_cluster_config.get("desc")))
+            action_arguments.append(self._get_properties_spec("cluster_name", create_config.get("name")))
+            action_arguments.append(self._get_properties_spec("cluster_description", create_config.get("desc")))
         
         return payload, None
 
@@ -442,10 +469,10 @@ class Database(NutanixDatabase):
 
         # validations
         if not ha_proxy.get("cluster"):
-            return None, "cluster details is required for ha proxy"
+            return None, "cluster info is required for ha proxy"
         
         if not ha_proxy.get("name"):
-            return None, "'name' is required for ha proxy"
+            return None, "name is required for ha proxy"
 
         # add action arguments
         action_arguments = payload.get("actionArguments", [])
@@ -477,10 +504,10 @@ class Database(NutanixDatabase):
         # add HA proxy vm details
         nodes = payload.get("nodes", [])
         node_spec = {
-            "properties": {
+            "properties": [{
                 "name": "node_type",
                 "value": "haproxy"
-            }
+            }]
         }
 
         uuid, err = get_cluster_uuid(self.module, ha_proxy.get("cluster"))
@@ -499,9 +526,7 @@ class Database(NutanixDatabase):
     def _build_spec_postgres(self, payload, postgres):
         action_arguments = payload.get("actionArguments", [])
 
-        # map of action arguments fields to their default value
-        # these are common action arguments for both HA and single instance database
-        # 'args' map is used for creating action arguments spec further
+        # Below is a map of common action arguments fields to their default value
         args = {
             "listener_port": "",
             "allocate_pg_hugepage": False,
@@ -513,8 +538,7 @@ class Database(NutanixDatabase):
 
         ha_instance = self.module.params.get("ha_instance", False)
 
-        # Add HA or single instance related specific arguments to args for including them
-        # in action arguments spec
+        # Add HA or single instance related specific arguments to args for including them in action arguments spec
         if ha_instance:
             args.update(
                 {
@@ -522,7 +546,9 @@ class Database(NutanixDatabase):
                     "backup_policy": "",
                     "failover_mode": "",
                     "archive_wal_expire_days": "",
-                    "enable_synchronous_mode": False
+                    "enable_synchronous_mode": False,
+                    "enable_peer_auth": False,
+                    "node_type": "database"
                 }
             )
         else:
@@ -535,8 +561,8 @@ class Database(NutanixDatabase):
 
 
         # create action arguments
-        for key, value in args.items():
-            spec = {"name": key, "value": postgres.get(key, value)}
+        for key, default in args.items():
+            spec = {"name": key, "value": postgres.get(key, default)}
             action_arguments.append(spec)
 
         # handle scenariors where display names are different
