@@ -236,6 +236,7 @@ def run_module():
             ("state", "present", ("name", "vlan_uuid"), True),
             ("state", "absent", ("vlan_uuid",)),
         ],
+        required_together=[("name", "vlan_type")],
         required_by={"remove_ip_pools": "vlan_uuid"},
         supports_check_mode=True,
     )
