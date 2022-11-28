@@ -185,20 +185,18 @@ def update_vlan(module, result):
         result["response"] = update_spec
         return
 
-    if (
-        check_for_idempotency(old_spec, update_spec)
-        and not remove_ip_pools
-        and not ip_pools
-    ):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.")
-
-    resp = vlan.update(data=update_spec, uuid=uuid)
+    if check_for_idempotency(old_spec, update_spec):
+        if not remove_ip_pools and not ip_pools:
+            result["skipped"] = True
+            module.exit_json(msg="Nothing to change.")
+    else:
+        resp = vlan.update(data=update_spec, uuid=uuid)
 
     if remove_ip_pools:
         vlan.remove_ip_pools(vlan_uuid=uuid, ip_pools=remove_ip_pools)
     if ip_pools:
-        resp = vlan.add_ip_pools(vlan_uuid=uuid, ip_pools=ip_pools)
+        ip_pools_resp = vlan.add_ip_pools(vlan_uuid=uuid, ip_pools=ip_pools)
+        resp.update(ip_pools_resp)
 
     result["response"] = resp
     result["vlan_uuid"] = uuid
