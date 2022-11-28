@@ -91,11 +91,62 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create postgres vlan instance using with new vm
+- name: create Dhcp ndb vlan
   ntnx_ndb_vlans:
-    name: "test"
-    vlan_type: "DHCP"
-  register: vlan
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    name:  test-vlan-name
+    vlan_type: DHCP
+    cluster:
+      uuid: "<cluter-uuid>"
+  register: result
+
+- name: create static ndb vlan
+  ntnx_ndb_vlans:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    name:  test-vlan-name
+    vlan_type: Static
+    cluster:
+      uuid: "<cluter-uuid>"
+    gateway: "<cluter-uuid>"
+    subnet_mask: "<cluter-uuid>"
+    ip_pools:
+      -
+        start_ip: "<vlan_start_ip>"
+        end_ip: "<vlan_end_ip>"
+      -
+        start_ip: "<vlan_start_ip>"
+        end_ip: "<vlan_end_ip>"
+    primary_dns: "<vlan_primary_dns>"
+    secondary_dns: "<vlan_secondary_dns>"
+    dns_domain: "<dns_domain_ip>"
+  register: result
+
+- name: update ndb vlan type
+  ntnx_ndb_vlans:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    vlan_uuid: "<vlan-uuid>"
+    vlan_type: DHCP
+  register: result
+
+- name: Delete vlan
+  ntnx_ndb_vlans:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    state: absent
+    vlan_uuid: "<vlan-uuid>"
+  register: result
+
 """
 
 RETURN = r"""
@@ -108,7 +159,99 @@ vlan_uuid:
   description: created vlan UUID
   returned: always
   type: str
-  sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
+  sample: "00000-0000-000-0000-000000"
+clusterId:
+  description: Cluster ID
+  returned: always
+  type: str
+  sample: "00000-0000-000-0000-000000"
+name:
+  description: vlan name
+  returned: always
+  type: str
+  sample: "test-name"
+type:
+  description: vlan type Static or Dhcp
+  returned: always
+  type: str
+  sample: "Static"
+managed:
+  description: mannaged or unmannged vlan
+  returned: always
+  type: bool
+
+propertiesMap:
+  description: confiuration of static vlan
+  type: dict
+  returned: always
+  sample:
+    {
+                    "VLAN_DNS_DOMAIN": "0.0.0.0",
+                    "VLAN_GATEWAY": "0.0.0.0",
+                    "VLAN_PRIMARY_DNS": "0.0.0.0",
+                    "VLAN_SECONDARY_DNS": "0.0.0.0",
+                    "VLAN_SUBNET_MASK": "0.0.0.0",
+                }
+ipPools:
+  description: Range of ip's
+  type: list
+  returned: always
+  sample:
+    [
+                {
+                    "endIP": "0.0.0.0",
+                    "id": "000000-00000-000000-0000",
+                    "ipAddresses": [
+                        {
+                            "ip": "0.0.0.0",
+                            "status": "Available"
+                        },
+                        {
+                            "ip": "0.0.0.0",
+                            "status": "Available"
+                        },
+                        {
+                            "ip": "0.0.0.0",
+                            "status": "Available"
+                        },
+                    ],
+                    "modifiedBy": "000000-00000-000000-0000",
+                    "startIP": "0.0.0.0"
+                }
+                ]
+
+properties:
+  description: list of confiuration of static vlan
+  type: list
+  returned: always
+  sample:
+    [
+                {
+                    "name": "VLAN_DNS_DOMAIN",
+                    "secure": false,
+                    "value": "0.0.0.0"
+                },
+                {
+                    "name": "VLAN_GATEWAY",
+                    "secure": false,
+                    "value": "0.0.0.0"
+                },
+                {
+                    "name": "VLAN_PRIMARY_DNS",
+                    "secure": false,
+                    "value": "0.0.0.0"
+                },
+                {
+                    "name": "VLAN_SECONDARY_DNS",
+                    "secure": false,
+                    "value": "0.0.0.0"
+                },
+                {
+                    "name": "VLAN_SUBNET_MASK",
+                    "secure": false,
+                    "value": "0.0.0.0"
+                }
+            ]
 """
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.vlans import VLAN  # noqa: E402
