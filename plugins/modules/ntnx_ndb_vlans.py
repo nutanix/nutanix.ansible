@@ -63,10 +63,11 @@ options:
     description:
       - write
     type: str
-  ip_pool:
+  ip_pools:
         description:
           - write
-        type: dict
+        type: list
+        elements: dict
         suboptions:
             start_ip:
                 description:
@@ -76,6 +77,11 @@ options:
                 description:
                 - write
                 type: str
+  remove_ip_pools:
+        description:
+          - write
+        type: list
+        elements: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
@@ -236,8 +242,7 @@ def run_module():
             ("state", "present", ("name", "vlan_uuid"), True),
             ("state", "absent", ("vlan_uuid",)),
         ],
-        required_together=[("name", "vlan_type")],
-        required_by={"remove_ip_pools": "vlan_uuid"},
+        required_by={"remove_ip_pools": "vlan_uuid", "name": "vlan_type"},
         supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
