@@ -110,7 +110,6 @@ vlan_uuid:
   type: str
   sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
 """
-
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.vlans import VLAN  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -196,13 +195,14 @@ def update_vlan(module, result):
             result["skipped"] = True
             module.exit_json(msg="Nothing to change.")
     else:
-        resp = vlan.update(data=update_spec, uuid=uuid)
+        vlan.update(data=update_spec, uuid=uuid)
 
     if remove_ip_pools:
         vlan.remove_ip_pools(vlan_uuid=uuid, ip_pools=remove_ip_pools)
     if ip_pools:
-        ip_pools_resp = vlan.add_ip_pools(vlan_uuid=uuid, ip_pools=ip_pools)
-        resp.update(ip_pools_resp)
+        vlan.add_ip_pools(vlan_uuid=uuid, ip_pools=ip_pools)
+
+    resp, err = vlan.get_vlan(uuid=uuid, detailed=True)
 
     result["response"] = resp
     result["vlan_uuid"] = uuid
