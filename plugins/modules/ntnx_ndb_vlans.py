@@ -25,12 +25,12 @@ options:
     type: str
   vlan_type:
     description:
-      - write
+      - wheather the vlan is mannaged or no
     type: str
     choices: ["DHCP", "Static"]
   cluster:
         description:
-          - write
+          - Name or UUID of the cluster on which the vlan will be placed
         type: dict
         suboptions:
           name:
@@ -45,41 +45,41 @@ options:
             type: str
   gateway:
     description:
-      - write
+      - The gateway ip address
     type: str
   subnet_mask:
     description:
-      - write
+      - Subnet network address
     type: str
   primary_dns:
     description:
-      - write
+      - DNS servers IP
     type: str
   secondary_dns:
     description:
-      - write
+      - DNS servers IP
     type: str
   dns_domain:
     description:
-      - write
+      - The domain name
     type: str
   ip_pools:
         description:
-          - write
+          - Range of IPs
         type: list
         elements: dict
         suboptions:
             start_ip:
                 description:
-                - write
+                - The start address of the IPs pool range
                 type: str
             end_ip:
                 description:
-                - write
+                - The end address of the IPs pool range
                 type: str
   remove_ip_pools:
         description:
-          - write
+          - Range of IPs to remove
         type: list
         elements: str
 extends_documentation_fragment:
