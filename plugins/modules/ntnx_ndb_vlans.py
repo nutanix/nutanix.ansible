@@ -274,7 +274,8 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=ip_pool_spec,
-            required_together=[("start_ip", "end_ip")],
+            required_by={"end_ip": "start_ip"},
+
         ),
         remove_ip_pools=dict(type="list", elements="str"),
         gateway=dict(type="str"),
@@ -343,7 +344,9 @@ def update_vlan(module, result):
     if remove_ip_pools:
         vlan.remove_ip_pools(vlan_uuid=uuid, ip_pools=remove_ip_pools)
     if ip_pools:
-        vlan.add_ip_pools(vlan_uuid=uuid, ip_pools=ip_pools)
+        resp, err = vlan.add_ip_pools(vlan_uuid=uuid, ip_pools=ip_pools, old_spec=old_spec)
+        if err:
+            result["warning"] = "IP pool is not added. Error: {0}".format(err)
 
     resp, err = vlan.get_vlan(uuid=uuid, detailed=True)
 

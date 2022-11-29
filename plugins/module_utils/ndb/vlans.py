@@ -26,6 +26,12 @@ class VLAN(NutanixDatabase):
             "cluster": self._build_spec_cluster,
         }
 
+    def get_spec(self, old_spec=None, params=None):
+        err = self._validate_module_params(old_spec)
+        if err:
+            return None, err
+        return super().get_spec(old_spec=old_spec, params=params)
+
     def get_uuid(
         self,
         value,
@@ -109,7 +115,9 @@ class VLAN(NutanixDatabase):
     def _build_spec_ip_pools(self, payload, ip_pools):
         ip_pools_spec = []
         for ip_pool in ip_pools:
-            ip_pool = {"startIP": ip_pool["start_ip"], "endIP": ip_pool["end_ip"]}
+            start_ip = ip_pool["start_ip"]
+            end_ip = ip_pool.get("end_ip") or ip_pool["start_ip"]
+            ip_pool = {"startIP": start_ip, "endIP": end_ip}
             ip_pools_spec.append(ip_pool)
         payload["ipPools"] = ip_pools_spec
         return payload, None
@@ -122,7 +130,7 @@ class VLAN(NutanixDatabase):
         return payload
 
     def _build_spec_gateway(self, payload, gateway):
-        old_property = self.get_property_by_name("VLAN_GATEWAY", payload["properties"])
+        old_property = self._get_property_by_name("VLAN_GATEWAY", payload["properties"])
         if old_property:
             old_property["value"] = gateway
         else:
@@ -130,7 +138,7 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _build_spec_subnet_mask(self, payload, subnet_mask):
-        old_property = self.get_property_by_name(
+        old_property = self._get_property_by_name(
             "VLAN_SUBNET_MASK", payload["properties"]
         )
         if old_property:
@@ -142,7 +150,7 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _build_spec_primary_dns(self, payload, primary_dns):
-        old_property = self.get_property_by_name(
+        old_property = self._get_property_by_name(
             "VLAN_PRIMARY_DNS", payload["properties"]
         )
         if old_property:
@@ -154,7 +162,7 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _build_spec_secondary_dns(self, payload, secondary_dns):
-        old_property = self.get_property_by_name(
+        old_property = self._get_property_by_name(
             "VLAN_SECONDARY_DNS", payload["properties"]
         )
         if old_property:
@@ -166,7 +174,7 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _build_spec_dns_domain(self, payload, dns_domain):
-        old_property = self.get_property_by_name(
+        old_property = self._get_property_by_name(
             "VLAN_DNS_DOMAIN", payload["properties"]
         )
         if old_property:
@@ -177,16 +185,41 @@ class VLAN(NutanixDatabase):
             )
         return payload, None
 
-    def get_property_by_name(self, name, properties):
+    def _validate_module_params(self, payload=None):
+        updated_vlan_type = self.module.params.get("vlan_type")
+        old_vlan_type = payload.get("type")
+        vlan_type = updated_vlan_type or old_vlan_type
+
+        if vlan_type == "DHCP":
+            for item in ["gateway", "subnet_mask", "primary_dns", "secondary_dns", "dns_domain", "ip_pools"]:
+                if item in self.module.params:
+                    err = "{0} cannot be provided if vlan_type is DHCP".format(item)
+                    return err
+        if updated_vlan_type == "Static" and updated_vlan_type != old_vlan_type:
+            for item in ["gateway", "subnet_mask", "primary_dns"]:
+                if item not in self.module.params:
+                    err = "{0} is required if vlan_type is Static".format(item)
+                    return err
+        return None
+
+    def _get_property_by_name(self, name, properties):
         for property in properties:
             if property["name"] == name:
                 return property
         return None
 
-    def add_ip_pools(self, vlan_uuid, ip_pools):
+    def add_ip_pools(self, vlan_uuid, ip_pools, old_spec=None):
+        vlan_type = self.module.params.get("vlan_type") or old_spec.get("type")
+        if vlan_type == "DHCP":
+                err = "ip_pools cannot be provided if vlan_type is DHCP"
+                return None, err
+
         spec, err = self._build_spec_ip_pools({}, ip_pools)
+        if err:
+            return None, err
         endpoint = "ip-pool"
-        return self.update(uuid=vlan_uuid, data=spec, endpoint=endpoint, method="POST")
+        resp = self.update(uuid=vlan_uuid, data=spec, endpoint=endpoint, method="POST")
+        return resp, None
 
     def remove_ip_pools(self, vlan_uuid, ip_pools):
         spec = self._build_spec_remove_ip_pools(ip_pools)
