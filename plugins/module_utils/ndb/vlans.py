@@ -186,8 +186,8 @@ class VLAN(NutanixDatabase):
         return payload, None
 
     def _validate_module_params(self, payload=None):
-        updated_vlan_type = self.module.params.get("vlan_type")
-        old_vlan_type = payload.get("type")
+        updated_vlan_type = self.module.params.get("vlan_type", None)
+        old_vlan_type = payload.get("type", None)
         vlan_type = updated_vlan_type or old_vlan_type
 
         if vlan_type == "DHCP":
@@ -209,7 +209,7 @@ class VLAN(NutanixDatabase):
         return None
 
     def add_ip_pools(self, vlan_uuid, ip_pools, old_spec=None):
-        vlan_type = self.module.params.get("vlan_type") or old_spec.get("type")
+        vlan_type = self.module.params.get("vlan_type") or old_spec.get("type", None)
         if vlan_type == "DHCP":
                 err = "ip_pools cannot be provided if vlan_type is DHCP"
                 return None, err
@@ -219,7 +219,7 @@ class VLAN(NutanixDatabase):
             return None, err
         endpoint = "ip-pool"
         resp = self.update(uuid=vlan_uuid, data=spec, endpoint=endpoint, method="POST", raise_error=False)
-        if resp.get("errorCode"):
+        if resp.get("errorCode", None):
             err = resp.get("message")
             return None, err
         return resp, None
