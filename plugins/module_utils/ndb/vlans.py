@@ -218,7 +218,10 @@ class VLAN(NutanixDatabase):
         if err:
             return None, err
         endpoint = "ip-pool"
-        resp = self.update(uuid=vlan_uuid, data=spec, endpoint=endpoint, method="POST")
+        resp = self.update(uuid=vlan_uuid, data=spec, endpoint=endpoint, method="POST", raise_error=False)
+        if resp.get("errorCode"):
+            err = resp.get("message")
+            return None, err
         return resp, None
 
     def remove_ip_pools(self, vlan_uuid, ip_pools):
