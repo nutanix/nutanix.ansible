@@ -191,7 +191,14 @@ class VLAN(NutanixDatabase):
         vlan_type = updated_vlan_type or old_vlan_type
 
         if vlan_type == "DHCP":
-            for item in ["gateway", "subnet_mask", "primary_dns", "secondary_dns", "dns_domain", "ip_pools"]:
+            for item in [
+                "gateway",
+                "subnet_mask",
+                "primary_dns",
+                "secondary_dns",
+                "dns_domain",
+                "ip_pools",
+            ]:
                 if item in self.module.params:
                     err = "{0} cannot be provided if vlan_type is DHCP".format(item)
                     return err
@@ -211,14 +218,20 @@ class VLAN(NutanixDatabase):
     def add_ip_pools(self, vlan_uuid, ip_pools, old_spec=None):
         vlan_type = self.module.params.get("vlan_type") or old_spec.get("type", None)
         if vlan_type == "DHCP":
-                err = "ip_pools cannot be provided if vlan_type is DHCP"
-                return None, err
+            err = "ip_pools cannot be provided if vlan_type is DHCP"
+            return None, err
 
         spec, err = self._build_spec_ip_pools({}, ip_pools)
         if err:
             return None, err
         endpoint = "ip-pool"
-        resp = self.update(uuid=vlan_uuid, data=spec, endpoint=endpoint, method="POST", raise_error=False)
+        resp = self.update(
+            uuid=vlan_uuid,
+            data=spec,
+            endpoint=endpoint,
+            method="POST",
+            raise_error=False,
+        )
         if resp.get("errorCode", None):
             err = resp.get("message")
             return None, err
