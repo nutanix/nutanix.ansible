@@ -134,7 +134,7 @@ def create_profile(module, result):
         return
 
     resp = profiles.create(data=spec)
-    result["response"] = {"profile": resp}
+    result["response"] = resp
 
     if module.params.get("software"):
         uuid = resp.get("entityId")
@@ -160,7 +160,7 @@ def create_profile(module, result):
             result["error"] = err
             module.fail_json(msg="Failed fetching profile info post creation", **result)
 
-        result["response"]["profile"] = resp
+        result["response"] = resp
 
     result["changed"] = True
 
@@ -174,6 +174,23 @@ def check_profile_idempotency(old_spec, new_spec):
         return False
     if old_spec.get("description") != new_spec.get("description"):
         return False
+    
+    # check cluster availability update for software profile
+    if new_spec.get("updateClusterAvailability"):
+        old_clusters = []
+        for cluster in old_spec.get("clusterAvailability", []):
+            if cluster["status"] == "ACTIVE":
+                old_clusters.append(cluster["nxClusterId"])
+        
+        new_clusters = new_spec.get("availableClusterIds", [])
+        
+        if len(new_clusters) != len(old_clusters):
+            return False
+
+        # update if activation of cluster is required
+        for cluster in new_clusters:
+            if cluster not in old_clusters:
+                return False
 
     return True
 
@@ -242,9 +259,7 @@ def update_software_versions(module, result, profile_uuid):
             resp = None
             if not check_software_version_idempotency(old_spec, spec):
                 resp = _profiles.update_version(profile_uuid, version["uuid"], spec)
-                result["response"]["version"] = resp
 
-            result["response"]["version_uuid"] = version["uuid"]
             return resp
 
         else:
@@ -257,7 +272,6 @@ def update_software_versions(module, result, profile_uuid):
                 )
 
             resp = _profiles.create_version(profile_uuid, data=spec)
-            result["response"]["version"] = resp
             version_uuid = resp.get("entityId")
             if not version_uuid:
                 return module.fail_json(
@@ -276,7 +290,6 @@ def update_software_versions(module, result, profile_uuid):
                     uuid=profile_uuid, version_id=version_uuid
                 )
 
-                result["response"]["version"] = resp
                 return resp
 
     elif version.get("state") == "absent":
@@ -289,7 +302,6 @@ def update_software_versions(module, result, profile_uuid):
         resp = _profiles.delete_version(
             profile_uuid=profile_uuid, version_uuid=version_uuid
         )
-        result["response"]["version"] = resp
         return resp
 
     return None
@@ -322,11 +334,6 @@ def update_profile_version(module, result, profile_uuid, profile_config, old_spe
         result["error"] = err
         module.fail_json(msg="Failed generating profile version update spec", **result)
 
-    if module.check_mode:
-        result["new_spec"] = spec
-        result["old_spec"] = version
-        result["compare"] = check_version_idempotency(version, spec)
-
     if not check_version_idempotency(version, spec):
         resp = _profiles.update_version(profile_uuid, version_uuid, spec)
         return resp
@@ -353,10 +360,12 @@ def update_profile(module, result):
         module.fail_json(msg="Failed fetching profile's type", **result)
 
     # basic profile update spec
-    profile_update_spec = _profiles.get_update_profile_spec(old_spec=profile)
+    profile_update_spec, err = _profiles.get_update_profile_spec(profile_type=profile_type, old_spec=profile)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed creating profile update spec", **result)
 
     result["response"] = {}
-
     updated = False
     # update basic attributes of profile like name, desc, etc.
     if not check_profile_idempotency(profile, profile_update_spec):
@@ -367,7 +376,8 @@ def update_profile(module, result):
     # Update/delete version of profile if supported or publish/unplublish/deprecate profile
     resp = None
     if profile_type == NDB.ProfileTypes.SOFTWARE:
-        resp = update_software_versions(module, result, uuid)
+        if module.params.get("software", {}).get("version"):
+            resp = update_software_versions(module, result, uuid)
 
     elif profile_type == NDB.ProfileTypes.COMPUTE:
         profile_config = module.params.get("compute")
@@ -396,10 +406,9 @@ def update_profile(module, result):
 
     result["changed"] = True
 
-    if not result["response"].get("profile"):
-        result["response"]["profile"], err = _profiles.get_profiles(uuid=uuid)
-        if err:
-            return module.fail_json(msg="Failed fetching profile info", **result)
+    result["response"], err = _profiles.get_profiles(uuid=uuid)
+    if err:
+        return module.fail_json(msg="Failed fetching profile info", **result)
 
 
 def delete_profile(module, result):
@@ -411,9 +420,7 @@ def delete_profile(module, result):
     
     resp = profiles.delete(uuid)
     
-    result["response"] = {
-        "profile": resp
-    }
+    result["response"] = resp
     result["changed"] = True
 
 def run_module():

@@ -106,13 +106,34 @@ class Profile(NutanixDatabase):
 
         return resp, None
 
-    def get_update_profile_spec(self, old_spec=None):
+    def get_update_profile_spec(self, profile_type=None, old_spec=None):
         payload = {}
         payload["name"] = self.module.params.get("name", old_spec.get("name"))
         payload["description"] = self.module.params.get(
             "desc", old_spec.get("description")
         )
-        return payload
+
+        # set clusters for multicluster software profile
+        if profile_type == NDB.ProfileTypes.SOFTWARE:
+            clusters = self.module.params.get("software", {}).get("clusters", [])
+            if clusters:
+                _clusters = Cluster(self.module)
+                spec = []
+                clusters_name_uuid_map = _clusters.get_all_clusters_name_uuid_map()
+                for cluster in clusters:
+                    uuid = ""
+                    if cluster.get("name"):
+                        uuid = clusters_name_uuid_map.get(cluster["name"])
+                        if not uuid:
+                            return None, "Cluster with name {0} not found".format(cluster["name"])
+                    else:
+                        uuid = cluster["uuid"]
+                    
+                    spec.append(uuid)
+                payload["availableClusterIds"] = spec
+                payload["updateClusterAvailability"] = True
+        
+        return payload, None
 
     def _get_default_spec(self):
         return deepcopy(
