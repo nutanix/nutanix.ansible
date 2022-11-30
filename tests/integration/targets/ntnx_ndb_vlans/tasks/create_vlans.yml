@@ -1,0 +1,249 @@
+---
+- debug:
+    msg: Start testing ntnx_ndb_vlans
+
+- name: create Dhcp ndb vlan
+  ntnx_ndb_vlans:
+    name:  "{{ndb_vlan.name}}"
+    vlan_type: DHCP
+    cluster:
+      uuid: "{{cluster.uuid}}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.vlan_uuid is defined
+      - result.failed == false
+      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.type == "DHCP"
+      - result.response.managed == false
+      - result.response.clusterId == "{{cluster.uuid}}"
+    fail_msg: "fail: Unable to create Dhcp ndb vlan"
+    success_msg: "pass: create Dhcp ndb vlan finished successfully"
+###############################
+
+- name: update ndb vlan type for static
+  ntnx_ndb_vlans:
+    vlan_uuid: "{{result.vlan_uuid}}"
+    vlan_type: Static
+    gateway: "{{ndb_vlan.gateway}}"
+    subnet_mask: "{{ndb_vlan.subnet_mask}}"
+    ip_pools:
+      -
+        start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
+        end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
+      -
+        start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
+        end_ip: "{{ndb_vlan.ip_pools.1.end_ip}}"
+    primary_dns: "{{ndb_vlan.primary_dns}}"
+    secondary_dns: "{{ndb_vlan.secondary_dns}}"
+    dns_domain: "{{ndb_vlan.dns_domain}}"
+  register: result
+  ignore_errors: True
+
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.vlan_uuid is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.type == "Static"
+      - result.response.managed == false
+      - result.response.propertiesMap.VLAN_DNS_DOMAIN ==  "{{ndb_vlan.dns_domain}}"
+      - result.response.propertiesMap.VLAN_GATEWAY ==  "{{ndb_vlan.gateway}}"
+      - result.response.propertiesMap.VLAN_PRIMARY_DNS ==  "{{ndb_vlan.primary_dns}}"
+      - result.response.propertiesMap.VLAN_SECONDARY_DNS ==  "{{ndb_vlan.secondary_dns}}"
+      - result.response.propertiesMap.VLAN_SUBNET_MASK ==  "{{ndb_vlan.subnet_mask}}"
+      - result.response.ipPools[0].endIP == "{{ndb_vlan.ip_pools.0.end_ip}}"
+      - result.response.ipPools[0].startIP == "{{ndb_vlan.ip_pools.0.start_ip}}"
+      - result.response.ipPools[1].endIP == "{{ndb_vlan.ip_pools.1.end_ip}}"
+      - result.response.ipPools[1].startIP == "{{ndb_vlan.ip_pools.1.start_ip}}"
+    fail_msg: "fail: unable to update ndb vlan type for static"
+    success_msg: "pass: update ndb vlan type for static finished succesfully"
+###############################
+- name: Delete  created vlan's
+  ntnx_ndb_vlans:
+    state: absent
+    vlan_uuid: "{{  result.vlan_uuid }}"
+  register: result
+#################################
+- name: create static ndb vlan
+  ntnx_ndb_vlans:
+    name:  "{{ndb_vlan.name}}"
+    vlan_type: Static
+    cluster:
+      uuid: "{{cluster.uuid}}"
+    gateway: "{{ndb_vlan.gateway}}"
+    subnet_mask: "{{ndb_vlan.subnet_mask}}"
+    ip_pools:
+      -
+        start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
+        end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
+      -
+        start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
+        end_ip: "{{ndb_vlan.ip_pools.1.end_ip}}"
+    primary_dns: "{{ndb_vlan.primary_dns}}"
+    secondary_dns: "{{ndb_vlan.secondary_dns}}"
+    dns_domain: "{{ndb_vlan.dns_domain}}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.vlan_uuid is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.type == "Static"
+      - result.response.managed == false
+      - result.response.propertiesMap.VLAN_DNS_DOMAIN ==  "{{ndb_vlan.dns_domain}}"
+      - result.response.propertiesMap.VLAN_GATEWAY ==  "{{ndb_vlan.gateway}}"
+      - result.response.propertiesMap.VLAN_PRIMARY_DNS ==  "{{ndb_vlan.primary_dns}}"
+      - result.response.propertiesMap.VLAN_SECONDARY_DNS ==  "{{ndb_vlan.secondary_dns}}"
+      - result.response.propertiesMap.VLAN_SUBNET_MASK ==  "{{ndb_vlan.subnet_mask}}"
+      - result.response.ipPools[0].endIP == "{{ndb_vlan.ip_pools.0.end_ip}}"
+      - result.response.ipPools[0].startIP == "{{ndb_vlan.ip_pools.0.start_ip}}"
+      - result.response.ipPools[1].endIP == "{{ndb_vlan.ip_pools.1.end_ip}}"
+      - result.response.ipPools[1].startIP == "{{ndb_vlan.ip_pools.1.start_ip}}"
+    fail_msg: "fail: unable to create static ndb vlan"
+    success_msg: "pass: create static ndb vlan finished succesfully"
+- set_fact:
+    todelete: "{{ todelete + [  result.vlan_uuid ] }}"
+#############################
+- name: update ndb vlan by removing ip pool
+  ntnx_ndb_vlans:
+    vlan_uuid: "{{result.vlan_uuid}}"
+    remove_ip_pools:
+      - "{{result.response.ipPools[0].id}}"
+      - "{{result.response.ipPools[1].id}}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.vlan_uuid is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.type == "Static"
+      - result.response.managed == false
+      - result.response.propertiesMap.VLAN_DNS_DOMAIN ==  "{{ndb_vlan.dns_domain}}"
+      - result.response.propertiesMap.VLAN_GATEWAY ==  "{{ndb_vlan.gateway}}"
+      - result.response.propertiesMap.VLAN_PRIMARY_DNS ==  "{{ndb_vlan.primary_dns}}"
+      - result.response.propertiesMap.VLAN_SECONDARY_DNS ==  "{{ndb_vlan.secondary_dns}}"
+      - result.response.propertiesMap.VLAN_SUBNET_MASK ==  "{{ndb_vlan.subnet_mask}}"
+      - result.response.ipPools == []
+    fail_msg: "fail: unable to update  ndb vlan by removing ip pool"
+    success_msg: "pass: update ndb vlan by removing ip pool finished succesfully"
+###########################
+- name: update ndb vlan by adding a pool
+  ntnx_ndb_vlans:
+    vlan_uuid: "{{result.vlan_uuid}}"
+    ip_pools:
+      -
+        start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
+        end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.ipPools is  defined
+      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.type == "Static"
+      - result.response.managed == false
+      - result.response.propertiesMap.VLAN_DNS_DOMAIN ==  "{{ndb_vlan.dns_domain}}"
+      - result.response.propertiesMap.VLAN_GATEWAY ==  "{{ndb_vlan.gateway}}"
+      - result.response.propertiesMap.VLAN_PRIMARY_DNS ==  "{{ndb_vlan.primary_dns}}"
+      - result.response.propertiesMap.VLAN_SECONDARY_DNS ==  "{{ndb_vlan.secondary_dns}}"
+      - result.response.propertiesMap.VLAN_SUBNET_MASK ==  "{{ndb_vlan.subnet_mask}}"
+      - result.response.ipPools[0].endIP == "{{ndb_vlan.ip_pools.0.end_ip}}"
+      - result.response.ipPools[0].startIP == "{{ndb_vlan.ip_pools.0.start_ip}}"
+    fail_msg: "fail: unable to update ndb vlan by adding a pool "
+    success_msg: "pass: update ndb vlan by adding a pool finished succesfully"
+###########################
+
+- name: update ndb vLAN Configuration   
+  ntnx_ndb_vlans:
+    vlan_uuid: "{{result.vlan_uuid}}"
+    gateway: "{{ndb_vlan.updated_gateway}}"
+    subnet_mask: "{{ndb_vlan.updated_subnet_mask}}"
+    primary_dns: "{{ndb_vlan.updated_primary_dns}}"
+    secondary_dns: "{{ndb_vlan.updated_secondary_dns}}"
+    dns_domain: "{{ndb_vlan.updated_dns_domain}}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.managed == false
+      - result.response.propertiesMap.VLAN_DNS_DOMAIN ==  "{{ndb_vlan.updated_dns_domain}}"
+      - result.response.propertiesMap.VLAN_GATEWAY ==  "{{ndb_vlan.updated_gateway}}"
+      - result.response.propertiesMap.VLAN_PRIMARY_DNS ==  "{{ndb_vlan.updated_primary_dns}}"
+      - result.response.propertiesMap.VLAN_SECONDARY_DNS ==  "{{ndb_vlan.updated_secondary_dns}}"
+      - result.response.propertiesMap.VLAN_SUBNET_MASK ==  "{{ndb_vlan.updated_subnet_mask}}"
+    fail_msg: "fail: unable to  update ndb vLAN Configuration"
+    success_msg: "pass: update ndb vLAN Configuration finished succesfully"
+###########################
+- name: update ndb vlan type 
+  ntnx_ndb_vlans:
+    vlan_uuid: "{{result.vlan_uuid}}"
+    vlan_type: DHCP
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.type == "DHCP"
+      - result.response.managed == false
+      - result.vlan_uuid is defined
+      - result.response.properties == []
+    fail_msg: "fail: unable to update ndb vlan type "
+    success_msg: "pass: update ndb vlan type  finished succesfully"
+
+# ################################
+
+- name: Delete all created vlan's
+  ntnx_ndb_vlans:
+    state: absent
+    vlan_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "unable to delete all created vlan's"
+    success_msg: "All vlan'sdeleted succesfully"
+- set_fact:
+    todelete: []
