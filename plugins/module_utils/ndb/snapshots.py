@@ -27,6 +27,6 @@ class Snapshots(NutanixDatabase):
         return resp.get("id")
 
     def get_snapshot_files(self, uuid):
-        endpoint = "/files"
+        endpoint = "files"
         resp = self.read(uuid=uuid, endpoint=endpoint)
         return resp

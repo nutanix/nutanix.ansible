@@ -107,7 +107,7 @@ def run_module():
     module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        required_by={"get_files": "name"},
+        required_by={"get_files": "uuid"},
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("uuid"):
