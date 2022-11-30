@@ -609,14 +609,49 @@ class DatabaseRegistration(Database):
             "working_dir": self._build_spec_working_dir,
         }
 
-    def _build_spec_name(payload, name):
-        pass
+    def _get_default_spec(self):
+        return deepcopy(
+            {
+                "databaseType": "",
+                "databaseName": "",
+                "timeMachineInfo": {
+                    "name": "",
+                    "slaId": "",
+                    "schedule": {},
+                    "autoTuneLogDrive": True,
+                },
+                "nxClusterId": "",
+                "vmIp": "",
+                "vmUsername": "",
+                "vmPassword": "",
+                "vmSshkey": "",
+                "vmDescription": "",
+                "resetDescriptionInNxCluster": False,
+                "workingDirectory": "",
+                "clustered": False,
+                "forcedInstall": False,
+                "actionArguments": [],
+                "autoTuneStagingDrive": True,
+                "tags": [],
+            }
+        )   
+
+    def _build_spec_name(self, payload, name):
+        payload["databaseName"] = name
+        return payload, None
         
-    def _build_spec_db_vm(payload, db_vm):
-        pass
+    def _build_spec_unregistered_vm(self, payload, vm):
+        return payload, None
+    
+    def _build_spec_registered_vm(self, payload, vm):
+        return payload, None
 
-    def _build_spec_postgres(payload, postgres):
-        pass
+    def _build_spec_db_vm(self, payload, db_vm):
+        return payload, None
 
-    def _build_spec_working_dir(payoad, working_dir):
-        pass
+    def _build_spec_postgres(self, payload, postgres):
+        return payload, None
+
+    def _build_spec_working_dir(self, payload, working_dir):
+        payload["workingDirectory"] = working_dir
+        return payload, None
