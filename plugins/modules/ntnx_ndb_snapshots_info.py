@@ -93,6 +93,7 @@ def get_snapshot(module, result):
         resp = snapshot.read(uuid=uuid)
 
     result["response"] = resp
+    result["snapshot_uuid"] = uuid
 
 
 def get_snapshots(module, result):
