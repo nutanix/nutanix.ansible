@@ -4,8 +4,8 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 import time
-from urllib import response
 
 __metaclass__ = type
 
@@ -18,11 +18,14 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
+from ..module_utils.constants import NDB  # noqa: E402
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.profiles import Profile
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.utils import remove_param_with_none_value, strip_extra_attrs
-from ..module_utils.constants import NDB
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.profiles import Profile  # noqa: E402
+from ..module_utils.utils import (  # noqa: E402
+    remove_param_with_none_value,
+    strip_extra_attrs,
+)
 
 
 def get_module_spec():
@@ -174,16 +177,16 @@ def check_profile_idempotency(old_spec, new_spec):
         return False
     if old_spec.get("description") != new_spec.get("description"):
         return False
-    
+
     # check cluster availability update for software profile
     if new_spec.get("updateClusterAvailability"):
         old_clusters = []
         for cluster in old_spec.get("clusterAvailability", []):
             if cluster["status"] == "ACTIVE":
                 old_clusters.append(cluster["nxClusterId"])
-        
+
         new_clusters = new_spec.get("availableClusterIds", [])
-        
+
         if len(new_clusters) != len(old_clusters):
             return False
 
@@ -360,7 +363,9 @@ def update_profile(module, result):
         module.fail_json(msg="Failed fetching profile's type", **result)
 
     # basic profile update spec
-    profile_update_spec, err = _profiles.get_update_profile_spec(profile_type=profile_type, old_spec=profile)
+    profile_update_spec, err = _profiles.get_update_profile_spec(
+        profile_type=profile_type, old_spec=profile
+    )
     if err:
         result["error"] = err
         module.fail_json(msg="Failed creating profile update spec", **result)
@@ -417,11 +422,12 @@ def delete_profile(module, result):
     uuid = module.params.get("profile_uuid")
     if not uuid:
         return module.fail_json(msg="'profile_uuid' is a required for deleting profile")
-    
+
     resp = profiles.delete(uuid)
-    
+
     result["response"] = resp
     result["changed"] = True
+
 
 def run_module():
     module = NdbBaseModule(

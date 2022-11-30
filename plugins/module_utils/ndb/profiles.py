@@ -1,16 +1,16 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-from copy import deepcopy
 
+from copy import deepcopy
 
 __metaclass__ = type
 
 
-from .nutanix_database import NutanixDatabase
 from ..constants import NDB
 from .clusters import Cluster, get_cluster_uuid
 from .db_servers import get_db_server_uuid
+from .nutanix_database import NutanixDatabase
 
 
 class Profile(NutanixDatabase):
@@ -125,14 +125,16 @@ class Profile(NutanixDatabase):
                     if cluster.get("name"):
                         uuid = clusters_name_uuid_map.get(cluster["name"])
                         if not uuid:
-                            return None, "Cluster with name {0} not found".format(cluster["name"])
+                            return None, "Cluster with name {0} not found".format(
+                                cluster["name"]
+                            )
                     else:
                         uuid = cluster["uuid"]
-                    
+
                     spec.append(uuid)
                 payload["availableClusterIds"] = spec
                 payload["updateClusterAvailability"] = True
-        
+
         return payload, None
 
     def _get_default_spec(self):
