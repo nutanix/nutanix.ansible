@@ -594,3 +594,29 @@ class Database(NutanixDatabase):
             specs.append(spec)
         payload["tags"] = specs
         return payload, None
+
+class DatabaseRegistration(Database):
+    def __init__(self, module):
+        super(DatabaseRegistration, self).__init__(module)
+        self.build_spec_methods = {
+            "name": self._build_spec_name,
+            "desc": self._build_spec_desc,
+            "auto_tune_staging_drive": self._build_spec_auto_tune_staging_drive,
+            "db_vm": self._build_spec_db_vm,
+            "time_machine": self._build_spec_time_machine,
+            "postgres": self._build_spec_postgres,
+            "tags": self._build_spec_tags,
+            "working_dir": self._build_spec_working_dir,
+        }
+
+    def _build_spec_name(payload, name):
+        pass
+        
+    def _build_spec_db_vm(payload, db_vm):
+        pass
+
+    def _build_spec_postgres(payload, postgres):
+        pass
+
+    def _build_spec_working_dir(payoad, working_dir):
+        pass
