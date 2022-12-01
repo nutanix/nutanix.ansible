@@ -65,7 +65,140 @@ response:
   returned: always
   type: list
   sample: [
-  
+{
+                "accessLevel": null,
+                "appInfoVersion": "2",
+                "applicableTypes": [
+                    "CONTINUOUS_EXTRA"
+                ],
+                "databaseNodeId": "000-0000-0000-0000",
+                "databaseSnapshot": false,
+                "dateCreated": "2022-11-29 09:21:26",
+                "dateModified": "2022-12-01 06:22:22",
+                "dbServerStorageMetadataVersion": 1,
+                "dbserverId": null,
+                "dbserverIp": null,
+                "dbserverName": null,
+                "description": null,
+                "fromTimeStamp": "2022-11-29 09:20:52",
+                "id": "000-0000-0000-0000",
+                "info": {
+                    "databaseGroupId": null,
+                    "databases": null,
+                    "info": null,
+                    "linkedDatabases": [
+                        {
+                            "appConsistent": false,
+                            "clone": false,
+                            "databaseName": "template0",
+                            "id": "000-0000-0000-0000",
+                            "info": {
+                                "info": {
+                                    "created_by": "system"
+                                }
+                            },
+                            "message": null,
+                            "status": "READY"
+                        },
+                        {
+                            "appConsistent": false,
+                            "clone": false,
+                            "databaseName": "postgres",
+                            "id": "000-0000-0000-0000",
+                            "info": {
+                                "info": {
+                                    "created_by": "system"
+                                }
+                            },
+                            "message": null,
+                            "status": "READY"
+                        },
+                        {
+                            "appConsistent": false,
+                            "clone": false,
+                            "databaseName": "template1",
+                            "id": "000-0000-0000-0000",
+                            "info": {
+                                "info": {
+                                    "created_by": "system"
+                                }
+                            },
+                            "message": null,
+                            "status": "READY"
+                        },
+                        {
+                            "appConsistent": false,
+                            "clone": false,
+                            "databaseName": "testdb1",
+                            "id": "000-0000-0000-0000",
+                            "info": {
+                                "info": {
+                                    "created_by": "user"
+                                }
+                            },
+                            "message": null,
+                            "status": "READY"
+                        }
+                    ],
+                    "missingDatabases": null,
+                    "replicationHistory": null,
+                    "secureInfo": null
+                },
+                "lcmConfig": null,
+                "metadata": {
+                    "async": false,
+                    "curationRetryCount": 0,
+                    "deregisterInfo": null,
+                    "fromTimeStamp": "2022-11-29 09:20:52",
+                    "info": null,
+                    "lastReplicationRetrySourceSnapshotId": null,
+                    "lastReplicationRetryTimestamp": null,
+                    "operationsUsingSnapshot": [],
+                    "replicationRetryCount": 0,
+                    "secureInfo": null,
+                    "standby": false,
+                    "toTimeStamp": "2022-11-29 09:20:52"
+                },
+                "metric": {
+                    "lastUpdatedTimeInUTC": null,
+                    "storage": {
+                        "allocatedSize": 0.0,
+                        "controllerAvgIoLatencyUsecs": null,
+                        "controllerNumIops": null,
+                        "lastUpdatedTimeInUTC": null,
+                        "size": 67207168.0,
+                        "unit": "B",
+                        "usedSize": 0.0
+                    }
+                },
+                "name": "era_auto_snapshot",
+                "nxClusterId": "000-0000-0000-0000",
+                "ownerId": "000-0000-0000-0000",
+                "parentSnapshot": true,
+                "parentSnapshotId": null,
+                "processed": false,
+                "properties": [],
+                "protectionDomainId": "000-0000-0000-0000",
+                "replicatedSnapshots": null,
+                "sanitised": false,
+                "sanitisedFromSnapshotId": null,
+                "sanitisedSnapshots": null,
+                "snapshotFamily": null,
+                "snapshotId": "53553",
+                "snapshotSize": 67207168.0,
+                "snapshotTimeStamp": "2022-11-29 09:20:52",
+                "snapshotTimeStampDate": 1669713652000,
+                "snapshotUuid": "53553",
+                "softwareDatabaseSnapshot": false,
+                "softwareSnapshot": null,
+                "softwareSnapshotId": "000-0000-0000-0000",
+                "status": "ACTIVE",
+                "tags": [],
+                "timeMachineId": "000-0000-0000-0000",
+                "timeZone": "UTC",
+                "toTimeStamp": "2022-11-29 09:20:52",
+                "type": "CONTINUOUS_EXTRA"
+            },
         ]
 """
 
