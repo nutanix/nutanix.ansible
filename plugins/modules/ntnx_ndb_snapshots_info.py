@@ -208,9 +208,32 @@ from ..module_utils.ndb.snapshots import Snapshots  # noqa: E402
 
 def get_module_spec():
 
+    queries_spec = dict(
+        all=dict(type="bool"),
+        database_ids=dict(type="list"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "type",
+                "status",
+                "protection-domain-id",
+                "database-node",
+                "snapshot-id",
+                "time-machine",
+                "latest"
+            ]
+        ),
+        time_zone=dict(type="str"),
+    )
+
     module_args = dict(
         uuid=dict(type="str"),
         get_files=dict(type="bool"),
+        queries=dict(
+            type="dict",
+            options=queries_spec,
+        )
     )
 
     return module_args
@@ -232,7 +255,7 @@ def get_snapshot(module, result):
 def get_snapshots(module, result):
     snapshot = Snapshots(module)
 
-    resp = snapshot.read()
+    resp = snapshot.get_snapshots()
 
     result["response"] = resp
 
@@ -242,6 +265,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         required_by={"get_files": "uuid"},
+        mutually_exclusive=[("uuid", "queries")],
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("uuid"):
