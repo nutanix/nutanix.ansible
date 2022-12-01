@@ -709,16 +709,21 @@ def get_module_spec():
             required=True,
         ),
         role=dict(type="str", choices=["Primary", "Secondary"], required=True),
-        failover_mode=dict(type="str", choices=["Automatic", "Manual"], default="Automatic", required=False),
-        node_type=dict(type="str", choices=["database"], default="database", required=False)
+        failover_mode=dict(
+            type="str",
+            choices=["Automatic", "Manual"],
+            default="Automatic",
+            required=False,
+        ),
+        node_type=dict(
+            type="str", choices=["database"], default="database", required=False
+        ),
     )
 
     new_cluster = dict(
         name=dict(type="str", required=True),
         desc=dict(type="str", required=False),
-        vms=dict(
-            type="list", elements="dict", options=cluster_vm, required=True
-        ),
+        vms=dict(type="list", elements="dict", options=cluster_vm, required=True),
         ndb_user_password=dict(type="str", required=True, no_log=False),
         pub_ssh_key=dict(type="str", required=False),
         software_profile=dict(
@@ -739,7 +744,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        ndb_cluster = dict(
+        ndb_cluster=dict(
             type="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
@@ -800,9 +805,19 @@ def get_module_spec():
         ha_proxy=dict(type="dict", options=ha_proxy, required=False),
         enable_synchronous_mode=dict(type="bool", default=False, required=False),
         archive_wal_expire_days=dict(type="str", default="-1", required=False),
-        backup_policy=dict(type="str", choices=["prefer_secondary", "primary_only", "secondary_only"], default="primary_only", required=False),
-        failover_mode=dict(type="str", choices=["Automatic", "Manual"], default="Automatic", required=False),
-        enable_peer_auth=dict(type="bool", default=False, required=False)
+        backup_policy=dict(
+            type="str",
+            choices=["prefer_secondary", "primary_only", "secondary_only"],
+            default="primary_only",
+            required=False,
+        ),
+        failover_mode=dict(
+            type="str",
+            choices=["Automatic", "Manual"],
+            default="Automatic",
+            required=False,
+        ),
+        enable_peer_auth=dict(type="bool", default=False, required=False),
     )
     postgres.update(deepcopy(default_db_arguments))
 

@@ -31,25 +31,39 @@ class DBServers(NutanixDatabase):
         uuid = resp[0].get("id")
         return uuid, None
 
-    def get_db_server(self, name=None, uuid=None, ip=None):
-        resp = None
+    def get_db_server(self, name=None, uuid=None, ip=None, **kwargs):
+        db_server = None
+
+        # directly fetch using uuid
         if uuid:
-            resp = self.read(uuid=uuid)
+            db_server = self.read(uuid=uuid)
+
+        # fetch using name or ip based query
         elif name or ip:
+
             key = "name" if name else "ip"
             val = name if name else ip
             query = {"value-type": key, "value": val}
             resp = self.read(query=query)
             if not resp:
-                return None, "Database server with {0} {1} not found".format(key, val)
-            resp = resp[0]
+                return None, "Database server with {0} '{1} not found".format(key, val)
+
+            # resp is list
+            db_server = resp[0]
+
+            if name and kwargs.get("cluster_uuid") and len(resp) > 0:
+                for vm in resp:
+                    if vm.get("nxClusterId") == kwargs["cluster_uuid"]:
+                        db_server = vm
+                        break
+
         else:
             return (
                 None,
                 "Please provide uuid, name or server IP for fetching database server details",
             )
 
-        return resp, None
+        return db_server, None
 
 
 # Helper functions

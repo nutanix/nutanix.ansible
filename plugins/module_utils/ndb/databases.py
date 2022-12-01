@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from ..constants import NDB as NDB_CONSTANTS
 from .clusters import get_cluster_uuid, Cluster
-from .db_servers import get_db_server_uuid
+from .db_servers import DBServers, get_db_server_uuid
 from .nutanix_database import NutanixDatabase
 from .profiles import Profile, get_profile_uuid
 from .slas import get_sla_uuid
@@ -148,12 +148,9 @@ class Database(NutanixDatabase):
                 "deleteLogicalCluster": True,
             }
         )
-    
+
     def _get_properties_spec(self, name, value):
-        spec = {
-            "name": name,
-            "value": value
-        }
+        spec = {"name": name, "value": value}
         return spec
 
     def _build_spec_name(self, payload, name):
@@ -179,9 +176,7 @@ class Database(NutanixDatabase):
         return payload, None
 
     def _build_spec_software_profile(self, payload, software_profile):
-        uuid, err = get_profile_uuid(
-                self.module, "Software", software_profile
-        )
+        uuid, err = get_profile_uuid(self.module, "Software", software_profile)
         if err:
             return None, err
 
@@ -194,10 +189,8 @@ class Database(NutanixDatabase):
             profiles = Profile(self.module)
             profile = profiles.read(uuid)
             payload["softwareProfileId"] = uuid
-            payload["softwareProfileVersionId"] = profile[
-                "latestVersionId"
-            ]
-        
+            payload["softwareProfileVersionId"] = profile["latestVersionId"]
+
         return payload, None
 
     def _build_spec_db_vm(self, payload, db_vm):
@@ -223,7 +216,9 @@ class Database(NutanixDatabase):
             payload["computeProfileId"] = uuid
 
             # set software profile
-            payload, err = self._build_spec_software_profile(payload, vm_config["software_profile"])
+            payload, err = self._build_spec_software_profile(
+                payload, vm_config["software_profile"]
+            )
             if err:
                 return None, err
 
@@ -258,15 +253,18 @@ class Database(NutanixDatabase):
 
     def _build_spec_db_server_cluster(self, payload, db_server_cluster):
         if db_server_cluster.get("new_cluster"):
-            
+
             # basic validations
             if not db_server_cluster.get("new_cluster").get("name"):
                 return None, "'name' is required for new db servers cluster"
 
             create_config = db_server_cluster["new_cluster"]
             vms = create_config.get("vms", [])
-            if len(vms)<1:
-                return None, "Atleast one vm is required for creating cluster of database servers"
+            if len(vms) < 1:
+                return (
+                    None,
+                    "Atleast one vm is required for creating cluster of database servers",
+                )
 
             # get compute profile
             compute_profile_uuid, err = get_profile_uuid(
@@ -274,17 +272,16 @@ class Database(NutanixDatabase):
             )
             if err:
                 return None, err
-            
+
             # get network prfile
             network_profile_uuid, err = get_profile_uuid(
                 self.module, "Network", create_config["network_profile"]
             )
             if err:
                 return None, err
-            
+
             # get archive log destination link
             archive_log_destination = create_config.get("archive_log_destination", "")
-
 
             # get cluster uuid map to assign cluster uuid for each node vm
             clusters = Cluster(self.module)
@@ -294,25 +291,25 @@ class Database(NutanixDatabase):
             ndb_cluster = create_config.get("ndb_cluster")
             if not ndb_cluster:
                 return None, "ndb_cluster is required for creating db server cluster"
-            
+
             uuid = ""
             if ndb_cluster.get("name"):
                 if clusters_name_uuid_map.get(ndb_cluster["name"]):
                     uuid = clusters_name_uuid_map[ndb_cluster["name"]]
                 else:
-                    return None, "NDB cluster with name '{0}' not found".format(ndb_cluster["name"])
+                    return None, "NDB cluster with name '{0}' not found".format(
+                        ndb_cluster["name"]
+                    )
 
             elif ndb_cluster.get("uuid"):
                 uuid = ndb_cluster["uuid"]
-            
+
             payload["nxClusterId"] = uuid
-                
+
             # add specs for db server vm
             nodes = payload.get("nodes", [])
             for vm in vms:
-                spec = {
-                    "properties": []
-                }
+                spec = {"properties": []}
 
                 if vm.get("name"):
                     spec["vmName"] = vm["name"]
@@ -321,66 +318,86 @@ class Database(NutanixDatabase):
 
                 # set vm properties
                 if vm.get("role", False):
-                    spec["properties"].append(self._get_properties_spec("role", vm["role"]))
+                    spec["properties"].append(
+                        self._get_properties_spec("role", vm["role"])
+                    )
 
                 if vm.get("failover_mode"):
-                    spec["properties"].append(self._get_properties_spec("failover_mode", vm["failover_mode"]))
-                
-                if vm.get("node_type"):
-                    spec["properties"].append(self._get_properties_spec("node_type", vm["node_type"]))
+                    spec["properties"].append(
+                        self._get_properties_spec("failover_mode", vm["failover_mode"])
+                    )
 
-                spec["properties"].append(self._get_properties_spec("remote_archive_destination", archive_log_destination))
-                
+                if vm.get("node_type"):
+                    spec["properties"].append(
+                        self._get_properties_spec("node_type", vm["node_type"])
+                    )
+
+                spec["properties"].append(
+                    self._get_properties_spec(
+                        "remote_archive_destination", archive_log_destination
+                    )
+                )
+
                 # set profiles
                 spec["networkProfileId"] = network_profile_uuid
                 spec["computeProfileId"] = compute_profile_uuid
 
                 # set cluster uuid using clusters_name_uuid_map
                 if vm.get("cluster"):
-                    
+
                     uuid = ""
                     if vm["cluster"].get("name"):
                         if clusters_name_uuid_map.get(vm["cluster"]["name"]):
                             uuid = clusters_name_uuid_map[vm["cluster"]["name"]]
                         else:
-                            return None, "NDB cluster with name '{0}' not found".format(vm["cluster"]["name"])
+                            return None, "NDB cluster with name '{0}' not found".format(
+                                vm["cluster"]["name"]
+                            )
 
                     elif vm["cluster"].get("uuid"):
                         uuid = vm["cluster"]["uuid"]
-                    
+
                     spec["nxClusterId"] = uuid
-                    
+
                 else:
                     return None, "Cluster info is required for every db server vm node"
-                
+
                 nodes.append(spec)
-                
+
             payload["nodes"] = nodes
             payload["nodeCount"] = len(payload["nodes"])
             payload["createDbserver"] = True
             payload["clustered"] = True
 
             # set software profile
-            payload, err = self._build_spec_software_profile(payload, create_config["software_profile"])
+            payload, err = self._build_spec_software_profile(
+                payload, create_config["software_profile"]
+            )
             if err:
                 return None, err
-            
+
             # set network and compute profile for server cluster
             payload["networkProfileId"] = network_profile_uuid
             payload["computeProfileId"] = compute_profile_uuid
-            
+
             # set ssh key and vm password
             if create_config.get("pub_ssh_key"):
                 payload["sshPublicKey"] = create_config["pub_ssh_key"]
-            
+
             if create_config.get("ndb_user_password"):
                 payload["vmPassword"] = create_config["ndb_user_password"]
-            
+
             # set required action arguments
             action_arguments = payload.get("actionArguments", [])
-            action_arguments.append(self._get_properties_spec("cluster_name", create_config.get("name")))
-            action_arguments.append(self._get_properties_spec("cluster_description", create_config.get("desc")))
-        
+            action_arguments.append(
+                self._get_properties_spec("cluster_name", create_config.get("name"))
+            )
+            action_arguments.append(
+                self._get_properties_spec(
+                    "cluster_description", create_config.get("desc")
+                )
+            )
+
         return payload, None
 
     def _build_spec_time_machine(self, payload, time_machine):
@@ -399,12 +416,9 @@ class Database(NutanixDatabase):
                 if err:
                     return None, err
                 clusters.append(uuid)
-            
+
             time_machine_spec["slaDetails"] = {
-                "primarySla": {
-                    "slaId": sla_uuid,
-                    "nxClusterIds": clusters
-                }
+                "primarySla": {"slaId": sla_uuid, "nxClusterIds": clusters}
             }
 
         else:
@@ -470,45 +484,37 @@ class Database(NutanixDatabase):
         # validations
         if not ha_proxy.get("cluster"):
             return None, "cluster info is required for ha proxy"
-        
+
         if not ha_proxy.get("name"):
             return None, "name is required for ha proxy"
 
         # add action arguments
         action_arguments = payload.get("actionArguments", [])
-        
-        action_arguments.append({
-            "name": "provision_virtual_ip",
-            "value": ha_proxy.get("provision_virtual_ip", False)
-        })
+
+        action_arguments.append(
+            {
+                "name": "provision_virtual_ip",
+                "value": ha_proxy.get("provision_virtual_ip", False),
+            }
+        )
 
         if ha_proxy.get("write_port"):
-            action_arguments.append({
-                "name": "proxy_write_port",
-                "value": ha_proxy["write_port"]
-            })
-        
+            action_arguments.append(
+                {"name": "proxy_write_port", "value": ha_proxy["write_port"]}
+            )
+
         if ha_proxy.get("read_port"):
-            action_arguments.append({
-                "name": "proxy_read_port",
-                "value": ha_proxy["read_port"]
-            })
-        
-        action_arguments.append({
-            "name": "deploy_haproxy",
-            "value": True
-        })
+            action_arguments.append(
+                {"name": "proxy_read_port", "value": ha_proxy["read_port"]}
+            )
+
+        action_arguments.append({"name": "deploy_haproxy", "value": True})
 
         payload["actionArguments"] = action_arguments
 
         # add HA proxy vm details
         nodes = payload.get("nodes", [])
-        node_spec = {
-            "properties": [{
-                "name": "node_type",
-                "value": "haproxy"
-            }]
-        }
+        node_spec = {"properties": [{"name": "node_type", "value": "haproxy"}]}
 
         uuid, err = get_cluster_uuid(self.module, ha_proxy.get("cluster"))
         if err:
@@ -521,8 +527,7 @@ class Database(NutanixDatabase):
         payload["nodes"] = nodes
         payload["nodeCount"] = len(payload["nodes"])
         return payload, None
-        
-        
+
     def _build_spec_postgres(self, payload, postgres):
         action_arguments = payload.get("actionArguments", [])
 
@@ -548,17 +553,11 @@ class Database(NutanixDatabase):
                     "archive_wal_expire_days": "",
                     "enable_synchronous_mode": False,
                     "enable_peer_auth": False,
-                    "node_type": "database"
+                    "node_type": "database",
                 }
             )
         else:
-            args.update(
-                {
-                    "auto_tune_staging_drive": False,
-                    "auth_method": ""
-                }
-            )
-
+            args.update({"auto_tune_staging_drive": False, "auth_method": ""})
 
         # create action arguments
         for key, default in args.items():
@@ -595,18 +594,19 @@ class Database(NutanixDatabase):
         payload["tags"] = specs
         return payload, None
 
+
 class DatabaseRegistration(Database):
     def __init__(self, module):
         super(DatabaseRegistration, self).__init__(module)
         self.build_spec_methods = {
             "name": self._build_spec_name,
-            "desc": self._build_spec_desc,
-            "auto_tune_staging_drive": self._build_spec_auto_tune_staging_drive,
+            "desc": self._build_spec_desc,  # inherited
+            "auto_tune_staging_drive": self._build_spec_auto_tune_staging_drive,  # inherited
             "db_vm": self._build_spec_db_vm,
-            "time_machine": self._build_spec_time_machine,
+            "time_machine": self._build_spec_time_machine,  # inherited
             "postgres": self._build_spec_postgres,
-            "tags": self._build_spec_tags,
-            "working_dir": self._build_spec_working_dir,
+            "tags": self._build_spec_tags,  # inherited
+            "working_dir": self._build_spec_working_dir,  # inherited
         }
 
     def _get_default_spec(self):
@@ -634,22 +634,107 @@ class DatabaseRegistration(Database):
                 "autoTuneStagingDrive": True,
                 "tags": [],
             }
-        )   
+        )
 
     def _build_spec_name(self, payload, name):
         payload["databaseName"] = name
         return payload, None
-        
-    def _build_spec_unregistered_vm(self, payload, vm):
+
+    def _build_spec_registered_vm(self, payload, db_vm, cluster_uuid=None):
+
+        # fetch vm ip using name or uuid
+        if db_vm.get("name") or db_vm.get("uuid"):
+
+            _db_server = DBServers(self.module)
+            kwargs = {"cluster_uuid": cluster_uuid}
+            vm_info, err = _db_server.get_db_server(
+                name=db_vm.get("name"), uuid=db_vm.get("uuid"), kwargs=kwargs
+            )
+            if err:
+                return None, err
+
+            if not vm_info("ipAddresses", []):
+                return None, "No IP address found for given db server vm"
+
+            # picking first IP of db server vm for registraion
+            payload["vmIp"] = vm_info["ipAddress"][0]
+
+        elif db_vm.get("ip"):
+            payload["vmIp"] = db_vm["ip"]
+
+        else:
+            return None, "name, uuid or ip is required for registered vm configuration"
+
         return payload, None
-    
-    def _build_spec_registered_vm(self, payload, vm):
+
+    def _build_spec_unregistered_vm(self, payload, db_vm):
+
+        payload["vmIp"] = db_vm.get("ip")
+        payload["vmUsername"] = db_vm.get("username")
+
+        if db_vm.get("desc"):
+            payload["vmDescription"] = db_vm["desc"]
+            payload["resetDescriptionInNxCluster"] = db_vm.get("reset_desc", False)
+
+        if db_vm.get("password"):
+            payload["vmPassword"] = db_vm["password"]
+        elif db_vm.get("private_ssh_key"):
+            payload["vmSshkey"] = db_vm["private_ssh_key"]
+        else:
+            return (
+                None,
+                "Either password or private_ssh_key required for db server vm connection",
+            )
+
         return payload, None
 
     def _build_spec_db_vm(self, payload, db_vm):
+        cluster_uuid, err = get_cluster_uuid(self.module, payload.get("cluster"))
+        if err:
+            return None, err
+
+        payload["nxClusterId"] = cluster_uuid
+
+        err = None
+        if db_vm.get("registered"):
+            payload, err = self._build_spec_registered_vm(
+                payload, db_vm["registered"], cluster_uuid
+            )
+        else:
+            payload, err = self._build_spec_unregistered_vm(
+                payload, db_vm["unregistered"]
+            )
+
+        if err:
+            return None, err
+
         return payload, None
 
     def _build_spec_postgres(self, payload, postgres):
+        action_arguments = []
+
+        # List of action arguments for postgres registration
+        args = [
+            "listener_port",
+            "db_name",
+            "db_user",
+            "db_password",
+            "backup_policy",
+        ]
+
+        # create action arguments
+        for arg in args:
+            if arg in postgres:
+                spec = {"name": arg, "value": postgres[arg]}
+                action_arguments.append(spec)
+
+        action_arguments.append({
+            "name": "postgres_software_home",
+            "value": postgres["software_path"]
+        })
+
+        payload["actionArguments"] = action_arguments
+        payload["databaseType"] = NDB_CONSTANTS.DatabaseTypes.POSTGRES
         return payload, None
 
     def _build_spec_working_dir(self, payload, working_dir):
