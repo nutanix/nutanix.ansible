@@ -16,6 +16,7 @@ class VLAN(NutanixDatabase):
         super(VLAN, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
+            "desc": self._build_spec_desc,
             "vlan_type": self._build_spec_type,
             "ip_pools": self._build_spec_ip_pools,
             "gateway": self._build_spec_gateway,
@@ -24,6 +25,7 @@ class VLAN(NutanixDatabase):
             "secondary_dns": self._build_spec_secondary_dns,
             "dns_domain": self._build_spec_dns_domain,
             "cluster": self._build_spec_cluster,
+            "stretched_vlans": self._build_spec_stretched_vlans,
         }
 
     def get_spec(self, old_spec=None, params=None):
@@ -99,6 +101,10 @@ class VLAN(NutanixDatabase):
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name
+        return payload, None
+
+    def _build_spec_desc(self, payload, value):
+        payload["description"] = value
         return payload, None
 
     def _build_spec_type(self, payload, vlan_type):
@@ -185,11 +191,22 @@ class VLAN(NutanixDatabase):
             )
         return payload, None
 
+    def _build_spec_stretched_vlans(self, payload, value):
+        payload.pop("properties", None)
+        payload.pop("ipPools", None)
+        payload.pop("clusterId", None)
+        payload["vlanIds"] = value
+        payload["type"] = "Static"
+        return payload, None
+
     def _validate_module_params(self, payload=None):
+        name = self.module.params.get("name")
         updated_vlan_type = self.module.params.get("vlan_type")
         old_vlan_type = payload.get("type") if payload else None
         vlan_type = updated_vlan_type or old_vlan_type
-
+        if name and "stretched_vlans" not in self.module.params and "vlan_type" not in self.module.params:
+            err = "name is provided but any of the following are missing: vlan_type, stretched_vlans"
+            return err
         if vlan_type == "DHCP":
             for item in [
                 "gateway",
@@ -214,6 +231,10 @@ class VLAN(NutanixDatabase):
             if property["name"] == name:
                 return property
         return None
+
+    def create_stretched_vlans(self, data):
+        endpoint = "stretched-vlan"
+        return self.create(data=data, endpoint=endpoint)
 
     def add_ip_pools(self, vlan_uuid, ip_pools, old_spec=None):
         vlan_type = self.module.params.get("vlan_type") or old_spec.get("type", None)
