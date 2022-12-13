@@ -24,8 +24,30 @@ class Tag(NutanixDatabase):
         }
 
     def read(self, uuid=None, endpoint=None, query=None, raise_error=True, no_response=False, timeout=30):
-        query = {"id":uuid}
+        
+        if uuid:
+            if not query:
+                query = {}
+            query["id"] = uuid
+
         return super().read(uuid=None, query=query, endpoint=endpoint, raise_error=raise_error, no_response=no_response, timeout=timeout)
+
+
+    def get_tag_uuid(self, name, entity_type=None):
+        # use name + entity_type combination to get tag details
+        query = {
+            "name": name
+        }
+        if entity_type:
+            query["entityType"] = entity_type
+
+        resp = self.read(query=query)
+
+        if not resp:
+            return None, "Failed fetching tag uuid for given name and entity type"
+
+        uuid = resp.get("id")
+        return uuid, None
 
     def get_all_name_uuid_map(self):
         resp = self.read()

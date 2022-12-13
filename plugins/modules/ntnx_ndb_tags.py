@@ -15,7 +15,7 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.ndb.base_info_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.tags import Tag  # noqa: E402
 from ..module_utils.utils import strip_extra_attrs  # noqa: E402
 
@@ -40,10 +40,35 @@ def create_tags(module, result):
         result["error"] = err
         return module.fail_json(msg="Failed generating tag create spec", **result)
     
+    if module.check_mode:
+        result["response"] = spec
+        return
+
     resp = tags.create(data=spec)
     result["response"] = resp
+
+    # get uuid
+    uuid, err = tags.get_tag_uuid(resp["name"], resp["entityType"])
+    if err:
+        result["error"] = err
+        return module.fail_json(msg="Failed fetching tag uuid post creation", **result)
+
+    result["uuid"] = uuid
+
     result["changed"] = True
-    result["uuid"] = resp.get("id")
+
+def check_tags_idempotency(old_spec, new_spec):
+
+    # spec args allowed to updated
+    args = ["name", "description", "required", "status"]
+
+    for arg in args:
+        if old_spec.get(arg) != new_spec.get(arg):
+            return False
+
+    return True
+    
+
 
 def update_tags(module, result):
     tags = Tag(module)
@@ -54,14 +79,22 @@ def update_tags(module, result):
     tag = tags.read(uuid=uuid)
     if not tag:
         module.fail_json(msg="Failed fetching tag info", **result)
-
+    
     default_spec = tags.get_default_update_spec()
-    tag = strip_extra_attrs(tag, default_spec)
+    strip_extra_attrs(tag, default_spec)
     spec, err = tags.get_spec(old_spec=tag)
     if err:
         result["error"] = err
         return module.fail_json("Failed generating tag update spec", **result)
     
+    if module.check_mode:
+        result["response"] = spec
+        return
+    
+    if check_tags_idempotency(old_spec=tag, new_spec=spec):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.") 
+
     resp = tags.update(uuid=uuid, data=spec)
     result["response"] = resp
     result["changed"] = True
@@ -78,7 +111,7 @@ def delete_tags(module, result):
     result["changed"] = True
 
 def run_module():
-    module = NdbBaseInfoModule(
+    module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
@@ -93,7 +126,7 @@ def run_module():
         if module.params.get("uuid"):
             update_tags(module, result)
         else:
-            update_tags(module, result)
+            create_tags(module, result)
     else:
         delete_tags(module, result)
     module.exit_json(**result)
