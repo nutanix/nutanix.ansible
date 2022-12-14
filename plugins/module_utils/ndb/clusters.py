@@ -4,14 +4,28 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+from copy import deepcopy
 
-from .nutanix_database import NutanixDatabase
+from ..entity import Entity
 
 
-class Cluster(NutanixDatabase):
-    def __init__(self, module):
-        resource_type = "/clusters"
+class Cluster(Entity):
+    __BASEURL__ = "/era"
+
+    def __init__(self, module, api_version="v0.9"):
+        resource_type = "{0}/{1}/clusters".format(self.__BASEURL__, api_version)
+
         super(Cluster, self).__init__(module, resource_type=resource_type)
+        self.build_spec_methods = {
+            "name": self._build_spec_name,
+            "desc": self._build_spec_desc,
+            "name_prefix": self._build_spec_name_prefix,
+            "cluster_ip": self._build_spec_cluster_ip,
+            "cluster_credentials": self._build_spec_cluster_credentials,
+            "agent_network": self._build_spec_agent_network,
+            "vlan_access": self._build_spec_vlan_access,
+            "storage_container": self._build_spec_storage_container,
+        }
 
     def get_uuid(
         self,
@@ -44,6 +58,100 @@ class Cluster(NutanixDatabase):
             )
 
         return resp, None
+
+    def _get_default_spec(self):
+        return deepcopy(
+            {"clusterName": "",
+             "clusterIP": "",
+             "storageContainer": "",
+             "agentVMPrefix": "",
+             "port": 9440,
+             "protocol": "https",
+             "clusterType": "NTNX",
+             "version": "v2",
+             "credentialsInfo": [],
+             "agentNetworkInfo": [],
+             "networksInfo": []}
+        )
+
+    def _build_spec_name(self, payload, name):
+        payload["clusterName"] = name
+        return payload, None
+
+    def _build_spec_name_prefix(self, payload, prefix):
+        payload["agentVMPrefix"] = prefix
+        return payload, None
+
+    def _build_spec_desc(self, payload, desc):
+        payload["clusterDescription"] = desc
+        return payload, None
+
+    def _build_spec_cluster_ip(self, payload, cluster_ip):
+        payload["clusterIP"] = cluster_ip
+        return payload, None
+
+    def _build_spec_cluster_credentials(self, payload, credentials):
+        payload["credentialsInfo"] = [
+            {"name": "username", "value": credentials["username"]},
+            {"name": "password", "value": credentials["password"]}
+        ]
+        return payload, None
+
+    def _build_spec_agent_network(self, payload, agent_network):
+        payload["agentNetworkInfo"] = [
+            {"name": "dns", "value": ",".join(agent_network["dns_servers"])},
+            {"name": "ntp", "value": ",".join(agent_network["ntp_servers"])}
+        ]
+        return payload, None
+
+    def _build_spec_vlan_access(self, payload, vlans_config):
+        networks_info = []
+        prism_vlan = {
+            "type": vlans_config["prism_vlan"]["vlan_type"],
+            "networkInfo": [
+                   {"name": "vlanName", "value": vlans_config["prism_vlan"]["vlan_name"]},
+                   {"name": "staticIP", "value": vlans_config["prism_vlan"]["static_ip"]},
+                   {"name": "gateway", "value": vlans_config["prism_vlan"]["gateway"]},
+                   {"name": "subnetMask", "value": vlans_config["prism_vlan"]["subnet_mask"]}
+                ],
+            "accessType": ["PRISM"]
+        }
+        if vlans_config.get("dsip_vlan"):
+            dsip_vlan = {
+                "type": vlans_config["dsip_vlan"]["vlan_type"],
+                "networkInfo": [
+                    {"name": "vlanName", "value": vlans_config["dsip_vlan"]["vlan_name"]},
+                    {"name": "staticIP", "value": vlans_config["dsip_vlan"]["static_ip"]},
+                    {"name": "gateway", "value": vlans_config["dsip_vlan"]["gateway"]},
+                    {"name": "subnetMask", "value": vlans_config["dsip_vlan"]["subnet_mask"]}
+                ],
+                "accessType": ["DSIP"]
+            }
+            networks_info.append(dsip_vlan)
+        else:
+            prism_vlan["accessType"].append("DSIP")
+        if vlans_config.get("dbserver_vlan"):
+            dbserver_vlan = {
+                "type": vlans_config["dbserver_vlan"]["vlan_type"],
+                "networkInfo": [
+                    {"name": "vlanName", "value": vlans_config["dbserver_vlan"]["vlan_name"]},
+                    {"name": "staticIP", "value": vlans_config["dbserver_vlan"]["static_ip"]},
+                    {"name": "gateway", "value": vlans_config["dbserver_vlan"]["gateway"]},
+                    {"name": "subnetMask", "value": vlans_config["dbserver_vlan"]["subnet_mask"]}
+                ],
+                "accessType": ["DBSERVER"]
+            }
+            networks_info.append(dbserver_vlan)
+        else:
+            prism_vlan["accessType"].append("DBSERVER")
+        networks_info.append(prism_vlan)
+
+        payload["networksInfo"] = networks_info
+        return payload, None
+
+    def _build_spec_storage_container(self, payload, storage_container):
+        payload["storageContainer"] = storage_container
+        return payload, None
 
 
 # helper functions
