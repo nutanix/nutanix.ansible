@@ -61,17 +61,19 @@ class Cluster(Entity):
 
     def _get_default_spec(self):
         return deepcopy(
-            {"clusterName": "",
-             "clusterIP": "",
-             "storageContainer": "",
-             "agentVMPrefix": "",
-             "port": 9440,
-             "protocol": "https",
-             "clusterType": "NTNX",
-             "version": "v2",
-             "credentialsInfo": [],
-             "agentNetworkInfo": [],
-             "networksInfo": []}
+            {
+                "clusterName": "",
+                "clusterIP": "",
+                "storageContainer": "",
+                "agentVMPrefix": "",
+                "port": 9440,
+                "protocol": "https",
+                "clusterType": "NTNX",
+                "version": "v2",
+                "credentialsInfo": [],
+                "agentNetworkInfo": [],
+                "networksInfo": [],
+            }
         )
 
     def _build_spec_name(self, payload, name):
@@ -93,14 +95,14 @@ class Cluster(Entity):
     def _build_spec_cluster_credentials(self, payload, credentials):
         payload["credentialsInfo"] = [
             {"name": "username", "value": credentials["username"]},
-            {"name": "password", "value": credentials["password"]}
+            {"name": "password", "value": credentials["password"]},
         ]
         return payload, None
 
     def _build_spec_agent_network(self, payload, agent_network):
         payload["agentNetworkInfo"] = [
             {"name": "dns", "value": ",".join(agent_network["dns_servers"])},
-            {"name": "ntp", "value": ",".join(agent_network["ntp_servers"])}
+            {"name": "ntp", "value": ",".join(agent_network["ntp_servers"])},
         ]
         return payload, None
 
@@ -109,23 +111,35 @@ class Cluster(Entity):
         prism_vlan = {
             "type": vlans_config["prism_vlan"]["vlan_type"],
             "networkInfo": [
-                   {"name": "vlanName", "value": vlans_config["prism_vlan"]["vlan_name"]},
-                   {"name": "staticIP", "value": vlans_config["prism_vlan"]["static_ip"]},
-                   {"name": "gateway", "value": vlans_config["prism_vlan"]["gateway"]},
-                   {"name": "subnetMask", "value": vlans_config["prism_vlan"]["subnet_mask"]}
-                ],
-            "accessType": ["PRISM"]
+                {"name": "vlanName", "value": vlans_config["prism_vlan"]["vlan_name"]},
+                {"name": "staticIP", "value": vlans_config["prism_vlan"]["static_ip"]},
+                {"name": "gateway", "value": vlans_config["prism_vlan"]["gateway"]},
+                {
+                    "name": "subnetMask",
+                    "value": vlans_config["prism_vlan"]["subnet_mask"],
+                },
+            ],
+            "accessType": ["PRISM"],
         }
         if vlans_config.get("dsip_vlan"):
             dsip_vlan = {
                 "type": vlans_config["dsip_vlan"]["vlan_type"],
                 "networkInfo": [
-                    {"name": "vlanName", "value": vlans_config["dsip_vlan"]["vlan_name"]},
-                    {"name": "staticIP", "value": vlans_config["dsip_vlan"]["static_ip"]},
+                    {
+                        "name": "vlanName",
+                        "value": vlans_config["dsip_vlan"]["vlan_name"],
+                    },
+                    {
+                        "name": "staticIP",
+                        "value": vlans_config["dsip_vlan"]["static_ip"],
+                    },
                     {"name": "gateway", "value": vlans_config["dsip_vlan"]["gateway"]},
-                    {"name": "subnetMask", "value": vlans_config["dsip_vlan"]["subnet_mask"]}
+                    {
+                        "name": "subnetMask",
+                        "value": vlans_config["dsip_vlan"]["subnet_mask"],
+                    },
                 ],
-                "accessType": ["DSIP"]
+                "accessType": ["DSIP"],
             }
             networks_info.append(dsip_vlan)
         else:
@@ -134,12 +148,24 @@ class Cluster(Entity):
             dbserver_vlan = {
                 "type": vlans_config["dbserver_vlan"]["vlan_type"],
                 "networkInfo": [
-                    {"name": "vlanName", "value": vlans_config["dbserver_vlan"]["vlan_name"]},
-                    {"name": "staticIP", "value": vlans_config["dbserver_vlan"]["static_ip"]},
-                    {"name": "gateway", "value": vlans_config["dbserver_vlan"]["gateway"]},
-                    {"name": "subnetMask", "value": vlans_config["dbserver_vlan"]["subnet_mask"]}
+                    {
+                        "name": "vlanName",
+                        "value": vlans_config["dbserver_vlan"]["vlan_name"],
+                    },
+                    {
+                        "name": "staticIP",
+                        "value": vlans_config["dbserver_vlan"]["static_ip"],
+                    },
+                    {
+                        "name": "gateway",
+                        "value": vlans_config["dbserver_vlan"]["gateway"],
+                    },
+                    {
+                        "name": "subnetMask",
+                        "value": vlans_config["dbserver_vlan"]["subnet_mask"],
+                    },
                 ],
-                "accessType": ["DBSERVER"]
+                "accessType": ["DBSERVER"],
             }
             networks_info.append(dbserver_vlan)
         else:
