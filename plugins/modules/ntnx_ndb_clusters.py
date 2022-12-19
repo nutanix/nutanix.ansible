@@ -36,7 +36,7 @@ RETURN = r"""
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.clusters import Cluster  # noqa: E402
+from ..module_utils.ndb.clusters import Cluster, get_cluster_uuid  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 
 
@@ -68,6 +68,7 @@ def get_module_spec():
 
     module_args = dict(
         name=dict(type="str"),
+        uuid=dict(type="str"),
         desc=dict(type="str"),
         name_prefix=dict(type="str"),
         cluster_ip=dict(type="str"),
@@ -93,9 +94,42 @@ def create_cluster(module, result):
         return
 
     resp = cluster.create(spec)
-    cluster_uuid = resp["cluster_uuid"]
-    task_uuid = resp["task_uuid"]
+    cluster_name = resp["entityName"]
+    resp = cluster.get_cluster(name=cluster_name)
+    cluster_uuid = resp["id"]
+    task_uuid = resp["operationId"]
     result["cluster_uuid"] = cluster_uuid
+    result["changed"] = True
+
+    if module.params.get("wait"):
+        task = Task(module)
+        task.wait_for_completion(task_uuid)
+        resp = cluster.read(cluster_uuid)
+
+    result["response"] = resp
+
+
+def update_cluster(module, result):
+    uuid = module.params["uuid"]
+
+    cluster = Cluster(module)
+
+    resp = cluster.read(uuid)
+    old_spec = cluster.get_default_update_spec(override_spec=resp)
+
+    update_spec, err = cluster.get_spec(old_spec=old_spec)
+
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating update cluster spec", **result)
+
+    if module.check_mode:
+        result["response"] = old_spec
+        return
+
+    resp = cluster.update(update_spec)
+    task_uuid = resp["operationId"]
+    result["cluster_uuid"] = uuid
     result["changed"] = True
 
     if module.params.get("wait"):
@@ -130,6 +164,12 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        mutually_exclusive=[
+            ("uuid", "name_prefix"),
+            ("uuid", "agent_network"),
+            ("uuid", "vlan_access"),
+            ("uuid", "storage_container"),
+        ],
     )
     utils.remove_param_with_none_value(module.params)
     result = {"response": {}, "error": None, "changed": False}
