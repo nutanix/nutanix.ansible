@@ -36,7 +36,8 @@ RETURN = r"""
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.clusters import Cluster, get_cluster_uuid  # noqa: E402
+from ..module_utils.ndb.clusters import Cluster  # noqa: E402
+from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
 
 
@@ -128,13 +129,13 @@ def update_cluster(module, result):
         return
 
     resp = cluster.update(update_spec)
-    task_uuid = resp["operationId"]
+    ops_uuid = resp["operationId"]
     result["cluster_uuid"] = uuid
     result["changed"] = True
 
     if module.params.get("wait"):
-        task = Task(module)
-        task.wait_for_completion(task_uuid)
+        operations = Operation(module)
+        resp = operations.wait_for_completion(ops_uuid)
         resp = cluster.read(resp["cluster_name"])
 
     result["response"] = resp
