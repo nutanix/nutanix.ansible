@@ -98,13 +98,13 @@ def create_cluster(module, result):
     cluster_name = resp["entityName"]
     resp = cluster.get_cluster(name=cluster_name)
     cluster_uuid = resp["id"]
-    task_uuid = resp["operationId"]
+    ops_uuid = resp["operationId"]
     result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
 
     if module.params.get("wait"):
-        task = Task(module)
-        task.wait_for_completion(task_uuid)
+        operations = Operation(module)
+        resp = operations.wait_for_completion(ops_uuid)
         resp = cluster.read(cluster_uuid)
 
     result["response"] = resp
@@ -136,7 +136,7 @@ def update_cluster(module, result):
     if module.params.get("wait"):
         operations = Operation(module)
         resp = operations.wait_for_completion(ops_uuid)
-        resp = cluster.read(resp["cluster_name"])
+        resp = cluster.get_cluster(resp["cluster_name"])
 
     result["response"] = resp
 
