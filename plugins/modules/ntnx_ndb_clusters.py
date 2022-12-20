@@ -85,10 +85,15 @@ def get_module_spec():
 def create_cluster(module, result):
     cluster = Cluster(module, api_version="v0.8")
 
-    spec, error = cluster.get_spec()
-    if error:
-        result["error"] = error
+    spec, err = cluster.get_spec()
+    if err:
+        result["error"] = err
         module.fail_json(msg="Failed generating create cluster spec", **result)
+
+    if cluster.get_cluster_by_ip():
+        module.fail_json(
+            msg="The provided cluster IP is already registered with NDB.", **result
+        )
 
     if module.check_mode:
         result["response"] = spec
@@ -96,26 +101,30 @@ def create_cluster(module, result):
 
     resp = cluster.create(spec)
     cluster_name = resp["entityName"]
-    resp = cluster.get_cluster(name=cluster_name)
-    cluster_uuid = resp["id"]
     ops_uuid = resp["operationId"]
+    resp, err = cluster.get_cluster(name=cluster_name)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating create cluster spec", **result)
+
+    cluster_uuid = resp["id"]
     result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
 
     if module.params.get("wait"):
         operations = Operation(module)
-        resp = operations.wait_for_completion(ops_uuid)
+        operations.wait_for_completion(ops_uuid)
         resp = cluster.read(cluster_uuid)
 
     result["response"] = resp
 
 
 def update_cluster(module, result):
-    uuid = module.params["uuid"]
+    cluster_uuid = module.params["uuid"]
 
     cluster = Cluster(module)
 
-    resp = cluster.read(uuid)
+    resp = cluster.read(cluster_uuid)
     old_spec = cluster.get_default_update_spec(override_spec=resp)
 
     update_spec, err = cluster.get_spec(old_spec=old_spec)
@@ -130,13 +139,13 @@ def update_cluster(module, result):
 
     resp = cluster.update(update_spec)
     ops_uuid = resp["operationId"]
-    result["cluster_uuid"] = uuid
+    result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
 
     if module.params.get("wait"):
         operations = Operation(module)
-        resp = operations.wait_for_completion(ops_uuid)
-        resp = cluster.get_cluster(resp["cluster_name"])
+        operations.wait_for_completion(ops_uuid)
+        resp = cluster.read(cluster_uuid)
 
     result["response"] = resp
 

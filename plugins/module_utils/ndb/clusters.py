@@ -27,6 +27,14 @@ class Cluster(Entity):
             "storage_container": self._build_spec_storage_container,
         }
 
+    def get_cluster_by_ip(self):
+        cluster_ip = self.module.params["cluster_ip"]
+        clusters = self.read()
+        for cluster in clusters:
+            if cluster_ip in cluster["ipAddresses"]:
+                return cluster
+        return None
+
     def get_uuid(
         self,
         value,
@@ -48,8 +56,8 @@ class Cluster(Entity):
             resp = self.read(endpoint=endpoint)
 
             # we fetch cluster using ID again to get complete info.
-            if resp and resp.get("id"):
-                resp = self.read(uuid=resp["id"])
+            # if resp and resp.get("id"):
+            #     resp = self.read(uuid=resp["id"])
 
         else:
             return (
