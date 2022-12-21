@@ -27,6 +27,22 @@ class Cluster(Entity):
             "storage_container": self._build_spec_storage_container,
         }
 
+    def update(
+        self,
+        data=None,
+        uuid=None,
+        endpoint=None,
+        query=None,
+        raise_error=True,
+        no_response=False,
+        timeout=30,
+        method="PATCH",
+    ):
+        return super().update(
+            data, uuid, endpoint, query, raise_error, no_response, timeout, method
+        )
+
+
     def get_cluster_by_ip(self):
         cluster_ip = self.module.params["cluster_ip"]
         clusters = self.read()
@@ -84,8 +100,28 @@ class Cluster(Entity):
             }
         )
 
+    def get_default_update_spec(self, override_spec=None):
+        spec = deepcopy(
+            {
+                "username": "",
+                # "password": "",
+                "name": "",
+                "description": "",
+                "ipAddresses": []
+            }
+        )
+        if override_spec:
+            for key in spec.keys():
+                if override_spec.get(key):
+                    spec[key] = deepcopy(override_spec[key])
+
+        return spec
+
     def _build_spec_name(self, payload, name):
-        payload["clusterName"] = name
+        if self.module.params.get("uuid"):
+            payload["name"] = name
+        else:
+            payload["clusterName"] = name
         return payload, None
 
     def _build_spec_name_prefix(self, payload, prefix):
@@ -93,18 +129,28 @@ class Cluster(Entity):
         return payload, None
 
     def _build_spec_desc(self, payload, desc):
-        payload["clusterDescription"] = desc
+        if self.module.params.get("uuid"):
+            payload["description"] = desc
+        else:
+            payload["clusterDescription"] = desc
         return payload, None
 
     def _build_spec_cluster_ip(self, payload, cluster_ip):
-        payload["clusterIP"] = cluster_ip
+        if self.module.params.get("uuid"):
+            payload["ipAddresses"] = [cluster_ip]
+        else:
+            payload["clusterIP"] = cluster_ip
         return payload, None
 
     def _build_spec_cluster_credentials(self, payload, credentials):
-        payload["credentialsInfo"] = [
-            {"name": "username", "value": credentials["username"]},
-            {"name": "password", "value": credentials["password"]},
-        ]
+        if self.module.params.get("uuid"):
+            payload["username"] = credentials["username"]
+            payload["password"] = credentials["password"]
+        else:
+            payload["credentialsInfo"] = [
+                {"name": "username", "value": credentials["username"]},
+                {"name": "password", "value": credentials["password"]},
+            ]
         return payload, None
 
     def _build_spec_agent_network(self, payload, agent_network):

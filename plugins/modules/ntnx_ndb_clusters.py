@@ -134,18 +134,23 @@ def update_cluster(module, result):
         module.fail_json(msg="Failed generating update cluster spec", **result)
 
     if module.check_mode:
-        result["response"] = old_spec
+        result["response"] = update_spec
         return
 
-    resp = cluster.update(update_spec)
-    ops_uuid = resp["operationId"]
+    if check_for_idempotency(old_spec, update_spec):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.")
+
+    resp = cluster.update(data=update_spec, uuid=cluster_uuid)
+    # ops_uuid = resp["operationId"]
     result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
 
-    if module.params.get("wait"):
-        operations = Operation(module)
-        operations.wait_for_completion(ops_uuid)
-        resp = cluster.read(cluster_uuid)
+    # if module.params.get("wait") and resp.get("operationId"):
+    #     ops_uuid = resp["operationId"]
+    #     operations = Operation(module)
+    #     operations.wait_for_completion(ops_uuid)
+    #     resp = cluster.read(cluster_uuid)
 
     result["response"] = resp
 
@@ -170,6 +175,12 @@ def delete_cluster(module, result):
     result["response"] = resp
 
 
+def check_for_idempotency(old_spec, update_spec):
+    if old_spec == update_spec:
+        return True
+    return False
+
+
 def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
@@ -185,7 +196,10 @@ def run_module():
     result = {"response": {}, "error": None, "changed": False}
     state = module.params["state"]
     if state == "present":
-        create_cluster(module, result)
+        if module.params.get("uuid"):
+            update_cluster(module, result)
+        else:
+            create_cluster(module, result)
     else:
         delete_cluster(module, result)
 
