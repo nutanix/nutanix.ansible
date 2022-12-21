@@ -42,7 +42,6 @@ class Cluster(Entity):
             data, uuid, endpoint, query, raise_error, no_response, timeout, method
         )
 
-
     def get_cluster_by_ip(self):
         cluster_ip = self.module.params["cluster_ip"]
         clusters = self.read()
@@ -107,7 +106,7 @@ class Cluster(Entity):
                 # "password": "",
                 "name": "",
                 "description": "",
-                "ipAddresses": []
+                "ipAddresses": [],
             }
         )
         if override_spec:
