@@ -17,8 +17,107 @@ options:
     name:
         type: str
         description: Name of the cluster.
-        required: true
-
+    uuid:
+        type: str
+        description: UUID of the cluster.
+    desc:
+        type: str
+        description: Description of the cluster.
+    name_prefix:
+        type: str
+        description: write
+    cluster_ip:
+        type: Cluster ip
+        description: write
+    cluster_credentials:
+        type: dict
+        description: write
+        suboptions:
+            username:
+                type: str
+                description: Cluster username
+            password:
+                type: str
+                description: Cluster password
+    agent_network:
+        type: dict
+        description: write
+        suboptions:
+            dns_servers:
+                type: list
+                description: write
+                elements: str
+            ntp_servers:
+                type: list
+                elements: str
+                description: write
+    vlan_access:
+        type: dict
+        description: write
+        suboptions:
+            prism_vlan:
+                type: dict
+                description: write
+                suboptions:
+                    vlan_name:
+                        type: str
+                        description: write
+                    vlan_type:
+                        type: str
+                        description: write
+                        choices: ["DHCP", "Static"]
+                    static_ip:
+                        type: str
+                        description: write
+                    gateway:
+                        type: str
+                        description: write
+                    subnet_mask:
+                        type: str
+                        description: write
+            dsip_vlan:
+                type: dict
+                description: write
+                suboptions:
+                    vlan_name:
+                        type: str
+                        description: write
+                    vlan_type:
+                        type: str
+                        description: write
+                        choices: ["DHCP", "Static"]
+                    static_ip:
+                        type: str
+                        description: write
+                    gateway:
+                        type: str
+                        description: write
+                    subnet_mask:
+                        type: str
+                        description: write
+            dbserver_vlan:
+                type: dict
+                description: write
+                suboptions:
+                    vlan_name:
+                        type: str
+                        description: write
+                    vlan_type:
+                        type: str
+                        description: write
+                        choices: ["DHCP", "Static"]
+                    static_ip:
+                        type: str
+                        description: write
+                    gateway:
+                        type: str
+                        description: write
+                    subnet_mask:
+                        type: str
+                        description: write
+    storage_container:
+        type: str
+        description: write
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -49,8 +148,8 @@ def get_module_spec():
     )
 
     agent_network_spec = dict(
-        dns_servers=dict(type="list"),
-        ntp_servers=dict(type="list"),
+        dns_servers=dict(type="list", elements="str"),
+        ntp_servers=dict(type="list", elements="str"),
     )
 
     vlan_access_spec = dict(
