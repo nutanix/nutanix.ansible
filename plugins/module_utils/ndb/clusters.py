@@ -103,7 +103,7 @@ class Cluster(Entity):
     def get_default_update_spec(self, override_spec=None):
         spec = deepcopy(
             {
-                "username": "",
+                # "username": "",
                 # "password": "",
                 "name": "",
                 "description": "",
