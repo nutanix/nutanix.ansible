@@ -42,6 +42,24 @@ class Cluster(Entity):
             data, uuid, endpoint, query, raise_error, no_response, timeout, method
         )
 
+    def delete(
+            self,
+            uuid=None,
+            endpoint=None,
+            query=None,
+            raise_error=True,
+            no_response=False,
+            timeout=30,
+            data=None,
+    ):
+        if not data:
+            data = {
+                "deleteRemoteSites": False
+            }
+        return super().delete(
+            uuid, endpoint, query, raise_error, no_response, timeout, data
+        )
+
     def get_cluster_by_ip(self):
         cluster_ip = self.module.params["cluster_ip"]
         clusters = self.read()

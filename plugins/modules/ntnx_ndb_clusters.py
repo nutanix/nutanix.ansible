@@ -133,11 +133,12 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
+import time  # noqa: E402
+
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.clusters import Cluster  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():
@@ -241,35 +242,27 @@ def update_cluster(module, result):
         module.exit_json(msg="Nothing to change.")
 
     resp = cluster.update(data=update_spec, uuid=cluster_uuid)
-    # ops_uuid = resp["operationId"]
     result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
-
-    # if module.params.get("wait") and resp.get("operationId"):
-    #     ops_uuid = resp["operationId"]
-    #     operations = Operation(module)
-    #     operations.wait_for_completion(ops_uuid)
-    #     resp = cluster.read(cluster_uuid)
 
     result["response"] = resp
 
 
 def delete_cluster(module, result):
-    cluster_name = module.params["name"]
-    if not cluster_name:
-        result["error"] = "Missing parameter name in playbook"
-        module.fail_json(msg="Failed deleting cluster", **result)
+    cluster_uuid = module.params["uuid"]
 
     cluster = Cluster(module)
-    resp = cluster.delete(cluster_name)
+    resp = cluster.delete(cluster_uuid)
     result["changed"] = True
-    result["cluster_name"] = cluster_name
-    task_uuid = resp["task_uuid"]
-    result["task_uuid"] = task_uuid
+    result["cluster_uuid"] = cluster_uuid
+    ops_uuid = resp["operationId"]
+    result["cluster_uuid"] = cluster_uuid
 
     if module.params.get("wait"):
-        task = Task(module)
-        resp = task.wait_for_completion(task_uuid)
+        operations = Operation(module)
+        time.sleep(2)  # to get operation ID functional
+        operations.wait_for_completion(ops_uuid)
+        resp = cluster.read(cluster_uuid)
 
     result["response"] = resp
 
