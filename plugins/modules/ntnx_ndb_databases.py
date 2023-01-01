@@ -634,6 +634,10 @@ from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.databases import Database  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.ndb.db_servers import DBServerVM
+from ..module_utils.ndb.tags import Tag
+from ..module_utils.ndb.time_machines import TimeMachine
+from ..module_utils.ndb.database_instances import DatabaseInstance
 
 
 def get_module_spec():
@@ -723,6 +727,9 @@ def get_module_spec():
         allocate_pg_hugepage=dict(type="bool", default=False, required=False),
         auth_method=dict(type="str", default="md5", required=False),
         cluster_database=dict(type="bool", default=False, required=False),
+        type=dict(
+            type="str", choices=["single", "ha"], default="single", required=False
+        ),
     )
     postgres.update(deepcopy(default_db_arguments))
 
@@ -752,28 +759,88 @@ def get_module_spec():
     return module_args
 
 
-def create_instance(module, result):
-    _databases = Database(module)
+def provision_single_instance(module, result):
 
-    name = module.params["name"]
-    uuid, err = _databases.get_uuid(name)
-    if uuid:
-        module.fail_json(
-            msg="Database instance with given name already exists", **result
-        )
+    # create database instance obj
+    db_instance = DatabaseInstance(module=module)
 
-    spec, err = _databases.get_spec()
+    # get default spec
+    spec = db_instance.get_default_spec()
+
+    # populate VM related spec
+    db_vm = DBServerVM(module=module)
+    spec, err = db_vm.get_spec(old_spec=spec, db_instance=True)
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating create database instance spec", **result
+            msg="Failed getting vm spec for new database instance creation", **result
+        )
+
+    # populate database engine related spec
+    spec, err = db_instance.get_db_engine_spec(spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting database engine related spec for new database instance creation",
+            **result,
+        )
+
+    # populate database instance related spec
+    spec, err = db_instance.get_spec(spec, provision=True)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting spec for new database instance creation", **result
+        )
+
+    # populate time machine related spec
+    time_machine = TimeMachine(module)
+    spec, err = time_machine.get_spec(spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting spec for time machine for new database instance creation",
+            **result,
+        )
+
+    # populate tags related spec
+    tags = Tag(module)
+    spec, err = tags.get_spec_for_db_instance(spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting spec for tags for new database instance creation",
+            **result,
         )
 
     if module.check_mode:
         result["response"] = spec
         return
 
-    resp = _databases.create(data=spec)
+    return db_instance.provision(data=spec)
+
+
+def provision_ha_instance(module, result):
+    pass
+
+
+def create_instance(module, result):
+    db_instance = DatabaseInstance(module)
+    name = module.params["name"]
+    uuid, err = db_instance.get_uuid(name)
+    if uuid:
+        module.fail_json(
+            msg="Database instance with given name already exists", **result
+        )
+
+    if module.params.get("db_vm"):
+        resp = provision_single_instance(module, result)
+    else:
+        pass
+
+    if module.check_mode:
+        return
+
     result["response"] = resp
     result["db_uuid"] = resp["entityId"]
     db_uuid = resp["entityId"]
@@ -783,7 +850,7 @@ def create_instance(module, result):
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid)
-        resp = _databases.read(db_uuid)
+        resp = db_instance.read(db_uuid)
         result["response"] = resp
 
     result["changed"] = True
@@ -814,7 +881,7 @@ def check_for_idempotency(old_spec, update_spec):
 
 
 def update_instance(module, result):
-    _databases = Database(module)
+    _databases = DatabaseInstance(module)
 
     uuid = module.params.get("db_uuid")
     if not uuid:
@@ -823,49 +890,46 @@ def update_instance(module, result):
     resp = _databases.read(uuid)
     old_spec = _databases.get_default_update_spec(override_spec=resp)
 
-    update_spec, err = _databases.get_spec(old_spec=old_spec)
-
-    # due to field name changes
-    if update_spec.get("databaseDescription"):
-        update_spec["description"] = update_spec.pop("databaseDescription")
-
+    spec, err = _databases.get_spec(old_spec=old_spec, update=True)
     if err:
         result["error"] = err
         module.fail_json(
             msg="Failed generating update database instance spec", **result
         )
 
+    # populate tags related spec
+    if module.params.get("tags"):
+        tags = Tag(module)
+        spec, err = tags.get_spec_for_db_instance(spec)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting spec for tags for updating database instance",
+                **result,
+            )
+
     if module.check_mode:
-        result["response"] = update_spec
+        result["response"] = spec
         return
 
-    if check_for_idempotency(old_spec, update_spec):
+    if check_for_idempotency(old_spec, spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-    resp = _databases.update(data=update_spec, uuid=uuid)
+    resp = _databases.update(data=spec, uuid=uuid)
     result["response"] = resp
     result["db_uuid"] = uuid
     result["changed"] = True
 
 
 def delete_instance(module, result):
-    _databases = Database(module)
+    _databases = DatabaseInstance(module)
 
     uuid = module.params.get("db_uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
 
     spec = _databases.get_default_delete_spec()
-    if module.params.get("soft_delete"):
-        spec["remove"] = True
-        spec["delete"] = False
-    else:
-        spec["delete"] = True
-        spec["remove"] = False
-
-    if module.params.get("delete_time_machine"):
-        spec["deleteTimeMachine"] = True
 
     if module.check_mode:
         result["response"] = spec

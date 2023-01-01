@@ -284,7 +284,16 @@ class NDB:
     OPERATIONS_POLLING_DELAY = 30
 
     class DatabaseTypes:
-        POSTGRES = "postgres_database"
+        POSTGRES = "postgres"
+        ALL = [
+            "oracle",
+            "postgres",
+            "sqlserver",
+            "mariadb",
+            "mysql",
+            "saphana",
+            "mongodb",
+        ]
 
     class StatusCodes:
         SUCCESS = "5"

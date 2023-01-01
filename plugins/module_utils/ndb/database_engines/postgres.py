@@ -1,12 +1,13 @@
 from copy import deepcopy
 
-from database_engine import DatabaseEngine
+from .database_engine import DatabaseEngine
 from ..clusters import get_cluster_uuid
+from ...constants import NDB
 
 
 class Postgres(DatabaseEngine):
     def __init__(self, module):
-        self._type = "postgres"
+        self._type = NDB.DatabaseTypes.POSTGRES
         super(Postgres, self).__init__(module)
 
     def build_spec_db_params_profile_properties(self, params, cur_properties=None):
@@ -85,9 +86,9 @@ class Postgres(DatabaseEngine):
 
 class PostgresSingleInstance(Postgres):
     def __init__(self, module):
-        super(Postgres, self).__init__(module)
+        super(PostgresSingleInstance, self).__init__(module)
 
-    def build_spec_db_instance_action_arguments(self, payload, config):
+    def build_spec_db_instance_provision_action_arguments(self, payload, config):
 
         action_arguments = payload.get("actionArguments", [])
         # fields to their defaults maps
@@ -109,10 +110,10 @@ class PostgresSingleInstance(Postgres):
 
         # handle scenariors where display names are diff
         action_arguments.append(
-            {"name": "database_names", "value": action_arguments.get("db_name")}
+            {"name": "database_names", "value": config.get("db_name")}
         )
         action_arguments.append(
-            {"name": "database_size", "value": str(action_arguments.get("db_size"))}
+            {"name": "database_size", "value": str(config.get("db_size"))}
         )
 
         payload["actionArguments"] = action_arguments
@@ -121,9 +122,9 @@ class PostgresSingleInstance(Postgres):
 
 class PostgresHAInstance(Postgres):
     def __init__(self, module):
-        super(Postgres, self).__init__(module)
+        super(PostgresHAInstance, self).__init__(module)
 
-    def build_spec_db_instance_action_arguments(self, payload, config):
+    def build_spec_db_instance_provision_action_arguments(self, payload, config):
 
         action_arguments = payload.get("actionArguments", [])
         # Below is a map of common action arguments fields to their default value
@@ -153,7 +154,7 @@ class PostgresHAInstance(Postgres):
             {"name": "database_names", "value": config.get("db_name")}
         )
         action_arguments.append(
-            {"name": "database_size", "value": str(params.get("db_size"))}
+            {"name": "database_size", "value": str(config.get("db_size"))}
         )
 
         # for HA instance, add HA proxy related action arguments and vm details if required
@@ -196,7 +197,7 @@ class PostgresHAInstance(Postgres):
         payload["nodeCount"] = len(payload["nodes"])
         return payload, None
 
-    def build_spec_ha_proxy_action_arguments(self, ha_proxy, action_arguments=None):
+    def _build_spec_ha_proxy_action_arguments(self, ha_proxy, action_arguments=None):
 
         if not action_arguments:
             action_arguments = []

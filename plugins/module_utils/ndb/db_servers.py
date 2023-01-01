@@ -3,9 +3,8 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
-from clusters import get_cluster_uuid
-from database_instance import DatabaseInstance
-from profiles import Profile, get_profile_uuid
+from .clusters import get_cluster_uuid
+from .profiles import Profile, get_profile_uuid
 
 __metaclass__ = type
 
@@ -14,16 +13,18 @@ from .nutanix_database import NutanixDatabase
 
 
 class DBServerVM(NutanixDatabase):
-
-    db_instance: DatabaseInstance = None
-
     def __init__(self, module):
+
         resource_type = "/dbservers"
         super(DBServerVM, self).__init__(module, resource_type=resource_type)
-
-    def set_database_instance(self, db_instance: DatabaseInstance):
-        self.db_instance = db_instance
-        return self.db_instance
+        self.build_spec_methods = {
+            "compute_profile": self._build_spec_compute_profile,
+            "software_profile": self._build_spec_software_profile,
+            "network_profile": self._build_spec_network_profile,
+            "cluster": self._build_spec_cluster,
+            "pub_ssh_key": self._build_spec_pub_ssh_key,
+            "vm_password": self._build_spec_vm_password,
+        }
 
     def get_uuid(
         self,
@@ -84,58 +85,104 @@ class DBServerVM(NutanixDatabase):
             }
         )
 
-    # high level builders as per use case
-    def build_spec_provision_for_instance(self, payload, vm_config):
-        build_spec_methods = {
-            "name": self._build_spec_name,
-            "compute_profile": self._build_spec_compute_profile,
-            "software_profile": self._build_spec_software_profile,
-            "network_profile": self._build_spec_network_profile,
-            "cluster": self._build_spec_cluster,
-            "pub_ssh_key": self._build_spec_pub_ssh_key,
-            "vm_password": self._build_spec_vm_password,
-        }
+    def get_spec(self, old_spec=None, params=None, **kwargs):
+        if kwargs.get("db_instance"):
+            if self.module.params.get("db_vm", {}).get("create_new_server"):
+                payload, err = self.get_spec_provision_for_db_instance(payload=old_spec)
+                return payload, err
+            else:
+                payload, err = self.get_spec_for_db_instance_on_registered_server(
+                    payload=old_spec
+                )
+                return payload, err
+        elif kwargs.get("db_vm"):
+            if kwargs.get("provision"):
+                payload, err = self.get_spec_provision(payload=old_spec)
+                return payload, err
+            else:
+                payload, err = self.get_spec_register(payload=old_spec)
+                return payload, err
 
-        for field, method in build_spec_methods.items():
-            if field in vm_config:
-                payload, err = method(payload, vm_config[field])
-                if err:
-                    return None, err
+    def get_default_spec_for_db_instance(self):
+        return deepcopy(
+            {
+                "nodes": [{"properties": [], "vmName": "", "networkProfileId": ""}],
+                "nxClusterId": "",
+            }
+        )
+
+    # this routine populates spec for provisioning db vm for database instance creation
+    def get_spec_provision_for_db_instance(self, payload):
+
+        payload.update(self.get_default_spec_for_db_instance())
+
+        self.build_spec_methods.update(
+            {
+                "name": self._build_spec_name,
+            }
+        )
+
+        db_vm_config = self.module.params.get("db_vm", {}).get("create_new_server", {})
+        if not db_vm_config:
+            return (
+                None,
+                "'db_vm.create_new_server' is required for creating spec for new db server vm",
+            )
+
+        payload, err = super().get_spec(old_spec=payload, params=db_vm_config)
+        if err:
+            return None, err
 
         payload["nodeCount"] = 1
         payload["clustered"] = False
+        payload["createDbserver"] = True
         return payload, err
 
-    def build_spec_provision(self, payload, vm_config):
-        build_spec_methods = {
-            "compute_profile": self._build_spec_compute_profile,
-            "software_profile": self._build_spec_software_profile,
-            "network_profile": self._build_spec_network_profile,
-            "cluster": self._build_spec_cluster,
-            "vm_password": self._build_spec_vm_password,
-            "database_type": self._build_spec_database_type,
-        }
+    def get_spec_for_db_instance_on_registered_server(self, payload):
+        db_vm_config = self.module.params.get("db_vm", {}).get(
+            "use_registered_server", {}
+        )
+        if not db_vm_config:
+            return (
+                None,
+                "'db_vm.use_registered_server' is required for creating spec for registered db server vm",
+            )
 
-        for field, method in build_spec_methods.items():
-            if field in vm_config:
-                payload, err = method(payload, vm_config[field])
-                if err:
-                    return None, err
+        uuid, err = get_db_server_uuid(self.module, db_vm_config)
+        if err:
+            return None, err
+
+        payload["createDbserver"] = False
+        payload["dbserverId"] = uuid
+        payload["nodes"] = [{"properties": [], "dbserverId": uuid}]
+        return payload, None
+
+    def get_spec_provision(self, payload):
+        self.build_spec_methods.update(
+            {
+                "database_type": self._build_spec_database_type,
+            }
+        )
+
+        payload, err = super().get_spec(old_spec=payload)
 
         if not payload.get("actionArguments"):
             payload["actionArguments"] = []
 
         payload["actionArguments"].append(
-            {"name": "vm_name", "value": vm_config.get("name")}
+            {"name": "vm_name", "value": self.module.params.get("name")}
         )
 
         payload["actionArguments"].append(
-            {"name": "client_public_key", "value": vm_config.get("pub_ssh_key")}
+            {
+                "name": "client_public_key",
+                "value": self.module.params.get("pub_ssh_key"),
+            }
         )
 
         return payload, err
 
-    def build_spec_register(self, payload, params):
+    def get_spec_register(self, payload):
         pass
 
     # builder methods for vm
@@ -161,10 +208,8 @@ class DBServerVM(NutanixDatabase):
             return None, err
 
         payload["softwareProfileId"] = uuid
-        if profile["software_profile"].get("version_id"):
-            payload["softwareProfileVersionId"] = profile["software_profile"][
-                "version_id"
-            ]
+        if profile.get("version_id"):
+            payload["softwareProfileVersionId"] = profile["version_id"]
         else:
             profiles = Profile(self.module)
             software_profile = profiles.read(uuid)
@@ -184,7 +229,7 @@ class DBServerVM(NutanixDatabase):
 
     def _build_spec_cluster(self, payload, cluster):
         # set cluster config
-        uuid, err = get_cluster_uuid(self.module, cluster["cluster"])
+        uuid, err = get_cluster_uuid(self.module, cluster)
         if err:
             return None, err
         payload["nxClusterId"] = uuid
