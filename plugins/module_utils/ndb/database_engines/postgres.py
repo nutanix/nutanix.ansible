@@ -1,8 +1,17 @@
+# This file is part of Ansible
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
+
+
 from copy import deepcopy
 
 from .database_engine import DatabaseEngine
-from ..clusters import get_cluster_uuid
 from ...constants import NDB
+from ..db_servers import DBServerVM
+
 
 
 class Postgres(DatabaseEngine):
@@ -119,6 +128,31 @@ class PostgresSingleInstance(Postgres):
         payload["actionArguments"] = action_arguments
         return payload, None
 
+    def build_spec_db_instance_register_action_arguments(self, payload, config):
+        action_arguments = payload.get("actionArguments", [])
+
+        # List of action arguments for postgres registration
+        args = [
+            "listener_port",
+            "db_name",
+            "db_user",
+            "db_password",
+            "backup_policy",
+        ]
+
+        # create action arguments
+        for arg in args:
+            if arg in config:
+                spec = {"name": arg, "value": config[arg]}
+                action_arguments.append(spec)
+
+        action_arguments.append({
+            "name": "postgres_software_home",
+            "value": config["software_path"]
+        })
+
+        payload["actionArguments"] = action_arguments
+        return payload, None
 
 class PostgresHAInstance(Postgres):
     def __init__(self, module):
@@ -169,10 +203,8 @@ class PostgresHAInstance(Postgres):
         payload["actionArguments"] = action_arguments
         return payload, None
 
-    def build_spec_ha_proxy_vm(self, ha_proxy, payload=None):
-
-        if not payload:
-            payload = {}
+    def build_spec_db_instance_additional_vms(self, payload, config):
+        ha_proxy = config.get("ha_proxy")
 
         # validations
         if not ha_proxy.get("cluster"):
@@ -181,20 +213,11 @@ class PostgresHAInstance(Postgres):
         if not ha_proxy.get("name"):
             return None, "name is required for ha proxy"
 
-        # add HA proxy vm details
-        nodes = payload.get("nodes", [])
-        node_spec = {"properties": [{"name": "node_type", "value": "haproxy"}]}
-
-        uuid, err = get_cluster_uuid(self.module, ha_proxy.get("cluster"))
+        ha_proxy["node_type"] = "haproxy"
+        db_server_vm = DBServerVM(self.module)
+        payload, err = db_server_vm.build_spec_vms(payload, [ha_proxy])
         if err:
             return None, err
-
-        node_spec["nxClusterId"] = uuid
-        node_spec["vmName"] = ha_proxy["name"]
-        nodes.append(node_spec)
-
-        payload["nodes"] = nodes
-        payload["nodeCount"] = len(payload["nodes"])
         return payload, None
 
     def _build_spec_ha_proxy_action_arguments(self, ha_proxy, action_arguments=None):

@@ -1,20 +1,43 @@
+# This file is part of Ansible
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
+
 class DatabaseEngine:
+    """
+    Implement DatabaseEngine for all database engine types
+    """
+
     _type = ""
 
     def __init__(self, module):
         self.module = module
 
     def build_spec_db_instance_provision_action_arguments(self, payload, config):
-        return (
-            None,
-            "Build spec method for Database instance provision action arguments is not implemented",
-        )
+        """
+        Implement this method to add db engine specific action arguments for database instance provision
+        """
+        return payload, None
+    
+    def build_spec_db_instance_register_action_arguments(self, payload, config):
+        """
+        Implement this method to add db engine specific action arguments for database instance registration
+        """
+        return payload, None
+    
+    def build_spec_db_instance_additional_vms(self, payload, config):
+        """
+        Implement this method to add spec for creating additional vms required for specific db engine based db instance
+        """
+        return payload, None
 
-    def build_spec_db_params_profile_properties(self, params, curr_properties=None):
-        return (
-            None,
-            "Build spec method for Database Parameter profile's properties is not implemented",
-        )
+    def build_spec_db_params_profile_properties(self, payload, config):
+        """
+        Implement this method to add database engine specific properties for creating Database Parameter profiles
+        """
+        return payload, None
 
     def get_type(self):
         return self._type

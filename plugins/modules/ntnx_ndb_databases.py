@@ -631,13 +631,14 @@ import time  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.databases import Database  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.ndb.db_servers import DBServerVM
 from ..module_utils.ndb.tags import Tag
 from ..module_utils.ndb.time_machines import TimeMachine
 from ..module_utils.ndb.database_instances import DatabaseInstance
+from ..module_utils.ndb.db_server_cluster import DBServerCluster
+
 
 
 def get_module_spec():
@@ -648,8 +649,20 @@ def get_module_spec():
     )
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-    software_profile = dict(version_id=dict(type="str"))
-    software_profile.update(deepcopy(entity_by_spec))
+    software_profile = dict(name=dict(type="str"), uuid=dict(type="str"), version_id=dict(type="str"))
+
+    ha_proxy = dict(
+        name=dict(type="str", required=True),
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        provision_virtual_ip=dict(type="bool", default=True, required=False),
+        write_port=dict(type="str", default="5000", required=False),
+        read_port=dict(type="str", default="5001", required=False),
+    )
 
     new_server = dict(
         name=dict(type="str", required=True),
@@ -691,6 +704,64 @@ def get_module_spec():
         ),
     )
 
+    cluster_vm = dict(
+        name=dict(type="str", required=True),
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        role=dict(type="str", choices=["Primary", "Secondary"], required=True),
+        failover_mode=dict(
+            type="str",
+            choices=["Automatic", "Manual"],
+            default="Automatic",
+            required=False,
+        ),
+        node_type=dict(
+            type="str", choices=["database"], default="database", required=False
+        ),
+    )
+
+    new_cluster = dict(
+        name=dict(type="str", required=True),
+        desc=dict(type="str", required=False),
+        vms=dict(type="list", elements="dict", options=cluster_vm, required=True),
+        password=dict(type="str", required=True, no_log=False),
+        pub_ssh_key=dict(type="str", required=False),
+        software_profile=dict(
+            type="dict",
+            options=software_profile,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        network_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        compute_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        ndb_cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        archive_log_destination=dict(type="str", required=False),
+    )
+
+    # TO-DO: use_registered_clusters for oracle, ms sql, etc.
+    db_server_cluster = dict(
+        new_cluster=dict(type="dict", options=new_cluster, required=True),
+    )
+
     sla = dict(
         uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
@@ -717,9 +788,19 @@ def get_module_spec():
         ),
         schedule=dict(type="dict", options=schedule, required=True),
         auto_tune_log_drive=dict(type="bool", required=False, default=True),
+        clusters=dict(
+            type="list",
+            element="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
     )
 
     postgres = dict(
+        type=dict(
+            type="str", choices=["single", "ha"], default="single", required=False
+        ),
         listener_port=dict(type="str", required=True),
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
@@ -727,9 +808,23 @@ def get_module_spec():
         allocate_pg_hugepage=dict(type="bool", default=False, required=False),
         auth_method=dict(type="str", default="md5", required=False),
         cluster_database=dict(type="bool", default=False, required=False),
-        type=dict(
-            type="str", choices=["single", "ha"], default="single", required=False
+        patroni_cluster_name=dict(type="str", required=False),
+        ha_proxy=dict(type="dict", options=ha_proxy, required=False),
+        enable_synchronous_mode=dict(type="bool", default=False, required=False),
+        archive_wal_expire_days=dict(type="str", default="-1", required=False),
+        backup_policy=dict(
+            type="str",
+            choices=["prefer_secondary", "primary_only", "secondary_only"],
+            default="primary_only",
+            required=False,
         ),
+        failover_mode=dict(
+            type="str",
+            choices=["Automatic", "Manual"],
+            default="Automatic",
+            required=False,
+        ),
+        enable_peer_auth=dict(type="bool", default=False, required=False),
     )
     postgres.update(deepcopy(default_db_arguments))
 
@@ -749,6 +844,11 @@ def get_module_spec():
             mutually_exclusive=[("create_new_server", "use_registered_server")],
             required=False,
         ),
+        db_server_cluster=dict(
+            type="dict",
+            options=db_server_cluster,
+            required=False,
+        ),
         time_machine=dict(type="dict", options=time_machine, required=False),
         postgres=dict(type="dict", options=postgres, required=False),
         tags=dict(type="dict", required=False),
@@ -758,26 +858,36 @@ def get_module_spec():
     )
     return module_args
 
-
-def provision_single_instance(module, result):
+def get_provision_spec(module, result, ha=False):
 
     # create database instance obj
     db_instance = DatabaseInstance(module=module)
 
     # get default spec
-    spec = db_instance.get_default_spec()
+    spec = db_instance.get_default_provision_spec()
 
-    # populate VM related spec
-    db_vm = DBServerVM(module=module)
-    spec, err = db_vm.get_spec(old_spec=spec, db_instance=True)
-    if err:
-        result["error"] = err
-        module.fail_json(
-            msg="Failed getting vm spec for new database instance creation", **result
-        )
+    if ha:
+      # populate DB server VM cluster related spec
+      db_server_cluster = DBServerCluster(module=module)
+      spec, err = db_server_cluster.get_spec(old_spec=spec, db_instance_provision=True)
+      if err:
+          result["error"] = err
+          module.fail_json(
+              msg="Failed getting db server vm cluster spec for new database instance creation", **result
+          )
+    else:
+      # populate VM related spec
+      db_vm = DBServerVM(module=module)
+      spec, err = db_vm.get_spec(old_spec=spec, db_instance_provision=True)
+      if err:
+          result["error"] = err
+          module.fail_json(
+              msg="Failed getting vm spec for new database instance creation", **result
+          )
+
 
     # populate database engine related spec
-    spec, err = db_instance.get_db_engine_spec(spec)
+    spec, err = db_instance.get_db_engine_spec(spec, provision=True)
     if err:
         result["error"] = err
         module.fail_json(
@@ -819,11 +929,6 @@ def provision_single_instance(module, result):
 
     return db_instance.provision(data=spec)
 
-
-def provision_ha_instance(module, result):
-    pass
-
-
 def create_instance(module, result):
     db_instance = DatabaseInstance(module)
     name = module.params["name"]
@@ -833,10 +938,11 @@ def create_instance(module, result):
             msg="Database instance with given name already exists", **result
         )
 
-    if module.params.get("db_vm"):
-        resp = provision_single_instance(module, result)
-    else:
-        pass
+    ha = False
+    if module.params.get("db_server_cluster"):
+        ha = True
+    
+    resp = get_provision_spec(module, result, ha=ha)
 
     if module.check_mode:
         return

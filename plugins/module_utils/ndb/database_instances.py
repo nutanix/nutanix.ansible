@@ -1,3 +1,9 @@
+# This file is part of Ansible
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
 from copy import deepcopy
 from .nutanix_database import NutanixDatabase
 from .database_engines.database_engine import DatabaseEngine
@@ -12,9 +18,6 @@ class DatabaseInstance(NutanixDatabase):
 
         super(DatabaseInstance, self).__init__(module, self.resource_type)
         self.build_spec_methods = {
-            "name": self._build_spec_name,
-            "desc": self._build_spec_desc,
-            "db_params_profile": self._build_spec_db_params_profile,
             "auto_tune_staging_drive": self._build_spec_auto_tune_staging_drive,
         }
 
@@ -66,7 +69,7 @@ class DatabaseInstance(NutanixDatabase):
         uuid = resp[0].get("id")
         return uuid, None
 
-    def get_default_spec(self):
+    def get_default_provision_spec(self):
         return deepcopy(
             {
                 "databaseType": None,
@@ -78,6 +81,17 @@ class DatabaseInstance(NutanixDatabase):
                 "tags": [],
             }
         )
+    
+    def get_default_registration_spec(self):
+        return deepcopy(
+            {
+                "databaseType": "",
+                "databaseName": "",
+                "workingDirectory": "",
+                "actionArguments": [],
+                "autoTuneStagingDrive": True,
+            }
+        ) 
 
     def get_default_update_spec(self, override_spec=None):
         spec = deepcopy(
@@ -146,8 +160,10 @@ class DatabaseInstance(NutanixDatabase):
         else:
             if kwargs.get("provision"):
                 return self.get_spec_for_provision(payload=old_spec)
-            else:
+            elif kwargs.get("register"):
                 return self.get_spec_for_registration(payload=old_spec)
+    
+        return None, "Please provide supported arguments"
 
     def get_update_spec(self, payload):
         self.build_spec_methods = {
@@ -156,7 +172,7 @@ class DatabaseInstance(NutanixDatabase):
         }
         return super().get_spec(old_spec=payload)
 
-    def get_db_engine_spec(self, payload):
+    def get_db_engine_spec(self, payload, **kwargs):
 
         db_engine, err = create_db_engine(self.module)
         if err:
@@ -166,31 +182,52 @@ class DatabaseInstance(NutanixDatabase):
 
         config = self.module.params[db_type]
 
-        payload, err = db_engine.build_spec_db_instance_provision_action_arguments(
-            payload, config
-        )
+        if kwargs.get("provision"):
+
+            payload, err = db_engine.build_spec_db_instance_provision_action_arguments(
+                payload, config
+            )
+            if err:
+                return None, err
+
+            payload, err = db_engine.build_spec_db_instance_additional_vms(payload, config)
+            if err:
+                return None, err
+        
+        elif kwargs.get("register"):
+            payload, err = db_engine.build_spec_db_instance_register_action_arguments(payload, config)
+            if err:
+                return None, err
+
 
         payload["databaseType"] = db_type + "_database"
         return payload, err
 
     def get_spec_for_provision(self, payload):
+        self.build_spec_methods.update({
+            "name": self._build_spec_provision_name,
+            "db_params_profile": self._build_spec_db_params_profile,
+            "desc": self._build_spec_desc
+        })
         return super().get_spec(old_spec=payload)
 
     def get_spec_for_registration(self, payload):
+        self.build_spec_methods.update({
+            "working_dir": self._build_spec_register_working_dir,
+            "name": self._build_spec_register_name,
+            "desc": self._build_spec_register_desc,
+        })
         return super().get_spec(old_spec=payload)
-
-    def _build_spec_name(self, payload, name):
-        payload["name"] = name
-        return payload, None
-
-    def _build_spec_desc(self, payload, desc):
-        payload["databaseDescription"] = desc
-        return payload, None
 
     def _build_spec_desc_update(self, payload, desc):
         payload["description"] = desc
         return payload, None
-
+    
+    # provision specific builder methods
+    def _build_spec_provision_name(self, payload, name):
+        payload["name"] = name
+        return payload, None
+    
     def _build_spec_db_params_profile(self, payload, db_params_profile):
         uuid, err = get_profile_uuid(
             self.module, "Database_Parameter", db_params_profile
@@ -200,7 +237,25 @@ class DatabaseInstance(NutanixDatabase):
 
         payload["dbParameterProfileId"] = uuid
         return payload, None
+    
+    def _build_spec_desc(self, payload, desc):
+        payload["databaseDescription"] = desc
+        return payload, None
+    
+    # registration related builder methods
+    def _build_spec_register_name(self, payload, name):
+        payload["databaseName"] = name
+        return payload, None
 
+    def _build_spec_register_working_dir(self, payload, working_dir):
+        payload["workingDirectory"] = working_dir
+        return payload, None
+
+    def _build_spec_register_desc(self, payload, desc):
+        payload["description"] = desc
+        return payload, None
+
+    # common builder methods
     def _build_spec_auto_tune_staging_drive(self, payload, value):
         payload["autoTuneStagingDrive"] = value
         return payload, None

@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from ..constants import NDB as NDB_CONSTANTS
 from .clusters import get_cluster_uuid
-from .db_servers import get_db_server_uuid
+from .db_servers import DBServerVM, get_db_server_uuid
 from .nutanix_database import NutanixDatabase
 from .profiles import Profile, get_profile_uuid
 from .slas import get_sla_uuid
@@ -29,75 +29,6 @@ class Database(NutanixDatabase):
             "postgres": self._build_spec_postgres,
             "tags": self._build_spec_tags,
         }
-
-    def get_uuid(
-        self,
-        value,
-        key="name",
-        data=None,
-        entity_type=None,
-        raise_error=True,
-        no_response=False,
-    ):
-        query = {"value-type": key, "value": value}
-        resp = self.read(query=query)
-
-        if not resp:
-            return None, "Database instance with name {0} not found.".format(value)
-
-        uuid = resp[0].get("id")
-        return uuid, None
-
-    def create(
-        self,
-        data=None,
-        endpoint=None,
-        query=None,
-        method="POST",
-        raise_error=True,
-        no_response=False,
-        timeout=30,
-    ):
-        endpoint = "provision"
-        return super().create(
-            data, endpoint, query, method, raise_error, no_response, timeout
-        )
-
-    def update(
-        self,
-        data=None,
-        uuid=None,
-        endpoint=None,
-        query=None,
-        raise_error=True,
-        no_response=False,
-        timeout=30,
-        method="PATCH",
-    ):
-        return super().update(
-            data, uuid, endpoint, query, raise_error, no_response, timeout, method
-        )
-
-    def get_database(self, name=None, uuid=None):
-        default_query = {"detailed": True}
-        if uuid:
-            resp = self.read(uuid=uuid, query=default_query)
-        elif name:
-            query = {"value-type": "name", "value": name}
-            query.update(deepcopy(default_query))
-            resp = self.read(query=query)
-            if not resp:
-                return None, "Database with name {0} not found".format(name)
-            if isinstance(resp, list):
-                resp = resp[0]
-                return resp, None
-        else:
-            return (
-                None,
-                "Please provide either uuid or name for fetching database details",
-            )
-
-        return resp, None
 
     def _get_default_spec(self):
         return deepcopy(
@@ -148,29 +79,14 @@ class Database(NutanixDatabase):
             }
         )
 
-    def _build_spec_name(self, payload, name):
-        payload["name"] = name
-        return payload, None
-
-    def _build_spec_desc(self, payload, desc):
-        payload["databaseDescription"] = desc
-        return payload, None
-
     def _build_spec_auto_tune_staging_drive(self, payload, value):
         payload["autoTuneStagingDrive"] = value
         return payload, None
 
-    def _build_spec_db_params_profile(self, payload, db_params_profile):
-        uuid, err = get_profile_uuid(
-            self.module, "Database_Parameter", db_params_profile
-        )
-        if err:
-            return None, err
-
-        payload["dbParameterProfileId"] = uuid
-        return payload, None
-
     def _build_spec_db_vm(self, payload, db_vm):
+
+        db_server_vm = DBServerVM(self.module)
+
         if db_vm.get("use_registered_server"):
 
             uuid, err = get_db_server_uuid(self.module, db_vm["use_registered_server"])

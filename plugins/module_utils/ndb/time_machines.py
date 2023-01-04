@@ -3,13 +3,12 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
+from .clusters import Cluster
 from .slas import get_sla_uuid
-
-__metaclass__ = type
-
-
 from .nutanix_database import NutanixDatabase
 
+
+__metaclass__ = type
 
 class TimeMachine(NutanixDatabase):
     def __init__(self, module):
@@ -18,7 +17,6 @@ class TimeMachine(NutanixDatabase):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "sla": self._build_spec_sla,
             "schedule": self._build_spec_schedule,
             "auto_tune_log_drive": self._build_spec_auto_tune_log_drive,
         }
@@ -52,30 +50,65 @@ class TimeMachine(NutanixDatabase):
             )
         return resp, None
 
-    def get_default_spec_for_single_instance(self):
-        return deepcopy(
-            {
-                "name": "",
-                "description": "",
-                "slaId": "",
-                "schedule": {},
-                "autoTuneLogDrive": True,
-            }
-        )
+    def get_spec(self, old_spec, params=None, **kwargs):
 
-    def get_spec(self, old_spec, params=None):
-        tm_payload = self.get_default_spec_for_single_instance()
         if not params:
             if self.module.params.get("time_machine"):
                 params = self.module.params.get("time_machine")
             else:
                 return None, "'time_machine' is required for creating time machine spec"
 
-        time_machine_spec, err = super().get_spec(old_spec=tm_payload, params=params)
+        time_machine_spec, err = super().get_spec(params=params)
         if err:
             return None, err
+
+
+        # set sla spec
+        sla_uuid, err = get_sla_uuid(self.module, params["sla"])
+        if err:
+            return None, err
+
+        # set destination clusters incase of HA instance
+        if params.get("clusters"):
+            cluster_uuids = []
+            
+            # fetch all clusters name uuid map
+            _cluster = Cluster(self.module)
+            clusters_name_uuid_map = _cluster.get_all_clusters_name_uuid_map()
+            
+            for cluster in params.get("clusters"):
+                cluster_uuid = ""
+                if cluster.get("name"):
+                    if clusters_name_uuid_map.get(cluster["name"]):
+                        cluster_uuid = clusters_name_uuid_map[cluster["name"]]
+                    else:
+                        return None, "NDB cluster with name '{0}' not found".format(
+                            cluster["name"]
+                        )
+
+                elif cluster.get("uuid"):
+                    cluster_uuid = cluster["uuid"]
+
+                cluster_uuids.append(cluster_uuid)
+
+            time_machine_spec["slaDetails"] = {
+                "primarySla": {"slaId": sla_uuid, "nxClusterIds": cluster_uuids}
+            }
+        else:
+            time_machine_spec["slaId"] = sla_uuid
+
         old_spec["timeMachineInfo"] = time_machine_spec
         return old_spec, None
+
+    def _get_default_spec(self):
+        return deepcopy(
+            {
+                "name": "",
+                "description": "",
+                "schedule": {},
+                "autoTuneLogDrive": True,
+            }
+        )
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name
@@ -87,13 +120,6 @@ class TimeMachine(NutanixDatabase):
 
     def _build_spec_auto_tune_log_drive(self, payload, auto_tune):
         payload["autoTuneLogDrive"] = auto_tune
-        return payload, None
-
-    def _build_spec_sla(self, payload, sla):
-        uuid, err = get_sla_uuid(self.module, sla)
-        if err:
-            return None, err
-        payload["slaId"] = uuid
         return payload, None
 
     def _build_spec_schedule(self, payload, schedule):
