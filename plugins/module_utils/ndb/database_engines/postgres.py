@@ -174,6 +174,8 @@ class PostgresHAInstance(Postgres):
             "enable_synchronous_mode": False,
             "enable_peer_auth": False,
             "node_type": "database",
+            "backup_policy": "primary_only",
+            "failover_mode": "Automatic"
         }
 
         # create action arguments
