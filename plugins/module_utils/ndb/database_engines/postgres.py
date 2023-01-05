@@ -170,8 +170,6 @@ class PostgresHAInstance(Postgres):
             "pre_create_script": "",
             "post_create_script": "",
             "patroni_cluster_name": "",
-            "backup_policy": "",
-            "failover_mode": "",
             "archive_wal_expire_days": "",
             "enable_synchronous_mode": False,
             "enable_peer_auth": False,
@@ -201,23 +199,6 @@ class PostgresHAInstance(Postgres):
                 return None, err
 
         payload["actionArguments"] = action_arguments
-        return payload, None
-
-    def build_spec_db_instance_additional_vms(self, payload, config):
-        ha_proxy = config.get("ha_proxy")
-
-        # validations
-        if not ha_proxy.get("cluster"):
-            return None, "cluster info is required for ha proxy"
-
-        if not ha_proxy.get("name"):
-            return None, "name is required for ha proxy"
-
-        ha_proxy["node_type"] = "haproxy"
-        db_server_vm = DBServerVM(self.module)
-        payload, err = db_server_vm.build_spec_vms(payload, [ha_proxy])
-        if err:
-            return None, err
         return payload, None
 
     def _build_spec_ha_proxy_action_arguments(self, ha_proxy, action_arguments=None):

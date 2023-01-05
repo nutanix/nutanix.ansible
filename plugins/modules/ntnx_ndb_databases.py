@@ -652,13 +652,6 @@ def get_module_spec():
     software_profile = dict(name=dict(type="str"), uuid=dict(type="str"), version_id=dict(type="str"))
 
     ha_proxy = dict(
-        name=dict(type="str", required=True),
-        cluster=dict(
-            type="dict",
-            options=entity_by_spec,
-            mutually_exclusive=mutually_exclusive,
-            required=True,
-        ),
         provision_virtual_ip=dict(type="bool", default=True, required=False),
         write_port=dict(type="str", default="5000", required=False),
         read_port=dict(type="str", default="5001", required=False),
@@ -692,6 +685,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
+        ip = dict(type="str", required=False)
     )
 
     db_vm = dict(
@@ -710,20 +704,36 @@ def get_module_spec():
             type="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
-            required=True,
-        ),
-        role=dict(type="str", choices=["Primary", "Secondary"], required=True),
-        failover_mode=dict(
-            type="str",
-            choices=["Automatic", "Manual"],
-            default="Automatic",
             required=False,
         ),
-        node_type=dict(
-            type="str", choices=["database"], default="database", required=False
+        network_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
         ),
+        compute_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        role=dict(type="str", choices=["Primary", "Secondary"], required=False),
+        node_type=dict(
+            type="str", choices=["database", "haproxy"], default="database", required=False
+        ),
+        archive_log_destination=dict(type="str", required=False),
+        ip = dict(type="str", required=False)
     )
-
+    cluster_ip_info = dict(
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        ip = dict(type="str", required=True)
+    )
     new_cluster = dict(
         name=dict(type="str", required=True),
         desc=dict(type="str", required=False),
@@ -740,21 +750,21 @@ def get_module_spec():
             type="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
-            required=True,
+            required=False,
         ),
         compute_profile=dict(
             type="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
-            required=True,
+            required=False,
         ),
-        ndb_cluster=dict(
+        cluster=dict(
             type="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        archive_log_destination=dict(type="str", required=False),
+        ips = dict(type="list", elements="dict", options=cluster_ip_info, required=False)
     )
 
     # TO-DO: use_registered_clusters for oracle, ms sql, etc.
@@ -812,19 +822,8 @@ def get_module_spec():
         ha_proxy=dict(type="dict", options=ha_proxy, required=False),
         enable_synchronous_mode=dict(type="bool", default=False, required=False),
         archive_wal_expire_days=dict(type="str", default="-1", required=False),
-        backup_policy=dict(
-            type="str",
-            choices=["prefer_secondary", "primary_only", "secondary_only"],
-            default="primary_only",
-            required=False,
-        ),
-        failover_mode=dict(
-            type="str",
-            choices=["Automatic", "Manual"],
-            default="Automatic",
-            required=False,
-        ),
         enable_peer_auth=dict(type="bool", default=False, required=False),
+        virtual_ip = dict(type="str", required=False)
     )
     postgres.update(deepcopy(default_db_arguments))
 

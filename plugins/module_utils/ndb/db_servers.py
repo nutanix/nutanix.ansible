@@ -146,6 +146,10 @@ class DBServerVM(NutanixDatabase):
             return None, err
 
         # configure vm related spec
+        kwargs = {
+            "network_profile_uuid": payload["networkProfileId"]
+        }
+
         payload, err = self.build_spec_vms(payload, [db_vm_config])
         if err:
             return None, err
@@ -321,26 +325,56 @@ class DBServerVM(NutanixDatabase):
     def build_spec_pub_ssh_key(self, payload, pub_ssh_key):
         payload["sshPublicKey"] = pub_ssh_key
         return payload, None
+    
+    def _build_spec_ip(self, payload, ip):
+        payload["ipInfos"] = [
+            {
+                "ipType": "VM_IP",
+                "ipAddresses": [
+                    ip
+                ]
+            }
+        ],
+        return payload, None
 
     def build_spec_vm_password(self, payload, password):
         payload["vmPassword"] = password
         return payload, None
     
-    def build_spec_vms(self, payload, vms):
+    def build_spec_vms(self, payload, vms, **kwargs):
         nodes = payload.get("nodes", [])
 
         # get cluster uuid map to assign cluster uuid for each node vm
-        clusters = Cluster(self.module)
-        clusters_name_uuid_map = clusters.get_all_clusters_name_uuid_map()
+        cluster = Cluster(self.module)
+        clusters = cluster.get_all_clusters_name_uuid_map()
+
+        # spec with default vlaues
+        spec = {
+            "properties": [],
+            "vmName": "",
+            "networkProfileId": kwargs.get("network_profile_uuid", ""),
+            "computeProfileId": kwargs.get("compute_profile_uuid", ""),
+            "nxClusterId": kwargs.get("cluster_uuid", "")
+        }
+
+        profile = Profile(self.module)
+
+        # get all network profile name uuid map
+        network_profiles, err = profile.get_all_name_uuid_map(type="Network")
+        if err:
+            return None, err
+
+        # get all compute profile name uuid map
+        compute_profiles, err = profile.get_all_name_uuid_map(type="Compute")
+        if err:
+            return None, err
 
         for vm in vms:
 
-            node = {
-                "properties": [],
-                "vmName": vm.get("name"),
-            }
+            node = deepcopy(spec)
+            node["vmName"] = vm.get("name")
 
-            properties = ["role", "failover_mode", "node_type"]
+            properties = ["role", "node_type"]
 
             for prop in properties:
                 if prop in vm:
@@ -348,19 +382,51 @@ class DBServerVM(NutanixDatabase):
                         "name":prop,
                         "value": vm[prop]
                     })
+            
+            if vm.get("archive_log_destination"):
+                node["properties"].append({
+                        "name": "remote_archive_destination",
+                        "value": vm.get("archive_log_destination")
+                })
         
-            # add profile references
-            if vm.get("network_profile_uuid"):
-                node["networkProfileId"] = vm.get("network_profile_uuid")
-            if vm.get("compute_profile_uuid"):
-                node["computeProfileId"] = vm.get("compute_profile_uuid")
+            # add network profile for a vm if required
+            if vm.get("network_profile"):
+                uuid = ""
+                if vm["network_profile"].get("name"):
+                    if network_profiles.get(vm["network_profile"]["name"]):
+                        uuid = network_profiles[vm["network_profile"]["name"]]
+                    else:
+                        return None, "Network profile with name '{0}' not found".format(
+                            vm["network_profile"]["name"]
+                        )
+
+                elif vm["network_profile"].get("uuid"):
+                    uuid = vm["network_profile"]["uuid"]
+
+                node["networkProfileId"] =  uuid
+            
+             # add network profile for a vm if required
+            if vm.get("compute_profile"):
+                uuid = ""
+                if vm["compute_profile"].get("name"):
+                    if compute_profiles.get(vm["compute_profile"]["name"]):
+                        uuid = compute_profiles[vm["compute_profile"]["name"]]
+                    else:
+                        return None, "Compute profile with name '{0}' not found".format(
+                            vm["compute_profile"]["name"]
+                        )
+
+                elif vm["compute_profile"].get("uuid"):
+                    uuid = vm["compute_profile"]["uuid"]
+
+                node["computeProfileId"] =  uuid
             
             # add cluster spec for a vm
             if vm.get("cluster"):
                 cluster_uuid = ""
                 if vm["cluster"].get("name"):
-                    if clusters_name_uuid_map.get(vm["cluster"]["name"]):
-                        cluster_uuid = clusters_name_uuid_map[vm["cluster"]["name"]]
+                    if clusters.get(vm["cluster"]["name"]):
+                        cluster_uuid = clusters[vm["cluster"]["name"]]
                     else:
                         return None, "NDB cluster with name '{0}' not found".format(
                             vm["cluster"]["name"]
@@ -370,6 +436,11 @@ class DBServerVM(NutanixDatabase):
                     cluster_uuid = vm["cluster"]["uuid"]
 
                 node["nxClusterId"] =  cluster_uuid
+
+            if vm.get("ip"):
+                payload, err = self._build_spec_ip(payload, vm.get("ip"))
+                if err:
+                    return None, err
 
             nodes.append(node)
         
@@ -406,7 +477,7 @@ class DBServerVM(NutanixDatabase):
     def _build_spec_register_vm_reset_desc(self, payload, reset_desc):
         payload["resetDescriptionInNxCluster"] = reset_desc
         return payload, None
-    
+
 
 def get_db_server_uuid(module, config):
     if "name" in config:

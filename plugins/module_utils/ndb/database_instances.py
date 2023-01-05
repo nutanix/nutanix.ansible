@@ -189,10 +189,6 @@ class DatabaseInstance(NutanixDatabase):
             )
             if err:
                 return None, err
-
-            payload, err = db_engine.build_spec_db_instance_additional_vms(payload, config)
-            if err:
-                return None, err
         
         elif kwargs.get("register"):
             payload, err = db_engine.build_spec_db_instance_register_action_arguments(payload, config)

@@ -26,12 +26,6 @@ class DatabaseEngine:
         Implement this method to add db engine specific action arguments for database instance registration
         """
         return payload, None
-    
-    def build_spec_db_instance_additional_vms(self, payload, config):
-        """
-        Implement this method to add spec for creating additional vms required for specific db engine based db instance
-        """
-        return payload, None
 
     def build_spec_db_params_profile_properties(self, payload, config):
         """

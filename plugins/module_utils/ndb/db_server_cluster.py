@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from .db_servers import DBServerVM
 from .nutanix_database import NutanixDatabase
+from .clusters import Cluster
 
 __metaclass__ = type
 
@@ -17,12 +18,13 @@ class DBServerCluster(NutanixDatabase):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
+            "ips": self._build_spec_ips
         }
 
     def get_spec(self, old_spec=None, params=None, **kwargs):
 
         # if db server vm cluster is required for db instance
-        if kwargs.get("db_instance"):
+        if kwargs.get("db_instance_provision"):
             if self.module.params.get("db_server_cluster", {}).get("new_cluster"):
                 payload, err = self.get_spec_provision_for_db_instance(payload=old_spec)
                 return payload, err
@@ -53,7 +55,7 @@ class DBServerCluster(NutanixDatabase):
                 "software_profile": db_server_vm.build_spec_software_profile,
                 "network_profile": db_server_vm.build_spec_network_profile,
                 "password": db_server_vm.build_spec_vm_password,
-                "ndb_cluster": db_server_vm.build_spec_cluster,
+                "cluster": db_server_vm.build_spec_cluster,
                 "pub_ssh_key": db_server_vm.build_spec_pub_ssh_key,
             }
         )
@@ -69,17 +71,14 @@ class DBServerCluster(NutanixDatabase):
         if err:
             return None, err
 
-        # apply defaults to all vms
-        network_profile_uuid = payload["networkProfileId"]
-        compute_profile_uuid = payload["computeProfileId"]
-        archive_log_destination = config.get("archive_log_destination")
-        for vm in config["vms"]:
-            vm["network_profile_uuid"] = network_profile_uuid
-            vm["compute_profile_uuid"] = compute_profile_uuid
-            vm["archive_log_destination"] = archive_log_destination
-
         # configure spec for group of vms for cluster
-        payload, err = db_server_vm.build_spec_vms(payload, config["vms"])
+        # will send defaults in kwargs
+        kwargs = {
+            "network_profile_uuid": payload.get("networkProfileId"),
+            "compute_profile_uuid": payload.get("computeProfileId"),
+            "cluster_uuid": payload.get("nxClusterId")
+        }
+        payload, err = db_server_vm.build_spec_vms(payload, config.get("vms", []), **kwargs)
         if err:
             return None, err
 
@@ -107,3 +106,43 @@ class DBServerCluster(NutanixDatabase):
         payload["actionArguments"] = action_arguments
 
         return payload, None
+    
+    def _build_spec_ips(self, payload, cluster_ip_infos):
+        cluster = Cluster(self.module)
+        clusters = cluster.get_all_clusters_name_uuid_map()
+        
+        specs = []
+        for ip_info in cluster_ip_infos:
+            spec = {
+                "ipInfos": [
+                        {
+                            "ipType": "CLUSTER_IP",
+                            "ipAddresses": [
+                                ip_info.get("ip")
+                            ]
+                        }
+                ]
+            }
+
+            # add cluster spec
+            cluster_uuid = ""
+            if ip_info["cluster"].get("name"):
+                if clusters.get(ip_info["cluster"]["name"]):
+                    cluster_uuid = clusters[ip_info["cluster"]["name"]]
+                else:
+                    return None, "NDB cluster with name '{0}' not found".format(
+                        ip_info["cluster"]["name"]
+                    )
+
+            elif ip_info["cluster"].get("uuid"):
+                cluster_uuid = ip_info["cluster"]["uuid"]
+
+            spec["nxClusterId"] =  cluster_uuid
+            specs.append(spec)
+
+        payload["clusterInfo"] = {
+            "clusterIpInfos" : specs
+        }
+
+        return payload, None
+
