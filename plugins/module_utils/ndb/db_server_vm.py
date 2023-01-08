@@ -3,6 +3,8 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
+from plugins.module_utils.ndb.database_engines.db_engine_factory import create_db_engine
+
 
 __metaclass__ = type
 
@@ -121,10 +123,6 @@ class DBServerVM(NutanixDatabase):
             {
                 "nxClusterId": "",
                 "vmIp": "",
-                "vmUsername": "",
-                "vmPassword": "",
-                "vmSshkey": "",
-                "vmDescription": "",
                 "resetDescriptionInNxCluster": False,
                 "forcedInstall": True,
             }
@@ -185,7 +183,9 @@ class DBServerVM(NutanixDatabase):
                 )
                 return payload, err
             elif self.module.params.get("db_vm", {}).get("unregistered"):
-                payload, err = self.get_spec_register(payload=old_spec)
+                payload, err = self.get_spec_register_for_db_instance_registration(
+                    payload=old_spec
+                )
                 return payload, err
 
         # if only db server vm provision or register is required
@@ -204,6 +204,29 @@ class DBServerVM(NutanixDatabase):
                 return payload, err
 
         return None, "Please provide supported arguments"
+
+    def get_db_engine_spec(self, payload, params=None, **kwargs):
+
+        db_engine, err = create_db_engine(self.module)
+        if err:
+            return None, err
+
+        db_type = db_engine.get_type()
+
+        config = self.module.params.get(db_type) or params
+
+        if kwargs.get("register"):
+            payload, err = db_engine.build_spec_db_server_vm_register_action_arguments(
+                payload, config
+            )
+            if err:
+                return None, err
+
+        elif kwargs.get("provision"):
+            # add db engine specific spec for provisioning vm
+            pass
+
+        return payload, err
 
     # this routine populates spec for provisioning db vm for database instance creation
     def get_spec_provision_for_db_instance(self, payload):
@@ -267,6 +290,7 @@ class DBServerVM(NutanixDatabase):
                 "time_machine": self._build_spec_time_machine,
                 "software_profile": self.build_spec_software_profile,
                 "time_zone": self._build_spec_time_zone,
+                "desc": self._build_spec_description,
             }
         )
 
@@ -288,23 +312,21 @@ class DBServerVM(NutanixDatabase):
             }
         )
 
-        # add description
-        payload["description"] = self.module.params.get("desc")
         return payload, err
 
-    # this routine creates spec for registration of db server vm, also can be used during db instance registration
-    def get_spec_register(self, payload={}):
+    # this routine creates spec for registration of db server vm
+    def get_spec_register(self, payload):
         self.build_spec_methods = {
             "ip": self._build_spec_register_vm_ip,
-            "username": self._build_spec_register_vm_username,
-            "password": self._build_spec_register_vm_password,
-            "private_ssh_key": self._build_spec_register_vm_private_ssh_key,
-            "desc": self._build_spec_register_vm_desc,
-            "reset_desc_in_ntnx_cluster": self._build_spec_register_vm_reset_desc,
+            "username": self._build_spec_register_username,
+            "password": self._build_spec_register_password,
+            "private_ssh_key": self._build_spec_register_private_ssh_key,
+            "reset_desc_in_ntnx_cluster": self._build_spec_reset_description,
             "cluster": self.build_spec_cluster,
+            "desc": self._build_spec_description,
+            "working_directory": self._build_spec_register_working_dir,
+            "database_type": self._build_spec_database_type,
         }
-
-        payload.update(self.get_default_spec_for_registration())
 
         config = self.module.params.get("db_vm", {}).get("unregistered", {})
         if not config:
@@ -315,6 +337,37 @@ class DBServerVM(NutanixDatabase):
         payload, err = super().get_spec(old_spec=payload, params=config)
         if err:
             return None, err
+
+        # field name changes as per api requirements
+        payload["nxClusterUuid"] = payload.get("nxClusterId")
+
+        return payload, err
+
+    # this routine creates spec for registration of db server vm for db instance registration
+    def get_spec_register_for_db_instance_registration(self, payload):
+        self.build_spec_methods = {
+            "ip": self._build_spec_register_vm_ip,
+            "username": self._build_spec_register_vm_username,
+            "password": self._build_spec_register_vm_password,
+            "private_ssh_key": self._build_spec_register_vm_private_ssh_key,
+            "desc": self._build_spec_register_vm_desc,
+            "reset_desc_in_ntnx_cluster": self._build_spec_reset_description,
+            "cluster": self.build_spec_cluster,
+        }
+
+        config = self.module.params.get("db_vm", {}).get("unregistered", {})
+        if not config:
+            return (
+                None,
+                "'db_vm.unregistered' is required for creating spec for registering db server vm",
+            )
+        payload, err = super().get_spec(old_spec=payload, params=config)
+        if err:
+            return None, err
+
+        action_arguments = payload.get("actionArguments", [])
+        action_arguments.append({"name": "vmIp", "value": payload.get("vmIp")})
+        payload["actionArguments"] = action_arguments
 
         return payload, err
 
@@ -356,7 +409,7 @@ class DBServerVM(NutanixDatabase):
             "name": self._build_spec_update_name,
             "desc": self._build_spec_update_desc,
             "reset_name_in_ntnx_cluster": self._build_spec_update_reset_name_in_ntnx_cluster,
-            "reset_desc_in_ntnx_cluster": self._build_spec_update_reset_desc_in_ntnx_cluster,
+            "reset_desc_in_ntnx_cluster": self._build_spec_reset_description,
             "update_credentials": self._build_spec_update_credentials,
         }
 
@@ -377,6 +430,10 @@ class DBServerVM(NutanixDatabase):
             payload["nodes"] = [{}]
 
         payload["nodes"][0]["vmName"] = name
+        return payload, None
+
+    def _build_spec_description(self, payload, desc):
+        payload["description"] = desc
         return payload, None
 
     def _build_spec_database_type(self, payload, db_type):
@@ -569,9 +626,6 @@ class DBServerVM(NutanixDatabase):
     # builders for registration
     def _build_spec_register_vm_ip(self, payload, ip):
         payload["vmIp"] = ip
-        action_arguments = payload.get("actionArguments", [])
-        action_arguments.append({"name": "vmIp", "value": ip})
-        payload["actionArguments"] = action_arguments
         return payload, None
 
     def _build_spec_register_vm_username(self, payload, username):
@@ -590,16 +644,28 @@ class DBServerVM(NutanixDatabase):
         payload["vmDescription"] = desc
         return payload, None
 
-    def _build_spec_register_vm_reset_desc(self, payload, reset_desc):
+    def _build_spec_register_username(self, payload, username):
+        payload["username"] = username
+        return payload, None
+
+    def _build_spec_register_password(self, payload, password):
+        payload["password"] = password
+        return payload, None
+
+    def _build_spec_register_private_ssh_key(self, payload, private_ssh_key):
+        payload["sshPrivateKey"] = private_ssh_key
+        return payload, None
+
+    def _build_spec_reset_description(self, payload, reset_desc):
         payload["resetDescriptionInNxCluster"] = reset_desc
+        return payload, None
+
+    def _build_spec_register_working_dir(self, payload, working_dir):
+        payload["workingDirectory"] = working_dir
         return payload, None
 
     def _build_spec_update_reset_name_in_ntnx_cluster(self, payload, reset):
         payload["resetNameInNxCluster"] = reset
-        return payload, None
-
-    def _build_spec_update_reset_desc_in_ntnx_cluster(self, payload, reset):
-        payload["resetDescriptionInNxCluster"] = reset
         return payload, None
 
     def _build_spec_update_name(self, payload, name):

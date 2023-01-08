@@ -31,8 +31,8 @@ def get_module_spec():
         snapshot_uuid=dict(type="str", required=False),
     )
     credential = dict(
-        username=dict(type="str", required=False),
-        password=dict(type="str", required=False),
+        username=dict(type="str", required=True),
+        password=dict(type="str", required=True),
     )
     module_args = dict(
         uuid=dict(type="str", required=False),
@@ -228,8 +228,24 @@ def delete_db_server(module, result):
 
 
 def run_module():
+    mutually_exclusive_list = [
+        ("uuid", "database_type"),
+        ("uuid", "time_zone"),
+        ("uuid", "pub_ssh_key"),
+        ("uuid", "password"),
+        ("uuid", "time_machine"),
+        ("uuid", "cluster"),
+        ("uuid", "network_profile"),
+        ("uuid", "software_profile"),
+        ("uuid", "compute_profile"),
+    ]
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
+        mutually_exclusive=mutually_exclusive_list,
+        required_if=[
+            ("state", "present", ("name", "id"), True),
+            ("state", "absent", ("uuid",)),
+        ],
         supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)

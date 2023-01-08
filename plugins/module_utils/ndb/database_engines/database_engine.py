@@ -33,5 +33,11 @@ class DatabaseEngine:
         """
         return payload, None
 
+    def build_spec_db_server_vm_register_action_arguments(self, payload, config):
+        """
+        Implement this method to add database engine specific properties for registeration database server vm
+        """
+        return payload, None
+
     def get_type(self):
         return self._type

@@ -135,7 +135,6 @@ class PostgresSingleInstance(Postgres):
             "db_name",
             "db_user",
             "db_password",
-            "backup_policy",
         ]
 
         # create action arguments
@@ -146,6 +145,20 @@ class PostgresSingleInstance(Postgres):
 
         action_arguments.append(
             {"name": "postgres_software_home", "value": config["software_path"]}
+        )
+
+        payload["actionArguments"] = action_arguments
+        return payload, None
+
+    def build_spec_db_server_vm_register_action_arguments(self, payload, config):
+        action_arguments = payload.get("actionArguments", [])
+
+        action_arguments.append(
+            {"name": "postgres_software_home", "value": config.get("software_path", "")}
+        )
+
+        action_arguments.append(
+            {"name": "listner_port", "value": config("listner_port", "")}
         )
 
         payload["actionArguments"] = action_arguments

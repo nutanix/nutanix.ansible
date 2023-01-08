@@ -130,7 +130,7 @@ def get_module_spec():
     return module_args
 
 
-def get_registration_spec(module, result, ha=False):
+def get_registration_spec(module, result):
 
     # create database instance obj
     db_instance = DatabaseInstance(module=module)
@@ -190,18 +190,8 @@ def get_registration_spec(module, result, ha=False):
 
 def register_instance(module, result):
     db_instance = DatabaseInstance(module)
-    name = module.params["name"]
-    uuid, err = db_instance.get_uuid(name)
-    if uuid:
-        module.fail_json(
-            msg="Database instance with given name already exists", **result
-        )
 
-    ha = False
-    if module.params.get("db_server_cluster"):
-        ha = True
-
-    spec = get_registration_spec(module, result, ha=ha)
+    spec = get_registration_spec(module, result)
 
     if module.check_mode:
         result["response"] = spec

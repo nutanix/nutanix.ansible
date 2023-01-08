@@ -172,7 +172,7 @@ class DatabaseInstance(NutanixDatabase):
         }
         return super().get_spec(old_spec=payload)
 
-    def get_db_engine_spec(self, payload, **kwargs):
+    def get_db_engine_spec(self, payload, params=None, **kwargs):
 
         db_engine, err = create_db_engine(self.module)
         if err:
@@ -180,7 +180,7 @@ class DatabaseInstance(NutanixDatabase):
 
         db_type = db_engine.get_type()
 
-        config = self.module.params[db_type]
+        config = self.module.params.get(db_type) or params
 
         if kwargs.get("provision"):
 
