@@ -633,12 +633,11 @@ from copy import deepcopy  # noqa: E402
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.ndb.db_servers import DBServerVM
+from ..module_utils.ndb.db_server_vm import DBServerVM
 from ..module_utils.ndb.tags import Tag
 from ..module_utils.ndb.time_machines import TimeMachine
 from ..module_utils.ndb.database_instances import DatabaseInstance
 from ..module_utils.ndb.db_server_cluster import DBServerCluster
-
 
 
 def get_module_spec():
@@ -649,7 +648,9 @@ def get_module_spec():
     )
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-    software_profile = dict(name=dict(type="str"), uuid=dict(type="str"), version_id=dict(type="str"))
+    software_profile = dict(
+        name=dict(type="str"), uuid=dict(type="str"), version_id=dict(type="str")
+    )
 
     ha_proxy = dict(
         provision_virtual_ip=dict(type="bool", default=True, required=False),
@@ -685,7 +686,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        ip = dict(type="str", required=False)
+        ip=dict(type="str", required=False),
     )
 
     db_vm = dict(
@@ -720,10 +721,13 @@ def get_module_spec():
         ),
         role=dict(type="str", choices=["Primary", "Secondary"], required=False),
         node_type=dict(
-            type="str", choices=["database", "haproxy"], default="database", required=False
+            type="str",
+            choices=["database", "haproxy"],
+            default="database",
+            required=False,
         ),
         archive_log_destination=dict(type="str", required=False),
-        ip = dict(type="str", required=False)
+        ip=dict(type="str", required=False),
     )
     cluster_ip_info = dict(
         cluster=dict(
@@ -732,7 +736,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        ip = dict(type="str", required=True)
+        ip=dict(type="str", required=True),
     )
     new_cluster = dict(
         name=dict(type="str", required=True),
@@ -764,7 +768,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        ips = dict(type="list", elements="dict", options=cluster_ip_info, required=False)
+        ips=dict(type="list", elements="dict", options=cluster_ip_info, required=False),
     )
 
     # TO-DO: use_registered_clusters for oracle, ms sql, etc.
@@ -823,7 +827,7 @@ def get_module_spec():
         enable_synchronous_mode=dict(type="bool", default=False, required=False),
         archive_wal_expire_days=dict(type="str", default="-1", required=False),
         enable_peer_auth=dict(type="bool", default=False, required=False),
-        virtual_ip = dict(type="str", required=False)
+        virtual_ip=dict(type="str", required=False),
     )
     postgres.update(deepcopy(default_db_arguments))
 
@@ -857,6 +861,7 @@ def get_module_spec():
     )
     return module_args
 
+
 def get_provision_spec(module, result, ha=False):
 
     # create database instance obj
@@ -866,24 +871,27 @@ def get_provision_spec(module, result, ha=False):
     spec = db_instance.get_default_provision_spec()
 
     if ha:
-      # populate DB server VM cluster related spec
-      db_server_cluster = DBServerCluster(module=module)
-      spec, err = db_server_cluster.get_spec(old_spec=spec, db_instance_provision=True)
-      if err:
-          result["error"] = err
-          module.fail_json(
-              msg="Failed getting db server vm cluster spec for new database instance creation", **result
-          )
+        # populate DB server VM cluster related spec
+        db_server_cluster = DBServerCluster(module=module)
+        spec, err = db_server_cluster.get_spec(
+            old_spec=spec, db_instance_provision=True
+        )
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting db server vm cluster spec for new database instance creation",
+                **result,
+            )
     else:
-      # populate VM related spec
-      db_vm = DBServerVM(module=module)
-      spec, err = db_vm.get_spec(old_spec=spec, db_instance_provision=True)
-      if err:
-          result["error"] = err
-          module.fail_json(
-              msg="Failed getting vm spec for new database instance creation", **result
-          )
-
+        # populate VM related spec
+        db_vm = DBServerVM(module=module)
+        spec, err = db_vm.get_spec(old_spec=spec, db_instance_provision=True)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting vm spec for new database instance creation",
+                **result,
+            )
 
     # populate database engine related spec
     spec, err = db_instance.get_db_engine_spec(spec, provision=True)
@@ -895,7 +903,7 @@ def get_provision_spec(module, result, ha=False):
         )
 
     # populate database instance related spec
-    spec, err = db_instance.get_spec(spec, provision=True)
+    spec, err = db_instance.get_spec(old_spec=spec, provision=True)
     if err:
         result["error"] = err
         module.fail_json(
@@ -904,7 +912,7 @@ def get_provision_spec(module, result, ha=False):
 
     # populate time machine related spec
     time_machine = TimeMachine(module)
-    spec, err = time_machine.get_spec(spec)
+    spec, err = time_machine.get_spec(old_spec=spec)
     if err:
         result["error"] = err
         module.fail_json(
@@ -914,7 +922,7 @@ def get_provision_spec(module, result, ha=False):
 
     # populate tags related spec
     tags = Tag(module)
-    spec, err = tags.get_spec_for_db_instance(spec)
+    spec, err = tags.get_spec(old_spec=spec)
     if err:
         result["error"] = err
         module.fail_json(
@@ -922,11 +930,8 @@ def get_provision_spec(module, result, ha=False):
             **result,
         )
 
-    if module.check_mode:
-        result["response"] = spec
-        return
+    return spec
 
-    return db_instance.provision(data=spec)
 
 def create_instance(module, result):
     db_instance = DatabaseInstance(module)
@@ -940,12 +945,14 @@ def create_instance(module, result):
     ha = False
     if module.params.get("db_server_cluster"):
         ha = True
-    
-    resp = get_provision_spec(module, result, ha=ha)
+
+    spec = get_provision_spec(module, result, ha=ha)
 
     if module.check_mode:
+        result["response"] = spec
         return
 
+    resp = db_instance.provision(data=spec)
     result["response"] = resp
     result["db_uuid"] = resp["entityId"]
     db_uuid = resp["entityId"]

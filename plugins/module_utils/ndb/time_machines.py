@@ -10,6 +10,7 @@ from .nutanix_database import NutanixDatabase
 
 __metaclass__ = type
 
+
 class TimeMachine(NutanixDatabase):
     def __init__(self, module):
         resource_type = "/tms"
@@ -21,34 +22,30 @@ class TimeMachine(NutanixDatabase):
             "auto_tune_log_drive": self._build_spec_auto_tune_log_drive,
         }
 
-    def get_time_machine(self, uuid=None, name=None):
-        if uuid:
-            resp = self.read(uuid=uuid)
-        elif name:
-            endpoint = "{0}/{1}".format("name", name)
-            resp = self.read(endpoint=endpoint)
-            if isinstance(resp, list):
-                if not resp:
-                    return None, "Time machine with name {0} not found".format(name)
-                else:
-                    tm = None
-                    for entity in resp:
-                        if entity["name"] == name:
-                            tm = entity
-                            break
-                    if not tm:
-                        return None, "Time machine with name {0} not found".format(name)
-                    resp = tm
+    def get_time_machines(self, value=None, key="uuid", endpoint=None, query=None):
 
-                    # fetch all details using uuid
-                    if resp.get("id"):
-                        resp = self.read(uuid=resp["id"])
+        if value:
+            endpoint = value
+            if not query:
+                query = {}
+
+            query["value-type"] = key
+
+        return self.read(endpoint=endpoint, query=query)
+
+    def get_time_machine_uuid(self, config):
+        uuid = ""
+        if config.get("name"):
+            resp = self.get_time_machines(value=config["name"], key="name")
+            uuid = resp.get("id")
+        elif config.get("uuid"):
+            uuid = config["uuid"]
         else:
-            return (
-                None,
-                "Please provide either uuid or name for fetching time machine details",
+            error = "time machine config {0} doesn't have name or uuid key".format(
+                config
             )
-        return resp, None
+            return error, None
+        return uuid, None
 
     def get_spec(self, old_spec, params=None, **kwargs):
 
@@ -62,7 +59,6 @@ class TimeMachine(NutanixDatabase):
         if err:
             return None, err
 
-
         # set sla spec
         sla_uuid, err = get_sla_uuid(self.module, params["sla"])
         if err:
@@ -71,11 +67,11 @@ class TimeMachine(NutanixDatabase):
         # set destination clusters incase of HA instance
         if params.get("clusters"):
             cluster_uuids = []
-            
+
             # fetch all clusters name uuid map
             _cluster = Cluster(self.module)
             clusters_name_uuid_map = _cluster.get_all_clusters_name_uuid_map()
-            
+
             for cluster in params.get("clusters"):
                 cluster_uuid = ""
                 if cluster.get("name"):

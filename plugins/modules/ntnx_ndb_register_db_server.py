@@ -14,32 +14,31 @@ from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
-
-
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     postgres = dict(
-        listener_port = dict(type="str", default="5432", required=False),
-        software_path = dict(type="str", required=False)
+        listener_port=dict(type="str", default="5432", required=False),
+        software_path=dict(type="str", required=False),
     )
     module_args = dict(
-        ip = dict(type="str", required=False),
-        desc = dict(type="str", required=False),
-        reset_desc_in_ntnx_cluster = dict(type="bool", default=False, required=False),
+        ip=dict(type="str", required=False),
+        desc=dict(type="str", required=False),
+        reset_desc_in_ntnx_cluster=dict(type="bool", default=False, required=False),
         cluster=dict(
             type="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        postgres = dict(type="dict", options=postgres, required=False),
+        postgres=dict(type="dict", options=postgres, required=False),
         password=dict(type="str", required=False),
-        private_ssh_key = dict(type="str", required=False),
-        time_zone = dict(type="str", default="Asia/Calcutta", required=False),
-        working_directory = dict(type="str", default="/tmp", required=False),
+        private_ssh_key=dict(type="str", required=False),
+        time_zone=dict(type="str", default="Asia/Calcutta", required=False),
+        working_directory=dict(type="str", default="/tmp", required=False),
     )
     return module_args
+
 
 def register_db_server(module, result):
     pass

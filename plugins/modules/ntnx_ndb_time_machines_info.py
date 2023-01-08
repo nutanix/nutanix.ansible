@@ -241,10 +241,10 @@ def get_tm(module, result):
 
     uuid = module.params.get("uuid")
     name = module.params.get("name")
-    resp, err = tm.get_time_machine(uuid=uuid, name=name)
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed fetching time machine info", **result)
+    if name:
+        resp = tm.get_time_machines(value=name, key="name")
+    else:
+        resp = tm.get_time_machines(value=uuid, key="uuid")
     result["response"] = resp
 
 

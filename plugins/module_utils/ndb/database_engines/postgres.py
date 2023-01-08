@@ -5,13 +5,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-
 from copy import deepcopy
 
 from .database_engine import DatabaseEngine
 from ...constants import NDB
-from ..db_servers import DBServerVM
-
+from ..db_server_vm import DBServerVM
 
 
 class Postgres(DatabaseEngine):
@@ -146,13 +144,13 @@ class PostgresSingleInstance(Postgres):
                 spec = {"name": arg, "value": config[arg]}
                 action_arguments.append(spec)
 
-        action_arguments.append({
-            "name": "postgres_software_home",
-            "value": config["software_path"]
-        })
+        action_arguments.append(
+            {"name": "postgres_software_home", "value": config["software_path"]}
+        )
 
         payload["actionArguments"] = action_arguments
         return payload, None
+
 
 class PostgresHAInstance(Postgres):
     def __init__(self, module):
@@ -175,7 +173,7 @@ class PostgresHAInstance(Postgres):
             "enable_peer_auth": False,
             "node_type": "database",
             "backup_policy": "primary_only",
-            "failover_mode": "Automatic"
+            "failover_mode": "Automatic",
         }
 
         # create action arguments

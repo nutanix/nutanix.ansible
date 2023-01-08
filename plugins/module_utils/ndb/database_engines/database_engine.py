@@ -20,7 +20,7 @@ class DatabaseEngine:
         Implement this method to add db engine specific action arguments for database instance provision
         """
         return payload, None
-    
+
     def build_spec_db_instance_register_action_arguments(self, payload, config):
         """
         Implement this method to add db engine specific action arguments for database instance registration

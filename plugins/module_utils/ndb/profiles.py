@@ -76,18 +76,16 @@ class Profile(NutanixDatabase):
             )
 
         return resp, None
-    
+
     def get_all_name_uuid_map(self, type=None):
         if type:
-            query = {
-                "type": type
-            }
+            query = {"type": type}
 
         name_uuid_map = {}
         resp = self.read(query=query)
         if not isinstance(resp, list):
             return None, "Invalid response type obtained from NDB server"
-        
+
         for entity in resp:
             name_uuid_map[entity["name"]] = entity["id"]
 

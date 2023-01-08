@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
-from .db_servers import DBServerVM
+from .db_server_vm import DBServerVM
 from .nutanix_database import NutanixDatabase
 from .clusters import Cluster
 
@@ -11,14 +11,13 @@ __metaclass__ = type
 
 
 class DBServerCluster(NutanixDatabase):
-
     def __init__(self, module):
         resource_type = "/dpcs"
         super(DBServerCluster, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "ips": self._build_spec_ips
+            "ips": self._build_spec_ips,
         }
 
     def get_spec(self, old_spec=None, params=None, **kwargs):
@@ -29,11 +28,17 @@ class DBServerCluster(NutanixDatabase):
                 payload, err = self.get_spec_provision_for_db_instance(payload=old_spec)
                 return payload, err
             else:
-                return None, "Spec builder for DB server cluster registration for HA instance is not implemented"
+                return (
+                    None,
+                    "Spec builder for DB server cluster registration for HA instance is not implemented",
+                )
 
         elif kwargs.get("db_server_cluster"):
-            return None, "Spec builder for DB server cluster provision or register is not implemented"
-        
+            return (
+                None,
+                "Spec builder for DB server cluster provision or register is not implemented",
+            )
+
         return None, "Please provide supported arguments"
 
     def get_default_spec_for_db_instance(self):
@@ -54,7 +59,7 @@ class DBServerCluster(NutanixDatabase):
                 "compute_profile": db_server_vm.build_spec_compute_profile,
                 "software_profile": db_server_vm.build_spec_software_profile,
                 "network_profile": db_server_vm.build_spec_network_profile,
-                "password": db_server_vm.build_spec_vm_password,
+                "password": db_server_vm.build_spec_password,
                 "cluster": db_server_vm.build_spec_cluster,
                 "pub_ssh_key": db_server_vm.build_spec_pub_ssh_key,
             }
@@ -76,9 +81,11 @@ class DBServerCluster(NutanixDatabase):
         kwargs = {
             "network_profile_uuid": payload.get("networkProfileId"),
             "compute_profile_uuid": payload.get("computeProfileId"),
-            "cluster_uuid": payload.get("nxClusterId")
+            "cluster_uuid": payload.get("nxClusterId"),
         }
-        payload, err = db_server_vm.build_spec_vms(payload, config.get("vms", []), **kwargs)
+        payload, err = db_server_vm.build_spec_vms(
+            payload, config.get("vms", []), **kwargs
+        )
         if err:
             return None, err
 
@@ -86,41 +93,29 @@ class DBServerCluster(NutanixDatabase):
         payload["createDbserver"] = True
         return payload, err
 
-
     # builder methods for vm
     def _build_spec_name(self, payload, name):
         action_arguments = payload.get("actionArguments", [])
-        action_arguments.append({
-            "name": "cluster_name",
-            "value": name
-        })
+        action_arguments.append({"name": "cluster_name", "value": name})
         payload["actionArguments"] = action_arguments
         return payload, None
 
     def _build_spec_desc(self, payload, desc):
         action_arguments = payload.get("actionArguments", [])
-        action_arguments.append({
-            "name": "cluster_description",
-            "value": desc
-        })
+        action_arguments.append({"name": "cluster_description", "value": desc})
         payload["actionArguments"] = action_arguments
 
         return payload, None
-    
+
     def _build_spec_ips(self, payload, cluster_ip_infos):
         cluster = Cluster(self.module)
         clusters = cluster.get_all_clusters_name_uuid_map()
-        
+
         specs = []
         for ip_info in cluster_ip_infos:
             spec = {
                 "ipInfos": [
-                        {
-                            "ipType": "CLUSTER_IP",
-                            "ipAddresses": [
-                                ip_info.get("ip")
-                            ]
-                        }
+                    {"ipType": "CLUSTER_IP", "ipAddresses": [ip_info.get("ip")]}
                 ]
             }
 
@@ -137,12 +132,9 @@ class DBServerCluster(NutanixDatabase):
             elif ip_info["cluster"].get("uuid"):
                 cluster_uuid = ip_info["cluster"]["uuid"]
 
-            spec["nxClusterId"] =  cluster_uuid
+            spec["nxClusterId"] = cluster_uuid
             specs.append(spec)
 
-        payload["clusterInfo"] = {
-            "clusterIpInfos" : specs
-        }
+        payload["clusterInfo"] = {"clusterIpInfos": specs}
 
         return payload, None
-

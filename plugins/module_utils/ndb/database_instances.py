@@ -81,7 +81,7 @@ class DatabaseInstance(NutanixDatabase):
                 "tags": [],
             }
         )
-    
+
     def get_default_registration_spec(self):
         return deepcopy(
             {
@@ -91,7 +91,7 @@ class DatabaseInstance(NutanixDatabase):
                 "actionArguments": [],
                 "autoTuneStagingDrive": True,
             }
-        ) 
+        )
 
     def get_default_update_spec(self, override_spec=None):
         spec = deepcopy(
@@ -162,7 +162,7 @@ class DatabaseInstance(NutanixDatabase):
                 return self.get_spec_for_provision(payload=old_spec)
             elif kwargs.get("register"):
                 return self.get_spec_for_registration(payload=old_spec)
-    
+
         return None, "Please provide supported arguments"
 
     def get_update_spec(self, payload):
@@ -189,41 +189,46 @@ class DatabaseInstance(NutanixDatabase):
             )
             if err:
                 return None, err
-        
+
         elif kwargs.get("register"):
-            payload, err = db_engine.build_spec_db_instance_register_action_arguments(payload, config)
+            payload, err = db_engine.build_spec_db_instance_register_action_arguments(
+                payload, config
+            )
             if err:
                 return None, err
-
 
         payload["databaseType"] = db_type + "_database"
         return payload, err
 
     def get_spec_for_provision(self, payload):
-        self.build_spec_methods.update({
-            "name": self._build_spec_provision_name,
-            "db_params_profile": self._build_spec_db_params_profile,
-            "desc": self._build_spec_desc
-        })
+        self.build_spec_methods.update(
+            {
+                "name": self._build_spec_provision_name,
+                "db_params_profile": self._build_spec_db_params_profile,
+                "desc": self._build_spec_desc,
+            }
+        )
         return super().get_spec(old_spec=payload)
 
     def get_spec_for_registration(self, payload):
-        self.build_spec_methods.update({
-            "working_dir": self._build_spec_register_working_dir,
-            "name": self._build_spec_register_name,
-            "desc": self._build_spec_register_desc,
-        })
+        self.build_spec_methods.update(
+            {
+                "working_dir": self._build_spec_register_working_dir,
+                "name": self._build_spec_register_name,
+                "desc": self._build_spec_register_desc,
+            }
+        )
         return super().get_spec(old_spec=payload)
 
     def _build_spec_desc_update(self, payload, desc):
         payload["description"] = desc
         return payload, None
-    
+
     # provision specific builder methods
     def _build_spec_provision_name(self, payload, name):
         payload["name"] = name
         return payload, None
-    
+
     def _build_spec_db_params_profile(self, payload, db_params_profile):
         uuid, err = get_profile_uuid(
             self.module, "Database_Parameter", db_params_profile
@@ -233,11 +238,11 @@ class DatabaseInstance(NutanixDatabase):
 
         payload["dbParameterProfileId"] = uuid
         return payload, None
-    
+
     def _build_spec_desc(self, payload, desc):
         payload["databaseDescription"] = desc
         return payload, None
-    
+
     # registration related builder methods
     def _build_spec_register_name(self, payload, name):
         payload["databaseName"] = name

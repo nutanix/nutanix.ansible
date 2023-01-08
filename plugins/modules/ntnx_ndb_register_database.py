@@ -23,7 +23,7 @@ from copy import deepcopy  # noqa: E402
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.ndb.database_instances import DatabaseInstance
-from ..module_utils.ndb.db_servers import DBServerVM
+from ..module_utils.ndb.db_server_vm import DBServerVM
 from ..module_utils.ndb.operations import Operation
 from ..module_utils.ndb.tags import Tag
 from ..module_utils.ndb.time_machines import TimeMachine
@@ -34,29 +34,39 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     registered_vm = dict(
-        name=dict(type="str", required=False), 
-        uuid=dict(type="str", required=False), 
+        name=dict(type="str", required=False),
+        uuid=dict(type="str", required=False),
         ip=dict(type="str", required=False),
     )
 
     unregistered_vm = dict(
-        ip = dict(type="str", required=True),
-        username = dict(type="str", required=True),
-        private_key = dict(type="str", required=False),
-        password = dict(type="str", required=False),
-        desc = dict(type="str", required=False),
-        reset_desc_in_ntnx_cluster = dict(type="bool", default=False, required=False),
+        ip=dict(type="str", required=True),
+        username=dict(type="str", required=True),
+        private_key=dict(type="str", required=False),
+        password=dict(type="str", required=False),
+        desc=dict(type="str", required=False),
+        reset_desc_in_ntnx_cluster=dict(type="bool", default=False, required=False),
         cluster=dict(
             type="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=True,
-        )
+        ),
     )
 
     db_vm = dict(
-        registered=dict(type="dict", options=registered_vm, mutually_exclusive=["name", "uuid", "ip"], required=False),
-        unregistered=dict(type="dict", options=unregistered_vm, mutually_exclusive=["password", "private_key"], required=False),
+        registered=dict(
+            type="dict",
+            options=registered_vm,
+            mutually_exclusive=["name", "uuid", "ip"],
+            required=False,
+        ),
+        unregistered=dict(
+            type="dict",
+            options=unregistered_vm,
+            mutually_exclusive=["password", "private_key"],
+            required=False,
+        ),
     )
 
     sla = dict(
@@ -92,9 +102,14 @@ def get_module_spec():
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
         db_user=dict(type="str", default="postgres", required=False),
-        backup_policy=dict(type="str", choices=["primary_only", "prefer_secondary", "secondary_only"], default="prefer_secondary", required=False), # check if required
+        backup_policy=dict(
+            type="str",
+            choices=["primary_only", "prefer_secondary", "secondary_only"],
+            default="prefer_secondary",
+            required=False,
+        ),  # check if required
         software_path=dict(type="str", required=True),
-        type=dict(dict="str", choices=["single"], default="single", required=False)
+        type=dict(dict="str", choices=["single"], default="single", required=False),
     )
 
     module_args = dict(
@@ -114,6 +129,7 @@ def get_module_spec():
     )
     return module_args
 
+
 def get_registration_spec(module, result, ha=False):
 
     # create database instance obj
@@ -128,9 +144,9 @@ def get_registration_spec(module, result, ha=False):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting vm spec for new database instance registration", **result
+            msg="Failed getting vm spec for new database instance registration",
+            **result,
         )
-
 
     # populate database engine related spec
     spec, err = db_instance.get_db_engine_spec(spec, register=True)
@@ -161,7 +177,7 @@ def get_registration_spec(module, result, ha=False):
 
     # populate tags related spec
     tags = Tag(module)
-    spec, err = tags.get_spec_for_db_instance(spec)
+    spec, err = tags.get_spec(spec)
     if err:
         result["error"] = err
         module.fail_json(
@@ -169,11 +185,7 @@ def get_registration_spec(module, result, ha=False):
             **result,
         )
 
-    if module.check_mode:
-        result["response"] = spec
-        return
-
-    return db_instance.register(data=spec)
+    return spec
 
 
 def register_instance(module, result):
@@ -188,12 +200,14 @@ def register_instance(module, result):
     ha = False
     if module.params.get("db_server_cluster"):
         ha = True
-    
-    resp = get_registration_spec(module, result, ha=ha)
+
+    spec = get_registration_spec(module, result, ha=ha)
 
     if module.check_mode:
+        result["response"] = spec
         return
 
+    resp = db_instance.register(data=spec)
     result["response"] = resp
     result["db_uuid"] = resp["entityId"]
     db_uuid = resp["entityId"]

@@ -339,7 +339,7 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
 
 
 def get_module_spec():
@@ -354,7 +354,7 @@ def get_module_spec():
 
 
 def get_db_server(module, result):
-    db_server = DBServers(module)
+    db_server = DBServerVM(module)
     if module.params.get("uuid"):
         resp, err = db_server.get_db_server(uuid=module.params["uuid"])
     elif module.params.get("name"):
@@ -370,7 +370,7 @@ def get_db_server(module, result):
 
 
 def get_db_servers(module, result):
-    db_server = DBServers(module)
+    db_server = DBServerVM(module)
 
     resp = db_server.read()
 

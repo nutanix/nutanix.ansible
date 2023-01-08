@@ -3,13 +3,14 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
-from .clusters import Cluster, get_cluster_uuid
-from .profiles import Profile, get_profile_uuid
 
 __metaclass__ = type
 
 
 from .nutanix_database import NutanixDatabase
+from .time_machines import TimeMachine
+from .clusters import Cluster, get_cluster_uuid
+from .profiles import Profile, get_profile_uuid
 
 
 class DBServerVM(NutanixDatabase):
@@ -22,9 +23,31 @@ class DBServerVM(NutanixDatabase):
             "software_profile": self.build_spec_software_profile,
             "network_profile": self.build_spec_network_profile,
             "cluster": self.build_spec_cluster,
-            "pub_ssh_key": self.build_spec_pub_ssh_key,
-            "vm_password": self.build_spec_vm_password,
+            "password": self.build_spec_password,
         }
+
+    def provision(self, data):
+        endpoint = "provision"
+        return self.create(data, endpoint)
+
+    def register(self, data):
+        endpoint = "register"
+        return self.create(data, endpoint)
+
+    def update(
+        self,
+        data=None,
+        uuid=None,
+        endpoint=None,
+        query=None,
+        raise_error=True,
+        no_response=False,
+        timeout=30,
+        method="PATCH",
+    ):
+        return super().update(
+            data, uuid, endpoint, query, raise_error, no_response, timeout, method
+        )
 
     def get_uuid(
         self,
@@ -64,19 +87,27 @@ class DBServerVM(NutanixDatabase):
 
         return resp, None
 
-    def provision(self, data):
-        pass
+    def get_db_server_uuid(self, config):
+        if "name" in config:
+            name = config["name"]
+            uuid, err = self.get_uuid(name)
+            if err:
+                return None, err
+        elif "uuid" in config:
+            uuid = config["uuid"]
+        else:
+            error = "Config {0} doesn't have name or uuid key".format(config)
+            return None, error
 
-    def register(self, data):
-        pass
+        return uuid, None
 
-    def get_default_payload_for_provision(self):
+    def get_default_spec_for_provision(self):
         return deepcopy(
             {
                 "actionArguments": [],
                 "nxClusterId": "",
                 "databaseType": "",
-                "latestSnapshot": True,
+                "latestSnapshot": False,
                 "networkProfileId": "",
                 "softwareProfileId": "",
                 "softwareProfileVersionId": "",
@@ -84,56 +115,101 @@ class DBServerVM(NutanixDatabase):
                 "vmPassword": None,
             }
         )
-    
-    def get_default_payload_for_registration(self):
-        return deepcopy({
-            "nxClusterId": "",
-            "vmIp": "",
-            "vmUsername": "",
-            "vmPassword": "",
-            "vmSshkey": "",
-            "vmDescription": "",
-            "resetDescriptionInNxCluster": False
-        })
 
+    def get_default_spec_for_registration(self):
+        return deepcopy(
+            {
+                "nxClusterId": "",
+                "vmIp": "",
+                "vmUsername": "",
+                "vmPassword": "",
+                "vmSshkey": "",
+                "vmDescription": "",
+                "resetDescriptionInNxCluster": False,
+            }
+        )
+
+    def get_default_spec_for_update(self, override=None):
+        spec = {
+            "name": "",
+            "description": "",
+            "resetNameInNxCluster": False,
+            "resetDescriptionInNxCluster": False,
+            "resetCredential": False,
+            "credentials": [],
+            "resetTags": False,
+            "resetName": False,
+            "resetDescription": False,
+        }
+
+        # populate spec with values from old_spec
+        if override:
+            for key in spec:
+                if key in override:
+                    spec[key] = override[key]
+
+        return spec
+
+    def get_default_delete_spec(self):
+        return deepcopy(
+            {
+                "softRemove": False,
+                "remove": True,
+                "delete": False,
+                "deleteVgs": False,
+                "deleteVmSnapshots": False,
+            }
+        )
 
     def get_spec(self, old_spec=None, params=None, **kwargs):
-
         # if db server vm is required for db instance
         if kwargs.get("db_instance_provision"):
             if self.module.params.get("db_vm", {}).get("create_new_server"):
                 payload, err = self.get_spec_provision_for_db_instance(payload=old_spec)
                 return payload, err
             elif self.module.params.get("db_vm", {}).get("use_registered_server"):
-                payload, err = self.get_spec_registered_server_for_db_instance_provision(
+                (
+                    payload,
+                    err,
+                ) = self.get_spec_registered_server_for_db_instance_provision(
                     payload=old_spec
                 )
                 return payload, err
-        
+
         # if db server vm is required for registering db instance
         elif kwargs.get("db_instance_register"):
             if self.module.params.get("db_vm", {}).get("registered"):
-                payload, err = self.get_spec_registered_vm_for_db_instance_registration(payload=old_spec)
+                payload, err = self.get_spec_registered_vm_for_db_instance_registration(
+                    payload=old_spec
+                )
                 return payload, err
             elif self.module.params.get("db_vm", {}).get("unregistered"):
                 payload, err = self.get_spec_register(payload=old_spec)
                 return payload, err
-        
+
         # if only db server vm provision or register is required
-        elif kwargs.get("db_vm"):
+        else:
             if kwargs.get("provision"):
                 payload, err = self.get_spec_provision(payload=old_spec)
                 return payload, err
             elif kwargs.get("register"):
                 payload, err = self.get_spec_register(payload=old_spec)
                 return payload, err
-        
+            elif kwargs.get("update"):
+                payload, err = self.get_spec_update_vm(payload=old_spec)
+                return payload, err
+            elif kwargs.get("delete"):
+                payload, err = self.get_spec_delete_vm(payload=old_spec)
+                return payload, err
+
         return None, "Please provide supported arguments"
 
     # this routine populates spec for provisioning db vm for database instance creation
     def get_spec_provision_for_db_instance(self, payload):
 
-        payload.update(self.get_default_payload_for_provision())
+        payload.update(self.get_default_spec_for_provision())
+        self.build_spec_methods.update({"pub_ssh_key": self.build_spec_pub_ssh_key})
+
         db_vm_config = self.module.params.get("db_vm", {}).get("create_new_server", {})
         if not db_vm_config:
             return (
@@ -146,13 +222,16 @@ class DBServerVM(NutanixDatabase):
             return None, err
 
         # configure vm related spec
-        kwargs = {
-            "network_profile_uuid": payload["networkProfileId"]
-        }
+        kwargs = {"network_profile_uuid": payload["networkProfileId"]}
 
-        payload, err = self.build_spec_vms(payload, [db_vm_config])
+        payload, err = self.build_spec_vms(payload, [db_vm_config], **kwargs)
         if err:
             return None, err
+
+        # add description
+        payload["actionArguments"].append(
+            {"name": "dbserver_description", "value": db_vm_config.get("desc")}
+        )
 
         payload["clustered"] = False
         payload["createDbserver"] = True
@@ -169,7 +248,7 @@ class DBServerVM(NutanixDatabase):
                 "'db_vm.use_registered_server' is required for creating spec for registered db server vm",
             )
 
-        uuid, err = get_db_server_uuid(self.module, db_vm_config)
+        uuid, err = self.get_db_server_uuid(self.module, db_vm_config)
         if err:
             return None, err
 
@@ -179,16 +258,20 @@ class DBServerVM(NutanixDatabase):
         return payload, None
 
     # this routine creates spec for provisioning of db server vm
-    def get_spec_provision(self, payload={}):
-        payload.update(self.get_default_payload_for_provision())
+    def get_spec_provision(self, payload):
+
         self.build_spec_methods.update(
             {
                 "database_type": self._build_spec_database_type,
+                "time_machine": self._build_spec_time_machine,
+                "software_profile": self.build_spec_software_profile,
+                "time_zone": self._build_spec_time_zone,
             }
         )
 
         payload, err = super().get_spec(old_spec=payload)
 
+        # add vm name
         if not payload.get("actionArguments"):
             payload["actionArguments"] = []
 
@@ -196,6 +279,7 @@ class DBServerVM(NutanixDatabase):
             {"name": "vm_name", "value": self.module.params.get("name")}
         )
 
+        # add client public key
         payload["actionArguments"].append(
             {
                 "name": "client_public_key",
@@ -203,6 +287,8 @@ class DBServerVM(NutanixDatabase):
             }
         )
 
+        # add description
+        payload["description"] = self.module.params.get("desc")
         return payload, err
 
     # this routine creates spec for registration of db server vm, also can be used during db instance registration
@@ -214,14 +300,12 @@ class DBServerVM(NutanixDatabase):
             "private_ssh_key": self._build_spec_register_vm_private_ssh_key,
             "desc": self._build_spec_register_vm_desc,
             "reset_desc_in_ntnx_cluster": self._build_spec_register_vm_reset_desc,
-            "cluster": self.build_spec_cluster
+            "cluster": self.build_spec_cluster,
         }
 
-        payload.update(self.get_default_payload_for_registration())
+        payload.update(self.get_default_spec_for_registration())
 
-        config = self.module.params.get("db_vm", {}).get(
-            "unregistered", {}
-        )
+        config = self.module.params.get("db_vm", {}).get("unregistered", {})
         if not config:
             return (
                 None,
@@ -230,15 +314,13 @@ class DBServerVM(NutanixDatabase):
         payload, err = super().get_spec(old_spec=payload, params=config)
         if err:
             return None, err
-        
+
         return payload, err
 
     # this routine creates spec for registered vm to register db instance from it
     def get_spec_registered_vm_for_db_instance_registration(self, payload):
 
-        config = self.module.params.get("db_vm", {}).get(
-            "registered", {}
-        )
+        config = self.module.params.get("db_vm", {}).get("registered", {})
         if not config:
             return (
                 None,
@@ -268,16 +350,36 @@ class DBServerVM(NutanixDatabase):
 
         return payload, None
 
-    # builder methods for vm creation
+    def get_spec_update_vm(self, payload):
+        self.build_spec_methods = {
+            "name": self._build_spec_update_name,
+            "desc": self._build_spec_update_desc,
+            "reset_name_in_ntnx_cluster": self._build_spec_update_reset_name_in_ntnx_cluster,
+            "reset_desc_in_ntnx_cluster": self._build_spec_update_reset_desc_in_ntnx_cluster,
+            "update_credentials": self._build_spec_update_credentials,
+        }
+
+        return super().get_spec(old_spec=payload)
+
+    def get_spec_delete_vm(self, payload):
+        self.build_spec_methods = {
+            "delete_from_cluster": self._build_spec_delete_from_cluster,
+            "delete_vm_snapshots": self._build_spec_delete_vm_snapshots,
+            "delete_vgs": self._build_spec_delete_volume_groups,
+        }
+
+        return super().get_spec(old_spec=payload)
+
+    # builder methods for vm provisioning
     def _build_spec_name(self, payload, name):
         if not payload.get("nodes"):
             payload["nodes"] = [{}]
 
         payload["nodes"][0]["vmName"] = name
         return payload, None
-    
+
     def _build_spec_database_type(self, payload, db_type):
-        payload["database_type"] = db_type
+        payload["databaseType"] = db_type
         return payload, None
 
     def build_spec_compute_profile(self, payload, profile):
@@ -325,23 +427,39 @@ class DBServerVM(NutanixDatabase):
     def build_spec_pub_ssh_key(self, payload, pub_ssh_key):
         payload["sshPublicKey"] = pub_ssh_key
         return payload, None
-    
-    def _build_spec_ip(self, payload, ip):
-        payload["ipInfos"] = [
-            {
-                "ipType": "VM_IP",
-                "ipAddresses": [
-                    ip
-                ]
-            }
-        ],
+
+    def _build_spec_time_machine(self, payload, time_machine):
+        time_machine = TimeMachine(self.module)
+        uuid, err = time_machine.get_time_machine_uuid(self, time_machine)
+        if err:
+            return None, err
+
+        payload["timeMachineId"] = uuid
+        if time_machine.get("snapshot_uuid"):
+            payload["snapshotId"] = time_machine.get("snapshot_uuid")
+            payload["latestSnapshot"] = False
+        else:
+            payload["latestSnapshot"] = True
+
         return payload, None
 
-    def build_spec_vm_password(self, payload, password):
+    def _build_spec_time_zone(self, payload, time_zone):
+        payload["timeZone"] = time_zone
+        return payload, None
+
+    def _build_spec_ip(self, payload, ip):
+        payload["ipInfos"] = ([{"ipType": "VM_IP", "ipAddresses": [ip]}],)
+        return payload, None
+
+    def build_spec_password(self, payload, password):
         payload["vmPassword"] = password
         return payload, None
-    
+
     def build_spec_vms(self, payload, vms, **kwargs):
+        """
+        This method takes list of vm input and create specs for each.
+        Pass acceptable defaults in kwargs.
+        """
         nodes = payload.get("nodes", [])
 
         # get cluster uuid map to assign cluster uuid for each node vm
@@ -354,7 +472,7 @@ class DBServerVM(NutanixDatabase):
             "vmName": "",
             "networkProfileId": kwargs.get("network_profile_uuid", ""),
             "computeProfileId": kwargs.get("compute_profile_uuid", ""),
-            "nxClusterId": kwargs.get("cluster_uuid", "")
+            "nxClusterId": kwargs.get("cluster_uuid", ""),
         }
 
         profile = Profile(self.module)
@@ -378,17 +496,16 @@ class DBServerVM(NutanixDatabase):
 
             for prop in properties:
                 if prop in vm:
-                    node["properties"].append({
-                        "name":prop,
-                        "value": vm[prop]
-                    })
-            
+                    node["properties"].append({"name": prop, "value": vm[prop]})
+
             if vm.get("archive_log_destination"):
-                node["properties"].append({
+                node["properties"].append(
+                    {
                         "name": "remote_archive_destination",
-                        "value": vm.get("archive_log_destination")
-                })
-        
+                        "value": vm.get("archive_log_destination"),
+                    }
+                )
+
             # add network profile for a vm if required
             if vm.get("network_profile"):
                 uuid = ""
@@ -403,9 +520,9 @@ class DBServerVM(NutanixDatabase):
                 elif vm["network_profile"].get("uuid"):
                     uuid = vm["network_profile"]["uuid"]
 
-                node["networkProfileId"] =  uuid
-            
-             # add network profile for a vm if required
+                node["networkProfileId"] = uuid
+
+            # add network profile for a vm if required
             if vm.get("compute_profile"):
                 uuid = ""
                 if vm["compute_profile"].get("name"):
@@ -419,8 +536,8 @@ class DBServerVM(NutanixDatabase):
                 elif vm["compute_profile"].get("uuid"):
                     uuid = vm["compute_profile"]["uuid"]
 
-                node["computeProfileId"] =  uuid
-            
+                node["computeProfileId"] = uuid
+
             # add cluster spec for a vm
             if vm.get("cluster"):
                 cluster_uuid = ""
@@ -435,7 +552,7 @@ class DBServerVM(NutanixDatabase):
                 elif vm["cluster"].get("uuid"):
                     cluster_uuid = vm["cluster"]["uuid"]
 
-                node["nxClusterId"] =  cluster_uuid
+                node["nxClusterId"] = cluster_uuid
 
             if vm.get("ip"):
                 payload, err = self._build_spec_ip(payload, vm.get("ip"))
@@ -443,53 +560,73 @@ class DBServerVM(NutanixDatabase):
                     return None, err
 
             nodes.append(node)
-        
+
         payload["nodes"] = nodes
         payload["nodeCount"] = len(payload["nodes"])
         return payload, None
 
+    # builders for registration
     def _build_spec_register_vm_ip(self, payload, ip):
         payload["vmIp"] = ip
         action_arguments = payload.get("actionArguments", [])
-        action_arguments.append({
-            "name": "vmIp",
-            "value": ip
-        })
+        action_arguments.append({"name": "vmIp", "value": ip})
         payload["actionArguments"] = action_arguments
         return payload, None
-    
+
     def _build_spec_register_vm_username(self, payload, username):
         payload["vmUsername"] = username
         return payload, None
-    
+
     def _build_spec_register_vm_password(self, payload, password):
         payload["vmPassword"] = password
         return payload, None
-    
+
     def _build_spec_register_vm_private_ssh_key(self, payload, private_ssh_key):
         payload["vmSshkey"] = private_ssh_key
         return payload, None
-    
+
     def _build_spec_register_vm_desc(self, payload, desc):
         payload["vmDescription"] = desc
         return payload, None
-    
+
     def _build_spec_register_vm_reset_desc(self, payload, reset_desc):
         payload["resetDescriptionInNxCluster"] = reset_desc
         return payload, None
 
+    def _build_spec_update_reset_name_in_ntnx_cluster(self, payload, reset):
+        payload["resetNameInNxCluster"] = reset
+        return payload, None
 
-def get_db_server_uuid(module, config):
-    if "name" in config:
-        db_servers = DBServerVM(module)
-        name = config["name"]
-        uuid, err = db_servers.get_uuid(name)
-        if err:
-            return None, err
-    elif "uuid" in config:
-        uuid = config["uuid"]
-    else:
-        error = "Config {0} doesn't have name or uuid key".format(config)
-        return None, error
+    def _build_spec_update_reset_desc_in_ntnx_cluster(self, payload, reset):
+        payload["resetDescriptionInNxCluster"] = reset
+        return payload, None
 
-    return uuid, None
+    def _build_spec_update_name(self, payload, name):
+        if name != payload.get("name", ""):
+            payload["name"] = name
+            payload["resetName"] = True
+        return payload, None
+
+    def _build_spec_update_desc(self, payload, desc):
+        if desc != payload.get("desc", ""):
+            payload["description"] = desc
+            payload["resetDescription"] = True
+        return payload, None
+
+    def _build_spec_update_credentials(self, payload, credentials):
+        payload["credentials"] = credentials
+        payload["resetCredential"] = True
+        return payload, None
+
+    # builders for deleting vm spec
+    def _build_spec_delete_from_cluster(self, payload, delete_from_cluster):
+        payload["delete"] = delete_from_cluster
+        return payload, None
+
+    def _build_spec_delete_volume_groups(self, payload, delete_volume_groups):
+        payload["deleteVgs"] = delete_volume_groups
+        return payload, None
+
+    def _build_spec_delete_vm_snapshots(self, payload, delete_vm_snapshots):
+        payload["deleteVmSnapshots"] = delete_vm_snapshots
+        return payload, None

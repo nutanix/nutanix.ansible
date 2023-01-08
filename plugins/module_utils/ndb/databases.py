@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from ..constants import NDB as NDB_CONSTANTS
 from .clusters import get_cluster_uuid
-from .db_servers import DBServerVM, get_db_server_uuid
+from .db_server_vm import DBServerVM
 from .nutanix_database import NutanixDatabase
 from .profiles import Profile, get_profile_uuid
 from .slas import get_sla_uuid
@@ -89,7 +89,9 @@ class Database(NutanixDatabase):
 
         if db_vm.get("use_registered_server"):
 
-            uuid, err = get_db_server_uuid(self.module, db_vm["use_registered_server"])
+            uuid, err = db_server_vm.get_db_server_uuid(
+                self.module, db_vm["use_registered_server"]
+            )
             if err:
                 return None, err
 

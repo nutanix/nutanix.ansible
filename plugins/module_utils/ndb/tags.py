@@ -15,20 +15,26 @@ class Tag(NutanixDatabase):
         resource_type = "/tags"
         super(Tag, self).__init__(module, resource_type=resource_type)
 
-    def get_all_name_uuid_map(self):
-        resp = self.read()
+    def get_all_name_uuid_map(self, type=None):
+        query = {}
+        if type:
+            query = {"entityType": type}
+        resp = self.read(query=query)
         name_uuid_map = {}
         for tag in resp:
             name_uuid_map[tag["name"]] = tag["id"]
         return name_uuid_map
 
-    def get_spec_for_db_instance(self, payload):
-        tags = self.module.params.get("tags")
+    def get_spec(self, old_spec=None, params=None, **kwargs):
+
+        tags = params or self.module.params.get("tags")
+
+        payload = old_spec
         if not tags:
             payload["tags"] = []
             return payload, None
 
-        name_uuid_map = self.get_all_name_uuid_map()
+        name_uuid_map = self.get_all_name_uuid_map(type=kwargs.get("type"))
         specs = []
         for name, val in tags.items():
             if name not in name_uuid_map:
