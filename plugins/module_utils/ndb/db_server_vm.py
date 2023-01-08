@@ -126,6 +126,7 @@ class DBServerVM(NutanixDatabase):
                 "vmSshkey": "",
                 "vmDescription": "",
                 "resetDescriptionInNxCluster": False,
+                "forcedInstall": True,
             }
         )
 
