@@ -52,13 +52,16 @@ class Cluster(Entity):
             timeout=30,
             data=None,
     ):
+        if not self._validate_cluster_deleting(uuid):
+            err = "NDB is unable to remove the Nutanix Cluster at this time. Check dependencies"
+            return None, err
         if not data:
             data = {
                 "deleteRemoteSites": False
             }
         return super().delete(
             uuid, endpoint, query, raise_error, no_response, timeout, data
-        )
+        ), None
 
     def get_cluster_by_ip(self):
         cluster_ip = self.module.params["cluster_ip"]
@@ -87,10 +90,6 @@ class Cluster(Entity):
         elif name:
             endpoint = "{0}/{1}".format("name", name)
             resp = self.read(endpoint=endpoint)
-
-            # we fetch cluster using ID again to get complete info.
-            # if resp and resp.get("id"):
-            #     resp = self.read(uuid=resp["id"])
 
         else:
             return (
@@ -250,6 +249,17 @@ class Cluster(Entity):
         payload["storageContainer"] = storage_container
         return payload, None
 
+    def _validate_cluster_deleting(self, cluster_uuid):
+        query = {"count_entities": True}
+        cluster = self.read(cluster_uuid, query=query)
+        if cluster.get("entityCounts"):
+            if cluster["entityCounts"].get("dbServers") != 0:
+                return False
+            elif cluster["entityCounts"].get("engineCounts"):
+                for engine in cluster["entityCounts"]["engineCounts"]:
+                    if engine["timeMachines"] != 0:
+                        return False
+        return True
 
 # helper functions
 

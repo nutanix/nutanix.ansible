@@ -252,7 +252,11 @@ def delete_cluster(module, result):
     cluster_uuid = module.params["uuid"]
 
     cluster = Cluster(module)
-    resp = cluster.delete(cluster_uuid)
+    resp, err = cluster.delete(cluster_uuid)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed removing cluster", **result)
+
     result["changed"] = True
     result["cluster_uuid"] = cluster_uuid
     ops_uuid = resp["operationId"]
