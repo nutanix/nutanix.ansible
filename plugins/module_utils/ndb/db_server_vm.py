@@ -3,9 +3,6 @@
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 
-from plugins.module_utils.ndb.database_engines.db_engine_factory import create_db_engine
-
-
 __metaclass__ = type
 
 
@@ -13,6 +10,7 @@ from .nutanix_database import NutanixDatabase
 from .time_machines import TimeMachine
 from .clusters import Cluster, get_cluster_uuid
 from .profiles import Profile, get_profile_uuid
+from .database_engines.db_engine_factory import create_db_engine
 
 
 class DBServerVM(NutanixDatabase):
