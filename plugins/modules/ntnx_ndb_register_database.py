@@ -27,12 +27,18 @@ from ..module_utils.ndb.db_server_vm import DBServerVM
 from ..module_utils.ndb.operations import Operation
 from ..module_utils.ndb.tags import Tag
 from ..module_utils.ndb.time_machines import TimeMachine
+from ..module_utils.ndb.maintenance_window import (
+    MaintenanceWindow,
+    AutomatedPatchingSpec,
+)
 
 
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-
+    automated_patching = deepcopy(
+        AutomatedPatchingSpec.automated_patching_argument_spec
+    )
     registered_vm = dict(
         name=dict(type="str", required=False),
         uuid=dict(type="str", required=False),
@@ -126,6 +132,9 @@ def get_module_spec():
         tags=dict(type="dict", required=False),
         auto_tune_staging_drive=dict(type="bool", required=False),
         working_dir=dict(type="str", default="/tmp", required=False),
+        automated_patching=dict(
+            type="dict", options=automated_patching, required=False
+        ),
     )
     return module_args
 
@@ -162,7 +171,7 @@ def get_registration_spec(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for new database instance creation", **result
+            msg="Failed getting spec for database instance registration", **result
         )
 
     # populate time machine related spec
@@ -171,7 +180,7 @@ def get_registration_spec(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for time machine for new database instance creation",
+            msg="Failed getting spec for time machine for database instance registration",
             **result,
         )
 
@@ -181,9 +190,21 @@ def get_registration_spec(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for tags for new database instance creation",
+            msg="Failed getting spec for tags for database instance registration",
             **result,
         )
+
+    # configure automated patching
+    if module.params.get("automated_patching"):
+        mw = MaintenanceWindow(module)
+        mw_spec, err = mw.get_spec(configure_automated_patching=True)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting spec for automated patching in database instance",
+                **result,
+            )
+        spec["maintenanceTasks"] = mw_spec
 
     return spec
 

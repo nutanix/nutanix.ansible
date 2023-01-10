@@ -15,11 +15,19 @@ from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.ndb.db_server_vm import DBServerVM
 from ..module_utils.ndb.operations import Operation
+from ..module_utils.ndb.maintenance_window import (
+    MaintenanceWindow,
+    AutomatedPatchingSpec,
+)
 
 
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+    automated_patching = deepcopy(
+        AutomatedPatchingSpec.automated_patching_argument_spec
+    )
+
     postgres = dict(
         listener_port=dict(type="str", default="5432", required=False),
         software_path=dict(type="str", required=True),
@@ -38,6 +46,9 @@ def get_module_spec():
         username=dict(type="str", required=True),
         password=dict(type="str", required=False),
         private_ssh_key=dict(type="str", required=False),
+        automated_patching=dict(
+            type="dict", options=automated_patching, required=False
+        ),
         working_directory=dict(type="str", default="/tmp", required=False),
     )
     return module_args
@@ -47,6 +58,19 @@ def get_register_spec(module, result):
     db_server_vms = DBServerVM(module)
     default_spec = db_server_vms.get_default_spec_for_registration()
     spec, err = db_server_vms.get_spec(old_spec=default_spec, register=True)
+
+    # configure automated patching
+    if module.params.get("automated_patching"):
+        mw = MaintenanceWindow(module)
+        mw_spec, err = mw.get_spec(configure_automated_patching=True)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting spec for automated patching for db server vm",
+                **result,
+            )
+        spec["maintenanceTasks"] = mw_spec
+
     if err:
         result["error"] = err
         module.fail_json(

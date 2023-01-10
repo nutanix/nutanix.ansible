@@ -4,6 +4,7 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+from copy import deepcopy
 import time
 
 
@@ -13,15 +14,23 @@ from ..module_utils.ndb.db_server_vm import DBServerVM
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.utils import (
     remove_param_with_none_value,
-    strip_extra_attrs,
 )  # noqa: E402
 from ..module_utils.ndb.tags import Tag
 from ..module_utils.ndb.operations import Operation
+from ..module_utils.ndb.maintenance_window import (
+    MaintenanceWindow,
+    AutomatedPatchingSpec,
+)
 
 
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+
+    automated_patching = deepcopy(
+        AutomatedPatchingSpec.automated_patching_argument_spec
+    )
+
     software_profile = dict(
         name=dict(type="str"), uuid=dict(type="str"), version_id=dict(type="str")
     )
@@ -78,6 +87,9 @@ def get_module_spec():
         update_credentials=dict(
             type="list", elements="dict", options=credential, required=False
         ),
+        automated_patching=dict(
+            type="dict", options=automated_patching, required=False
+        ),
         delete_from_cluster=dict(type="bool", default=False, required=False),
         delete_vgs=dict(type="bool", default=False, required=False),
         delete_vm_snapshots=dict(type="bool", default=False, required=False),
@@ -85,7 +97,7 @@ def get_module_spec():
     return module_args
 
 
-def create_db_server(module, result):
+def get_provision_spec(module, result):
     db_servers = DBServerVM(module)
 
     default_spec = db_servers.get_default_spec_for_provision()
@@ -96,15 +108,35 @@ def create_db_server(module, result):
         module.fail_json("Failed getting DB server vm create spec", **result)
 
     # populate tags related spec
-    tags = Tag(module)
-    spec, err = tags.get_spec(spec, type="DATABASE_SERVER")
-    if err:
-        result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for tags for new db server vm",
-            **result,
-        )
+    if module.params.get("tags"):
+        tags = Tag(module)
+        spec, err = tags.get_spec(spec, type="DATABASE_SERVER")
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting spec for tags for new db server vm",
+                **result,
+            )
 
+    # configure automated patching
+    if module.params.get("automated_patching"):
+        mw = MaintenanceWindow(module)
+        mw_spec, err = mw.get_spec(configure_automated_patching=True)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting spec for automated patching for new db server vm",
+                **result,
+            )
+        spec["maintenanceTasks"] = mw_spec
+
+    return spec
+
+
+def create_db_server(module, result):
+    db_servers = DBServerVM(module)
+
+    spec = get_provision_spec(module, result)
     if module.check_mode:
         result["response"] = spec
         return

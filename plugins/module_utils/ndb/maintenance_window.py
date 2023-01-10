@@ -34,10 +34,49 @@ class MaintenanceWindow(NutanixDatabase):
             data, uuid, endpoint, query, raise_error, no_response, timeout, method
         )
 
+    def get_uuid(
+        self,
+        value,
+        key="name",
+        data=None,
+        entity_type=None,
+        raise_error=True,
+        no_response=False,
+    ):
+        resp = self.read()
+        for entity in resp:
+            if entity.get(key) == value:
+                return entity.get("id"), None
+
+        return None, "Maintenance window with name {0} not found.".format(value)
+
+    def get_maintenance_window_uuid(self, config):
+        if "name" in config:
+            name = config["name"]
+            uuid, err = self.get_uuid(value=name)
+            if err:
+                return None, err
+        elif "uuid" in config:
+            uuid = config["uuid"]
+        else:
+            error = "Config {0} doesn't have name or uuid key".format(config)
+            return None, error
+
+        return uuid, None
+
+    def get_spec(self, old_spec=None, params=None, **kwargs):
+        if kwargs.get("configure_automated_patching"):
+            return self.get_spec_for_automated_patching(
+                old_spec=old_spec, params=params, **kwargs
+            )
+
+        else:
+            return super().get_spec(old_spec=old_spec, params=params, **kwargs)
+
     def _get_default_spec(self):
         return deepcopy({"name": "", "description": "", "timezone": "", "schedule": {}})
 
-    def get_update_spec(self, override_spec=None):
+    def get_default_update_spec(self, override_spec=None):
         spec = {
             "name": "",
             "description": "",
@@ -53,6 +92,22 @@ class MaintenanceWindow(NutanixDatabase):
                     spec[key] = override_spec[key]
 
         return spec
+
+    def get_default_automated_patching_spec(self):
+        return deepcopy({"maintenanceWindowId": "", "tasks": []})
+
+    def get_spec_for_automated_patching(self, old_spec=None, params=None, **kwargs):
+        config = params or self.module.params.get("automated_patching", {})
+
+        payload = old_spec
+        if not payload:
+            payload = self.get_default_automated_patching_spec()
+
+        self.build_spec_methods = {
+            "maintenance_window": self._build_spec_maintenance_window,
+            "tasks": self._build_spec_tasks,
+        }
+        return super().get_spec(old_spec=payload, params=config, **kwargs)
 
     def _build_spec_name(self, payload, name):
 
@@ -86,3 +141,62 @@ class MaintenanceWindow(NutanixDatabase):
 
         payload["timezone"] = schedule.get("timezone")
         return payload, None
+
+    # builders for configuring automated patching
+    def _build_spec_maintenance_window(self, payload, mw):
+        uuid, err = self.get_maintenance_window_uuid(config=mw)
+        if err:
+            return None, err
+        payload["maintenanceWindowId"] = uuid
+        return payload, err
+
+    def _build_spec_tasks(self, payload, tasks):
+        specs = payload.get("tasks", [])
+        for task in tasks:
+            spec = {}
+
+            if task.get("type"):
+                spec["taskType"] = task.get("type")
+            else:
+                return (
+                    None,
+                    "'type' is required for setting task type in automated patching",
+                )
+
+            # set pre post commands
+            spec["payload"] = {"prePostCommand": {}}
+            if task.get("pre_task_cmd"):
+                spec["payload"]["prePostCommand"]["preCommand"] = task.get(
+                    "pre_task_cmd"
+                )
+            if task.get("post_task_cmd"):
+                spec["payload"]["prePostCommand"]["postCommand"] = task.get(
+                    "post_task_cmd"
+                )
+
+            specs.append(spec)
+
+        payload["tasks"] = specs
+        return payload, None
+
+
+class AutomatedPatchingSpec:
+    mutually_exclusive = [("name", "uuid")]
+
+    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+
+    task = dict(
+        type=dict(type="str", choices=["OS_PATCHING", "DB_PATCHING"], required=False),
+        pre_task_cmd=dict(type="str", required=False),
+        post_task_cmd=dict(type="str", required=False),
+    )
+
+    automated_patching_argument_spec = dict(
+        maintenance_window=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutuallu_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        tasks=dict(type="list", elements="dict", options=task, require=False),
+    )

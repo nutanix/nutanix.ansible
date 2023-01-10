@@ -9,7 +9,6 @@ from copy import deepcopy
 
 from .database_engine import DatabaseEngine
 from ...constants import NDB
-from ..db_server_vm import DBServerVM
 
 
 class Postgres(DatabaseEngine):

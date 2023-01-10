@@ -638,6 +638,10 @@ from ..module_utils.ndb.tags import Tag
 from ..module_utils.ndb.time_machines import TimeMachine
 from ..module_utils.ndb.database_instances import DatabaseInstance
 from ..module_utils.ndb.db_server_cluster import DBServerCluster
+from ..module_utils.ndb.maintenance_window import (
+    MaintenanceWindow,
+    AutomatedPatchingSpec,
+)
 
 
 def get_module_spec():
@@ -648,6 +652,9 @@ def get_module_spec():
     )
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
+    automated_patching = deepcopy(
+        AutomatedPatchingSpec.automated_patching_argument_spec
+    )
     software_profile = dict(
         name=dict(type="str"), uuid=dict(type="str"), version_id=dict(type="str")
     )
@@ -856,6 +863,9 @@ def get_module_spec():
         postgres=dict(type="dict", options=postgres, required=False),
         tags=dict(type="dict", required=False),
         auto_tune_staging_drive=dict(type="bool", required=False),
+        automated_patching=dict(
+            type="dict", options=automated_patching, required=False
+        ),
         soft_delete=dict(type="bool", required=False),
         delete_time_machine=dict(type="bool", required=False),
     )
@@ -879,7 +889,7 @@ def get_provision_spec(module, result, ha=False):
         if err:
             result["error"] = err
             module.fail_json(
-                msg="Failed getting db server vm cluster spec for new database instance creation",
+                msg="Failed getting db server vm cluster spec for database instance",
                 **result,
             )
     else:
@@ -889,7 +899,7 @@ def get_provision_spec(module, result, ha=False):
         if err:
             result["error"] = err
             module.fail_json(
-                msg="Failed getting vm spec for new database instance creation",
+                msg="Failed getting vm spec for database instance",
                 **result,
             )
 
@@ -898,7 +908,7 @@ def get_provision_spec(module, result, ha=False):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting database engine related spec for new database instance creation",
+            msg="Failed getting database engine related spec for database instance",
             **result,
         )
 
@@ -906,9 +916,7 @@ def get_provision_spec(module, result, ha=False):
     spec, err = db_instance.get_spec(old_spec=spec, provision=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for new database instance creation", **result
-        )
+        module.fail_json(msg="Failed getting spec for database instance", **result)
 
     # populate time machine related spec
     time_machine = TimeMachine(module)
@@ -916,7 +924,7 @@ def get_provision_spec(module, result, ha=False):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for time machine for new database instance creation",
+            msg="Failed getting spec for time machine for database instance",
             **result,
         )
 
@@ -926,9 +934,22 @@ def get_provision_spec(module, result, ha=False):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for tags for new database instance creation",
+            msg="Failed getting spec for tags for database instance",
             **result,
         )
+
+    # configure automated patching only during create
+    if module.params.get("automated_patching") and not module.params.get("uuid"):
+
+        mw = MaintenanceWindow(module)
+        mw_spec, err = mw.get_spec(configure_automated_patching=True)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting spec for automated patching for new database  instance creation",
+                **result,
+            )
+        spec["maintenanceTasks"] = mw_spec
 
     return spec
 

@@ -83,7 +83,9 @@ def update_window(module, result):
         module.fail_json(msg="uuid is required field for update", **result)
 
     maintenance_window = _maintenance_window.read(uuid=uuid)
-    default_spec = _maintenance_window.get_update_spec(override_spec=maintenance_window)
+    default_spec = _maintenance_window.get_default_update_spec(
+        override_spec=maintenance_window
+    )
     spec, err = _maintenance_window.get_spec(old_spec=default_spec)
     if err:
         result["error"] = err
