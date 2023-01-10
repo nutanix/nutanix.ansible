@@ -256,7 +256,7 @@ class Cluster(Entity):
             if cluster["entityCounts"].get("dbServers") != 0:
                 return False
             elif cluster["entityCounts"].get("engineCounts"):
-                for engine in cluster["entityCounts"]["engineCounts"]:
+                for engine in cluster["entityCounts"]["engineCounts"].values():
                     if engine["timeMachines"] != 0:
                         return False
         return True
