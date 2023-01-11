@@ -66,6 +66,16 @@ class DBServerVM(NutanixDatabase):
 
         uuid = resp[0].get("id")
         return uuid, None
+    
+    def get_all_db_servers_name_uuid_map(self):
+        resp = self.read()
+        name_uuid_map = {}
+        for vm in resp:
+            if vm.get("name") and vm.get("id"):
+                name_uuid_map[vm.get("name")] = vm.get("id")
+        
+        return name_uuid_map
+
 
     def get_db_server(self, name=None, uuid=None, ip=None):
         resp = None

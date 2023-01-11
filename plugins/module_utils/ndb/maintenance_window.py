@@ -7,7 +7,8 @@ __metaclass__ = type
 
 
 from .nutanix_database import NutanixDatabase
-
+from .db_server_vm import DBServerVM
+from .db_server_cluster import DBServerCluster
 
 class MaintenanceWindow(NutanixDatabase):
     def __init__(self, module):
@@ -33,6 +34,11 @@ class MaintenanceWindow(NutanixDatabase):
         return super().update(
             data, uuid, endpoint, query, raise_error, no_response, timeout, method
         )
+
+    def update_tasks(self, data):
+        endpoint = "tasks"
+        return super().create(data=data, endpoint=endpoint)
+        
 
     def get_uuid(
         self,
@@ -106,6 +112,8 @@ class MaintenanceWindow(NutanixDatabase):
         self.build_spec_methods = {
             "maintenance_window": self._build_spec_maintenance_window,
             "tasks": self._build_spec_tasks,
+            "db_server_vms": self._build_spec_db_server_vms,
+            "db_server_clusters": self._build_spec_db_server_clusters
         }
         return super().get_spec(old_spec=payload, params=config, **kwargs)
 
@@ -177,6 +185,60 @@ class MaintenanceWindow(NutanixDatabase):
             specs.append(spec)
 
         payload["tasks"] = specs
+        return payload, None
+    
+    def _build_spec_db_server_vms(self, payload, vms):
+        db_server_vms = DBServerVM(self.module)
+        vms_name_uuid_map = db_server_vms.get_all_db_servers_name_uuid_map()
+
+        uuids = []
+        for vm in vms:
+
+            if vm.get("name"):
+                if vms_name_uuid_map.get(vm["name"]):
+                    uuid = vms_name_uuid_map[vm["name"]]
+                else:
+                    return None, "DB server vm with name '{0}' not found".format(
+                        vm["name"]
+                    )
+
+            elif vm.get("uuid"):
+                uuid = vm["uuid"]
+            else:
+                return None, "uuid or name is required for setting db server vm"
+            
+            uuids.append(uuid)
+        
+        if not payload.get("entities"):
+            payload["entities"] = {}
+        payload["entities"]["ERA_DBSERVER"] = uuids
+        return payload, None
+    
+    def _build_spec_db_server_clusters(self, payload, clusters):
+        db_server_clusters = DBServerCluster(self.module)
+        cluster_name_uuid_map = db_server_clusters.get_all_clusters_name_uuid_map()
+
+        uuids = []
+        for cluster in clusters:
+
+            if cluster.get("name"):
+                if cluster_name_uuid_map.get(cluster["name"]):
+                    uuid = cluster_name_uuid_map[cluster["name"]]
+                else:
+                    return None, "DB server cluster with name '{0}' not found".format(
+                        cluster["name"]
+                    )
+
+            elif cluster.get("uuid"):
+                uuid = cluster["uuid"]
+            else:
+                return None, "uuid or name is required for setting db server cluster uuid"
+            
+            uuids.append(uuid)
+        
+        if not payload.get("entities"):
+            payload["entities"] = {}
+        payload["entities"]["ERA_DBSERVER_CLUSTER"] = uuids
         return payload, None
 
 
