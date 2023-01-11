@@ -6,13 +6,20 @@ from copy import deepcopy
 __metaclass__ = type
 
 
+from .clusters import get_cluster_uuid
 from .nutanix_database import NutanixDatabase
+from .slas import get_sla_uuid
 
 
 class TimeMachine(NutanixDatabase):
     def __init__(self, module):
         resource_type = "/tms"
         super(TimeMachine, self).__init__(module, resource_type=resource_type)
+        self.build_spec_methods = {
+            "cluster": self._build_spec_cluster,
+            "type": self._build_spec_type,
+            "sla": self._build_spec_sla,
+        }
 
     def log_catchup(self, time_machine_uuid, data):
         endpoint = "{0}/{1}".format(time_machine_uuid, "log-catchups")
@@ -81,3 +88,61 @@ class TimeMachine(NutanixDatabase):
                 ],
             }
         )
+
+    def get_default_data_access_spec(self, override_spec=None):
+        spec = deepcopy(
+            {
+                "nxClusterId": "",
+                "type": "OTHER",
+                "slaId": ""
+            }
+        )
+        if override_spec:
+            for key in spec.keys():
+                if override_spec.get(key):
+                    spec[key] = deepcopy(override_spec[key])
+
+        return spec
+
+    def get_data_access_spec(self, old_spec=None):
+        spec = old_spec or self.get_default_data_access_spec()
+        return super().get_spec(old_spec=spec)
+
+    def _build_spec_cluster(self, payload, param):
+        uuid, err = get_cluster_uuid(self.module, param)
+        if err:
+            return None, err
+        payload["nxClusterId"] = uuid
+        return payload, None
+
+    def _build_spec_type(self, payload, type):
+        payload["type"] = type
+        return payload, None
+
+    def _build_spec_sla(self, payload, param):
+        uuid, err = get_sla_uuid(self.module, param)
+        if err:
+            return None, err
+        if payload.get("slaId"):
+            payload["resetSlaId"] = True
+        payload["slaId"] = uuid
+        return payload, None
+
+    def read_data_access_instance(self, tm_uuid=None, cluster_uuid=None, raise_error=False):
+        endpoint = "clusters/{0}".format(cluster_uuid)
+        return super().read(uuid=tm_uuid, endpoint=endpoint, raise_error=raise_error)
+
+    def create_data_access_instance(self, uuid=None, data=None):
+        return super().update(uuid=uuid, data=data, endpoint="clusters", method="POST")
+
+    def update_data_access_instance(self, tm_uuid=None, cluster_uuid=None, data=None):
+        endpoint = "clusters/{0}".format(cluster_uuid)
+        return super().update(uuid=tm_uuid, data=data, endpoint=endpoint, method="PATCH")
+
+    def delete_data_access_instance(self, tm_uuid=None, cluster_uuid=None):
+        endpoint = "clusters/{0}".format(cluster_uuid)
+        data = {
+            "deleteReplicatedSnapshots": True,
+            "deleteReplicatedProtectionDomains": True
+        }
+        return super().delete(uuid=tm_uuid, data=data, endpoint=endpoint)
