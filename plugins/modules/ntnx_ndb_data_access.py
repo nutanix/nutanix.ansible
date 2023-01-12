@@ -58,7 +58,7 @@ def get_module_spec():
             # required_one_of=required_one_of_list,
             mutually_exclusive=mutually_exclusive,
         ),
-        type=dict(type="str", required=False, default="OTHER"),
+        type=dict(type="str", required=False, default="OTHER", choices=["OTHER", "PRIMARY"]),
         sla=dict(
             type="dict",
             options=entity_by_spec,
