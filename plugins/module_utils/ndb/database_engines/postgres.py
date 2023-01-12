@@ -157,7 +157,7 @@ class PostgresSingleInstance(Postgres):
         )
 
         action_arguments.append(
-            {"name": "listner_port", "value": config("listner_port", "")}
+            {"name": "listener_port", "value": config.get("listener_port", "")}
         )
 
         payload["actionArguments"] = action_arguments

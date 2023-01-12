@@ -215,7 +215,7 @@ class DBServerVM(NutanixDatabase):
 
     def get_db_engine_spec(self, payload, params=None, **kwargs):
 
-        db_engine, err = create_db_engine(self.module)
+        db_engine, err = create_db_engine(self.module, db_architecture="single")
         if err:
             return None, err
 
@@ -229,6 +229,7 @@ class DBServerVM(NutanixDatabase):
             )
             if err:
                 return None, err
+            payload["databaseType"] = db_type + "_database"
 
         elif kwargs.get("provision"):
             # add db engine specific spec for provisioning vm
@@ -333,21 +334,14 @@ class DBServerVM(NutanixDatabase):
             "cluster": self.build_spec_cluster,
             "desc": self._build_spec_description,
             "working_directory": self._build_spec_register_working_dir,
-            "database_type": self._build_spec_database_type,
         }
 
-        config = self.module.params.get("db_vm", {}).get("unregistered", {})
-        if not config:
-            return (
-                None,
-                "'db_vm.unregistered' is required for creating spec for registering db server vm",
-            )
-        payload, err = super().get_spec(old_spec=payload, params=config)
+        payload, err = super().get_spec(old_spec=payload)
         if err:
             return None, err
 
         # field name changes as per api requirements
-        payload["nxClusterUuid"] = payload.get("nxClusterId")
+        payload["nxClusterUuid"] = payload.pop("nxClusterId")
 
         return payload, err
 

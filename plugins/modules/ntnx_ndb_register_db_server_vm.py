@@ -58,6 +58,12 @@ def get_register_spec(module, result):
     db_server_vms = DBServerVM(module)
     default_spec = db_server_vms.get_default_spec_for_registration()
     spec, err = db_server_vms.get_spec(old_spec=default_spec, register=True)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting spec for db server vm registration",
+            **result,
+        )
 
     # configure automated patching
     if module.params.get("automated_patching"):
@@ -79,7 +85,7 @@ def get_register_spec(module, result):
         )
 
     # populate database engine related spec
-    spec, err = db_server_vms.get_db_engine_spec(spec)
+    spec, err = db_server_vms.get_db_engine_spec(spec, register=True)
     if err:
         result["error"] = err
         module.fail_json(
@@ -93,13 +99,7 @@ def get_register_spec(module, result):
 def register_db_server(module, result):
     db_server_vms = DBServerVM(module)
 
-    spec, err = get_register_spec(module, result)
-    if err:
-        result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for db server vm registration",
-            **result,
-        )
+    spec = get_register_spec(module, result)
 
     if module.check_mode:
         result["response"] = spec

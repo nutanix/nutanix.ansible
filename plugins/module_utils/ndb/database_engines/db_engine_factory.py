@@ -22,14 +22,18 @@ def get_engine_type(module):
     return None, "Input doesn't conatains config for allowed engine types of databases"
 
 
-def create_db_engine(module):
+def create_db_engine(module, db_architecture=None):
     engines = {"postgres": {"single": PostgresSingleInstance, "ha": PostgresHAInstance}}
 
     engine_type, err = get_engine_type(module)
     if err:
         return None, err
 
-    db_architecture = module.params[engine_type].get("type")
+    if not db_architecture:       
+        db_architecture = module.params[engine_type].get("type")
+
+    if not db_architecture:
+        return None, "db architecture is required for creating db engine object"
 
     if engine_type in engines:
         if (
