@@ -33,20 +33,26 @@ class Tag(NutanixDatabase):
         return super().read(uuid=None, query=query, endpoint=endpoint, raise_error=raise_error, no_response=no_response, timeout=timeout)
 
 
-    def get_tag_uuid(self, name, entity_type=None):
+    def get_tag_uuid(self, name, entity_type):
         # use name + entity_type combination to get tag details
-        query = {
-            "name": name
-        }
+        query = {}
         if entity_type:
             query["entityType"] = entity_type
 
         resp = self.read(query=query)
 
-        if not resp:
-            return None, "Failed fetching tag uuid for given name and entity type"
+        uuid = None
+        if isinstance(resp, list):
+            for tag in resp:
+                if tag.get("name") == name and tag.get("status") == "ENABLED":
+                    uuid =  tag.get("id")
 
-        uuid = resp.get("id")
+        else:
+            return None, "Invalid API response"
+
+        if not uuid:
+            return None, "Tag with name {0} not found".format(name)
+
         return uuid, None
 
     def get_all_name_uuid_map(self):

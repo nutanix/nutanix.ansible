@@ -48,7 +48,7 @@ def create_tags(module, result):
     result["response"] = resp
 
     # get uuid
-    uuid, err = tags.get_tag_uuid(resp["name"], resp["entityType"])
+    uuid, err = tags.get_tag_uuid(name = resp["name"], entity_type = resp["entityType"])
     if err:
         result["error"] = err
         return module.fail_json(msg="Failed fetching tag uuid post creation", **result)
