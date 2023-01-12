@@ -699,3 +699,29 @@ class DBServerVM(NutanixDatabase):
     def _build_spec_delete_vm_snapshots(self, payload, delete_vm_snapshots):
         payload["deleteVmSnapshots"] = delete_vm_snapshots
         return payload, None
+
+    def resolve_uuids_from_entity_specs(self, vms):
+        """
+        This helper creates list of uuids from list of db server vms config (containing either name or uuid)
+        """
+        vms_name_uuid_map = self.get_all_db_servers_name_uuid_map()
+
+        uuids = []
+        for vm in vms:
+
+            if vm.get("name"):
+                if vms_name_uuid_map.get(vm["name"]):
+                    uuid = vms_name_uuid_map[vm["name"]]
+                else:
+                    return None, "DB server vm with name '{0}' not found".format(
+                        vm["name"]
+                    )
+
+            elif vm.get("uuid"):
+                uuid = vm["uuid"]
+            else:
+                return None, "uuid or name is required for setting db server vm"
+            
+            uuids.append(uuid)
+        
+        return uuids, None

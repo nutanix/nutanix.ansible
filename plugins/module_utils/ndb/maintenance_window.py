@@ -189,26 +189,10 @@ class MaintenanceWindow(NutanixDatabase):
     
     def _build_spec_db_server_vms(self, payload, vms):
         db_server_vms = DBServerVM(self.module)
-        vms_name_uuid_map = db_server_vms.get_all_db_servers_name_uuid_map()
+        uuids, err = db_server_vms.resolve_uuids_from_entity_specs(vms=vms)
+        if err:
+            return None, err
 
-        uuids = []
-        for vm in vms:
-
-            if vm.get("name"):
-                if vms_name_uuid_map.get(vm["name"]):
-                    uuid = vms_name_uuid_map[vm["name"]]
-                else:
-                    return None, "DB server vm with name '{0}' not found".format(
-                        vm["name"]
-                    )
-
-            elif vm.get("uuid"):
-                uuid = vm["uuid"]
-            else:
-                return None, "uuid or name is required for setting db server vm"
-            
-            uuids.append(uuid)
-        
         if not payload.get("entities"):
             payload["entities"] = {}
         payload["entities"]["ERA_DBSERVER"] = uuids

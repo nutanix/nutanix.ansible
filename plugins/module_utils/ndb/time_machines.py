@@ -7,7 +7,6 @@ from .clusters import Cluster
 from .slas import get_sla_uuid
 from .nutanix_database import NutanixDatabase
 
-
 __metaclass__ = type
 
 
@@ -21,6 +20,14 @@ class TimeMachine(NutanixDatabase):
             "schedule": self._build_spec_schedule,
             "auto_tune_log_drive": self._build_spec_auto_tune_log_drive,
         }
+
+    def authorize_db_server_vms(self, uuid, data):
+        endpoint = "dbservers"
+        return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
+
+    def get_authorize_db_server_vms(self, uuid):
+        endpoint = "candidate-dbservers"
+        return self.read(uuid=uuid, endpoint=endpoint)
 
     def get_time_machines(self, value=None, key="uuid", endpoint=None, query=None):
 
@@ -46,6 +53,17 @@ class TimeMachine(NutanixDatabase):
             )
             return error, None
         return uuid, None
+
+    
+    def _get_default_spec(self):
+        return deepcopy(
+            {
+                "name": "",
+                "description": "",
+                "schedule": {},
+                "autoTuneLogDrive": True,
+            }
+        )
 
     def get_spec(self, old_spec, params=None, **kwargs):
 
@@ -96,15 +114,15 @@ class TimeMachine(NutanixDatabase):
         old_spec["timeMachineInfo"] = time_machine_spec
         return old_spec, None
 
-    def _get_default_spec(self):
-        return deepcopy(
-            {
-                "name": "",
-                "description": "",
-                "schedule": {},
-                "autoTuneLogDrive": True,
-            }
-        )
+    def get_authorize_db_server_vms_spec(self):
+        # avoiding circuler imports
+        from .db_server_vm import DBServerVM
+        _db_server_vms = DBServerVM(self.module)
+        db_server_vms = self.module.params.get("db_server_vms")
+
+        uuids, err = _db_server_vms.resolve_uuids_from_entity_specs(vms=db_server_vms)
+        payload = uuids
+        return payload, err
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name
