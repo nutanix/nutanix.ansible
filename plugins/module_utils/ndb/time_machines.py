@@ -25,9 +25,9 @@ class TimeMachine(NutanixDatabase):
         endpoint = "dbservers"
         return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
 
-    def get_authorize_db_server_vms(self, uuid):
+    def get_authorized_db_server_vms(self, uuid, query=None):
         endpoint = "candidate-dbservers"
-        return self.read(uuid=uuid, endpoint=endpoint)
+        return self.read(uuid=uuid, endpoint=endpoint, query=query)
 
     def get_time_machines(self, value=None, key="uuid", endpoint=None, query=None):
 
@@ -52,6 +52,28 @@ class TimeMachine(NutanixDatabase):
                 config
             )
             return error, None
+        return uuid, None
+
+    def get_authorized_db_server_vm_uuid(self, time_machine_uuid, config):
+        uuid = ""
+        if config.get("name"):
+            resp = self.get_authorized_db_server_vms(uuid=time_machine_uuid, query={"usable": True})
+            for vm in resp:
+                if vm.get("name") == config.get("name"):
+                    uuid = vm.get("id")
+            
+            if not uuid:
+                return None, "Authorized db server vm with name {0} not found".format(config.get("name"))
+
+        elif config.get("uuid"):
+            uuid = config["uuid"]
+
+        else:
+            error = "Authorized db server vm config {0} doesn't have name or uuid key".format(
+                config
+            )
+            return error, None
+
         return uuid, None
 
     

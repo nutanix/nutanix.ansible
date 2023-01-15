@@ -167,8 +167,8 @@ class DatabaseInstance(NutanixDatabase):
 
     def get_update_spec(self, payload):
         self.build_spec_methods = {
-            "name": self._build_spec_name,
-            "desc": self._build_spec_desc_update,
+            "name": self.build_spec_name,
+            "desc": self.build_spec_desc,
         }
         return super().get_spec(old_spec=payload)
 
@@ -203,9 +203,9 @@ class DatabaseInstance(NutanixDatabase):
     def get_spec_for_provision(self, payload):
         self.build_spec_methods.update(
             {
-                "name": self._build_spec_provision_name,
-                "db_params_profile": self._build_spec_db_params_profile,
-                "desc": self._build_spec_desc,
+                "name": self.build_spec_name,
+                "db_params_profile": self.build_spec_db_params_profile,
+                "desc": self._build_spec_database_desc,
             }
         )
         return super().get_spec(old_spec=payload)
@@ -215,21 +215,21 @@ class DatabaseInstance(NutanixDatabase):
             {
                 "working_dir": self._build_spec_register_working_dir,
                 "name": self._build_spec_register_name,
-                "desc": self._build_spec_register_desc,
+                "desc": self.build_spec_desc,
             }
         )
         return super().get_spec(old_spec=payload)
 
-    def _build_spec_desc_update(self, payload, desc):
+    def build_spec_desc(self, payload, desc):
         payload["description"] = desc
         return payload, None
 
     # provision specific builder methods
-    def _build_spec_provision_name(self, payload, name):
+    def build_spec_name(self, payload, name):
         payload["name"] = name
         return payload, None
 
-    def _build_spec_db_params_profile(self, payload, db_params_profile):
+    def build_spec_db_params_profile(self, payload, db_params_profile):
         uuid, err = get_profile_uuid(
             self.module, "Database_Parameter", db_params_profile
         )
@@ -239,7 +239,7 @@ class DatabaseInstance(NutanixDatabase):
         payload["dbParameterProfileId"] = uuid
         return payload, None
 
-    def _build_spec_desc(self, payload, desc):
+    def _build_spec_database_desc(self, payload, desc):
         payload["databaseDescription"] = desc
         return payload, None
 
@@ -250,10 +250,6 @@ class DatabaseInstance(NutanixDatabase):
 
     def _build_spec_register_working_dir(self, payload, working_dir):
         payload["workingDirectory"] = working_dir
-        return payload, None
-
-    def _build_spec_register_desc(self, payload, desc):
-        payload["description"] = desc
         return payload, None
 
     # common builder methods

@@ -162,7 +162,23 @@ class PostgresSingleInstance(Postgres):
 
         payload["actionArguments"] = action_arguments
         return payload, None
+    
+    def build_spec_db_clone_action_arguments(self, payload, config):
+        action_arguments = payload.get("actionArguments", [])
+        # fields to their defaults maps
+        args = {
+            "db_password": "",
+            "pre_clone_cmd": "",
+            "post_clone_cmd": "",
+        }
 
+        # create action arguments
+        for key, value in args.items():
+            spec = {"name": key, "value": config.get(key, value)}
+            action_arguments.append(spec)
+
+        payload["actionArguments"] = action_arguments
+        return payload, None
 
 class PostgresHAInstance(Postgres):
     def __init__(self, module):
