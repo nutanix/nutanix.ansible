@@ -14,7 +14,7 @@ short_description: Module for create, update and delete of single instance time_
 version_added: 1.8.0-beta.1
 description: Module for create, update and delete of single instance time_machine_clusters in Nutanix time_machine_clusters Service
 options:
- 
+
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
@@ -30,7 +30,7 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-  description: 
+  description:
   returned: always
   type: dict
   sample: {}
@@ -42,7 +42,7 @@ tm_uuid:
 """
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.time_machines import TimeMachine, get_cluster_uuid
+from ..module_utils.ndb.time_machines import TimeMachine, get_cluster_uuid  # noqa: E402
 
 
 def get_module_spec():
@@ -58,7 +58,9 @@ def get_module_spec():
             # required_one_of=required_one_of_list,
             mutually_exclusive=mutually_exclusive,
         ),
-        type=dict(type="str", required=False, default="OTHER", choices=["OTHER", "PRIMARY"]),
+        type=dict(
+            type="str", required=False, default="OTHER", choices=["OTHER", "PRIMARY"]
+        ),
         sla=dict(
             type="dict",
             options=entity_by_spec,
@@ -135,7 +137,9 @@ def update_data_access_instance(module, result):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-    resp = tm.update_data_access_instance(data=spec, tm_uuid=tm_uuid, cluster_uuid=cluster_uuid)
+    resp = tm.update_data_access_instance(
+        data=spec, tm_uuid=tm_uuid, cluster_uuid=cluster_uuid
+    )
     result["response"] = resp
     result["tm_uuid"] = tm_uuid
     result["cluster_uuid"] = cluster_uuid

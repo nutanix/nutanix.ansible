@@ -1,6 +1,7 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 from copy import deepcopy
 
 __metaclass__ = type
@@ -90,13 +91,7 @@ class TimeMachine(NutanixDatabase):
         )
 
     def get_default_data_access_spec(self, override_spec=None):
-        spec = deepcopy(
-            {
-                "nxClusterId": "",
-                "type": "OTHER",
-                "slaId": ""
-            }
-        )
+        spec = deepcopy({"nxClusterId": "", "type": "OTHER", "slaId": ""})
         if override_spec:
             for key in spec.keys():
                 if override_spec.get(key):
@@ -128,7 +123,9 @@ class TimeMachine(NutanixDatabase):
         payload["slaId"] = uuid
         return payload, None
 
-    def read_data_access_instance(self, tm_uuid=None, cluster_uuid=None, raise_error=False):
+    def read_data_access_instance(
+        self, tm_uuid=None, cluster_uuid=None, raise_error=False
+    ):
         endpoint = "clusters/{0}".format(cluster_uuid)
         return super().read(uuid=tm_uuid, endpoint=endpoint, raise_error=raise_error)
 
@@ -137,12 +134,14 @@ class TimeMachine(NutanixDatabase):
 
     def update_data_access_instance(self, tm_uuid=None, cluster_uuid=None, data=None):
         endpoint = "clusters/{0}".format(cluster_uuid)
-        return super().update(uuid=tm_uuid, data=data, endpoint=endpoint, method="PATCH")
+        return super().update(
+            uuid=tm_uuid, data=data, endpoint=endpoint, method="PATCH"
+        )
 
     def delete_data_access_instance(self, tm_uuid=None, cluster_uuid=None):
         endpoint = "clusters/{0}".format(cluster_uuid)
         data = {
             "deleteReplicatedSnapshots": True,
-            "deleteReplicatedProtectionDomains": True
+            "deleteReplicatedProtectionDomains": True,
         }
         return super().delete(uuid=tm_uuid, data=data, endpoint=endpoint)
