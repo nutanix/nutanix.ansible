@@ -2,24 +2,24 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
+
 __metaclass__ = type
 
 from copy import deepcopy
 from .database_engines.db_engine_factory import create_db_engine
 from .time_machines import TimeMachine
-from .nutanix_database import NutanixDatabase
+from .database_instances import DatabaseInstance
 from .profiles import get_profile_uuid
 
 
-class DatabaseClones(NutanixDatabase):
-    resource_type = "/clones"
-
+class DatabaseClone(DatabaseInstance):
+    resource_type="/clones"
     def __init__(self, module):
 
-        super(DatabaseClones, self).__init__(module, self.resource_type)
+        super(DatabaseClone, self).__init__(module, self.resource_type)
         self.build_spec_methods = {
-            "name": self._build_spec_name,
-            "desc": self._build_spec_desc,
+            "name": self.build_spec_name,
+            "desc": self.build_spec_desc,
             "db_params_profile": self._build_spec_db_params_profile,
             "time_machine": self._build_spec_time_machine,
             "removal_schedule": self._build_spec_removal_schedule,
@@ -69,14 +69,6 @@ class DatabaseClones(NutanixDatabase):
             return None, err
 
         return payload, err
-    
-    def _build_spec_desc(self, payload, desc):
-        payload["description"] = desc
-        return payload, None
-
-    def _build_spec_name(self, payload, name):
-        payload["name"] = name
-        return payload, None
 
     def _build_spec_db_params_profile(self, payload, db_params_profile):
         uuid, err = get_profile_uuid(

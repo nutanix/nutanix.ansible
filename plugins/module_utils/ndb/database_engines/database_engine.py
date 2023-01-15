@@ -39,5 +39,11 @@ class DatabaseEngine:
         """
         return payload, None
 
+    def build_spec_db_clone_action_arguments(self, payload, config):
+        """
+        Implement this method to add database engine specific properties for database clone provisioning
+        """
+        return payload, None
+    
     def get_type(self):
         return self._type
