@@ -27,7 +27,7 @@ options:
         type: str
         description: write
     cluster_ip:
-        type: Cluster ip
+        type: str
         description: write
     cluster_credentials:
         type: dict
@@ -119,8 +119,8 @@ options:
         type: str
         description: write
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
+      - nutanix.ncp.ntnx_ndb_base_module
 author:
     - Prem Karat (@premkarat)
     - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
