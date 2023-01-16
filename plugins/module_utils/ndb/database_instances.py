@@ -14,9 +14,7 @@ from .profiles import get_profile_uuid
 class DatabaseInstance(NutanixDatabase):
     resource_type = "/databases"
 
-    def __init__(self, module, resource_type=None):
-        if resource_type:
-            self.resource_type=resource_type
+    def __init__(self, module):
 
         super(DatabaseInstance, self).__init__(module, self.resource_type)
         self.build_spec_methods = {

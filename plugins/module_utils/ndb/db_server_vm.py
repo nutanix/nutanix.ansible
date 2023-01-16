@@ -66,16 +66,15 @@ class DBServerVM(NutanixDatabase):
 
         uuid = resp[0].get("id")
         return uuid, None
-    
+
     def get_all_db_servers_name_uuid_map(self):
         resp = self.read()
         name_uuid_map = {}
         for vm in resp:
             if vm.get("name") and vm.get("id"):
                 name_uuid_map[vm.get("name")] = vm.get("id")
-        
-        return name_uuid_map
 
+        return name_uuid_map
 
     def get_db_server(self, name=None, uuid=None, ip=None):
         resp = None
@@ -110,7 +109,7 @@ class DBServerVM(NutanixDatabase):
             return None, error
 
         return uuid, None
-        
+
     def get_default_spec_for_provision(self):
         return deepcopy(
             {
@@ -172,7 +171,9 @@ class DBServerVM(NutanixDatabase):
         # if db server vm is required for db instance
         if kwargs.get("db_instance_provision"):
             if self.module.params.get("db_vm", {}).get("create_new_server"):
-                payload, err = self.get_spec_provision_for_db_instance(payload=old_spec, **kwargs)
+                payload, err = self.get_spec_provision_for_db_instance(
+                    payload=old_spec, **kwargs
+                )
                 return payload, err
             elif self.module.params.get("db_vm", {}).get("use_registered_server"):
                 (
@@ -203,10 +204,8 @@ class DBServerVM(NutanixDatabase):
                 )
                 return payload, err
             elif self.module.params.get("db_vm", {}).get("use_authorized_server"):
-                payload, err = self.get_spec_authorized_vm(
-                    payload=old_spec, **kwargs
-                )
-                return payload, err 
+                payload, err = self.get_spec_authorized_vm(payload=old_spec, **kwargs)
+                return payload, err
 
         # if only db server vm provision or register is required
         else:
@@ -427,17 +426,24 @@ class DBServerVM(NutanixDatabase):
                 "'db_vm.use_authorized_server' is required for creating spec for authorized db server vm",
             )
 
-        time_machine_uuid = kwargs.get("time_machine_uuid") or payload.get("timeMachineId")
+        time_machine_uuid = kwargs.get("time_machine_uuid") or payload.get(
+            "timeMachineId"
+        )
         if not time_machine_uuid:
-            return None, "Time machine uuid is required for creating authorized db server vm spec"
+            return (
+                None,
+                "Time machine uuid is required for creating authorized db server vm spec",
+            )
 
         # get db server vm uuid associated with given time machine
         time_machine = TimeMachine(self.module)
-        db_server_vm_uuid, err = time_machine.get_authorized_db_server_vm_uuid(time_machine_uuid=time_machine_uuid, config=db_vm_config)
+        db_server_vm_uuid, err = time_machine.get_authorized_db_server_vm_uuid(
+            time_machine_uuid=time_machine_uuid, config=db_vm_config
+        )
         if err:
             return None, err
 
-        db_server_vm = self.read(uuid = db_server_vm_uuid)
+        db_server_vm = self.read(uuid=db_server_vm_uuid)
 
         payload["createDbserver"] = False
         payload["dbserverId"] = db_server_vm_uuid
@@ -447,10 +453,10 @@ class DBServerVM(NutanixDatabase):
                 "vmName": db_server_vm.get("name"),
                 "properties": [],
                 "nxClusterId": db_server_vm.get("nxClusterId"),
-                "dbserverId": db_server_vm_uuid
+                "dbserverId": db_server_vm_uuid,
             }
         ]
-        
+
         return payload, None
 
     def get_spec_update_vm(self, payload, **kwargs):
@@ -768,7 +774,7 @@ class DBServerVM(NutanixDatabase):
                 uuid = vm["uuid"]
             else:
                 return None, "uuid or name is required for setting db server vm"
-            
+
             uuids.append(uuid)
-        
+
         return uuids, None

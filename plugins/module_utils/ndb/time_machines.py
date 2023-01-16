@@ -57,13 +57,17 @@ class TimeMachine(NutanixDatabase):
     def get_authorized_db_server_vm_uuid(self, time_machine_uuid, config):
         uuid = ""
         if config.get("name"):
-            resp = self.get_authorized_db_server_vms(uuid=time_machine_uuid, query={"usable": True})
+            resp = self.get_authorized_db_server_vms(
+                uuid=time_machine_uuid, query={"usable": True}
+            )
             for vm in resp:
                 if vm.get("name") == config.get("name"):
                     uuid = vm.get("id")
-            
+
             if not uuid:
-                return None, "Authorized db server vm with name {0} not found".format(config.get("name"))
+                return None, "Authorized db server vm with name {0} not found".format(
+                    config.get("name")
+                )
 
         elif config.get("uuid"):
             uuid = config["uuid"]
@@ -76,7 +80,6 @@ class TimeMachine(NutanixDatabase):
 
         return uuid, None
 
-    
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -139,6 +142,7 @@ class TimeMachine(NutanixDatabase):
     def get_authorize_db_server_vms_spec(self):
         # avoiding circuler imports
         from .db_server_vm import DBServerVM
+
         _db_server_vms = DBServerVM(self.module)
         db_server_vms = self.module.params.get("db_server_vms")
 

@@ -44,6 +44,6 @@ class DatabaseEngine:
         Implement this method to add database engine specific properties for database clone provisioning
         """
         return payload, None
-    
+
     def get_type(self):
         return self._type

@@ -11,7 +11,10 @@ __metaclass__ = type
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.ndb.maintenance_window import MaintenanceWindow, AutomatedPatchingSpec
+from ..module_utils.ndb.maintenance_window import (
+    MaintenanceWindow,
+    AutomatedPatchingSpec,
+)
 
 
 def get_module_spec():
@@ -22,8 +25,20 @@ def get_module_spec():
         AutomatedPatchingSpec.automated_patching_argument_spec
     )
     module_args = dict(
-        db_server_vms = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=False),
-        db_server_clusters = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=False),
+        db_server_vms=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        db_server_clusters=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
     )
     module_args.update(automated_patching)
 
@@ -50,8 +65,8 @@ def update_maintenance_tasks(module, result):
     uuid = spec.get("maintenanceWindowId")
 
     maintenance_window.update_tasks(data=spec)
-    
-    query={"load-task-associations":True, "load-entities":True}
+
+    query = {"load-task-associations": True, "load-entities": True}
     resp = maintenance_window.read(uuid=uuid, query=query)
     result["response"] = resp
     result["uuid"] = uuid
@@ -64,7 +79,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "present", ("db_server_vms", "db_server_clusters"), True)
-        ]
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "uuid": None}

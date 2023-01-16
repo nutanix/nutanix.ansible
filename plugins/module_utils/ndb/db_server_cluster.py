@@ -19,14 +19,14 @@ class DBServerCluster(NutanixDatabase):
             "desc": self._build_spec_desc,
             "ips": self._build_spec_ips,
         }
-    
+
     def get_all_clusters_name_uuid_map(self):
         resp = self.read()
         name_uuid_map = {}
         for cluster in resp:
             if cluster.get("name") and cluster.get("id"):
                 name_uuid_map[cluster.get("name")] = cluster.get("id")
-        
+
         return name_uuid_map
 
     def get_spec(self, old_spec=None, params=None, **kwargs):

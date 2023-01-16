@@ -29,7 +29,7 @@ def create_db_engine(module, db_architecture=None):
     if err:
         return None, err
 
-    if not db_architecture:       
+    if not db_architecture:
         db_architecture = module.params[engine_type].get("type")
 
     if not db_architecture:

@@ -10,6 +10,7 @@ from .nutanix_database import NutanixDatabase
 from .db_server_vm import DBServerVM
 from .db_server_cluster import DBServerCluster
 
+
 class MaintenanceWindow(NutanixDatabase):
     def __init__(self, module):
         resource_type = "/maintenance"
@@ -38,7 +39,6 @@ class MaintenanceWindow(NutanixDatabase):
     def update_tasks(self, data):
         endpoint = "tasks"
         return super().create(data=data, endpoint=endpoint)
-        
 
     def get_uuid(
         self,
@@ -113,7 +113,7 @@ class MaintenanceWindow(NutanixDatabase):
             "maintenance_window": self._build_spec_maintenance_window,
             "tasks": self._build_spec_tasks,
             "db_server_vms": self._build_spec_db_server_vms,
-            "db_server_clusters": self._build_spec_db_server_clusters
+            "db_server_clusters": self._build_spec_db_server_clusters,
         }
         return super().get_spec(old_spec=payload, params=config, **kwargs)
 
@@ -186,7 +186,7 @@ class MaintenanceWindow(NutanixDatabase):
 
         payload["tasks"] = specs
         return payload, None
-    
+
     def _build_spec_db_server_vms(self, payload, vms):
         db_server_vms = DBServerVM(self.module)
         uuids, err = db_server_vms.resolve_uuids_from_entity_specs(vms=vms)
@@ -197,7 +197,7 @@ class MaintenanceWindow(NutanixDatabase):
             payload["entities"] = {}
         payload["entities"]["ERA_DBSERVER"] = uuids
         return payload, None
-    
+
     def _build_spec_db_server_clusters(self, payload, clusters):
         db_server_clusters = DBServerCluster(self.module)
         cluster_name_uuid_map = db_server_clusters.get_all_clusters_name_uuid_map()
@@ -216,10 +216,13 @@ class MaintenanceWindow(NutanixDatabase):
             elif cluster.get("uuid"):
                 uuid = cluster["uuid"]
             else:
-                return None, "uuid or name is required for setting db server cluster uuid"
-            
+                return (
+                    None,
+                    "uuid or name is required for setting db server cluster uuid",
+                )
+
             uuids.append(uuid)
-        
+
         if not payload.get("entities"):
             payload["entities"] = {}
         payload["entities"]["ERA_DBSERVER_CLUSTER"] = uuids

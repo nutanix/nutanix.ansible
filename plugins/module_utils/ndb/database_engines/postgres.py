@@ -162,7 +162,7 @@ class PostgresSingleInstance(Postgres):
 
         payload["actionArguments"] = action_arguments
         return payload, None
-    
+
     def build_spec_db_clone_action_arguments(self, payload, config):
         action_arguments = payload.get("actionArguments", [])
         # fields to their defaults maps
@@ -179,6 +179,7 @@ class PostgresSingleInstance(Postgres):
 
         payload["actionArguments"] = action_arguments
         return payload, None
+
 
 class PostgresHAInstance(Postgres):
     def __init__(self, module):

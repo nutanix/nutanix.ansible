@@ -19,17 +19,33 @@ def get_module_spec():
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     module_args = dict(
-        db_server_vms = dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True),
-        time_machine = dict(type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True)
+        db_server_vms=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        time_machine=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
     )
     return module_args
+
 
 def authorize_db_server_vms(module, result):
     time_machine = TimeMachine(module)
     if not module.params.get("time_machine"):
-        module.fail_json(msg="'time_machine' is required for authorizing db server vms with time machine")
+        module.fail_json(
+            msg="'time_machine' is required for authorizing db server vms with time machine"
+        )
 
-    time_machine_uuid, err = time_machine.get_time_machine_uuid(module.params.get("time_machine"))
+    time_machine_uuid, err = time_machine.get_time_machine_uuid(
+        module.params.get("time_machine")
+    )
     if err:
         result["response"] = err
         module.fail_json(msg="Failed fetching time machine uuid", **result)
@@ -38,7 +54,7 @@ def authorize_db_server_vms(module, result):
     if err:
         result["response"] = err
         module.fail_json(msg="Failed getting authorizing db server vm spec", **result)
-    
+
     if module.check_mode:
         result["response"] = spec
         return
@@ -47,6 +63,7 @@ def authorize_db_server_vms(module, result):
     result["response"] = resp
     result["uuid"] = time_machine_uuid
     result["changed"] = True
+
 
 def run_module():
     module = NdbBaseModule(
