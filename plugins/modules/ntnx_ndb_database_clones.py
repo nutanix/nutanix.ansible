@@ -124,8 +124,8 @@ def get_module_spec():
             required=False,
         ),
         refresh_schedule=dict(type="dict", options=refresh_schedule, required=False),
-        soft_delete=dict(type="bool", required=False),
-        delete_time_machine=dict(type="bool", required=False),
+        delete_from_vm=dict(type="bool", required=False),
+        soft_remove=dict(type="bool", required=False)
     )
     return module_args
 
@@ -198,7 +198,7 @@ def create_db_clone(module, result):
         result["response"] = spec
         return
 
-    resp = db_clone.clone(data=spec, time_machine_uuid=time_machine_uuid)
+    resp = db_clone.create(time_machine_uuid=time_machine_uuid, data=spec)
     result["response"] = resp
     result["uuid"] = resp["entityId"]
     uuid = resp["entityId"]
@@ -298,7 +298,15 @@ def delete_db_clone(module, result):
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
 
-    spec = _clones.get_default_delete_spec()
+    default_spec = _clones.get_default_delete_spec()
+    spec, err = _clones.get_delete_spec(payload=default_spec)
+    if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting spec for deleting database clone",
+                **result,
+            )
+
 
     if module.check_mode:
         result["response"] = spec
@@ -322,6 +330,7 @@ def run_module():
         ("uuid", "db_vm"),
         ("uuid", "postgres"),
         ("uuid", "time_machine"),
+        ("delete_from_vm", "soft_remove"),
     ]
     module = NdbBaseModule(
         argument_spec=get_module_spec(),

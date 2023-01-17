@@ -140,7 +140,6 @@ class TimeMachine(NutanixDatabase):
         return old_spec, None
 
     def get_authorize_db_server_vms_spec(self):
-        # avoiding circuler imports
         from .db_server_vm import DBServerVM
 
         _db_server_vms = DBServerVM(self.module)

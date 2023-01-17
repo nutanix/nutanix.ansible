@@ -26,10 +26,14 @@ class DatabaseClone(NutanixDatabase):
             "refresh_schedule": self._build_spec_refresh_schedule,
         }
 
-    def clone(self, data, time_machine_uuid):
+    def create(self, time_machine_uuid, data):
         time_machine = TimeMachine(self.module)
         endpoint = "{}/clones".format(time_machine_uuid)
         return time_machine.create(data=data, endpoint=endpoint)
+    
+    def refresh(self, uuid, data):
+        endpoint = "refresh"
+        return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
 
     def update(
         self,
@@ -40,7 +44,7 @@ class DatabaseClone(NutanixDatabase):
         raise_error=True,
         no_response=False,
         timeout=30,
-        method="PUT",
+        method="PATCH",
     ):
         return super().update(
             data,
@@ -50,7 +54,7 @@ class DatabaseClone(NutanixDatabase):
             raise_error,
             no_response,
             timeout,
-            method="PATCH",
+            method=method,
         )
 
     def _get_default_spec(self):
@@ -91,6 +95,13 @@ class DatabaseClone(NutanixDatabase):
                     spec[key] = deepcopy(override_spec[key])
 
         return spec
+    
+    def get_default_delete_spec(self):
+        return deepcopy({
+            "remove": False,
+            "delete": False,
+            "softRemove": False
+        })
 
     def get_clone(self, uuid=None, name=None):
         if uuid:
@@ -131,6 +142,31 @@ class DatabaseClone(NutanixDatabase):
         }
 
         return super().get_spec(old_spec=payload)
+    
+    def get_delete_spec(self, payload):
+        if self.module.params.get("delete_from_vm"):
+            payload["delete"] = True
+        elif self.module.params.get("soft_remove"):
+            payload["softRemove"] =  True
+        else:
+            payload["remove"] = True
+
+        return payload, None
+
+    def get_clone_refresh_spec(self):
+        payload = {}
+        if self.module.params.get("snapshot_uuid"):
+            payload["snapshotId"] = self.module.params.get("snapshot_uuid")
+        elif self.module.params.get("pitr_timestamp"):
+            payload["userPitrTimestamp"] = self.module.params.get("pitr_timestamp")
+        else:
+            return (
+                None,
+                "snapshot_uuid or pitr_timestamp is required for database clone refresh",
+            )
+
+        payload["timeZone"] = self.module.params.get("timezone") 
+        return payload, None
 
     def _build_spec_desc(self, payload, desc):
         payload["description"] = desc
@@ -160,7 +196,7 @@ class DatabaseClone(NutanixDatabase):
         if time_machine.get("snapshot_uuid"):
             payload["snapshotId"] = time_machine.get("snapshot_uuid")
         elif time_machine.get("pitr_timestamp"):
-            payload["userPitrTimestamp"] = time_machine.get("userPitrTimestamp")
+            payload["userPitrTimestamp"] = time_machine.get("pitr_timestamp")
         else:
             return (
                 None,
