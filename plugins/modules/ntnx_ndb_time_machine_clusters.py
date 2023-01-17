@@ -47,15 +47,12 @@ from ..module_utils.ndb.time_machines import TimeMachine, get_cluster_uuid  # no
 
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
-    entity_by_spec = dict(name=dict(type="str", required=True), uuid=dict(type="str"))
-    # required_one_of_list = [("name", "uuid")]
+    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     module_args = dict(
         tm_uuid=dict(type="str", required=True),
         cluster=dict(
             type="dict",
             options=entity_by_spec,
-            # required=True,
-            # required_one_of=required_one_of_list,
             mutually_exclusive=mutually_exclusive,
         ),
         type=dict(
@@ -65,7 +62,6 @@ def get_module_spec():
             type="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
-            # required_one_of=required_one_of_list,
         ),
     )
     return module_args
@@ -77,7 +73,13 @@ def create_data_access_instance(module, result):
     if not module.params.get("cluster"):
         module.fail_json(msg="cluster is required field", **result)
 
-    cluster_uuid = module.params["cluster"].get("uuid")
+    cluster_uuid, err = get_cluster_uuid(module, module.params["cluster"])
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating update data access instance spec", **result
+        )
+
     if not tm.read_data_access_instance(tm_uuid, cluster_uuid).get("errorCode"):
         update_data_access_instance(module, result)
         return
