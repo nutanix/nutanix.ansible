@@ -11,9 +11,10 @@ __metaclass__ = type
 
 
 class VLAN(NutanixDatabase):
-    def __init__(self, module):
+    def __init__(self, module, is_stretched=False):
         resource_type = "/resources/networks"
         super(VLAN, self).__init__(module, resource_type=resource_type)
+        self.is_stretched = is_stretched
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
@@ -25,13 +26,18 @@ class VLAN(NutanixDatabase):
             "secondary_dns": self._build_spec_secondary_dns,
             "dns_domain": self._build_spec_dns_domain,
             "cluster": self._build_spec_cluster,
-            "stretched_vlans": self._build_spec_stretched_vlans,
+            "vlans": self._build_spec_vlans,
         }
 
     def get_spec(self, old_spec=None, params=None):
         err = self._validate_module_params(old_spec)
         if err:
             return None, err
+        return super().get_spec(old_spec=old_spec, params=params)
+
+    def get_stretched_vlan_spec(self, old_spec=None, params=None):
+        if not old_spec:
+            old_spec = self._get_default_stretched_vlan_spec()
         return super().get_spec(old_spec=old_spec, params=params)
 
     def get_uuid(
@@ -72,6 +78,19 @@ class VLAN(NutanixDatabase):
 
         return resp, None
 
+    def get_stretched_vlan(self, uuid=None):
+        if uuid:
+            endpoint = "stretched-vlan/{0}".format(uuid)
+            resp = self.read(endpoint=endpoint)
+            if not resp:
+                return None, "stretched vlan with uuid {0} not found".format(uuid)
+        else:
+            return (
+                None,
+                "Please provide uuid for fetching stretched vlan details",
+            )
+        return resp, None
+
     def _get_default_spec(self):
         return deepcopy(
             {
@@ -80,6 +99,15 @@ class VLAN(NutanixDatabase):
                 "properties": [],
                 "ipPools": [],
                 "clusterId": "",
+            }
+        )
+
+    def _get_default_stretched_vlan_spec(self):
+        return deepcopy(
+            {
+                "name": "",
+                "type": "Static",
+                "vlanIds": []
             }
         )
 
@@ -97,6 +125,25 @@ class VLAN(NutanixDatabase):
                 if override_spec.get(key):
                     spec[key] = deepcopy(override_spec[key])
 
+        return spec
+
+    def get_default_stretched_update_spec(self, override_spec=None):
+        spec = deepcopy(
+            {
+                "name": "",
+                "type": "Static",
+                "metadata": {
+                    "gateway": "",
+                    "subnetMask": ""
+                },
+                "vlanIds": []
+            }
+        )
+        if override_spec:
+            for key in spec.keys():
+                if override_spec.get(key):
+                    spec[key] = deepcopy(override_spec[key])
+            spec["vlanIds"] = [vlan["id"] for vlan in override_spec.get("vlans")]
         return spec
 
     def _build_spec_name(self, payload, name):
@@ -136,23 +183,29 @@ class VLAN(NutanixDatabase):
         return payload
 
     def _build_spec_gateway(self, payload, gateway):
-        old_property = self._get_property_by_name("VLAN_GATEWAY", payload["properties"])
-        if old_property:
-            old_property["value"] = gateway
+        if self.is_stretched:
+            payload["metadata"]["gateway"] = gateway
         else:
-            payload["properties"].append({"name": "VLAN_GATEWAY", "value": gateway})
+            old_property = self._get_property_by_name("VLAN_GATEWAY", payload["properties"])
+            if old_property:
+                old_property["value"] = gateway
+            else:
+                payload["properties"].append({"name": "VLAN_GATEWAY", "value": gateway})
         return payload, None
 
     def _build_spec_subnet_mask(self, payload, subnet_mask):
-        old_property = self._get_property_by_name(
-            "VLAN_SUBNET_MASK", payload["properties"]
-        )
-        if old_property:
-            old_property["value"] = subnet_mask
+        if self.is_stretched:
+            payload["metadata"]["subnetMask"] = subnet_mask
         else:
-            payload["properties"].append(
-                {"name": "VLAN_SUBNET_MASK", "value": subnet_mask}
+            old_property = self._get_property_by_name(
+                "VLAN_SUBNET_MASK", payload["properties"]
             )
+            if old_property:
+                old_property["value"] = subnet_mask
+            else:
+                payload["properties"].append(
+                    {"name": "VLAN_SUBNET_MASK", "value": subnet_mask}
+                )
         return payload, None
 
     def _build_spec_primary_dns(self, payload, primary_dns):
@@ -191,22 +244,15 @@ class VLAN(NutanixDatabase):
             )
         return payload, None
 
-    def _build_spec_stretched_vlans(self, payload, value):
-        payload.pop("properties", None)
-        payload.pop("ipPools", None)
-        payload.pop("clusterId", None)
+    def _build_spec_vlans(self, payload, value):
         payload["vlanIds"] = value
         payload["type"] = "Static"
         return payload, None
 
     def _validate_module_params(self, payload=None):
-        name = self.module.params.get("name")
         updated_vlan_type = self.module.params.get("vlan_type")
         old_vlan_type = payload.get("type") if payload else None
         vlan_type = updated_vlan_type or old_vlan_type
-        if name and "stretched_vlans" not in self.module.params and "vlan_type" not in self.module.params:
-            err = "name is provided but any of the following are missing: vlan_type, stretched_vlans"
-            return err
         if vlan_type == "DHCP":
             for item in [
                 "gateway",
@@ -232,9 +278,17 @@ class VLAN(NutanixDatabase):
                 return property
         return None
 
-    def create_stretched_vlans(self, data):
+    def create_stretched_vlan(self, data):
         endpoint = "stretched-vlan"
         return self.create(data=data, endpoint=endpoint)
+
+    def update_stretched_vlan(self, data, uuid):
+        endpoint = "stretched-vlan/{0}".format(uuid)
+        return self.update(data=data, endpoint=endpoint)
+
+    def delete_stretched_vlan(self, uuid):
+        endpoint = "stretched-vlan/{0}".format(uuid)
+        return self.delete(endpoint=endpoint)
 
     def add_ip_pools(self, vlan_uuid, ip_pools, old_spec=None):
         vlan_type = self.module.params.get("vlan_type") or old_spec.get("type", None)

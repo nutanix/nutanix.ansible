@@ -87,7 +87,8 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_operations
 author:
   - Prem Karat (@premkarat)
-  - Pradeepsingh Bhati (@bhati-pradeep)
+  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
@@ -265,7 +266,6 @@ def get_module_spec():
 
     module_args = dict(
         name=dict(type="str"),
-        desc=dict(type="str"),
         vlan_type=dict(type="str", choices=["DHCP", "Static"]),
         vlan_uuid=dict(type="str"),
         cluster=dict(
@@ -283,7 +283,6 @@ def get_module_spec():
         primary_dns=dict(type="str"),
         secondary_dns=dict(type="str"),
         dns_domain=dict(type="str"),
-        stretched_vlans=dict(type="list", elements="str"),
     )
     return module_args
 
@@ -305,10 +304,8 @@ def create_vlan(module, result):
         result["response"] = spec
         return
 
-    if module.params.get("stretched_vlans"):
-        resp = vlan.create_stretched_vlans(data=spec)
-    else:
-        resp = vlan.create(data=spec)
+    resp = vlan.create(data=spec)
+
     result["response"] = resp
     vlan_uuid = resp["id"]
     result["vlan_uuid"] = vlan_uuid
@@ -384,36 +381,15 @@ def check_for_idempotency(old_spec, update_spec):
 
 
 def run_module():
-    mutually_exclusive_list = [
-        ("vlan_uuid", "name"),
-        ("vlan_uuid", "stretched_vlans"),
-        ("cluster", "stretched_vlans"),
-        ("vlan_type", "stretched_vlans"),
-        ("gateway", "stretched_vlans"),
-        ("subnet_mask", "stretched_vlans"),
-        ("primary_dns", "stretched_vlans"),
-        ("secondary_dns", "stretched_vlans"),
-        ("dns_domain", "stretched_vlans"),
-        ("ip_pools", "stretched_vlans"),
-        ("remove_ip_pools", "stretched_vlans"),
-        ("cluster", "desc"),
-        ("vlan_type", "desc"),
-        ("gateway", "desc"),
-        ("subnet_mask", "desc"),
-        ("primary_dns", "desc"),
-        ("secondary_dns", "desc"),
-        ("dns_domain", "desc"),
-        ("ip_pools", "desc"),
-        ("remove_ip_pools", "desc"),
-    ]
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
-        mutually_exclusive=mutually_exclusive_list,
+        mutually_exclusive=[("vlan_uuid", "name")],
         required_if=[
             ("state", "present", ("name", "vlan_uuid"), True),
             ("state", "absent", ("vlan_uuid",)),
         ],
         required_by={"remove_ip_pools": "vlan_uuid"},
+        required_one_of=[("vlan_uuid", "vlan_type")],
         supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
