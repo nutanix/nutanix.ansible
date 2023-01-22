@@ -14,7 +14,43 @@ short_description: Module for create, update and delete of single instance time_
 version_added: 1.8.0-beta.1
 description: Module for create, update and delete of single instance time_machine_clusters in Nutanix time_machine_clusters Service
 options:
-
+  tm_uuid:
+    description: write
+    type: str
+    required: true
+  cluster:
+        description: write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - Cluster Name
+                    - Mutually exclusive with C(uuid)
+                type: str
+            uuid:
+                description:
+                    - Cluster UUID
+                    - Mutually exclusive with C(name)
+                type: str
+  type:
+    description: write
+    type: str
+    default: "OTHER"
+    choices: ["OTHER", "PRIMARY"]
+  sla:
+        description: write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - Sla Name
+                    - Mutually exclusive with C(uuid)
+                type: str
+            uuid:
+                description:
+                    - Sla UUID
+                    - Mutually exclusive with C(name)
+                type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
@@ -30,15 +66,43 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-  description:
+  description: An intentful representation of a TM status
   returned: always
   type: dict
-  sample: {}
+  sample: {
+            "dateCreated": "2023-01-22 08:03:46",
+            "dateModified": "2023-01-22 08:03:46",
+            "description": null,
+            "forceVGBasedLogDrive": false,
+            "info": null,
+            "logDrive": null,
+            "logDriveId": null,
+            "logDriveStatus": "NOT_INITIALIZED",
+            "metadata": null,
+            "nxCluster": null,
+            "nxClusterId": "0000000-000000-00000-0000",
+            "ownerId": "0000000-000000-00000-0000",
+            "resetDescription": false,
+            "resetSlaId": false,
+            "resetType": false,
+            "schedule": null,
+            "scheduleId": "0000000-000000-00000-0000",
+            "sla": null,
+            "slaId": "0000000-000000-00000-0000",
+            "source": false,
+            "sourceClusters": null,
+            "status": "ACTIVE",
+            "storageResourceId": null,
+            "submitActivateTimeMachineOp": false,
+            "timeMachineId": "0000000-000000-00000-0000",
+            "type": "OTHER",
+            "updateOperationSummary": null
+        }
 tm_uuid:
   description: created data access instance UUID
   returned: always
   type: str
-  sample: ""
+  sample: "0000000-000000-00000-0000"
 """
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
