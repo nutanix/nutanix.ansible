@@ -45,6 +45,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
+        clusters=dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=False),
         expiry_days=dict(type="str", required=False),
         remove_expiry=dict(type="bool", required=False),
         timezone=dict(type="str", required=False),

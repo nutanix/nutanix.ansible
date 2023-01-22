@@ -9,6 +9,7 @@ __metaclass__ = type
 
 from .nutanix_database import NutanixDatabase
 from .time_machines import TimeMachine
+from .clusters import Cluster
 
 
 class Snapshot(NutanixDatabase):
@@ -18,6 +19,7 @@ class Snapshot(NutanixDatabase):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "expiry_days": self._build_spec_expiry,
+            "clusters": self._build_spec_clusters
         }
 
     def create_snapshot(self, time_machine_uuid, data):
@@ -92,7 +94,7 @@ class Snapshot(NutanixDatabase):
         return spec
 
     def _get_default_spec(self):
-        return deepcopy({"name": ""})
+        return deepcopy({"name": "", "replicateToClusterIds": []})
 
     def _build_spec_name(self, payload, name):
         payload["name"] = name
@@ -109,4 +111,21 @@ class Snapshot(NutanixDatabase):
                 }
             }
         }
+        return payload, None
+    
+    def _build_spec_clusters(self, payload, clusters):
+        _clusters = Cluster(self.module)
+        spec = []
+        clusters_name_uuid_map = _clusters.get_all_clusters_name_uuid_map()
+        for cluster in clusters:
+            uuid = ""
+            if cluster.get("name"):
+                uuid = clusters_name_uuid_map.get(cluster["name"])
+                if not uuid:
+                    return None, "Cluster with name {0} not found".format(cluster["name"])
+            else:
+                uuid = cluster["uuid"]
+            
+            spec.append(uuid)
+        payload["replicateToClusterIds"] = spec
         return payload, None
