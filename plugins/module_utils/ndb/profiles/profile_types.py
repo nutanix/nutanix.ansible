@@ -418,20 +418,7 @@ class DatabaseParameterProfile(Profile):
         
         return self.build_spec_status(payload)
 
-# helper functions
-
-
-def get_profile_uuid(module, type, config):
-    uuid = ""
-    if config.get("name"):
-        profiles = Profile(module)
-        uuid = profiles.get_profile_uuid(type, config["name"])
-    elif config.get("uuid"):
-        uuid = config["uuid"]
-    else:
-        error = "Profile config {0} doesn't have name or uuid key".format(config)
-        return error, None
-    return uuid, None
+# Helper methods for getting profile type objects
 
 def get_profile_type(module):
     profile_types = NDB.ProfileTypes.ALL
