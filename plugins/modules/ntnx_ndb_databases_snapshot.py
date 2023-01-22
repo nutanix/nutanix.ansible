@@ -19,7 +19,7 @@ RETURN = r"""
 import time  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.databases import Database  # noqa: E402
+from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.ndb.snapshots import Snapshot  # noqa: E402
 from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
@@ -64,7 +64,7 @@ def create_snapshot(module, result):
             result["error"] = err
             module.fail_json(msg="Failed fetching time machine uuid", **result)
     else:
-        database = Database(module)
+        database = DatabaseInstance(module)
         db, err = database.get_database(
             name=module.params["database"].get("name"),
             uuid=module.params["database"].get("uuid"),

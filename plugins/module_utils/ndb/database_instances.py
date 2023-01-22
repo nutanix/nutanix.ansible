@@ -28,6 +28,25 @@ class DatabaseInstance(NutanixDatabase):
     def register(self, data):
         endpoint = "register"
         return self.create(data, endpoint)
+    
+    def scale(self, uuid, data):
+        endpoint = "update/extend-storage"
+        return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
+
+    def restore(self, uuid, data):
+        endpoint = "restore"
+        return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
+
+    def add_databases(self, instance_uuid, data):
+        endpoint = "linked-databases"
+        return self.update(
+            data=data, uuid=instance_uuid, endpoint=endpoint, method="POST"
+        )
+
+    def remove_linked_database(self, database_uuid, instance_uuid):
+        spec = {"delete": True, "forced": True}
+        endpoint = "linked-databases/{0}".format(database_uuid)
+        return self.delete(uuid=instance_uuid, endpoint=endpoint, data=spec)
 
     def update(
         self,
@@ -110,26 +129,27 @@ class DatabaseInstance(NutanixDatabase):
                     spec[key] = deepcopy(override_spec[key])
 
         return spec
-
-    def get_default_delete_spec(self):
-        spec = {
-            "delete": False,
-            "remove": False,
-            "deleteTimeMachine": False,
-            "deleteLogicalCluster": True,
-        }
-
-        if self.module.params.get("soft_delete"):
-            spec["remove"] = True
-            spec["delete"] = False
-        else:
-            spec["delete"] = True
-            spec["remove"] = False
-
-        if self.module.params.get("delete_time_machine"):
-            spec["deleteTimeMachine"] = True
-
-        return spec
+    
+    def _get_default_scaling_spec(self):
+        return deepcopy(
+            {
+                "actionArguments": [
+                    {"name": "working_dir", "value": "/tmp"},
+                ],
+                "applicationType": None,
+            }
+        )
+    
+    def get_default_restore_spec(self):
+        return deepcopy(
+            {
+                "snapshotId": None,
+                "latestSnapshot": None,
+                "userPitrTimestamp": None,
+                "timeZone": None,
+                "actionArguments": [{"name": "sameLocation", "value": True}],
+            }
+        )
 
     def get_database(self, name=None, uuid=None):
         default_query = {"detailed": True}
@@ -218,13 +238,76 @@ class DatabaseInstance(NutanixDatabase):
 
         payload["databaseType"] = db_type + "_database"
         return payload, err
+    
+    def get_delete_spec(self):
+        spec = {
+            "delete": False,
+            "remove": False,
+            "deleteTimeMachine": False,
+            "deleteLogicalCluster": True,
+        }
+
+        if self.module.params.get("soft_delete"):
+            spec["remove"] = True
+            spec["delete"] = False
+        else:
+            spec["delete"] = True
+            spec["remove"] = False
+
+        if self.module.params.get("delete_time_machine"):
+            spec["deleteTimeMachine"] = True
+
+        return spec
+    
+    def get_scaling_spec(self, scale_config, database_type):
+        config = deepcopy(scale_config)
+        spec = self._get_default_scaling_spec()
+
+        spec["applicationType"] = database_type
+
+        spec["actionArguments"].append(
+            self._get_action_argument_spec(
+                "data_storage_size", int(config.get("storage_gb"))
+            )
+        )
+        spec["actionArguments"].append(
+            self._get_action_argument_spec(
+                "pre_script_cmd", config.get("pre_update_cmd")
+            )
+        )
+        spec["actionArguments"].append(
+            self._get_action_argument_spec(
+                "post_script_cmd", config.get("post_update_cmd")
+            )
+        )
+
+        return spec
+
+    def get_restore_spec(self, restore_config):
+        spec = self.get_default_restore_spec()
+        if restore_config.get("snapshot_uuid"):
+            spec["snapshotId"] = restore_config["snapshot_uuid"]
+        elif restore_config.get("point_in_time"):
+            spec["userPitrTimestamp"] = restore_config["point_in_time"]
+        else:
+            spec["latestSnapshot"] = True
+
+        spec["timeZone"] = restore_config.get("timezone")
+        return spec
+
+    def get_add_database_spec(self, database_names):
+        spec = {"databases": []}
+
+        for name in database_names:
+            spec["databases"].append({"databaseName": name})
+
+        return spec
 
 
     def build_spec_desc(self, payload, desc):
         payload["description"] = desc
         return payload, None
 
-    # provision specific builder methods
     def build_spec_name(self, payload, name):
         payload["name"] = name
         return payload, None
@@ -243,7 +326,6 @@ class DatabaseInstance(NutanixDatabase):
         payload["databaseDescription"] = desc
         return payload, None
 
-    # registration related builder methods
     def _build_spec_register_name(self, payload, name):
         payload["databaseName"] = name
         return payload, None
@@ -252,7 +334,6 @@ class DatabaseInstance(NutanixDatabase):
         payload["workingDirectory"] = working_dir
         return payload, None
 
-    # common builder methods
     def _build_spec_auto_tune_staging_drive(self, payload, value):
         payload["autoTuneStagingDrive"] = value
         return payload, None

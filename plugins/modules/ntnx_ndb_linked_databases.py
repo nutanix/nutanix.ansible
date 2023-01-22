@@ -19,7 +19,7 @@ RETURN = r"""
 import time  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.databases import Database  # noqa: E402
+from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
@@ -44,7 +44,7 @@ def add_database(module, result):
     result["db_instance_uuid"] = instance_uuid
 
 
-    _databases = Database(module)
+    _databases = DatabaseInstance(module)
     databases = module.params.get("databases")
     if not databases:
         return module.exit_json(msg="No database to add", **result)
@@ -77,7 +77,7 @@ def remove_database(module, result):
             **result,
         )
 
-    _databases = Database(module)
+    _databases = DatabaseInstance(module)
     resp = _databases.remove_linked_database(
         database_uuid=database_uuid, instance_uuid=instance_uuid
     )

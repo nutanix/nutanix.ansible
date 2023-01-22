@@ -1071,7 +1071,7 @@ def delete_instance(module, result):
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
 
-    spec = _databases.get_default_delete_spec()
+    spec = _databases.get_delete_spec()
 
     if module.check_mode:
         result["response"] = spec

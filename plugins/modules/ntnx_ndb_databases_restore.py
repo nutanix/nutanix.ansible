@@ -18,7 +18,7 @@ RETURN = r"""
 import time  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.databases import Database  # noqa: E402
+from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
@@ -35,7 +35,7 @@ def get_module_spec():
 
 
 def restore_database(module, result):
-    db = Database(module)
+    db = DatabaseInstance(module)
     db_uuid = module.params.get("db_uuid")
     if not db_uuid:
         module.fail_json(msg="db_uuid is required field for restoring", **result)
