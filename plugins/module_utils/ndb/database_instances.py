@@ -8,7 +8,7 @@ from copy import deepcopy
 from .nutanix_database import NutanixDatabase
 from .database_engines.database_engine import DatabaseEngine
 from .database_engines.db_engine_factory import create_db_engine
-from .profiles import get_profile_uuid
+from .profiles.profiles import get_profile_uuid
 
 
 class DatabaseInstance(NutanixDatabase):
@@ -156,22 +156,41 @@ class DatabaseInstance(NutanixDatabase):
         # handle registration and provisioning from this factory itself
 
         if kwargs.get("update"):
-            return self.get_update_spec(payload=old_spec)
-        else:
-            if kwargs.get("provision"):
-                return self.get_spec_for_provision(payload=old_spec)
-            elif kwargs.get("register"):
-                return self.get_spec_for_registration(payload=old_spec)
+            return self.get_update_spec(old_spec=old_spec, params=params, **kwargs)
+        elif kwargs.get("provision"):
+            return self.get_spec_for_provision(old_spec=old_spec, params=params, **kwargs)
+        elif kwargs.get("register"):
+            return self.get_spec_for_registration(old_spec=old_spec, params=params, **kwargs)
 
         return None, "Please provide supported arguments"
 
-    def get_update_spec(self, payload):
+    def get_update_spec(self, old_spec=None, params=None, **kwargs):
         self.build_spec_methods = {
             "name": self.build_spec_name,
             "desc": self.build_spec_desc,
         }
-        return super().get_spec(old_spec=payload)
+        return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
+    def get_spec_for_provision(self, old_spec=None, params=None, **kwargs):
+        self.build_spec_methods.update(
+            {
+                "name": self.build_spec_name,
+                "db_params_profile": self.build_spec_db_params_profile,
+                "desc": self._build_spec_database_desc,
+            }
+        )
+        return super().get_spec(old_spec=old_spec, params=params, **kwargs)
+
+    def get_spec_for_registration(self, old_spec=None, params=None, **kwargs):
+        self.build_spec_methods.update(
+            {
+                "working_dir": self._build_spec_register_working_dir,
+                "name": self._build_spec_register_name,
+                "desc": self.build_spec_desc,
+            }
+        )
+        return super().get_spec(old_spec=old_spec, params=params, **kwargs)
+    
     def get_db_engine_spec(self, payload, params=None, **kwargs):
 
         db_engine, err = create_db_engine(self.module)
@@ -200,25 +219,6 @@ class DatabaseInstance(NutanixDatabase):
         payload["databaseType"] = db_type + "_database"
         return payload, err
 
-    def get_spec_for_provision(self, payload):
-        self.build_spec_methods.update(
-            {
-                "name": self.build_spec_name,
-                "db_params_profile": self.build_spec_db_params_profile,
-                "desc": self._build_spec_database_desc,
-            }
-        )
-        return super().get_spec(old_spec=payload)
-
-    def get_spec_for_registration(self, payload):
-        self.build_spec_methods.update(
-            {
-                "working_dir": self._build_spec_register_working_dir,
-                "name": self._build_spec_register_name,
-                "desc": self.build_spec_desc,
-            }
-        )
-        return super().get_spec(old_spec=payload)
 
     def build_spec_desc(self, payload, desc):
         payload["description"] = desc

@@ -57,7 +57,7 @@ def get_module_spec():
 def get_register_spec(module, result):
     db_server_vms = DBServerVM(module)
     default_spec = db_server_vms.get_default_spec_for_registration()
-    spec, err = db_server_vms.get_spec(old_spec=default_spec, register=True)
+    spec, err = db_server_vms.get_spec(old_spec=default_spec, register_server=True)
     if err:
         result["error"] = err
         module.fail_json(

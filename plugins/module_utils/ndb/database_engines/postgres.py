@@ -5,7 +5,6 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-from copy import deepcopy
 
 from .database_engine import DatabaseEngine
 from ...constants import NDB
@@ -16,13 +15,8 @@ class Postgres(DatabaseEngine):
         self._type = NDB.DatabaseTypes.POSTGRES
         super(Postgres, self).__init__(module)
 
-    def build_spec_db_params_profile_properties(self, params, cur_properties=None):
-        input_properties = deepcopy(params)
-        properties = []
-
-        # for update
-        if cur_properties:
-            properties = deepcopy(properties)
+    def build_spec_create_db_params_profile_properties(self, payload, db_params):
+        properties = payload.get("properties", [])
 
         # map of properties with defaults
         default_properties = {
@@ -59,35 +53,44 @@ class Postgres(DatabaseEngine):
             "autovacuum_vacuum_cost_delay": "ms",
         }
 
-        # update current properties with input config
-        if properties:
+        # create new properties spec
+        for name, val in default_properties.items():
 
-            for prop in properties:
-                # if input given
-                if prop["name"] in input_properties:
+            # check if property value is given in input
+            if name in db_params:
+                val = str(db_params.get(name))
 
-                    # get property value from input and add unit suffix if required
-                    val = str(input_properties[prop["name"]]) + property_units.get(
-                        prop["name"], ""
-                    )
+            val = str(val) + property_units.get(name, "")
 
-                    # update the property value
-                    prop["value"] = val
+            spec = {"name": name, "value": val}
+            properties.append(spec)
 
-        else:
+        payload["properties"] = properties
+        return payload, None
+    
+    def build_spec_update_db_params_profile_version(self, payload, db_params):
+        
+        # map of certain properties with their units
+        property_units = {
+            "min_wal_size": "MB",
+            "max_wal_size": "GB",
+            "checkpoint_timeout": "min",
+            "autovacuum_vacuum_cost_delay": "ms",
+        }
 
-            for name, val in default_properties:
+        properties = payload.get("properties", [])
+        
+        # update properties
+        for prop in properties:
 
-                # check if property value is given in input
-                if name in input_properties:
-                    val = str(val)
+            # check if property value is given in input
+            if prop["name"] in db_params:
+                val = str(db_params.get(prop["name"]))
+                val = val + property_units.get(prop["name"], "")
+                prop["value"] = val
 
-                val = val + property_units.get(name, "")
-
-                spec = {"name": name, "value": val}
-                properties.append(spec)
-
-        return properties, None
+        payload["properties"] = properties
+        return payload, None
 
 
 class PostgresSingleInstance(Postgres):

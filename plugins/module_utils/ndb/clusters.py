@@ -52,7 +52,7 @@ class Cluster(NutanixDatabase):
             return uuid_name_map
 
         for cluster in resp:
-            uuid_name_map[cluster["id"]] = cluster["name"]
+            uuid_name_map[cluster.get("id")] = cluster.get("name")
 
         return uuid_name_map
     
@@ -63,16 +63,8 @@ class Cluster(NutanixDatabase):
             return name_uuid_map
 
         for cluster in resp:
-            name_uuid_map[cluster["name"]] = cluster["id"]
-
-        return name_uuid_map
-
-    def get_all_clusters_name_uuid_map(self):
-        resp = self.read(uuid=None)
-        name_uuid_map = {}
-        for cluster in resp:
             if cluster.get("name"):
-                name_uuid_map[cluster["name"]] = cluster.get("id")
+                name_uuid_map[cluster.get("name")] = cluster.get("id")
 
         return name_uuid_map
 

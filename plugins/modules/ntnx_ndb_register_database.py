@@ -149,7 +149,16 @@ def get_registration_spec(module, result):
 
     # populate VM related spec
     db_vm = DBServerVM(module=module)
-    spec, err = db_vm.get_spec(old_spec=spec, db_instance_register=True)
+
+    use_registered_server = True if module.params.get("registered") else False
+    register_server = not use_registered_server
+
+    kwargs = {
+        "registered": use_registered_server,
+        "unregistered": register_server,
+        "db_instance_register": True,
+    }
+    spec, err = db_vm.get_spec(old_spec=spec, **kwargs)
     if err:
         result["error"] = err
         module.fail_json(

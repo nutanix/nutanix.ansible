@@ -8,7 +8,7 @@ from copy import deepcopy
 from .database_engines.db_engine_factory import create_db_engine
 from .time_machines import TimeMachine
 from .nutanix_database import NutanixDatabase
-from .profiles import get_profile_uuid
+from .profiles.profiles import get_profile_uuid
 
 
 class DatabaseClone(NutanixDatabase):

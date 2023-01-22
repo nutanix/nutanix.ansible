@@ -101,7 +101,7 @@ def get_provision_spec(module, result):
     db_servers = DBServerVM(module)
 
     default_spec = db_servers.get_default_spec_for_provision()
-    spec, err = db_servers.get_spec(old_spec=default_spec, provision=True)
+    spec, err = db_servers.get_spec(old_spec=default_spec, provision_new_server=True)
 
     if err:
         result["error"] = err

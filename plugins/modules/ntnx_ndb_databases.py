@@ -895,7 +895,16 @@ def get_provision_spec(module, result, ha=False):
     else:
         # populate VM related spec
         db_vm = DBServerVM(module=module)
-        spec, err = db_vm.get_spec(old_spec=spec, db_instance_provision=True)
+
+        provision_new_server = True if module.params.get("create_new_server") else False
+        use_registered_server = not provision_new_server
+
+        kwargs = {
+            "provision_new_server": provision_new_server,
+            "use_registered_server": use_registered_server,
+            "db_instance_provision": True
+        }
+        spec, err = db_vm.get_spec(old_spec=spec, **kwargs)
         if err:
             result["error"] = err
             module.fail_json(

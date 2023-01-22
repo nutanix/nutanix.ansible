@@ -6,6 +6,7 @@ __metaclass__ = type
 
 
 from ..database_engines.postgres import (
+    Postgres,
     PostgresHAInstance,
     PostgresSingleInstance,
 )
@@ -22,18 +23,13 @@ def get_engine_type(module):
     return None, "Input doesn't conatains config for allowed engine types of databases"
 
 
-def create_db_engine(module, db_architecture=None):
-    engines = {"postgres": {"single": PostgresSingleInstance, "ha": PostgresHAInstance}}
+def create_db_engine(module, engine_type=None, db_architecture=None):
+    engines = {"postgres": {"single": PostgresSingleInstance, "ha": PostgresHAInstance, "default": Postgres}}
 
-    engine_type, err = get_engine_type(module)
-    if err:
-        return None, err
-
-    if not db_architecture:
-        db_architecture = module.params[engine_type].get("type")
-
-    if not db_architecture:
-        return None, "db architecture is required for creating db engine object"
+    if not engine_type:
+        engine_type, err = get_engine_type(module)
+        if err:
+            return None, err
 
     if engine_type in engines:
         if (
@@ -43,11 +39,6 @@ def create_db_engine(module, db_architecture=None):
         ):
             return engines[engine_type][db_architecture](module), None
         else:
-            return (
-                None,
-                "Invalid database engine architecture: {0} given for {1}".format(
-                    db_architecture, engine_type
-                ),
-            )
+            return engines[engine_type]["default"](module), None
     else:
         return None, "Invalid database engine type: {0}".format(engine_type)

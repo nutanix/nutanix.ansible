@@ -154,14 +154,20 @@ def get_clone_spec(module, result, time_machine_uuid):
 
     # populate database instance related spec
     db_server_vms = DBServerVM(module)
+
+    provision_new_server = True if module.params.get("create_new_server") else False
+    use_athorized_server = not provision_new_server
+
+    kwargs = {
+        "time_machine_uuid": time_machine_uuid,
+        "db_clone": True,
+        "provision_new_server": provision_new_server,
+        "use_authorized_server": use_athorized_server
+    }
+
     spec, err = db_server_vms.get_spec(
-        old_spec=spec, db_clone=True, time_machine_uuid=time_machine_uuid
+        old_spec=spec, **kwargs
     )
-    if err:
-        result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for db server hosting database clone", **result
-        )
 
     # populate tags related spec
     tags = Tag(module)
