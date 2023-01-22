@@ -104,7 +104,7 @@ def create_snapshot(module, result):
                 msg="Failed fetching snapshot info post creation", **result
             )
 
-        result["snapshot_uuid"] = resp["id"]
+        result["snapshot_uuid"] = resp.get("id")
 
     result["response"] = resp
     result["changed"] = True
@@ -157,6 +157,8 @@ def update_snapshot(module, result):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
+
+    snapshot = _snapshot.read(uuid=uuid)
     result["snapshot_uuid"] = uuid
     result["response"] = snapshot
     result["changed"] = True

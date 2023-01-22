@@ -32,18 +32,25 @@ class Snapshot(NutanixDatabase):
         return self.read(snapshot_uuid), None
 
     def get_snapshot_uuid(self, time_machine_uuid, name):
-        endpoint = "snapshots"
-        time_machine = TimeMachine(self.module)
-        resp = time_machine.read(uuid=time_machine_uuid, endpoint=endpoint)
+        query = {
+            "value-type": time_machine_uuid,
+            "detailed": False,
+            "load-database": False,
+            "load-clones": False,
+            "time-zone": "UTC"
+        }
 
-        snapshots_per_clusters = resp.get("snapshotsPerNxCluster", {})
-        for _, snapshots_by_types in snapshots_per_clusters.items():
-            for snapshots in snapshots_by_types:
-                if snapshots.get("type") == "MANUAL":
-                    for snapshot in snapshots.get("snapshots"):
-                        if snapshot.get("name") == name:
-                            return snapshot["id"], None
-                    break
+        snapshots = self.read(query=query)
+        if isinstance(snapshots, list):
+
+            # multiple snapshots can have same name
+            # sort snapshots based on time stamp with latest first
+            snapshots = sorted(snapshots, key=lambda snapshot: snapshot.get("snapshotTimeStampDate"), reverse=True)
+
+            # check for latest snapshot with given name
+            for snapshot in snapshots:
+                if snapshot.get("name") == name:
+                    return snapshot.get("id"), None
 
         return None, "Snapshot with name {0} not found".format(name)
 
