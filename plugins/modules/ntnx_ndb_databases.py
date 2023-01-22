@@ -631,9 +631,17 @@ import time  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.databases import Database  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.ndb.db_server_vm import DBServerVM
+from ..module_utils.ndb.tags import Tag
+from ..module_utils.ndb.time_machines import TimeMachine
+from ..module_utils.ndb.database_instances import DatabaseInstance
+from ..module_utils.ndb.db_server_cluster import DBServerCluster
+from ..module_utils.ndb.maintenance_window import (
+    MaintenanceWindow,
+    AutomatedPatchingSpec,
+)
 
 
 def get_module_spec():
@@ -644,8 +652,18 @@ def get_module_spec():
     )
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-    software_profile = dict(version_id=dict(type="str"))
-    software_profile.update(deepcopy(entity_by_spec))
+    automated_patching = deepcopy(
+        AutomatedPatchingSpec.automated_patching_argument_spec
+    )
+    software_profile = dict(
+        name=dict(type="str"), uuid=dict(type="str"), version_id=dict(type="str")
+    )
+
+    ha_proxy = dict(
+        provision_virtual_ip=dict(type="bool", default=True, required=False),
+        write_port=dict(type="str", default="5000", required=False),
+        read_port=dict(type="str", default="5001", required=False),
+    )
 
     new_server = dict(
         name=dict(type="str", required=True),
@@ -675,6 +693,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
+        ip=dict(type="str", required=False),
     )
 
     db_vm = dict(
@@ -685,6 +704,83 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
+    )
+
+    cluster_vm = dict(
+        name=dict(type="str", required=True),
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        network_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        compute_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        role=dict(type="str", choices=["Primary", "Secondary"], required=False),
+        node_type=dict(
+            type="str",
+            choices=["database", "haproxy"],
+            default="database",
+            required=False,
+        ),
+        archive_log_destination=dict(type="str", required=False),
+        ip=dict(type="str", required=False),
+    )
+    cluster_ip_info = dict(
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        ip=dict(type="str", required=True),
+    )
+    new_cluster = dict(
+        name=dict(type="str", required=True),
+        desc=dict(type="str", required=False),
+        vms=dict(type="list", elements="dict", options=cluster_vm, required=True),
+        password=dict(type="str", required=True, no_log=False),
+        pub_ssh_key=dict(type="str", required=False),
+        software_profile=dict(
+            type="dict",
+            options=software_profile,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        network_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        compute_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        ips=dict(type="list", elements="dict", options=cluster_ip_info, required=False),
+    )
+
+    # TO-DO: use_registered_clusters for oracle, ms sql, etc.
+    db_server_cluster = dict(
+        new_cluster=dict(type="dict", options=new_cluster, required=True),
     )
 
     sla = dict(
@@ -713,9 +809,19 @@ def get_module_spec():
         ),
         schedule=dict(type="dict", options=schedule, required=True),
         auto_tune_log_drive=dict(type="bool", required=False, default=True),
+        clusters=dict(
+            type="list",
+            element="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
     )
 
     postgres = dict(
+        type=dict(
+            type="str", choices=["single", "ha"], default="single", required=False
+        ),
         listener_port=dict(type="str", required=True),
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
@@ -723,6 +829,12 @@ def get_module_spec():
         allocate_pg_hugepage=dict(type="bool", default=False, required=False),
         auth_method=dict(type="str", default="md5", required=False),
         cluster_database=dict(type="bool", default=False, required=False),
+        patroni_cluster_name=dict(type="str", required=False),
+        ha_proxy=dict(type="dict", options=ha_proxy, required=False),
+        enable_synchronous_mode=dict(type="bool", default=False, required=False),
+        archive_wal_expire_days=dict(type="str", default="-1", required=False),
+        enable_peer_auth=dict(type="bool", default=False, required=False),
+        virtual_ip=dict(type="str", required=False),
     )
     postgres.update(deepcopy(default_db_arguments))
 
@@ -742,38 +854,135 @@ def get_module_spec():
             mutually_exclusive=[("create_new_server", "use_registered_server")],
             required=False,
         ),
+        db_server_cluster=dict(
+            type="dict",
+            options=db_server_cluster,
+            required=False,
+        ),
         time_machine=dict(type="dict", options=time_machine, required=False),
         postgres=dict(type="dict", options=postgres, required=False),
         tags=dict(type="dict", required=False),
         auto_tune_staging_drive=dict(type="bool", required=False),
+        automated_patching=dict(
+            type="dict", options=automated_patching, required=False
+        ),
         soft_delete=dict(type="bool", required=False),
         delete_time_machine=dict(type="bool", required=False),
     )
     return module_args
 
 
-def create_instance(module, result):
-    _databases = Database(module)
+def get_provision_spec(module, result, ha=False):
 
+    # create database instance obj
+    db_instance = DatabaseInstance(module=module)
+
+    # get default spec
+    spec = db_instance.get_default_provision_spec()
+
+    if ha:
+        # populate DB server VM cluster related spec
+        db_server_cluster = DBServerCluster(module=module)
+        spec, err = db_server_cluster.get_spec(
+            old_spec=spec, db_instance_provision=True
+        )
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting db server vm cluster spec for database instance",
+                **result,
+            )
+    else:
+        # populate VM related spec
+        db_vm = DBServerVM(module=module)
+
+        provision_new_server = True if module.params.get("create_new_server") else False
+        use_registered_server = not provision_new_server
+
+        kwargs = {
+            "provision_new_server": provision_new_server,
+            "use_registered_server": use_registered_server,
+            "db_instance_provision": True
+        }
+        spec, err = db_vm.get_spec(old_spec=spec, **kwargs)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting vm spec for database instance",
+                **result,
+            )
+
+    # populate database engine related spec
+    spec, err = db_instance.get_db_engine_spec(spec, provision=True)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting database engine related spec for database instance",
+            **result,
+        )
+
+    # populate database instance related spec
+    spec, err = db_instance.get_spec(old_spec=spec, provision=True)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed getting spec for database instance", **result)
+
+    # populate time machine related spec
+    time_machine = TimeMachine(module)
+    spec, err = time_machine.get_spec(old_spec=spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting spec for time machine for database instance",
+            **result,
+        )
+
+    # populate tags related spec
+    tags = Tag(module)
+    spec, err = tags.get_spec(old_spec=spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting spec for tags for database instance",
+            **result,
+        )
+
+    # configure automated patching only during create
+    if module.params.get("automated_patching") and not module.params.get("uuid"):
+
+        mw = MaintenanceWindow(module)
+        mw_spec, err = mw.get_spec(configure_automated_patching=True)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting spec for automated patching for new database  instance creation",
+                **result,
+            )
+        spec["maintenanceTasks"] = mw_spec
+
+    return spec
+
+
+def create_instance(module, result):
+    db_instance = DatabaseInstance(module)
     name = module.params["name"]
-    uuid, err = _databases.get_uuid(name)
+    uuid, err = db_instance.get_uuid(name)
     if uuid:
         module.fail_json(
             msg="Database instance with given name already exists", **result
         )
 
-    spec, err = _databases.get_spec()
-    if err:
-        result["error"] = err
-        module.fail_json(
-            msg="Failed generating create database instance spec", **result
-        )
+    ha = False
+    if module.params.get("db_server_cluster"):
+        ha = True
+
+    spec = get_provision_spec(module, result, ha=ha)
 
     if module.check_mode:
         result["response"] = spec
         return
 
-    resp = _databases.create(data=spec)
+    resp = db_instance.provision(data=spec)
     result["response"] = resp
     result["db_uuid"] = resp["entityId"]
     db_uuid = resp["entityId"]
@@ -783,7 +992,7 @@ def create_instance(module, result):
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid)
-        resp = _databases.read(db_uuid)
+        resp = db_instance.read(db_uuid)
         result["response"] = resp
 
     result["changed"] = True
@@ -814,7 +1023,7 @@ def check_for_idempotency(old_spec, update_spec):
 
 
 def update_instance(module, result):
-    _databases = Database(module)
+    _databases = DatabaseInstance(module)
 
     uuid = module.params.get("db_uuid")
     if not uuid:
@@ -823,49 +1032,46 @@ def update_instance(module, result):
     resp = _databases.read(uuid)
     old_spec = _databases.get_default_update_spec(override_spec=resp)
 
-    update_spec, err = _databases.get_spec(old_spec=old_spec)
-
-    # due to field name changes
-    if update_spec.get("databaseDescription"):
-        update_spec["description"] = update_spec.pop("databaseDescription")
-
+    spec, err = _databases.get_spec(old_spec=old_spec, update=True)
     if err:
         result["error"] = err
         module.fail_json(
             msg="Failed generating update database instance spec", **result
         )
 
+    # populate tags related spec
+    if module.params.get("tags"):
+        tags = Tag(module)
+        spec, err = tags.get_spec_for_db_instance(spec)
+        if err:
+            result["error"] = err
+            module.fail_json(
+                msg="Failed getting spec for tags for updating database instance",
+                **result,
+            )
+
     if module.check_mode:
-        result["response"] = update_spec
+        result["response"] = spec
         return
 
-    if check_for_idempotency(old_spec, update_spec):
+    if check_for_idempotency(old_spec, spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-    resp = _databases.update(data=update_spec, uuid=uuid)
+    resp = _databases.update(data=spec, uuid=uuid)
     result["response"] = resp
     result["db_uuid"] = uuid
     result["changed"] = True
 
 
 def delete_instance(module, result):
-    _databases = Database(module)
+    _databases = DatabaseInstance(module)
 
     uuid = module.params.get("db_uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
 
     spec = _databases.get_default_delete_spec()
-    if module.params.get("soft_delete"):
-        spec["remove"] = True
-        spec["delete"] = False
-    else:
-        spec["delete"] = True
-        spec["remove"] = False
-
-    if module.params.get("delete_time_machine"):
-        spec["deleteTimeMachine"] = True
 
     if module.check_mode:
         result["response"] = spec

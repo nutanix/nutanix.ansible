@@ -24,7 +24,10 @@ class Operation(NutanixDatabase):
         while True:
             resp = self.read(uuid)
             status = resp.get("status")
-            if status == NDB.StatusCodes.SUCCESS:
+            if (
+                status == NDB.StatusCodes.SUCCESS
+                or status == NDB.StatusCodes.COMPLETED_WITH_WARNING
+            ):
                 return resp
             elif status == NDB.StatusCodes.FAILURE:
                 if not raise_error:

@@ -168,7 +168,7 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.profiles import Profile  # noqa: E402
+from ..module_utils.ndb.profiles.profiles import Profile  # noqa: E402
 
 
 def get_module_spec():
