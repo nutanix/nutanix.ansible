@@ -128,9 +128,161 @@ author:
 """
 
 EXAMPLES = r"""
+  - name: Register Cluster with prisim_vlan
+    ntnx_ndb_clusters:
+        nutanix_host: "<ndb_era_ip>"
+        nutanix_username: "<ndb_era_username>"
+        nutanix_password: "<ndb_era_password>"
+        validate_certs: false
+        name: "cluster_name"
+        desc: "cluster_desc"
+        name_prefix: "cluster_name_prefix"
+        cluster_ip: "cluster_ip"
+        cluster_credentials:
+          username: "{{cluter_info.cluster_credentials.username}}"
+          password: "{{cluter_info.cluster_credentials.password}}"
+        agent_network:
+          dns_servers:
+            - "{{cluter_info.agent_network.dns_servers[0]}}"
+            - "{{cluter_info.agent_network.dns_servers[1]}}"
+          ntp_servers:
+            - "{{cluter_info.agent_network.ntp_servers[0]}}"
+            - "{{cluter_info.agent_network.ntp_servers[1]}}"
+        vlan_access:
+          prism_vlan:
+            vlan_name: "{{cluter_info.vlan_access.prism_vlan.vlan_name}}"
+            vlan_type: "{{cluter_info.vlan_access.prism_vlan.vlan_type}}"
+            static_ip: "{{cluter_info.vlan_access.prism_vlan.static_ip}}"
+            gateway: "{{cluter_info.vlan_access.prism_vlan.gateway}}"
+            subnet_mask: "{{cluter_info.vlan_access.prism_vlan.subnet_mask}}"
+        storage_container: "{{cluter_info.storage_container}}"
+
+  - name: update cluster name , desc
+    ntnx_ndb_clusters:
+        nutanix_host: "<ndb_era_ip>"
+        nutanix_username: "<ndb_era_username>"
+        nutanix_password: "<ndb_era_password>"
+        validate_certs: false
+        uuid:  "cluster_uuid"
+        name: newname
+        desc: newdesc
+
+  - name: delete cluster
+    ntnx_ndb_clusters:
+        nutanix_host: "<ndb_era_ip>"
+        nutanix_username: "<ndb_era_username>"
+        nutanix_password: "<ndb_era_password>"
+        validate_certs: false
+        uuid:    "cluster_uuid"
+        state: absent
 """
 
 RETURN = r"""
+response:
+  description: An intentful representation of a cluster status
+  returned: always
+  type: dict
+  sample:
+            {
+                        "cloudInfo": null,
+                        "cloudType": "NTNX",
+                        "dateCreated": "2023-01-22 08:59:42.12768",
+                        "dateModified": "2023-01-22 09:12:07.842244",
+                        "description": "newdesc",
+                        "entityCounts": null,
+                        "fqdns": null,
+                        "healthy": true,
+                        "hypervisorType": "AHV",
+                        "hypervisorVersion": "6.1",
+                        "id": "0000-0000-000-00000-0000",
+                        "ipAddresses": [
+                            "10.46.33.223"
+                        ],
+                        "managementServerInfo": null,
+                        "name": "newname",
+                        "nxClusterUUID": "0000-0000-000-00000-0000",
+                        "ownerId": "0000-0000-000-00000-0000",
+                        "password": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+                        "properties": [
+                            {
+                                "description": null,
+                                "name": "CLUSTER_ID",
+                                "ref_id": "0000-0000-000-00000-0000",
+                                "secure": false,
+                                "value": "0000-0000-000-00000-0000",
+                            },
+                            {
+                                "description": null,
+                                "name": "CLUSTER_INCARNATION_ID",
+                                "ref_id": "0000-0000-000-00000-0000",
+                                "secure": false,
+                                "value": "1670238836188065"
+                            },
+                            {
+                                "description": null,
+                                "name": "ERA_STORAGE_CONTAINER",
+                                "ref_id": "0000-0000-000-00000-0000",
+                                "secure": false,
+                                "value": "default-container-95673204421578"
+                            },
+                            {
+                                "description": null,
+                                "name": "MODEL_NAME",
+                                "ref_id": "0000-0000-000-00000-0000",
+                                "secure": false,
+                                "value": "NX-1065-G5"
+                            },
+                            {
+                                "description": null,
+                                "name": "ONDEMAND_REPLICATION_SUPPORTED",
+                                "ref_id": "0000-0000-000-00000-0000",
+                                "secure": false,
+                                "value": "true"
+                            },
+                            {
+                                "description": null,
+                                "name": "PRISM_VM_LIST_PAGINATION_LIMIT",
+                                "ref_id": "0000-0000-000-00000-0000",
+                                "secure": false,
+                                "value": "500"
+                            },
+                            {
+                                "description": null,
+                                "name": "PRISM_VM_LIST_PAGINATION_SIZE",
+                                "ref_id": "0000-0000-000-00000-0000",
+                                "secure": false,
+                                "value": "50"
+                            },
+                            {
+                                "description": null,
+                                "name": "RESOURCE_CONFIG",
+                                "ref_id": "0000-0000-000-00000-0000",
+                                "secure": false,
+                                "value": "{\"storageThresholdPercentage\":95.0,\"memoryThresholdPercentage\":95.0}"
+                            },
+                            {
+                                "description": null,
+                                "name": "TIMEZONE",
+                                "ref_id": "0000-0000-000-00000-0000",
+                                "secure": false,
+                                "value": "UTC"
+                            }
+                        ],
+                        "referenceCount": 0,
+                        "resourceConfig": {
+                            "memoryThresholdPercentage": 95.0,
+                            "storageThresholdPercentage": 95.0
+                        },
+                        "status": "UP",
+                        "uniqueName": "NEWNAME",
+                        "username": "admin",
+                        "version": "v2",
+            }
+cluster_uuid:
+  description: The created cluster uuid
+  returned: always
+  type: str
+  sample: "00000000-0000-0000-0000-000000000000"
 """
 
 import time  # noqa: E402
