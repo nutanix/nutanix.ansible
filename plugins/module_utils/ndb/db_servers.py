@@ -37,14 +37,18 @@ class DBServers(NutanixDatabase):
         uuid = resp[0]["id"]
         return uuid, None
 
-    def get_db_server(self, name=None, uuid=None, ip=None):
+    def get_db_server(self, name=None, uuid=None, ip=None, query=None):
         resp = None
         if uuid:
-            resp = self.read(uuid=uuid, raise_error=False)
+            resp = self.read(uuid=uuid, query=query, raise_error=False)
         elif name or ip:
             key = "name" if name else "ip"
             val = name if name else ip
-            query = {"value-type": key, "value": val}
+            query_params = {"value-type": key, "value": val}
+            if query:
+                query.update(query_params)
+            else:
+                query = query_params
             resp = self.read(query=query)
             if not resp:
                 return None, "Database server with {0} {1} not found".format(key, val)

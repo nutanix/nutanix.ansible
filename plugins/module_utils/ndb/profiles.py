@@ -58,7 +58,7 @@ class Profile(NutanixDatabase):
             )
         return resp
 
-    def get_profiles(self, uuid=None, name=None, type=None):
+    def get_profiles(self, uuid=None, name=None): #, type=None):
         if name or uuid:
             query = {}
             if name:
@@ -66,25 +66,26 @@ class Profile(NutanixDatabase):
             else:
                 query["id"] = uuid
 
-            if type:
-                query["type"] = type
+            # if type:
+            #     query["type"] = type
 
             resp = self.read(query=query, raise_error=False)
             if isinstance(resp, dict) and resp.get("errorCode"):
                 self.module.fail_json(
-                    msg="Failed fetching pofile info",
+                    msg="Failed fetching profile info",
                     error=resp.get("message"),
                     response=resp,
                 )
-        elif type:
-            query = {"type": type}
-            resp = self.read(query=query)
-            if not resp:
-                return None, "Profiles with type {0} not found".format(type)
+        # elif type:
+        #     query = {"type": type}
+        #     resp = self.read(query=query)
+        #     if not resp:
+        #         return None, "Profiles with type {0} not found".format(type)
         else:
             return (
                 None,
-                "Please provide uuid, name or profile type for fetching profile details",
+                # "Please provide uuid, name or profile type for fetching profile details",
+                "Please provide uuid or name for fetching profile details",
             )
 
         return resp, None

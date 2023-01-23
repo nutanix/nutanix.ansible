@@ -44,10 +44,37 @@ from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 
 def get_module_spec():
 
+    queries_spec = dict(
+        detailed=dict(type="bool"),
+        load_clones=dict(type="bool"),
+        load_databases=dict(type="bool"),
+        load_dbserver_cluster=dict(type="bool"),
+        load_metrics=dict(type="bool"),
+        curator=dict(type="bool"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "ip",
+                "name",
+                "vm-cluster-name",
+                "vm-cluster-uuid",
+                "dbserver-cluster-id",
+                "nx-cluster-id",
+                "fqdn"
+            ]
+        ),
+        time_zone=dict(type="str"),
+    )
+
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
         server_ip=dict(type="str"),
+        queries=dict(
+            type="dict",
+            options=queries_spec,
+        )
     )
 
     return module_args
@@ -55,12 +82,15 @@ def get_module_spec():
 
 def get_db_server(module, result):
     db_server = DBServers(module)
+    db_server.queries_map()
+    query_params = module.params.get("queries")
+
     if module.params.get("uuid"):
-        resp, err = db_server.get_db_server(uuid=module.params["uuid"])
+        resp, err = db_server.get_db_server(uuid=module.params["uuid"], query=query_params)
     elif module.params.get("name"):
-        resp, err = db_server.get_db_server(name=module.params["name"])
+        resp, err = db_server.get_db_server(name=module.params["name"], query=query_params)
     else:
-        resp, err = db_server.get_db_server(ip=module.params["server_ip"])
+        resp, err = db_server.get_db_server(ip=module.params["server_ip"], query=query_params)
 
     if err:
         result["error"] = err
@@ -71,8 +101,10 @@ def get_db_server(module, result):
 
 def get_db_servers(module, result):
     db_server = DBServers(module)
+    db_server.queries_map()
+    query_params = module.params.get("queries")
 
-    resp = db_server.read()
+    resp = db_server.read(query=query_params)
 
     result["response"] = resp
 

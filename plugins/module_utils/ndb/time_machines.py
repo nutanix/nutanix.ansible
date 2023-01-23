@@ -13,9 +13,9 @@ class TimeMachine(NutanixDatabase):
         resource_type = "/tms"
         super(TimeMachine, self).__init__(module, resource_type=resource_type)
 
-    def get_time_machine(self, uuid=None, name=None):
+    def get_time_machine(self, uuid=None, name=None, query=None):
         if uuid:
-            resp = self.read(uuid=uuid, raise_error=False)
+            resp = self.read(uuid=uuid, query=query, raise_error=False)
         elif name:
             endpoint = "{0}/{1}".format("name", name)
             resp = self.read(endpoint=endpoint, raise_error=False)
@@ -34,7 +34,7 @@ class TimeMachine(NutanixDatabase):
 
                     # fetch all details using uuid
                     if resp.get("id"):
-                        resp = self.read(uuid=resp["id"], raise_error=False)
+                        resp = self.read(uuid=resp["id"], query=query, raise_error=False)
         else:
             return (
                 None,

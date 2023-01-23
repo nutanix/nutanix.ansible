@@ -42,9 +42,17 @@ from ..module_utils.ndb.clusters import Cluster  # noqa: E402
 
 def get_module_spec():
 
+    queries_spec = dict(
+        include_management_server=dict(type="bool"),
+    )
+
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
+        queries=dict(
+            type="dict",
+            options=queries_spec,
+        )
     )
 
     return module_args
@@ -67,8 +75,10 @@ def get_cluster(module, result):
 
 def get_clusters(module, result):
     cluster = Cluster(module)
+    cluster.queries_map()
+    query_params = module.params.get("queries")
 
-    resp = cluster.read()
+    resp = cluster.read(query=query_params)
 
     result["response"] = resp
 
@@ -77,7 +87,11 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        mutually_exclusive=[("name", "uuid")],
+        mutually_exclusive=[
+            ("name", "uuid"),
+            ("name", "queries"),
+            ("uuid", "queries"),
+        ],
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("name") or module.params.get("uuid"):

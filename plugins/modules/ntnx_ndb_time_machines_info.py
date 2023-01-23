@@ -42,9 +42,30 @@ from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 
 def get_module_spec():
 
+    queries_spec = dict(
+        detailed=dict(type="bool"),
+        load_clones=dict(type="bool"),
+        load_databases=dict(type="bool"),
+        clone_tms=dict(type="bool"),
+        database_tms=dict(type="bool"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "ip",
+                "name",
+            ]
+        ),
+        time_zone=dict(type="str"),
+    )
+
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
+        queries=dict(
+            type="dict",
+            options=queries_spec,
+        )
     )
 
     return module_args
@@ -52,10 +73,12 @@ def get_module_spec():
 
 def get_tm(module, result):
     tm = TimeMachine(module)
+    tm.queries_map()
 
     uuid = module.params.get("uuid")
     name = module.params.get("name")
-    resp, err = tm.get_time_machine(uuid=uuid, name=name)
+    query_params = module.params.get("queries")
+    resp, err = tm.get_time_machine(uuid=uuid, name=name, query=query_params)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed fetching sla info", **result)
@@ -64,8 +87,11 @@ def get_tm(module, result):
 
 def get_tms(module, result):
     tm = TimeMachine(module)
+    tm.queries_map()
 
-    resp = tm.read()
+    query_params = module.params.get("queries")
+
+    resp = tm.read(query=query_params)
 
     result["response"] = resp
 
