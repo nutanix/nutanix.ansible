@@ -73,3 +73,4 @@ action_groups:
   - ntnx_ndb_clusters_info
   - ntnx_ndb_vlans
   - ntnx_ndb_vlans_info
+  - ntnx_ndb_stretched_vlans

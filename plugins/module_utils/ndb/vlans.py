@@ -103,13 +103,7 @@ class VLAN(NutanixDatabase):
         )
 
     def _get_default_stretched_vlan_spec(self):
-        return deepcopy(
-            {
-                "name": "",
-                "type": "Static",
-                "vlanIds": []
-            }
-        )
+        return deepcopy({"name": "", "type": "Static", "vlanIds": []})
 
     def get_default_update_spec(self, override_spec=None):
         spec = deepcopy(
@@ -132,11 +126,8 @@ class VLAN(NutanixDatabase):
             {
                 "name": "",
                 "type": "Static",
-                "metadata": {
-                    "gateway": "",
-                    "subnetMask": ""
-                },
-                "vlanIds": []
+                "metadata": {"gateway": "", "subnetMask": ""},
+                "vlanIds": [],
             }
         )
         if override_spec:
@@ -186,7 +177,9 @@ class VLAN(NutanixDatabase):
         if self.is_stretched:
             payload["metadata"]["gateway"] = gateway
         else:
-            old_property = self._get_property_by_name("VLAN_GATEWAY", payload["properties"])
+            old_property = self._get_property_by_name(
+                "VLAN_GATEWAY", payload["properties"]
+            )
             if old_property:
                 old_property["value"] = gateway
             else:

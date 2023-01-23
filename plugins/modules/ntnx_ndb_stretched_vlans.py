@@ -18,10 +18,24 @@ options:
     description:
       - uuid for update or delete of vlan instance
     type: str
+  vlans:
+    description:
+      - write
+    type: list
+    elements: str
+  vlan_type:
+    description:
+      - wheather the vlan is mannaged or no
+    type: str
+    choices: ["DHCP", "Static"]
   name:
     description:
       - name of vlan instance
       - update allowed
+    type: str
+  desc:
+    description:
+      - description of vlan instance
     type: str
   gateway:
     description:
@@ -41,36 +55,36 @@ author:
 """
 
 EXAMPLES = r"""
-- name: create static ndb vlan
-  ntnx_ndb_stretched_vlans:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
-    validate_certs: false
-    name:  test-vlan-name
-        vlans:
-            - "00000000-0000-0000-0000-000000000000"
-            - "00000000-0000-0000-0000-000000000000"
-  register: result
+# - name: create static ndb vlan
+#   ntnx_ndb_stretched_vlans:
+#     nutanix_host: <pc_ip>
+#     nutanix_username: <user>
+#     nutanix_password: <pass>
+#     validate_certs: false
+#     name:  test-vlan-name
+#         vlans:
+#             - "00000000-0000-0000-0000-000000000000"
+#             - "00000000-0000-0000-0000-000000000000"
+#   register: result
 
-- name: update ndb vlan type
-  ntnx_ndb_stretched_vlans:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
-    validate_certs: false
-    vlan_uuid: "<vlan-uuid>"
-  register: result
+# - name: update ndb vlan type
+#   ntnx_ndb_stretched_vlans:
+#     nutanix_host: <pc_ip>
+#     nutanix_username: <user>
+#     nutanix_password: <pass>
+#     validate_certs: false
+#     vlan_uuid: "<vlan-uuid>"
+#   register: result
 
-- name: Delete vlan
-  ntnx_ndb_stretched_vlans:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
-    validate_certs: false
-    state: absent
-    vlan_uuid: "<vlan-uuid>"
-  register: result
+# - name: Delete vlan
+#   ntnx_ndb_stretched_vlans:
+#     nutanix_host: "<pc_ip>"
+#     nutanix_username: <user>
+#     nutanix_password: <pass>
+#     validate_certs: false
+#     state: absent
+#     vlan_uuid: "<vlan-uuid>"
+#   register: result
 
 """
 
@@ -140,14 +154,18 @@ def update_stretched_vlan(module, result):
     resp, err = vlan.get_stretched_vlan(uuid=uuid)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating update stretched vlan instance spec", **result)
+        module.fail_json(
+            msg="Failed generating update stretched vlan instance spec", **result
+        )
 
     old_spec = vlan.get_default_stretched_update_spec(override_spec=resp)
 
     update_spec, err = vlan.get_spec(old_spec=old_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating update stretched vlan instance spec", **result)
+        module.fail_json(
+            msg="Failed generating update stretched vlan instance spec", **result
+        )
 
     if module.check_mode:
         result["response"] = update_spec
