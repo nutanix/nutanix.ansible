@@ -194,6 +194,10 @@ def run_module():
             ("state", "present", ("name", "vlan_uuid"), True),
             ("state", "absent", ("vlan_uuid",)),
         ],
+        required_together=[
+            ("gateway", "vlan_uuid"),
+            ("subnet_mask", "vlan_uuid"),
+        ],
         supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
