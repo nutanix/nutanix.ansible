@@ -36,6 +36,21 @@ options:
             - wheater the lastet version of profile or no
         type: bool
         default: false
+      queries:
+        description:
+            - write
+        type: dict
+        suboptions:
+            engine:
+                description:
+                    - write
+                type: str
+                choices: ["oracle_database","postgres_database","sqlserver_database","mariadb_database","mysql_database","saphana_database","mongodb_database",]
+            type:
+                description:
+                    - write
+                type: str
+                choices: ["Software","Compute","Network","Database_Parameter",]
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
 author:
@@ -65,7 +80,7 @@ def get_module_spec():
                 "mysql_database",
                 "saphana_database",
                 "mongodb_database",
-            ]
+            ],
         ),
         type=dict(
             type="str",
@@ -74,7 +89,7 @@ def get_module_spec():
                 "Compute",
                 "Network",
                 "Database_Parameter",
-            ]
+            ],
         ),
     )
 
@@ -89,7 +104,7 @@ def get_module_spec():
         queries=dict(
             type="dict",
             options=queries_spec,
-        )
+        ),
     )
 
     return module_args
@@ -100,7 +115,7 @@ def get_profile(module, result):
     name = module.params.get("name")
     uuid = module.params.get("uuid")
     # type = module.params.get("profile_type")
-    resp, err = profile.get_profiles(uuid, name) #, type)
+    resp, err = profile.get_profiles(uuid, name)  # , type)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed fetching profile info", **result)

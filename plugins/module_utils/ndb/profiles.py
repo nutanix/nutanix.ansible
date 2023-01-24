@@ -58,7 +58,7 @@ class Profile(NutanixDatabase):
             )
         return resp
 
-    def get_profiles(self, uuid=None, name=None): #, type=None):
+    def get_profiles(self, uuid=None, name=None):  # , type=None):
         if name or uuid:
             query = {}
             if name:

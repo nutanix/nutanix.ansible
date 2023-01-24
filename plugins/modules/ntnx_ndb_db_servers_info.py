@@ -26,8 +26,48 @@ options:
         description:
             - server ip
         type: str
-extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+      queries:
+        description:
+            - write
+        type: dict
+        suboptions:
+            detailed:
+                description:
+                    - write
+                type: bool
+            load_clones:
+                description:
+                    - write
+                type: bool
+            load_databases:
+                description:
+                    - write
+                type: bool
+            load_dbserver_cluster:
+                description:
+                    - write
+                type: bool
+            load_metrics:
+                description:
+                    - write
+                type: bool
+            curator:
+                description:
+                    - write
+                type: bool
+            value:
+                description:
+                    - write
+                type: str
+            value_type:
+                description:
+                    - write
+                type: str
+                choices: ["ip","name","vm-cluster-name","vm-cluster-uuid", "dbserver-cluster-id","nx-cluster-id", "fqdn",]
+            time_zone:
+                description:
+                    - write
+                type: str
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -38,8 +78,8 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
 
 
 def get_module_spec():
@@ -61,8 +101,8 @@ def get_module_spec():
                 "vm-cluster-uuid",
                 "dbserver-cluster-id",
                 "nx-cluster-id",
-                "fqdn"
-            ]
+                "fqdn",
+            ],
         ),
         time_zone=dict(type="str"),
     )
@@ -74,7 +114,7 @@ def get_module_spec():
         queries=dict(
             type="dict",
             options=queries_spec,
-        )
+        ),
     )
 
     return module_args
@@ -86,11 +126,17 @@ def get_db_server(module, result):
     query_params = module.params.get("queries")
 
     if module.params.get("uuid"):
-        resp, err = db_server.get_db_server(uuid=module.params["uuid"], query=query_params)
+        resp, err = db_server.get_db_server(
+            uuid=module.params["uuid"], query=query_params
+        )
     elif module.params.get("name"):
-        resp, err = db_server.get_db_server(name=module.params["name"], query=query_params)
+        resp, err = db_server.get_db_server(
+            name=module.params["name"], query=query_params
+        )
     else:
-        resp, err = db_server.get_db_server(ip=module.params["server_ip"], query=query_params)
+        resp, err = db_server.get_db_server(
+            ip=module.params["server_ip"], query=query_params
+        )
 
     if err:
         result["error"] = err

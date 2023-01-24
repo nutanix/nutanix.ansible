@@ -34,8 +34,8 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-from ..module_utils.ndb.clones import Clone  # noqa: E402
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.clones import Clone  # noqa: E402
 
 
 def get_module_spec():

@@ -34,7 +34,9 @@ class TimeMachine(NutanixDatabase):
 
                     # fetch all details using uuid
                     if resp.get("id"):
-                        resp = self.read(uuid=resp["id"], query=query, raise_error=False)
+                        resp = self.read(
+                            uuid=resp["id"], query=query, raise_error=False
+                        )
         else:
             return (
                 None,
