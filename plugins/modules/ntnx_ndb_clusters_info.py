@@ -5,7 +5,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -23,6 +22,15 @@ options:
         description:
             - cluster id
         type: str
+      queries:
+        description:
+            - write
+        type: dict
+        suboptions:
+            include_management_server:
+                description:
+                    - write
+                type: bool
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
 author:
@@ -52,7 +60,7 @@ def get_module_spec():
         queries=dict(
             type="dict",
             options=queries_spec,
-        )
+        ),
     )
 
     return module_args

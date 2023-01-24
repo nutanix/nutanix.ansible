@@ -34,8 +34,8 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-from ..module_utils.ndb.databases import Database  # noqa: E402
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.databases import Database  # noqa: E402
 
 
 def get_module_spec():
@@ -52,7 +52,7 @@ def get_module_spec():
                 "ip",
                 "name",
                 "database-name",
-            ]
+            ],
         ),
         time_zone=dict(type="str"),
     )

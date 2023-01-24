@@ -22,6 +22,44 @@ options:
         description:
             - time machine id
         type: str
+      queries:
+        description:
+            - write
+        type: dict
+        suboptions:
+            detailed:
+                description:
+                    - write
+                type: bool
+            load_clones:
+                description:
+                    - write
+                type: bool
+            load_databases:
+                description:
+                    - write
+                type: bool
+            clone_tms:
+                description:
+                    - write
+                type: bool
+            database_tms:
+                description:
+                    - write
+                type: bool
+            value:
+                description:
+                    - write
+                type: str
+            value_type:
+                description:
+                    - write
+                type: str
+                choices: ["ip","name",]
+            time_zone:
+                description:
+                    - write
+                type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
 author:
@@ -54,7 +92,7 @@ def get_module_spec():
             choices=[
                 "ip",
                 "name",
-            ]
+            ],
         ),
         time_zone=dict(type="str"),
     )
@@ -65,7 +103,7 @@ def get_module_spec():
         queries=dict(
             type="dict",
             options=queries_spec,
-        )
+        ),
     )
 
     return module_args
