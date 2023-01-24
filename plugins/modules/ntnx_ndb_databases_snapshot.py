@@ -52,12 +52,9 @@ def get_module_spec():
     )
     return module_args
 
-
-# Create snapshot out of database instance or time machine
-def create_snapshot(module, result):
-    time_machine_uuid = ""
-
+def get_time_machine_uuid(module, result):
     # fetch uuid from time machine or database
+    time_machine_uuid = ""
     if module.params.get("time_machine"):
         tm = TimeMachine(module)
         time_machine_uuid, err = tm.get_time_machine_uuid(module.params["time_machine"])
@@ -75,7 +72,15 @@ def create_snapshot(module, result):
             module.fail_json(
                 msg="Failed fetching time machine uuid from database", **result
             )
+        
         time_machine_uuid = db["timeMachineId"]
+
+    return time_machine_uuid
+
+# Create snapshot out of database instance or time machine
+def create_snapshot(module, result):
+
+    time_machine_uuid = get_time_machine_uuid(module, result)
 
     snapshots = Snapshot(module)
     spec, err = snapshots.get_spec()
@@ -92,8 +97,8 @@ def create_snapshot(module, result):
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]
         operations = Operation(module)
-        time.sleep(5)  # for getting
-        operations.wait_for_completion(ops_uuid)
+        time.sleep(3)
+        operations.wait_for_completion(ops_uuid, delay=5)
 
         # get snapshot info after its finished
         resp, err = snapshots.get_snapshot(
@@ -159,7 +164,7 @@ def update_snapshot(module, result):
         module.exit_json(msg="Nothing to change.")
 
 
-    snapshot = _snapshot.read(uuid=uuid)
+    snapshot = _snapshot.read(uuid=uuid, query={"load-replicated-child-snapshots": True})
     result["snapshot_uuid"] = uuid
     result["response"] = snapshot
     result["changed"] = True
