@@ -28,10 +28,11 @@ class NutanixDatabase(Entity):
 
     def queries_map(self, except_keys=None):
         queries = self.module.params.get("queries")
-        mapped_queries = {}
-        for key, value in queries.items():
-            if value is not None:
-                if except_keys and key not in except_keys:
-                    key = key.replace("_", "-")
-                mapped_queries.update({key: value})
-        self.module.params["queries"] = mapped_queries
+        if queries:
+            mapped_queries = {}
+            for key, value in queries.items():
+                if value is not None:
+                    if except_keys and key not in except_keys:
+                        key = key.replace("_", "-")
+                    mapped_queries.update({key: value})
+            self.module.params["queries"] = mapped_queries
