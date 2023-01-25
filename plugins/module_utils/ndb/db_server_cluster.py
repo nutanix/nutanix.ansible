@@ -1,11 +1,12 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 from copy import deepcopy
 
+from .clusters import Cluster
 from .db_server_vm import DBServerVM
 from .nutanix_database import NutanixDatabase
-from .clusters import Cluster
 
 __metaclass__ = type
 

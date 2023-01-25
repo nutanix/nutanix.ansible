@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 import time  # noqa: E402
+
 from ..module_utils.ndb.base_module import NdbBaseModule
 from ..module_utils.ndb.database_clones import DatabaseClone
 from ..module_utils.ndb.db_server_vm import DBServerVM
@@ -125,7 +126,7 @@ def get_module_spec():
         ),
         refresh_schedule=dict(type="dict", options=refresh_schedule, required=False),
         delete_from_vm=dict(type="bool", required=False),
-        soft_remove=dict(type="bool", required=False)
+        soft_remove=dict(type="bool", required=False),
     )
     return module_args
 
@@ -162,12 +163,10 @@ def get_clone_spec(module, result, time_machine_uuid):
         "time_machine_uuid": time_machine_uuid,
         "db_clone": True,
         "provision_new_server": provision_new_server,
-        "use_authorized_server": use_athorized_server
+        "use_authorized_server": use_athorized_server,
     }
 
-    spec, err = db_server_vms.get_spec(
-        old_spec=spec, **kwargs
-    )
+    spec, err = db_server_vms.get_spec(old_spec=spec, **kwargs)
 
     # populate tags related spec
     tags = Tag(module)
@@ -307,12 +306,11 @@ def delete_db_clone(module, result):
     default_spec = _clones.get_default_delete_spec()
     spec, err = _clones.get_delete_spec(payload=default_spec)
     if err:
-            result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for deleting database clone",
-                **result,
-            )
-
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting spec for deleting database clone",
+            **result,
+        )
 
     if module.check_mode:
         result["response"] = spec

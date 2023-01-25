@@ -5,7 +5,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -28,24 +27,34 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 # Notes:
 # 1. Snapshot replication of only one cluster at a time is supported currently
 
+
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
 
     module_args = dict(
         snapshot_uuid=dict(type="str", required=False),
-        clusters=dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=True),
+        clusters=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
         expiry_days=dict(type="str", required=False),
         timezone=dict(type="str", required=False),
     )
     return module_args
+
 
 # Create snapshot out of database instance or time machine
 def replicate_snapshot(module, result):
 
     snapshot_uuid = module.params.get("snapshot_uuid")
     if not snapshot_uuid:
-        module.fail_json(msg="snapshot_uuid is required field for replication", **result)
+        module.fail_json(
+            msg="snapshot_uuid is required field for replication", **result
+        )
 
     _snapshot = Snapshot(module)
     snapshot = _snapshot.read(uuid=snapshot_uuid)
@@ -60,7 +69,9 @@ def replicate_snapshot(module, result):
         result["response"] = spec
         return
 
-    resp = _snapshot.replicate(uuid=snapshot_uuid,time_machine_uuid=time_machine_uuid, data=spec)
+    resp = _snapshot.replicate(
+        uuid=snapshot_uuid, time_machine_uuid=time_machine_uuid, data=spec
+    )
     result["response"] = resp
     result["snapshot_uuid"] = snapshot_uuid
 
@@ -69,7 +80,9 @@ def replicate_snapshot(module, result):
         operations = Operation(module)
         time.sleep(3)
         operations.wait_for_completion(ops_uuid, delay=5)
-        snapshot = _snapshot.read(uuid=snapshot_uuid, query={"load-replicated-child-snapshots": True})
+        snapshot = _snapshot.read(
+            uuid=snapshot_uuid, query={"load-replicated-child-snapshots": True}
+        )
         result["response"] = snapshot
 
     result["changed"] = True

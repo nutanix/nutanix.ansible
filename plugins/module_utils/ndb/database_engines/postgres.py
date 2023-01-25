@@ -5,9 +5,8 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-
-from .database_engine import DatabaseEngine
 from ...constants import NDB
+from .database_engine import DatabaseEngine
 
 
 class Postgres(DatabaseEngine):
@@ -67,9 +66,9 @@ class Postgres(DatabaseEngine):
 
         payload["properties"] = properties
         return payload, None
-    
+
     def build_spec_update_db_params_profile_version(self, payload, db_params):
-        
+
         # map of certain properties with their units
         property_units = {
             "min_wal_size": "MB",
@@ -79,7 +78,7 @@ class Postgres(DatabaseEngine):
         }
 
         properties = payload.get("properties", [])
-        
+
         # update properties
         for prop in properties:
 

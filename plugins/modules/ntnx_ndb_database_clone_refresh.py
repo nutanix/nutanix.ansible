@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 import time  # noqa: E402
+
 from ..module_utils.ndb.base_module import NdbBaseModule
 from ..module_utils.ndb.database_clones import DatabaseClone
 from ..module_utils.ndb.db_server_vm import DBServerVM
@@ -28,20 +29,19 @@ def get_module_spec():
     return module_args
 
 
-
 def refresh_clone(module, result):
     db_clone = DatabaseClone(module)
-    
+
     uuid = module.params.get("uuid")
     if not uuid:
-        module.fail_json(msg="uuid is required field for database clone refresh", **result)
+        module.fail_json(
+            msg="uuid is required field for database clone refresh", **result
+        )
 
     spec, err = db_clone.get_clone_refresh_spec()
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for database clone refresh", **result
-        )
+        module.fail_json(msg="Failed getting spec for database clone refresh", **result)
 
     if module.check_mode:
         result["response"] = spec
