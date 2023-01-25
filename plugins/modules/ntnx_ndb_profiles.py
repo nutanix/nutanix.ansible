@@ -4,6 +4,7 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 import time
 
 __metaclass__ = type
@@ -18,13 +19,15 @@ RETURN = r"""
 """
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.operations import Operation
 from ..module_utils.ndb.profiles.profile_types import get_profile_type_obj
 from ..module_utils.ndb.profiles.profiles import Profile
-from ..module_utils.ndb.operations import Operation
 from ..module_utils.utils import remove_param_with_none_value
 
 profile_types_with_version_support = ["software"]
 profile_types_with_wait_support = ["software"]
+
+
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
@@ -99,7 +102,6 @@ def get_module_spec():
             required=False,
         ),
         database_type=dict(type="str", options=["postgres"]),
-
     )
 
     database_parameters = dict(postgres=dict(type="dict", options=postgres_params))
@@ -108,12 +110,18 @@ def get_module_spec():
         profile_uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        type=dict(type="str", choices=["software", "compute", "network", "database_parameters"], required=True),
+        type=dict(
+            type="str",
+            choices=["software", "compute", "network", "database_parameters"],
+            required=True,
+        ),
         database_type=dict(type="str", options=["postgres"]),
         compute=dict(type="dict", options=compute, required=False),
         software=dict(type="dict", options=software, required=False),
         network=dict(type="dict", options=network, required=False),
-        database_parameters=dict(type="dict", options=database_parameters, required=False),
+        database_parameters=dict(
+            type="dict", options=database_parameters, required=False
+        ),
         publish=dict(type="bool", required=False),
         deprecate=dict(type="bool", required=False),
     )
@@ -129,16 +137,16 @@ def check_profile_idempotency(old_spec, new_spec):
         return False
     if old_spec.get("description") != new_spec.get("description"):
         return False
-    
+
     # check cluster availability update for software profile
     if new_spec.get("updateClusterAvailability"):
         old_clusters = []
         for cluster in old_spec.get("clusterAvailability", []):
             if cluster["status"] == "ACTIVE":
                 old_clusters.append(cluster["nxClusterId"])
-        
+
         new_clusters = new_spec.get("availableClusterIds", [])
-        
+
         if len(new_clusters) != len(old_clusters):
             return False
 
@@ -156,17 +164,17 @@ def create_profile_version(module, result, profile_uuid, profile_type):
     spec, err = _profile.get_create_version_spec()
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating profile version create spec", **result) 
-    
+        module.fail_json(msg="Failed generating profile version create spec", **result)
+
     if module.check_mode:
         result["response"]["version"] = spec
-        return 
+        return
 
     resp = _profile.create_version(profile_uuid, data=spec)
     version_uuid = resp.get("entityId") or resp.get("id")
     result["version_uuid"] = version_uuid
     result["response"]["version"] = resp
-    
+
     if module.params.get("wait") and profile_type in profile_types_with_wait_support:
 
         ops_uuid = resp["operationId"]
@@ -190,27 +198,33 @@ def update_profile_version(module, result, profile_uuid, profile_type):
     if config and config.get("version_uuid"):
         version_uuid = config.get("version_uuid")
 
-    version = _profile.get_profile_by_version(uuid=profile_uuid, version_uuid=version_uuid)
+    version = _profile.get_profile_by_version(
+        uuid=profile_uuid, version_uuid=version_uuid
+    )
     version_uuid = version.get("entityId") or version.get("id")
     result["version_uuid"] = version_uuid
-    
+
     default_spec = _profile.get_default_version_update_spec(override_spec=version)
     spec, err = _profile.get_update_version_spec(old_spec=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating profile version update spec", **result) 
-    
+        module.fail_json(msg="Failed generating profile version update spec", **result)
+
     if spec.get("propertiesMap"):
         spec.pop("propertiesMap")
-    
+
     if module.check_mode:
         result["response"]["version"] = spec
-        return 
+        return
 
     resp = _profile.update_version(profile_uuid, version_uuid, spec)
     result["response"]["version"] = resp
-    
-    if module.params.get("wait") and profile_type in profile_types_with_wait_support and resp.get("operationId"):
+
+    if (
+        module.params.get("wait")
+        and profile_type in profile_types_with_wait_support
+        and resp.get("operationId")
+    ):
 
         ops_uuid = resp["operationId"]
         operations = Operation(module)
@@ -228,11 +242,11 @@ def delete_profile_version(module, result, profile_uuid, profile_type):
     _profile, err = get_profile_type_obj(profile_type=profile_type)
 
     config = module.params.get(profile_type)
-    
+
     version_uuid = config.get("version_uuid")
     if not version_uuid:
         module.fail_json(msg="uuid is required field for version delete", **result)
-    
+
     resp = _profile.delete_profile(profile_uuid=profile_uuid, version_uuid=version_uuid)
     result["response"]["version"] = resp
 
@@ -244,7 +258,7 @@ def version_operations(module, result, profile_uuid, profile_type):
         profile_config = module.params.get(profile_type)
         state = profile_config.get("state", "present")
         if state == "present":
-            if profile_config.get("version_uuid"): 
+            if profile_config.get("version_uuid"):
                 update_profile_version(module, result, profile_uuid, profile_type)
             else:
                 create_profile_version(module, result, profile_uuid, profile_type)
@@ -258,7 +272,10 @@ def create_profile(module, result):
     _profile, err = get_profile_type_obj(module, profile_type=profile_type)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating object for profile type {0}".format(profile_type), **result)
+        module.fail_json(
+            msg="Failed generating object for profile type {0}".format(profile_type),
+            **result,
+        )
 
     spec, err = _profile.get_create_profile_spec()
     if err:
@@ -285,7 +302,7 @@ def create_profile(module, result):
     result["profile_uuid"] = uuid
 
     # polling is only required for software profile
-    if module.params.get("wait") and profile_type=="software":
+    if module.params.get("wait") and profile_type == "software":
 
         ops_uuid = resp["operationId"]
         operations = Operation(module)
@@ -310,18 +327,22 @@ def update_profile(module, result):
     _profile, err = get_profile_type_obj(module, profile_type=profile_type)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating object for profile type {0}".format(profile_type), **result)
-    
+        module.fail_json(
+            msg="Failed generating object for profile type {0}".format(profile_type),
+            **result,
+        )
+
     profile = _profile.get_profiles(uuid=uuid)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed fetching profile info", **result)
 
-
     # profile update operations
     default_update_spec = _profile.get_default_update_spec(override_spec=profile)
 
-    profile_update_spec, err = _profile.get_update_profile_spec(old_spec=default_update_spec)
+    profile_update_spec, err = _profile.get_update_profile_spec(
+        old_spec=default_update_spec
+    )
     if err:
         result["error"] = err
         module.fail_json(msg="Failed creating profile update spec", **result)
@@ -331,7 +352,9 @@ def update_profile(module, result):
     if module.check_mode:
         result["response"]["profile"] = profile_update_spec
 
-    if not module.check_mode and not check_profile_idempotency(profile, profile_update_spec):
+    if not module.check_mode and not check_profile_idempotency(
+        profile, profile_update_spec
+    ):
         resp = _profile.update(data=profile_update_spec, uuid=uuid)
         result["response"]["profile"] = resp
 
@@ -350,9 +373,9 @@ def delete_profile(module, result):
     uuid = module.params.get("profile_uuid")
     if not uuid:
         return module.fail_json(msg="'profile_uuid' is a required for deleting profile")
-    
+
     resp = profiles.delete(uuid)
-    
+
     result["response"] = resp
     result["changed"] = True
 

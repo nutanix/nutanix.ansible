@@ -32,6 +32,7 @@ def get_maintenance_windows(module, result):
     resp = mw.read(uuid=module.params.get("uuid"))
     result["response"] = resp
 
+
 def run_module():
     module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),

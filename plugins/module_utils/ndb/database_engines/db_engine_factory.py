@@ -5,12 +5,12 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
+from ...constants import NDB
 from ..database_engines.postgres import (
     Postgres,
     PostgresHAInstance,
     PostgresSingleInstance,
 )
-from ...constants import NDB
 
 
 def get_engine_type(module):
@@ -24,7 +24,13 @@ def get_engine_type(module):
 
 
 def create_db_engine(module, engine_type=None, db_architecture=None):
-    engines = {"postgres": {"single": PostgresSingleInstance, "ha": PostgresHAInstance, "default": Postgres}}
+    engines = {
+        "postgres": {
+            "single": PostgresSingleInstance,
+            "ha": PostgresHAInstance,
+            "default": Postgres,
+        }
+    }
 
     if not engine_type:
         engine_type, err = get_engine_type(module)

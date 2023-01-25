@@ -5,7 +5,6 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -45,12 +44,19 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        clusters=dict(type="list", elements="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive, required=False),
+        clusters=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
         expiry_days=dict(type="str", required=False),
         remove_expiry=dict(type="bool", required=False),
         timezone=dict(type="str", required=False),
     )
     return module_args
+
 
 def get_time_machine_uuid(module, result):
     # fetch uuid from time machine or database
@@ -72,10 +78,11 @@ def get_time_machine_uuid(module, result):
             module.fail_json(
                 msg="Failed fetching time machine uuid from database", **result
             )
-        
+
         time_machine_uuid = db["timeMachineId"]
 
     return time_machine_uuid
+
 
 # Create snapshot out of database instance or time machine
 def create_snapshot(module, result):
@@ -163,8 +170,9 @@ def update_snapshot(module, result):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-
-    snapshot = _snapshot.read(uuid=uuid, query={"load-replicated-child-snapshots": True})
+    snapshot = _snapshot.read(
+        uuid=uuid, query={"load-replicated-child-snapshots": True}
+    )
     result["snapshot_uuid"] = uuid
     result["response"] = snapshot
     result["changed"] = True
