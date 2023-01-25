@@ -490,8 +490,8 @@ class DBServerVM(NutanixDatabase):
             "delete_from_cluster": self._build_spec_delete_from_cluster,
             "delete_vm_snapshots": self._build_spec_delete_vm_snapshots,
             "delete_vgs": self._build_spec_delete_volume_groups,
-            "soft_remove": self._build_spec_soft_remove
-       }
+            "soft_remove": self._build_spec_soft_remove,
+        }
 
         return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
