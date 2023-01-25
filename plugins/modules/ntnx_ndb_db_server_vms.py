@@ -32,7 +32,7 @@ def get_module_spec():
     )
 
     software_profile = dict(
-        name=dict(type="str"), uuid=dict(type="str"), version_id=dict(type="str")
+        name=dict(type="str"), uuid=dict(type="str"), version_uuid=dict(type="str")
     )
     time_machine = dict(
         name=dict(type="str", required=False),
@@ -93,6 +93,7 @@ def get_module_spec():
         delete_from_cluster=dict(type="bool", default=False, required=False),
         delete_vgs=dict(type="bool", default=False, required=False),
         delete_vm_snapshots=dict(type="bool", default=False, required=False),
+        soft_remove=dict(type="bool", default=False, required=False),
     )
     return module_args
 
@@ -195,7 +196,7 @@ def update_db_server(module, result):
         module.fail_json("'uuid' is required for updating db server vm")
 
     db_server = db_servers.read(uuid=uuid)
-    update_spec = db_servers.get_default_spec_for_update(old_spec=db_server)
+    update_spec = db_servers.get_default_spec_for_update(override=db_server)
     update_spec, err = db_servers.get_spec(old_spec=update_spec, update=True)
     if err:
         result["error"] = err
@@ -249,11 +250,11 @@ def delete_db_server(module, result):
     resp = db_servers.delete(data=spec, uuid=uuid)
     result["response"] = resp
 
-    if module.params.get("wait"):
+    if module.params.get("wait") and resp.get("operationId"):
         ops_uuid = resp["operationId"]
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
-        resp = operations.wait_for_completion(ops_uuid)
+        resp = operations.wait_for_completion(ops_uuid, delay=5)
         result["response"] = resp
 
     result["changed"] = True

@@ -474,7 +474,8 @@ class DBServerVM(NutanixDatabase):
             "delete_from_cluster": self._build_spec_delete_from_cluster,
             "delete_vm_snapshots": self._build_spec_delete_vm_snapshots,
             "delete_vgs": self._build_spec_delete_volume_groups,
-        }
+            "soft_remove": self._build_spec_soft_remove
+       }
 
         return super().get_spec(old_spec=old_spec, params=params,  **kwargs)
 
@@ -509,8 +510,8 @@ class DBServerVM(NutanixDatabase):
             return None, err
 
         payload["softwareProfileId"] = uuid
-        if profile.get("version_id"):
-            payload["softwareProfileVersionId"] = profile["version_id"]
+        if profile.get("version_uuid"):
+            payload["softwareProfileVersionId"] = profile["version_uuid"]
         else:
             profiles = Profile(self.module)
             software_profile = profiles.read(uuid)
@@ -541,8 +542,8 @@ class DBServerVM(NutanixDatabase):
         return payload, None
 
     def _build_spec_time_machine(self, payload, time_machine):
-        time_machine = TimeMachine(self.module)
-        uuid, err = time_machine.get_time_machine_uuid(self, time_machine)
+        _time_machine = TimeMachine(self.module)
+        uuid, err = _time_machine.get_time_machine_uuid(time_machine)
         if err:
             return None, err
 
@@ -746,6 +747,11 @@ class DBServerVM(NutanixDatabase):
 
     def _build_spec_delete_volume_groups(self, payload, delete_volume_groups):
         payload["deleteVgs"] = delete_volume_groups
+        return payload, None
+
+    def _build_spec_soft_remove(self, payload, soft_remove):
+        payload["softRemove"] = soft_remove
+        payload["remove"] = False
         return payload, None
 
     def _build_spec_delete_vm_snapshots(self, payload, delete_vm_snapshots):

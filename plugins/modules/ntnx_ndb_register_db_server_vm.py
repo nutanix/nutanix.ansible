@@ -125,6 +125,7 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[("state", "present", ("postgres",), True)],
         mutually_exclusive=[("private_ssh_key", "password")],
     )
     remove_param_with_none_value(module.params)
