@@ -1,15 +1,15 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
-from copy import deepcopy
 
+from copy import deepcopy
 
 __metaclass__ = type
 
 
+from .clusters import Cluster
 from .nutanix_database import NutanixDatabase
 from .time_machines import TimeMachine
-from .clusters import Cluster
 
 
 class Snapshot(NutanixDatabase):
@@ -19,14 +19,14 @@ class Snapshot(NutanixDatabase):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "expiry_days": self._build_spec_expiry,
-            "clusters": self._build_spec_clusters
+            "clusters": self._build_spec_clusters,
         }
 
     def create_snapshot(self, time_machine_uuid, data):
         endpoint = "{0}/{1}".format(time_machine_uuid, "snapshots")
         time_machine = TimeMachine(self.module)
         return time_machine.create(data=data, endpoint=endpoint)
-    
+
     def rename_snapshot(self, uuid, data):
         endpoint = "i/{0}".format(uuid)
         return self.update(data=data, endpoint=endpoint, method="PATCH")
@@ -44,13 +44,18 @@ class Snapshot(NutanixDatabase):
     def replicate(self, uuid, time_machine_uuid, data):
         endpoint = "{0}/{1}/{2}".format("snapshots", uuid, "replicate")
         time_machine = TimeMachine(self.module)
-        return time_machine.update(data=data, uuid=time_machine_uuid, endpoint=endpoint, method="POST")
+        return time_machine.update(
+            data=data, uuid=time_machine_uuid, endpoint=endpoint, method="POST"
+        )
 
     def get_snapshot(self, time_machine_uuid, name):
         snapshot_uuid, err = self.get_snapshot_uuid(time_machine_uuid, name)
         if err:
             return None, err
-        return self.read(snapshot_uuid, query={"load-replicated-child-snapshots": True}), None
+        return (
+            self.read(snapshot_uuid, query={"load-replicated-child-snapshots": True}),
+            None,
+        )
 
     def get_snapshot_uuid(self, time_machine_uuid, name):
         query = {
@@ -58,7 +63,7 @@ class Snapshot(NutanixDatabase):
             "detailed": False,
             "load-database": False,
             "load-clones": False,
-            "time-zone": "UTC"
+            "time-zone": "UTC",
         }
 
         snapshots = self.read(query=query)
@@ -69,7 +74,10 @@ class Snapshot(NutanixDatabase):
             # check for latest snapshot with given name using latest timestamp
             latest_timestamp = 0
             for snapshot in snapshots:
-                if snapshot.get("name") == name and snapshot.get("snapshotTimeStampDate") > latest_timestamp:
+                if (
+                    snapshot.get("name") == name
+                    and snapshot.get("snapshotTimeStampDate") > latest_timestamp
+                ):
                     uuid = snapshot.get("id")
                     latest_timestamp = snapshot.get("snapshotTimeStampDate")
 
@@ -77,16 +85,12 @@ class Snapshot(NutanixDatabase):
                 return None, "Snapshot with name {0} not found".format(name)
 
         return uuid, None
-    
+
     def _get_default_spec(self):
         return deepcopy({"name": "", "replicateToClusterIds": []})
-    
+
     def _get_default_snapshot_replication_spec(self):
-        return deepcopy(
-            {
-                "nxClusterIds": []
-            }
-        )
+        return deepcopy({"nxClusterIds": []})
 
     def get_expiry_update_spec(self, config):
         expiry = config.get("expiry_days")
@@ -110,7 +114,7 @@ class Snapshot(NutanixDatabase):
     def get_remove_expiry_spec(self, uuid, name):
         spec = {"id": uuid, "name": name}
         return spec
-    
+
     def get_replicate_snapshot_spec(self):
         payload = self._get_default_snapshot_replication_spec()
         self.build_spec_methods = {
@@ -139,14 +143,14 @@ class Snapshot(NutanixDatabase):
             }
         }
         return payload, None
-    
+
     def _build_spec_clusters(self, payload, clusters):
         cluster_uuids, err = self.resolve_cluster_uuids(clusters)
         if err:
             return None, err
         payload["replicateToClusterIds"] = cluster_uuids
         return payload, None
-    
+
     def resolve_cluster_uuids(self, clusters):
         _clusters = Cluster(self.module)
         specs = []
@@ -155,7 +159,7 @@ class Snapshot(NutanixDatabase):
         clusters_name_uuid_map = {}
         if len(clusters) > 1:
             clusters_name_uuid_map = _clusters.get_all_clusters_name_uuid_map()
-        
+
         for cluster in clusters:
             uuid = ""
             if cluster.get("name"):
@@ -167,10 +171,12 @@ class Snapshot(NutanixDatabase):
                     uuid = _clusters.get_uuid(value=cluster.get("name"))
 
                 if not uuid:
-                    return None, "Cluster with name {0} not found".format(cluster["name"])
+                    return None, "Cluster with name {0} not found".format(
+                        cluster["name"]
+                    )
             else:
                 uuid = cluster.get("uuid")
-            
+
             specs.append(uuid)
-        
+
         return specs, None

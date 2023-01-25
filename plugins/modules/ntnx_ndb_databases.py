@@ -631,17 +631,17 @@ import time  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.tags import Tag
-from ..module_utils.ndb.time_machines import TimeMachine
 from ..module_utils.ndb.database_instances import DatabaseInstance
 from ..module_utils.ndb.db_server_cluster import DBServerCluster
+from ..module_utils.ndb.db_server_vm import DBServerVM
 from ..module_utils.ndb.maintenance_window import (
-    MaintenanceWindow,
     AutomatedPatchingSpec,
+    MaintenanceWindow,
 )
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.tags import Tag
+from ..module_utils.ndb.time_machines import TimeMachine
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
@@ -902,7 +902,7 @@ def get_provision_spec(module, result, ha=False):
         kwargs = {
             "provision_new_server": provision_new_server,
             "use_registered_server": use_registered_server,
-            "db_instance_provision": True
+            "db_instance_provision": True,
         }
         spec, err = db_vm.get_spec(old_spec=spec, **kwargs)
         if err:

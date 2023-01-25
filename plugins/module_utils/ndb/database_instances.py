@@ -5,9 +5,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 from copy import deepcopy
-from .nutanix_database import NutanixDatabase
+
 from .database_engines.database_engine import DatabaseEngine
 from .database_engines.db_engine_factory import create_db_engine
+from .nutanix_database import NutanixDatabase
 from .profiles.profiles import get_profile_uuid
 
 
@@ -28,7 +29,7 @@ class DatabaseInstance(NutanixDatabase):
     def register(self, data):
         endpoint = "register"
         return self.create(data, endpoint)
-    
+
     def scale(self, uuid, data):
         endpoint = "update/extend-storage"
         return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
@@ -129,7 +130,7 @@ class DatabaseInstance(NutanixDatabase):
                     spec[key] = deepcopy(override_spec[key])
 
         return spec
-    
+
     def _get_default_scaling_spec(self):
         return deepcopy(
             {
@@ -139,7 +140,7 @@ class DatabaseInstance(NutanixDatabase):
                 "applicationType": None,
             }
         )
-    
+
     def get_default_restore_spec(self):
         return deepcopy(
             {
@@ -178,9 +179,13 @@ class DatabaseInstance(NutanixDatabase):
         if kwargs.get("update"):
             return self.get_update_spec(old_spec=old_spec, params=params, **kwargs)
         elif kwargs.get("provision"):
-            return self.get_spec_for_provision(old_spec=old_spec, params=params, **kwargs)
+            return self.get_spec_for_provision(
+                old_spec=old_spec, params=params, **kwargs
+            )
         elif kwargs.get("register"):
-            return self.get_spec_for_registration(old_spec=old_spec, params=params, **kwargs)
+            return self.get_spec_for_registration(
+                old_spec=old_spec, params=params, **kwargs
+            )
 
         return None, "Please provide supported arguments"
 
@@ -210,7 +215,7 @@ class DatabaseInstance(NutanixDatabase):
             }
         )
         return super().get_spec(old_spec=old_spec, params=params, **kwargs)
-    
+
     def get_db_engine_spec(self, payload, params=None, **kwargs):
 
         db_engine, err = create_db_engine(self.module)
@@ -238,7 +243,7 @@ class DatabaseInstance(NutanixDatabase):
 
         payload["databaseType"] = db_type + "_database"
         return payload, err
-    
+
     def get_delete_spec(self):
         spec = {
             "delete": False,
@@ -258,7 +263,7 @@ class DatabaseInstance(NutanixDatabase):
             spec["deleteTimeMachine"] = True
 
         return spec
-    
+
     def get_scaling_spec(self, scale_config, database_type):
         config = deepcopy(scale_config)
         spec = self._get_default_scaling_spec()
@@ -302,7 +307,6 @@ class DatabaseInstance(NutanixDatabase):
             spec["databases"].append({"databaseName": name})
 
         return spec
-
 
     def build_spec_desc(self, payload, desc):
         payload["description"] = desc

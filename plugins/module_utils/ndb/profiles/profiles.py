@@ -1,12 +1,14 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 from copy import deepcopy
 
 __metaclass__ = type
 
 
 from ..nutanix_database import NutanixDatabase
+
 
 class Profile(NutanixDatabase):
     types = ["Database_Parameter", "Compute", "Network", "Software"]
@@ -18,7 +20,7 @@ class Profile(NutanixDatabase):
         self.build_spec_methods = {
             "name": self.build_spec_name,
             "desc": self.build_spec_desc,
-            "database_type": self.build_spec_database_type
+            "database_type": self.build_spec_database_type,
         }
 
     def get_profile_uuid(self, type, name):
@@ -55,7 +57,9 @@ class Profile(NutanixDatabase):
 
     def create_version(self, profile_uuid, data):
         endpoint = "versions"
-        resp = self.update(uuid=profile_uuid, endpoint=endpoint, data=data, method="POST")
+        resp = self.update(
+            uuid=profile_uuid, endpoint=endpoint, data=data, method="POST"
+        )
         return resp
 
     def delete_version(self, profile_uuid, version_uuid):
@@ -76,8 +80,8 @@ class Profile(NutanixDatabase):
     def get_profiles(self, uuid=None, name=None, type=None):
 
         if not type:
-            type=self._type
-        
+            type = self._type
+
         query = {}
         if name:
             query["name"] = name
@@ -116,10 +120,7 @@ class Profile(NutanixDatabase):
         )
 
     def get_default_update_spec(self, override_spec=None):
-        spec = {
-            "name": "",
-            "description": ""
-        }
+        spec = {"name": "", "description": ""}
         for key in spec:
             if key in override_spec:
                 spec[key] = override_spec[key]
@@ -127,7 +128,13 @@ class Profile(NutanixDatabase):
         return spec
 
     def get_default_version_update_spec(self, override_spec=None):
-        spec = {"name": "", "description": "", "published": None, "properties": [], "propertiesMap": {}}
+        spec = {
+            "name": "",
+            "description": "",
+            "published": None,
+            "properties": [],
+            "propertiesMap": {},
+        }
 
         for key in spec:
             if key in override_spec:
@@ -163,7 +170,7 @@ class Profile(NutanixDatabase):
         Implement this method to support profile version delete
         """
         return old_spec, None
-    
+
     def get_property_spec(self, name, value):
         return deepcopy({"name": name, "value": value})
 
@@ -171,16 +178,16 @@ class Profile(NutanixDatabase):
     def build_spec_name(self, payload, name):
         payload["name"] = name
         return payload, None
-    
+
     def build_spec_desc(self, payload, desc):
         payload["description"] = desc
         return payload, None
 
     def build_spec_database_type(self, payload, type):
-        if self._type!="compute":
+        if self._type != "compute":
             payload["engineType"] = type + "_database"
-        return payload, None 
-    
+        return payload, None
+
     def build_spec_status(self, payload):
         if self.module.params.get("publish") is not None:
             payload["published"] = self.module.params.get("publish")

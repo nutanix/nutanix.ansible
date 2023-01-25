@@ -38,13 +38,13 @@ class DatabaseEngine:
         Implement this method to add database engine specific properties for database clone provisioning
         """
         return payload, None
-    
+
     def build_spec_create_db_params_profile_properties(self, payload, config):
         """
         Implement this method to add database engine specific properties in database parameter profile
         """
         return payload, None
-    
+
     def build_spec_update_db_params_profile_version(self, payload, config):
         """
         Implement this method to update database engine specific properties in database parameter profile

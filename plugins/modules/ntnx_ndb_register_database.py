@@ -4,6 +4,7 @@
 # Copyright: (c) 2021, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 import time
 
 __metaclass__ = type
@@ -21,16 +22,16 @@ RETURN = r"""
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.ndb.database_instances import DatabaseInstance
 from ..module_utils.ndb.db_server_vm import DBServerVM
+from ..module_utils.ndb.maintenance_window import (
+    AutomatedPatchingSpec,
+    MaintenanceWindow,
+)
 from ..module_utils.ndb.operations import Operation
 from ..module_utils.ndb.tags import Tag
 from ..module_utils.ndb.time_machines import TimeMachine
-from ..module_utils.ndb.maintenance_window import (
-    MaintenanceWindow,
-    AutomatedPatchingSpec,
-)
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

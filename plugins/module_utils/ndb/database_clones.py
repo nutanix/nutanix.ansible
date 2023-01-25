@@ -5,10 +5,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 from copy import deepcopy
+
 from .database_engines.db_engine_factory import create_db_engine
-from .time_machines import TimeMachine
 from .nutanix_database import NutanixDatabase
 from .profiles.profiles import get_profile_uuid
+from .time_machines import TimeMachine
 
 
 class DatabaseClone(NutanixDatabase):
@@ -30,7 +31,7 @@ class DatabaseClone(NutanixDatabase):
         time_machine = TimeMachine(self.module)
         endpoint = "{}/clones".format(time_machine_uuid)
         return time_machine.create(data=data, endpoint=endpoint)
-    
+
     def refresh(self, uuid, data):
         endpoint = "refresh"
         return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
@@ -95,13 +96,9 @@ class DatabaseClone(NutanixDatabase):
                     spec[key] = deepcopy(override_spec[key])
 
         return spec
-    
+
     def get_default_delete_spec(self):
-        return deepcopy({
-            "remove": False,
-            "delete": False,
-            "softRemove": False
-        })
+        return deepcopy({"remove": False, "delete": False, "softRemove": False})
 
     def get_clone(self, uuid=None, name=None):
         if uuid:
@@ -142,12 +139,12 @@ class DatabaseClone(NutanixDatabase):
         }
 
         return super().get_spec(old_spec=payload)
-    
+
     def get_delete_spec(self, payload):
         if self.module.params.get("delete_from_vm"):
             payload["delete"] = True
         elif self.module.params.get("soft_remove"):
-            payload["softRemove"] =  True
+            payload["softRemove"] = True
         else:
             payload["remove"] = True
 
@@ -165,7 +162,7 @@ class DatabaseClone(NutanixDatabase):
                 "snapshot_uuid or pitr_timestamp is required for database clone refresh",
             )
 
-        payload["timeZone"] = self.module.params.get("timezone") 
+        payload["timeZone"] = self.module.params.get("timezone")
         return payload, None
 
     def _build_spec_desc(self, payload, desc):

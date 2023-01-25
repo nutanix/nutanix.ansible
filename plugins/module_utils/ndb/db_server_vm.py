@@ -1,16 +1,17 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 from copy import deepcopy
 
 __metaclass__ = type
 
 
-from .nutanix_database import NutanixDatabase
-from .time_machines import TimeMachine
 from .clusters import Cluster, get_cluster_uuid
-from .profiles.profiles import Profile, get_profile_uuid
 from .database_engines.db_engine_factory import create_db_engine
+from .nutanix_database import NutanixDatabase
+from .profiles.profiles import Profile, get_profile_uuid
+from .time_machines import TimeMachine
 
 
 class DBServerVM(NutanixDatabase):
@@ -179,7 +180,6 @@ class DBServerVM(NutanixDatabase):
                     old_spec=old_spec, params=params, **kwargs
                 )
 
-
         # if db server vm is required for registering db instance
         elif kwargs.get("db_instance_register"):
             if kwargs.get("use_registered_server"):
@@ -197,18 +197,28 @@ class DBServerVM(NutanixDatabase):
                     old_spec=old_spec, params=params, **kwargs
                 )
             elif kwargs.get("use_authorized_server"):
-                return self.get_spec_authorized_vm(old_spec=old_spec, params=params, **kwargs)
+                return self.get_spec_authorized_vm(
+                    old_spec=old_spec, params=params, **kwargs
+                )
 
         # if only db server vm provision or register is required
         else:
             if kwargs.get("provision_new_server"):
-                return self.get_spec_provision(old_spec=old_spec, params=params, **kwargs)
+                return self.get_spec_provision(
+                    old_spec=old_spec, params=params, **kwargs
+                )
             elif kwargs.get("register_server"):
-                return self.get_spec_register(old_spec=old_spec, params=params, **kwargs)
+                return self.get_spec_register(
+                    old_spec=old_spec, params=params, **kwargs
+                )
             elif kwargs.get("update"):
-                return self.get_spec_update_vm(old_spec=old_spec, params=params, **kwargs)
+                return self.get_spec_update_vm(
+                    old_spec=old_spec, params=params, **kwargs
+                )
             elif kwargs.get("delete"):
-                return self.get_spec_delete_vm(old_spec=old_spec, params=params, **kwargs)
+                return self.get_spec_delete_vm(
+                    old_spec=old_spec, params=params, **kwargs
+                )
         return None, "Please provide supported arguments"
 
     def get_db_engine_spec(self, payload, params=None, **kwargs):
@@ -270,9 +280,11 @@ class DBServerVM(NutanixDatabase):
         return payload, err
 
     # this routine populates spec for registered db vm to host new database instance
-    def get_spec_registered_server_for_db_instance_provision(self, old_spec=None, params=None, **kwargs):
+    def get_spec_registered_server_for_db_instance_provision(
+        self, old_spec=None, params=None, **kwargs
+    ):
         payload = deepcopy(old_spec)
-        if not params: 
+        if not params:
             params = self.module.params.get("db_vm", {}).get(
                 "use_registered_server", {}
             )
@@ -348,7 +360,9 @@ class DBServerVM(NutanixDatabase):
         return payload, err
 
     # this routine creates spec for registration of db server vm for db instance registration
-    def get_spec_register_for_db_instance_registration(self, old_spec=None, params=None, **kwargs):
+    def get_spec_register_for_db_instance_registration(
+        self, old_spec=None, params=None, **kwargs
+    ):
         self.build_spec_methods = {
             "ip": self._build_spec_register_vm_ip,
             "username": self._build_spec_register_vm_username,
@@ -378,11 +392,13 @@ class DBServerVM(NutanixDatabase):
         return payload, err
 
     # this routine creates spec for registered vm to register db instance from it
-    def get_spec_registered_vm_for_db_instance_registration(self, old_spec=None, params=None, **kwargs):
+    def get_spec_registered_vm_for_db_instance_registration(
+        self, old_spec=None, params=None, **kwargs
+    ):
         payload = deepcopy(old_spec)
         if not params:
             config = self.module.params.get("db_vm", {}).get("registered", {})
-        
+
         if not params:
             return (
                 None,
@@ -414,7 +430,7 @@ class DBServerVM(NutanixDatabase):
 
     def get_spec_authorized_vm(self, old_spec=None, params=None, **kwargs):
         payload = deepcopy(old_spec)
-        if not params:  
+        if not params:
             params = self.module.params.get("db_vm", {}).get(
                 "use_authorized_server", {}
             )
@@ -476,7 +492,7 @@ class DBServerVM(NutanixDatabase):
             "delete_vgs": self._build_spec_delete_volume_groups,
         }
 
-        return super().get_spec(old_spec=old_spec, params=params,  **kwargs)
+        return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
     # builder methods for vm provisioning
     def _build_spec_name(self, payload, name):

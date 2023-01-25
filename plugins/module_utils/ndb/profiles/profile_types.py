@@ -1,47 +1,46 @@
 # This file is part of Ansible
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
+
 from copy import deepcopy
 
 __metaclass__ = type
 
 
-from .profiles import Profile
 from ...constants import NDB
 from ..clusters import Cluster, get_cluster_uuid
-from ..db_server_vm import DBServerVM 
 from ..database_engines.db_engine_factory import create_db_engine
-
+from ..db_server_vm import DBServerVM
+from .profiles import Profile
 
 
 class ComputeProfile(Profile):
-
     def __init__(self, module):
         super(ComputeProfile, self).__init__(module)
         self._type = NDB.ProfileTypes.COMPUTE
-    
-    def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
- 
 
-        payload, err = super().get_create_profile_spec(old_spec=old_spec, params=params, **kwargs)
+    def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
+
+        payload, err = super().get_create_profile_spec(
+            old_spec=old_spec, params=params, **kwargs
+        )
         if err:
             return None, err
 
         compute = self.module.params.get("compute", {})
         return self._build_spec_create_profile(payload, compute)
 
-
     def get_update_version_spec(self, old_spec=None, params=None, **kwargs):
         payload = deepcopy(old_spec)
-        
+
         if not params:
             params = self.module.params.get("compute")
-        
+
         if params:
             payload, err = self._build_spec_update_profile(payload, params)
             if err:
                 return None, err
-        
+
         # remove not required fields
         if payload.get("type") is not None:
             payload.pop("type")
@@ -84,39 +83,38 @@ class ComputeProfile(Profile):
         if compute.get("memory"):
             properties_map["MEMORY_SIZE"] = str(compute["memory"])
 
-
         properties = payload.get("properties", [])
 
         # update existing properties with new values
         for prop in properties:
             prop["value"] = properties_map.get(prop["name"])
-     
+
         return payload, None
 
-class NetworkProfile(Profile):
 
+class NetworkProfile(Profile):
     def __init__(self, module):
         super(NetworkProfile, self).__init__(module)
         self._type = NDB.ProfileTypes.NETWORK
 
     def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
-        
-        self.build_spec_methods.update({
-            "network": self._build_spec_profile
-        })
-        return super().get_create_profile_spec(old_spec=old_spec, params=params, **kwargs)
-    
+
+        self.build_spec_methods.update({"network": self._build_spec_profile})
+        return super().get_create_profile_spec(
+            old_spec=old_spec, params=params, **kwargs
+        )
+
     def get_update_version_spec(self, old_spec=None, params=None, **kwargs):
         payload = deepcopy(old_spec)
-        
+
         if not params:
             params = self.module.params.get("network")
-        
+
         if params:
             payload, err = self._build_spec_profile(payload, params)
             if err:
                 return None, err
-        
+
         # remove not required fields
         if payload.get("type") is not None:
             payload.pop("type")
@@ -124,7 +122,7 @@ class NetworkProfile(Profile):
             payload.pop("topology")
         if payload.get("versionClusterAssociation") is not None:
             payload.pop("versionClusterAssociation")
-        
+
         return self.build_spec_status(payload)
 
     def _build_spec_profile(self, payload, profile):
@@ -166,9 +164,7 @@ class NetworkProfile(Profile):
             if err:
                 return err
             payload["properties"].append(
-                self.get_property_spec(
-                    "VLAN_NAME_" + str(i), vlans[i].get("vlan_name")
-                )
+                self.get_property_spec("VLAN_NAME_" + str(i), vlans[i].get("vlan_name"))
             )
             payload["properties"].append(
                 self.get_property_spec(
@@ -194,44 +190,46 @@ class NetworkProfile(Profile):
         payload["versionClusterAssociation"] = [{"nxClusterId": cluster_uuid}]
 
         return payload, None
-    
+
+
 class SoftwareProfile(Profile):
 
     _type = "Software"
+
     def __init__(self, module):
         super(SoftwareProfile, self).__init__(module)
         self._type = NDB.ProfileTypes.SOFTWARE
 
     def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
-        self.build_spec_methods.update({
-            "software": self._build_spec_profile
-        })
-        payload, err = super().get_create_profile_spec(old_spec=old_spec, params=params, **kwargs)
+        self.build_spec_methods.update({"software": self._build_spec_profile})
+        payload, err = super().get_create_profile_spec(
+            old_spec=old_spec, params=params, **kwargs
+        )
         if err:
             return None, err
-        
+
         if payload.get("updateClusterAvailability"):
             payload.pop("updateClusterAvailability")
-        
+
         return payload, None
 
     def get_update_profile_spec(self, old_spec=None, params=None, **kwargs):
         payload, err = super().get_update_profile_spec(old_spec, params, **kwargs)
         if err:
             return None, err
-        
+
         clusters = self.module.params.get("software", {}).get("clusters", [])
         if clusters:
             payload, err = self._build_spec_clusters_availibilty(payload, clusters)
             if err:
                 return None, err
-            
+
         return payload, None
 
     def get_create_version_spec(self, old_spec=None, params=None, **kwargs):
         if not params:
             params = self.module.params.get("software")
-         
+
         if not params:
             return None, "Please provide version config for creating new version"
 
@@ -242,9 +240,7 @@ class SoftwareProfile(Profile):
         payload["type"] = self._type
 
         # add new base version related properties
-        payload, err = self._build_spec_version_create_properties(
-            payload, params
-        )
+        payload, err = self._build_spec_version_create_properties(payload, params)
         if err:
             return None, err
 
@@ -263,8 +259,8 @@ class SoftwareProfile(Profile):
 
         payload, err = super().get_spec(old_spec=old_spec, params=params, *kwargs)
         if err:
-            return None , err
-        
+            return None, err
+
         # update version status and return
         return self.build_spec_status(payload)
 
@@ -289,15 +285,15 @@ class SoftwareProfile(Profile):
 
         payload["topology"] = topology
         return payload, None
-    
-    def _build_spec_version_create_properties(self, payload, version, base_version=False):
-        properties=payload.get("properties", [])
+
+    def _build_spec_version_create_properties(
+        self, payload, version, base_version=False
+    ):
+        properties = payload.get("properties", [])
         if base_version:
             if version.get("name"):
                 properties.append(
-                    self.get_property_spec(
-                        "BASE_PROFILE_VERSION_NAME", version["name"]
-                    )
+                    self.get_property_spec("BASE_PROFILE_VERSION_NAME", version["name"])
                 )
             if version.get("desc"):
                 properties.append(
@@ -337,10 +333,12 @@ class SoftwareProfile(Profile):
             if cluster.get("name"):
                 uuid = clusters_name_uuid_map.get(cluster["name"])
                 if not uuid:
-                    return None, "Cluster with name {0} not found".format(cluster["name"])
+                    return None, "Cluster with name {0} not found".format(
+                        cluster["name"]
+                    )
             else:
                 uuid = cluster["uuid"]
-            
+
             spec.append(uuid)
         payload["availableClusterIds"] = spec
         payload["updateClusterAvailability"] = True
@@ -348,9 +346,7 @@ class SoftwareProfile(Profile):
 
     def build_spec_status(self, payload):
         if self.module.params.get("publish"):
-            payload["published"] = self.module.params.get(
-                "publish"
-            )
+            payload["published"] = self.module.params.get("publish")
             payload["deprecated"] = False
 
         elif self.module.params.get("deprecate"):
@@ -358,9 +354,11 @@ class SoftwareProfile(Profile):
 
         return payload, None
 
+
 class DatabaseParameterProfile(Profile):
 
     _type = "Database_Parameter"
+
     def __init__(self, module):
         super(DatabaseParameterProfile, self).__init__(module)
 
@@ -387,25 +385,29 @@ class DatabaseParameterProfile(Profile):
                 payload, config
             )
             if err:
-                return None, err 
-        
+                return None, err
+
         return payload, err
 
     def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
         payload, err = super().get_create_profile_spec(old_spec, params, **kwargs)
         if err:
             return None, err
-        
+
         if not params:
             params = self.module.params.get("database_parameters")
-        return self.get_db_engine_spec(payload=payload, params=params, create_profile=True)
+        return self.get_db_engine_spec(
+            payload=payload, params=params, create_profile=True
+        )
 
     def get_update_version_spec(self, old_spec=None, params=None, **kwargs):
         payload = deepcopy(old_spec)
 
         if not params:
             params = self.module.params.get("database_parameters")
-        payload, err = self.get_db_engine_spec(payload=payload, params=params, update_version=True)
+        payload, err = self.get_db_engine_spec(
+            payload=payload, params=params, update_version=True
+        )
         if err:
             return None, err
 
@@ -415,10 +417,12 @@ class DatabaseParameterProfile(Profile):
             payload.pop("topology")
         if payload.get("versionClusterAssociation") is not None:
             payload.pop("versionClusterAssociation")
-        
+
         return self.build_spec_status(payload)
 
+
 # Helper methods for getting profile type objects
+
 
 def get_profile_type(module):
     profile_types = NDB.ProfileTypes.ALL
@@ -435,7 +439,7 @@ def get_profile_type_obj(module, profile_type=None) -> tuple[Profile, str]:
         "software": SoftwareProfile,
         "network": NetworkProfile,
         "compute": ComputeProfile,
-        "database_parameters": DatabaseParameterProfile
+        "database_parameters": DatabaseParameterProfile,
     }
 
     if not profile_type:
