@@ -684,6 +684,10 @@ def get_module_spec():
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
