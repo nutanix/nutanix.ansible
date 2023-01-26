@@ -1,0 +1,25 @@
+---
+- name: Soft delete single instance database and time machine associated
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+        
+    - name: Soft delete single instance database and time machine associated
+      ntnx_ndb_databases:
+        state: "absent"
+        db_uuid: c0a4433a-49f2-40f3-ae52-d88788d2824b
+        soft_delete: true
+        delete_time_machine: true
+      register: output
+    
+    - debug:
+        msg: "{{output}}"

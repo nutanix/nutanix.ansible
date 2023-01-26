@@ -24,24 +24,17 @@ class SLA(NutanixDatabase):
     ):
         endpoint = "{0}/{1}".format(key, value)
         resp = self.read(uuid=None, endpoint=endpoint)
-        return resp["id"]
+        return resp.get("id")
 
     def get_sla(self, uuid=None, name=None):
         if uuid:
-            resp = self.read(uuid=uuid, raise_error=False)
+            resp = self.read(uuid=uuid)
         elif name:
             endpoint = "{0}/{1}".format("name", name)
-            resp = self.read(endpoint=endpoint, raise_error=False)
+            resp = self.read(endpoint=endpoint)
 
         else:
             return None, "Please provide either uuid or name for fetching sla details"
-
-        if isinstance(resp, dict) and resp.get("errorCode"):
-            self.module.fail_json(
-                msg="Failed fetching sla info",
-                error=resp.get("message"),
-                response=resp,
-            )
         return resp, None
 
 
@@ -57,5 +50,5 @@ def get_sla_uuid(module, config):
         uuid = config["uuid"]
     else:
         error = "sla config {0} doesn't have name or uuid key".format(config)
-        return error, None
+        return None, error
     return uuid, None

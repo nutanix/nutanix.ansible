@@ -280,9 +280,35 @@ class ACP:
 
 
 class NDB:
+
+    OPERATIONS_POLLING_DELAY = 30
+
     class DatabaseTypes:
-        POSTGRES = "postgres_database"
+        POSTGRES = "postgres"
+        ALL = [
+            "oracle",
+            "postgres",
+            "sqlserver",
+            "mariadb",
+            "mysql",
+            "saphana",
+            "mongodb",
+        ]
+
+    class ProfileTypes:
+        COMPUTE = "Compute"
+        NETWORK = "Network"
+        DB_PARAMS = "Database_Parameter"
+        SOFTWARE = "Software"
+        ALL = ["compute", "network", "database_parameters", "software"]
+
+    class ProfileTypes:
+        COMPUTE = "Compute"
+        NETWORK = "Network"
+        DB_PARAMS = "Database_Parameter"
+        SOFTWARE = "Software"
 
     class StatusCodes:
         SUCCESS = "5"
         FAILURE = "4"
+        COMPLETED_WITH_WARNING = "17"

@@ -2,8 +2,9 @@
     msg: start testing ntnx_roles_info
 ##################################################
 
-- name: List all roles
+- name: List roles
   ntnx_roles_info:
+    length: 2
   register: result
   ignore_errors: True
 

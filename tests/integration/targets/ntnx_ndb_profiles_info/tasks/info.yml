@@ -114,6 +114,7 @@
   ntnx_ndb_profiles_info:
     name: "abcd"
   register: result
+  no_log: true
   ignore_errors: True
 
 - name: check listing status

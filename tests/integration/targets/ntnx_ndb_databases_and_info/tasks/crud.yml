@@ -1,0 +1,347 @@
+- set_fact:
+    db_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+    db_name_updated: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+    desc: "ansible-created"
+    desc_updated: "ansible-created-updated"
+    vm_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
+
+- debug:
+    msg: "Starting ntnx_ndb_database crud tests"
+
+# ############################################################################################
+
+- name: Create postgres database instance with new vm spec using check mode
+  check_mode: yes
+  ntnx_ndb_databases:
+    name: "{{db_name}}"
+    desc: "{{desc}}"
+    
+    db_params_profile:
+      uuid: "TEST_DB_PROFILE_UUID"
+    
+    db_vm:
+      create_new_server:
+        name: "{{vm_name}}"
+        password: "{{ndb.password}}"
+        cluster: 
+          uuid: "TEST_CLUSTER_UUID"
+        software_profile:
+          uuid: "{{ndb.software_profile.uuid}}"
+        network_profile:
+          uuid: "TEST_NETWORK_UUID"
+        compute_profile:
+          uuid: "TEST_COMPUTE_UUID"
+        pub_ssh_key: "{{ndb.key}}"
+    
+    postgres:
+      listener_port: "5432"
+      db_name: ansible_test
+      db_password: "{{ndb.password}}"
+      db_size: 200
+      pre_create_script: "ls"
+      post_create_script: "ls"
+
+    time_machine:
+      name: POSTGRES_SERVER_PRAD_TM_1
+      desc: POSTGRES_SERVER_PRAD_TM_1_DESC
+      sla:
+        uuid: "TEST_SLA_UUID"
+      schedule: 
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        yearly: FEBRUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+
+    tags:
+      test1: check1
+    wait: true
+  no_log: true
+  register: db
+
+- set_fact:
+    expected_schedule: {
+                    "continuousSchedule": {
+                        "enabled": true,
+                        "logBackupInterval": 30,
+                        "snapshotsPerDay": 2
+                    },
+                    "monthlySchedule": {
+                        "dayOfMonth": 4,
+                        "enabled": true
+                    },
+                    "quartelySchedule": {
+                        "dayOfMonth": 4,
+                        "enabled": true,
+                        "startMonth": "JANUARY"
+                    },
+                    "snapshotTimeOfDay": {
+                        "hours": 11,
+                        "minutes": 10,
+                        "seconds": 2
+                    },
+                    "weeklySchedule": {
+                        "dayOfWeek": "WEDNESDAY",
+                        "enabled": true
+                    },
+                    "yearlySchedule": {
+                        "dayOfMonth": 4,
+                        "enabled": true,
+                        "month": "FEBRUARY"
+                    }
+                }
+
+- name: Verify check mode generated spec
+  assert:
+    that:
+      - db.response is defined
+      - db.failed == false
+      - db.changed == false
+      - db.response.name == db_name
+      - db.response.databaseDescription == "{{desc}}"
+      - db.response.actionArguments is defined
+      - db.response.autoTuneStagingDrive == true
+      - db.response.clustered == false
+      - db.response.createDbserver == true
+      - db.response.nodeCount == 1
+      - db.response.nodes | length == 1
+      - db.response.nodes[0].networkProfileId == "TEST_NETWORK_UUID"
+      - db.response.nodes[0].vmName == "{{vm_name}}"
+      - db.response.dbParameterProfileId == "TEST_DB_PROFILE_UUID"
+      - db.response.softwareProfileId == "{{ndb.software_profile.uuid}}"
+      - db.response.softwareProfileVersionId is defined
+      - db.response.networkProfileId == "TEST_NETWORK_UUID"
+      - db.response.computeProfileId == "TEST_COMPUTE_UUID"
+      - db.response.timeMachineInfo is defined
+      - db.response.timeMachineInfo.name == "POSTGRES_SERVER_PRAD_TM_1"
+      - db.response.timeMachineInfo.schedule == expected_schedule
+      - db.response.timeMachineInfo.slaId == "TEST_SLA_UUID"
+      - db.response.databaseType == "postgres_database"
+      - db.response.tags[0]["value"] == "check1"
+      - db.response.tags[0]["tagName"] == "test1"
+    fail_msg: "Unable to create spec for database instance in check mode"
+    success_msg: "Created check mode spec for database instance successfully"
+
+# ############################################################################################
+
+- name: Create postgres database instance using with new vm
+  ntnx_ndb_databases:
+    name: "{{db_name}}"
+    desc: "{{desc}}"
+    
+    db_params_profile:
+      name: "{{ndb.db_params}}"
+    
+    db_vm:
+      create_new_server:
+        name: "{{vm_name}}"
+        password: "{{ndb.password}}"
+        cluster: 
+          name: "{{ndb.cluster}}"
+        software_profile:
+          name: "{{ndb.software_profile.name}}"
+        network_profile:
+          name: "{{ndb.network_profile}}"
+        compute_profile:
+          name: "{{ndb.compute_profile}}"
+        pub_ssh_key: "{{ndb.key}}"
+    
+    postgres:
+      listener_port: "5432"
+      db_name: ansible_test
+      db_password: "{{ndb.password}}"
+      db_size: 200
+      pre_create_script: "ls"
+      post_create_script: "ls"
+
+    time_machine:
+      name: POSTGRES_SERVER_PRAD_TM_1
+      desc: POSTGRES_SERVER_PRAD_TM_1_DESC
+      sla:
+        name: "{{ndb.sla_name}}"
+      schedule: 
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        yearly: FEBRUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+
+    tags:
+      test1: check1
+    wait: true
+  no_log: true
+  register: db
+
+- name: Verify attributes
+  assert:
+    that:
+      - db.response is defined
+      - db.failed == false
+      - db.changed == true
+      - db.db_uuid is defined
+      - db.response.status == "READY"
+      - db.response.tags | length == 1
+      - db.response.type == "postgres_database"
+      - db.response.name == "{{db_name}}"
+      - db.response.description == "{{desc}}"
+      - db.response.tags[0]["value"] == "check1"
+      - db.response.tags[0]["tagName"] == "test1"
+    fail_msg: "Unable to create database instance"
+    success_msg: "Created database instance successfully"
+
+############################################################################################
+
+- name: update db instance
+  ntnx_ndb_databases:
+    db_uuid: "{{db.db_uuid}}"
+    name: "{{db_name_updated}}"
+    desc: "{{desc_updated}}"
+    tags:
+      test1: check1_updated
+      test2: check2_updated
+  no_log: true
+  register: db
+
+- set_fact:
+    expected_tags: {
+      "test1": "check1_updated",
+      "test2": "check2_updated"
+    }
+
+- name: Verify attributes
+  assert:
+    that:
+      - db.response is defined
+      - db.failed == false
+      - db.changed == true
+      - db.db_uuid == "{{db.db_uuid}}"
+      - db.response.status == "READY"
+      - db.response.tags | length == 2
+      - db.response.type == "postgres_database"
+      - db.response.name == "{{db_name_updated}}"
+      - db.response.description == "{{desc_updated}}"
+      - expected_tags[db.response.tags[0].tagName] == db.response.tags[0].value
+      - expected_tags[db.response.tags[1].tagName] == db.response.tags[1].value
+
+    fail_msg: "Unable to update database instance"
+    success_msg: "Database instance updated successfully"
+
+############################################################################################
+
+- name: idempotency check, update db instance with same spec
+  ntnx_ndb_databases:
+    db_uuid: "{{db.db_uuid}}"
+    name: "{{db_name_updated}}"
+    desc: "{{desc_updated}}"
+    tags:
+      test1: check1_updated
+      test2: check2_updated
+  register: result
+  no_log: true
+  ignore_errors: True
+
+- name: idempotency check status
+  assert: 
+    that:
+      - result.changed == False
+      - result.failed == False
+      - "'Nothing to change' in result.msg"
+    fail_msg: "Idempotency check failed"
+    success_msg: "Database instance updated call skipped successfully"
+
+#####################################INFO Module tests#######################################################
+
+- debug:
+    msg: Start testing ntnx_ndb_databases_info based on created database
+
+- name: List era databases
+  ntnx_ndb_databases_info:
+  register: databases
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - databases.response is defined
+      - databases.failed == false
+      - databases.changed == false
+      - databases.response | length > 0
+    fail_msg: "Unable to list all era databases"
+    success_msg: "era databases listed successfully"
+################################################################
+- name: Get era databases using its name
+  ntnx_ndb_databases_info:
+    name: "{{databases.response[0].name}}"
+  register: result
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.id == "{{databases.response[0].id}}"
+    fail_msg: "Unable to Get era databases using its name"
+    success_msg: "Get era databases using its name finished successfully"
+################################################################
+- name: Get era databases using its name
+  ntnx_ndb_databases_info:
+    uuid: "{{databases.response[0].id}}"
+  register: result
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{databases.response[0].name}}"
+    fail_msg: "Unable to Get era databases using its id"
+    success_msg: "Get era databases using its id finished successfully"
+
+################################################################
+
+- name: get era database with incorrect name
+  ntnx_ndb_databases_info:
+    name: "xxxxxxx"
+  register: result
+  ignore_errors: True
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"
+
+############################################################################################
+
+- name: delete database
+  ntnx_ndb_databases:
+    state: "absent"
+    db_uuid: "{{db.db_uuid}}"
+    delete_time_machine: True
+    wait: true
+  no_log: true
+  register: db
+
+- name: Verify attributes
+  assert:
+    that:
+      - db.response is defined
+      - db.failed == false
+      - db.changed == true
+      - db.response.status == "5"
+    fail_msg: "Unable to delete database instance"
+    success_msg: "Database instance deleted successfully"
+
+############################################################################################

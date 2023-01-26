@@ -73,6 +73,7 @@
   ntnx_ndb_db_servers_info:
     name: "abcd"
   register: result
+  no_log: true
   ignore_errors: True
 
 - name: check listing status

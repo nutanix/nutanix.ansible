@@ -24,17 +24,17 @@ class Cluster(NutanixDatabase):
     ):
         endpoint = "{0}/{1}".format(key, value)
         resp = self.read(uuid=None, endpoint=endpoint)
-        return resp["id"]
+        return resp.get("id")
 
     def get_cluster(self, uuid=None, name=None):
         if uuid:
-            resp = self.read(uuid=uuid, raise_error=False)
+            resp = self.read(uuid=uuid)
         elif name:
             endpoint = "{0}/{1}".format("name", name)
-            resp = self.read(endpoint=endpoint, raise_error=False)
+            resp = self.read(endpoint=endpoint)
 
             # we fetch cluster using ID again to get complete info.
-            if resp and not resp.get("errorCode") and resp.get("id"):
+            if resp and resp.get("id"):
                 resp = self.read(uuid=resp["id"])
 
         else:
@@ -43,14 +43,30 @@ class Cluster(NutanixDatabase):
                 "Please provide either uuid or name for fetching cluster details",
             )
 
-        if isinstance(resp, dict) and resp.get("errorCode"):
-            self.module.fail_json(
-                msg="Failed fetching cluster info",
-                error=resp.get("message"),
-                response=resp,
-            )
-
         return resp, None
+
+    def get_all_clusters_uuid_name_map(self):
+        resp = self.read()
+        uuid_name_map = {}
+        if not resp:
+            return uuid_name_map
+
+        for cluster in resp:
+            uuid_name_map[cluster.get("id")] = cluster.get("name")
+
+        return uuid_name_map
+
+    def get_all_clusters_name_uuid_map(self):
+        resp = self.read()
+        name_uuid_map = {}
+        if not resp:
+            return name_uuid_map
+
+        for cluster in resp:
+            if cluster.get("name"):
+                name_uuid_map[cluster.get("name")] = cluster.get("id")
+
+        return name_uuid_map
 
 
 # helper functions

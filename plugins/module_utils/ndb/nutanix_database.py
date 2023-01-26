@@ -11,26 +11,8 @@ class NutanixDatabase(Entity):
 
     def __init__(self, module, resource_type, additional_headers=None):
         resource_type = self.__BASEURL__ + self.api_version + resource_type
-        host_ip = module.params.get("ndb_host")
-        credentials = {
-            "username": module.params.get("ndb_username"),
-            "password": module.params.get("ndb_password"),
-        }
         super(NutanixDatabase, self).__init__(
             module,
             resource_type,
-            host_ip,
             additional_headers=additional_headers,
-            credentials=credentials,
         )
-
-    def filters_map(self, except_keys=None):
-        filters = self.module.params.get("filters")
-        if filters:
-            mapped_filters = {}
-            for key, value in filters.items():
-                if value is not None:
-                    if except_keys and key not in except_keys:
-                        key = key.replace("_", "-")
-                    mapped_filters.update({key: value})
-            self.module.params["filters"] = mapped_filters
