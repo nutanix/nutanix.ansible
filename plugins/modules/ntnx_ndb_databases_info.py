@@ -665,6 +665,22 @@ from ..module_utils.ndb.databases import Database  # noqa: E402
 
 def get_module_spec():
 
+    filters_spec = dict(
+        detailed=dict(type="bool"),
+        load_dbserver_cluster=dict(type="bool"),
+        order_by_dbserver_cluster=dict(type="bool"),
+        order_by_dbserver_logical_cluster=dict(type="bool"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "ip",
+                "name",
+                "database-name",
+            ],
+        ),
+        time_zone=dict(type="str"),
+    )
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
@@ -675,12 +691,15 @@ def get_module_spec():
 
 def get_database(module, result):
     database = Database(module)
+    database.filters_map()
+    query_params = module.params.get("filters")
+
     if module.params.get("name"):
         name = module.params["name"]
-        resp, err = database.get_database(name=name)
+        resp, err = database.get_database(name=name, query=query_params)
     else:
         uuid = module.params["uuid"]
-        resp, err = database.get_database(uuid=uuid)
+        resp, err = database.get_database(uuid=uuid, query=query_params)
 
     if err:
         result["error"] = err
@@ -690,8 +709,10 @@ def get_database(module, result):
 
 def get_databases(module, result):
     database = Database(module)
+    database.filters_map()
+    query_params = module.params.get("filters")
 
-    resp = database.read()
+    resp = database.read(query=query_params)
 
     result["response"] = resp
 
