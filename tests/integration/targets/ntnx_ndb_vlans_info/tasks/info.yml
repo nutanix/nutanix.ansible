@@ -1,0 +1,65 @@
+---
+- debug:
+    msg: Start testing ntnx_ndb_vlans_info
+
+- name: List all era vlans
+  ntnx_ndb_vlans_info:
+  register: vlans
+
+- name: check listing status
+  assert:
+    that:
+      - vlans.response is defined
+      - vlans.failed == false
+      - vlans.changed == false
+      - vlans.response | length > 0
+    fail_msg: "Unable to list all era vlans"
+    success_msg: "era vlans listed successfully"
+################################################################
+- name: get era vlans using it's name  
+  ntnx_ndb_vlans_info:
+    name: "{{vlans.response[0].name}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.id == "{{vlans.response[0].id}}"
+    fail_msg: "Unable to get era vlans using it's name  "
+    success_msg: "get  era vlans using it's name  successfully"
+################################################################
+- name: List vlans use id
+  ntnx_ndb_vlans_info:
+    uuid: "{{vlans.response[0].id}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{vlans.response[0].name}}"
+    fail_msg: "Unable to get era vlans using it's id  "
+    success_msg: "get  era vlans using it's id  successfully"
+################################################################
+- name: get era vlans with incorrect name
+  ntnx_ndb_vlans_info:
+    name: "abcd"
+  register: result
+  no_log: true
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Fail: module didn't errored out correctly when incorrect name is given"
+    success_msg: "Pass: module errored out correctly when incorrect name is given"
+
+################################################################
