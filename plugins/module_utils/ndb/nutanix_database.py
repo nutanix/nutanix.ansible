@@ -24,13 +24,13 @@ class NutanixDatabase(Entity):
             credentials=credentials,
         )
 
-    def queries_map(self, except_keys=None):
-        queries = self.module.params.get("queries")
-        if queries:
-            mapped_queries = {}
-            for key, value in queries.items():
+    def filters_map(self, except_keys=None):
+        filters = self.module.params.get("filters")
+        if filters:
+            mapped_filters = {}
+            for key, value in filters.items():
                 if value is not None:
                     if except_keys and key not in except_keys:
                         key = key.replace("_", "-")
-                    mapped_queries.update({key: value})
-            self.module.params["queries"] = mapped_queries
+                    mapped_filters.update({key: value})
+            self.module.params["filters"] = mapped_filters

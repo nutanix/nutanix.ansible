@@ -36,7 +36,7 @@ options:
             - wheater the lastet version of profile or no
         type: bool
         default: false
-      queries:
+      filters:
         description:
             - write
         type: dict
@@ -69,7 +69,7 @@ from ..module_utils.ndb.profiles import Profile  # noqa: E402
 
 def get_module_spec():
 
-    queries_spec = dict(
+    filters_spec = dict(
         engine=dict(
             type="str",
             choices=[
@@ -101,9 +101,9 @@ def get_module_spec():
         # ),
         version_id=dict(type="str"),
         latest_version=dict(type="bool", default=False),
-        queries=dict(
+        filters=dict(
             type="dict",
-            options=queries_spec,
+            options=filters_spec,
         ),
     )
 
@@ -125,7 +125,7 @@ def get_profile(module, result):
 
 def get_profiles(module, result):
     profile = Profile(module)
-    query_params = module.params.get("queries")
+    query_params = module.params.get("filters")
 
     resp = profile.read(query=query_params)
 

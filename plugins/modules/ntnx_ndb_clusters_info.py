@@ -22,7 +22,7 @@ options:
         description:
             - cluster id
         type: str
-      queries:
+      filters:
         description:
             - write
         type: dict
@@ -50,16 +50,16 @@ from ..module_utils.ndb.clusters import Cluster  # noqa: E402
 
 def get_module_spec():
 
-    queries_spec = dict(
+    filters_spec = dict(
         include_management_server=dict(type="bool"),
     )
 
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
-        queries=dict(
+        filters=dict(
             type="dict",
-            options=queries_spec,
+            options=filters_spec,
         ),
     )
 
@@ -83,8 +83,8 @@ def get_cluster(module, result):
 
 def get_clusters(module, result):
     cluster = Cluster(module)
-    cluster.queries_map()
-    query_params = module.params.get("queries")
+    cluster.filters_map()
+    query_params = module.params.get("filters")
 
     resp = cluster.read(query=query_params)
 
@@ -97,8 +97,8 @@ def run_module():
         supports_check_mode=False,
         mutually_exclusive=[
             ("name", "uuid"),
-            ("name", "queries"),
-            ("uuid", "queries"),
+            ("name", "filters"),
+            ("uuid", "filters"),
         ],
     )
     result = {"changed": False, "error": None, "response": None}

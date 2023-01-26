@@ -22,7 +22,7 @@ options:
         description:
             - time machine id
         type: str
-      queries:
+      filters:
         description:
             - write
         type: dict
@@ -80,7 +80,7 @@ from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 
 def get_module_spec():
 
-    queries_spec = dict(
+    filters_spec = dict(
         detailed=dict(type="bool"),
         load_clones=dict(type="bool"),
         load_databases=dict(type="bool"),
@@ -100,9 +100,9 @@ def get_module_spec():
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
-        queries=dict(
+        filters=dict(
             type="dict",
-            options=queries_spec,
+            options=filters_spec,
         ),
     )
 
@@ -111,11 +111,11 @@ def get_module_spec():
 
 def get_tm(module, result):
     tm = TimeMachine(module)
-    tm.queries_map()
+    tm.filters_map()
 
     uuid = module.params.get("uuid")
     name = module.params.get("name")
-    query_params = module.params.get("queries")
+    query_params = module.params.get("filters")
     resp, err = tm.get_time_machine(uuid=uuid, name=name, query=query_params)
     if err:
         result["error"] = err
@@ -125,9 +125,9 @@ def get_tm(module, result):
 
 def get_tms(module, result):
     tm = TimeMachine(module)
-    tm.queries_map()
+    tm.filters_map()
 
-    query_params = module.params.get("queries")
+    query_params = module.params.get("filters")
 
     resp = tm.read(query=query_params)
 

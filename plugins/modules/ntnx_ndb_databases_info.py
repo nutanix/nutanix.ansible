@@ -40,7 +40,7 @@ from ..module_utils.ndb.databases import Database  # noqa: E402
 
 def get_module_spec():
 
-    queries_spec = dict(
+    filters_spec = dict(
         detailed=dict(type="bool"),
         load_dbserver_cluster=dict(type="bool"),
         order_by_dbserver_cluster=dict(type="bool"),
@@ -66,8 +66,8 @@ def get_module_spec():
 
 def get_database(module, result):
     database = Database(module)
-    database.queries_map()
-    query_params = module.params.get("queries")
+    database.filters_map()
+    query_params = module.params.get("filters")
 
     if module.params.get("name"):
         name = module.params["name"]
@@ -84,8 +84,8 @@ def get_database(module, result):
 
 def get_databases(module, result):
     database = Database(module)
-    database.queries_map()
-    query_params = module.params.get("queries")
+    database.filters_map()
+    query_params = module.params.get("filters")
 
     resp = database.read(query=query_params)
 

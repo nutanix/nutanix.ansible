@@ -26,7 +26,7 @@ options:
         description:
             - server ip
         type: str
-      queries:
+      filters:
         description:
             - write
         type: dict
@@ -84,7 +84,7 @@ from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
 
 def get_module_spec():
 
-    queries_spec = dict(
+    filters_spec = dict(
         detailed=dict(type="bool"),
         load_clones=dict(type="bool"),
         load_databases=dict(type="bool"),
@@ -111,9 +111,9 @@ def get_module_spec():
         name=dict(type="str"),
         uuid=dict(type="str"),
         server_ip=dict(type="str"),
-        queries=dict(
+        filters=dict(
             type="dict",
-            options=queries_spec,
+            options=filters_spec,
         ),
     )
 
@@ -122,8 +122,8 @@ def get_module_spec():
 
 def get_db_server(module, result):
     db_server = DBServers(module)
-    db_server.queries_map()
-    query_params = module.params.get("queries")
+    db_server.filters_map()
+    query_params = module.params.get("filters")
 
     if module.params.get("uuid"):
         resp, err = db_server.get_db_server(
@@ -147,8 +147,8 @@ def get_db_server(module, result):
 
 def get_db_servers(module, result):
     db_server = DBServers(module)
-    db_server.queries_map()
-    query_params = module.params.get("queries")
+    db_server.filters_map()
+    query_params = module.params.get("filters")
 
     resp = db_server.read(query=query_params)
 
