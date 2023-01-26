@@ -1,0 +1,39 @@
+network_profile:
+      name: ""
+      uuid: ""
+
+software_profile:
+      name: ""
+      uuid: ""
+      latest_version_id: ""
+
+compute_profile:
+      name: ""
+      uuid: ""
+
+public_ssh_key: ""
+
+maintenance:
+      window_name: ""
+      window_uuid: ""
+
+Cluster:
+      cluster1: 
+            name: ""
+            uuid: ""
+
+vm_password: ""
+vm_user: ""
+
+tags:
+      db_server_vm:
+            name: ""
+            uuid: ""
+
+time_machine:
+      name: ""
+      uuid: ""
+      snapshot_uuid: ""
+
+postgres:
+      software_home: "/usr/pgsql-10.4"

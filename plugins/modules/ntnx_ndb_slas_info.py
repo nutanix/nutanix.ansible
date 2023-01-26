@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_slas_info
-short_description: sla  info module
+short_description: info module for ndb slas
 version_added: 1.8.0-beta.1
 description: 'Get sla info'
 options:
@@ -23,18 +23,88 @@ options:
             - sla id
         type: str
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
+- name: List all era slas
+  ntnx_ndb_slas_info:
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
+    validate_certs: false
+  register: slas
+
+- name: get era slas using it's name
+  ntnx_ndb_slas_info:
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
+    validate_certs: false
+    name: "test_name"
+  register: result
+
+- name: List slas use id
+  ntnx_ndb_slas_info:
+    nutanix_host: "<ndb_era_ip>"
+    nutanix_username: "<ndb_era_username>"
+    nutanix_password: "<ndb_era_password>"
+    validate_certs: false
+    uuid: "<uuid of sla>"
+  register: result
+
 """
 RETURN = r"""
+response:
+  description: listing all slas
+  returned: always
+  type: list
+  sample: [
+            {
+                "continuousRetention": 30,
+                "currentActiveFrequency": "CONTINUOUS",
+                "dailyRetention": 90,
+                "dateCreated": "2022-04-08 16:21:51.591815",
+                "dateModified": "2022-04-08 16:21:51.591815",
+                "description": "Out of the box Gold SLA for Era Time Machines.",
+                "id": "50dsad9-db5e-47af-8102-ff9dsad9bd81",
+                "monthlyRetention": 12,
+                "name": "DEFAULT_OOB_GOLD_SLA",
+                "ownerId": "era-internal-user-id",
+                "pitrEnabled": true,
+                "quarterlyRetention": 35,
+                "referenceCount": 1,
+                "systemSla": true,
+                "uniqueName": "DEFAULT_OOB_GOLD_SLA",
+                "weeklyRetention": 16,
+                "yearlyRetention": 0
+            },
+            {
+                "continuousRetention": 14,
+                "currentActiveFrequency": "CONTINUOUS",
+                "dailyRetention": 60,
+                "dateCreated": "2022-04-08 16:21:51.591815",
+                "dateModified": "2022-04-08 16:21:51.591815",
+                "description": "Out of the box Silver SLA for Era Time Machines.",
+                "id": "27dasdd9-db5e-47af-8102-ff9354dsada0",
+                "monthlyRetention": 12,
+                "name": "DEFAULT_OOB_SILVER_SLA",
+                "ownerId": "era-internal-user-id",
+                "pitrEnabled": true,
+                "quarterlyRetention": 0,
+                "referenceCount": 0,
+                "systemSla": true,
+                "uniqueName": "DEFAULT_OOB_SILVER_SLA",
+                "weeklyRetention": 12,
+                "yearlyRetention": 0
+            },
+        ]
 """
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 from ..module_utils.ndb.slas import SLA  # noqa: E402
 
 
@@ -69,7 +139,7 @@ def get_slas(module, result):
 
 
 def run_module():
-    module = NdbBaseModule(
+    module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[("name", "uuid")],

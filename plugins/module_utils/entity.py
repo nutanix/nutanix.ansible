@@ -214,7 +214,7 @@ class Entity(object):
         return resp
 
     # "params" can be used to override module.params to create spec by other modules backened
-    def get_spec(self, old_spec=None, params=None):
+    def get_spec(self, old_spec=None, params=None, **kwargs):
         spec = copy.deepcopy(old_spec) or self._get_default_spec()
 
         ansible_params = None
@@ -382,7 +382,12 @@ class Entity(object):
             return resp_json
 
         if status_code >= 300:
-            err = info.get("msg", "Status code != 2xx")
+            if resp_json and resp_json.get("message"):  # for ndb apis
+                err = resp_json["message"]
+            elif info.get("msg"):
+                err = info["msg"]
+            else:
+                err = "Status code != 2xx"
             self.module.fail_json(
                 msg="Failed fetching URL: {0}".format(url),
                 status_code=status_code,

@@ -16,14 +16,18 @@ class Operation(NutanixDatabase):
         resource_type = "/operations"
         super(Operation, self).__init__(module, resource_type=resource_type)
 
-    def wait_for_completion(self, uuid, raise_error=True):
-        delay = 30
+    def wait_for_completion(
+        self, uuid, raise_error=True, delay=NDB.OPERATIONS_POLLING_DELAY
+    ):
         timeout = time.time() + self.module.params["timeout"]
         resp = None
         while True:
             resp = self.read(uuid)
             status = resp.get("status")
-            if status == NDB.StatusCodes.SUCCESS:
+            if (
+                status == NDB.StatusCodes.SUCCESS
+                or status == NDB.StatusCodes.COMPLETED_WITH_WARNING
+            ):
                 return resp
             elif status == NDB.StatusCodes.FAILURE:
                 if not raise_error:
