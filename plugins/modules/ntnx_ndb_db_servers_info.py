@@ -425,7 +425,7 @@ def get_module_spec():
 
 
 def get_db_server(module, result):
-    db_server = DBServers(module)
+    db_server = DBServerVM(module)
     db_server.filters_map()
     query_params = module.params.get("filters")
 
@@ -450,7 +450,7 @@ def get_db_server(module, result):
 
 
 def get_db_servers(module, result):
-    db_server = DBServers(module)
+    db_server = DBServerVM(module)
     db_server.filters_map()
     query_params = module.params.get("filters")
 

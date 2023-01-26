@@ -23,7 +23,7 @@ class NutanixDatabase(Entity):
             mapped_filters = {}
             for key, value in filters.items():
                 if value is not None:
-                    if except_keys and key not in except_keys:
+                    if except_keys is None or key not in except_keys:
                         key = key.replace("_", "-")
                     mapped_filters.update({key: value})
             self.module.params["filters"] = mapped_filters
