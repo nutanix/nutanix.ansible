@@ -101,7 +101,7 @@ EXAMPLES = r"""
     name:  test-vlan-name
     vlan_type: DHCP
     cluster:
-      uuid: "<cluter-uuid>"
+      uuid: "<cluster-uuid>"
   register: result
 
 - name: create static ndb vlan
@@ -113,9 +113,9 @@ EXAMPLES = r"""
     name:  test-vlan-name
     vlan_type: Static
     cluster:
-      uuid: "<cluter-uuid>"
-    gateway: "<cluter-uuid>"
-    subnet_mask: "<cluter-uuid>"
+      uuid: "<cluster-uuid>"
+    gateway: "<cluster-uuid>"
+    subnet_mask: "<cluster-uuid>"
     ip_pools:
       -
         start_ip: "<vlan_start_ip>"

@@ -139,23 +139,23 @@ EXAMPLES = r"""
         name_prefix: "cluster_name_prefix"
         cluster_ip: "cluster_ip"
         cluster_credentials:
-          username: "{{cluter_info.cluster_credentials.username}}"
-          password: "{{cluter_info.cluster_credentials.password}}"
+          username: "{{cluster_info.cluster_credentials.username}}"
+          password: "{{cluster_info.cluster_credentials.password}}"
         agent_network:
           dns_servers:
-            - "{{cluter_info.agent_network.dns_servers[0]}}"
-            - "{{cluter_info.agent_network.dns_servers[1]}}"
+            - "{{cluster_info.agent_network.dns_servers[0]}}"
+            - "{{cluster_info.agent_network.dns_servers[1]}}"
           ntp_servers:
-            - "{{cluter_info.agent_network.ntp_servers[0]}}"
-            - "{{cluter_info.agent_network.ntp_servers[1]}}"
+            - "{{cluster_info.agent_network.ntp_servers[0]}}"
+            - "{{cluster_info.agent_network.ntp_servers[1]}}"
         vlan_access:
           prism_vlan:
-            vlan_name: "{{cluter_info.vlan_access.prism_vlan.vlan_name}}"
-            vlan_type: "{{cluter_info.vlan_access.prism_vlan.vlan_type}}"
-            static_ip: "{{cluter_info.vlan_access.prism_vlan.static_ip}}"
-            gateway: "{{cluter_info.vlan_access.prism_vlan.gateway}}"
-            subnet_mask: "{{cluter_info.vlan_access.prism_vlan.subnet_mask}}"
-        storage_container: "{{cluter_info.storage_container}}"
+            vlan_name: "{{cluster_info.vlan_access.prism_vlan.vlan_name}}"
+            vlan_type: "{{cluster_info.vlan_access.prism_vlan.vlan_type}}"
+            static_ip: "{{cluster_info.vlan_access.prism_vlan.static_ip}}"
+            gateway: "{{cluster_info.vlan_access.prism_vlan.gateway}}"
+            subnet_mask: "{{cluster_info.vlan_access.prism_vlan.subnet_mask}}"
+        storage_container: "{{cluster_info.storage_container}}"
 
   - name: update cluster name , desc
     ntnx_ndb_clusters:

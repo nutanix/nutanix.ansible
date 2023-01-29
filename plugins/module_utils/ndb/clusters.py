@@ -6,22 +6,15 @@ __metaclass__ = type
 
 from copy import deepcopy
 
-from ..entity import Entity
 from .nutanix_database import NutanixDatabase
 
-#TODO check
-# class Cluster(NutanixDatabase):
-#
-#     def __init__(self, module):
-#         resource_type = "/clusters"
 
+class Cluster(NutanixDatabase):
 
-class Cluster(Entity):
-    __BASEURL__ = "/era"
-
-    def __init__(self, module, api_version="v0.9"):
-        resource_type = "{0}/{1}/clusters".format(self.__BASEURL__, api_version)
-
+    def __init__(self, module, api_version=None):
+        resource_type = "/clusters"
+        if api_version:
+            self.api_version = "/{0}".format(api_version)
         super(Cluster, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,

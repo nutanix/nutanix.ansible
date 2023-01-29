@@ -221,7 +221,7 @@ def get_clusters(module, result):
 
 
 def run_module():
-    module = NdbBaseModule(
+    module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[

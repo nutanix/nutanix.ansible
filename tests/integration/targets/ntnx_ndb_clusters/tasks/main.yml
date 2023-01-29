@@ -6,4 +6,4 @@
         nutanix_password: "{{ndb_password}}"
         validate_certs: false
   block:
-        - import_tasks: "register_cluter.yml"
+        - import_tasks: "register_cluster.yml"
