@@ -10,7 +10,7 @@ __metaclass__ = type
 from .clusters import Cluster, get_cluster_uuid
 from .database_engines.db_engine_factory import create_db_engine
 from .nutanix_database import NutanixDatabase
-from .profiles.profiles import Profile, get_profile_uuid
+from .profiles.profile_types import NetworkProfile, ComputeProfile, SoftwareProfile
 from .time_machines import TimeMachine
 
 
@@ -397,16 +397,16 @@ class DBServerVM(NutanixDatabase):
     ):
         payload = deepcopy(old_spec)
         if not params:
-            config = self.module.params.get("db_vm", {}).get("registered", {})
+            params = self.module.params.get("db_vm", {}).get("registered", {})
 
         if not params:
             return (
                 None,
-                "Registered db server vm input is required for creating spec for registered db server vm",
+                "Registered db server vm input is required for creating spec for db server vm",
             )
 
         # fetch vm ip using name or uuid
-        if params.get("name") or config.get("uuid"):
+        if params.get("name") or params.get("uuid"):
 
             vm_info, err = self.get_db_server(
                 name=params.get("name"), uuid=params.get("uuid")
@@ -420,7 +420,7 @@ class DBServerVM(NutanixDatabase):
             # picking first IP of db server vm for registraion
             payload["vmIp"] = vm_info["ipAddresses"][0]
 
-        elif config.get("ip"):
+        elif params.get("ip"):
             payload["vmIp"] = params["ip"]
 
         else:
@@ -513,7 +513,8 @@ class DBServerVM(NutanixDatabase):
 
     def build_spec_compute_profile(self, payload, profile):
         # set compute profile
-        uuid, err = get_profile_uuid(self.module, "Compute", profile)
+        compute_profile = ComputeProfile(self.module)
+        uuid, err = compute_profile.get_profile_uuid(profile)
         if err:
             return None, err
         payload["computeProfileId"] = uuid
@@ -521,7 +522,8 @@ class DBServerVM(NutanixDatabase):
 
     def build_spec_software_profile(self, payload, profile):
         # set software profile
-        uuid, err = get_profile_uuid(self.module, "Software", profile)
+        software_profile = SoftwareProfile(self.module)
+        uuid, err = software_profile.get_profile_uuid(profile)
         if err:
             return None, err
 
@@ -529,8 +531,7 @@ class DBServerVM(NutanixDatabase):
         if profile.get("version_uuid"):
             payload["softwareProfileVersionId"] = profile["version_uuid"]
         else:
-            profiles = Profile(self.module)
-            software_profile = profiles.read(uuid)
+            software_profile = software_profile.read(uuid)
             payload["softwareProfileId"] = uuid
             payload["softwareProfileVersionId"] = software_profile["latestVersionId"]
 
@@ -538,7 +539,8 @@ class DBServerVM(NutanixDatabase):
 
     def build_spec_network_profile(self, payload, profile):
         # set network prfile
-        uuid, err = get_profile_uuid(self.module, "Network", profile)
+        network_profile = NetworkProfile(self.module)
+        uuid, err = network_profile.get_profile_uuid(profile)
         if err:
             return None, err
 
@@ -577,7 +579,7 @@ class DBServerVM(NutanixDatabase):
         return payload, None
 
     def _build_spec_ip(self, payload, ip):
-        payload["ipInfos"] = ([{"ipType": "VM_IP", "ipAddresses": [ip]}],)
+        payload["ipInfos"] = [{"ipType": "VM_IP", "ipAddresses": [ip]}]
         return payload, None
 
     def build_spec_password(self, payload, password):
@@ -604,15 +606,15 @@ class DBServerVM(NutanixDatabase):
             "nxClusterId": kwargs.get("cluster_uuid", ""),
         }
 
-        profile = Profile(self.module)
-
         # get all network profile name uuid map
-        network_profiles, err = profile.get_all_name_uuid_map(type="Network")
+        network_profile = NetworkProfile(self.module)
+        network_profiles, err = network_profile.get_all_name_uuid_map()
         if err:
             return None, err
 
         # get all compute profile name uuid map
-        compute_profiles, err = profile.get_all_name_uuid_map(type="Compute")
+        compute_profile = ComputeProfile(self.module)
+        compute_profiles, err = compute_profile.get_all_name_uuid_map()
         if err:
             return None, err
 
@@ -684,7 +686,7 @@ class DBServerVM(NutanixDatabase):
                 node["nxClusterId"] = cluster_uuid
 
             if vm.get("ip"):
-                payload, err = self._build_spec_ip(payload, vm.get("ip"))
+                node, err = self._build_spec_ip(node, vm.get("ip"))
                 if err:
                     return None, err
 

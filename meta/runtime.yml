@@ -70,4 +70,6 @@ action_groups:
   - ntnx_ndb_db_servers_info
   - ntnx_ndb_slas_info
   - ntnx_ndb_databases
+  - ntnx_ndb_register_database
+  - ntnx_ndb_db_server_vms
   - ntnx_ndb_clusters_info

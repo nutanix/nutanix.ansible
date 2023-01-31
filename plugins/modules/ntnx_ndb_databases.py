@@ -667,6 +667,7 @@ def get_module_spec():
 
     new_server = dict(
         name=dict(type="str", required=True),
+        desc=dict(type="str", required=False),
         pub_ssh_key=dict(type="str", required=True, no_log=True),
         password=dict(type="str", required=True, no_log=True),
         cluster=dict(
@@ -814,7 +815,7 @@ def get_module_spec():
             element="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
-            required=True,
+            required=False,
         ),
     )
 
@@ -822,7 +823,7 @@ def get_module_spec():
         type=dict(
             type="str", choices=["single", "ha"], default="single", required=False
         ),
-        listener_port=dict(type="str", required=True),
+        listener_port=dict(type="str", defaul="5432", required=False),
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
         auto_tune_staging_drive=dict(type="bool", default=True, required=False),
@@ -862,11 +863,12 @@ def get_module_spec():
         time_machine=dict(type="dict", options=time_machine, required=False),
         postgres=dict(type="dict", options=postgres, required=False),
         tags=dict(type="dict", required=False),
-        auto_tune_staging_drive=dict(type="bool", required=False),
+        auto_tune_staging_drive=dict(type="bool", default=True, required=False),
         automated_patching=dict(
             type="dict", options=automated_patching, required=False
         ),
         soft_delete=dict(type="bool", required=False),
+        delete_db_from_vm=dict(type="bool", required=False),
         delete_time_machine=dict(type="bool", required=False),
     )
     return module_args
@@ -896,7 +898,7 @@ def get_provision_spec(module, result, ha=False):
         # populate VM related spec
         db_vm = DBServerVM(module=module)
 
-        provision_new_server = True if module.params.get("create_new_server") else False
+        provision_new_server = True if module.params.get("db_vm",{}).get("create_new_server") else False
         use_registered_server = not provision_new_server
 
         kwargs = {
@@ -1042,7 +1044,7 @@ def update_instance(module, result):
     # populate tags related spec
     if module.params.get("tags"):
         tags = Tag(module)
-        spec, err = tags.get_spec_for_db_instance(spec)
+        spec, err = tags.get_spec(spec)
         if err:
             result["error"] = err
             module.fail_json(

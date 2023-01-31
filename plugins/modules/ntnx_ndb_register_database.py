@@ -105,7 +105,7 @@ def get_module_spec():
     )
 
     postgres = dict(
-        listener_port=dict(type="str", required=True),
+        listener_port=dict(type="str", default="5432", required=False),
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
         db_user=dict(type="str", default="postgres", required=False),
@@ -132,7 +132,7 @@ def get_module_spec():
         postgres=dict(type="dict", options=postgres, required=False),
         tags=dict(type="dict", required=False),
         auto_tune_staging_drive=dict(type="bool", required=False),
-        working_dir=dict(type="str", default="/tmp", required=False),
+        working_directory=dict(type="str", default="/tmp", required=False),
         automated_patching=dict(
             type="dict", options=automated_patching, required=False
         ),
@@ -151,12 +151,12 @@ def get_registration_spec(module, result):
     # populate VM related spec
     db_vm = DBServerVM(module=module)
 
-    use_registered_server = True if module.params.get("registered") else False
+    use_registered_server = True if module.params.get("db_vm", {}).get("registered") else False
     register_server = not use_registered_server
 
     kwargs = {
-        "registered": use_registered_server,
-        "unregistered": register_server,
+        "use_registered_server": use_registered_server,
+        "register_server": register_server,
         "db_instance_register": True,
     }
     spec, err = db_vm.get_spec(old_spec=spec, **kwargs)

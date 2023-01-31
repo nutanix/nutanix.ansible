@@ -8,7 +8,7 @@ from copy import deepcopy
 
 from .database_engines.db_engine_factory import create_db_engine
 from .nutanix_database import NutanixDatabase
-from .profiles.profiles import get_profile_uuid
+from .profiles.profile_types import DatabaseParameterProfile
 from .time_machines import TimeMachine
 
 
@@ -174,8 +174,9 @@ class DatabaseClone(NutanixDatabase):
         return payload, None
 
     def _build_spec_db_params_profile(self, payload, db_params_profile):
-        uuid, err = get_profile_uuid(
-            self.module, "Database_Parameter", db_params_profile
+        db_params = DatabaseParameterProfile(self.module)
+        uuid, err = db_params.get_profile_uuid(
+            db_params_profile
         )
         if err:
             return None, err
