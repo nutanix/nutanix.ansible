@@ -434,7 +434,7 @@ def get_profile_type(module):
     return None, "Input doesn't conatains config for allowed profile types of databases"
 
 
-def get_profile_type_obj(module, profile_type=None): #-> tuple[Profile, str]:
+def get_profile_type_obj(module, profile_type=None):  # -> tuple[Profile, str]:
     profiles = {
         "software": SoftwareProfile,
         "network": NetworkProfile,

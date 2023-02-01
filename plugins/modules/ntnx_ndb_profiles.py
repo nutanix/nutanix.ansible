@@ -115,7 +115,7 @@ def get_module_spec():
             choices=["software", "compute", "network", "database_parameters"],
             required=True,
         ),
-        =dict(type="str", options=["postgres"]),
+        database_type=dict(type="str", options=["postgres"]),
         compute=dict(type="dict", options=compute, required=False),
         software=dict(type="dict", options=software, required=False),
         network=dict(type="dict", options=network, required=False),
