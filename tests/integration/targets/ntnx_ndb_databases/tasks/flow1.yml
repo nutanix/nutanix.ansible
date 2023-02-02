@@ -36,7 +36,7 @@
       create_new_server:
         name: "{{ vm1_name }}"
         desc: vm for db server
-        password: "{{ vm_password }}"
+        password: "test_password"
         cluster: 
           name: "{{cluster.cluster1.name}}"
         software_profile:
@@ -45,12 +45,12 @@
           name: "{{ network_profile.name }}"
         compute_profile:
           name: "{{ compute_profile.name }}"
-        pub_ssh_key: "{{ software_profile.name }}"
+        pub_ssh_key: "test_key"
     
     postgres:
       listener_port: "9999"
       db_name: testAnsible
-      db_password: "{{ vm_password }}"
+      db_password: "test_password"
       db_size: 200
       type: "single"
       auto_tune_staging_drive: false
@@ -484,7 +484,7 @@
       listener_port: "9999"
       db_name: testAnsible1
       db_password: "{{vm_password}}"
-      software_path: "{{postgres.software_home}}"
+      db_user: "postgres"
 
     time_machine:
       name: TM1
@@ -533,10 +533,6 @@
                 {
                     "name": "db_password",
                     "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
-                },
-                {
-                    "name": "postgres_software_home",
-                    "value": "{{postgres.software_home}}"
                 }
             ]
 
@@ -630,7 +626,7 @@
     postgres:
       db_name: testAnsible1
       db_password: "{{vm_password}}"
-      software_path: "{{postgres.software_home}}"
+
     time_machine:
       name: TM1
       desc: TM-desc
@@ -717,7 +713,7 @@
     delete_vm_snapshots: True
   register: result
 
-- name: check mode Status
+- name: check delete status
   assert: 
     that:
       - result.response is defined

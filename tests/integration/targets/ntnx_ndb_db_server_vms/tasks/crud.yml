@@ -71,7 +71,7 @@
     db_server_uuid: "{{ result.response.uuid }}"
 
 - set_fact:
-    vm_ip: "{{result.response.ipAddresses[0] }}"
+    vm_ip: "{{ result.response.ipAddresses[0] }}"
 
 - name: create era vm using time machine and check mode
   check_mode: yes
@@ -166,7 +166,7 @@
       reset_name_in_ntnx_cluster: True
       reset_desc_in_ntnx_cluster: True
       update_credentials:
-        - username: "{{vm_user}}"
+        - username: "{{vm_username}}"
           password: "{{vm_password}}"
       tags:
         "{{tags.db_server_vm.name}}": ansible-updated

@@ -295,7 +295,7 @@ class DBServerVM(NutanixDatabase):
                 "db server vm input is required for creating spec for registered db server vm",
             )
 
-        uuid, err = self.get_db_server_uuid(self.module, params)
+        uuid, err = self.get_db_server_uuid(params)
         if err:
             return None, err
 
@@ -363,6 +363,7 @@ class DBServerVM(NutanixDatabase):
     def get_spec_register_for_db_instance_registration(
         self, old_spec=None, params=None, **kwargs
     ):
+
         self.build_spec_methods = {
             "ip": self._build_spec_register_vm_ip,
             "username": self._build_spec_register_vm_username,

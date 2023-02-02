@@ -25,7 +25,7 @@ class DatabaseInstance(NutanixDatabase):
 
     def provision(self, data):
         endpoint = "provision"
-        return self.create(data, endpoint)
+        return self.create(data, endpoint, timeout=60)
 
     def register(self, data):
         endpoint = "register"

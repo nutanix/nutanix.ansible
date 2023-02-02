@@ -5,5 +5,10 @@
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"
         validate_certs: "{{ validate_certs }}"
+
   block:
         - import_tasks: "flow1.yml"
+        - import_tasks: "flow2.yml"
+        - import_tasks: "flow3.yml"
+
+

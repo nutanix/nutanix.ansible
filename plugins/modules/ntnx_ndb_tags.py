@@ -121,7 +121,7 @@ def run_module():
         },
         mutually_exclusive=[("uuid", "entity_type")]
     )
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "error": None, "response": None, "uuid": None}
     if module.params.get("state", "present") == "present":
         if module.params.get("uuid"):
             update_tags(module, result)

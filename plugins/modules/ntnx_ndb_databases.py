@@ -750,7 +750,7 @@ def get_module_spec():
         name=dict(type="str", required=True),
         desc=dict(type="str", required=False),
         vms=dict(type="list", elements="dict", options=cluster_vm, required=True),
-        password=dict(type="str", required=True, no_log=False),
+        password=dict(type="str", required=True, no_log=True),
         pub_ssh_key=dict(type="str", required=False),
         software_profile=dict(
             type="dict",
@@ -808,7 +808,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        schedule=dict(type="dict", options=schedule, required=True),
+        schedule=dict(type="dict", options=schedule, required=False),
         auto_tune_log_drive=dict(type="bool", required=False, default=True),
         clusters=dict(
             type="list",
@@ -823,7 +823,7 @@ def get_module_spec():
         type=dict(
             type="str", choices=["single", "ha"], default="single", required=False
         ),
-        listener_port=dict(type="str", defaul="5432", required=False),
+        listener_port=dict(type="str", default="5432", required=False),
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
         auto_tune_staging_drive=dict(type="bool", default=True, required=False),

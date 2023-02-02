@@ -100,7 +100,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        schedule=dict(type="dict", options=schedule, required=True),
+        schedule=dict(type="dict", options=schedule, required=False),
         auto_tune_log_drive=dict(type="bool", required=False, default=True),
     )
 
@@ -109,13 +109,7 @@ def get_module_spec():
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
         db_user=dict(type="str", default="postgres", required=False),
-        backup_policy=dict(
-            type="str",
-            choices=["primary_only", "prefer_secondary", "secondary_only"],
-            default="prefer_secondary",
-            required=False,
-        ),  # check if required
-        software_path=dict(type="str", required=True),
+        software_path=dict(type="str", required=False),
         type=dict(dict="str", choices=["single"], default="single", required=False),
     )
 
@@ -237,7 +231,7 @@ def register_instance(module, result):
         ops_uuid = resp["operationId"]
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
-        operations.wait_for_completion(ops_uuid)
+        operations.wait_for_completion(ops_uuid, delay=15)
         resp = db_instance.read(db_uuid)
         result["response"] = resp
 
