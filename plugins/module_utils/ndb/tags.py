@@ -68,22 +68,7 @@ class Tag(NutanixDatabase):
     def get_spec(self, old_spec=None, params=None, **kwargs):
 
         if kwargs.get("associate_to_entity"):
-            tags = params or self.module.params.get("tags")
-
-            payload = old_spec
-            if not tags:
-                payload["tags"] = []
-                return payload, None
-
-            name_uuid_map = self.get_all_name_uuid_map(type=kwargs.get("type"))
-            specs = []
-            for name, val in tags.items():
-                if name not in name_uuid_map:
-                    return None, "Tag with name {0} not found".format(name)
-                spec = {"tagId": name_uuid_map[name], "tagName": name, "value": val}
-                specs.append(spec)
-            payload["tags"] = specs
-            return payload, None
+            return self.get_spec_for_tags_association(old_spec=old_spec, params=params, **kwargs)
         else:
             return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
@@ -107,6 +92,24 @@ class Tag(NutanixDatabase):
                 "description": ""
             }
         )
+    
+    def get_spec_for_tags_association(self, old_spec=None, params=None, **kwargs):
+        tags = params or self.module.params.get("tags")
+
+        payload = deepcopy(old_spec)
+        if not tags:
+            payload["tags"] = []
+            return payload, None
+
+        name_uuid_map = self.get_all_name_uuid_map(type=kwargs.get("type"))
+        specs = []
+        for name, val in tags.items():
+            if name not in name_uuid_map:
+                return None, "Tag with name {0} not found".format(name)
+            spec = {"tagId": name_uuid_map[name], "tagName": name, "value": val}
+            specs.append(spec)
+        payload["tags"] = specs
+        return payload, None
     
     def _build_spec_name(self, payload, name):
         payload["name"] = name

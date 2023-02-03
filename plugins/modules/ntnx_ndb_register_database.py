@@ -190,7 +190,7 @@ def get_registration_spec(module, result):
 
     # populate tags related spec
     tags = Tag(module)
-    spec, err = tags.get_spec(spec)
+    spec, err = tags.get_spec(spec, associate_to_entity=True, type="DATABASE")
     if err:
         result["error"] = err
         module.fail_json(
@@ -232,7 +232,8 @@ def register_instance(module, result):
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid, delay=15)
-        resp = db_instance.read(db_uuid)
+        query = {"detailed": True, "load-dbserver-cluster": True}
+        resp = db_instance.read(db_uuid, query=query)
         result["response"] = resp
 
     result["changed"] = True

@@ -51,6 +51,24 @@ class DBServerCluster(NutanixDatabase):
 
         return None, "Please provide supported arguments"
 
+    def get_default_delete_spec(self, **kwargs):
+        delete = kwargs.get("delete", False)
+        return deepcopy(
+            {
+                "delete": delete,
+                "forced": False,
+                "softRemove": False,
+                "remove": not delete,
+                "dbservers": {
+                    "remove": not delete,
+                    "delete": delete,
+                    "deleteVgs": False,
+                    "deleteVmSnapshots": False
+                }
+            }
+        )
+
+
     def get_default_spec_for_db_instance(self):
         return deepcopy(
             {

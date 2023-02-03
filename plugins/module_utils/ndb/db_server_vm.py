@@ -157,12 +157,13 @@ class DBServerVM(NutanixDatabase):
 
         return spec
 
-    def get_default_delete_spec(self):
+    def get_default_delete_spec(self, **kwargs):
+        delete = kwargs.get("delete", False)
         return deepcopy(
             {
                 "softRemove": False,
-                "remove": True,
-                "delete": False,
+                "remove": not delete,
+                "delete": delete,
                 "deleteVgs": False,
                 "deleteVmSnapshots": False,
             }

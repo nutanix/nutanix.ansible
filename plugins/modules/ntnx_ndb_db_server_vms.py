@@ -109,7 +109,7 @@ def get_provision_spec(module, result):
     # populate tags related spec
     if module.params.get("tags"):
         tags = Tag(module)
-        spec, err = tags.get_spec(spec, type="DATABASE_SERVER")
+        spec, err = tags.get_spec(spec, associate_to_entity=True, type="DATABASE_SERVER")
         if err:
             result["error"] = err
             module.fail_json(
@@ -203,7 +203,7 @@ def update_db_server(module, result):
     # populate tags related spec
     if module.params.get("tags"):
         tags = Tag(module)
-        update_spec, err = tags.get_spec(update_spec, type="DATABASE_SERVER")
+        update_spec, err = tags.get_spec(update_spec, associate_to_entity=True, type="DATABASE_SERVER")
         if err:
             result["error"] = err
             module.fail_json(

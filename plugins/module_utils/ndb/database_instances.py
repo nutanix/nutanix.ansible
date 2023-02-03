@@ -203,7 +203,6 @@ class DatabaseInstance(NutanixDatabase):
                 "db_params_profile": self.build_spec_db_params_profile,
                 "desc": self._build_spec_database_desc,
             }
-
         payload, err  = super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
         if self.module.params.get("auto_tune_staging_drive") is not None:

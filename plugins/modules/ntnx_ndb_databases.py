@@ -870,6 +870,8 @@ def get_module_spec():
         soft_delete=dict(type="bool", required=False),
         delete_db_from_vm=dict(type="bool", required=False),
         delete_time_machine=dict(type="bool", required=False),
+        unregister_db_server_vms=dict(type="bool", required=False),
+        delete_db_server_vms=dict(type="bool", required=False),
     )
     return module_args
 
@@ -941,7 +943,7 @@ def get_provision_spec(module, result, ha=False):
 
     # populate tags related spec
     tags = Tag(module)
-    spec, err = tags.get_spec(old_spec=spec)
+    spec, err = tags.get_spec(old_spec=spec, associate_to_entity=True, type="DATABASE")
     if err:
         result["error"] = err
         module.fail_json(
@@ -961,7 +963,6 @@ def get_provision_spec(module, result, ha=False):
                 **result,
             )
         spec["maintenanceTasks"] = mw_spec
-
     return spec
 
 
@@ -979,7 +980,6 @@ def create_instance(module, result):
         ha = True
 
     spec = get_provision_spec(module, result, ha=ha)
-
     if module.check_mode:
         result["response"] = spec
         return
@@ -994,7 +994,8 @@ def create_instance(module, result):
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid)
-        resp = db_instance.read(db_uuid)
+        query = {"detailed": True, "load-dbserver-cluster": True}
+        resp = db_instance.read(db_uuid, query=query)
         result["response"] = resp
 
     result["changed"] = True
@@ -1044,7 +1045,7 @@ def update_instance(module, result):
     # populate tags related spec
     if module.params.get("tags"):
         tags = Tag(module)
-        spec, err = tags.get_spec(spec)
+        spec, err = tags.get_spec(old_spec=spec, associate_to_entity=True, type="DATABASE")
         if err:
             result["error"] = err
             module.fail_json(
@@ -1065,6 +1066,38 @@ def update_instance(module, result):
     result["db_uuid"] = uuid
     result["changed"] = True
 
+def delete_db_servers(module, result, database_info):
+    """
+    This method deletes the associated database server vms or cluster database delete
+    """
+    if module.params.get("unregister_db_server_vms") or module.params.get("delete_db_server_vms"):
+        db_servers = None
+        uuid = None
+        if database_info.get("clustered", False):
+            db_servers = DBServerCluster(module)
+            uuid = database_info.get("dbserverlogicalCluster", {}).get("dbserverClusterId")
+        else:
+            db_servers = DBServerVM(module)
+            database_nodes = database_info.get("databaseNodes")
+            if database_nodes:
+                uuid = database_nodes[0].get("dbserverId")
+
+        if not uuid:
+            module.fail_json(
+                msg="Failed fetching uuid of associated db server vm or db server cluster",
+            )
+
+        spec = db_servers.get_default_delete_spec(delete=module.params.get("delete_db_server_vms", False))
+        resp = db_servers.delete(uuid=uuid, data=spec)
+
+        ops_uuid = resp["operationId"]
+        time.sleep(5)  # to get operation ID functional
+        operations = Operation(module)
+        resp = operations.wait_for_completion(ops_uuid, delay=5)
+        
+        if not result.get("response"):
+            result["response"] = {}
+        result["response"]["db_server_vms_delete_status"] = resp
 
 def delete_instance(module, result):
     _databases = DatabaseInstance(module)
@@ -1072,6 +1105,9 @@ def delete_instance(module, result):
     uuid = module.params.get("db_uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
+
+    query = {"detailed": True, "load-dbserver-cluster": True}
+    database = _databases.read(uuid, query=query)
 
     spec = _databases.get_delete_spec()
 
@@ -1085,11 +1121,13 @@ def delete_instance(module, result):
         ops_uuid = resp["operationId"]
         time.sleep(5)  # to get operation ID functional
         operations = Operation(module)
-        resp = operations.wait_for_completion(ops_uuid)
+        resp = operations.wait_for_completion(ops_uuid, delay=15)
+        result["response"] = resp
 
-    result["response"] = resp
+        # delete db server vms or cluster only when database cleanup has finished
+        delete_db_servers(module, result, database_info=database)
+
     result["changed"] = True
-
 
 def run_module():
     mutually_exclusive_list = [

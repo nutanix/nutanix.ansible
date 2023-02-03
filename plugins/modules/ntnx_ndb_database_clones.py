@@ -170,7 +170,7 @@ def get_clone_spec(module, result, time_machine_uuid):
 
     # populate tags related spec
     tags = Tag(module)
-    spec, err = tags.get_spec(old_spec=spec)
+    spec, err = tags.get_spec(old_spec=spec, associate_to_entity=True, type="CLONE")
     if err:
         result["error"] = err
         module.fail_json(
@@ -274,7 +274,7 @@ def update_db_clone(module, result):
     # populate tags related spec
     if module.params.get("tags"):
         tags = Tag(module)
-        spec, err = tags.get_spec(spec)
+        spec, err = tags.get_spec(old_spec=spec, associate_to_entity=True, type="CLONE")
         if err:
             result["error"] = err
             module.fail_json(

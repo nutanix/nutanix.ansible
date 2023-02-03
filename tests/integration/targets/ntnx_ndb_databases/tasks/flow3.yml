@@ -439,12 +439,13 @@
     fail_msg: "Unable to provision postgres HA database instance"
     success_msg: "postgres HA database instance provision successfully"
 
-- name: unregister db along with delete time machine
+- name: unregister db along with delete time machine and db server vms
   ntnx_ndb_databases:
     db_uuid: "{{result.db_uuid}}" 
     state: "absent"
     wait: true
     delete_time_machine: true
+    delete_db_server_vms: True
   register: result
 
 - name: verify status of delete of database along with time machine delete
@@ -453,6 +454,7 @@
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
+      - result.response.db_server_vms_delete_status.status == "5"
     fail_msg: "database delete failed"
     success_msg: "database deleted successfully"
 
@@ -582,12 +584,13 @@
     success_msg: "postgres HA database instance provision successfully"
 
 
-- name: unregister db along with delete time machine
+- name: unregister db along with delete time machine and db server vms
   ntnx_ndb_databases:
     db_uuid: "{{result.db_uuid}}" 
     state: "absent"
     wait: true
     delete_time_machine: true
+    delete_db_server_vms: True
   register: result
 
 - name: verify status of delete of database along with time machine delete
@@ -596,5 +599,6 @@
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
+      - result.response.db_server_vms_delete_status.status == "5"
     fail_msg: "database delete failed"
     success_msg: "database deleted successfully"
