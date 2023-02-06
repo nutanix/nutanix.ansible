@@ -380,19 +380,14 @@ def get_clone_spec(module, result, time_machine_uuid):
     spec, err = db_clone.get_spec(create=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting database clone spec",
-            **result,
-        )
+        module.fail_json(msg="Failed getting database clone spec", **result)
 
     # populate database engine related spec
     spec, err = db_clone.get_db_engine_spec(spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting database engine related spec for database clone",
-            **result,
-        )
+        err_msg = "Failed getting database engine related spec for database clone"
+        module.fail_json(msg=err_msg, **result)
 
     # populate database instance related spec
     db_server_vms = DBServerVM(module)
@@ -412,10 +407,7 @@ def get_clone_spec(module, result, time_machine_uuid):
     spec, err = db_server_vms.get_spec(old_spec=spec, **kwargs)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting vm spec for database clone",
-            **result,
-        )
+        module.fail_json(msg="Failed getting vm spec for database clone", **result)
 
     # populate tags related spec
     tags = Tag(module)
@@ -423,8 +415,7 @@ def get_clone_spec(module, result, time_machine_uuid):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for tags for database clone",
-            **result,
+            msg="Failed getting spec for tags for database clone", **result
         )
 
     return spec
@@ -443,8 +434,7 @@ def create_db_clone(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting time machine uuid for database clone",
-            **result,
+            msg="Failed getting time machine uuid for database clone", **result
         )
     spec = get_clone_spec(module, result, time_machine_uuid=time_machine_uuid)
 
@@ -528,8 +518,7 @@ def update_db_clone(module, result):
         if err:
             result["error"] = err
             module.fail_json(
-                msg="Failed getting spec for tags for updating database clone",
-                **result,
+                msg="Failed getting spec for tags for updating database clone", **result
             )
 
     if module.check_mode:
@@ -558,8 +547,7 @@ def delete_db_clone(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for deleting database clone",
-            **result,
+            msg="Failed getting spec for deleting database clone", **result
         )
 
     if module.check_mode:

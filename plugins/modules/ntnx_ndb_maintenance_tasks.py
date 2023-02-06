@@ -102,10 +102,8 @@ def update_maintenance_tasks(module, result):
     spec, err = maintenance_window.get_spec(configure_automated_patching=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for updating maitenance tasks",
-            **result,
-        )
+        err_msg = "Failed getting spec for updating maitenance tasks"
+        module.fail_json(msg=err_msg, **result)
 
     if module.check_mode:
         result["response"] = spec

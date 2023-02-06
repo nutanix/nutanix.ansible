@@ -84,10 +84,8 @@ def get_register_spec(module, result):
     spec, err = db_server_vms.get_spec(old_spec=default_spec, register_server=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for db server vm registration",
-            **result,
-        )
+        err_msg = "Failed getting spec for db server vm registration"
+        module.fail_json(msg=err_msg, **result)
 
     # configure automated patching
     if module.params.get("automated_patching"):
@@ -95,27 +93,21 @@ def get_register_spec(module, result):
         mw_spec, err = mw.get_spec(configure_automated_patching=True)
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for automated patching for db server vm",
-                **result,
-            )
+            err_msg = "Failed getting spec for automated patching for db server vm"
+            module.fail_json(msg=err_msg, **result)
         spec["maintenanceTasks"] = mw_spec
 
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for db server vm registration",
-            **result,
-        )
+        err_msg = "Failed getting spec for db server vm registration"
+        module.fail_json(msg=err_msg, **result)
 
     # populate database engine related spec
     spec, err = db_server_vms.get_db_engine_spec(spec, register=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting database engine related spec for database instance registration",
-            **result,
-        )
+        err_msg = "Failed getting database engine related spec for database instance registration"
+        module.fail_json(msg=err_msg, **result)
 
     return spec
 

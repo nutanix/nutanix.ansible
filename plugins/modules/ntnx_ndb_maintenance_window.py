@@ -103,10 +103,8 @@ def create_window(module, result):
     spec, err = maintenance_window.get_spec()
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for new maintenance window",
-            **result,
-        )
+        err_msg = "Failed getting spec for new maintenance window"
+        module.fail_json(msg=err_msg, **result)
 
     if module.check_mode:
         result["response"] = spec
@@ -149,10 +147,8 @@ def update_window(module, result):
     spec, err = _maintenance_window.get_spec(old_spec=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for updating maintenance window",
-            **result,
-        )
+        err_msg = "Failed getting spec for updating maintenance window"
+        module.fail_json(msg=err_msg, **result)
 
     if module.check_mode:
         result["response"] = spec

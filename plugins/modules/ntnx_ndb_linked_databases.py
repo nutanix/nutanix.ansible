@@ -60,10 +60,8 @@ def get_module_spec():
 def add_database(module, result):
     instance_uuid = module.params.get("db_instance_uuid")
     if not instance_uuid:
-        return module.fail_json(
-            msg="db_instance_uuid is required field for adding databases to database instance",
-            **result,
-        )
+        err_msg = "db_instance_uuid is required field for adding databases to database instance"
+        return module.fail_json(msg=err_msg, **result)
     result["db_instance_uuid"] = instance_uuid
 
     _databases = DatabaseInstance(module)
@@ -94,10 +92,8 @@ def remove_database(module, result):
     instance_uuid = module.params.get("db_instance_uuid")
     database_uuid = module.params.get("database_uuid")
     if not database_uuid or not instance_uuid:
-        module.fail_json(
-            msg="database_uuid and instance_uuid are required fields for deleting database from database instance",
-            **result,
-        )
+        err_msg = "database_uuid and instance_uuid are required fields for deleting database from database instance"
+        module.fail_json(msg=err_msg, **result)
 
     _databases = DatabaseInstance(module)
     resp = _databases.remove_linked_database(
