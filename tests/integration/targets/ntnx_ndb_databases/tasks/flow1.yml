@@ -72,7 +72,7 @@
         snapshots_per_day: 2
     auto_tune_staging_drive: False
     tags:
-      ansible-databases : "single-instance-dbs"
+      ansible-databases: "single-instance-dbs"
     
     automated_patching:
       maintenance_window:
@@ -261,7 +261,7 @@
         log_catchup: 30
         snapshots_per_day: 2
     tags:
-      ansible-databases : "single-instance-dbs"
+      ansible-databases: "single-instance-dbs"
     
     automated_patching:
       maintenance_window:
@@ -329,7 +329,7 @@
 ################################### update tests #############################
 
 
-- name : update database with check mode
+- name: update database with check mode
   check_mode: yes
   ntnx_ndb_databases:
     wait: true
@@ -352,7 +352,7 @@
     fail_msg: "Unable to create single instance postgres database update spec"
     success_msg: "single instance postgres database update spec generated successfully"
 
-- name : update database
+- name: update database
   ntnx_ndb_databases:
     wait: true
     db_uuid: "{{db_uuid}}" 
@@ -381,7 +381,7 @@
     success_msg: "single instance postgres database updated successfully"
 
 
-- name : idempotency checks
+- name: idempotency checks
   ntnx_ndb_databases:
     wait: true
     db_uuid: "{{db_uuid}}" 
@@ -389,7 +389,7 @@
     desc: "ansible-created-db-desc-updated"
     
     tags:
-      ansible-databases : "single-instance-dbs-updated"
+      ansible-databases: "single-instance-dbs-updated"
   register: result
 
 - name: check idempotency status
@@ -502,7 +502,6 @@
     tags:
       ansible-databases: "single-instance-dbs"
     working_directory: "/check"
-    auto_tune_staging_drive: false
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"

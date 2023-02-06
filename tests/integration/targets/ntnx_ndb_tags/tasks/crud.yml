@@ -189,4 +189,3 @@
       - result.failed == false
     fail_msg: "Unable to delete tag"
     success_msg: "tag deleted succefully"
-
