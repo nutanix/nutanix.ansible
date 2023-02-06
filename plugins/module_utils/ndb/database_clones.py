@@ -29,7 +29,7 @@ class DatabaseClone(NutanixDatabase):
 
     def create(self, time_machine_uuid, data):
         time_machine = TimeMachine(self.module)
-        endpoint = "{}/clones".format(time_machine_uuid)
+        endpoint = "{0}/clones".format(time_machine_uuid)
         return time_machine.create(data=data, endpoint=endpoint)
 
     def refresh(self, uuid, data):

@@ -22,15 +22,15 @@ RETURN = r"""
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.database_instances import DatabaseInstance
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.maintenance_window import (
+from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.maintenance_window import (  # noqa: E402
     AutomatedPatchingSpec,
     MaintenanceWindow,
 )
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.ndb.tags import Tag
-from ..module_utils.ndb.time_machines import TimeMachine
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.tags import Tag  # noqa: E402
+from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 

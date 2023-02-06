@@ -8,7 +8,79 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_databases_snapshot
+short_description: write
+version_added: 1.8.0-beta.1
+description: 'write'
+options:
+      snapshot_uuid:
+        description:
+            - write
+        type: str
+      name:
+        description:
+            - write
+        type: str
+      time_machine:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+      database:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+      clusters:
+        description:
+            - write
+        type: list
+        elements: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+      expiry_days:
+            description:
+                - write
+            type: str
+      remove_expiry:
+            description:
+                - write
+            type: bool
+      timezone:
+            description:
+                - write
+            type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
+
 
 EXAMPLES = r"""
 """

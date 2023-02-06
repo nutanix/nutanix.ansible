@@ -19,10 +19,10 @@ RETURN = r"""
 """
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.ndb.profiles.profile_types import get_profile_type_obj
-from ..module_utils.ndb.profiles.profiles import Profile
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.profiles.profile_types import get_profile_type_obj  # noqa: E402
+from ..module_utils.ndb.profiles.profiles import Profile  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 profile_types_with_version_support = ["software"]
 profile_types_with_wait_support = ["software"]
