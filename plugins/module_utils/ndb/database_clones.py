@@ -176,9 +176,7 @@ class DatabaseClone(NutanixDatabase):
 
     def _build_spec_db_params_profile(self, payload, db_params_profile):
         db_params = DatabaseParameterProfile(self.module)
-        uuid, err = db_params.get_profile_uuid(
-            db_params_profile
-        )
+        uuid, err = db_params.get_profile_uuid(db_params_profile)
         if err:
             return None, err
 
@@ -221,7 +219,7 @@ class DatabaseClone(NutanixDatabase):
         for key, val in args.items():
             if removal_schedule.get(key) is not None:
                 expiry_details[val] = removal_schedule.get(key)
-        
+
         if not payload["lcmConfig"].get("databaseLCMConfig"):
             payload["lcmConfig"]["databaseLCMConfig"] = {
                 "expiryDetails": expiry_details
@@ -246,27 +244,31 @@ class DatabaseClone(NutanixDatabase):
         for key, val in args.items():
             if refresh_schedule.get(key):
                 refresh_details[val] = refresh_schedule.get(key)
-        
+
         if not payload["lcmConfig"].get("databaseLCMConfig"):
             payload["lcmConfig"]["databaseLCMConfig"] = {
                 "refreshDetails": refresh_details
             }
         else:
-            payload["lcmConfig"]["databaseLCMConfig"]["refreshDetails"] = refresh_details        
-        
+            payload["lcmConfig"]["databaseLCMConfig"][
+                "refreshDetails"
+            ] = refresh_details
+
         return payload, None
 
     def _build_spec_removal_schedule_update(self, payload, removal_schedule):
         if removal_schedule.get("state", "present") == "absent":
             payload["removeExpiryConfig"] = True
         else:
-            
+
             payload, err = self._build_spec_removal_schedule(payload, removal_schedule)
             if err:
                 return None, err
-            payload["lcmConfig"]["expiryDetails"] = payload["lcmConfig"]["databaseLCMConfig"]["expiryDetails"]
+            payload["lcmConfig"]["expiryDetails"] = payload["lcmConfig"][
+                "databaseLCMConfig"
+            ]["expiryDetails"]
             payload["lcmConfig"].pop("databaseLCMConfig")
-            
+
             # some changes for expiry timestamp
             if removal_schedule.get("timestamp"):
                 payload["lcmConfig"]["expiryDetails"]["expireInDays"] = 0
@@ -280,8 +282,10 @@ class DatabaseClone(NutanixDatabase):
             payload, err = self._build_spec_refresh_schedule(payload, refresh_schedule)
             if err:
                 return None, err
-            
-            payload["lcmConfig"]["refreshDetails"] = payload["lcmConfig"]["databaseLCMConfig"]["refreshDetails"]
+
+            payload["lcmConfig"]["refreshDetails"] = payload["lcmConfig"][
+                "databaseLCMConfig"
+            ]["refreshDetails"]
             payload["lcmConfig"].pop("databaseLCMConfig")
             payload["resetLcmConfig"] = True
         return payload, None

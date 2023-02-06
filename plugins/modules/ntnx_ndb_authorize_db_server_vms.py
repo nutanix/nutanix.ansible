@@ -114,6 +114,7 @@ def authorize_db_server_vms(module, result):
     result["uuid"] = time_machine_uuid
     result["changed"] = True
 
+
 def deauthorize_db_server_vms(module, result):
     time_machine = TimeMachine(module)
     if not module.params.get("time_machine"):

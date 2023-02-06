@@ -26,11 +26,18 @@ def get_module_spec():
         name=dict(type="str", required=False),
         uuid=dict(type="str", required=False),
         desc=dict(type="str", required=False),
-        entity_type=dict(type="str", choices=["DATABASE", "CLONE", "TIME_MACHINE", "DATABASE_SERVER"], required=False),
+        entity_type=dict(
+            type="str",
+            choices=["DATABASE", "CLONE", "TIME_MACHINE", "DATABASE_SERVER"],
+            required=False,
+        ),
         tag_value_required=dict(type="bool", required=False),
-        status=dict(type="str", choices=["ENABLED", "DEPRECATED"], required=False) # deprecate will disallow tags addition
+        status=dict(
+            type="str", choices=["ENABLED", "DEPRECATED"], required=False
+        ),  # deprecate will disallow tags addition
     )
     return module_args
+
 
 def create_tags(module, result):
     tags = Tag(module)
@@ -39,7 +46,7 @@ def create_tags(module, result):
     if err:
         result["error"] = err
         return module.fail_json(msg="Failed generating tag create spec", **result)
-    
+
     if module.check_mode:
         result["response"] = spec
         return
@@ -48,7 +55,7 @@ def create_tags(module, result):
     result["response"] = resp
 
     # get uuid
-    uuid, err = tags.get_tag_uuid(name = resp["name"], entity_type = resp["entityType"])
+    uuid, err = tags.get_tag_uuid(name=resp["name"], entity_type=resp["entityType"])
     if err:
         result["error"] = err
         return module.fail_json(msg="Failed fetching tag uuid post creation", **result)
@@ -56,6 +63,7 @@ def create_tags(module, result):
     result["uuid"] = uuid
 
     result["changed"] = True
+
 
 def check_tags_idempotency(old_spec, new_spec):
 
@@ -67,7 +75,6 @@ def check_tags_idempotency(old_spec, new_spec):
             return False
 
     return True
-    
 
 
 def update_tags(module, result):
@@ -79,47 +86,48 @@ def update_tags(module, result):
     tag = tags.read(uuid=uuid)
     if not tag:
         module.fail_json(msg="Failed fetching tag info", **result)
-    
+
     default_spec = tags.get_default_update_spec()
     strip_extra_attrs(tag, default_spec)
     spec, err = tags.get_spec(old_spec=tag)
     if err:
         result["error"] = err
         return module.fail_json("Failed generating tag update spec", **result)
-    
+
     if module.check_mode:
         result["response"] = spec
         return
-    
+
     if check_tags_idempotency(old_spec=tag, new_spec=spec):
         result["skipped"] = True
-        module.exit_json(msg="Nothing to change.") 
+        module.exit_json(msg="Nothing to change.")
 
     resp = tags.update(uuid=uuid, data=spec)
     result["response"] = resp
     result["changed"] = True
     result["uuid"] = uuid
 
+
 def delete_tags(module, result):
     tags = Tag(module)
     uuid = module.params.get("uuid")
     if not uuid:
         module.fail_json(msg="'uuid' is required field for delete", **result)
-    
+
     resp = tags.delete(uuid=uuid)
     result["response"] = resp
     result["changed"] = True
+
 
 def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[
-            ("state", "present", ("name", "uuid"), True)],
+        required_if=[("state", "present", ("name", "uuid"), True)],
         required_by={
-            'status': 'uuid',
+            "status": "uuid",
         },
-        mutually_exclusive=[("uuid", "entity_type")]
+        mutually_exclusive=[("uuid", "entity_type")],
     )
     result = {"changed": False, "error": None, "response": None, "uuid": None}
     if module.params.get("state", "present") == "present":

@@ -192,7 +192,6 @@ class NetworkProfile(Profile):
 
 
 class SoftwareProfile(Profile):
-
     def __init__(self, module):
         super(SoftwareProfile, self).__init__(module)
         self._type = NDB.ProfileTypes.SOFTWARE
@@ -312,8 +311,9 @@ class SoftwareProfile(Profile):
             )
 
         if version.get("db_server"):
-            # importing here to avoid frozen import 
+            # importing here to avoid frozen import
             from ..db_server_vm import DBServerVM
+
             db_server_vm = DBServerVM(self.module)
             uuid, err = db_server_vm.get_db_server_uuid(version["db_server"])
             if err:
@@ -355,7 +355,6 @@ class SoftwareProfile(Profile):
 
 
 class DatabaseParameterProfile(Profile):
-
     def __init__(self, module):
         self._type = NDB.ProfileTypes.DB_PARAMS
         super(DatabaseParameterProfile, self).__init__(module)

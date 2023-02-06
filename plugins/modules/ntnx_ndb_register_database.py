@@ -145,7 +145,9 @@ def get_registration_spec(module, result):
     # populate VM related spec
     db_vm = DBServerVM(module=module)
 
-    use_registered_server = True if module.params.get("db_vm", {}).get("registered") else False
+    use_registered_server = (
+        True if module.params.get("db_vm", {}).get("registered") else False
+    )
     register_server = not use_registered_server
 
     kwargs = {

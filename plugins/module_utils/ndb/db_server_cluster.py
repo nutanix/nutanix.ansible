@@ -63,11 +63,10 @@ class DBServerCluster(NutanixDatabase):
                     "remove": not delete,
                     "delete": delete,
                     "deleteVgs": False,
-                    "deleteVmSnapshots": False
-                }
+                    "deleteVmSnapshots": False,
+                },
             }
         )
-
 
     def get_default_spec_for_db_instance(self):
         return deepcopy(

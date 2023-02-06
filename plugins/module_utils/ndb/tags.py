@@ -20,18 +20,32 @@ class Tag(NutanixDatabase):
             "desc": self._build_spec_desc,
             "entity_type": self._build_spec_entity_type,
             "tag_value_required": self._build_spec_tag_vlaue_required,
-            "status": self._build_spec_status
+            "status": self._build_spec_status,
         }
 
-    def read(self, uuid=None, endpoint=None, query=None, raise_error=True, no_response=False, timeout=30):
-        
+    def read(
+        self,
+        uuid=None,
+        endpoint=None,
+        query=None,
+        raise_error=True,
+        no_response=False,
+        timeout=30,
+    ):
+
         if uuid:
             if not query:
                 query = {}
             query["id"] = uuid
 
-        return super().read(uuid=None, query=query, endpoint=endpoint, raise_error=raise_error, no_response=no_response, timeout=timeout)
-
+        return super().read(
+            uuid=None,
+            query=query,
+            endpoint=endpoint,
+            raise_error=raise_error,
+            no_response=no_response,
+            timeout=timeout,
+        )
 
     def get_tag_uuid(self, name, entity_type):
         # use name + entity_type combination to get tag details
@@ -45,7 +59,7 @@ class Tag(NutanixDatabase):
         if isinstance(resp, list):
             for tag in resp:
                 if tag.get("name") == name and tag.get("status") == "ENABLED":
-                    uuid =  tag.get("id")
+                    uuid = tag.get("id")
 
         else:
             return None, "Invalid API response"
@@ -68,31 +82,30 @@ class Tag(NutanixDatabase):
     def get_spec(self, old_spec=None, params=None, **kwargs):
 
         if kwargs.get("associate_to_entity"):
-            return self.get_spec_for_tags_association(old_spec=old_spec, params=params, **kwargs)
+            return self.get_spec_for_tags_association(
+                old_spec=old_spec, params=params, **kwargs
+            )
         else:
             return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
     def get_default_update_spec(self):
-        return deepcopy({
-            "id": "",
-            "name": "",
-            "description": "",
-            "owner": "",
-            "required": False,
-            "status": "",
-            "entityType": ""
-        })
+        return deepcopy(
+            {
+                "id": "",
+                "name": "",
+                "description": "",
+                "owner": "",
+                "required": False,
+                "status": "",
+                "entityType": "",
+            }
+        )
 
     def _get_default_spec(self):
         return deepcopy(
-            {
-                "entityType": "",
-                "name": "",
-                "required": False,
-                "description": ""
-            }
+            {"entityType": "", "name": "", "required": False, "description": ""}
         )
-    
+
     def get_spec_for_tags_association(self, old_spec=None, params=None, **kwargs):
         tags = params or self.module.params.get("tags")
 
@@ -110,7 +123,7 @@ class Tag(NutanixDatabase):
             specs.append(spec)
         payload["tags"] = specs
         return payload, None
-    
+
     def _build_spec_name(self, payload, name):
         payload["name"] = name
         return payload, None
@@ -118,15 +131,15 @@ class Tag(NutanixDatabase):
     def _build_spec_desc(self, payload, desc):
         payload["description"] = desc
         return payload, None
-    
+
     def _build_spec_entity_type(self, payload, entity_type):
         payload["entityType"] = entity_type
         return payload, None
-    
+
     def _build_spec_tag_vlaue_required(self, payload, tag_value_required):
         payload["required"] = tag_value_required
         return payload, None
-    
+
     def _build_spec_status(self, payload, status):
         payload["status"] = status
         return payload, None

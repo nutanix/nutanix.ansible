@@ -398,7 +398,9 @@ def get_clone_spec(module, result, time_machine_uuid):
     # populate database instance related spec
     db_server_vms = DBServerVM(module)
 
-    provision_new_server = True if module.params.get("db_vm", {}).get("create_new_server") else False
+    provision_new_server = (
+        True if module.params.get("db_vm", {}).get("create_new_server") else False
+    )
     use_athorized_server = not provision_new_server
 
     kwargs = {

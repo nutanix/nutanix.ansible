@@ -900,7 +900,9 @@ def get_provision_spec(module, result, ha=False):
         # populate VM related spec
         db_vm = DBServerVM(module=module)
 
-        provision_new_server = True if module.params.get("db_vm",{}).get("create_new_server") else False
+        provision_new_server = (
+            True if module.params.get("db_vm", {}).get("create_new_server") else False
+        )
         use_registered_server = not provision_new_server
 
         kwargs = {
@@ -1045,7 +1047,9 @@ def update_instance(module, result):
     # populate tags related spec
     if module.params.get("tags"):
         tags = Tag(module)
-        spec, err = tags.get_spec(old_spec=spec, associate_to_entity=True, type="DATABASE")
+        spec, err = tags.get_spec(
+            old_spec=spec, associate_to_entity=True, type="DATABASE"
+        )
         if err:
             result["error"] = err
             module.fail_json(
@@ -1066,16 +1070,21 @@ def update_instance(module, result):
     result["db_uuid"] = uuid
     result["changed"] = True
 
+
 def delete_db_servers(module, result, database_info):
     """
     This method deletes the associated database server vms or cluster database delete
     """
-    if module.params.get("unregister_db_server_vms") or module.params.get("delete_db_server_vms"):
+    if module.params.get("unregister_db_server_vms") or module.params.get(
+        "delete_db_server_vms"
+    ):
         db_servers = None
         uuid = None
         if database_info.get("clustered", False):
             db_servers = DBServerCluster(module)
-            uuid = database_info.get("dbserverlogicalCluster", {}).get("dbserverClusterId")
+            uuid = database_info.get("dbserverlogicalCluster", {}).get(
+                "dbserverClusterId"
+            )
         else:
             db_servers = DBServerVM(module)
             database_nodes = database_info.get("databaseNodes")
@@ -1087,17 +1096,20 @@ def delete_db_servers(module, result, database_info):
                 msg="Failed fetching uuid of associated db server vm or db server cluster",
             )
 
-        spec = db_servers.get_default_delete_spec(delete=module.params.get("delete_db_server_vms", False))
+        spec = db_servers.get_default_delete_spec(
+            delete=module.params.get("delete_db_server_vms", False)
+        )
         resp = db_servers.delete(uuid=uuid, data=spec)
 
         ops_uuid = resp["operationId"]
         time.sleep(5)  # to get operation ID functional
         operations = Operation(module)
         resp = operations.wait_for_completion(ops_uuid, delay=5)
-        
+
         if not result.get("response"):
             result["response"] = {}
         result["response"]["db_server_vms_delete_status"] = resp
+
 
 def delete_instance(module, result):
     _databases = DatabaseInstance(module)
@@ -1128,6 +1140,7 @@ def delete_instance(module, result):
         delete_db_servers(module, result, database_info=database)
 
     result["changed"] = True
+
 
 def run_module():
     mutually_exclusive_list = [
