@@ -74,3 +74,7 @@ action_groups:
   - ntnx_ndb_db_server_vms
   - ntnx_ndb_clusters_info
   - ntnx_ndb_tags
+  - ntnx_ndb_database_clones
+  - ntnx_ndb_database_snapshots
+  - ntnx_ndb_database_clone_refresh
+  - ntnx_ndb_authorize_db_server_vms
