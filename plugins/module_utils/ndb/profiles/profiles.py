@@ -27,7 +27,7 @@ class Profile(NutanixDatabase):
         uuid = ""
         if data.get("name"):
             if not type:
-                type=self._type
+                type = self._type
             if type not in self.types:
                 return None, "{0} is not a valid type. Allowed types are {1}".format(
                     type, self.types
@@ -41,9 +41,8 @@ class Profile(NutanixDatabase):
         else:
             error = "Profile config {0} doesn't have name or uuid key".format(data)
             return error, None
-        
+
         return uuid, None
-        
 
     def read(
         self,

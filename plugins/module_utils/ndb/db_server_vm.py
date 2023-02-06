@@ -10,7 +10,7 @@ __metaclass__ = type
 from .clusters import Cluster, get_cluster_uuid
 from .database_engines.db_engine_factory import create_db_engine
 from .nutanix_database import NutanixDatabase
-from .profiles.profile_types import NetworkProfile, ComputeProfile, SoftwareProfile
+from .profiles.profile_types import ComputeProfile, NetworkProfile, SoftwareProfile
 from .time_machines import TimeMachine
 
 
