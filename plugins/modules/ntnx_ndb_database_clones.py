@@ -6,16 +6,258 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_database_clones
+short_description: write
+version_added: 1.8.0-beta.1
+description: 'write'
+options:
+      uuid:
+        description:
+            - write
+        type: str
+      name:
+        description:
+            - write
+        type: str
+      desc:
+        description:
+            - write
+        type: str
+      db_params_profile:
+        description:
+            - write
+        type: dict
+        suboptions:
+            uuid:
+                description:
+                    - write
+                type: str
+            name:
+                description:
+                    - write
+                type: str
+      db_vm:
+        description:
+            - write
+        type: dict
+        suboptions:
+            create_new_server:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    name:
+                        description:
+                            - write
+                        type: str
+                        required: true
+                    desc:
+                        description:
+                            - write
+                        type: str
+                    pub_ssh_key:
+                        description:
+                            - write
+                        type: str
+                        required: true
+                    password:
+                        description:
+                            - write
+                        type: str
+                        required: true
+                    cluster:
+                        description:
+                            - write
+                        type: dict
+                        required: true
+                        suboptions:
+                            uuid:
+                                description:
+                                    - write
+                                type: str
+                            name:
+                                description:
+                                    - write
+                                type: str
+                    network_profile:
+                        description:
+                            - write
+                        type: dict
+                        required: true
+                        suboptions:
+                            uuid:
+                                description:
+                                    - write
+                                type: str
+                            name:
+                                description:
+                                    - write
+                                type: str
+                    compute_profile:
+                        description:
+                            - write
+                        type: dict
+                        required: true
+                        suboptions:
+                            uuid:
+                                description:
+                                    - write
+                                type: str
+                            name:
+                                description:
+                                    - write
+                                type: str
+
+            use_authorized_server:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    uuid:
+                        description:
+                            - write
+                        type: str
+                    name:
+                        description:
+                            - write
+                        type: str
+      time_machine:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+                required: true
+            uuid:
+                description:
+                    - write
+                type: str
+            snapshot_uuid:
+                description:
+                    - write
+                type: str
+            timezone:
+                description:
+                    - write
+                type: str
+                default: "Asia/Calcutta"
+            pitr_timestamp:
+                description:
+                    - write
+                type: str
+      postgres:
+        description:
+            - write
+        type: dict
+        suboptions:
+            db_password:
+                description:
+                    - write
+                type: str
+                required: true
+            pre_clone_cmd:
+                description:
+                    - write
+                type: str
+            post_clone_cmd:
+                description:
+                    - write
+                type: str
+      tags:
+        description:
+            - write
+        type: dict
+      removal_schedule:
+        description:
+            - write
+        type: dict
+        suboptions:
+            state:
+                description:
+                    - write
+                type: str
+                choices: ["present", "absent"]
+                default: "present"
+            days:
+                description:
+                    - write
+                type: int
+            timezone:
+                description:
+                    - write
+                type: str
+            delete_database:
+                description:
+                    - write
+                type: bool
+                default: false
+            timestamp:
+                description:
+                    - write
+                type: str
+            remind_before_in_days:
+                description:
+                    - write
+                type: int
+      refresh_schedule:
+        description:
+            - write
+        type: dict
+        suboptions:
+            state:
+                description:
+                    - write
+                type: str
+                choices: ["present", "absent"]
+                default: "present"
+            days:
+                description:
+                    - write
+                type: int
+            timezone:
+                description:
+                    - write
+                type: str
+            time:
+                description:
+                    - write
+                type: str
+      delete_from_vm:
+        description:
+            - write
+        type: bool
+      soft_remove:
+        description:
+            - write
+        type: bool
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+"""
+
+EXAMPLES = r"""
+"""
+RETURN = r"""
+
+
+"""
 
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule
-from ..module_utils.ndb.database_clones import DatabaseClone
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.ndb.tags import Tag
-from ..module_utils.ndb.time_machines import TimeMachine
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.database_clones import DatabaseClone  # noqa: E402
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.tags import Tag  # noqa: E402
+from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

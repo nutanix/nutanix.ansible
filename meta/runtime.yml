@@ -78,3 +78,4 @@ action_groups:
   - ntnx_ndb_database_snapshots
   - ntnx_ndb_database_clone_refresh
   - ntnx_ndb_authorize_db_server_vms
+  - ntnx_ndb_profiles

@@ -8,12 +8,42 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_databases_restore
+short_description: write
+version_added: 1.8.0-beta.1
+description: 'write'
+options:
+      point_in_time:
+        description:
+            - write
+        type: str
+      snapshot_uuid:
+        description:
+            - write
+        type: str
+      timezone:
+        description:
+            - write
+        type: str
+        required: true
+      db_uuid:
+        description:
+            - write
+        type: str
+        required: true
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
 
 EXAMPLES = r"""
 """
-
 RETURN = r"""
+
+
 """
 import time  # noqa: E402
 

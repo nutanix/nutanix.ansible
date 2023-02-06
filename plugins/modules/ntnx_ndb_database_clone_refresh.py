@@ -6,16 +6,51 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_database_clone_refresh
+short_description: write
+version_added: 1.8.0-beta.1
+description: 'write'
+options:
+      uuid:
+        description:
+            - write
+        type: str
+      snapshot_uuid:
+        description:
+            - write
+        type: str
+      timezone:
+        description:
+            - write
+        type: str
+        default: "Asia/Calcutta"
+      pitr_timestamp:
+        description:
+            - write
+        type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 
+"""
+EXAMPLES = r"""
+
+
+"""
+RETURN = r"""
+
+
+"""
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule
-from ..module_utils.ndb.database_clones import DatabaseClone
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.ndb.tags import Tag
-from ..module_utils.ndb.time_machines import TimeMachine
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.database_clones import DatabaseClone  # noqa: E402
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

@@ -13,7 +13,7 @@
 
 ################################### DB server VM Provision tests #############################
 - name: create era vm using software profile
-    ntnx_ndb_db_server_vms:
+  ntnx_ndb_db_server_vms:
       wait: True
       name: "{{ vm1_name }}"
       desc: "ansible-created-vm1-desc"
@@ -42,9 +42,9 @@
       register: result
   
 - name: create properties map
-    set_fact: 
+  set_fact: 
         properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
-    loop: "{{result.properties}}"  
+  loop: "{{result.properties}}"  
 
 - name: Creation Status
   assert: 
@@ -75,7 +75,7 @@
 
 - name: create era vm using time machine and check mode
   check_mode: yes
-    ntnx_ndb_db_server_vms:
+  ntnx_ndb_db_server_vms:
       wait: True
       name: "ansible-created-vm1-from-time-machine"
       desc: "ansible-created-vm1-from-time-machine-time-machine"
@@ -107,9 +107,9 @@
   register: check_mode_result
 
 - name: create action_arguments map
-    set_fact: 
+  set_fact: 
         action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
-    loop: "{{result.actionArguments}}"  
+  loop: "{{result.actionArguments}}"  
 
 - set_fact:
     mainetance_tasks: {
@@ -158,7 +158,7 @@
 ################################### DB server VM update Tests #############################
 
 - name: update db server vm name, desc, credentials, tags
-    ntnx_ndb_db_server_vms:
+  ntnx_ndb_db_server_vms:
       wait: True
       uuid: "{{db_server_uuid}}"
       name: "{{vm1_name_updated}}"
@@ -170,7 +170,7 @@
           password: "{{vm_password}}"
       tags:
         "{{tags.db_server_vm.name}}": ansible-updated
-    register: result
+  register: result
 
 - name: Creation Status
   assert: 
@@ -192,14 +192,14 @@
     success_msg: "DB server VM updated successfully"
 
 - name: check idempotency
-    ntnx_ndb_db_server_vms:
+  ntnx_ndb_db_server_vms:
       wait: True
       uuid: "{{db_server_uuid}}"
       name: "{{vm1_name_updated}}"
       desc: "ansible-created-vm1-updated-desc"
       tags:
         "{{tags.db_server_vm.name}}": ansible-updated
-    register: result
+  register: result
 
 - name: check idempotency status
   assert: 
@@ -212,14 +212,14 @@
 
 
 - name: update db server vm name with check mode and check defaults
-    check_mode: yes
-    ntnx_ndb_db_server_vms:
+  check_mode: yes
+  ntnx_ndb_db_server_vms:
       wait: True
       uuid: "{{db_server_uuid}}"
       update_credentials:
         - username: "user"
           password: "pass"
-    register: result
+  register: result
   
 - name: check mode Status
   assert: 
@@ -240,12 +240,12 @@
 ################################### DB server VM unregistration tests #############################
 
 - name: generate check mode spec for unregister with default
-    check_mode: yes
-    ntnx_ndb_db_server_vms:
+  check_mode: yes
+  ntnx_ndb_db_server_vms:
       state: "absent"
       wait: True
       uuid: "{{db_server_uuid}}"
-    register: result
+  register: result
 
 - name: check mode Status
   assert: 
@@ -262,14 +262,14 @@
     success_msg: "DB server VM unregister spec generated successfully"
   
 - name: genereate check mode spec for delete vm with vgs and snapshots
-    check_mode: yes
-    ntnx_ndb_db_server_vms:
+  check_mode: yes
+  ntnx_ndb_db_server_vms:
       state: "absent"
       uuid: "{{db_server_uuid}}"
       delete_from_cluster: True
       delete_vgs: True
       delete_vm_snapshots: True
-    register: result
+  register: result
 
 - name: check mode Status
   assert: 
@@ -310,7 +310,7 @@
 ################################### DB server VM Registration tests #############################
 
 - name: register the previous deregistered vm
-    ntnx_ndb_register_db_server_vm:
+  ntnx_ndb_register_db_server_vm:
       ip: "{{vm_ip}}"
       desc: "register-vm-desc"
       cluster:
@@ -331,12 +331,12 @@
             pre_task_cmd: "ls -l"
             post_task_cmd: "ls -F"
   
-    register: result
+  register: result
   
 - name: create properties map
-    set_fact: 
+  set_fact: 
         properties1: "{{ properties1 | default({}) | combine ({ item['name'] : item['value'] }) }}"
-    loop: "{{result.properties}}"  
+  loop: "{{result.properties}}"  
 
 - name: Creation Status
   assert: 
@@ -363,8 +363,8 @@
     db_server_uuid: "{{result.uuid}}"
 
 - name: generate spec for registeration of the previous deregistered vm spec using check mode
-    check_mode: yes
-    ntnx_ndb_register_db_server_vm:
+  check_mode: yes
+  ntnx_ndb_register_db_server_vm:
       ip: "{{vm_ip}}"
       desc: "register-vm-desc"
       reset_desc_in_ntnx_cluster: true
@@ -385,15 +385,15 @@
             pre_task_cmd: "ls -l"
             post_task_cmd: "ls -F"
       working_directory: "/check"
-    register: result
+  register: result
 
 - set_fact:
     action_arguments: {}
 
 - name: create action_arguments map
-    set_fact: 
+  set_fact: 
         action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
-    loop: "{{result.actionArguments}}"
+  loop: "{{result.actionArguments}}"
 
 - set_fact:
     mainetance_tasks: {
