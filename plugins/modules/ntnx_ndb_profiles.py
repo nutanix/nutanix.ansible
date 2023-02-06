@@ -161,7 +161,7 @@ def check_profile_idempotency(old_spec, new_spec):
 def create_profile_version(module, result, profile_uuid, profile_type):
     _profile, err = get_profile_type_obj(module, profile_type=profile_type)
 
-    spec, err = _profile.get_create_version_spec()
+    spec, err = _profile.get_spec(create=True, version=True)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating profile version create spec", **result)
@@ -205,7 +205,7 @@ def update_profile_version(module, result, profile_uuid, profile_type):
     result["version_uuid"] = version_uuid
 
     default_spec = _profile.get_default_version_update_spec(override_spec=version)
-    spec, err = _profile.get_update_version_spec(old_spec=default_spec)
+    spec, err = _profile.get_spec(old_spec=default_spec, version=True, update=True)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating profile version update spec", **result)
@@ -277,7 +277,7 @@ def create_profile(module, result):
             **result,
         )
 
-    spec, err = _profile.get_create_profile_spec()
+    spec, err = _profile.get_spec(create=True)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create profile spec", **result)
@@ -340,8 +340,9 @@ def update_profile(module, result):
     # profile update operations
     default_update_spec = _profile.get_default_update_spec(override_spec=profile)
 
-    profile_update_spec, err = _profile.get_update_profile_spec(
-        old_spec=default_update_spec
+    profile_update_spec, err = _profile.get_spec(
+        old_spec=default_update_spec,
+        update=True
     )
     if err:
         result["error"] = err

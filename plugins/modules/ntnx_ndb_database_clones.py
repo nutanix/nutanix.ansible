@@ -378,7 +378,7 @@ def get_clone_spec(module, result, time_machine_uuid):
     # create database instance obj
     db_clone = DatabaseClone(module=module)
 
-    spec, err = db_clone.get_spec()
+    spec, err = db_clone.get_spec(create=True)
     if err:
         result["error"] = err
         module.fail_json(
@@ -515,7 +515,7 @@ def update_db_clone(module, result):
     resp = _clones.read(uuid)
     old_spec = _clones.get_default_update_spec(override_spec=resp)
 
-    spec, err = _clones.get_update_spec(old_spec)
+    spec, err = _clones.get_spec(old_spec=old_spec, update=True)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating update database clone spec", **result)
@@ -553,7 +553,7 @@ def delete_db_clone(module, result):
         module.fail_json(msg="uuid is required field for delete", **result)
 
     default_spec = _clones.get_default_delete_spec()
-    spec, err = _clones.get_delete_spec(payload=default_spec)
+    spec, err = _clones.get_spec(old_spec=default_spec, delete=True)
     if err:
         result["error"] = err
         module.fail_json(

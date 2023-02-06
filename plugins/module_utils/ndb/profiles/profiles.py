@@ -39,7 +39,7 @@ class Profile(NutanixDatabase):
         elif data.get("uuid"):
             uuid = data.get("uuid")
         else:
-            error = "Profile config {0} doesn't have name or uuid key".format(config)
+            error = "Profile config {0} doesn't have name or uuid key".format(data)
             return error, None
         
         return uuid, None
@@ -153,6 +153,22 @@ class Profile(NutanixDatabase):
                 spec[key] = override_spec[key]
 
         return spec
+
+    def get_spec(self, old_spec=None, params=None, **kwargs):
+        if kwargs.get("version"):
+            if kwargs.get("create"):
+                return self.get_create_version_spec(old_spec, params, **kwargs)
+            elif kwargs.get("update"):
+                return self.get_update_profile_spec(old_spec, params, **kwargs)
+            elif kwargs.get("delete"):
+                return self.get_delete_version_spec(old_spec, params, **kwargs)
+        else:
+            if kwargs.get("create"):
+                return self.get_create_profile_spec(old_spec, params, **kwargs)
+            elif kwargs.get("update"):
+                return self.get_update_profile_spec(old_spec, params, **kwargs)
+        
+        return None, "Please provide supported arguments"
 
     def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
         payload, err = super().get_spec(old_spec=old_spec, params=params, **kwargs)

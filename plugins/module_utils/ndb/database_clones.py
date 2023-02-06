@@ -115,6 +115,15 @@ class DatabaseClone(NutanixDatabase):
 
         return resp, None
 
+    def get_spec(self, old_spec=None, params=None, **kwargs):
+        if kwargs.get("create"):
+            return super().get_spec(old_spec=old_spec, params=params, **kwargs)
+        elif kwargs.get("update"):
+            return self.get_update_spec(old_spec=old_spec, params=params, **kwargs)
+        elif kwargs.get("delete"):
+            return self.get_delete_spec(old_spec=old_spec, params=params, **kwargs)
+        return None, "Please provide supported arguments"
+
     def get_db_engine_spec(self, payload, params=None, **kwargs):
 
         db_engine, err = create_db_engine(self.module, db_architecture="single")
@@ -131,7 +140,7 @@ class DatabaseClone(NutanixDatabase):
 
         return payload, err
 
-    def get_update_spec(self, payload):
+    def get_update_spec(self, old_spec=None, params=None, **kwargs):
         self.build_spec_methods = {
             "removal_schedule": self._build_spec_removal_schedule_update,
             "refresh_schedule": self._build_spec_refresh_schedule_update,
@@ -139,9 +148,10 @@ class DatabaseClone(NutanixDatabase):
             "desc": self._build_spec_desc,
         }
 
-        return super().get_spec(old_spec=payload)
+        return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
-    def get_delete_spec(self, payload):
+    def get_delete_spec(self, old_spec=None, params=None, **kwargs):
+        payload = deepcopy(old_spec)
         if self.module.params.get("delete_from_vm"):
             payload["delete"] = True
         elif self.module.params.get("soft_remove"):
