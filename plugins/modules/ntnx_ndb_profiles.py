@@ -341,8 +341,7 @@ def update_profile(module, result):
     default_update_spec = _profile.get_default_update_spec(override_spec=profile)
 
     profile_update_spec, err = _profile.get_spec(
-        old_spec=default_update_spec,
-        update=True
+        old_spec=default_update_spec, update=True
     )
     if err:
         result["error"] = err

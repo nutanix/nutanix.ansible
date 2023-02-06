@@ -229,7 +229,9 @@ class SoftwareProfile(Profile):
         if not params:
             return None, "Please provide version config for creating new version"
 
-        payload, err = super(Profile).get_spec(old_spec=old_spec, params=params, **kwargs)
+        payload, err = super(Profile).get_spec(
+            old_spec=old_spec, params=params, **kwargs
+        )
         if err:
             return None, err
 
@@ -253,7 +255,9 @@ class SoftwareProfile(Profile):
         if not params:
             params = self.module.params.get("software")
 
-        payload, err = super(Profile).get_spec(old_spec=old_spec, params=params, *kwargs)
+        payload, err = super(Profile).get_spec(
+            old_spec=old_spec, params=params, *kwargs
+        )
         if err:
             return None, err
 
