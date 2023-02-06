@@ -8,11 +8,35 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_linked_databases
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+      db_instance_uuid:
+        description:
+            - write
+        type: str
+        required: true
+      database_uuid:
+        description:
+            - write
+        type: str
+      databases:
+        description:
+            - write
+        type: list
+        elements: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
 
 EXAMPLES = r"""
 """
-
 RETURN = r"""
 """
 import time  # noqa: E402

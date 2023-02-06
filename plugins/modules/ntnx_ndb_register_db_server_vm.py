@@ -6,17 +6,42 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_register_db_server_vm
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+    desc:
+        description:
+            - write
+        type: str
+        required: true
 
+
+
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+"""
+
+EXAMPLES = r"""
+"""
+RETURN = r"""
+"""
 import time  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.maintenance_window import (
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.maintenance_window import (  # noqa: E402
     AutomatedPatchingSpec,
     MaintenanceWindow,
 )
-from ..module_utils.ndb.operations import Operation
+from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 

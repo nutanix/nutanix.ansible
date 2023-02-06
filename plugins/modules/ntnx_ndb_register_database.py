@@ -5,20 +5,35 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-import time
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_register_database
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+    name:
+        description:
+            - write
+        type: str
+        required: true
+
+
+
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
 
 EXAMPLES = r"""
-
 """
-
 RETURN = r"""
-
 """
+import time  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402

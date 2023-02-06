@@ -5,19 +5,46 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-import time
-from copy import deepcopy
-
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_db_server_vms
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+    name:
+        description:
+            - write
+        type: str
+    uuid:
+        description:
+            - write
+        type: str
+
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+"""
+
+EXAMPLES = r"""
+"""
+RETURN = r"""
+"""
+
+import time  # noqa: E402
+from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.maintenance_window import (
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.maintenance_window import (  # noqa: E402
     AutomatedPatchingSpec,
     MaintenanceWindow,
 )
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.ndb.tags import Tag
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.tags import Tag  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
