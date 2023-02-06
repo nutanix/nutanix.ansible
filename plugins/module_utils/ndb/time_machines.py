@@ -55,6 +55,10 @@ class TimeMachine(NutanixDatabase):
     def authorize_db_server_vms(self, uuid, data):
         endpoint = "dbservers"
         return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
+    
+    def deauthorize_db_server_vms(self, uuid, data):
+        endpoint = "dbservers"
+        return self.delete(data=data, uuid=uuid, endpoint=endpoint)
 
     def get_authorized_db_server_vms(self, uuid, query=None):
         endpoint = "candidate-dbservers"

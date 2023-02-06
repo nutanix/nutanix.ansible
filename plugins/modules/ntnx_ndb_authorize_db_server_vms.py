@@ -65,6 +65,34 @@ def authorize_db_server_vms(module, result):
     result["uuid"] = time_machine_uuid
     result["changed"] = True
 
+def deauthorize_db_server_vms(module, result):
+    time_machine = TimeMachine(module)
+    if not module.params.get("time_machine"):
+        module.fail_json(
+            msg="'time_machine' is required for deauthorizing db server vms with time machine"
+        )
+
+    time_machine_uuid, err = time_machine.get_time_machine_uuid(
+        module.params.get("time_machine")
+    )
+    if err:
+        result["response"] = err
+        module.fail_json(msg="Failed fetching time machine uuid", **result)
+
+    spec, err = time_machine.get_authorize_db_server_vms_spec()
+    if err:
+        result["response"] = err
+        module.fail_json(msg="Failed getting deauthorizing db server vm spec", **result)
+
+    if module.check_mode:
+        result["response"] = spec
+        return
+
+    resp = time_machine.deauthorize_db_server_vms(uuid=time_machine_uuid, data=spec)
+    result["response"] = resp
+    result["uuid"] = time_machine_uuid
+    result["changed"] = True
+
 
 def run_module():
     module = NdbBaseModule(
@@ -73,7 +101,11 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "uuid": None}
-    authorize_db_server_vms(module, result)
+    if module.params.get("state") == "present":
+        authorize_db_server_vms(module, result)
+    else:
+        deauthorize_db_server_vms(module, result)
+
     module.exit_json(**result)
 
 

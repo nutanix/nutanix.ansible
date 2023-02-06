@@ -59,7 +59,7 @@ def get_module_spec():
     )
 
     time_machine = dict(
-        name=dict(type="str", required=True),
+        name=dict(type="str", required=False),
         uuid=dict(type="str", required=False),
         snapshot_uuid=dict(type="str", required=False),
         pitr_timestamp=dict(type="str", required=False),
@@ -156,7 +156,7 @@ def get_clone_spec(module, result, time_machine_uuid):
     # populate database instance related spec
     db_server_vms = DBServerVM(module)
 
-    provision_new_server = True if module.params.get("create_new_server") else False
+    provision_new_server = True if module.params.get("db_vm", {}).get("create_new_server") else False
     use_athorized_server = not provision_new_server
 
     kwargs = {
@@ -167,6 +167,12 @@ def get_clone_spec(module, result, time_machine_uuid):
     }
 
     spec, err = db_server_vms.get_spec(old_spec=spec, **kwargs)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting vm spec for database clone",
+            **result,
+        )
 
     # populate tags related spec
     tags = Tag(module)
@@ -212,7 +218,7 @@ def create_db_clone(module, result):
         ops_uuid = resp["operationId"]
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
-        operations.wait_for_completion(ops_uuid)
+        operations.wait_for_completion(ops_uuid, delay=15)
         resp = db_clone.read(uuid)
         result["response"] = resp
 
@@ -262,6 +268,7 @@ def update_db_clone(module, result):
     uuid = module.params.get("uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for update", **result)
+    result["uuid"] = uuid
 
     resp = _clones.read(uuid)
     old_spec = _clones.get_default_update_spec(override_spec=resp)
@@ -322,7 +329,7 @@ def delete_db_clone(module, result):
         ops_uuid = resp["operationId"]
         time.sleep(5)  # to get operation ID functional
         operations = Operation(module)
-        resp = operations.wait_for_completion(ops_uuid)
+        resp = operations.wait_for_completion(ops_uuid, delay=5)
 
     result["response"] = resp
     result["changed"] = True
