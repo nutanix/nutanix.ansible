@@ -6,16 +6,257 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_database_clones
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+      uuid:
+        description:
+            - write
+        type: str
+      name:
+        description:
+            - write
+        type: str
+      desc:
+        description:
+            - write
+        type: str
+      db_params_profile:
+        description:
+            - write
+        type: dict
+        suboptions:
+            uuid:
+                description:
+                    - write
+                type: str
+            name:
+                description:
+                    - write
+                type: str
+      db_vm:
+        description:
+            - write
+        type: dict
+        suboptions:
+            create_new_server:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    name:
+                        description:
+                            - write
+                        type: str
+                        required: true
+                    desc:
+                        description:
+                            - write
+                        type: str
+                    pub_ssh_key:
+                        description:
+                            - write
+                        type: str
+                        required: true
+                    password:
+                        description:
+                            - write
+                        type: str
+                        required: true
+                    cluster:
+                        description:
+                            - write
+                        type: dict
+                        required: true
+                        suboptions:
+                            uuid:
+                                description:
+                                    - write
+                                type: str
+                            name:
+                                description:
+                                    - write
+                                type: str
+                    network_profile:
+                        description:
+                            - write
+                        type: dict
+                        required: true
+                        suboptions:
+                            uuid:
+                                description:
+                                    - write
+                                type: str
+                            name:
+                                description:
+                                    - write
+                                type: str
+                    compute_profile:
+                        description:
+                            - write
+                        type: dict
+                        required: true
+                        suboptions:
+                            uuid:
+                                description:
+                                    - write
+                                type: str
+                            name:
+                                description:
+                                    - write
+                                type: str
+
+            use_authorized_server:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    uuid:
+                        description:
+                            - write
+                        type: str
+                    name:
+                        description:
+                            - write
+                        type: str
+      time_machine:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+            snapshot_uuid:
+                description:
+                    - write
+                type: str
+            timezone:
+                description:
+                    - write
+                type: str
+                default: "Asia/Calcutta"
+            pitr_timestamp:
+                description:
+                    - write
+                type: str
+      postgres:
+        description:
+            - write
+        type: dict
+        suboptions:
+            db_password:
+                description:
+                    - write
+                type: str
+                required: true
+            pre_clone_cmd:
+                description:
+                    - write
+                type: str
+            post_clone_cmd:
+                description:
+                    - write
+                type: str
+      tags:
+        description:
+            - write
+        type: dict
+      removal_schedule:
+        description:
+            - write
+        type: dict
+        suboptions:
+            state:
+                description:
+                    - write
+                type: str
+                choices: ["present", "absent"]
+                default: "present"
+            days:
+                description:
+                    - write
+                type: int
+            timezone:
+                description:
+                    - write
+                type: str
+            delete_database:
+                description:
+                    - write
+                type: bool
+                default: false
+            timestamp:
+                description:
+                    - write
+                type: str
+            remind_before_in_days:
+                description:
+                    - write
+                type: int
+      refresh_schedule:
+        description:
+            - write
+        type: dict
+        suboptions:
+            state:
+                description:
+                    - write
+                type: str
+                choices: ["present", "absent"]
+                default: "present"
+            days:
+                description:
+                    - write
+                type: int
+            timezone:
+                description:
+                    - write
+                type: str
+            time:
+                description:
+                    - write
+                type: str
+      delete_from_vm:
+        description:
+            - write
+        type: bool
+      soft_remove:
+        description:
+            - write
+        type: bool
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+"""
+
+EXAMPLES = r"""
+"""
+RETURN = r"""
+
+
+"""
 
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule
-from ..module_utils.ndb.database_clones import DatabaseClone
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.ndb.tags import Tag
-from ..module_utils.ndb.time_machines import TimeMachine
-from ..module_utils.utils import remove_param_with_none_value
+from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.database_clones import DatabaseClone  # noqa: E402
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.tags import Tag  # noqa: E402
+from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
@@ -59,7 +300,7 @@ def get_module_spec():
     )
 
     time_machine = dict(
-        name=dict(type="str", required=True),
+        name=dict(type="str", required=False),
         uuid=dict(type="str", required=False),
         snapshot_uuid=dict(type="str", required=False),
         pitr_timestamp=dict(type="str", required=False),
@@ -136,27 +377,24 @@ def get_clone_spec(module, result, time_machine_uuid):
     # create database instance obj
     db_clone = DatabaseClone(module=module)
 
-    spec, err = db_clone.get_spec()
+    spec, err = db_clone.get_spec(create=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting database clone spec",
-            **result,
-        )
+        module.fail_json(msg="Failed getting database clone spec", **result)
 
     # populate database engine related spec
     spec, err = db_clone.get_db_engine_spec(spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting database engine related spec for database clone",
-            **result,
-        )
+        err_msg = "Failed getting database engine related spec for database clone"
+        module.fail_json(msg=err_msg, **result)
 
     # populate database instance related spec
     db_server_vms = DBServerVM(module)
 
-    provision_new_server = True if module.params.get("create_new_server") else False
+    provision_new_server = (
+        True if module.params.get("db_vm", {}).get("create_new_server") else False
+    )
     use_athorized_server = not provision_new_server
 
     kwargs = {
@@ -167,15 +405,17 @@ def get_clone_spec(module, result, time_machine_uuid):
     }
 
     spec, err = db_server_vms.get_spec(old_spec=spec, **kwargs)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed getting vm spec for database clone", **result)
 
     # populate tags related spec
     tags = Tag(module)
-    spec, err = tags.get_spec(old_spec=spec)
+    spec, err = tags.get_spec(old_spec=spec, associate_to_entity=True, type="CLONE")
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for tags for database clone",
-            **result,
+            msg="Failed getting spec for tags for database clone", **result
         )
 
     return spec
@@ -194,8 +434,7 @@ def create_db_clone(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting time machine uuid for database clone",
-            **result,
+            msg="Failed getting time machine uuid for database clone", **result
         )
     spec = get_clone_spec(module, result, time_machine_uuid=time_machine_uuid)
 
@@ -212,7 +451,7 @@ def create_db_clone(module, result):
         ops_uuid = resp["operationId"]
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
-        operations.wait_for_completion(ops_uuid)
+        operations.wait_for_completion(ops_uuid, delay=15)
         resp = db_clone.read(uuid)
         result["response"] = resp
 
@@ -262,11 +501,12 @@ def update_db_clone(module, result):
     uuid = module.params.get("uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for update", **result)
+    result["uuid"] = uuid
 
     resp = _clones.read(uuid)
     old_spec = _clones.get_default_update_spec(override_spec=resp)
 
-    spec, err = _clones.get_update_spec(old_spec)
+    spec, err = _clones.get_spec(old_spec=old_spec, update=True)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating update database clone spec", **result)
@@ -274,12 +514,11 @@ def update_db_clone(module, result):
     # populate tags related spec
     if module.params.get("tags"):
         tags = Tag(module)
-        spec, err = tags.get_spec(spec)
+        spec, err = tags.get_spec(old_spec=spec, associate_to_entity=True, type="CLONE")
         if err:
             result["error"] = err
             module.fail_json(
-                msg="Failed getting spec for tags for updating database clone",
-                **result,
+                msg="Failed getting spec for tags for updating database clone", **result
             )
 
     if module.check_mode:
@@ -304,12 +543,11 @@ def delete_db_clone(module, result):
         module.fail_json(msg="uuid is required field for delete", **result)
 
     default_spec = _clones.get_default_delete_spec()
-    spec, err = _clones.get_delete_spec(payload=default_spec)
+    spec, err = _clones.get_spec(old_spec=default_spec, delete=True)
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for deleting database clone",
-            **result,
+            msg="Failed getting spec for deleting database clone", **result
         )
 
     if module.check_mode:
@@ -322,7 +560,7 @@ def delete_db_clone(module, result):
         ops_uuid = resp["operationId"]
         time.sleep(5)  # to get operation ID functional
         operations = Operation(module)
-        resp = operations.wait_for_completion(ops_uuid)
+        resp = operations.wait_for_completion(ops_uuid, delay=5)
 
     result["response"] = resp
     result["changed"] = True

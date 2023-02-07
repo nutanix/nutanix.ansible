@@ -5,19 +5,46 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-import time
-from copy import deepcopy
-
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_db_server_vms
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+    name:
+        description:
+            - write
+        type: str
+    uuid:
+        description:
+            - write
+        type: str
+
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+"""
+
+EXAMPLES = r"""
+"""
+RETURN = r"""
+"""
+
+import time  # noqa: E402
+from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.maintenance_window import (
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.maintenance_window import (  # noqa: E402
     AutomatedPatchingSpec,
     MaintenanceWindow,
 )
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.ndb.tags import Tag
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.tags import Tag  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -109,13 +136,13 @@ def get_provision_spec(module, result):
     # populate tags related spec
     if module.params.get("tags"):
         tags = Tag(module)
-        spec, err = tags.get_spec(spec, type="DATABASE_SERVER")
+        spec, err = tags.get_spec(
+            spec, associate_to_entity=True, type="DATABASE_SERVER"
+        )
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for tags for new db server vm",
-                **result,
-            )
+            err_msg = "Failed getting spec for tags for new db server vm"
+            module.fail_json(msg=err_msg,**result)
 
     # configure automated patching
     if module.params.get("automated_patching"):
@@ -123,10 +150,9 @@ def get_provision_spec(module, result):
         mw_spec, err = mw.get_spec(configure_automated_patching=True)
         if err:
             result["error"] = err
+            err_msg = "Failed getting spec for automated patching for new db server vm" 
             module.fail_json(
-                msg="Failed getting spec for automated patching for new db server vm",
-                **result,
-            )
+                msg=err_msg,**result)
         spec["maintenanceTasks"] = mw_spec
 
     return spec
@@ -203,13 +229,13 @@ def update_db_server(module, result):
     # populate tags related spec
     if module.params.get("tags"):
         tags = Tag(module)
-        update_spec, err = tags.get_spec(update_spec, type="DATABASE_SERVER")
+        update_spec, err = tags.get_spec(
+            update_spec, associate_to_entity=True, type="DATABASE_SERVER"
+        )
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for tags for db server vm update",
-                **result,
-            )
+            err_msg = "Failed getting spec for tags for db server vm update" 
+            module.fail_json(msg=err_msg,**result)
         update_spec["resetTags"] = True
 
     if module.check_mode:

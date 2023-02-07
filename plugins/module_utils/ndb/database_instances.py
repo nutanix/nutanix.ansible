@@ -6,10 +6,11 @@ __metaclass__ = type
 
 from copy import deepcopy
 
+from ..constants import NDB
 from .database_engines.database_engine import DatabaseEngine
-from .database_engines.db_engine_factory import create_db_engine
+from .database_engines.db_engine_factory import create_db_engine, get_engine_type
 from .nutanix_database import NutanixDatabase
-from .profiles.profiles import get_profile_uuid
+from .profiles.profile_types import DatabaseParameterProfile
 
 
 class DatabaseInstance(NutanixDatabase):
@@ -24,7 +25,7 @@ class DatabaseInstance(NutanixDatabase):
 
     def provision(self, data):
         endpoint = "provision"
-        return self.create(data, endpoint)
+        return self.create(data, endpoint, timeout=60)
 
     def register(self, data):
         endpoint = "register"
@@ -197,34 +198,68 @@ class DatabaseInstance(NutanixDatabase):
         return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
     def get_spec_for_provision(self, old_spec=None, params=None, **kwargs):
-        self.build_spec_methods.update(
-            {
-                "name": self.build_spec_name,
-                "db_params_profile": self.build_spec_db_params_profile,
-                "desc": self._build_spec_database_desc,
-            }
-        )
-        return super().get_spec(old_spec=old_spec, params=params, **kwargs)
+        self.build_spec_methods = {
+            "name": self.build_spec_name,
+            "db_params_profile": self.build_spec_db_params_profile,
+            "desc": self._build_spec_database_desc,
+        }
+        payload, err = super().get_spec(old_spec=old_spec, params=params, **kwargs)
+
+        if self.module.params.get("auto_tune_staging_drive") is not None:
+            payload["autoTuneStagingDrive"] = self.module.params.get(
+                "auto_tune_staging_drive"
+            )
+
+        return payload, err
 
     def get_spec_for_registration(self, old_spec=None, params=None, **kwargs):
-        self.build_spec_methods.update(
-            {
-                "working_dir": self._build_spec_register_working_dir,
-                "name": self._build_spec_register_name,
-                "desc": self.build_spec_desc,
-            }
+        self.build_spec_methods = {
+            "working_directory": self._build_spec_register_working_dir,
+            "name": self._build_spec_register_name,
+            "desc": self.build_spec_desc,
+        }
+
+        payload, err = super().get_spec(old_spec=old_spec, params=params, **kwargs)
+
+        if self.module.params.get("auto_tune_staging_drive") is not None:
+            payload["autoTuneStagingDrive"] = self.module.params.get(
+                "auto_tune_staging_drive"
+            )
+
+        return payload, err
+
+    def get_engine_type(self):
+        engine_types = NDB.DatabaseTypes.ALL
+
+        for type in engine_types:
+            if type in self.module.params:
+                return type, None
+
+        return (
+            None,
+            "Input doesn't conatains config for allowed engine types of databases",
         )
-        return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
     def get_db_engine_spec(self, payload, params=None, **kwargs):
 
-        db_engine, err = create_db_engine(self.module)
+        db_engine_type, err = get_engine_type(self.module)
         if err:
             return None, err
 
-        db_type = db_engine.get_type()
+        config = self.module.params.get(db_engine_type) or params
 
-        config = self.module.params.get(db_type) or params
+        if not config:
+            return None, "input for database engine is missing, {0}".format(
+                db_engine_type
+            )
+
+        db_architecture = config.get("type")
+
+        db_engine, err = create_db_engine(
+            self.module, engine_type=db_engine_type, db_architecture=db_architecture
+        )
+        if err:
+            return None, err
 
         if kwargs.get("provision"):
 
@@ -241,23 +276,24 @@ class DatabaseInstance(NutanixDatabase):
             if err:
                 return None, err
 
-        payload["databaseType"] = db_type + "_database"
+        payload["databaseType"] = db_engine_type + "_database"
         return payload, err
 
     def get_delete_spec(self):
         spec = {
             "delete": False,
             "remove": False,
+            "softRemove": False,
             "deleteTimeMachine": False,
-            "deleteLogicalCluster": True,
+            "deleteLogicalCluster": False,
         }
 
         if self.module.params.get("soft_delete"):
-            spec["remove"] = True
-            spec["delete"] = False
-        else:
+            spec["softRemove"] = True
+        elif self.module.params.get("delete_db_from_vm"):
             spec["delete"] = True
-            spec["remove"] = False
+        else:
+            spec["remove"] = True
 
         if self.module.params.get("delete_time_machine"):
             spec["deleteTimeMachine"] = True
@@ -317,9 +353,8 @@ class DatabaseInstance(NutanixDatabase):
         return payload, None
 
     def build_spec_db_params_profile(self, payload, db_params_profile):
-        uuid, err = get_profile_uuid(
-            self.module, "Database_Parameter", db_params_profile
-        )
+        db_params = DatabaseParameterProfile(self.module)
+        uuid, err = db_params.get_profile_uuid(db_params_profile)
         if err:
             return None, err
 

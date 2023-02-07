@@ -1,0 +1,378 @@
+---
+# Summary:
+# This playbook will test below cases:
+#   1. Create DB server VM to host new database instance (vm1)
+#   2. Create single instance postgres database (db1) on existing registered vm (vm1)
+#   3. Unregister database instance (db1) and db server vm (vm1)
+#   4. Register db1 from unregistered vm1
+
+- debug:
+    msg: "start ndb databases test flow 2"
+
+- name: Generate random name
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+
+- set_fact:
+    db1_name: "{{random_name[0]}}"
+    db1_name_updated: "{{random_name[0]}}-updated"
+    vm1_name: "{{random_name[0]}}-vm"
+
+- name: create db server vm using software profile
+  ntnx_ndb_db_server_vms:
+    wait: True
+    name: "{{ vm1_name }}"
+    desc: "ansible-created-vm1-desc"
+    software_profile:
+      name: "{{ software_profile.name }}"
+    compute_profile:
+      name: "{{ compute_profile.name }}"
+    network_profile:
+      name: "{{ network_profile.name }}"
+    cluster:
+      name: "{{ cluster.cluster1.name }}"
+    password: "{{ vm_password }}"
+    pub_ssh_key: "{{ public_ssh_key }}"
+    time_zone: "UTC"
+    database_type: "postgres_database"
+  register: result
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.response.status == 'UP'
+      - result.uuid is defined
+      - result.changed == true
+    fail_msg: "Unable to create db server vm using software profile"
+    success_msg: "DB server VM created successfully"
+
+- set_fact:
+    db_server_uuid: "{{ result.uuid }}"
+
+- set_fact:
+    _vm_ip: "{{ result.response.ipAddresses[0] }}"
+
+
+- name: create new single instance postgres database on vm created earlier
+  ntnx_ndb_databases:
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
+
+    db_params_profile:
+      name: "{{db_params_profile.name}}"
+    
+    db_vm:
+      use_registered_server:
+        name: "{{ vm1_name }}"
+    
+    postgres:
+      db_name: testAnsible
+      db_password: "{{ vm_password }}"
+      db_size: 200
+
+    time_machine:
+      name: TM1
+      desc: TM-desc
+      sla:
+        name: "{{ sla.name }}"
+      schedule: 
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+
+    tags:
+      ansible-databases: "single-instance-dbs"
+  register: result
+
+- set_fact:
+    db_uuid: "{{result.db_uuid}}"
+
+- name: create properties map
+  set_fact: 
+      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+  loop: "{{result.response.properties}}"
+  no_log: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.response.status == 'READY'
+      - result.db_uuid is defined
+      - result.changed == true
+      - result.response.name == db1_name
+      - result.response.description == "ansible-created-db-desc"
+      - result.response.type == "postgres_database"
+      - properties["listener_port"] == "5432"
+      - properties["db_parameter_profile_id"] == db_params_profile.uuid
+      - result.response.databaseNodes[0].status == "READY"
+      - result.response.databaseNodes[0].dbserverId ==  db_server_uuid
+      - result.response.tags | length == 1
+      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].value == "single-instance-dbs"
+      - result.response.timeMachine is defined
+      - result.response.timeMachine.name == "TM1"
+      - result.response.timeMachine.description == "TM-desc"
+      - result.response.timeMachine.sla is defined
+      - result.response.timeMachine.sla.id == sla.uuid
+
+    fail_msg: "Unable to create single instance postgres database"
+    success_msg: "single instance postgres database created successfully"
+
+
+- name: unregister db along with delete time machine and unregister db servr vm
+  ntnx_ndb_databases:
+    state: "absent"
+    db_uuid: "{{db_uuid}}" 
+    wait: true
+    delete_time_machine: true
+    unregister_db_server_vms: True
+  register: result
+
+- name: verify status of unregister of database with time machine delete
+  assert: 
+    that:
+      - result.changed == True
+      - result.failed == false
+      - result.response.status == "5"
+      - result.response.db_server_vms_delete_status.status == "5"
+    fail_msg: "database unregistration failed"
+    success_msg: "database unregistered successfully"
+
+
+- name: create spec for registering previously unregistered DB from previously unregistered DB server vm
+  check_mode: yes
+  ntnx_ndb_register_database:
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
+
+    db_vm:
+      unregistered:
+        ip: "{{_vm_ip}}"
+        username: "{{vm_username}}"
+        password: "{{vm_password}}"
+        desc: "vm-desc-updated"
+        reset_desc_in_ntnx_cluster: true
+        cluster:
+          name: "{{cluster.cluster1.name}}"
+
+    postgres:
+      db_name: testAnsible1
+      db_password: "{{vm_password}}"
+      software_path: "{{postgres.software_home}}"
+
+    time_machine:
+      name: TM1
+      desc: TM-desc
+      sla:
+        name: "{{ sla.name }}"
+    
+    tags:
+      ansible-databases: "single-instance-dbs"
+    
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+
+  register: result
+
+
+- set_fact:
+    expected_action_arguments: [
+                {
+                    "name": "vmIp",
+                    "value": "{{_vm_ip}}"
+                },
+                {
+                    "name": "listener_port",
+                    "value": "5432"
+                },
+                {
+                    "name": "db_name",
+                    "value": "testAnsible1"
+                },
+                {
+                    "name": "db_user",
+                    "value": "postgres"
+                },
+                {
+                    "name": "db_password",
+                    "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+                },
+                {
+                    "name": "postgres_software_home",
+                    "value": "{{postgres.software_home}}"
+                }
+            ]
+
+- set_fact:
+    expected_time_machine_info: {
+                "autoTuneLogDrive": true,
+                "description": "TM-desc",
+                "name": "TM1",
+                "schedule": {},
+                "slaId": "{{sla.uuid}}"
+            }
+
+- set_fact:
+    mainetance_tasks: {
+                "maintenanceWindowId": "{{maintenance.window_uuid}}",
+                "tasks": [
+                    {
+                        "payload": {
+                            "prePostCommand": {
+                                "postCommand": "ls -a",
+                                "preCommand": "ls"
+                            }
+                        },
+                        "taskType": "OS_PATCHING"
+                    },
+                    {
+                        "payload": {
+                            "prePostCommand": {
+                                "postCommand": "ls -F",
+                                "preCommand": "ls -l"
+                            }
+                        },
+                        "taskType": "DB_PATCHING"
+                    }
+                ]
+            }
+
+- name: Check mode status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.response.databaseName == db1_name
+      - result.response.description == "ansible-created-db-desc"
+      - result.response.actionArguments == expected_action_arguments
+      - result.response.vmDescription == "vm-desc-updated"
+      - result.response.vmIp == _vm_ip
+      - result.response.vmPassword == "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+      - result.response.vmUsername == vm_username
+      - result.response.resetDescriptionInNxCluster == True
+      - result.response.databaseType == "postgres_database"
+      - result.response.timeMachineInfo == expected_time_machine_info
+      - result.response.nxClusterId == cluster.cluster1.uuid
+      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.workingDirectory == "/tmp"
+    fail_msg: "Unable to create register database spec"
+    success_msg: "single instance postgres database register spec created successfully"
+
+
+- name: register previously unregistered DB from previously unregistered DB server vm
+  ntnx_ndb_register_database:
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
+
+    db_vm:
+      unregistered:
+        ip: "{{_vm_ip}}"
+        username: "{{vm_username}}"
+        password: "{{vm_password}}"
+        desc: "vm-desc-updated"
+        reset_desc_in_ntnx_cluster: True
+        cluster:
+          name: "{{cluster.cluster1.name}}"
+
+    postgres:
+      db_name: testAnsible1
+      db_password: "{{vm_password}}"
+      software_path: "{{postgres.software_home}}"
+      db_user: "postgres"
+
+    time_machine:
+      name: TM1
+      desc: TM-desc
+      sla:
+        name: "{{ sla.name }}"
+      schedule: 
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+    
+    tags:
+      ansible-databases: "single-instance-dbs"
+    
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+
+  register: result
+
+
+- name: create properties map
+  set_fact: 
+    properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+  loop: "{{result.response.properties}}"  
+  no_log: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.response.status == 'READY'
+      - result.db_uuid is defined
+      - result.changed == true
+      - result.response.name == db1_name
+      - result.response.description == "ansible-created-db-desc"
+      - properties["listener_port"] == "5432"
+      - properties["vm_ip"] == _vm_ip
+      - result.response.databaseNodes | length == 1
+      - result.response.databaseNodes[0].status == "READY"
+      - result.response.type == "postgres_database"
+      - result.response.tags | length == 1
+      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].value == "single-instance-dbs"
+      - result.response.timeMachine is defined
+      - result.response.timeMachine.name == "TM1"
+      - result.response.timeMachine.description == "TM-desc"
+      - result.response.timeMachine.sla is defined
+      - result.response.timeMachine.sla.id == sla.uuid
+
+    fail_msg: "Unable to register single instance postgres database"
+    success_msg: "single instance postgres database registered successfully"
+
+- name: delete db along with delete time machine and db server vms
+  ntnx_ndb_databases:
+    db_uuid: "{{result.db_uuid}}" 
+    state: "absent"
+    wait: true
+    delete_time_machine: true
+    unregister_db_server_vms: True 
+  register: result
+
+- name: verify status of delete of database along with time machine delete
+  assert: 
+    that:
+      - result.changed == True
+      - result.failed == false
+      - result.response.status == "5"
+      - result.response.db_server_vms_delete_status.status == "5"
+    fail_msg: "database delete failed"
+    success_msg: "database deleted successfully"

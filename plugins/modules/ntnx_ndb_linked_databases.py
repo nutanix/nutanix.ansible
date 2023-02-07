@@ -8,11 +8,35 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_linked_databases
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+      db_instance_uuid:
+        description:
+            - write
+        type: str
+        required: true
+      database_uuid:
+        description:
+            - write
+        type: str
+      databases:
+        description:
+            - write
+        type: list
+        elements: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
 
 EXAMPLES = r"""
 """
-
 RETURN = r"""
 """
 import time  # noqa: E402
@@ -36,10 +60,8 @@ def get_module_spec():
 def add_database(module, result):
     instance_uuid = module.params.get("db_instance_uuid")
     if not instance_uuid:
-        return module.fail_json(
-            msg="db_instance_uuid is required field for adding databases to database instance",
-            **result,
-        )
+        err_msg = "db_instance_uuid is required field for adding databases to database instance"
+        return module.fail_json(msg=err_msg, **result)
     result["db_instance_uuid"] = instance_uuid
 
     _databases = DatabaseInstance(module)
@@ -70,10 +92,8 @@ def remove_database(module, result):
     instance_uuid = module.params.get("db_instance_uuid")
     database_uuid = module.params.get("database_uuid")
     if not database_uuid or not instance_uuid:
-        module.fail_json(
-            msg="database_uuid and instance_uuid are required fields for deleting database from database instance",
-            **result,
-        )
+        err_msg = "database_uuid and instance_uuid are required fields for deleting database from database instance"
+        module.fail_json(msg=err_msg, **result)
 
     _databases = DatabaseInstance(module)
     resp = _databases.remove_linked_database(

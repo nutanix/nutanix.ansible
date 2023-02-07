@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_time_machines_info
 short_description: info module for ndb time machines
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get tm info'
 options:
       name:

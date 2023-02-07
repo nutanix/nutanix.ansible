@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_profiles_info
 short_description: info module for ndb profiles
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get profile info'
 options:
       name:

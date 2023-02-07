@@ -110,7 +110,6 @@ class PostgresSingleInstance(Postgres):
             "pre_create_script": "",
             "post_create_script": "",
         }
-
         # create action arguments
         for key, value in args.items():
             spec = {"name": key, "value": config.get(key, value)}

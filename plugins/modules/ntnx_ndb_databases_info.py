@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_databases_info
 short_description: info module for ndb database instances
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get database instance info'
 options:
       name:

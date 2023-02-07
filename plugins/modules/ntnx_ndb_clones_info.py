@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_clones_info
 short_description: info module for database clones
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get clone info'
 options:
       name:

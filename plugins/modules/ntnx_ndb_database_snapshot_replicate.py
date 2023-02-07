@@ -8,20 +8,57 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_database_snapshot_replicate
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+      expiry_days:
+        description:
+            - write
+        type: str
+      snapshot_uuid:
+        description:
+            - write
+        type: str
+      timezone:
+        description:
+            - write
+        type: str
+      clusters:
+        description:
+            - write
+        type: list
+        elements: dict
+        required: true
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
 
 EXAMPLES = r"""
 """
-
 RETURN = r"""
+
+
 """
 import time  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.ndb.snapshots import Snapshot  # noqa: E402
-from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 # Notes:
