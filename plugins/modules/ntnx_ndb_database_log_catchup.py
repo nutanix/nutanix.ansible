@@ -67,56 +67,26 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
-    mutually_exclusive = [("name", "uuid")]
-    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     module_args = dict(
-        time_machine=dict(
-            type="dict",
-            options=entity_by_spec,
-            mutually_exclusive=mutually_exclusive,
-            required=False,
-        ),
-        database=dict(
-            type="dict",
-            options=entity_by_spec,
-            mutually_exclusive=mutually_exclusive,
-            required=False,
-        ),
+        time_machine_uuid = dict(type="str", required=True),
         for_restore=dict(type="bool", required=False, default=False),
     )
     return module_args
 
 
 def log_catchup(module, result):
-    time_machine_uuid = ""
-    tm = TimeMachine(module)
+    time_machine_uuid = module.params.get("time_machine_uuid")
+    if not time_machine_uuid:
+        return module.fail_json(msg="time_machine_uuid is required for log catchups")
 
-    # fetch uuid from time machine or database
-    if module.params.get("time_machine"):
-        time_machine_uuid, err = tm.get_time_machine_uuid(module.params["time_machine"])
-        if err:
-            result["error"] = err
-            module.fail_json(msg="Failed fetching time machine uuid", **result)
-    else:
-        database = DatabaseInstance(module)
-        db, err = database.get_database(
-            name=module.params["database"].get("name"),
-            uuid=module.params["database"].get("uuid"),
-        )
-        if err:
-            result["error"] = err
-            module.fail_json(
-                msg="Failed fetching time machine uuid from database", **result
-            )
-        time_machine_uuid = db["timeMachineId"]
-
+    time_machine = TimeMachine(module)
     for_restore = module.params.get("for_restore")
-    spec = tm.get_log_catchup_spec(for_restore)
+    spec = time_machine.get_log_catchup_spec(for_restore)
     if module.check_mode:
         result["response"] = spec
         return
 
-    resp = tm.log_catchup(time_machine_uuid=time_machine_uuid, data=spec)
+    resp = time_machine.log_catchup(time_machine_uuid=time_machine_uuid, data=spec)
     result["response"] = resp
 
     if module.params.get("wait"):

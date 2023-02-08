@@ -45,10 +45,10 @@ class DatabaseInstance(NutanixDatabase):
             data=data, uuid=instance_uuid, endpoint=endpoint, method="POST"
         )
 
-    def remove_linked_database(self, database_uuid, instance_uuid):
+    def remove_linked_database(self, linked_database_uuid, database_instance_uuid):
         spec = {"delete": True, "forced": True}
-        endpoint = "linked-databases/{0}".format(database_uuid)
-        return self.delete(uuid=instance_uuid, endpoint=endpoint, data=spec)
+        endpoint = "linked-databases/{0}".format(linked_database_uuid)
+        return self.delete(uuid=database_instance_uuid, endpoint=endpoint, data=spec)
 
     def update(
         self,
@@ -59,7 +59,7 @@ class DatabaseInstance(NutanixDatabase):
         raise_error=True,
         no_response=False,
         timeout=30,
-        method="PUT",
+        method="PATCH",
     ):
         return super().update(
             data,
@@ -69,7 +69,7 @@ class DatabaseInstance(NutanixDatabase):
             raise_error,
             no_response,
             timeout,
-            method="PATCH",
+            method=method,
         )
 
     def get_uuid(
@@ -89,6 +89,13 @@ class DatabaseInstance(NutanixDatabase):
 
         uuid = resp[0].get("id")
         return uuid, None
+
+
+    def _get_action_argument_spec(self, name, value):
+        return deepcopy({
+            "name": name,
+            "value": value
+        })
 
     def get_default_provision_spec(self):
         return deepcopy(
@@ -328,12 +335,12 @@ class DatabaseInstance(NutanixDatabase):
         spec = self.get_default_restore_spec()
         if restore_config.get("snapshot_uuid"):
             spec["snapshotId"] = restore_config["snapshot_uuid"]
-        elif restore_config.get("point_in_time"):
-            spec["userPitrTimestamp"] = restore_config["point_in_time"]
+        elif restore_config.get("pitr_timestamp"):
+            spec["userPitrTimestamp"] = restore_config["pitr_timestamp"]
+            spec["timeZone"] = restore_config.get("timezone")
         else:
             spec["latestSnapshot"] = True
 
-        spec["timeZone"] = restore_config.get("timezone")
         return spec
 
     def get_add_database_spec(self, database_names):
@@ -376,13 +383,3 @@ class DatabaseInstance(NutanixDatabase):
     def _build_spec_auto_tune_staging_drive(self, payload, value):
         payload["autoTuneStagingDrive"] = value
         return payload, None
-
-
-class SingleInstance(DatabaseInstance):
-    def __init__(self, module, db_engine: DatabaseEngine):
-        super(SingleInstance, SingleInstance).__init__(module, db_engine)
-
-
-class HAInstance(DatabaseInstance):
-    def __init__(self, module, db_engine: DatabaseEngine):
-        super(HAInstance, SingleInstance).__init__(module, db_engine)

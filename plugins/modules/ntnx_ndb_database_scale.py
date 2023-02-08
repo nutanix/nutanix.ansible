@@ -92,8 +92,7 @@ def scale_db_instance(module, result):
         ops_uuid = resp["operationId"]
         time.sleep(5)  # to get operation ID functional
         operations = Operation(module)
-        operations.wait_for_completion(ops_uuid)
-        resp = _databases.read(uuid)
+        resp = operations.wait_for_completion(ops_uuid)
         result["response"] = resp
 
     result["changed"] = True
