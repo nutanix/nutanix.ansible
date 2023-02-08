@@ -77,13 +77,20 @@ class TimeMachine(NutanixDatabase):
 
     def get_time_machine_uuid(self, config):
         uuid = ""
-        if config.get("name"):
-            resp = self.get_time_machines(value=config["name"], key="name")
-            uuid = resp.get("id")
-        elif config.get("uuid"):
+        if config.get("uuid"):
             uuid = config["uuid"]
+        elif config.get("name"):
+            name = config["name"]
+            tm, err = self.get_time_machine(name=name)
+            if err:
+                return None, err
+            uuid = tm.get("id")
         else:
-            return None, "time machine config doesn't have name or uuid key"
+            error = "time machine config {0} doesn't have name or uuid key".format(
+                config
+            )
+            return None, error
+
         return uuid, None
 
     def get_log_catchup_spec(self, for_restore=False):

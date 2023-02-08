@@ -87,18 +87,16 @@ class Snapshot(NutanixDatabase):
         return uuid, None
 
     def _get_default_spec(self):
-        return deepcopy({"name": "", "replicateToClusterIds": []})
+        return deepcopy({"name": ""})
 
     def _get_default_snapshot_replication_spec(self):
         return deepcopy({"nxClusterIds": []})
 
     def get_expiry_update_spec(self, config):
         expiry = config.get("expiry_days")
-        timezone = config.get("timezone")
         spec = {
             "lcmConfig": {
                 "expiryDetails": {
-                    "expiryDateTimezone": timezone,
                     "expireInDays": expiry,
                 }
             }
@@ -132,12 +130,9 @@ class Snapshot(NutanixDatabase):
         return payload, None
 
     def _build_spec_expiry(self, payload, expiry):
-        if not self.module.params.get("timezone"):
-            return None, "timezone is required field for snapshot removal schedule"
         payload["lcmConfig"] = {
             "snapshotLCMConfig": {
                 "expiryDetails": {
-                    "expiryDateTimezone": self.module.params.get("timezone"),
                     "expireInDays": int(expiry),
                 }
             }

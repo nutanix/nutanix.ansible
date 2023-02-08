@@ -57,9 +57,9 @@ def get_module_spec():
 
     module_args = dict(
         snapshot_uuid=dict(type="str", required=False),
-        point_in_time=dict(type="str", required=False),
+        pitr_timestamp=dict(type="str", required=False),
         db_uuid=dict(type="str", required=True),
-        timezone=dict(type="str", required=True),
+        timezone=dict(type="str", required=False),
     )
     return module_args
 
@@ -83,8 +83,7 @@ def restore_database(module, result):
         ops_uuid = resp["operationId"]
         time.sleep(5)  # to get operation ID functional
         operations = Operation(module)
-        operations.wait_for_completion(ops_uuid)
-        resp = db.read(db_uuid)
+        resp = operations.wait_for_completion(ops_uuid)
         result["response"] = resp
 
     result["changed"] = True
@@ -95,7 +94,8 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[("snapshot_uuid", "point_in_time")],
+        required_together = [("pitr_timestamp", "timezone")],
+        mutually_exclusive=[("snapshot_uuid", "pitr_timestamp")],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "db_uuid": None}

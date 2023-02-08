@@ -79,3 +79,7 @@ action_groups:
   - ntnx_ndb_database_clone_refresh
   - ntnx_ndb_authorize_db_server_vms
   - ntnx_ndb_profiles
+  - ntnx_ndb_database_log_catchup
+  - ntnx_ndb_database_restore
+  - ntnx_ndb_database_scale
+  - ntnx_ndb_linked_databases

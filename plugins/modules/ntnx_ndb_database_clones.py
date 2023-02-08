@@ -353,7 +353,7 @@ def get_module_spec():
         time_machine=dict(
             type="dict",
             options=time_machine,
-            mutually_exclusive=[("snapshot_uuid", "pitr_snapshot")],
+            mutually_exclusive=[("snapshot_uuid", "pitr_timestamp")],
             required=False,
         ),
         postgres=dict(type="dict", options=postgres, required=False),

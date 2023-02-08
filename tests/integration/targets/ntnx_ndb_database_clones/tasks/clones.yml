@@ -92,8 +92,7 @@
 
 - name: create manual snapshot of database
   ntnx_ndb_database_snapshots:
-    time_machine: 
-      name: "{{tm1}}"
+    time_machine_uuid:  "{{time_machine_uuid}}"
     name: "{{snapshot_name}}"
   register: result
 
