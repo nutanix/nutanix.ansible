@@ -166,7 +166,7 @@ class Profile(NutanixDatabase):
                 return self.get_create_profile_spec(old_spec, params, **kwargs)
             elif kwargs.get("update"):
                 return self.get_update_profile_spec(old_spec, params, **kwargs)
-        
+
         return None, "Please provide supported arguments"
 
     def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):

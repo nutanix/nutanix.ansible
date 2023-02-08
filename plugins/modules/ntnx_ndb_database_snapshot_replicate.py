@@ -9,9 +9,9 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_ndb_databases_snapshot_replicate
+module: ntnx_ndb_database_snapshot_replicate
 short_description: write
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'write'
 options:
       expiry_days:

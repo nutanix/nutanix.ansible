@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_db_servers_info
 short_description: info module for ndb db server vms info
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get database server info'
 options:
       name:

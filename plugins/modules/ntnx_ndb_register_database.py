@@ -5,20 +5,227 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-import time
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_register_database
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+    name:
+        description:
+            - write
+        type: str
+        required: true
+    desc:
+        description:
+            - write
+        type: str
+    db_vm:
+        description:
+            - write
+        type: dict
+        required: true
+        suboptions:
+            registered:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    name:
+                        description:
+                            - write
+                        type: str
+                    uuid:
+                        description:
+                            - write
+                        type: str
+                    ip:
+                        description:
+                            - write
+                        type: str
+            unregistered:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    ip:
+                        description:
+                            - write
+                        type: str
+                        required: true
+                    username:
+                        description:
+                            - write
+                        type: str
+                        required: true
+                    private_key:
+                        description:
+                            - write
+                        type: str
+                    password:
+                        description:
+                            - write
+                        type: str
+                    desc:
+                        description:
+                            - write
+                        type: str
+                    reset_desc_in_ntnx_cluster:
+                        description:
+                            - write
+                        type: bool
+                        default: false
+                    cluster:
+                        description:
+                            - write
+                        type: dict
+                        required: true
+                        suboptions:
+                            name:
+                                description:
+                                    - write
+                                type: str
+                            uuid:
+                                description:
+                                    - write
+                                type: str
+    time_machine:
+        description:
+            - write
+        type: dict
+        required: true
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+                required: true
+            desc:
+                description:
+                    - write
+                type: str
+            sla:
+                description:
+                    - write
+                type: dict
+                required: true
+                suboptions:
+                    name:
+                        description:
+                            - write
+                        type: str
+                    uuid:
+                        description:
+                            - write
+                        type: str
+            schedule:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    daily:
+                        description:
+                            - write
+                        type: str
+                    weekly:
+                        description:
+                            - write
+                        type: str
+                    monthly:
+                        description:
+                            - write
+                        type: int
+                    quaterly:
+                        description:
+                            - write
+                        type: str
+                    yearly:
+                        description:
+                            - write
+                        type: str
+                    log_catchup:
+                        description:
+                            - write
+                        type: int
+                        choices: [15, 30, 60, 90, 120]
+                    snapshots_per_day:
+                        description:
+                            - write
+                        type: int
+                        default: 1
+            auto_tune_log_drive:
+                description:
+                    - write
+                type: bool
+                default: true
+    postgres:
+        description:
+            - write
+        type: dict
+        suboptions:
+            listener_port:
+                description:
+                    - write
+                type: str
+                default: "5432"
+            db_name:
+                description:
+                    - write
+                type: str
+                required: true
+            db_password:
+                description:
+                    - write
+                type: str
+                required: true
+            db_user:
+                description:
+                    - write
+                type: str
+                default: "postgres"
+            software_path:
+                description:
+                    - write
+                type: str
+            type:
+                description:
+                    - write
+                type: str
+                choices: ["single"]
+                default: "single"
+    tags:
+        description:
+            - write
+        type: dict
+    auto_tune_staging_drive:
+        description:
+            - write
+        type: bool
+    working_directory:
+        description:
+            - write
+        type: str
+        default: "/tmp"
+    automated_patching:
+        description:
+            - write
+        type: dict
+
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
 
 EXAMPLES = r"""
-
 """
-
 RETURN = r"""
-
 """
+import time  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
@@ -49,8 +256,8 @@ def get_module_spec():
     unregistered_vm = dict(
         ip=dict(type="str", required=True),
         username=dict(type="str", required=True),
-        private_key=dict(type="str", required=False),
-        password=dict(type="str", required=False),
+        private_key=dict(type="str", required=False, no_log=True),
+        password=dict(type="str", required=False, no_log=True),
         desc=dict(type="str", required=False),
         reset_desc_in_ntnx_cluster=dict(type="bool", default=False, required=False),
         cluster=dict(
@@ -110,7 +317,7 @@ def get_module_spec():
         db_password=dict(type="str", required=True, no_log=True),
         db_user=dict(type="str", default="postgres", required=False),
         software_path=dict(type="str", required=False),
-        type=dict(dict="str", choices=["single"], default="single", required=False),
+        type=dict(type="str", choices=["single"], default="single", required=False),
     )
 
     module_args = dict(
@@ -158,47 +365,40 @@ def get_registration_spec(module, result):
     spec, err = db_vm.get_spec(old_spec=spec, **kwargs)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting vm spec for new database instance registration",
-            **result,
-        )
+        err_msg = "Failed getting vm spec for new database instance registration"
+        module.fail_json(msg=err_msg, **result)
 
     # populate database engine related spec
     spec, err = db_instance.get_db_engine_spec(spec, register=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting database engine related spec for database instance registration",
-            **result,
-        )
+        err_msg = "Failed getting database engine related spec for database instance registration"
+        module.fail_json(msg=err_msg, **result)
 
     # populate database instance related spec
     spec, err = db_instance.get_spec(spec, register=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for database instance registration", **result
-        )
+        err_msg = "Failed getting spec for database instance registration"
+        module.fail_json(msg=err_msg, **result)
 
     # populate time machine related spec
     time_machine = TimeMachine(module)
     spec, err = time_machine.get_spec(spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for time machine for database instance registration",
-            **result,
+        err_msg = (
+            "Failed getting spec for time machine for database instance registration"
         )
+        module.fail_json(msg=err_msg, **result)
 
     # populate tags related spec
     tags = Tag(module)
     spec, err = tags.get_spec(spec, associate_to_entity=True, type="DATABASE")
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for tags for database instance registration",
-            **result,
-        )
+        err_msg = "Failed getting spec for tags for database instance registration"
+        module.fail_json(msg=err_msg, **result)
 
     # configure automated patching
     if module.params.get("automated_patching"):
@@ -206,10 +406,8 @@ def get_registration_spec(module, result):
         mw_spec, err = mw.get_spec(configure_automated_patching=True)
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for automated patching in database instance",
-                **result,
-            )
+            err_msg = "Failed getting spec for automated patching in database instance"
+            module.fail_json(msg=err_msg, **result)
         spec["maintenanceTasks"] = mw_spec
 
     return spec

@@ -9,9 +9,9 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_ndb_databases_scale
+module: ntnx_ndb_database_scale
 short_description: write
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'write'
 options:
       pre_update_cmd:

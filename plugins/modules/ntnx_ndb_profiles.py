@@ -5,18 +5,294 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-import time
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_profiles
+short_description: info module for ndb profiles
+version_added: 1.8.0
+description: 'Get profile info'
+options:
+      profile_uuid:
+        description:
+            - write
+        type: str
+      name:
+        description:
+            - write
+        type: str
+      desc:
+        description:
+            - write
+        type: str
+      type:
+        description:
+            - write
+        type: str
+        choices: ["software", "compute", "network", "database_parameters"]
+        required: true
+      database_type:
+        description:
+            - write
+        type: str
+        choices: ["postgres"]
+      compute:
+        description:
+            - write
+        type: dict
+        suboptions:
+            vcpus:
+                description:
+                    - write
+                type: int
+            cores_per_cpu:
+                description:
+                    - write
+                type: int
+            memory:
+                description:
+                    - write
+                type: int
+      software:
+        description:
+            - write
+        type: dict
+        suboptions:
+            topology:
+                description:
+                    - write
+                type: str
+                choices: ["single", "cluster", "all"]
+            state:
+                description:
+                    - write
+                type: str
+                choices: ["present", "absent"]
+                default: "present"
+            version_uuid:
+                description:
+                    - write
+                type: str
+            name:
+                description:
+                    - write
+                type: str
+            desc:
+                description:
+                    - write
+                type: str
+            notes:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    os:
+                        description:
+                            - write
+                        type: str
+                    db_software:
+                        description:
+                            - write
+                        type: str
+            db_server:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    name:
+                        description:
+                            - write
+                        type: str
+                    uuid:
+                        description:
+                            - write
+                        type: str
+            clusters:
+                description:
+                    - write
+                type: list
+                elements: dict
+                suboptions:
+                    name:
+                        description:
+                            - write
+                        type: str
+                    uuid:
+                        description:
+                            - write
+                        type: str
+            database_type:
+                description:
+                    - write
+                type: str
+                choices: ["postgres"]
+      network:
+        description:
+            - write
+        type: dict
+        suboptions:
+            topology:
+                description:
+                    - write
+                type: str
+                choices: ["single", "cluster", "all"]
+            vlans:
+                description:
+                    - write
+                type: list
+                elements: dict
+                suboptions:
+                    cluster:
+                        description:
+                            - write
+                        type: dict
+                        required: true
+                        suboptions:
+                            name:
+                                description:
+                                    - write
+                                type: str
+                            uuid:
+                                description:
+                                    - write
+                                type: str
+                    vlan_name:
+                        description:
+                            - write
+                        type: str
+                        required: true
+            enable_ip_address_selection:
+                description:
+                    - write
+                type: bool
+      database_parameters:
+        description:
+            - write
+        type: dict
+        suboptions:
+            postgres:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                            max_connections:
+                                description:
+                                    - write
+                                type: int
+                            max_replication_slots:
+                                description:
+                                    - write
+                                type: int
+                            max_locks_per_transaction:
+                                description:
+                                    - write
+                                type: int
+                            effective_io_concurrency:
+                                description:
+                                    - write
+                                type: int
+                            timezone:
+                                description:
+                                    - write
+                                type: str
+                            max_prepared_transactions:
+                                description:
+                                    - write
+                                type: int
+                            max_wal_senders:
+                                description:
+                                    - write
+                                type: int
+                            min_wal_size:
+                                description:
+                                    - write
+                                type: str
+                            max_wal_size:
+                                description:
+                                    - write
+                                type: str
+                            wal_keep_segments:
+                                description:
+                                    - write
+                                type: int
+                            max_worker_processes:
+                                description:
+                                    - write
+                                type: int
+                            checkpoint_timeout:
+                                description:
+                                    - write
+                                type: str
+                            autovacuum:
+                                description:
+                                    - write
+                                type: str
+                                choices: ["on", "off"]
+                            checkpoint_completion_target:
+                                description:
+                                    - write
+                                type: float
+                            autovacuum_freeze_max_age:
+                                description:
+                                    - write
+                                type: int
+                            autovacuum_vacuum_threshold:
+                                description:
+                                    - write
+                                type: int
+                            autovacuum_vacuum_scale_factor:
+                                description:
+                                    - write
+                                type: float
+                            autovacuum_work_mem:
+                                description:
+                                    - write
+                                type: int
+                            autovacuum_max_workers:
+                                description:
+                                    - write
+                                type: int
+                            autovacuum_vacuum_cost_delay:
+                                description:
+                                    - write
+                                type: str
+                            wal_buffers:
+                                description:
+                                    - write
+                                type: int
+                            synchronous_commit:
+                                description:
+                                    - write
+                                type: str
+                                choices: ["on", "off", "local", "remote_apply", "remote_write"]
+                            random_page_cost:
+                                description:
+                                    - write
+                                type: int
+      publish:
+        description:
+            - write
+        type: bool
+      deprecate:
+        description:
+            - write
+        type: bool
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
-
 EXAMPLES = r"""
-"""
 
+
+"""
 RETURN = r"""
 """
+import time  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
@@ -101,7 +377,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        database_type=dict(type="str", options=["postgres"]),
+        database_type=dict(type="str", choices=["postgres"]),
     )
 
     database_parameters = dict(postgres=dict(type="dict", options=postgres_params))
@@ -115,7 +391,7 @@ def get_module_spec():
             choices=["software", "compute", "network", "database_parameters"],
             required=True,
         ),
-        database_type=dict(type="str", options=["postgres"]),
+        database_type=dict(type="str", choices=["postgres"]),
         compute=dict(type="dict", options=compute, required=False),
         software=dict(type="dict", options=software, required=False),
         network=dict(type="dict", options=network, required=False),
@@ -341,8 +617,7 @@ def update_profile(module, result):
     default_update_spec = _profile.get_default_update_spec(override_spec=profile)
 
     profile_update_spec, err = _profile.get_spec(
-        old_spec=default_update_spec,
-        update=True
+        old_spec=default_update_spec, update=True
     )
     if err:
         result["error"] = err
