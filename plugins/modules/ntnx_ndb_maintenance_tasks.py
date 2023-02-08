@@ -102,21 +102,24 @@ def update_maintenance_tasks(module, result):
     spec, err = maintenance_window.get_spec(configure_automated_patching=True)
     if err:
         result["error"] = err
-        err_msg = "Failed getting spec for updating maitenance tasks"
+        err_msg = "Failed getting spec for updating maintenance tasks"
         module.fail_json(msg=err_msg, **result)
 
+    uuid = spec.get("maintenanceWindowId")
+
+    if not uuid: 
+        return module.fail_json(msg="Failed fetching maintenance window uuid")
+
+    result["uuid"] = uuid
     if module.check_mode:
         result["response"] = spec
         return
-
-    uuid = spec.get("maintenanceWindowId")
 
     maintenance_window.update_tasks(data=spec)
 
     query = {"load-task-associations": True, "load-entities": True}
     resp = maintenance_window.read(uuid=uuid, query=query)
     result["response"] = resp
-    result["uuid"] = uuid
     result["changed"] = True
 
 

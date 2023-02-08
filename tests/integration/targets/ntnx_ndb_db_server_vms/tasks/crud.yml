@@ -236,6 +236,212 @@
     fail_msg: "Unable to generate check mode spec for update"
     success_msg: "DB server VM update spec generated successfully"
 
+################################### maintenance tasks update tests #############################
+
+- name: create spec for adding maintenance window tasks to db server vm
+  check_mode: yes
+  ntnx_ndb_maintenance_tasks:
+    db_server_vms:
+      - name: "{{vm1_name_updated}}"
+      - uuid: "test_vm_1"
+    db_server_clusters:
+      - uuid: "test_cluter_1"
+      - uuid: "test_cluter_2"
+    maintenance_window: 
+      name: "{{maintenance.window_name}}"
+    tasks:         
+      - type: "OS_PATCHING"
+        pre_task_cmd: "ls -a"
+        post_task_cmd: "ls"
+      - type: "DB_PATCHING"
+        pre_task_cmd: "ls -a"
+        post_task_cmd: "ls"
+  register: result
+
+- set_fact:
+    expected_result: {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": {
+            "entities": {
+                "ERA_DBSERVER": [
+                    "{{db_server_uuid}}",
+                    "test_vm_1"
+                ],
+                "ERA_DBSERVER_CLUSTER": [
+                    "test_cluter_1",
+                    "test_cluter_2"
+                ]
+            },
+            "maintenanceWindowId": "{{maintenance.window_uuid}}",
+            "tasks": [
+                {
+                    "payload": {
+                        "prePostCommand": {
+                            "postCommand": "ls",
+                            "preCommand": "ls -a"
+                        }
+                    },
+                    "taskType": "OS_PATCHING"
+                },
+                {
+                    "payload": {
+                        "prePostCommand": {
+                            "postCommand": "ls",
+                            "preCommand": "ls -a"
+                        }
+                    },
+                    "taskType": "DB_PATCHING"
+                }
+            ]
+        },
+        "uuid": "{{maintenance.window_uuid}}"
+    }
+
+- name: Check mode status
+  assert: 
+    that:
+      - result == expected_result
+
+    fail_msg: "Unable to create spec for adding maintenance tasks for db server vm"
+    success_msg: "spec for adding maintenance tasks for db server vm created successfully"
+
+
+- name: create spec for removing maintenance window tasks from above created vm
+  check_mode: yes
+  ntnx_ndb_maintenance_tasks:
+    db_server_vms:
+      - uuid: "{{db_server_uuid}}"
+    maintenance_window: 
+      uuid: "{{maintenance.window_uuid}}"
+    tasks: []
+  register: result
+
+- set_fact:
+    expected_result: {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": {
+            "entities": {
+                "ERA_DBSERVER": [
+                    "{{db_server_uuid}}"
+                ]
+            },
+            "maintenanceWindowId": "{{maintenance.window_uuid}}",
+            "tasks": [],
+          },
+        "uuid": "{{maintenance.window_uuid}}"
+    }
+
+- name: Check mode status
+  assert: 
+    that:
+      - result == expected_result
+
+    fail_msg: "Unable to create spec for removing maintenance tasks for db server vm"
+    success_msg: "spec for removing maintenance tasks for db server vm created successfully"
+
+
+- name: db server vm already contains some tasks so remove maintenance window tasks from above created vm
+  ntnx_ndb_maintenance_tasks:
+    db_server_vms:
+      - uuid: "{{db_server_uuid}}"
+    maintenance_window: 
+      uuid: "{{maintenance.window_uuid}}"
+    tasks: []
+  register: result
+
+- set_fact:
+    tasks: []
+    entity_tasks_associations: "{{result.response.entityTaskAssoc}}"
+
+- name: entity_tasks_associations can be null so converting it to list
+  set_fact:
+    entity_tasks_associations: []
+  when: entity_tasks_associations == ""
+
+- name: creating list of tasks associated to db server vm
+  set_fact: 
+    tasks: "{{ tasks | default([]) | union ([item]]) }}"
+  loop: "{{entity_tasks_associations}}"  
+  when: item['entity']['id'] == db_server_uuid
+  no_log: true
+
+- name: Check update status
+  assert: 
+    that:
+      - result.changed == true
+      - result.failed == false
+      - tasks | length == 0
+
+    fail_msg: "Unable to remove maintenance tasks for given db server vm"
+    success_msg: "maintenance tasks for given db server vm removed successfully"
+
+
+- name: Add maitenance window task for vm
+  ntnx_ndb_maintenance_tasks:
+    db_server_vms:
+      - name: "{{vm1_name_updated}}"
+    maintenance_window: 
+      name: "{{maintenance.window_name}}"
+    tasks:         
+      - type: "OS_PATCHING"
+        pre_task_cmd: "ls -a"
+        post_task_cmd: "ls"
+      - type: "DB_PATCHING"
+        pre_task_cmd: "ls -a"
+        post_task_cmd: "ls"
+  register: result
+
+- set_fact:
+    tasks: []
+
+- set_fact:
+    entity_tasks_associations: "{{result.response.entityTaskAssoc}}"
+
+- name: entity_tasks_associations can be null so converting it to list
+  set_fact:
+    entity_tasks_associations: []
+  when: entity_tasks_associations == None
+
+- name: creating list of tasks associated with db server vm
+  set_fact: 
+    tasks: "{{ tasks | default([]) | union ([item]) }}"
+  loop: "{{entity_tasks_associations}}"  
+  when: item['entity']['id'] == db_server_uuid
+  no_log: true
+
+- name: Check update status
+  assert: 
+    that:
+      - result.changed == true
+      - result.failed == false
+      - tasks | length == 2
+
+    fail_msg: "Unable to add maintenance tasks for given db server vm"
+    success_msg: "maintenance tasks for given db server vm added successfully"
+
+- name: Remove maintenance window tasks from above created vm
+  ntnx_ndb_maintenance_tasks:
+    db_server_vms:
+      - uuid: "{{db_server_uuid}}"
+    maintenance_window: 
+      uuid: "{{maintenance.window_uuid}}"
+    tasks: []
+  register: result
+
+- name: Check update status
+  assert: 
+    that:
+      - result.changed == true
+      - result.failed == false
+
+    fail_msg: "Unable to remove maintenance tasks for given db server vm"
+    success_msg: "maintenance tasks for given db server vm removed successfully"
+
+
 ################################### DB server VM unregistration tests #############################
 
 - name: generate check mode spec for unregister with default values
