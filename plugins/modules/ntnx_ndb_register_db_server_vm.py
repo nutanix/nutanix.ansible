@@ -43,8 +43,8 @@ def get_module_spec():
         ),
         postgres=dict(type="dict", options=postgres, required=False),
         username=dict(type="str", required=True),
-        password=dict(type="str", required=False),
-        private_ssh_key=dict(type="str", required=False),
+        password=dict(type="str", required=False, no_log=True),
+        private_ssh_key=dict(type="str", required=False, no_log=True),
         automated_patching=dict(
             type="dict", options=automated_patching, required=False
         ),

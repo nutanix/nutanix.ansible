@@ -77,7 +77,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        password=dict(type="str", required=False),
+        password=dict(type="str", required=False, no_log=True),
         pub_ssh_key=dict(type="str", required=False),
         time_zone=dict(type="str", default="Asia/Calcutta", required=False),
         database_type=dict(type="str", choices=["postgres_database"], required=False),
@@ -278,7 +278,7 @@ def run_module():
         argument_spec=get_module_spec(),
         mutually_exclusive=mutually_exclusive_list,
         required_if=[
-            ("state", "present", ("name", "id"), True),
+            ("state", "present", ("name", "uuid"), True),
             ("state", "absent", ("uuid",)),
         ],
         supports_check_mode=True,

@@ -319,6 +319,8 @@ class DBServerVM(NutanixDatabase):
         )
 
         payload, err = super().get_spec(old_spec=old_spec, params=params, **kwargs)
+        if err:
+            return None, err
 
         # add vm name
         if not payload.get("actionArguments"):
