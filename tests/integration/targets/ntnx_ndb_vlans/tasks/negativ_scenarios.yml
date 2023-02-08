@@ -1,0 +1,121 @@
+---
+- debug:
+    msg: Start negative secanrios ntnx_ndb_vlans
+
+- name: create Dhcp ndb vlan with static Configuration
+  ntnx_ndb_vlans:
+    name:  "{{ndb_vlan.name}}"
+    vlan_type: DHCP
+    gateway: "{{ndb_vlan.gateway}}"
+    subnet_mask: "{{ndb_vlan.subnet_mask}}"
+    ip_pools:
+      -
+        start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
+        end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
+    primary_dns: "{{ndb_vlan.primary_dns}}"
+    secondary_dns: "{{ndb_vlan.secondary_dns}}"
+    dns_domain: "{{ndb_vlan.dns_domain}}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Failed generating create vlan instance spec"
+    fail_msg: "fail: create Dhcp ndb vlan with static Configuration finished succesfully" 
+    success_msg: "pass: Returnerd error as expected"
+# ###############################
+- name: create static ndb vlan with missing Configuration
+  ntnx_ndb_vlans:
+    name:  "{{ndb_vlan.name}}"
+    vlan_type: Static
+    gateway: "{{ndb_vlan.gateway}}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Failed generating create vlan instance spec"
+    fail_msg: "fail:  create static ndb vlan with missing Configuration finished succesfully"
+    success_msg: "pass: Returnerd error as expected"
+
+###########
+- name: create Dhcp ndb vlan
+  ntnx_ndb_vlans:
+    name:  "{{ndb_vlan.name}}"
+    vlan_type: DHCP
+    cluster:
+      uuid: "{{cluster.uuid}}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.vlan_uuid is defined
+      - result.failed == false
+      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.type == "DHCP"
+      - result.response.managed == false
+      - result.response.clusterId == "{{cluster.uuid}}"
+    fail_msg: "fail: Unable to create Dhcp ndb vlan"
+    success_msg: "pass: create Dhcp ndb vlan finished successfully"
+
+- set_fact:
+    todelete: "{{ todelete + [  result.vlan_uuid ] }}"  
+######################
+- name: update dhcp ndb vlan with static Configuration
+  ntnx_ndb_vlans:
+    vlan_uuid: "{{result.vlan_uuid}}"
+    gateway: "{{ndb_vlan.gateway}}"
+    subnet_mask: "{{ndb_vlan.subnet_mask}}"
+    ip_pools:
+      -
+        start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
+        end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
+      -
+        start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
+        end_ip: "{{ndb_vlan.ip_pools.1.end_ip}}"
+    primary_dns: "{{ndb_vlan.primary_dns}}"
+    secondary_dns: "{{ndb_vlan.secondary_dns}}"
+    dns_domain: "{{ndb_vlan.dns_domain}}"
+  register: result
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Failed generating update vlan instance spec"
+    fail_msg: "fail: update dhcp ndb vlan with static Configuration finished succesfully" 
+    success_msg: "pass: Returnerd error as expected"
+
+##################################
+
+- name: Delete all created vlan's
+  ntnx_ndb_vlans:
+    state: absent
+    vlan_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "unable to delete all created vlan's"
+    success_msg: "All vlan'sdeleted succesfully"
+
+- set_fact:
+    todelete: []

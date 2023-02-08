@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_db_servers_info
 short_description: info module for ndb db server vms info
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get database server info'
 options:
       name:
@@ -28,6 +28,50 @@ options:
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
+            - server ip
+        type: str
+      filters:
+        description:
+            - write
+        type: dict
+        suboptions:
+            detailed:
+                description:
+                    - write
+                type: bool
+            load_clones:
+                description:
+                    - write
+                type: bool
+            load_databases:
+                description:
+                    - write
+                type: bool
+            load_dbserver_cluster:
+                description:
+                    - write
+                type: bool
+            load_metrics:
+                description:
+                    - write
+                type: bool
+            curator:
+                description:
+                    - write
+                type: bool
+            value:
+                description:
+                    - write
+                type: str
+            value_type:
+                description:
+                    - write
+                type: str
+                choices: ["ip","name","vm-cluster-name","vm-cluster-uuid", "dbserver-cluster-id","nx-cluster-id", "fqdn",]
+            time_zone:
+                description:
+                    - write
+                type: str
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -344,10 +388,37 @@ from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
 
 def get_module_spec():
 
+    filters_spec = dict(
+        detailed=dict(type="bool"),
+        load_clones=dict(type="bool"),
+        load_databases=dict(type="bool"),
+        load_dbserver_cluster=dict(type="bool"),
+        load_metrics=dict(type="bool"),
+        curator=dict(type="bool"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "ip",
+                "name",
+                "vm-cluster-name",
+                "vm-cluster-uuid",
+                "dbserver-cluster-id",
+                "nx-cluster-id",
+                "fqdn",
+            ],
+        ),
+        time_zone=dict(type="str"),
+    )
+
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
         server_ip=dict(type="str"),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
@@ -355,12 +426,21 @@ def get_module_spec():
 
 def get_db_server(module, result):
     db_server = DBServerVM(module)
+    db_server.filters_map()
+    query_params = module.params.get("filters")
+
     if module.params.get("uuid"):
-        resp, err = db_server.get_db_server(uuid=module.params["uuid"])
+        resp, err = db_server.get_db_server(
+            uuid=module.params["uuid"], query=query_params
+        )
     elif module.params.get("name"):
-        resp, err = db_server.get_db_server(name=module.params["name"])
+        resp, err = db_server.get_db_server(
+            name=module.params["name"], query=query_params
+        )
     else:
-        resp, err = db_server.get_db_server(ip=module.params["server_ip"])
+        resp, err = db_server.get_db_server(
+            ip=module.params["server_ip"], query=query_params
+        )
 
     if err:
         result["error"] = err
@@ -371,8 +451,10 @@ def get_db_server(module, result):
 
 def get_db_servers(module, result):
     db_server = DBServerVM(module)
+    db_server.filters_map()
+    query_params = module.params.get("filters")
 
-    resp = db_server.read()
+    resp = db_server.read(query=query_params)
 
     result["response"] = resp
 

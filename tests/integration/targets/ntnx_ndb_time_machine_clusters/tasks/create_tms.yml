@@ -1,0 +1,111 @@
+---
+- debug:
+    msg: Start testing ntnx_ndb_time_machine_clusters
+
+- name: create data access instance with cluster name and sla name
+  ntnx_ndb_time_machine_clusters:
+      tm_uuid: "{{tm_uuid}}"
+      cluster:
+        name: "{{machine.cluster.name}}"
+      sla:
+        name: "{{machine.sla.name}}"
+  register: out
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - out.response is defined
+      - out.tm_uuid is defined
+      - out.changed == true
+      - out.cluster_uuid is defined
+      - out.failed == false
+    fail_msg: "fail: Unable create data access instance with cluster name and sla name"
+    success_msg: "pass: create data access instance with cluster name and sla name finished successfully"
+#######################
+- name: update data access instance with new sla name
+  ntnx_ndb_time_machine_clusters:
+      tm_uuid: "{{tm_uuid}}"
+      cluster:
+        name: "{{machine.cluster.name}}"
+      sla:
+        name: "{{machine.sla.name2}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.tm_uuid is defined
+      - result.changed == true
+      - result.cluster_uuid is defined
+      - result.failed == false
+      - result.response.slaId != out.response.slaId
+    fail_msg: "fail: Unable to update data access instance with new  sla name"
+    success_msg: "pass: update data access instance with new sla name finished successfully"
+
+#######################
+
+- name: delete time maschine 
+  ntnx_ndb_time_machine_clusters:
+      state: absent
+      tm_uuid: "{{result.tm_uuid}}"
+      cluster:
+        uuid: "{{result.cluster_uuid}}"
+  register: result
+  ignore_errors: true
+
+#####################
+- name: create data access instance with cluster uuid and sla uuid
+  ntnx_ndb_time_machine_clusters:
+      tm_uuid: "{{tm_uuid}}"
+      cluster:
+        uuid: "{{machine.cluster.uuid}}"
+      sla:
+        uuid: "{{machine.sla.uuid}}"
+  register: out
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - out.response is defined
+      - out.tm_uuid is defined
+      - out.changed == true
+      - out.cluster_uuid is defined
+      - out.failed == false
+    fail_msg: "fail: Unable create data access instance with cluster uuid and sla uuid"
+    success_msg: "pass: create data access instance with cluster uuid and sla uuid finished successfully"
+#######################
+- name: update data access instance with sla uuid
+  ntnx_ndb_time_machine_clusters:
+      tm_uuid: "{{tm_uuid}}"
+      cluster:
+        uuid: "{{machine.cluster.uuid}}"
+      sla:
+        uuid: "{{machine.sla.uuid2}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.tm_uuid is defined
+      - result.changed == true
+      - result.cluster_uuid is defined
+      - result.response.slaId != out.response.slaId
+      - result.failed == false
+    fail_msg: "fail: Unable to update data access instance with sla uuid"
+    success_msg: "pass: update data access instance with sla uuid finished successfully"
+
+- name: delete time maschine 
+  ntnx_ndb_time_machine_clusters:   
+      state: absent
+      tm_uuid: "{{result.tm_uuid}}"
+      cluster:
+        uuid: "{{result.cluster_uuid}}"
+  register: result
+  ignore_errors: true
+#######################

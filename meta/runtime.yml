@@ -73,6 +73,12 @@ action_groups:
   - ntnx_ndb_register_database
   - ntnx_ndb_db_server_vms
   - ntnx_ndb_clusters_info
+  - ntnx_ndb_clusters
+  - ntnx_ndb_snapshots_info
+  - ntnx_ndb_vlans
+  - ntnx_ndb_vlans_info
+  - ntnx_ndb_stretched_vlans
+  - ntnx_ndb_time_machine_clusters
   - ntnx_ndb_tags
   - ntnx_ndb_database_clones
   - ntnx_ndb_database_snapshots
