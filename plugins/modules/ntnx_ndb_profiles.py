@@ -10,11 +10,27 @@ import time
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_profiles
+short_description: info module for ndb profiles
+version_added: 1.8.0
+description: 'Get profile info'
+options:
+      name:
+        description:
+            - profile name
+        type: str
+extends_documentation_fragment:
+    - nutanix.ncp.ntnx_ndb_base_module
+author:
+ - Prem Karat (@premkarat)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Alaa Bishtawi (@alaa-bish)
 """
-
 EXAMPLES = r"""
-"""
 
+
+"""
 RETURN = r"""
 """
 
@@ -101,7 +117,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        database_type=dict(type="str", options=["postgres"]),
+        database_type=dict(type="str", choices=["postgres"]),
     )
 
     database_parameters = dict(postgres=dict(type="dict", options=postgres_params))
@@ -115,7 +131,7 @@ def get_module_spec():
             choices=["software", "compute", "network", "database_parameters"],
             required=True,
         ),
-        database_type=dict(type="str", options=["postgres"]),
+        database_type=dict(type="str", choices=["postgres"]),
         compute=dict(type="dict", options=compute, required=False),
         software=dict(type="dict", options=software, required=False),
         network=dict(type="dict", options=network, required=False),

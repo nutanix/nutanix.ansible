@@ -142,7 +142,7 @@ def get_provision_spec(module, result):
         if err:
             result["error"] = err
             err_msg = "Failed getting spec for tags for new db server vm"
-            module.fail_json(msg=err_msg,**result)
+            module.fail_json(msg=err_msg, **result)
 
     # configure automated patching
     if module.params.get("automated_patching"):
@@ -150,9 +150,8 @@ def get_provision_spec(module, result):
         mw_spec, err = mw.get_spec(configure_automated_patching=True)
         if err:
             result["error"] = err
-            err_msg = "Failed getting spec for automated patching for new db server vm" 
-            module.fail_json(
-                msg=err_msg,**result)
+            err_msg = "Failed getting spec for automated patching for new db server vm"
+            module.fail_json(msg=err_msg, **result)
         spec["maintenanceTasks"] = mw_spec
 
     return spec
@@ -234,8 +233,8 @@ def update_db_server(module, result):
         )
         if err:
             result["error"] = err
-            err_msg = "Failed getting spec for tags for db server vm update" 
-            module.fail_json(msg=err_msg,**result)
+            err_msg = "Failed getting spec for tags for db server vm update"
+            module.fail_json(msg=err_msg, **result)
         update_spec["resetTags"] = True
 
     if module.check_mode:
