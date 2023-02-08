@@ -77,7 +77,7 @@ def remove_database(module, result):
 
     _databases = DatabaseInstance(module)
     resp = _databases.remove_linked_database(
-        database_uuid=database_uuid, instance_uuid=instance_uuid
+        linked_database_uuid=database_uuid, database_instance_uuid=instance_uuid
     )
     result["response"] = resp
     result["db_instance_uuid"] = instance_uuid

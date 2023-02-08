@@ -8,7 +8,79 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_databases_snapshot
+short_description: write
+version_added: 1.8.0-beta.1
+description: 'write'
+options:
+      snapshot_uuid:
+        description:
+            - write
+        type: str
+      name:
+        description:
+            - write
+        type: str
+      time_machine:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+      database:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+      clusters:
+        description:
+            - write
+        type: list
+        elements: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+      expiry_days:
+            description:
+                - write
+            type: str
+      remove_expiry:
+            description:
+                - write
+            type: bool
+      timezone:
+            description:
+                - write
+            type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
+
 
 EXAMPLES = r"""
 """
@@ -32,18 +104,7 @@ def get_module_spec():
     module_args = dict(
         snapshot_uuid=dict(type="str", required=False),
         name=dict(type="str", required=False),
-        time_machine=dict(
-            type="dict",
-            options=entity_by_spec,
-            mutually_exclusive=mutually_exclusive,
-            required=False,
-        ),
-        database=dict(
-            type="dict",
-            options=entity_by_spec,
-            mutually_exclusive=mutually_exclusive,
-            required=False,
-        ),
+        time_machine_uuid=dict(type="str", required=False),
         clusters=dict(
             type="list",
             elements="dict",
@@ -51,43 +112,17 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        expiry_days=dict(type="str", required=False),
+        expiry_days=dict(type="int", required=False),
         remove_expiry=dict(type="bool", required=False),
-        timezone=dict(type="str", required=False),
     )
     return module_args
 
 
-def get_time_machine_uuid(module, result):
-    # fetch uuid from time machine or database
-    time_machine_uuid = ""
-    if module.params.get("time_machine"):
-        tm = TimeMachine(module)
-        time_machine_uuid, err = tm.get_time_machine_uuid(module.params["time_machine"])
-        if err:
-            result["error"] = err
-            module.fail_json(msg="Failed fetching time machine uuid", **result)
-    else:
-        database = DatabaseInstance(module)
-        db, err = database.get_database(
-            name=module.params["database"].get("name"),
-            uuid=module.params["database"].get("uuid"),
-        )
-        if err:
-            result["error"] = err
-            module.fail_json(
-                msg="Failed fetching time machine uuid from database", **result
-            )
-
-        time_machine_uuid = db["timeMachineId"]
-
-    return time_machine_uuid
-
-
-# Create snapshot out of database instance or time machine
+# Create snapshot
 def create_snapshot(module, result):
-
-    time_machine_uuid = get_time_machine_uuid(module, result)
+    time_machine_uuid = module.params.get("time_machine_uuid")
+    if not time_machine_uuid:
+        return module.fail_json(msg="time_machine_uuid is required for creating snapshot")
 
     snapshots = Snapshot(module)
     spec, err = snapshots.get_spec()
@@ -126,10 +161,6 @@ def create_snapshot(module, result):
 def verify_snapshot_expiry_idempotency(old_spec, new_spec):
     if old_spec.get("expireInDays") != new_spec.get("expireInDays"):
         return False
-
-    if old_spec.get("expiryDateTimezone") != new_spec.get("expiryDateTimezone"):
-        return False
-
     return True
 
 
@@ -159,12 +190,14 @@ def update_snapshot(module, result):
 
     elif module.params.get("expiry_days"):
         spec = _snapshot.get_expiry_update_spec(config=module.params)
-        old_spec = snapshot.get("lcmConfig", {}).get("expiryDetails", {})
-        if verify_snapshot_expiry_idempotency(
-            old_spec, spec["lcmConfig"]["expiryDetails"]
+        lcm_config = snapshot.get("lcmConfig", {}) or {}
+        expiry_details = lcm_config.get("expiryDetails", {})
+        if not verify_snapshot_expiry_idempotency(
+            expiry_details, spec.get("lcmConfig", {}).get("expiryDetails", {})
         ):
             snapshot = _snapshot.update_expiry(uuid, spec)
             updated = True
+
 
     if not updated:
         result["skipped"] = True
@@ -202,13 +235,12 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         mutually_exclusive=[
-            ("time_machine", "database"),
+            ("snapshot_uuid", "time_machine_uuid"),
             ("remove_expiry", "expiry_days"),
-            ("remove_expiry", "timezone"),
         ],
-        required_together=[("expiry_days", "timezone")],
         required_if=[
             ("state", "present", ("name", "snapshot_uuid"), True),
+            ("state", "present", ("snapshot_uuid", "time_machine_uuid"), True),
             ("state", "absent", ("snapshot_uuid",)),
         ],
     )

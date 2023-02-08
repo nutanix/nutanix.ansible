@@ -1,0 +1,192 @@
+---
+
+- debug:
+    msg: "start ntnx_ndb_tags"
+
+- name: Generate random name
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+
+- set_fact:
+    tag_name: "{{random_name[0]}}"
+    tag_name_updated: "{{random_name[0]}}-updated"
+
+############################# Create & Delete tests ########################
+
+- name: check mode for creation
+  check_mode: yes
+  ntnx_ndb_tags:
+    name: "{{tag_name}}-timemachine"
+    desc: tag-created-by-ansible
+    tag_value_required: True
+    entity_type: TIME_MACHINE
+  register: result
+  
+- set_fact:
+    expected_response: {
+            "description": "tag-created-by-ansible",
+            "entityType": "TIME_MACHINE",
+            "name": "{{tag_name}}-timemachine",
+            "required": true
+    }
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response == expected_response
+
+    fail_msg: "Unable to create spec for tag"
+    success_msg: "Spec generated succefully for tag creation"
+
+
+- name: create tags for clone
+  ntnx_ndb_tags:
+    name: "{{tag_name}}-clone"
+    desc: tag-created-by-ansible
+    tag_value_required: True
+    entity_type: CLONE
+  register: result
+
+- name: Check create status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.uuid is defined
+      - result.response.name ==  "{{tag_name}}-clone"
+      - result.response.entityType == "CLONE"
+      - result.response.status == "ENABLED"
+      - result.response.description == "tag-created-by-ansible"
+      - result.response.required == true
+    fail_msg: "Tag for clone create failed"
+    success_msg: "Tag for clone created succefully"
+
+
+
+- name: delete the tag
+  ntnx_ndb_tags:
+    state: "absent"
+    uuid: "{{result.uuid}}"
+  register: result
+
+- name: Check delete status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Unable to delete tag"
+    success_msg: "tag deleted succefully"
+
+
+- name: create tags for databases
+  ntnx_ndb_tags:
+    name: "{{tag_name}}-database"
+    desc: tag-created-by-ansible
+    tag_value_required: False
+    entity_type: DATABASE
+  register: result
+
+
+- name: check create status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.uuid is defined
+      - result.response.name ==  "{{tag_name}}-database"
+      - result.response.required == false
+      - result.response.entityType == "DATABASE"
+      - result.response.status == "ENABLED"
+    fail_msg: "Tag create for databases failed"
+    success_msg: "Tag created succefully"
+
+
+- set_fact:
+    tag_uuid: "{{result.uuid}}"
+
+################################## Update tests ########################
+
+- name: update tag
+  ntnx_ndb_tags:
+    uuid: "{{tag_uuid}}"
+    name: "{{tag_name_updated}}"
+    desc: tag-created-by-ansible-updated
+    tag_value_required: true
+    status: "DEPRECATED"
+  register: result
+
+- name: Check update status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.uuid is defined
+      - result.response.name == "{{tag_name_updated}}"
+      - result.response.required == true
+      - result.response.entityType == "DATABASE"
+      - result.response.status == "DEPRECATED"
+    fail_msg: "tag update failed"
+    success_msg: "tag updated succefully"
+
+
+
+- name: idempotency checks
+  ntnx_ndb_tags:
+    uuid: "{{tag_uuid}}"
+    name: "{{tag_name_updated}}"
+    desc: tag-created-by-ansible-updated
+    tag_value_required: true
+    status: "DEPRECATED"
+  register: result
+
+
+
+- name: check idempotency status
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - "'Nothing to change' in result.msg"
+    fail_msg: "tag got updated"
+    success_msg: "tag update skipped due to no state changes"
+
+
+- name: enable tag
+  ntnx_ndb_tags:
+    uuid: "{{tag_uuid}}"
+    tag_value_required: true
+    status: "ENABLED"
+  register: result
+
+
+
+- name: check status changes
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.uuid == "{{tag_uuid}}"
+      - result.response.status == "ENABLED"
+    fail_msg: "Enabling tag failed"
+    success_msg: "Tag enabled succefully"
+
+
+- name: delete the tag
+  ntnx_ndb_tags:
+    state: "absent"
+    uuid: "{{tag_uuid}}"
+  register: result
+
+
+- name: Check delete status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Unable to delete tag"
+    success_msg: "tag deleted succefully"
+

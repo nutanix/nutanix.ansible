@@ -22,15 +22,15 @@ RETURN = r"""
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.database_instances import DatabaseInstance
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.maintenance_window import (
+from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.maintenance_window import (  # noqa: E402
     AutomatedPatchingSpec,
     MaintenanceWindow,
 )
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.ndb.tags import Tag
-from ..module_utils.ndb.time_machines import TimeMachine
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.tags import Tag  # noqa: E402
+from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -100,22 +100,16 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        schedule=dict(type="dict", options=schedule, required=True),
+        schedule=dict(type="dict", options=schedule, required=False),
         auto_tune_log_drive=dict(type="bool", required=False, default=True),
     )
 
     postgres = dict(
-        listener_port=dict(type="str", required=True),
+        listener_port=dict(type="str", default="5432", required=False),
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
         db_user=dict(type="str", default="postgres", required=False),
-        backup_policy=dict(
-            type="str",
-            choices=["primary_only", "prefer_secondary", "secondary_only"],
-            default="prefer_secondary",
-            required=False,
-        ),  # check if required
-        software_path=dict(type="str", required=True),
+        software_path=dict(type="str", required=False),
         type=dict(dict="str", choices=["single"], default="single", required=False),
     )
 
@@ -132,7 +126,7 @@ def get_module_spec():
         postgres=dict(type="dict", options=postgres, required=False),
         tags=dict(type="dict", required=False),
         auto_tune_staging_drive=dict(type="bool", required=False),
-        working_dir=dict(type="str", default="/tmp", required=False),
+        working_directory=dict(type="str", default="/tmp", required=False),
         automated_patching=dict(
             type="dict", options=automated_patching, required=False
         ),
@@ -151,12 +145,14 @@ def get_registration_spec(module, result):
     # populate VM related spec
     db_vm = DBServerVM(module=module)
 
-    use_registered_server = True if module.params.get("registered") else False
+    use_registered_server = (
+        True if module.params.get("db_vm", {}).get("registered") else False
+    )
     register_server = not use_registered_server
 
     kwargs = {
-        "registered": use_registered_server,
-        "unregistered": register_server,
+        "use_registered_server": use_registered_server,
+        "register_server": register_server,
         "db_instance_register": True,
     }
     spec, err = db_vm.get_spec(old_spec=spec, **kwargs)
@@ -196,7 +192,7 @@ def get_registration_spec(module, result):
 
     # populate tags related spec
     tags = Tag(module)
-    spec, err = tags.get_spec(spec)
+    spec, err = tags.get_spec(spec, associate_to_entity=True, type="DATABASE")
     if err:
         result["error"] = err
         module.fail_json(
@@ -237,8 +233,9 @@ def register_instance(module, result):
         ops_uuid = resp["operationId"]
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
-        operations.wait_for_completion(ops_uuid)
-        resp = db_instance.read(db_uuid)
+        operations.wait_for_completion(ops_uuid, delay=15)
+        query = {"detailed": True, "load-dbserver-cluster": True}
+        resp = db_instance.read(db_uuid, query=query)
         result["response"] = resp
 
     result["changed"] = True

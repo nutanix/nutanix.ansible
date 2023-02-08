@@ -8,7 +8,7 @@ from copy import deepcopy
 
 from .database_engines.db_engine_factory import create_db_engine
 from .nutanix_database import NutanixDatabase
-from .profiles.profiles import get_profile_uuid
+from .profiles.profile_types import DatabaseParameterProfile
 from .time_machines import TimeMachine
 
 
@@ -29,7 +29,7 @@ class DatabaseClone(NutanixDatabase):
 
     def create(self, time_machine_uuid, data):
         time_machine = TimeMachine(self.module)
-        endpoint = "{}/clones".format(time_machine_uuid)
+        endpoint = "{0}/clones".format(time_machine_uuid)
         return time_machine.create(data=data, endpoint=endpoint)
 
     def refresh(self, uuid, data):
@@ -67,7 +67,7 @@ class DatabaseClone(NutanixDatabase):
                 "nxClusterId": "",
                 "sshPublicKey": "",
                 "timeMachineId": "",
-                "snapshotId": "",
+                "snapshotId": None,
                 "userPitrTimestamp": None,
                 "timeZone": "",
                 "latestSnapshot": False,
@@ -114,9 +114,18 @@ class DatabaseClone(NutanixDatabase):
 
         return resp, None
 
+    def get_spec(self, old_spec=None, params=None, **kwargs):
+        if kwargs.get("create"):
+            return super().get_spec(old_spec=old_spec, params=params, **kwargs)
+        elif kwargs.get("update"):
+            return self.get_update_spec(old_spec=old_spec, params=params, **kwargs)
+        elif kwargs.get("delete"):
+            return self.get_delete_spec(old_spec=old_spec, params=params, **kwargs)
+        return None, "Please provide supported arguments"
+
     def get_db_engine_spec(self, payload, params=None, **kwargs):
 
-        db_engine, err = create_db_engine(self.module, "single")
+        db_engine, err = create_db_engine(self.module, db_architecture="single")
         if err:
             return None, err
 
@@ -130,7 +139,7 @@ class DatabaseClone(NutanixDatabase):
 
         return payload, err
 
-    def get_update_spec(self, payload):
+    def get_update_spec(self, old_spec=None, params=None, **kwargs):
         self.build_spec_methods = {
             "removal_schedule": self._build_spec_removal_schedule_update,
             "refresh_schedule": self._build_spec_refresh_schedule_update,
@@ -138,9 +147,10 @@ class DatabaseClone(NutanixDatabase):
             "desc": self._build_spec_desc,
         }
 
-        return super().get_spec(old_spec=payload)
+        return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
-    def get_delete_spec(self, payload):
+    def get_delete_spec(self, old_spec=None, params=None, **kwargs):
+        payload = deepcopy(old_spec)
         if self.module.params.get("delete_from_vm"):
             payload["delete"] = True
         elif self.module.params.get("soft_remove"):
@@ -174,9 +184,8 @@ class DatabaseClone(NutanixDatabase):
         return payload, None
 
     def _build_spec_db_params_profile(self, payload, db_params_profile):
-        uuid, err = get_profile_uuid(
-            self.module, "Database_Parameter", db_params_profile
-        )
+        db_params = DatabaseParameterProfile(self.module)
+        uuid, err = db_params.get_profile_uuid(db_params_profile)
         if err:
             return None, err
 
@@ -204,59 +213,74 @@ class DatabaseClone(NutanixDatabase):
         return payload, None
 
     def _build_spec_removal_schedule(self, payload, removal_schedule):
-        payload["lcmConfig"]["databaseLCMConfig"]["expiryDetails"] = {
-            "expireInDays": removal_schedule.get("days"),
-            "expiryDateTimezone": removal_schedule.get("timezone"),
-            "deleteDatabase": removal_schedule.get("delete_database"),
+        expiry_details = payload.get("lcmConfig", {}).get("expiryDetails", {})
+        if not expiry_details:
+            expiry_details = {}
+
+        # map of display name to api field names
+        args = {
+            "days": "expireInDays",
+            "timezone": "expiryDateTimezone",
+            "delete_database": "deleteDatabase",
+            "timestamp": "expiryTimestamp",
+            "remind_before_in_days": "remindBeforeInDays",
         }
+        for key, val in args.items():
+            if removal_schedule.get(key) is not None:
+                expiry_details[val] = removal_schedule.get(key)
+
+        if not payload["lcmConfig"].get("databaseLCMConfig"):
+            payload["lcmConfig"]["databaseLCMConfig"] = {
+                "expiryDetails": expiry_details
+            }
+        else:
+            payload["lcmConfig"]["databaseLCMConfig"]["expiryDetails"] = expiry_details
+
         return payload, None
 
     def _build_spec_refresh_schedule(self, payload, refresh_schedule):
-        payload["lcmConfig"]["databaseLCMConfig"]["refreshDetails"] = {
-            "refreshInDays": str(refresh_schedule.get("days")),
-            "refreshTime": refresh_schedule.get("time"),
-            "refreshDateTimezone": refresh_schedule.get("timezone"),
-        }
-        return payload, None
+        refresh_details = payload.get("lcmConfig", {}).get("refreshDetails", {})
+        if not refresh_details:
+            refresh_details = {}
 
-    def _build_spec_removal_schedule(self, payload, removal_schedule):
-        payload["lcmConfig"]["databaseLCMConfig"]["expiryDetails"] = {
-            "expireInDays": removal_schedule.get("days"),
-            "expiryDateTimezone": removal_schedule.get("timezone"),
-            "deleteDatabase": removal_schedule.get("delete_database"),
+        # map of display name to api field names
+        args = {
+            "days": "refreshInDays",
+            "timezone": "refreshDateTimezone",
+            "time": "refreshTime",
         }
-        return payload, None
 
-    def _build_spec_refresh_schedule(self, payload, refresh_schedule):
-        payload["lcmConfig"]["databaseLCMConfig"]["refreshDetails"] = {
-            "refreshInDays": str(refresh_schedule.get("days")),
-            "refreshTime": refresh_schedule.get("time"),
-            "refreshDateTimezone": refresh_schedule.get("timezone"),
-        }
+        for key, val in args.items():
+            if refresh_schedule.get(key):
+                refresh_details[val] = refresh_schedule.get(key)
+
+        if not payload["lcmConfig"].get("databaseLCMConfig"):
+            payload["lcmConfig"]["databaseLCMConfig"] = {
+                "refreshDetails": refresh_details
+            }
+        else:
+            payload["lcmConfig"]["databaseLCMConfig"][
+                "refreshDetails"
+            ] = refresh_details
+
         return payload, None
 
     def _build_spec_removal_schedule_update(self, payload, removal_schedule):
         if removal_schedule.get("state", "present") == "absent":
             payload["removeExpiryConfig"] = True
         else:
-            expiry_details = payload.get("lcmConfig", {}).get("expiryDetails", {})
-            if not expiry_details:
-                expiry_details = {}
 
-            # map of display name to api field names
-            args = {
-                "days": "expireInDays",
-                "timezone": "expiryDateTimezone",
-                "delete_database": "deleteDatabase",
-                "timestamp": "expiryTimestamp",
-                "remind_before_in_days": "remindBeforeInDays",
-            }
+            payload, err = self._build_spec_removal_schedule(payload, removal_schedule)
+            if err:
+                return None, err
+            payload["lcmConfig"]["expiryDetails"] = payload["lcmConfig"][
+                "databaseLCMConfig"
+            ]["expiryDetails"]
+            payload["lcmConfig"].pop("databaseLCMConfig")
 
-            for key, val in args.items():
-                if removal_schedule.get(key):
-                    expiry_details[val] = removal_schedule.get(key)
-
-            payload["lcmConfig"]["expiryDetails"] = expiry_details
+            # some changes for expiry timestamp
+            if removal_schedule.get("timestamp"):
+                payload["lcmConfig"]["expiryDetails"]["expireInDays"] = 0
             payload["resetLcmConfig"] = True
         return payload, None
 
@@ -264,21 +288,13 @@ class DatabaseClone(NutanixDatabase):
         if refresh_schedule.get("state", "present") == "absent":
             payload["removeRefreshConfig"] = True
         else:
-            refresh_details = payload.get("lcmConfig", {}).get("refreshDetails", {})
-            if not refresh_details:
-                refresh_details = {}
+            payload, err = self._build_spec_refresh_schedule(payload, refresh_schedule)
+            if err:
+                return None, err
 
-            # map of display name to api field names
-            args = {
-                "days": "refreshInDays",
-                "timezone": "refreshDateTimezone",
-                "time": "refreshTime",
-            }
-
-            for key, val in args.items():
-                if refresh_schedule.get(key):
-                    refresh_details[val] = refresh_schedule.get(key)
-
-            payload["lcmConfig"]["refreshDetails"] = refresh_details
+            payload["lcmConfig"]["refreshDetails"] = payload["lcmConfig"][
+                "databaseLCMConfig"
+            ]["refreshDetails"]
+            payload["lcmConfig"].pop("databaseLCMConfig")
             payload["resetLcmConfig"] = True
         return payload, None

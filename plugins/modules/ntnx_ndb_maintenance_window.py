@@ -7,10 +7,9 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-import time  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.maintenance_window import MaintenanceWindow
+from ..module_utils.ndb.maintenance_window import MaintenanceWindow  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 

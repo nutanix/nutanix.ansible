@@ -23,15 +23,26 @@ class Profile(NutanixDatabase):
             "database_type": self.build_spec_database_type,
         }
 
-    def get_profile_uuid(self, type, name):
-        if type not in self.types:
-            return None, "{0} is not a valid type. Allowed types are {1}".format(
-                type, self.types
-            )
-        query = {"type": type, "name": name}
-        resp = self.read(query=query)
-        uuid = resp.get("id")
-        return uuid
+    def get_profile_uuid(self, data, type=None):
+        uuid = ""
+        if data.get("name"):
+            if not type:
+                type = self._type
+            if type not in self.types:
+                return None, "{0} is not a valid type. Allowed types are {1}".format(
+                    type, self.types
+                )
+
+            query = {"type": type, "name": data.get("name")}
+            resp = self.read(query=query)
+            uuid = resp.get("id")
+        elif data.get("uuid"):
+            uuid = data.get("uuid")
+        else:
+            error = "Profile config {0} doesn't have name or uuid key".format(data)
+            return error, None
+
+        return uuid, None
 
     def read(
         self,
@@ -142,6 +153,22 @@ class Profile(NutanixDatabase):
 
         return spec
 
+    def get_spec(self, old_spec=None, params=None, **kwargs):
+        if kwargs.get("version"):
+            if kwargs.get("create"):
+                return self.get_create_version_spec(old_spec, params, **kwargs)
+            elif kwargs.get("update"):
+                return self.get_update_profile_spec(old_spec, params, **kwargs)
+            elif kwargs.get("delete"):
+                return self.get_delete_version_spec(old_spec, params, **kwargs)
+        else:
+            if kwargs.get("create"):
+                return self.get_create_profile_spec(old_spec, params, **kwargs)
+            elif kwargs.get("update"):
+                return self.get_update_profile_spec(old_spec, params, **kwargs)
+        
+        return None, "Please provide supported arguments"
+
     def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
         payload, err = super().get_spec(old_spec=old_spec, params=params, **kwargs)
         if err:
@@ -192,19 +219,3 @@ class Profile(NutanixDatabase):
         if self.module.params.get("publish") is not None:
             payload["published"] = self.module.params.get("publish")
         return payload, None
-
-
-# helper functions
-
-
-def get_profile_uuid(module, type, config):
-    uuid = ""
-    if config.get("name"):
-        profiles = Profile(module)
-        uuid = profiles.get_profile_uuid(type, config["name"])
-    elif config.get("uuid"):
-        uuid = config["uuid"]
-    else:
-        error = "Profile config {0} doesn't have name or uuid key".format(config)
-        return error, None
-    return uuid, None

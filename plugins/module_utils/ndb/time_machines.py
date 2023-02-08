@@ -60,6 +60,10 @@ class TimeMachine(NutanixDatabase):
         endpoint = "dbservers"
         return self.update(data=data, uuid=uuid, endpoint=endpoint, method="POST")
 
+    def deauthorize_db_server_vms(self, uuid, data):
+        endpoint = "dbservers"
+        return self.delete(data=data, uuid=uuid, endpoint=endpoint)
+
     def get_authorized_db_server_vms(self, uuid, query=None):
         endpoint = "candidate-dbservers"
         return self.read(uuid=uuid, endpoint=endpoint, query=query)
@@ -74,17 +78,6 @@ class TimeMachine(NutanixDatabase):
             query["value-type"] = key
 
         return self.read(endpoint=endpoint, query=query)
-
-    def get_time_machine_uuid(self, config):
-        uuid = ""
-        if config.get("name"):
-            resp = self.get_time_machines(value=config["name"], key="name")
-            uuid = resp.get("id")
-        elif config.get("uuid"):
-            uuid = config["uuid"]
-        else:
-            return None, "time machine config doesn't have name or uuid key"
-        return uuid, None
 
     def get_time_machine_uuid(self, config):
         uuid = ""
