@@ -1,0 +1,66 @@
+---
+- debug:
+    msg: Start testing ntnx_ndb_snapshots_info
+
+- name: List all era snapshots
+  ntnx_ndb_snapshots_info:
+  register: snapshots
+
+- name: check listing status
+  assert:
+    that:
+      - snapshots.response is defined
+      - snapshots.failed == false
+      - snapshots.changed == false
+      - snapshots.response | length > 0
+    fail_msg: "Unable to list all era snapshots"
+    success_msg: "era snapshots listed successfully"
+################################################################
+- name: get era snapshots using it's uuid  
+  ntnx_ndb_snapshots_info:
+    uuid: "{{snapshots.response[0].id}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.id == "{{snapshots.response[0].id}}"
+    fail_msg: "Unable to get era snapshots using it's uuid  "
+    success_msg: "get  era snapshots using it's uuid  successfully"
+# ################################################################
+- name: List snapshots use uuid and get snapshot files
+  ntnx_ndb_snapshots_info:
+    uuid: "{{snapshots.response[0].id}}"
+    get_files: true
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response[0].fileList is defined
+      - result.snapshot_uuid == "{{snapshots.response[0].id}}"
+    fail_msg: "Unable to get era snapshots using it's id and get files "
+    success_msg: "get  era snapshots using it's id and get files  successfully"
+# ################################################################
+
+- name: get era snapshots with incorrect uuid
+  ntnx_ndb_snapshots_info:
+    uuid: "abcd"
+  register: result
+  no_log: true
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Fail: module didn't errored out correctly when incorrect uuid is given"
+    success_msg: "Pass: module errored out correctly when incorrect uuid is given"

@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_clusters_info
 short_description: info module for ndb clusters info
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get clusters info'
 options:
       name:
@@ -22,7 +22,17 @@ options:
         description:
             - cluster id
         type: str
+      filters:
+        description:
+            - write
+        type: dict
+        suboptions:
+            include_management_server:
+                description:
+                    - write
+                type: bool
 extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
@@ -169,9 +179,17 @@ from ..module_utils.ndb.clusters import Cluster  # noqa: E402
 
 def get_module_spec():
 
+    filters_spec = dict(
+        include_management_server=dict(type="bool"),
+    )
+
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
@@ -194,8 +212,10 @@ def get_cluster(module, result):
 
 def get_clusters(module, result):
     cluster = Cluster(module)
+    cluster.filters_map()
+    query_params = module.params.get("filters")
 
-    resp = cluster.read()
+    resp = cluster.read(query=query_params)
 
     result["response"] = resp
 
@@ -204,7 +224,11 @@ def run_module():
     module = NdbBaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        mutually_exclusive=[("name", "uuid")],
+        mutually_exclusive=[
+            ("name", "uuid"),
+            ("name", "filters"),
+            ("uuid", "filters"),
+        ],
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("name") or module.params.get("uuid"):
