@@ -155,9 +155,7 @@ def update_window(module, result):
         return
 
     # defining start_time will skip idempotency checks
-    if check_idempotency(
-        old_spec=maintenance_window, new_spec=spec
-    ):
+    if check_idempotency(old_spec=maintenance_window, new_spec=spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 

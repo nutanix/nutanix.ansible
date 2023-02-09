@@ -107,7 +107,7 @@ def update_maintenance_tasks(module, result):
 
     uuid = spec.get("maintenanceWindowId")
 
-    if not uuid: 
+    if not uuid:
         return module.fail_json(msg="Failed fetching maintenance window uuid")
 
     result["uuid"] = uuid

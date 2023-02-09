@@ -85,3 +85,4 @@ action_groups:
   - ntnx_ndb_linked_databases
   - ntnx_ndb_register_db_server_vm
   - ntnx_ndb_maintenance_tasks
+  - ntnx_ndb_slas

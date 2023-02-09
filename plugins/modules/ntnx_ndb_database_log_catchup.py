@@ -68,7 +68,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 def get_module_spec():
     module_args = dict(
-        time_machine_uuid = dict(type="str", required=True),
+        time_machine_uuid=dict(type="str", required=True),
         for_restore=dict(type="bool", required=False, default=False),
     )
     return module_args

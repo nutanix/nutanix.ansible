@@ -90,12 +90,8 @@ class DatabaseInstance(NutanixDatabase):
         uuid = resp[0].get("id")
         return uuid, None
 
-
     def _get_action_argument_spec(self, name, value):
-        return deepcopy({
-            "name": name,
-            "value": value
-        })
+        return deepcopy({"name": name, "value": value})
 
     def get_default_provision_spec(self):
         return deepcopy(
