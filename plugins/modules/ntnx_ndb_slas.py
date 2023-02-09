@@ -8,6 +8,59 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_slas
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+      name:
+        description:
+            - sla name
+        type: str
+      desc:
+        description:
+            - sla description
+        type: str
+      sla_uuid:
+        description:
+            - sla id
+        type: str
+      frequency:
+        description:
+            - write
+        type: dict
+        suboptions:
+            logs_retention:
+                description:
+                    - write
+                type: int
+            snapshots_retention:
+                description:
+                    - write
+                type: dict
+                suboptions:
+                    daily:
+                        description:
+                            - write
+                        type: int
+                    weekly:
+                        description:
+                            - write
+                        type: int
+                    monthly:
+                        description:
+                            - write
+                        type: int
+                    quarterly:
+                        description:
+                            - write
+                        type: int
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
 
 EXAMPLES = r"""
@@ -17,8 +70,11 @@ RETURN = r"""
 """
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.slas import SLA
-from ..module_utils.utils import remove_param_with_none_value, strip_extra_attrs
+from ..module_utils.ndb.slas import SLA  # noqa: E402
+from ..module_utils.utils import (  # noqa: E402
+    remove_param_with_none_value,
+    strip_extra_attrs,
+)
 
 
 def get_module_spec():

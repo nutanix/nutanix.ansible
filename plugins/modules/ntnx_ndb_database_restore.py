@@ -94,7 +94,7 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_together = [("pitr_timestamp", "timezone")],
+        required_together=[("pitr_timestamp", "timezone")],
         mutually_exclusive=[("snapshot_uuid", "pitr_timestamp")],
     )
     remove_param_with_none_value(module.params)

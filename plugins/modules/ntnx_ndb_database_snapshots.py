@@ -122,7 +122,9 @@ def get_module_spec():
 def create_snapshot(module, result):
     time_machine_uuid = module.params.get("time_machine_uuid")
     if not time_machine_uuid:
-        return module.fail_json(msg="time_machine_uuid is required for creating snapshot")
+        return module.fail_json(
+            msg="time_machine_uuid is required for creating snapshot"
+        )
 
     snapshots = Snapshot(module)
     spec, err = snapshots.get_spec()
@@ -197,7 +199,6 @@ def update_snapshot(module, result):
         ):
             snapshot = _snapshot.update_expiry(uuid, spec)
             updated = True
-
 
     if not updated:
         result["skipped"] = True
