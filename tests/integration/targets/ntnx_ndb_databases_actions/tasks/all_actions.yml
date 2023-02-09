@@ -10,7 +10,7 @@
 #   7. Add/Remove linked databases
 
 - debug:
-    msg: "start ndb database clone tests"
+    msg: "start ndb database day2 actions tests"
 
 - name: Generate random name
   set_fact:

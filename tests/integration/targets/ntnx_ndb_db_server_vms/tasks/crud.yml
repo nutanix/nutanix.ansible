@@ -47,6 +47,7 @@
   set_fact: 
     action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{check_mode_result.response.actionArguments}}"  
+  no_log: true
 
 - set_fact:
     mainetance_tasks: {
@@ -125,6 +126,7 @@
   set_fact: 
     properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"  
+  no_log: true
 
 - name: Creation Status
   assert: 
@@ -547,6 +549,7 @@
   set_fact: 
         action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.actionArguments}}"
+  no_log: true
 
 - set_fact:
     maintenance_tasks: {
@@ -620,6 +623,7 @@
   set_fact: 
         properties1: "{{ properties1 | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
+  no_log: true
 
 - name: Creation Status
   assert: 

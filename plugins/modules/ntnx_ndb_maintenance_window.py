@@ -79,7 +79,7 @@ def get_module_spec():
         recurrence=dict(type="str", choices=["weekly", "monthly"], required=False),
         duration=dict(type="int", required=False),  # in hrs
         start_time=dict(type="str", required=False),  # in 24hrs format in HH:MM:SS
-        timezone=dict(type="str", default="Asia/Calcutta", required=False),
+        timezone=dict(type="str", required=False),
         week_of_month=dict(type="str", required=False),
         day_of_week=dict(type="str", required=False),
     )
@@ -124,7 +124,7 @@ def check_idempotency(old_spec, new_spec):
             return False
 
     # check for schedule changes
-    args = ["recurrence", "dayOfMonth", "weekOfMonth", "duration"]
+    args = ["recurrence", "dayOfWeek", "weekOfMonth", "duration", "startTime"]
     for arg in args:
         if old_spec.get("schedule", {}).get(arg, "") != new_spec.get(
             "schedule", {}
@@ -157,7 +157,7 @@ def update_window(module, result):
     # defining start_time will skip idempotency checks
     if check_idempotency(
         old_spec=maintenance_window, new_spec=spec
-    ) and not module.params.get("schedule", {}).get("start_time"):
+    ):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
