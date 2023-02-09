@@ -86,8 +86,8 @@ def get_module_spec():
         quarterly=dict(type="int"),
     )
     frequency = dict(
-        logs_retention=dict(type="int"), 
-        snapshots_retention=dict(type="dict", options=snapshot_retention)
+        logs_retention=dict(type="int"),
+        snapshots_retention=dict(type="dict", options=snapshot_retention),
     )
     module_args = dict(
         sla_uuid=dict(type="str"),
