@@ -16,7 +16,7 @@ class SLA(NutanixDatabase):
         self.build_spec_methods = {
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
-            "retention": self._build_spec_retention,
+            "frequency": self._build_spec_frequency,
         }
 
     def get_uuid(
