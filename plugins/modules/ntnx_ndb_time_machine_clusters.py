@@ -98,7 +98,7 @@ response:
             "type": "OTHER",
             "updateOperationSummary": null
         }
-tm_uuid:
+time_machine_uuid:
   description: created data access instance UUID
   returned: always
   type: str
@@ -106,6 +106,7 @@ tm_uuid:
 """
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.ndb.time_machines import TimeMachine, get_cluster_uuid  # noqa: E402
 
 
@@ -113,7 +114,7 @@ def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
     module_args = dict(
-        tm_uuid=dict(type="str", required=True),
+        time_machine_uuid=dict(type="str", required=True),
         cluster=dict(
             type="dict",
             options=entity_by_spec,
@@ -133,7 +134,7 @@ def get_module_spec():
 
 def create_data_access_instance(module, result):
     tm = TimeMachine(module)
-    tm_uuid = module.params["tm_uuid"]
+    tm_uuid = module.params["time_machine_uuid"]
     if not module.params.get("cluster"):
         module.fail_json(msg="cluster is required field", **result)
 
@@ -159,9 +160,22 @@ def create_data_access_instance(module, result):
         return
 
     resp = tm.create_data_access_instance(tm_uuid, spec)
+
+    if (
+            module.params.get("wait")
+            and resp.get("updateOperationSummary")
+            and resp["updateOperationSummary"]("operationId")
+    ):
+        ops_uuid = resp["updateOperationSummary"]["operationId"]
+        operations = Operation(module)
+        # time.sleep(5)  # to get operation ID functional
+        operations.wait_for_completion(ops_uuid)
+        resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
+        result["response"] = resp
+
     result["response"] = resp
     result["cluster_uuid"] = resp["nxClusterId"]
-    result["tm_uuid"] = tm_uuid
+    result["time_machine_uuid"] = tm_uuid
     result["changed"] = True
 
 
@@ -174,7 +188,7 @@ def check_for_idempotency(old_spec, update_spec):
 def update_data_access_instance(module, result):
     tm = TimeMachine(module)
 
-    tm_uuid = module.params["tm_uuid"]
+    tm_uuid = module.params["time_machine_uuid"]
     if not module.params.get("cluster"):
         module.fail_json(msg="cluster is required field", **result)
     cluster_uuid, err = get_cluster_uuid(module, module.params["cluster"])
@@ -206,8 +220,21 @@ def update_data_access_instance(module, result):
     resp = tm.update_data_access_instance(
         data=spec, tm_uuid=tm_uuid, cluster_uuid=cluster_uuid
     )
+
+    if (
+            module.params.get("wait")
+            and resp.get("updateOperationSummary")
+            and resp["updateOperationSummary"]("operationId")
+    ):
+        ops_uuid = resp["updateOperationSummary"]["operationId"]
+        operations = Operation(module)
+        # time.sleep(5)  # to get operation ID functional
+        operations.wait_for_completion(ops_uuid)
+        resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
+        result["response"] = resp
+
     result["response"] = resp
-    result["tm_uuid"] = tm_uuid
+    result["time_machine_uuid"] = tm_uuid
     result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
 
@@ -215,7 +242,7 @@ def update_data_access_instance(module, result):
 def delete_data_access_instance(module, result):
     tm = TimeMachine(module)
 
-    tm_uuid = module.params["tm_uuid"]
+    tm_uuid = module.params["time_machine_uuid"]
     if not module.params.get("cluster"):
         module.fail_json(msg="cluster is required field", **result)
     cluster_uuid, err = get_cluster_uuid(module, module.params["cluster"])
@@ -238,7 +265,7 @@ def run_module():
             ("state", "present", ("sla",)),
         ],
     )
-    result = {"changed": False, "error": None, "response": None, "tm_uuid": None}
+    result = {"changed": False, "error": None, "response": None, "time_machine_uuid": None}
     if module.params["state"] == "present":
         create_data_access_instance(module, result)
     else:
