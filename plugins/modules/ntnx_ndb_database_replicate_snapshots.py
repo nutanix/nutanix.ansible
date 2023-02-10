@@ -62,8 +62,8 @@ from ..module_utils.ndb.snapshots import Snapshot  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 # Notes:
-# 1. Snapshot replication of only one cluster at a time is supported currently
-
+# 1. Snapshot replication to one cluster at a time is supported currently
+# 2. For snapshot on secondary cluster, this module only tracks primary cluster snapshot process
 
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
@@ -84,7 +84,6 @@ def get_module_spec():
     return module_args
 
 
-# Create snapshot out of database instance or time machine
 def replicate_snapshot(module, result):
 
     snapshot_uuid = module.params.get("snapshot_uuid")
@@ -102,6 +101,8 @@ def replicate_snapshot(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating snapshot create spec", **result)
 
+    result["snapshot_uuid"] = snapshot_uuid
+
     if module.check_mode:
         result["response"] = spec
         return
@@ -110,17 +111,13 @@ def replicate_snapshot(module, result):
         uuid=snapshot_uuid, time_machine_uuid=time_machine_uuid, data=spec
     )
     result["response"] = resp
-    result["snapshot_uuid"] = snapshot_uuid
 
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]
         operations = Operation(module)
         time.sleep(3)
-        operations.wait_for_completion(ops_uuid, delay=5)
-        snapshot = _snapshot.read(
-            uuid=snapshot_uuid, query={"load-replicated-child-snapshots": True}
-        )
-        result["response"] = snapshot
+        resp = operations.wait_for_completion(ops_uuid, delay=5)
+        result["response"] = resp
 
     result["changed"] = True
 
