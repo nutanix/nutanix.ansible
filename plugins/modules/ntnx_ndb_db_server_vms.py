@@ -21,10 +21,155 @@ options:
         description:
             - write
         type: str
-
+    desc:
+        description:
+            - write
+        type: str
+    reset_name_in_ntnx_cluster:
+        description:
+            - write
+        type: bool
+        default: false
+    reset_desc_in_ntnx_cluster:
+        description:
+            - write
+        type: bool
+        default: false
+    cluster:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+    network_profile:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+    compute_profile:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+    software_profile:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+            version_uuid:
+                description:
+                    - write
+                type: str
+    time_machine:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+            snapshot_uuid:
+                description:
+                    - write
+                type: str
+    password:
+        description:
+            - write
+        type: str
+    pub_ssh_key:
+        description:
+            - write
+        type: str
+    time_zone:
+        description:
+            - write
+        type: str
+        default: "Asia/Calcutta"
+    database_type:
+        description:
+            - write
+        type: str
+        choices: ["postgres_database"]
+    tags:
+        description:
+            - write
+        type: dict
+    update_credentials:
+        description:
+            - write
+        type: list
+        elements: dict
+        suboptions:
+            username:
+                description:
+                    - write
+                type: str
+                required: true
+            password:
+                description:
+                    - write
+                type: str
+                required: true
+    delete_from_cluster:
+        description:
+            - write
+        type: bool
+        default: False
+    delete_vgs:
+        description:
+            - write
+        type: bool
+        default: False
+    delete_vm_snapshots:
+        description:
+            - write
+        type: bool
+        default: False
+    soft_remove:
+        description:
+            - write
+        type: bool
+        default: False
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
+      - nutanix.ncp.ntnx_AutomatedPatchingSpec
 author:
  - Prem Karat (@premkarat)
 """
@@ -66,7 +211,7 @@ def get_module_spec():
     )
     credential = dict(
         username=dict(type="str", required=True),
-        password=dict(type="str", required=True),
+        password=dict(type="str", required=True, no_log=True),
     )
     module_args = dict(
         uuid=dict(type="str", required=False),
@@ -105,7 +250,7 @@ def get_module_spec():
             required=False,
         ),
         password=dict(type="str", required=False, no_log=True),
-        pub_ssh_key=dict(type="str", required=False),
+        pub_ssh_key=dict(type="str", required=False, no_log=True),
         time_zone=dict(type="str", default="Asia/Calcutta", required=False),
         database_type=dict(type="str", choices=["postgres_database"], required=False),
         tags=dict(type="dict", required=False),

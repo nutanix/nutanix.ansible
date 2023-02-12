@@ -13,17 +13,72 @@ short_description: write
 version_added: 1.8.0
 description: 'write'
 options:
-    desc:
+    ip:
         description:
             - write
         type: str
         required: true
-
-
+    desc:
+        description:
+            - write
+        type: str
+    reset_desc_in_ntnx_cluster:
+        description:
+            - write
+        type: bool
+        default: false
+    cluster:
+        description:
+            - write
+        type: dict
+        required: true
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+    postgres:
+        description:
+            - write
+        type: dict
+        suboptions:
+            listener_port:
+                description:
+                    - write
+                type: str
+                default: "5432"
+            software_path:
+                description:
+                    - write
+                type: str
+                required: true
+    username:
+        description:
+            - write
+        type: str
+        required: true
+    password:
+        description:
+            - write
+        type: str
+    private_ssh_key:
+        description:
+            - write
+        type: str
+    working_directory:
+        description:
+            - write
+        type: str
+        default: "/tmp"
 
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
+      - nutanix.ncp.ntnx_AutomatedPatchingSpec
 author:
  - Prem Karat (@premkarat)
 """

@@ -14,7 +14,7 @@ short_description: write
 version_added: 1.8.0
 description: 'write'
 options:
-      point_in_time:
+      pitr_timestamp:
         description:
             - write
         type: str
@@ -26,7 +26,6 @@ options:
         description:
             - write
         type: str
-        required: true
       db_uuid:
         description:
             - write

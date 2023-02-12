@@ -22,32 +22,6 @@ options:
         description:
             - write
         type: str
-      time_machine:
-        description:
-            - write
-        type: dict
-        suboptions:
-            name:
-                description:
-                    - write
-                type: str
-            uuid:
-                description:
-                    - write
-                type: str
-      database:
-        description:
-            - write
-        type: dict
-        suboptions:
-            name:
-                description:
-                    - write
-                type: str
-            uuid:
-                description:
-                    - write
-                type: str
       clusters:
         description:
             - write
@@ -65,12 +39,12 @@ options:
       expiry_days:
             description:
                 - write
-            type: str
+            type: int
       remove_expiry:
             description:
                 - write
             type: bool
-      timezone:
+      time_machine_uuid:
             description:
                 - write
             type: str

@@ -9,37 +9,16 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_ndb_log_catchup
+module: ntnx_ndb_database_log_catchup
 short_description: write
 version_added: 1.8.0
 description: 'write'
 options:
-      time_machine:
+      time_machine_uuid:
         description:
             - write
-        type: dict
-        suboptions:
-            name:
-                description:
-                    - write
-                type: str
-            uuid:
-                description:
-                    - write
-                type: str
-      database:
-        description:
-            - write
-        type: dict
-        suboptions:
-            name:
-                description:
-                    - write
-                type: str
-            uuid:
-                description:
-                    - write
-                type: str
+        type: str
+        required: true
       for_restore:
         description:
             - write
