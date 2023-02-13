@@ -360,14 +360,20 @@ class DatabaseParameterProfile(Profile):
         super(DatabaseParameterProfile, self).__init__(module)
 
     def get_db_engine_spec(self, payload=None, params=None, **kwargs):
-        engine_type = self.module.params.get("database_type")
+        engine_type = kwargs.get("engine_type")
+        if not engine_type:
+            engine_type = self.module.params.get("database_type")
+
         db_engine, err = create_db_engine(self.module, engine_type=engine_type)
         if err:
             return None, err
 
         engine_type = db_engine.get_type()
 
-        config = params.get(engine_type)
+        config = {}
+        if params:
+            config = params.get(engine_type, {})
+
         if not payload:
             payload = {}
 
@@ -392,7 +398,7 @@ class DatabaseParameterProfile(Profile):
             return None, err
 
         if not params:
-            params = self.module.params.get("database_parameters")
+            params = self.module.params.get("database_parameter", {})
         return self.get_db_engine_spec(
             payload=payload, params=params, create_profile=True
         )
@@ -401,9 +407,11 @@ class DatabaseParameterProfile(Profile):
         payload = deepcopy(old_spec)
 
         if not params:
-            params = self.module.params.get("database_parameters")
+            params = self.module.params.get("database_parameter")
+        
+        kwargs["update_version"] = True
         payload, err = self.get_db_engine_spec(
-            payload=payload, params=params, update_version=True
+            payload=payload, params=params, **kwargs
         )
         if err:
             return None, err
@@ -414,7 +422,6 @@ class DatabaseParameterProfile(Profile):
             payload.pop("topology")
         if payload.get("versionClusterAssociation") is not None:
             payload.pop("versionClusterAssociation")
-
         return self.build_spec_status(payload)
 
 
@@ -436,7 +443,7 @@ def get_profile_type_obj(module, profile_type=None):  # -> tuple[Profile, str]:
         "software": SoftwareProfile,
         "network": NetworkProfile,
         "compute": ComputeProfile,
-        "database_parameters": DatabaseParameterProfile,
+        "database_parameter": DatabaseParameterProfile,
     }
 
     if not profile_type:

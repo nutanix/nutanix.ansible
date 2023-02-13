@@ -23,6 +23,9 @@ class Profile(NutanixDatabase):
             "database_type": self.build_spec_database_type,
         }
 
+    def get_type(self):
+        return self._type
+
     def get_profile_uuid(self, data, type=None):
         uuid = ""
         if data.get("name"):
@@ -158,7 +161,7 @@ class Profile(NutanixDatabase):
             if kwargs.get("create"):
                 return self.get_create_version_spec(old_spec, params, **kwargs)
             elif kwargs.get("update"):
-                return self.get_update_profile_spec(old_spec, params, **kwargs)
+                return self.get_update_version_spec(old_spec, params, **kwargs)
             elif kwargs.get("delete"):
                 return self.get_delete_version_spec(old_spec, params, **kwargs)
         else:

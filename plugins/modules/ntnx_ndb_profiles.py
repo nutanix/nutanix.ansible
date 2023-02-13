@@ -30,7 +30,7 @@ options:
         description:
             - write
         type: str
-        choices: ["software", "compute", "network", "database_parameters"]
+        choices: ["software", "compute", "network", "database_parameter"]
         required: true
       database_type:
         description:
@@ -388,8 +388,8 @@ def get_module_spec():
         desc=dict(type="str", required=False),
         type=dict(
             type="str",
-            choices=["software", "compute", "network", "database_parameters"],
-            required=True,
+            choices=["software", "compute", "network", "database_parameter"],
+            required=False,
         ),
         database_type=dict(type="str", choices=["postgres"]),
         compute=dict(type="dict", options=compute, required=False),
@@ -434,10 +434,8 @@ def check_profile_idempotency(old_spec, new_spec):
     return True
 
 
-def create_profile_version(module, result, profile_uuid, profile_type):
-    _profile, err = get_profile_type_obj(module, profile_type=profile_type)
-
-    spec, err = _profile.get_spec(create=True, version=True)
+def create_profile_version(module, result, profile_uuid, profile_obj):
+    spec, err = profile_obj.get_spec(create=True, version=True)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating profile version create spec", **result)
@@ -446,11 +444,12 @@ def create_profile_version(module, result, profile_uuid, profile_type):
         result["response"]["version"] = spec
         return
 
-    resp = _profile.create_version(profile_uuid, data=spec)
+    resp = profile_obj.create_version(profile_uuid, data=spec)
     version_uuid = resp.get("entityId") or resp.get("id")
     result["version_uuid"] = version_uuid
     result["response"]["version"] = resp
 
+    profile_type = profile_obj.get_type()
     if module.params.get("wait") and profile_type in profile_types_with_wait_support:
 
         ops_uuid = resp["operationId"]
@@ -458,30 +457,37 @@ def create_profile_version(module, result, profile_uuid, profile_type):
         time.sleep(3)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid, delay=10)
 
-        resp = _profile.get_profile_by_version(
+        resp = profile_obj.get_profile_by_version(
             uuid=profile_uuid, version_uuid=version_uuid
         )
 
     result["response"]["version"] = resp
 
 
-def update_profile_version(module, result, profile_uuid, profile_type):
+def update_profile_version(module, result, profile_uuid, profile_obj):
+    profile_type = profile_obj.get_type()
     config = module.params.get(profile_type)
-
-    _profile, err = get_profile_type_obj(module, profile_type=profile_type)
 
     version_uuid = "latest"
     if config and config.get("version_uuid"):
         version_uuid = config.get("version_uuid")
 
-    version = _profile.get_profile_by_version(
+    version = profile_obj.get_profile_by_version(
         uuid=profile_uuid, version_uuid=version_uuid
     )
     version_uuid = version.get("entityId") or version.get("id")
     result["version_uuid"] = version_uuid
 
-    default_spec = _profile.get_default_version_update_spec(override_spec=version)
-    spec, err = _profile.get_spec(old_spec=default_spec, version=True, update=True)
+    engine_type = version.get("engineType")
+
+    default_spec = profile_obj.get_default_version_update_spec(override_spec=version)
+
+    kwargs = {
+        "version": True,
+        "update": True,
+        "engine_type": engine_type
+    }
+    spec, err = profile_obj.get_spec(old_spec=default_spec, **kwargs)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating profile version update spec", **result)
@@ -493,7 +499,7 @@ def update_profile_version(module, result, profile_uuid, profile_type):
         result["response"]["version"] = spec
         return
 
-    resp = _profile.update_version(profile_uuid, version_uuid, spec)
+    resp = profile_obj.update_version(profile_uuid, version_uuid, spec)
     result["response"]["version"] = resp
 
     if (
@@ -507,15 +513,15 @@ def update_profile_version(module, result, profile_uuid, profile_type):
         time.sleep(3)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid, delay=10)
 
-        resp = _profile.get_profile_by_version(
+        resp = profile_obj.get_profile_by_version(
             uuid=profile_uuid, version_uuid=version_uuid
         )
 
     result["response"]["version"] = resp
 
 
-def delete_profile_version(module, result, profile_uuid, profile_type):
-    _profile, err = get_profile_type_obj(profile_type=profile_type)
+def delete_profile_version(module, result, profile_uuid, profile_obj):
+    profile_type = profile_obj.get_type()
 
     config = module.params.get(profile_type)
 
@@ -523,33 +529,36 @@ def delete_profile_version(module, result, profile_uuid, profile_type):
     if not version_uuid:
         module.fail_json(msg="uuid is required field for version delete", **result)
 
-    resp = _profile.delete_profile(profile_uuid=profile_uuid, version_uuid=version_uuid)
+    resp = profile_obj.delete_profile(profile_uuid=profile_uuid, version_uuid=version_uuid)
     result["response"]["version"] = resp
 
 
-def version_operations(module, result, profile_uuid, profile_type):
+def version_operations(module, result, profile_uuid, profile_obj):
+    profile_type = profile_obj.get_type()
     if profile_type not in profile_types_with_version_support:
-        update_profile_version(module, result, profile_uuid, profile_type)
+        update_profile_version(module, result, profile_uuid, profile_obj)
     else:
         profile_config = module.params.get(profile_type)
         state = profile_config.get("state", "present")
         if state == "present":
             if profile_config.get("version_uuid"):
-                update_profile_version(module, result, profile_uuid, profile_type)
+                update_profile_version(module, result, profile_uuid, profile_obj)
             else:
-                create_profile_version(module, result, profile_uuid, profile_type)
+                create_profile_version(module, result, profile_uuid, profile_obj)
         else:
-            delete_profile_version(module, result, profile_uuid, profile_type)
+            delete_profile_version(module, result, profile_uuid, profile_obj)
 
 
 def create_profile(module, result):
     profile_type = module.params.get("type")
+    if not profile_type:
+        return module.fail_json("'type' is required field for creating profile of certain type")
 
     _profile, err = get_profile_type_obj(module, profile_type=profile_type)
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating object for profile type {0}".format(profile_type),
+            msg="Failed getting object for profile type {0}".format(profile_type),
             **result,
         )
 
@@ -598,7 +607,14 @@ def update_profile(module, result):
 
     result["profile_uuid"] = uuid
 
-    profile_type = module.params.get("type")
+    _profile = Profile(module)
+
+    profile = _profile.get_profiles(uuid=uuid)
+
+    profile_type = module.params.get("type") or profile.get("type", "").lower()
+    if not profile_type:
+        result["response"] = profile
+        return module.fail_json(msg="Failed getting profile type", **result)
 
     _profile, err = get_profile_type_obj(module, profile_type=profile_type)
     if err:
@@ -607,11 +623,6 @@ def update_profile(module, result):
             msg="Failed generating object for profile type {0}".format(profile_type),
             **result,
         )
-
-    profile = _profile.get_profiles(uuid=uuid)
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed fetching profile info", **result)
 
     # profile update operations
     default_update_spec = _profile.get_default_update_spec(override_spec=profile)
@@ -635,7 +646,7 @@ def update_profile(module, result):
         result["response"]["profile"] = resp
 
     # perform versions related crud as per support
-    version_operations(module, result, profile_uuid=uuid, profile_type=profile_type)
+    version_operations(module, result, profile_uuid=uuid, profile_obj=_profile)
 
     if not module.check_mode:
         resp = _profile.get_profiles(uuid=uuid)

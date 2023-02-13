@@ -300,7 +300,7 @@ class NDB:
         NETWORK = "Network"
         DB_PARAMS = "Database_Parameter"
         SOFTWARE = "Software"
-        ALL = ["compute", "network", "database_parameters", "software"]
+        ALL = ["compute", "network", "database_parameter", "software"]
 
     class StatusCodes:
         SUCCESS = "5"
