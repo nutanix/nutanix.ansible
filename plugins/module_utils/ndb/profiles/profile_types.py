@@ -96,55 +96,65 @@ class NetworkProfile(Profile):
         super(NetworkProfile, self).__init__(module)
         self._type = NDB.ProfileTypes.NETWORK
 
-    def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
+    def get_default_version_update_spec(self, override_spec=None):
+        spec = {
+            "name": "",
+            "description": "",
+            "published": None,
+            "properties": [],
+            "propertiesMap": {},
+            "topology": "",
+            "engineType": ""
+        }
 
-        self.build_spec_methods.update({"network": self._build_spec_profile})
+        for key in spec:
+            if key in override_spec:
+                spec[key] = override_spec[key]
+
+        return spec
+
+    def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
+        self.build_spec_methods.update({"network": self._build_spec_create_profile})
         return super().get_create_profile_spec(
             old_spec=old_spec, params=params, **kwargs
         )
 
     def get_update_version_spec(self, old_spec=None, params=None, **kwargs):
-        payload = deepcopy(old_spec)
+        self.build_spec_methods.update({"network": self._build_spec_update_profile_version})
+        payload, err =  super().get_spec(
+            old_spec=old_spec, params=params
+        )
+        if err:
+            return None, err
 
-        if not params:
-            params = self.module.params.get("network")
+        return payload, None
 
-        if params:
-            payload, err = self._build_spec_profile(payload, params)
-            if err:
-                return None, err
+    def _build_spec_create_profile(self, payload, profile):
+        vlans = profile.get("vlans")
 
-        # remove not required fields
-        if payload.get("type") is not None:
-            payload.pop("type")
-        if payload.get("topology") is not None:
-            payload.pop("topology")
-        if payload.get("versionClusterAssociation") is not None:
-            payload.pop("versionClusterAssociation")
-
-        return self.build_spec_status(payload, params)
-
-    def _build_spec_profile(self, payload, profile):
-        vlans = profile.get("vlans", [])
-        payload["properties"] = []
         if profile.get("topology") == "cluster" or len(vlans) > 1:
-            payload, err = self._build_spec_multicluster_network_profile(payload, vlans)
-            payload["properties"].append({"name": "NUM_CLUSTERS", "value": len(vlans)})
+            payload, err = self._build_spec_multi_networks(payload, vlans)
+            payload["propertiesMap"]["NUM_CLUSTERS"] = len(vlans)
+
         else:
-            payload, err = self._build_spec_single_cluster_network_profile(
+            payload, err = self._build_spec_single_network(
                 payload, vlans[0]
             )
 
         if err:
             return None, err
 
-        enable_ip_address_selection = profile.get("enable_ip_address_selection", False)
-        payload["properties"].append(
-            {
-                "name": "ENABLE_IP_ADDRESS_SELECTION",
-                "value": str(enable_ip_address_selection).lower(),
-            }
-        )
+        payload["propertiesMap"]["ENABLE_IP_ADDRESS_SELECTION"] = str(profile.get("enable_ip_address_selection", False)).lower()
+
+        properties = []
+        properties_map = payload.pop("propertiesMap")
+        for name, val in properties_map.items():
+            properties.append({
+                "name": name,
+                "value": val
+            })
+
+        payload["properties"] = properties
 
         topology = profile.get("topology")
         if topology == "all":
@@ -154,40 +164,79 @@ class NetworkProfile(Profile):
 
         return payload, None
 
-    def _build_spec_multicluster_network_profile(self, payload, vlans):
-        _clusters = Cluster(self.module)
-        clusters_uuid_name_map = _clusters.get_all_clusters_uuid_name_map()
+    def _build_spec_update_profile_version(self, payload, profile):
+        vlans = profile.get("vlans")
 
-        for i in range(len(vlans)):
-            cluster_uuid, err = get_cluster_uuid(self.module, vlans[i].get("cluster"))
-            if err:
-                return err
-            payload["properties"].append(
-                self.get_property_spec("VLAN_NAME_" + str(i), vlans[i].get("vlan_name"))
-            )
-            payload["properties"].append(
-                self.get_property_spec(
-                    "CLUSTER_NAME_" + str(i), clusters_uuid_name_map[cluster_uuid]
+        enable_ip_address_selection = payload.get("propertiesMap", {}).get("ENABLE_IP_ADDRESS_SELECTION", False)
+        
+        if vlans:
+            payload["propertiesMap"] = {}
+            err = None
+            if payload.get("topology") == "cluster":
+                payload, err = self._build_spec_multi_networks(payload, vlans)
+                payload["propertiesMap"]["NUM_CLUSTERS"] = len(vlans)
+            else:
+                payload, err = self._build_spec_single_network(
+                    payload, vlans[0]
                 )
-            )
-            payload["properties"].append(
-                self.get_property_spec("CLUSTER_ID_" + str(i), cluster_uuid)
-            )
+            if err:
+                return None, err
 
-        return payload, None
 
-    def _build_spec_single_cluster_network_profile(self, payload, vlan):
+        if profile.get("enable_ip_address_selection") is not None:
+            enable_ip_address_selection = str(profile.get("enable_ip_address_selection", False)).lower()
+        payload["propertiesMap"]["ENABLE_IP_ADDRESS_SELECTION"] = enable_ip_address_selection
+
+        properties = []
+        properties_map = payload.pop("propertiesMap")
+        for name, val in properties_map.items():
+            properties.append({
+                "name": name,
+                "value": val
+            })
+
+        payload["properties"] = properties
+        return self.build_spec_status(payload, profile)
+
+    def _build_spec_single_network(self, payload, vlan):
         cluster = vlan.get("cluster")
         cluster_uuid, err = get_cluster_uuid(self.module, cluster)
         if err:
             return None, err
+        properties_map = payload.get("propertiesMap", {})
 
-        payload["properties"] = [
-            self.get_property_spec("VLAN_NAME", vlan.get("vlan_name"))
-        ]
+        properties_map["VLAN_NAME"] = vlan.get("vlan_name")
+        payload["propertiesMap"] = properties_map
 
         payload["versionClusterAssociation"] = [{"nxClusterId": cluster_uuid}]
 
+        return payload, None
+
+    def _build_spec_multi_networks(self, payload, vlans):
+        _clusters = Cluster(self.module)
+        clusters_uuid_name_map = _clusters.get_all_clusters_uuid_name_map()
+        clusters_name_uuid_map = _clusters.get_all_clusters_name_uuid_map()
+        properties_map = payload.get("propertiesMap", {})
+        for i in range(len(vlans)):
+
+            properties_map["VLAN_NAME_" + str(i)] = vlans[i].get("vlan_name")
+
+            cluster_name = None
+            if vlans[i].get("cluster", {}).get("name"):
+                cluster_name = vlans[i].get("cluster", {}).get("name")
+
+            elif  vlans[i].get("cluster", {}).get("uuid"):
+                cluster_name = clusters_uuid_name_map[vlans[i].get("cluster", {}).get("uuid")]
+        
+            else:
+                return None, "invalid cluster spec given"
+
+            if not cluster_name: 
+                return None, "failed getting cluster for vlan {0}".format(vlans[i].get("vlan_name"))
+
+            properties_map["CLUSTER_NAME_" + str(i)] = cluster_name
+            properties_map["CLUSTER_ID_" + str(i)] = clusters_name_uuid_map[cluster_name]
+        payload["propertiesMap"] = properties_map
         return payload, None
 
 
