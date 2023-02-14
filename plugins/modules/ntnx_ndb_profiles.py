@@ -355,12 +355,15 @@ def get_module_spec():
         vcpus=dict(type="int"),
         cores_per_cpu=dict(type="int"),
         memory=dict(type="int"),
+        publish=dict(type="bool", required=False),
+
     )
 
     network = dict(
         topology=dict(type="str", choices=["single", "cluster"]),
         vlans=dict(type="list", elements="dict", options=vlan),
         enable_ip_address_selection=dict(type="bool"),
+        publish=dict(type="bool", required=False),
     )
 
     software = dict(
@@ -373,9 +376,11 @@ def get_module_spec():
         db_server_vm=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
+        publish=dict(type="bool", required=False),
+        deprecate=dict(type="bool", required=False),
     )
 
-    database_parameter = dict(postgres=dict(type="dict", options=postgres_params))
+    database_parameter = dict(postgres=dict(type="dict", options=postgres_params), publish=dict(type="bool", required=False))
 
     module_args = dict(
         profile_uuid=dict(type="str", required=False),
@@ -400,8 +405,6 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        publish=dict(type="bool", required=False),
-        deprecate=dict(type="bool", required=False),
     )
     return module_args
 

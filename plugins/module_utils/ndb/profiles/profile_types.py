@@ -48,7 +48,7 @@ class ComputeProfile(Profile):
         if payload.get("versionClusterAssociation") is not None:
             payload.pop("versionClusterAssociation")
 
-        return self.build_spec_status(payload)
+        return self.build_spec_status(payload, params)
 
     def _build_spec_create_profile(self, payload, compute=None):
         properties = payload.get("properties", [])
@@ -122,7 +122,7 @@ class NetworkProfile(Profile):
         if payload.get("versionClusterAssociation") is not None:
             payload.pop("versionClusterAssociation")
 
-        return self.build_spec_status(payload)
+        return self.build_spec_status(payload, params)
 
     def _build_spec_profile(self, payload, profile):
         vlans = profile.get("vlans", [])
@@ -266,7 +266,7 @@ class SoftwareProfile(Profile):
             return None, err
 
         # update version status and return
-        return self.build_spec_status(payload)
+        return self.build_spec_status(payload, params)
 
     def _build_spec_profile(self, payload, profile):
 
@@ -344,13 +344,13 @@ class SoftwareProfile(Profile):
         payload["updateClusterAvailability"] = True
         return payload, None
 
-    def build_spec_status(self, payload):
-        if self.module.params.get("publish"):
-            payload["published"] = self.module.params.get("publish")
+    def build_spec_status(self, payload, params):
+        if params.get("publish"):
+            payload["published"] = params.get("publish")
             payload["deprecated"] = False
 
-        elif self.module.params.get("deprecate"):
-            payload["deprecated"] = self.module.params.get("deprecate")
+        elif params.get("deprecate"):
+            payload["deprecated"] = params.get("deprecate")
 
         return payload, None
 
@@ -423,7 +423,8 @@ class DatabaseParameterProfile(Profile):
             payload.pop("topology")
         if payload.get("versionClusterAssociation") is not None:
             payload.pop("versionClusterAssociation")
-        return self.build_spec_status(payload)
+
+        return self.build_spec_status(payload, params)
 
 
 # Helper methods for getting profile type objects

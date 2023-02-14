@@ -217,7 +217,7 @@ class Profile(NutanixDatabase):
             payload["engineType"] = type + "_database"
         return payload, None
 
-    def build_spec_status(self, payload):
-        if self.module.params.get("publish") is not None:
-            payload["published"] = self.module.params.get("publish")
+    def build_spec_status(self, payload, params):
+        if params.get("publish") is not None:
+            payload["published"] = params.get("publish")
         return payload, None
