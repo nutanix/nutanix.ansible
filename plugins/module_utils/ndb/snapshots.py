@@ -177,18 +177,18 @@ class Snapshot(NutanixDatabase):
         return specs, None
 
 
-    def get_uuid(
-        self,
-        value,
-        key="name",
-        data=None,
-        entity_type=None,
-        raise_error=True,
-        no_response=False,
-    ):
-        endpoint = "{0}/{1}".format(key, value)
-        resp = self.read(uuid=None, endpoint=endpoint)
-        return resp.get("id")
+    # def get_uuid(
+    #     self,
+    #     value,
+    #     key="name",
+    #     data=None,
+    #     entity_type=None,
+    #     raise_error=True,
+    #     no_response=False,
+    # ):
+    #     endpoint = "{0}/{1}".format(key, value)
+    #     resp = self.read(uuid=None, endpoint=endpoint)
+    #     return resp.get("id")
 
     def _build_query_params(self, query_params):
         query = {}

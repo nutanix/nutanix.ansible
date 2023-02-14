@@ -11,8 +11,8 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_clusters
 short_description: Create, Delete a k8s cluster with the provided configuration.
-version_added: 1.6.0
-description: "Create, Delete clusters"
+version_added: 1.8.0
+description: "Create, Update and Delete clusters"
 options:
     name:
         type: str
@@ -335,14 +335,15 @@ def get_module_spec():
 
 
 def create_cluster(module, result):
-    cluster = Cluster(module, api_version="v0.8")
+    cluster = Cluster(module)
+    cluster_ip = module.params.get("cluster_ip")
 
     spec, err = cluster.get_spec()
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create cluster spec", **result)
 
-    if cluster.get_cluster_by_ip():
+    if cluster.get_cluster_by_ip(cluster_ip):
         module.fail_json(
             msg="The provided cluster IP is already registered with NDB.", **result
         )
@@ -357,7 +358,7 @@ def create_cluster(module, result):
     resp, err = cluster.get_cluster(name=cluster_name)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create cluster spec", **result)
+        module.fail_json(msg="Failed getting created cluster", **result)
 
     cluster_uuid = resp["id"]
     result["cluster_uuid"] = cluster_uuid
@@ -385,6 +386,8 @@ def update_cluster(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update cluster spec", **result)
 
+    result["cluster_uuid"] = cluster_uuid
+
     if module.check_mode:
         result["response"] = update_spec
         return
@@ -394,7 +397,6 @@ def update_cluster(module, result):
         module.exit_json(msg="Nothing to change.")
 
     resp = cluster.update(data=update_spec, uuid=cluster_uuid)
-    result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
 
     result["response"] = resp
@@ -412,7 +414,6 @@ def delete_cluster(module, result):
     result["changed"] = True
     result["cluster_uuid"] = cluster_uuid
     ops_uuid = resp["operationId"]
-    result["cluster_uuid"] = cluster_uuid
 
     if module.params.get("wait"):
         operations = Operation(module)
@@ -433,6 +434,10 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[
+            ("state", "present", ("name", "uuid"), True),
+            ("state", "absent", ("uuid",)),
+        ],
         mutually_exclusive=[
             ("uuid", "name_prefix"),
             ("uuid", "agent_network"),

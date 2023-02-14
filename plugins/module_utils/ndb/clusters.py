@@ -11,10 +11,8 @@ from .nutanix_database import NutanixDatabase
 
 class Cluster(NutanixDatabase):
 
-    def __init__(self, module, api_version=None):
+    def __init__(self, module):
         resource_type = "/clusters"
-        if api_version:
-            self.api_version = "/{0}".format(api_version)
         super(Cluster, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             "name": self._build_spec_name,
@@ -64,8 +62,7 @@ class Cluster(NutanixDatabase):
             None,
         )
 
-    def get_cluster_by_ip(self):
-        cluster_ip = self.module.params["cluster_ip"]
+    def get_cluster_by_ip(self, cluster_ip):
         clusters = self.read()
         for cluster in clusters:
             if cluster_ip in cluster["ipAddresses"]:
@@ -131,8 +128,6 @@ class Cluster(NutanixDatabase):
     def get_default_update_spec(self, override_spec=None):
         spec = deepcopy(
             {
-                # "username": "",
-                # "password": "",
                 "name": "",
                 "description": "",
                 "ipAddresses": [],
@@ -190,65 +185,19 @@ class Cluster(NutanixDatabase):
 
     def _build_spec_vlan_access(self, payload, vlans_config):
         networks_info = []
-        prism_vlan = {
-            "type": vlans_config["prism_vlan"]["vlan_type"],
-            "networkInfo": [
-                {"name": "vlanName", "value": vlans_config["prism_vlan"]["vlan_name"]},
-                {"name": "staticIP", "value": vlans_config["prism_vlan"]["static_ip"]},
-                {"name": "gateway", "value": vlans_config["prism_vlan"]["gateway"]},
-                {
-                    "name": "subnetMask",
-                    "value": vlans_config["prism_vlan"]["subnet_mask"],
-                },
-            ],
-            "accessType": ["PRISM"],
-        }
+        prism_vlan = self._generate_vlan_access_spec(vlans_config["prism_vlan"])
+        prism_vlan["accessType"] = ["PRISM"]
+
         if vlans_config.get("dsip_vlan"):
-            dsip_vlan = {
-                "type": vlans_config["dsip_vlan"]["vlan_type"],
-                "networkInfo": [
-                    {
-                        "name": "vlanName",
-                        "value": vlans_config["dsip_vlan"]["vlan_name"],
-                    },
-                    {
-                        "name": "staticIP",
-                        "value": vlans_config["dsip_vlan"]["static_ip"],
-                    },
-                    {"name": "gateway", "value": vlans_config["dsip_vlan"]["gateway"]},
-                    {
-                        "name": "subnetMask",
-                        "value": vlans_config["dsip_vlan"]["subnet_mask"],
-                    },
-                ],
-                "accessType": ["DSIP"],
-            }
+            dsip_vlan = self._generate_vlan_access_spec(vlans_config["dsip_vlan"])
+            dsip_vlan["accessType"] = ["DSIP"]
             networks_info.append(dsip_vlan)
         else:
             prism_vlan["accessType"].append("DSIP")
+
         if vlans_config.get("dbserver_vlan"):
-            dbserver_vlan = {
-                "type": vlans_config["dbserver_vlan"]["vlan_type"],
-                "networkInfo": [
-                    {
-                        "name": "vlanName",
-                        "value": vlans_config["dbserver_vlan"]["vlan_name"],
-                    },
-                    {
-                        "name": "staticIP",
-                        "value": vlans_config["dbserver_vlan"]["static_ip"],
-                    },
-                    {
-                        "name": "gateway",
-                        "value": vlans_config["dbserver_vlan"]["gateway"],
-                    },
-                    {
-                        "name": "subnetMask",
-                        "value": vlans_config["dbserver_vlan"]["subnet_mask"],
-                    },
-                ],
-                "accessType": ["DBSERVER"],
-            }
+            dbserver_vlan = self._generate_vlan_access_spec(vlans_config["dbserver_vlan"])
+            dbserver_vlan["accessType"] = ["DBSERVER"]
             networks_info.append(dbserver_vlan)
         else:
             prism_vlan["accessType"].append("DBSERVER")
@@ -257,6 +206,31 @@ class Cluster(NutanixDatabase):
         payload["networksInfo"] = networks_info
         return payload, None
 
+    @staticmethod
+    def _generate_vlan_access_spec(vlan):
+        vlan_spec = {
+                "type": vlan["vlan_type"],
+                "networkInfo": [
+                    {
+                        "name": "vlanName",
+                        "value": vlan["vlan_name"],
+                    },
+                    {
+                        "name": "staticIP",
+                        "value": vlan["static_ip"],
+                    },
+                    {
+                        "name": "gateway",
+                        "value": vlan["gateway"],
+                    },
+                    {
+                        "name": "subnetMask",
+                        "value": vlan["subnet_mask"],
+                    },
+                ],
+            }
+        return vlan_spec
+
     def _build_spec_storage_container(self, payload, storage_container):
         payload["storageContainer"] = storage_container
         return payload, None
@@ -264,6 +238,7 @@ class Cluster(NutanixDatabase):
     def _validate_cluster_deleting(self, cluster_uuid):
         query = {"count_entities": True}
         cluster = self.read(cluster_uuid, query=query)
+
         if cluster.get("entityCounts"):
             if cluster["entityCounts"].get("dbServers") != 0:
                 return False
