@@ -303,7 +303,10 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 profile_types_with_version_support = ["software"]
 profile_types_with_wait_support = ["software"]
 
-
+# Notes:
+# 1. publish/deprecate/unpublish can only be done using update.
+# 2. keep version spec as part of profile related spec,
+#    as module avoids version operations if profile related spec is not found.
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
@@ -355,32 +358,24 @@ def get_module_spec():
     )
 
     network = dict(
-        topology=dict(type="str", choices=["single", "cluster", "all"]),
+        topology=dict(type="str", choices=["single", "cluster"]),
         vlans=dict(type="list", elements="dict", options=vlan),
         enable_ip_address_selection=dict(type="bool"),
     )
 
     software = dict(
-        topology=dict(type="str", choices=["single", "cluster", "all"]),
+        topology=dict(type="str", choices=["single", "cluster"]),
         state=dict(type="str", choices=["present", "absent"], default="present"),
         version_uuid=dict(type="str"),
         name=dict(type="str"),
         desc=dict(type="str"),
         notes=dict(type="dict", options=notes),
-        db_server=dict(
+        db_server_vm=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
-        clusters=dict(
-            type="list",
-            elements="dict",
-            options=entity_by_spec,
-            mutually_exclusive=mutually_exclusive,
-            required=False,
-        ),
-        database_type=dict(type="str", choices=["postgres"]),
     )
 
-    database_parameters = dict(postgres=dict(type="dict", options=postgres_params))
+    database_parameter = dict(postgres=dict(type="dict", options=postgres_params))
 
     module_args = dict(
         profile_uuid=dict(type="str", required=False),
@@ -395,8 +390,15 @@ def get_module_spec():
         compute=dict(type="dict", options=compute, required=False),
         software=dict(type="dict", options=software, required=False),
         network=dict(type="dict", options=network, required=False),
-        database_parameters=dict(
-            type="dict", options=database_parameters, required=False
+        database_parameter=dict(
+            type="dict", options=database_parameter, required=False
+        ),
+        clusters=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
         ),
         publish=dict(type="bool", required=False),
         deprecate=dict(type="bool", required=False),
@@ -445,27 +447,27 @@ def create_profile_version(module, result, profile_uuid, profile_obj):
         return
 
     resp = profile_obj.create_version(profile_uuid, data=spec)
-    version_uuid = resp.get("entityId") or resp.get("id")
+    version_uuid = resp.get("entityId")
     result["version_uuid"] = version_uuid
     result["response"]["version"] = resp
 
-    profile_type = profile_obj.get_type()
-    if module.params.get("wait") and profile_type in profile_types_with_wait_support:
+    profile_type = profile_obj.get_type().lower()
+    if module.params.get("wait") and profile_type in profile_types_with_wait_support and resp.get("operationId"):
 
         ops_uuid = resp["operationId"]
         operations = Operation(module)
         time.sleep(3)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid, delay=10)
 
-        resp = profile_obj.get_profile_by_version(
+        result["response"]["version"] = profile_obj.get_profile_by_version(
             uuid=profile_uuid, version_uuid=version_uuid
         )
 
-    result["response"]["version"] = resp
+    result["changed"] = True
 
 
 def update_profile_version(module, result, profile_uuid, profile_obj):
-    profile_type = profile_obj.get_type()
+    profile_type = profile_obj.get_type().lower()
     config = module.params.get(profile_type)
 
     version_uuid = "latest"
@@ -501,6 +503,7 @@ def update_profile_version(module, result, profile_uuid, profile_obj):
 
     resp = profile_obj.update_version(profile_uuid, version_uuid, spec)
     result["response"]["version"] = resp
+    result["changed"] = True
 
     if (
         module.params.get("wait")
@@ -513,15 +516,13 @@ def update_profile_version(module, result, profile_uuid, profile_obj):
         time.sleep(3)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid, delay=10)
 
-        resp = profile_obj.get_profile_by_version(
+        result["response"]["version"] = profile_obj.get_profile_by_version(
             uuid=profile_uuid, version_uuid=version_uuid
         )
 
-    result["response"]["version"] = resp
-
 
 def delete_profile_version(module, result, profile_uuid, profile_obj):
-    profile_type = profile_obj.get_type()
+    profile_type = profile_obj.get_type().lower()
 
     config = module.params.get(profile_type)
 
@@ -529,12 +530,14 @@ def delete_profile_version(module, result, profile_uuid, profile_obj):
     if not version_uuid:
         module.fail_json(msg="uuid is required field for version delete", **result)
 
-    resp = profile_obj.delete_profile(profile_uuid=profile_uuid, version_uuid=version_uuid)
+    resp = profile_obj.delete_version(profile_uuid=profile_uuid, version_uuid=version_uuid)
     result["response"]["version"] = resp
+    result["changed"] = True
 
 
 def version_operations(module, result, profile_uuid, profile_obj):
-    profile_type = profile_obj.get_type()
+    profile_type = profile_obj.get_type().lower()
+    result["profile_type"] = profile_type
     if profile_type not in profile_types_with_version_support:
         update_profile_version(module, result, profile_uuid, profile_obj)
     else:
@@ -573,11 +576,11 @@ def create_profile(module, result):
 
     resp = _profile.create(data=spec)
     result["response"] = resp
+    uuid = resp.get("id")
 
-    if profile_type == "software":
+    # incase there is process of replication triggered, operation info is recieved
+    if profile_type=="software" and not uuid: 
         uuid = resp.get("entityId")
-    else:
-        uuid = resp.get("id")
 
     if not uuid:
         return module.fail_json(
@@ -587,7 +590,7 @@ def create_profile(module, result):
     result["profile_uuid"] = uuid
 
     # polling is only required for software profile
-    if module.params.get("wait") and profile_type == "software":
+    if module.params.get("wait") and profile_type in profile_types_with_wait_support and resp.get("operationId"):
 
         ops_uuid = resp["operationId"]
         operations = Operation(module)
@@ -644,14 +647,25 @@ def update_profile(module, result):
     ):
         resp = _profile.update(data=profile_update_spec, uuid=uuid)
         result["response"]["profile"] = resp
+        result["changed"] = True
+        if module.params.get("wait") and profile_type in profile_types_with_wait_support and resp.get("operationId"):
+
+            ops_uuid = resp["operationId"]
+            operations = Operation(module)
+            time.sleep(3)  # to get operation ID functional
+            operations.wait_for_completion(ops_uuid, delay=10)
+
+            resp = _profile.get_profiles(uuid=uuid)
+            result["response"]["profile"] = resp
 
     # perform versions related crud as per support
-    version_operations(module, result, profile_uuid=uuid, profile_obj=_profile)
+    # version spec needs to be part of spec of profile type
+    if module.params.get(profile_type):
+        version_operations(module, result, profile_uuid=uuid, profile_obj=_profile)
 
     if not module.check_mode:
         resp = _profile.get_profiles(uuid=uuid)
         result["response"]["profile"] = resp
-    result["changed"] = True
 
 
 def delete_profile(module, result):

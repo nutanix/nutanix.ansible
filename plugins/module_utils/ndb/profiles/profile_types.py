@@ -197,7 +197,12 @@ class SoftwareProfile(Profile):
         self._type = NDB.ProfileTypes.SOFTWARE
 
     def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
-        self.build_spec_methods.update({"software": self._build_spec_profile})
+        self.build_spec_methods.update(
+            {
+                "software": self._build_spec_profile,
+                "clusters": self._build_spec_clusters_availibilty
+            }
+        )
         payload, err = super().get_create_profile_spec(
             old_spec=old_spec, params=params, **kwargs
         )
@@ -210,15 +215,15 @@ class SoftwareProfile(Profile):
         return payload, None
 
     def get_update_profile_spec(self, old_spec=None, params=None, **kwargs):
+        
+        self.build_spec_methods.update(
+            {
+                "clusters": self._build_spec_clusters_availibilty
+            }
+        )
         payload, err = super().get_update_profile_spec(old_spec, params, **kwargs)
         if err:
             return None, err
-
-        clusters = self.module.params.get("software", {}).get("clusters", [])
-        if clusters:
-            payload, err = self._build_spec_clusters_availibilty(payload, clusters)
-            if err:
-                return None, err
 
         return payload, None
 
@@ -229,7 +234,8 @@ class SoftwareProfile(Profile):
         if not params:
             return None, "Please provide version config for creating new version"
 
-        payload, err = super().get_spec(old_spec=old_spec, params=params, **kwargs)
+        params["database_type"] = self.module.params.get("database_type")
+        payload, err = super().get_spec(old_spec=old_spec, params=params)
         if err:
             return None, err
 
@@ -253,7 +259,9 @@ class SoftwareProfile(Profile):
         if not params:
             params = self.module.params.get("software")
 
-        payload, err = super().get_spec(old_spec=old_spec, params=params, *kwargs)
+        params["database_type"] = self.module.params.get("database_type")
+        
+        payload, err = super().get_spec(old_spec=old_spec, params=params)
         if err:
             return None, err
 
@@ -267,13 +275,6 @@ class SoftwareProfile(Profile):
         )
         if err:
             return None, err
-
-        # add cluster uuids
-        clusters = profile.get("clusters", [])
-        if clusters:
-            payload, err = self._build_spec_clusters_availibilty(payload, clusters)
-            if err:
-                return None, err
 
         topology = profile.get("topology")
         if topology == "all":
@@ -310,12 +311,12 @@ class SoftwareProfile(Profile):
                 )
             )
 
-        if version.get("db_server"):
+        if version.get("db_server_vm"):
             # importing here to avoid frozen import
             from ..db_server_vm import DBServerVM
 
             db_server_vm = DBServerVM(self.module)
-            uuid, err = db_server_vm.get_db_server_uuid(version["db_server"])
+            uuid, err = db_server_vm.get_db_server_uuid(version["db_server_vm"])
             if err:
                 return None, err
             properties.append(self.get_property_spec("SOURCE_DBSERVER_ID", uuid))
