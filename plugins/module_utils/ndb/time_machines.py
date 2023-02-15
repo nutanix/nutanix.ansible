@@ -20,28 +20,25 @@ class TimeMachine(NutanixDatabase):
             "desc": self._build_spec_desc,
             "schedule": self._build_spec_schedule,
             "auto_tune_log_drive": self._build_spec_auto_tune_log_drive,
-
-            # "cluster": self._build_spec_cluster,
-            # "type": self._build_spec_type,
-            # "sla": self._build_spec_sla,
         }
 
     def log_catchup(self, time_machine_uuid, data):
         endpoint = "{0}/{1}".format(time_machine_uuid, "log-catchups")
         return self.create(data=data, endpoint=endpoint)
 
-    def get_time_machine(self, uuid=None, name=None):
+    def get_time_machine(self, uuid=None, name=None, query=None):
         """
         Fetch time machine info based on uuid or name.
         Args:
             uuid(str): uuid of time machine
             name(str): name of time machine
+            query(str): query params
         """
         if uuid:
-            resp = self.read(uuid=uuid)
+            resp = self.read(uuid=uuid, query=query)
         elif name:
             endpoint = "{0}/{1}".format("name", name)
-            resp = self.read(endpoint=endpoint)
+            resp = self.read(endpoint=endpoint, query=query)
             if isinstance(resp, list):
                 if not resp:
                     return None, "Time machine with name {0} not found".format(name)
