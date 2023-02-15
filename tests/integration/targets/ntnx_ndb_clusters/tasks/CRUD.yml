@@ -2,7 +2,7 @@
 - debug:
     msg: Start testing ntnx_ndb_clusters
 
-- name: Register Cluster with prisim_vlan
+- name: Register Cluster with prism_vlan
   ntnx_ndb_clusters:
       wait: true
       name: "{{cluster2.name}}"
@@ -150,7 +150,7 @@
 
 ################################################################
 
-- name: List all era clusters
+- name: List all NDB clusters
   ntnx_ndb_clusters_info:
   register: clusters
 
@@ -161,12 +161,12 @@
       - clusters.failed == false
       - clusters.changed == false
       - clusters.response | length > 0
-    fail_msg: "Unable to list all era clusters"
-    success_msg: "era clusters listed successfully"
+    fail_msg: "Unable to list all NDB clusters"
+    success_msg: "NDB clusters listed successfully"
 
 ################################################################
 
-- name: get era clusters using it's name
+- name: get NDB clusters using it's name
   ntnx_ndb_clusters_info:
     name: "{{clusters.response[0].name}}"
   register: result
@@ -178,8 +178,8 @@
       - result.failed == false
       - result.changed == false
       - result.response.name == "{{clusters.response[0].name}}"
-    fail_msg: "Unable to get era clusters using it's name  "
-    success_msg: "get  era clusters using it's name  successfully"
+    fail_msg: "Unable to get NDB clusters using it's name  "
+    success_msg: "get  NDB clusters using it's name  successfully"
 
 ################################################################
 
@@ -195,12 +195,12 @@
       - result.failed == false
       - result.changed == false
       - result.response.name == "{{clusters.response[0].name}}"
-    fail_msg: "Unable to get era clusters using it's id  "
-    success_msg: "get  era clusters using it's id  successfully"
+    fail_msg: "Unable to get NDB clusters using it's id  "
+    success_msg: "get  NDB clusters using it's id  successfully"
 
 ################################################################
 
-- name: get era clusters with incorrect name
+- name: get NDB clusters with incorrect name
   ntnx_ndb_clusters_info:
     name: "abcd"
   register: result
