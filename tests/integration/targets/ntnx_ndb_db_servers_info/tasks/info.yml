@@ -19,6 +19,24 @@
     fail_msg: "Unable to list all NDB db_servers"
     success_msg: "NDB db_servers listed successfully"
 ################################################################
+- name: get NDB db_servers using it's ip
+  ntnx_ndb_db_servers_info:
+    filters:
+      value_type: ip
+      value: "{{db_servers.response[0].ipAddresses[0]}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response[0].id == "{{db_servers.response[0].id}}"
+      - result.response[0].ipAddresses[0] == "{{db_servers.response[0].ipAddresses[0]}}"
+    fail_msg: "Unable to get NDB db_servers using it's ip "
+    success_msg: "get NDB db_server using it's ip finished successfully"
+################################################################
 - name: get NDB db_servers using it's name
   ntnx_ndb_db_servers_info:
     name: "{{db_servers.response[0].name}}"

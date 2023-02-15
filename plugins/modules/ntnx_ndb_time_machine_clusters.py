@@ -148,7 +148,7 @@ def create_data_access_instance(module, result):
     if not tm.read_data_access_instance(tm_uuid, cluster_uuid).get("errorCode"):
         update_data_access_instance(module, result)
         return
-    spec, err = tm.get_data_access_spec()
+    spec, err = tm.get_data_access_management_spec()
     if err:
         result["error"] = err
         module.fail_json(
@@ -200,9 +200,9 @@ def update_data_access_instance(module, result):
 
     resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
 
-    old_spec = tm.get_default_data_access_spec(override_spec=resp)
+    old_spec = tm.get_default_data_access_management_spec(override_spec=resp)
 
-    spec, err = tm.get_data_access_spec(old_spec=old_spec)
+    spec, err = tm.get_data_access_management_spec(old_spec=old_spec)
     if err:
         result["error"] = err
         module.fail_json(
