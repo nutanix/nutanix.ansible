@@ -16,16 +16,3 @@ class NutanixDatabase(Entity):
             resource_type,
             additional_headers=additional_headers,
         )
-
-    #move to utils
-
-    def filters_map(self, except_keys=None):
-        filters = self.module.params.get("filters")
-        if filters:
-            mapped_filters = {}
-            for key, value in filters.items():
-                if value is not None:
-                    if except_keys is None or key not in except_keys:
-                        key = key.replace("_", "-")
-                    mapped_filters.update({key: value})
-            self.module.params["filters"] = mapped_filters

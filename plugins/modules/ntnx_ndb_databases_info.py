@@ -660,7 +660,8 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.databases import Database  # noqa: E402
+from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
+from ..module_utils.utils import format_filters_map  # noqa: E402
 
 
 def get_module_spec():
@@ -694,9 +695,9 @@ def get_module_spec():
 
 
 def get_database(module, result):
-    database = Database(module)
-    database.filters_map()
+    database = DatabaseInstance(module)
     query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
 
     if module.params.get("name"):
         name = module.params["name"]
@@ -712,9 +713,9 @@ def get_database(module, result):
 
 
 def get_databases(module, result):
-    database = Database(module)
-    database.filters_map()
+    database = DatabaseInstance(module)
     query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
 
     resp = database.read(query=query_params)
 

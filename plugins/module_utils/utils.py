@@ -97,3 +97,15 @@ def extract_uuids_from_references_list(reference_lists):
     for spec in reference_lists:
         uuids.add(spec["uuid"])
     return uuids
+
+
+def format_filters_map(filters, except_keys=None):
+    if filters:
+        mapped_filters = {}
+        for key, value in filters.items():
+            if value is not None:
+                if except_keys is None or key not in except_keys:
+                    key = key.replace("_", "-")
+                mapped_filters.update({key: value})
+        filters = mapped_filters
+    return filters

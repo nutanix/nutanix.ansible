@@ -20,9 +20,10 @@ class TimeMachine(NutanixDatabase):
             "desc": self._build_spec_desc,
             "schedule": self._build_spec_schedule,
             "auto_tune_log_drive": self._build_spec_auto_tune_log_drive,
-            "cluster": self._build_spec_cluster,
-            "type": self._build_spec_type,
-            "sla": self._build_spec_sla,
+
+            # "cluster": self._build_spec_cluster,
+            # "type": self._build_spec_type,
+            # "sla": self._build_spec_sla,
         }
 
     def log_catchup(self, time_machine_uuid, data):

@@ -203,12 +203,13 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.snapshots import Snapshots  # noqa: E402
+from ..module_utils.ndb.snapshots import Snapshot  # noqa: E402
+from ..module_utils.utils import format_filters_map  # noqa: E402
 
 
 def get_module_spec():
 
-    queries_spec = dict(
+    filters_spec = dict(
         all=dict(type="bool"),
         database_ids=dict(type="list"),
         value=dict(type="str"),
@@ -230,9 +231,9 @@ def get_module_spec():
     module_args = dict(
         uuid=dict(type="str"),
         get_files=dict(type="bool"),
-        queries=dict(
+        filters=dict(
             type="dict",
-            options=queries_spec,
+            options=filters_spec,
         )
     )
 
@@ -240,7 +241,7 @@ def get_module_spec():
 
 
 def get_snapshot(module, result):
-    snapshot = Snapshots(module)
+    snapshot = Snapshot(module)
     uuid = module.params["uuid"]
     get_files = module.params["get_files"]
     if get_files:
@@ -253,9 +254,11 @@ def get_snapshot(module, result):
 
 
 def get_snapshots(module, result):
-    snapshot = Snapshots(module)
+    snapshot = Snapshot(module)
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
 
-    resp = snapshot.get_snapshots()
+    resp = snapshot.get_snapshots(query_params=query_params)
 
     result["response"] = resp
 
