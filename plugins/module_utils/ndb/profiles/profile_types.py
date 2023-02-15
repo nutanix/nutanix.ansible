@@ -134,15 +134,16 @@ class NetworkProfile(Profile):
 
         if profile.get("topology") == "cluster" or len(vlans) > 1:
             payload, err = self._build_spec_multi_networks(payload, vlans)
+            if err:
+                return None, err
             payload["propertiesMap"]["NUM_CLUSTERS"] = len(vlans)
 
         else:
             payload, err = self._build_spec_single_network(
                 payload, vlans[0]
             )
-
-        if err:
-            return None, err
+            if err:
+                return None, err
 
         payload["propertiesMap"]["ENABLE_IP_ADDRESS_SELECTION"] = str(profile.get("enable_ip_address_selection", False)).lower()
 
@@ -221,18 +222,16 @@ class NetworkProfile(Profile):
 
             properties_map["VLAN_NAME_" + str(i)] = vlans[i].get("vlan_name")
 
-            cluster_name = None
-            if vlans[i].get("cluster", {}).get("name"):
-                cluster_name = vlans[i].get("cluster", {}).get("name")
+            cluster_name = vlans[i].get("cluster", {}).get("name")
+            cluster_uuid = vlans[i].get("cluster", {}).get("uuid")
 
-            elif  vlans[i].get("cluster", {}).get("uuid"):
-                cluster_name = clusters_uuid_name_map[vlans[i].get("cluster", {}).get("uuid")]
-        
-            else:
-                return None, "invalid cluster spec given"
-
-            if not cluster_name: 
-                return None, "failed getting cluster for vlan {0}".format(vlans[i].get("vlan_name"))
+            if cluster_uuid and not cluster_name:
+                if not clusters_uuid_name_map.get(cluster_uuid):
+                    return None, "Cluster with uuid {0} not found".format(cluster_uuid)
+                cluster_name = clusters_uuid_name_map[cluster_uuid]
+            
+            if not cluster_name:
+                return None, "Pleae provide uuid or name for getting cluster info"
 
             properties_map["CLUSTER_NAME_" + str(i)] = cluster_name
             properties_map["CLUSTER_ID_" + str(i)] = clusters_name_uuid_map[cluster_name]
