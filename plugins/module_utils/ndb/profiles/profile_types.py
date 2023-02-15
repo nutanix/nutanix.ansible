@@ -393,11 +393,11 @@ class SoftwareProfile(Profile):
         return payload, None
 
     def build_spec_status(self, payload, params):
-        if params.get("publish"):
+        if params.get("publish") is not None:
             payload["published"] = params.get("publish")
             payload["deprecated"] = False
 
-        elif params.get("deprecate"):
+        elif params.get("deprecate") is not None:
             payload["deprecated"] = params.get("deprecate")
 
         return payload, None
