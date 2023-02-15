@@ -16,11 +16,11 @@ description: Module for create, update and delete of single instance vlan in Nut
 options:
   vlan_uuid:
     description:
-      - uuid for update or delete of vlan instance
+      - uuid for update or delete of vlan
     type: str
   name:
     description:
-      - name of vlan instance
+      - name of vlan
       - update allowed
     type: str
   vlan_type:
@@ -290,15 +290,15 @@ def get_module_spec():
 def create_vlan(module, result):
     vlan = VLAN(module)
 
-    name = module.params["name"]
+    name = module.params.get("name")
     uuid, err = vlan.get_uuid(name)
     if uuid:
-        module.fail_json(msg="vlan instance with given name already exists", **result)
+        module.fail_json(msg="vlan with given name already exists", **result)
 
     spec, err = vlan.get_spec()
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create vlan instance spec", **result)
+        module.fail_json(msg="Failed generating create vlan spec", **result)
 
     if module.check_mode:
         result["response"] = spec
@@ -329,7 +329,7 @@ def update_vlan(module, result):
 
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating update vlan instance spec", **result)
+        module.fail_json(msg="Failed generating update vlan spec", **result)
 
     if module.check_mode:
         result["response"] = update_spec

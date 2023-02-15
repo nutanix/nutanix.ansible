@@ -16,7 +16,7 @@ description: Module for create, update and delete of single instance stretched v
 options:
   vlan_uuid:
     description:
-      - uuid for update or delete of stretched vlan instance
+      - uuid for update or delete of stretched stretched vlan
     type: str
   vlans:
     description:
