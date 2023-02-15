@@ -436,6 +436,8 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "present", ("name", "uuid"), True),
+            ("state", "present", ("cluster_ip", "uuid"), True),
+            ("state", "present", ("cluster_credentials", "uuid"), True),
             ("state", "absent", ("uuid",)),
         ],
         mutually_exclusive=[
