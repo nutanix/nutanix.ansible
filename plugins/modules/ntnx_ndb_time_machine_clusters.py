@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_time_machine_clusters
 short_description: Module for create, update and delete of single instance time_machine_clusters. Currently, postgres type time_machine is officially supported.
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: Module for create, update and delete of single instance time_machine_clusters in Nutanix time_machine_clusters Service
 options:
   tm_uuid:
