@@ -1,0 +1,192 @@
+- name: Generate random profile_name 
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- set_fact:
+    suffix_name: "ansible-role-mapping"
+
+- set_fact:
+    todelete: []
+    profile1_name: "{{random_name}}{{suffix_name}}1"
+    profile2_name: "{{random_name}}{{suffix_name}}2"
+    profile3_name: "{{random_name}}{{suffix_name}}3"
+################################################################
+- name: verify create of single cluster network profile
+  ntnx_ndb_profiles:
+    name: "{{profile1_name}}"
+    desc: "testdesc"
+    type: network
+    database_type: postgres
+    network:
+      topology: single
+      vlans:
+        - 
+          cluster:  
+            name: "{{network_profile.single.cluster.name}}"
+          vlan_name: "{{network_profile.single.vlan_name}}"
+      enable_ip_address_selection: true
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.name ==  "{{profile1_name}}"
+      - result.response.description == "testdesc"
+      - result.response.type == "Network"
+      - result.response.topology == "single"
+      - result.response.versions[0].propertiesMap.ENABLE_IP_ADDRESS_SELECTION == "true"
+      - result.response.versions[0].propertiesMap.VLAN_NAME == "{{network_profile.single.vlan_name}}"
+      - result.response.versions[0].published == false
+    fail_msg: "Fail: unable to verify create of single cluster network profile"
+    success_msg: "Pass: verify create of single cluster network profile finished succesfully "
+################################################################
+- name: update the profile for single cluster by  name , desc , publish
+  ntnx_ndb_profiles:
+    name: "{{profile2_name}}"
+    desc: "testdesc2"
+    network:
+      publish: true
+    profile_uuid: "{{result.profile_uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.profile.name == "{{profile2_name}}"
+      - result.response.profile.description == "testdesc2"
+      - result.response.profile.type == "Network"
+      - result.response.profile.topology == "single"
+      - result.response.profile.versions[0].propertiesMap.ENABLE_IP_ADDRESS_SELECTION == "true"
+      - result.response.profile.versions[0].propertiesMap.VLAN_NAME == "{{network_profile.single.vlan_name}}"
+      - result.response.profile.versions[0].published == true
+    fail_msg: "Fail: unable to update the profile for single cluster by  name , desc , publish "
+    success_msg: "Pass: update the profile for single cluster by  name , desc , publish finished succesfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.profile_uuid ] }}"
+################################################################
+- name: verify idempotency check
+  ntnx_ndb_profiles:
+    name: "{{profile2_name}}"
+    desc: "testdesc2"
+    profile_uuid: "{{result.profile_uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.profile_uuid is defined
+    fail_msg: "Fail: unable to verify idempotency check"
+    success_msg: "Pass: verify idempotency check finished succesfully "
+################################################################
+- name: verify create of multiple cluster network profile
+  ntnx_ndb_profiles:
+    name: "{{profile3_name}}"
+    desc: "testdesc"
+    type: network
+    database_type: postgres
+    network:
+      topology: cluster
+      vlans:
+        - 
+          cluster:  
+            name: "{{network_profile.HA.cluster1.name}}"
+          vlan_name: "{{network_profile.HA.cluster1.vlan_name}}"
+        - 
+          cluster:  
+            name: "{{network_profile.HA.cluster2.name}}"
+          vlan_name: "{{network_profile.HA.cluster2.vlan_name}}"
+
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.name ==  "{{profile3_name}}"
+      - result.response.description == "testdesc"
+      - result.response.type == "Network"
+      - result.response.topology == "cluster"
+      - result.response.versions[0].propertiesMap.ENABLE_IP_ADDRESS_SELECTION == "false"
+      - result.response.versions[0].propertiesMap.VLAN_NAME_0 == "{{network_profile.HA.cluster1.vlan_name}}"
+      - result.response.versions[0].propertiesMap.VLAN_NAME_1 == "{{network_profile.HA.cluster2.vlan_name}}"
+      - result.response.versions[0].propertiesMap.CLUSTER_NAME_0 == "{{network_profile.HA.cluster1.name}}"
+      - result.response.versions[0].propertiesMap.CLUSTER_NAME_1 == "{{network_profile.HA.cluster2.name}}"
+    fail_msg: "Fail: unable to verify create of multiple cluster network profile "
+    success_msg: "Pass:  verify create of multiple cluster network profile finished sucessfully"
+
+- set_fact:
+    todelete: "{{ todelete + [  result.profile_uuid ] }}"
+################################################################
+- name: update the profile for multiple cluster by  subnets, publish
+  ntnx_ndb_profiles:
+    type: network
+    profile_uuid: "{{result.profile_uuid}}"
+    network:
+      publish: true
+      topology: cluster
+      vlans:
+        - 
+          cluster:  
+            name: "{{network_profile.HA.cluster1.name}}"
+          vlan_name: "{{network_profile.HA.cluster1.vlan_name2}}"
+        - 
+          cluster:  
+            name: "{{network_profile.HA.cluster2.name}}"
+          vlan_name: "{{network_profile.HA.cluster2.vlan_name2}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.profile.name ==  "{{profile3_name}}"
+      - result.response.profile.description == "testdesc"
+      - result.response.profile.type == "Network"
+      - result.response.profile.topology == "cluster"
+      - result.response.profile.versions[0].propertiesMap.ENABLE_IP_ADDRESS_SELECTION == "false"
+      - result.response.profile.versions[0].propertiesMap.VLAN_NAME_0 == "{{network_profile.HA.cluster1.vlan_name2}}"
+      - result.response.profile.versions[0].propertiesMap.VLAN_NAME_1 == "{{network_profile.HA.cluster2.vlan_name2}}"
+      - result.response.profile.versions[0].propertiesMap.CLUSTER_NAME_0 == "{{network_profile.HA.cluster1.name}}"
+      - result.response.profile.versions[0].propertiesMap.CLUSTER_NAME_1 == "{{network_profile.HA.cluster2.name}}"
+      - result.response.profile.versions[0].published == true
+    fail_msg: "Fail: unable to update the profile for multiple cluster by  subnets, publish "
+    success_msg: "Pass: update the profile for multiple cluster by  subnets, publish finished successfully"
+################################################################
+- name: Delete all created network profiles
+  ntnx_ndb_profiles:
+    state: absent
+    profile_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "unable to delete all created network profiles"
+    success_msg: "All network profiles deleted succesfully"
+
+- set_fact:
+    todelete: []
