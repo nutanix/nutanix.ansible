@@ -19,8 +19,8 @@ maintenance:
 
 Cluster:
       cluster1: 
-            name: EraCluster
-            uuid: 386ec3f1-e3b5-4e58-b9bf-80e6f222d355
+            name: ""
+            uuid: ""
       cluster2:
             name: ""
             desc: ""
@@ -62,6 +62,3 @@ time_machine:
 
 postgres:
       software_home: "/usr/pgsql-10.4"
-ndb_ip: 10.51.144.218
-ndb_username: "admin"
-ndb_password: "Nutanix.123"

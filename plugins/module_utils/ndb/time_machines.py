@@ -266,7 +266,7 @@ class TimeMachine(NutanixDatabase):
         payload["schedule"] = schedule_spec
         return payload, None
 
-    def get_default_data_access_spec(self, override_spec=None):
+    def get_default_data_access_management_spec(self, override_spec=None):
         spec = deepcopy({"nxClusterId": "", "type": "OTHER", "slaId": ""})
         if override_spec:
             for key in spec.keys():
@@ -275,8 +275,13 @@ class TimeMachine(NutanixDatabase):
 
         return spec
 
-    def get_data_access_spec(self, old_spec=None):
-        spec = old_spec or self.get_default_data_access_spec()
+    def get_data_access_management_spec(self, old_spec=None):
+        self.build_spec_methods = {
+            "cluster": self._build_spec_cluster,
+            "type": self._build_spec_type,
+            "sla": self._build_spec_sla,
+        }
+        spec = old_spec or self.get_default_data_access_management_spec()
         return super().get_spec(old_spec=spec)
 
     def _build_spec_cluster(self, payload, param):
