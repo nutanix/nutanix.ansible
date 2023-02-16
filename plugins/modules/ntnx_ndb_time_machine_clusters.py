@@ -145,7 +145,14 @@ def create_data_access_instance(module, result):
             msg="Failed generating update cluster in time machine spec", **result
         )
 
-    if not tm.read_data_access_instance(tm_uuid, cluster_uuid).get("errorCode"):
+    cluster_in_tm = tm.read_data_access_instance(tm_uuid, cluster_uuid)
+    if not cluster_in_tm:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating update cluster in time machine spec", **result
+        )
+
+    if not cluster_in_tm.get("errorCode"):
         update_data_access_instance(module, result)
         return
     spec, err = tm.get_data_access_management_spec()
@@ -168,7 +175,6 @@ def create_data_access_instance(module, result):
     ):
         ops_uuid = resp["updateOperationSummary"]["operationId"]
         operations = Operation(module)
-        # time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid)
         resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
         result["response"] = resp
