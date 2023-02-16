@@ -353,14 +353,15 @@ def create_cluster(module, result):
         return
 
     resp = cluster.create(spec)
-    cluster_name = resp["entityName"]
     ops_uuid = resp["operationId"]
-    resp, err = cluster.get_cluster(name=cluster_name)
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed getting created cluster", **result)
 
-    cluster_uuid = resp["id"]
+    cluster_name = module.params.get("name")
+    cluster_uuid = cluster.get_uuid(key="name", value=cluster_name)
+
+    if not cluster_uuid:
+        result["error"] = err
+        module.fail_json(msg="Failed getting cluster uuid", **result)
+
     result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
 
@@ -418,8 +419,7 @@ def delete_cluster(module, result):
     if module.params.get("wait"):
         operations = Operation(module)
         time.sleep(2)  # to get operation ID functional
-        operations.wait_for_completion(ops_uuid)
-        resp = cluster.read(cluster_uuid)
+        operations.wait_for_completion(ops_uuid, delay=5)
 
     result["response"] = resp
 

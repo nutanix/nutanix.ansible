@@ -80,7 +80,7 @@ class Cluster(NutanixDatabase):
     ):
         endpoint = "{0}/{1}".format(key, value)
         resp = self.read(uuid=None, endpoint=endpoint)
-        return resp["id"]
+        return resp.get("id")
 
     def get_cluster(self, uuid=None, name=None):
         if uuid:
