@@ -218,7 +218,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "stretched_vlan_uuid": None}
     if module.params["state"] == "present":
-        if module.params.get("vlan_uuid"):
+        if module.params.get("stretched_vlan_uuid"):
             update_stretched_vlan(module, result)
         else:
             create_stretched_vlan(module, result)
