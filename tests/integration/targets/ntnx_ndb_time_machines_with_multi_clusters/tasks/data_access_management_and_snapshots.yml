@@ -54,7 +54,7 @@
 # cluster1: primary cluster
 # cluster2: secondary cluster
 
-- name: create snapshot for on cluster2
+- name: create snapshot on cluster2
   ntnx_ndb_database_snapshots:
     name: "ansible-created-snapshot-on-{{Cluster.cluster2.name}}"
     time_machine_uuid: "{{time_machine.uuid}}"
