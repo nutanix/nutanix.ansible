@@ -50,7 +50,7 @@
     name:  "{{ndb_vlan.name}}"
     vlan_type: DHCP
     cluster:
-      uuid: "{{cluster.uuid}}"
+      uuid: "{{Cluster.cluster2.uuid}}"
   register: result
   ignore_errors: True
 
@@ -64,7 +64,7 @@
       - result.response.name == "{{ndb_vlan.name}}"
       - result.response.type == "DHCP"
       - result.response.managed == false
-      - result.response.clusterId == "{{cluster.uuid}}"
+      - result.response.clusterId == "{{Cluster.cluster2.uuid}}"
     fail_msg: "fail: Unable to create Dhcp ndb vlan"
     success_msg: "pass: create Dhcp ndb vlan finished successfully"
 
