@@ -145,22 +145,20 @@ def create_data_access_instance(module, result):
             msg="Failed generating spec", **result
         )
 
-    cluster_in_tm = tm.read_data_access_instance(tm_uuid, cluster_uuid)
-    if not cluster_in_tm:
-        result["error"] = "something goes wrong , check connection"
-        module.fail_json(
-            msg="Failed generating spec", **result
-        )
+    cluster_in_time_machine = tm.check_if_cluster_exists(tm_uuid, cluster_uuid)
 
-    if not cluster_in_tm.get("errorCode"):
+    # if cluster exist in time machine trigger update flow
+    if cluster_in_time_machine:
         update_data_access_instance(module, result)
         return
+
     spec, err = tm.get_data_access_management_spec()
     if err:
         result["error"] = err
         module.fail_json(
             msg="Failed generating create cluster in time machine spec", **result
         )
+    result["time_machine_uuid"] = tm_uuid
 
     if module.check_mode:
         result["response"] = spec
@@ -181,13 +179,14 @@ def create_data_access_instance(module, result):
 
     result["response"] = resp
     result["cluster_uuid"] = resp["nxClusterId"]
-    result["time_machine_uuid"] = tm_uuid
     result["changed"] = True
 
 
 def check_for_idempotency(old_spec, update_spec):
-    if old_spec != update_spec:
-        return False
+    attrs = ["slaId", "type"]
+    for attr in attrs:
+        if old_spec.get(attr) != update_spec.get(attr):
+            return False
     return True
 
 
@@ -196,13 +195,16 @@ def update_data_access_instance(module, result):
 
     tm_uuid = module.params["time_machine_uuid"]
     if not module.params.get("cluster"):
-        module.fail_json(msg="cluster is required field", **result)
+        module.fail_json(msg="'cluster' is required field for update", **result)
+    
     cluster_uuid, err = get_cluster_uuid(module, module.params["cluster"])
     if err:
         result["error"] = err
         module.fail_json(
             msg="Failed generating update cluster in time machine spec", **result
         )
+
+    result["time_machine_uuid"] = tm_uuid
 
     resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
 
@@ -227,8 +229,6 @@ def update_data_access_instance(module, result):
         data=spec, tm_uuid=tm_uuid, cluster_uuid=cluster_uuid
     )
 
-    result["response"] = resp
-
     if (
             module.params.get("wait")
             and resp.get("updateOperationSummary")
@@ -237,10 +237,10 @@ def update_data_access_instance(module, result):
         ops_uuid = resp["updateOperationSummary"]["operationId"]
         operations = Operation(module)
         operations.wait_for_completion(ops_uuid)
-        resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
-        result["response"] = resp
+    
+    resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
+    result["response"] = resp
 
-    result["time_machine_uuid"] = tm_uuid
     result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
 
