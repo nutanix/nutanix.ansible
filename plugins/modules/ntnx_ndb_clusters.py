@@ -411,18 +411,17 @@ def delete_cluster(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed removing cluster", **result)
-
-    result["changed"] = True
-    result["cluster_uuid"] = cluster_uuid
+    result["response"] = resp
+    
     ops_uuid = resp["operationId"]
 
     if module.params.get("wait"):
         operations = Operation(module)
         time.sleep(2)  # to get operation ID functional
-        operations.wait_for_completion(ops_uuid, delay=5)
-
-    result["response"] = resp
-
+        resp = operations.wait_for_completion(ops_uuid, delay=5)
+        result["response"] = resp
+    result["changed"] = True
+    result["cluster_uuid"] = cluster_uuid
 
 def check_for_idempotency(old_spec, update_spec):
     if old_spec == update_spec:
