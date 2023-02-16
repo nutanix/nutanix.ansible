@@ -163,7 +163,8 @@ def create_data_access_instance(module, result):
 
     if (
             module.params.get("wait")
-            and resp.get("updateOperationSummary", {}).get("operationId")
+            and resp.get("updateOperationSummary")
+            and resp["updateOperationSummary"].get("operationId")
     ):
         ops_uuid = resp["updateOperationSummary"]["operationId"]
         operations = Operation(module)
@@ -224,7 +225,8 @@ def update_data_access_instance(module, result):
 
     if (
             module.params.get("wait")
-            and resp.get("updateOperationSummary", {}).get("operationId")
+            and resp.get("updateOperationSummary")
+            and resp["updateOperationSummary"].get("operationId")
     ):
         ops_uuid = resp["updateOperationSummary"]["operationId"]
         operations = Operation(module)
