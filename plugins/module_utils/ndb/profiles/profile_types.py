@@ -104,7 +104,7 @@ class NetworkProfile(Profile):
             "properties": [],
             "propertiesMap": {},
             "topology": "",
-            "engineType": ""
+            "engineType": "",
         }
 
         for key in spec:
@@ -120,10 +120,10 @@ class NetworkProfile(Profile):
         )
 
     def get_update_version_spec(self, old_spec=None, params=None, **kwargs):
-        self.build_spec_methods.update({"network": self._build_spec_update_profile_version})
-        payload, err =  super().get_spec(
-            old_spec=old_spec, params=params
+        self.build_spec_methods.update(
+            {"network": self._build_spec_update_profile_version}
         )
+        payload, err = super().get_spec(old_spec=old_spec, params=params)
         if err:
             return None, err
 
@@ -139,21 +139,18 @@ class NetworkProfile(Profile):
             payload["propertiesMap"]["NUM_CLUSTERS"] = len(vlans)
 
         else:
-            payload, err = self._build_spec_single_network(
-                payload, vlans[0]
-            )
+            payload, err = self._build_spec_single_network(payload, vlans[0])
             if err:
                 return None, err
 
-        payload["propertiesMap"]["ENABLE_IP_ADDRESS_SELECTION"] = str(profile.get("enable_ip_address_selection", False)).lower()
+        payload["propertiesMap"]["ENABLE_IP_ADDRESS_SELECTION"] = str(
+            profile.get("enable_ip_address_selection", False)
+        ).lower()
 
         properties = []
         properties_map = payload.pop("propertiesMap")
         for name, val in properties_map.items():
-            properties.append({
-                "name": name,
-                "value": val
-            })
+            properties.append({"name": name, "value": val})
 
         payload["properties"] = properties
 
@@ -168,8 +165,10 @@ class NetworkProfile(Profile):
     def _build_spec_update_profile_version(self, payload, profile):
         vlans = profile.get("vlans")
 
-        enable_ip_address_selection = payload.get("propertiesMap", {}).get("ENABLE_IP_ADDRESS_SELECTION", False)
-        
+        enable_ip_address_selection = payload.get("propertiesMap", {}).get(
+            "ENABLE_IP_ADDRESS_SELECTION", False
+        )
+
         if vlans:
             payload["propertiesMap"] = {}
             err = None
@@ -177,24 +176,22 @@ class NetworkProfile(Profile):
                 payload, err = self._build_spec_multi_networks(payload, vlans)
                 payload["propertiesMap"]["NUM_CLUSTERS"] = len(vlans)
             else:
-                payload, err = self._build_spec_single_network(
-                    payload, vlans[0]
-                )
+                payload, err = self._build_spec_single_network(payload, vlans[0])
             if err:
                 return None, err
 
-
         if profile.get("enable_ip_address_selection") is not None:
-            enable_ip_address_selection = str(profile.get("enable_ip_address_selection", False)).lower()
-        payload["propertiesMap"]["ENABLE_IP_ADDRESS_SELECTION"] = enable_ip_address_selection
+            enable_ip_address_selection = str(
+                profile.get("enable_ip_address_selection", False)
+            ).lower()
+        payload["propertiesMap"][
+            "ENABLE_IP_ADDRESS_SELECTION"
+        ] = enable_ip_address_selection
 
         properties = []
         properties_map = payload.pop("propertiesMap")
         for name, val in properties_map.items():
-            properties.append({
-                "name": name,
-                "value": val
-            })
+            properties.append({"name": name, "value": val})
 
         payload["properties"] = properties
         return self.build_spec_status(payload, profile)
@@ -229,12 +226,14 @@ class NetworkProfile(Profile):
                 if not clusters_uuid_name_map.get(cluster_uuid):
                     return None, "Cluster with uuid {0} not found".format(cluster_uuid)
                 cluster_name = clusters_uuid_name_map[cluster_uuid]
-            
+
             if not cluster_name:
                 return None, "Pleae provide uuid or name for getting cluster info"
 
             properties_map["CLUSTER_NAME_" + str(i)] = cluster_name
-            properties_map["CLUSTER_ID_" + str(i)] = clusters_name_uuid_map[cluster_name]
+            properties_map["CLUSTER_ID_" + str(i)] = clusters_name_uuid_map[
+                cluster_name
+            ]
         payload["propertiesMap"] = properties_map
         return payload, None
 
@@ -248,7 +247,7 @@ class SoftwareProfile(Profile):
         self.build_spec_methods.update(
             {
                 "software": self._build_spec_profile,
-                "clusters": self._build_spec_clusters_availibilty
+                "clusters": self._build_spec_clusters_availibilty,
             }
         )
         payload, err = super().get_create_profile_spec(
@@ -263,11 +262,9 @@ class SoftwareProfile(Profile):
         return payload, None
 
     def get_update_profile_spec(self, old_spec=None, params=None, **kwargs):
-        
+
         self.build_spec_methods.update(
-            {
-                "clusters": self._build_spec_clusters_availibilty
-            }
+            {"clusters": self._build_spec_clusters_availibilty}
         )
         payload, err = super().get_update_profile_spec(old_spec, params, **kwargs)
         if err:
@@ -308,7 +305,7 @@ class SoftwareProfile(Profile):
             params = self.module.params.get("software")
 
         params["database_type"] = self.module.params.get("database_type")
-        
+
         payload, err = super().get_spec(old_spec=old_spec, params=params)
         if err:
             return None, err
@@ -457,11 +454,9 @@ class DatabaseParameterProfile(Profile):
 
         if not params:
             params = self.module.params.get("database_parameter")
-        
+
         kwargs["update_version"] = True
-        payload, err = self.get_db_engine_spec(
-            payload=payload, params=params, **kwargs
-        )
+        payload, err = self.get_db_engine_spec(payload=payload, params=params, **kwargs)
         if err:
             return None, err
 

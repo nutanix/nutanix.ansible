@@ -321,6 +321,7 @@ def create_db_server(module, result):
         time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid)
         resp = db_servers.read(db_uuid)
+        db_servers.format_response(resp)
         result["response"] = resp
 
     result["changed"] = True
@@ -391,6 +392,7 @@ def update_db_server(module, result):
         module.exit_json(msg="Nothing to change.")
 
     resp = db_servers.update(data=update_spec, uuid=uuid)
+    db_servers.format_response(resp)
     result["response"] = resp
     result["uuid"] = uuid
     result["changed"] = True

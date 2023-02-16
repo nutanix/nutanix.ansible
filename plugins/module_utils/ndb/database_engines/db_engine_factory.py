@@ -35,7 +35,7 @@ def create_db_engine(module, engine_type=None, db_architecture=None):
             "single": PostgresSingleInstance,
             "ha": PostgresHAInstance,
             "default": Postgres,
-        }
+        },
     }
 
     if not engine_type:

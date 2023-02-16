@@ -312,7 +312,7 @@
       - result.response.tags | length == 1  
       - result.response.tags[0].tagName == "{{tags.clones.name}}"
       - result.response.tags[0].value == "ansible-test-db-clones"
-      - result.response.metadata.sourceSnapshotId == snapshot_uuid
+      - result.response.sourceSnapshotId == snapshot_uuid
       - result.response.parentTimeMachineId ==  time_machine_uuid
     fail_msg: "Unable to create clone"
     success_msg: "Database clone created successfully"

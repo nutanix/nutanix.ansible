@@ -111,6 +111,32 @@ class DBServerVM(NutanixDatabase):
 
         return uuid, None
 
+    @staticmethod
+    def format_response(response):
+        """This method formats response of db server vm.  It removes attributes as per requirement."""
+        attrs = [
+            "accessKeyId",
+            "lcmConfig",
+            "category",
+            "placeholder",
+            "accessKey",
+            "accessLevel",
+            "ownerId",
+            "softwareInstallationId",
+        ]
+        for attr in attrs:
+            if attr in response:
+                response.pop(attr)
+
+        if response.get("metadata") is not None:
+            response["provisionOperationId"] = response.get("metadata", {}).get(
+                "provisionOperationId"
+            )
+
+        response.pop("metadata")
+
+        return response
+
     def get_default_spec_for_provision(self):
         return deepcopy(
             {

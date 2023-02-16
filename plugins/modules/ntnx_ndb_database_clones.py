@@ -453,6 +453,7 @@ def create_db_clone(module, result):
         time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid, delay=15)
         resp = db_clone.read(uuid)
+        db_clone.format_response(resp)
         result["response"] = resp
 
     result["changed"] = True
@@ -530,6 +531,7 @@ def update_db_clone(module, result):
         module.exit_json(msg="Nothing to change.")
 
     resp = _clones.update(data=spec, uuid=uuid)
+    _clones.format_response(resp)
     result["response"] = resp
     result["uuid"] = uuid
     result["changed"] = True

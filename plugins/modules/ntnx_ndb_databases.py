@@ -987,6 +987,7 @@ def create_instance(module, result):
         operations.wait_for_completion(ops_uuid)
         query = {"detailed": True, "load-dbserver-cluster": True}
         resp = db_instance.read(db_uuid, query=query)
+        db_instance.format_response(resp)
         result["response"] = resp
 
     result["changed"] = True
@@ -1052,7 +1053,12 @@ def update_instance(module, result):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-    resp = _databases.update(data=spec, uuid=uuid)
+    _databases.update(data=spec, uuid=uuid)
+
+    query = {"detailed": True, "load-dbserver-cluster": True}
+    resp = _databases.read(uuid, query=query)
+    _databases.format_response(resp)
+
     result["response"] = resp
     result["db_uuid"] = uuid
     result["changed"] = True
