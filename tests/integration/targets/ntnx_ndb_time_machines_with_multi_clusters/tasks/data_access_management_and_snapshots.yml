@@ -4,9 +4,9 @@
 
 - name: create data access instance with cluster name and sla name
   ntnx_ndb_time_machine_clusters:
-    tm_uuid: "{{time_machine.uuid}}"
+    time_machine_uuid: "{{time_machine.uuid}}"
     cluster:
-      name: "{{cluster.cluster2.name}}"
+      name: "{{Cluster.cluster2.name}}"
     sla:
       name: "{{sla.name}}"
   register: out
@@ -18,7 +18,7 @@
   assert:
     that:
       - out.response is defined
-      - out.tm_uuid is defined
+      - out.time_machine_uuid is defined
       - out.changed == true
       - out.cluster_uuid is defined
       - out.failed == false
@@ -27,9 +27,9 @@
 #######################
 - name: update data access instance with new sla name
   ntnx_ndb_time_machine_clusters:
-      tm_uuid: "{{time_machine.uuid}}"
+      time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
-        name: "{{cluster.cluster2.name}}"
+        name: "{{Cluster.cluster2.name}}"
       sla:
         name: "{{sla2.name}}"
   register: result
@@ -42,7 +42,7 @@
   assert:
     that:
       - result.response is defined
-      - result.tm_uuid is defined
+      - result.time_machine_uuid is defined
       - result.changed == true
       - result.cluster_uuid is defined
       - result.failed == false
@@ -57,10 +57,10 @@
 
 - name: create snapshot for on cluster2
   ntnx_ndb_database_snapshots:
-    name: "ansible-created-snapshot-on-{{cluster.cluster2.name}}"
+    name: "ansible-created-snapshot-on-{{Cluster.cluster2.name}}"
     time_machine_uuid: "{{time_machine.uuid}}"
     clusters:
-      - name: "{{cluster.cluster1.name}}"
+      - name: "{{Cluster.cluster2.name}}"
   register: result
 
 - debug:
@@ -72,7 +72,7 @@
       - result.response is defined
       - result.snapshot_uuid is defined
       - result.changed == true
-      - result.response.name == "ansible-created-snapshot-on-{{cluster.cluster2.name}}"
+      - result.response.name == "ansible-created-snapshot-on-{{Cluster.cluster2.name}}"
       - result.failed == false
     fail_msg: "fail: Unable to create snapshot on secondary cluster"
     success_msg: "pass: snapshot created successfully on secondary cluster"
@@ -80,10 +80,10 @@
 
 - name: create a snapshot on cluster1
   ntnx_ndb_database_snapshots:
-    name: "ansible-created-snapshot-on-{{cluster.cluster1.name}}"
+    name: "ansible-created-snapshot-on-{{Cluster.cluster1.name}}"
     time_machine_uuid: "{{time_machine.uuid}}"
     clusters:
-      - uuid: "{{cluster.cluster1.uuid}}"
+      - uuid: "{{Cluster.cluster1.uuid}}"
   register: result
 
 - debug:
@@ -95,9 +95,9 @@
       - result.response is defined
       - result.snapshot_uuid is defined
       - result.changed == true
-      - result.response.name == "ansible-created-snapshot-on-{{cluster.cluster1.name}}"
+      - result.response.name == "ansible-created-snapshot-on-{{Cluster.cluster1.name}}"
       - result.failed == false
-      - result.response.nxClusterId == cluster.cluster1.uuid
+      - result.response.nxClusterId == Cluster.cluster1.uuid
     fail_msg: "fail: Unable to create snapshot on primary cluster"
     success_msg: "pass: snapshot created successfully on primary cluster"
 
@@ -110,7 +110,7 @@
   ntnx_ndb_database_replicate_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     clusters:
-      - name: "{{cluster.cluster2.name}}"
+      - name: "{{Cluster.cluster2.name}}"
     expiry_days: 20
     timezone: "UTC"
   register: result
@@ -129,7 +129,7 @@
                 }
             },
             "nxClusterIds": [
-                "{{cluster.cluster2.uuid}}"
+                "{{Cluster.cluster2.uuid}}"
             ]
         },
         "snapshot_uuid": "{{snapshot_uuid}}"
@@ -150,7 +150,7 @@
   ntnx_ndb_database_replicate_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     clusters:
-      - name: "{{cluster.cluster2.name}}"
+      - name: "{{Cluster.cluster2.name}}"
     expiry_days: 20
     timezone: "UTC"
   register: result
@@ -172,7 +172,7 @@
 - name: delete time maschine 
   ntnx_ndb_time_machine_clusters:
       state: absent
-      tm_uuid: "{{time_machine.uuid}}"
+      time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
         uuid: "{{result.cluster_uuid}}"
   register: result
@@ -184,9 +184,9 @@
 #####################
 - name: create data access instance with cluster uuid and sla uuid
   ntnx_ndb_time_machine_clusters:
-      tm_uuid: "{{time_machine.uuid}}"
+      time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
-        uuid: "{{cluster.cluster2.uuid}}"
+        uuid: "{{Cluster.cluster2.uuid}}"
       sla:
         uuid: "{{sla.uuid}}"
   register: out
@@ -199,7 +199,7 @@
   assert:
     that:
       - out.response is defined
-      - out.tm_uuid is defined
+      - out.time_machine_uuid is defined
       - out.changed == true
       - out.cluster_uuid is defined
       - out.failed == false
@@ -208,9 +208,9 @@
 #######################
 - name: update data access instance with sla uuid
   ntnx_ndb_time_machine_clusters:
-      tm_uuid: "{{time_machine.uuid}}"
+      time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
-        uuid: "{{cluster.cluster2.uuid}}"
+        uuid: "{{Cluster.cluster2.uuid}}"
       sla:
         uuid: "{{sla2.uuid}}"
   register: result
@@ -223,7 +223,7 @@
   assert:
     that:
       - result.response is defined
-      - result.tm_uuid is defined
+      - result.time_machine_uuid is defined
       - result.changed == true
       - result.cluster_uuid is defined
       - result.response.slaId != out.response.slaId
@@ -234,7 +234,7 @@
 - name: delete time maschine 
   ntnx_ndb_time_machine_clusters:   
       state: absent
-      tm_uuid: "{{result.tm_uuid}}"
+      time_machine_uuid: "{{result.time_machine_uuid}}"
       cluster:
         uuid: "{{result.cluster_uuid}}"
   register: result
