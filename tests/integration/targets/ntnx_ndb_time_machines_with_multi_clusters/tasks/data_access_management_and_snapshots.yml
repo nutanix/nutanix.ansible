@@ -35,8 +35,7 @@
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
+
 
 - name: check listing status
   assert:
@@ -63,8 +62,10 @@
       - name: "{{Cluster.cluster2.name}}"
   register: result
 
-- debug:
-    var: result
+      
+- name: wait for 3 minutes for replication to finish from source cluster to cluster2
+  ansible.builtin.pause:
+    minutes: 3
 
 - name: check snapshot status on cluster2
   assert:
@@ -74,6 +75,7 @@
       - result.changed == true
       - result.response.name == "ansible-created-snapshot-on-{{Cluster.cluster2.name}}"
       - result.failed == false
+      - result.response.status == "ACTIVE"
     fail_msg: "fail: Unable to create snapshot on secondary cluster"
     success_msg: "pass: snapshot created successfully on secondary cluster"
 
@@ -86,8 +88,7 @@
       - uuid: "{{Cluster.cluster1.uuid}}"
   register: result
 
-- debug:
-    var: result
+
 
 - name: check snapshot status on cluster2
   assert:
@@ -135,8 +136,7 @@
         "snapshot_uuid": "{{snapshot_uuid}}"
     }
 
-- debug:
-    var: result
+
 
 - name: check snapshot replication spec
   assert:
@@ -155,8 +155,7 @@
     timezone: "UTC"
   register: result
 
-- debug:
-    var: result
+
 
 - name: verify status of snapshot replication
   assert:
@@ -178,8 +177,7 @@
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
+
 
 #####################
 - name: create data access instance with cluster uuid and sla uuid
@@ -192,8 +190,7 @@
   register: out
   ignore_errors: true
 
-- debug:
-    var: result
+
 
 - name: check listing status
   assert:
@@ -216,8 +213,7 @@
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
+
 
 - name: check listing status
   assert:
@@ -240,6 +236,5 @@
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
+
 #######################
