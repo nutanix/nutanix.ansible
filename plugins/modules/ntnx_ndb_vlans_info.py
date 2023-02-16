@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_vlans_info
 short_description: info module for ndb vlans
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get vlan info'
 options:
       name:

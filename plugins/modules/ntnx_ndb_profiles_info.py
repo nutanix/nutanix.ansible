@@ -238,8 +238,7 @@ def get_profile(module, result):
     profile = Profile(module)
     name = module.params.get("name")
     uuid = module.params.get("uuid")
-    # type = module.params.get("profile_type")
-    resp, err = profile.get_profiles(uuid, name)  # , type)
+    resp, err = profile.get_profiles(uuid, name)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed fetching profile info", **result)

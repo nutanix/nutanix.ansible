@@ -272,14 +272,14 @@ def get_module_spec():
     filters_spec = dict(
         detailed=dict(type="bool"),
         load_clones=dict(type="bool"),
-        load_databases=dict(type="bool"),
+        load_database=dict(type="bool"),
         clone_tms=dict(type="bool"),
         database_tms=dict(type="bool"),
         value=dict(type="str"),
         value_type=dict(
             type="str",
             choices=[
-                "ip",
+                "id",
                 "name",
             ],
         ),
@@ -298,7 +298,7 @@ def get_module_spec():
     return module_args
 
 
-def get_tm(module, result):
+def get_time_machine(module, result):
     tm = TimeMachine(module)
 
     uuid = module.params.get("uuid")
@@ -313,7 +313,7 @@ def get_tm(module, result):
     result["response"] = resp
 
 
-def get_tms(module, result):
+def get_time_machines(module, result):
     tm = TimeMachine(module)
 
     query_params = module.params.get("filters")
@@ -332,9 +332,9 @@ def run_module():
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("name") or module.params.get("uuid"):
-        get_tm(module, result)
+        get_time_machine(module, result)
     else:
-        get_tms(module, result)
+        get_time_machines(module, result)
     module.exit_json(**result)
 
 

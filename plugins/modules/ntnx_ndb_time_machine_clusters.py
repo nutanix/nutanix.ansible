@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_time_machine_clusters
 short_description: Module for create, update and delete of single instance time_machine_clusters. Currently, postgres type time_machine is officially supported.
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: Module for create, update and delete of single instance time_machine_clusters in Nutanix time_machine_clusters Service
 options:
   tm_uuid:
@@ -142,7 +142,7 @@ def create_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating update data access instance spec", **result
+            msg="Failed generating update cluster in time machine spec", **result
         )
 
     if not tm.read_data_access_instance(tm_uuid, cluster_uuid).get("errorCode"):
@@ -152,7 +152,7 @@ def create_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating create data access instance spec", **result
+            msg="Failed generating create cluster in time machine spec", **result
         )
 
     if module.check_mode:
@@ -163,8 +163,7 @@ def create_data_access_instance(module, result):
 
     if (
             module.params.get("wait")
-            and resp.get("updateOperationSummary")
-            and resp["updateOperationSummary"]("operationId")
+            and resp.get("updateOperationSummary", {}).get("operationId")
     ):
         ops_uuid = resp["updateOperationSummary"]["operationId"]
         operations = Operation(module)
@@ -195,7 +194,7 @@ def update_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating update data access instance spec", **result
+            msg="Failed generating update cluster in time machine spec", **result
         )
 
     resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
@@ -206,7 +205,7 @@ def update_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating update data access instance spec", **result
+            msg="Failed generating update cluster in time machine spec", **result
         )
 
     if module.check_mode:
@@ -221,19 +220,18 @@ def update_data_access_instance(module, result):
         data=spec, tm_uuid=tm_uuid, cluster_uuid=cluster_uuid
     )
 
+    result["response"] = resp
+
     if (
             module.params.get("wait")
-            and resp.get("updateOperationSummary")
-            and resp["updateOperationSummary"]("operationId")
+            and resp.get("updateOperationSummary", {}).get("operationId")
     ):
         ops_uuid = resp["updateOperationSummary"]["operationId"]
         operations = Operation(module)
-        # time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid)
         resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
         result["response"] = resp
 
-    result["response"] = resp
     result["time_machine_uuid"] = tm_uuid
     result["cluster_uuid"] = cluster_uuid
     result["changed"] = True
@@ -249,7 +247,7 @@ def delete_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating update data access instance spec", **result
+            msg="Failed generating update cluster in time machine spec", **result
         )
     resp = tm.delete_data_access_instance(tm_uuid, cluster_uuid)
 
