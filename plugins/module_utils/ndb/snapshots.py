@@ -59,11 +59,10 @@ class Snapshot(NutanixDatabase):
 
     def get_snapshot_uuid(self, time_machine_uuid, name):
         query = {
-            "value-type": time_machine_uuid,
-            "detailed": False,
-            "load-database": False,
-            "load-clones": False,
-            "time-zone": "UTC",
+            "value-type": "time-machine",
+            "value": time_machine_uuid,
+            "detailed": True,
+            "all": True
         }
 
         snapshots = self.read(query=query)
