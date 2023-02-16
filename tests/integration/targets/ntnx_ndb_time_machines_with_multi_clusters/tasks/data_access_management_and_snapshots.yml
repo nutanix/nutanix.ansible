@@ -10,8 +10,6 @@
     sla:
       name: "{{sla.name}}"
   register: out
-  ignore_errors: true
-
 
 
 - name: check listing status
@@ -33,7 +31,6 @@
       sla:
         name: "{{sla2.name}}"
   register: result
-  ignore_errors: true
 
 
 
@@ -49,6 +46,26 @@
     fail_msg: "fail: Unable to update data access instance with new  sla name"
     success_msg: "pass: update data access instance with new sla name finished successfully"
 
+
+- name: idempotency checks
+  ntnx_ndb_time_machine_clusters:
+      time_machine_uuid: "{{time_machine.uuid}}"
+      cluster:
+        name: "{{Cluster.cluster2.name}}"
+      sla:
+        name: "{{sla2.name}}"
+  register: result
+
+- name: check idempotency status
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - "'Nothing to change' in result.msg"
+    fail_msg: "clusters in time machine go updated"
+    success_msg: "update of clusters in time machine skipped due to no state changes"
+
+
 ############################################## multicluster snapshots and replication tests #########################
 
 # cluster1: primary cluster
@@ -62,12 +79,7 @@
       - name: "{{Cluster.cluster2.name}}"
   register: result
 
-      
-- name: wait for 3 minutes for replication to finish from source cluster to cluster2
-  ansible.builtin.pause:
-    minutes: 3
-
-- name: check snapshot status on cluster2
+- name: check snapshot status
   assert:
     that:
       - result.response is defined
@@ -75,9 +87,29 @@
       - result.changed == true
       - result.response.name == "ansible-created-snapshot-on-{{Cluster.cluster2.name}}"
       - result.failed == false
+      - result.response.status == "PENDING"
+
+    fail_msg: "fail: Unable to create snapshot for secondary cluster"
+    success_msg: "pass: snapshot created successfully for secondary cluster"
+
+      
+- name: wait for 2 minutes for replication to finish from source cluster to cluster2
+  ansible.builtin.pause:
+    minutes: 2
+
+- name: check the status of post of replication if snapshot is active
+  ntnx_ndb_snapshots_info:
+    uuid: "{{result.snapshot_uuid}}"
+  register: result
+
+- name: check snapshot status
+  assert:
+    that:
+      - result.response.name == "ansible-created-snapshot-on-{{Cluster.cluster2.name}}"
       - result.response.status == "ACTIVE"
-    fail_msg: "fail: Unable to create snapshot on secondary cluster"
-    success_msg: "pass: snapshot created successfully on secondary cluster"
+    fail_msg: "fail: Unable to check snapshot status post internal replication"
+    success_msg: "pass: snapshot replicated successfully on secondary cluster"
+
 
 
 - name: create a snapshot on cluster1
@@ -87,8 +119,6 @@
     clusters:
       - uuid: "{{Cluster.cluster1.uuid}}"
   register: result
-
-
 
 - name: check snapshot status on cluster2
   assert:
@@ -168,16 +198,27 @@
 
 #######################
 
-- name: delete time maschine 
+- name: delete time machine 
   ntnx_ndb_time_machine_clusters:
       state: absent
       time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
-        uuid: "{{result.cluster_uuid}}"
+        uuid: "{{Cluster.cluster2.uuid}}"
   register: result
-  ignore_errors: true
 
+- name: check delete status
+  assert:
+    that:
+      - result.response is defined
+      - result.time_machine_uuid is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "fail: Unable to remove cluster from time machine"
+    success_msg: "pass: cluster from time machine removed successfully"
 
+- name: wait for 2 minutes for internal cleanup to finish
+  ansible.builtin.pause:
+    minutes: 2
 
 #####################
 - name: create data access instance with cluster uuid and sla uuid
@@ -188,9 +229,6 @@
       sla:
         uuid: "{{sla.uuid}}"
   register: out
-  ignore_errors: true
-
-
 
 - name: check listing status
   assert:
@@ -211,9 +249,6 @@
       sla:
         uuid: "{{sla2.uuid}}"
   register: result
-  ignore_errors: true
-
-
 
 - name: check listing status
   assert:
@@ -227,14 +262,22 @@
     fail_msg: "fail: Unable to update data access instance with sla uuid"
     success_msg: "pass: update data access instance with sla uuid finished successfully"
 
-- name: delete time maschine 
+- name: delete time machine 
   ntnx_ndb_time_machine_clusters:   
       state: absent
       time_machine_uuid: "{{result.time_machine_uuid}}"
       cluster:
-        uuid: "{{result.cluster_uuid}}"
+        uuid: "{{Cluster.cluster2.uuid}}"
   register: result
-  ignore_errors: true
 
+- name: check delete status
+  assert:
+    that:
+      - result.response is defined
+      - result.time_machine_uuid is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "fail: Unable to remove cluster from time machine"
+    success_msg: "pass: cluster from time machine removed successfully"
 
 #######################

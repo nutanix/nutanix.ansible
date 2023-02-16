@@ -142,7 +142,8 @@ def create_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating spec", **result
+            msg="'cluster' is required field for adding cluster in time machine", 
+            **result
         )
 
     cluster_in_time_machine = tm.check_if_cluster_exists(tm_uuid, cluster_uuid)
@@ -156,7 +157,7 @@ def create_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating create cluster in time machine spec", **result
+            msg="Failed generating spec for adding cluster in time machine", **result
         )
     result["time_machine_uuid"] = tm_uuid
 
@@ -201,7 +202,7 @@ def update_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating update cluster in time machine spec", **result
+            msg="Failed generating spec for updating cluster in time machine", **result
         )
 
     result["time_machine_uuid"] = tm_uuid
@@ -214,7 +215,7 @@ def update_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating update cluster in time machine spec", **result
+            msg="Failed generating spec for updating cluster in time machine", **result
         )
 
     if module.check_mode:
@@ -255,7 +256,8 @@ def delete_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating update cluster in time machine spec", **result
+            msg="'cluster' is required field for removing cluster from time machine", 
+            **result
         )
     resp = tm.delete_data_access_instance(tm_uuid, cluster_uuid)
 
