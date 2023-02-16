@@ -219,10 +219,10 @@ def get_module_spec():
                 "type",
                 "status",
                 "protection-domain-id",
-                "database-node",
-                "snapshot-id",
+                # "database-node",
+                # "snapshot-id",
                 "time-machine",
-                "latest"
+                # "latest"
             ]
         ),
         time_zone=dict(type="str"),

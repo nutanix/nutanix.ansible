@@ -19,6 +19,50 @@
     fail_msg: "Unable to list all NDB db_servers"
     success_msg: "NDB db_servers listed successfully"
 ################################################################
+- name: get NDB db_servers using it's name
+  ntnx_ndb_db_servers_info:
+    filters:
+      load_metrics: true
+      load_databases: True
+      value_type: name
+      value: "{{db_servers.response[0].name}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response[0].id == "{{db_servers.response[0].id}}"
+      - result.response[0].databases is defined
+      - result.response[0].name == "{{db_servers.response[0].name}}"
+      - result.response[0].metric is defined
+    fail_msg: "Unable to get NDB db_servers using it's name and filters "
+    success_msg: "get NDB db_server using it's name and filters finished successfully"
+
+################################################################
+
+- name: get NDB db_servers using incorrect name
+  ntnx_ndb_db_servers_info:
+    filters:
+      load_metrics: true
+      load_databases: True
+      value_type: name
+      value: "xxxxxxxxxxxxxx"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response | length == 0
+
+    fail_msg: "listing ndb db servers using incorrect name didn't failed"
+    success_msg: "Got empty response for incorrect name successfully"
+################################################################
 - name: get NDB db_servers using it's ip
   ntnx_ndb_db_servers_info:
     filters:

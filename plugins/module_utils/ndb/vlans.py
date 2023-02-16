@@ -45,7 +45,7 @@ class VLAN(NutanixDatabase):
         query = {key: value}
         resp = self.read(query=query, raise_error=False)
         if resp is None:
-            return None, "vlan instance with name {0} not found.".format(value)
+            return None, "vlan with name {0} not found.".format(value)
         uuid = resp.get("id")
         return uuid, None
 

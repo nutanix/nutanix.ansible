@@ -27,7 +27,7 @@ options:
             - write
         type: dict
         suboptions:
-            include_management_server:
+            count_entities:
                 description:
                     - write
                 type: bool
@@ -175,13 +175,12 @@ response:
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 from ..module_utils.ndb.clusters import Cluster  # noqa: E402
-from ..module_utils.utils import format_filters_map  # noqa: E402
 
 
 def get_module_spec():
 
     filters_spec = dict(
-        include_management_server=dict(type="bool"),
+        count_entities=dict(type="bool"),
     )
 
     module_args = dict(
@@ -214,7 +213,6 @@ def get_cluster(module, result):
 def get_clusters(module, result):
     cluster = Cluster(module)
     query_params = module.params.get("filters")
-    query_params = format_filters_map(query_params)
 
     resp = cluster.read(query=query_params)
 
