@@ -142,14 +142,14 @@ def create_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating update cluster in time machine spec", **result
+            msg="Failed generating spec", **result
         )
 
     cluster_in_tm = tm.read_data_access_instance(tm_uuid, cluster_uuid)
     if not cluster_in_tm:
-        result["error"] = err
+        result["error"] = "something goes wrong , check connection"
         module.fail_json(
-            msg="Failed generating update cluster in time machine spec", **result
+            msg="Failed generating spec", **result
         )
 
     if not cluster_in_tm.get("errorCode"):
