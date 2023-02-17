@@ -248,5 +248,5 @@ class AutomatedPatchingSpec:
             mutuallu_exclusive=mutually_exclusive,
             required=False,
         ),
-        tasks=dict(type="list", elements="dict", options=task, require=False),
+        tasks=dict(type="list", elements="dict", options=task, required=False),
     )

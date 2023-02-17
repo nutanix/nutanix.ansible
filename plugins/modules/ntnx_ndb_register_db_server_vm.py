@@ -6,17 +6,97 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_register_db_server_vm
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+    ip:
+        description:
+            - write
+        type: str
+        required: true
+    desc:
+        description:
+            - write
+        type: str
+    reset_desc_in_ntnx_cluster:
+        description:
+            - write
+        type: bool
+        default: false
+    cluster:
+        description:
+            - write
+        type: dict
+        required: true
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+    postgres:
+        description:
+            - write
+        type: dict
+        suboptions:
+            listener_port:
+                description:
+                    - write
+                type: str
+                default: "5432"
+            software_path:
+                description:
+                    - write
+                type: str
+                required: true
+    username:
+        description:
+            - write
+        type: str
+        required: true
+    password:
+        description:
+            - write
+        type: str
+    private_ssh_key:
+        description:
+            - write
+        type: str
+    working_directory:
+        description:
+            - write
+        type: str
+        default: "/tmp"
 
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+      - nutanix.ncp.ntnx_AutomatedPatchingSpec
+author:
+ - Prem Karat (@premkarat)
+"""
+
+EXAMPLES = r"""
+"""
+RETURN = r"""
+"""
 import time  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.maintenance_window import (
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.maintenance_window import (  # noqa: E402
     AutomatedPatchingSpec,
     MaintenanceWindow,
 )
-from ..module_utils.ndb.operations import Operation
+from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -43,8 +123,8 @@ def get_module_spec():
         ),
         postgres=dict(type="dict", options=postgres, required=False),
         username=dict(type="str", required=True),
-        password=dict(type="str", required=False),
-        private_ssh_key=dict(type="str", required=False),
+        password=dict(type="str", required=False, no_log=True),
+        private_ssh_key=dict(type="str", required=False, no_log=True),
         automated_patching=dict(
             type="dict", options=automated_patching, required=False
         ),
@@ -59,10 +139,8 @@ def get_register_spec(module, result):
     spec, err = db_server_vms.get_spec(old_spec=default_spec, register_server=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for db server vm registration",
-            **result,
-        )
+        err_msg = "Failed getting spec for db server vm registration"
+        module.fail_json(msg=err_msg, **result)
 
     # configure automated patching
     if module.params.get("automated_patching"):
@@ -70,27 +148,21 @@ def get_register_spec(module, result):
         mw_spec, err = mw.get_spec(configure_automated_patching=True)
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for automated patching for db server vm",
-                **result,
-            )
+            err_msg = "Failed getting spec for automated patching for db server vm"
+            module.fail_json(msg=err_msg, **result)
         spec["maintenanceTasks"] = mw_spec
 
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for db server vm registration",
-            **result,
-        )
+        err_msg = "Failed getting spec for db server vm registration"
+        module.fail_json(msg=err_msg, **result)
 
     # populate database engine related spec
     spec, err = db_server_vms.get_db_engine_spec(spec, register=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting database engine related spec for database instance registration",
-            **result,
-        )
+        err_msg = "Failed getting database engine related spec for database instance registration"
+        module.fail_json(msg=err_msg, **result)
 
     return spec
 

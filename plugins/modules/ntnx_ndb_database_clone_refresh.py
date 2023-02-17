@@ -10,7 +10,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_database_clone_refresh
 short_description: write
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'write'
 options:
       uuid:

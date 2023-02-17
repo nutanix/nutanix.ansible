@@ -86,7 +86,7 @@
         snapshots_per_day: 2
 
     tags:
-      ansible-databases : "single-instance-dbs"
+      ansible-databases: "single-instance-dbs"
   register: result
 
 - set_fact:

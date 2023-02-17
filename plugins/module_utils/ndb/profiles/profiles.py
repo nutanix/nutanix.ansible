@@ -158,16 +158,15 @@ class Profile(NutanixDatabase):
             if kwargs.get("create"):
                 return self.get_create_version_spec(old_spec, params, **kwargs)
             elif kwargs.get("update"):
-                return self.get_update_profile_spec(old_spec, params, **kwargs)
+                return self.get_update_version_spec(old_spec, params, **kwargs)
             elif kwargs.get("delete"):
                 return self.get_delete_version_spec(old_spec, params, **kwargs)
+        elif kwargs.get("create"):
+            return self.get_create_profile_spec(old_spec, params, **kwargs)
+        elif kwargs.get("update"):
+            return self.get_update_profile_spec(old_spec, params, **kwargs)
         else:
-            if kwargs.get("create"):
-                return self.get_create_profile_spec(old_spec, params, **kwargs)
-            elif kwargs.get("update"):
-                return self.get_update_profile_spec(old_spec, params, **kwargs)
-        
-        return None, "Please provide supported arguments"
+            return super().get_spec(old_spec, params, **kwargs)
 
     def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
         payload, err = super().get_spec(old_spec=old_spec, params=params, **kwargs)
@@ -215,7 +214,7 @@ class Profile(NutanixDatabase):
             payload["engineType"] = type + "_database"
         return payload, None
 
-    def build_spec_status(self, payload):
-        if self.module.params.get("publish") is not None:
-            payload["published"] = self.module.params.get("publish")
+    def build_spec_status(self, payload, params):
+        if params.get("publish") is not None:
+            payload["published"] = params.get("publish")
         return payload, None

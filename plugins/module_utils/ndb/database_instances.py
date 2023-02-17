@@ -11,6 +11,8 @@ from .database_engines.database_engine import DatabaseEngine
 from .database_engines.db_engine_factory import create_db_engine, get_engine_type
 from .nutanix_database import NutanixDatabase
 from .profiles.profile_types import DatabaseParameterProfile
+from .db_server_vm import DBServerVM
+from .time_machines import TimeMachine
 
 
 class DatabaseInstance(NutanixDatabase):
@@ -90,12 +92,46 @@ class DatabaseInstance(NutanixDatabase):
         uuid = resp[0].get("id")
         return uuid, None
 
+    @staticmethod
+    def format_response(response):
+        """This method formats the response.  It removes attributes as per requirement."""
+        attrs = [
+            "lcmConfig",
+            "accessLevel",
+            "category",
+            "placeholder",
+            "internal",
+            "databaseGroupStateInfo",
+            "databaseClusterType",
+            "parentTimeMachineId",
+            "parentSourceDatabaseId",
+            "ownerId",
+            "databaseStatus",
+            "groupInfo",
+        ]
+        for attr in attrs:
+            if attr in response:
+                response.pop(attr)
+
+        if response.get("metadata") is not None:
+            response["provisionOperationId"] = response.get("metadata", {}).get(
+                "provisionOperationId"
+            )
+        response.pop("metadata")
+
+        # format database node's responses
+        for node in response.get("databaseNodes", []):
+            DBServerVM.format_response(node)
+            node.pop("dbserver")
+
+        # format time machine's response
+        if response.get("timeMachine"):
+            TimeMachine.format_response(response.get("timeMachine"))
+
+        return response
 
     def _get_action_argument_spec(self, name, value):
-        return deepcopy({
-            "name": name,
-            "value": value
-        })
+        return deepcopy({"name": name, "value": value})
 
     def get_default_provision_spec(self):
         return deepcopy(

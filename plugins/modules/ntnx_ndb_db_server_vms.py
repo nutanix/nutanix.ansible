@@ -5,19 +5,191 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-import time
-from copy import deepcopy
-
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_db_server_vms
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+    name:
+        description:
+            - write
+        type: str
+    uuid:
+        description:
+            - write
+        type: str
+    desc:
+        description:
+            - write
+        type: str
+    reset_name_in_ntnx_cluster:
+        description:
+            - write
+        type: bool
+        default: false
+    reset_desc_in_ntnx_cluster:
+        description:
+            - write
+        type: bool
+        default: false
+    cluster:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+    network_profile:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+    compute_profile:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+    software_profile:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+            version_uuid:
+                description:
+                    - write
+                type: str
+    time_machine:
+        description:
+            - write
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+            snapshot_uuid:
+                description:
+                    - write
+                type: str
+    password:
+        description:
+            - write
+        type: str
+    pub_ssh_key:
+        description:
+            - write
+        type: str
+    time_zone:
+        description:
+            - write
+        type: str
+        default: "Asia/Calcutta"
+    database_type:
+        description:
+            - write
+        type: str
+        choices: ["postgres_database"]
+    tags:
+        description:
+            - write
+        type: dict
+    update_credentials:
+        description:
+            - write
+        type: list
+        elements: dict
+        suboptions:
+            username:
+                description:
+                    - write
+                type: str
+                required: true
+            password:
+                description:
+                    - write
+                type: str
+                required: true
+    delete_from_cluster:
+        description:
+            - write
+        type: bool
+        default: False
+    delete_vgs:
+        description:
+            - write
+        type: bool
+        default: False
+    delete_vm_snapshots:
+        description:
+            - write
+        type: bool
+        default: False
+    soft_remove:
+        description:
+            - write
+        type: bool
+        default: False
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+      - nutanix.ncp.ntnx_AutomatedPatchingSpec
+author:
+ - Prem Karat (@premkarat)
+"""
+
+EXAMPLES = r"""
+"""
+RETURN = r"""
+"""
+
+import time  # noqa: E402
+from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.db_server_vm import DBServerVM
-from ..module_utils.ndb.maintenance_window import (
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.maintenance_window import (  # noqa: E402
     AutomatedPatchingSpec,
     MaintenanceWindow,
 )
-from ..module_utils.ndb.operations import Operation
-from ..module_utils.ndb.tags import Tag
+from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.tags import Tag  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -39,7 +211,7 @@ def get_module_spec():
     )
     credential = dict(
         username=dict(type="str", required=True),
-        password=dict(type="str", required=True),
+        password=dict(type="str", required=True, no_log=True),
     )
     module_args = dict(
         uuid=dict(type="str", required=False),
@@ -77,8 +249,8 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        password=dict(type="str", required=False),
-        pub_ssh_key=dict(type="str", required=False),
+        password=dict(type="str", required=False, no_log=True),
+        pub_ssh_key=dict(type="str", required=False, no_log=True),
         time_zone=dict(type="str", default="Asia/Calcutta", required=False),
         database_type=dict(type="str", choices=["postgres_database"], required=False),
         tags=dict(type="dict", required=False),
@@ -114,10 +286,8 @@ def get_provision_spec(module, result):
         )
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for tags for new db server vm",
-                **result,
-            )
+            err_msg = "Failed getting spec for tags for new db server vm"
+            module.fail_json(msg=err_msg, **result)
 
     # configure automated patching
     if module.params.get("automated_patching"):
@@ -125,10 +295,8 @@ def get_provision_spec(module, result):
         mw_spec, err = mw.get_spec(configure_automated_patching=True)
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for automated patching for new db server vm",
-                **result,
-            )
+            err_msg = "Failed getting spec for automated patching for new db server vm"
+            module.fail_json(msg=err_msg, **result)
         spec["maintenanceTasks"] = mw_spec
 
     return spec
@@ -153,6 +321,7 @@ def create_db_server(module, result):
         time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid)
         resp = db_servers.read(db_uuid)
+        db_servers.format_response(resp)
         result["response"] = resp
 
     result["changed"] = True
@@ -210,10 +379,8 @@ def update_db_server(module, result):
         )
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for tags for db server vm update",
-                **result,
-            )
+            err_msg = "Failed getting spec for tags for db server vm update"
+            module.fail_json(msg=err_msg, **result)
         update_spec["resetTags"] = True
 
     if module.check_mode:
@@ -225,6 +392,7 @@ def update_db_server(module, result):
         module.exit_json(msg="Nothing to change.")
 
     resp = db_servers.update(data=update_spec, uuid=uuid)
+    db_servers.format_response(resp)
     result["response"] = resp
     result["uuid"] = uuid
     result["changed"] = True
@@ -278,7 +446,7 @@ def run_module():
         argument_spec=get_module_spec(),
         mutually_exclusive=mutually_exclusive_list,
         required_if=[
-            ("state", "present", ("name", "id"), True),
+            ("state", "present", ("name", "uuid"), True),
             ("state", "absent", ("uuid",)),
         ],
         supports_check_mode=True,

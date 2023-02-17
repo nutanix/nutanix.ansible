@@ -8,6 +8,3 @@
 
   block:
         - import_tasks: "clones.yml"
-
-
-

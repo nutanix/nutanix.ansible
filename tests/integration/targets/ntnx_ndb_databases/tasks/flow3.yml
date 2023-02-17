@@ -391,7 +391,7 @@
         - name: "{{cluster.cluster1.name}}"
         - uuid: "{{cluster.cluster2.uuid}}"
     tags:
-      ansible-databases : "ha-instance-dbs"
+      ansible-databases: "ha-instance-dbs"
     
     automated_patching:
       maintenance_window:
@@ -537,7 +537,7 @@
       clusters:
         - name: "{{cluster.cluster1.name}}"
     tags:
-      ansible-databases : "ha-instance-dbs"
+      ansible-databases: "ha-instance-dbs"
     
     automated_patching:
       maintenance_window:

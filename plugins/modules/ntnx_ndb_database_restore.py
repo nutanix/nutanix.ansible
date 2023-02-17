@@ -9,12 +9,12 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_ndb_databases_restore
+module: ntnx_ndb_database_restore
 short_description: write
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'write'
 options:
-      point_in_time:
+      pitr_timestamp:
         description:
             - write
         type: str
@@ -26,7 +26,6 @@ options:
         description:
             - write
         type: str
-        required: true
       db_uuid:
         description:
             - write
@@ -94,7 +93,7 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_together = [("pitr_timestamp", "timezone")],
+        required_together=[("pitr_timestamp", "timezone")],
         mutually_exclusive=[("snapshot_uuid", "pitr_timestamp")],
     )
     remove_param_with_none_value(module.params)

@@ -9,9 +9,9 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_ndb_databases_snapshot
+module: ntnx_ndb_database_snapshots
 short_description: write
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'write'
 options:
       snapshot_uuid:
@@ -22,32 +22,6 @@ options:
         description:
             - write
         type: str
-      time_machine:
-        description:
-            - write
-        type: dict
-        suboptions:
-            name:
-                description:
-                    - write
-                type: str
-            uuid:
-                description:
-                    - write
-                type: str
-      database:
-        description:
-            - write
-        type: dict
-        suboptions:
-            name:
-                description:
-                    - write
-                type: str
-            uuid:
-                description:
-                    - write
-                type: str
       clusters:
         description:
             - write
@@ -65,12 +39,12 @@ options:
       expiry_days:
             description:
                 - write
-            type: str
+            type: int
       remove_expiry:
             description:
                 - write
             type: bool
-      timezone:
+      time_machine_uuid:
             description:
                 - write
             type: str
@@ -125,7 +99,9 @@ def get_module_spec():
 def create_snapshot(module, result):
     time_machine_uuid = module.params.get("time_machine_uuid")
     if not time_machine_uuid:
-        return module.fail_json(msg="time_machine_uuid is required for creating snapshot")
+        return module.fail_json(
+            msg="time_machine_uuid is required for creating snapshot"
+        )
 
     snapshots = Snapshot(module)
     spec, err = snapshots.get_spec()
@@ -200,7 +176,6 @@ def update_snapshot(module, result):
         ):
             snapshot = _snapshot.update_expiry(uuid, spec)
             updated = True
-
 
     if not updated:
         result["skipped"] = True

@@ -5,13 +5,61 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
-from copy import deepcopy
-
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_maintenance_tasks
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+      db_server_vms:
+        description:
+            - write
+        type: list
+        elements: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
 
+      db_server_clusters:
+        description:
+            - write
+        type: list
+        elements: dict
+        suboptions:
+            name:
+                description:
+                    - write
+                type: str
+            uuid:
+                description:
+                    - write
+                type: str
+
+
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+"""
+
+EXAMPLES = r"""
+"""
+RETURN = r"""
+"""
+
+from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.maintenance_window import (
+from ..module_utils.ndb.maintenance_window import (  # noqa: E402
     AutomatedPatchingSpec,
     MaintenanceWindow,
 )
@@ -54,23 +102,24 @@ def update_maintenance_tasks(module, result):
     spec, err = maintenance_window.get_spec(configure_automated_patching=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for updating maitenance tasks",
-            **result,
-        )
+        err_msg = "Failed getting spec for updating maintenance tasks"
+        module.fail_json(msg=err_msg, **result)
 
+    uuid = spec.get("maintenanceWindowId")
+
+    if not uuid:
+        return module.fail_json(msg="Failed fetching maintenance window uuid")
+
+    result["uuid"] = uuid
     if module.check_mode:
         result["response"] = spec
         return
-
-    uuid = spec.get("maintenanceWindowId")
 
     maintenance_window.update_tasks(data=spec)
 
     query = {"load-task-associations": True, "load-entities": True}
     resp = maintenance_window.read(uuid=uuid, query=query)
     result["response"] = resp
-    result["uuid"] = uuid
     result["changed"] = True
 
 

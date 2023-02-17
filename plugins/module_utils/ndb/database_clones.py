@@ -10,6 +10,7 @@ from .database_engines.db_engine_factory import create_db_engine
 from .nutanix_database import NutanixDatabase
 from .profiles.profile_types import DatabaseParameterProfile
 from .time_machines import TimeMachine
+from .db_server_vm import DBServerVM
 
 
 class DatabaseClone(NutanixDatabase):
@@ -57,6 +58,39 @@ class DatabaseClone(NutanixDatabase):
             timeout,
             method=method,
         )
+
+    def format_response(self, response):
+        """This method formats the response. It removes attributes as per requirement."""
+        attrs = [
+            "accessLevel",
+            "category",
+            "placeholder",
+            "internal",
+            "databaseClusterType",
+            "ownerId",
+            "databaseStatus",
+            "dbserverlogicalCluster",
+            "databaseGroupStateInfo",
+        ]
+        for attr in attrs:
+            if attr in response:
+                response.pop(attr)
+        if response.get("metadata") is not None:
+            response["provisionOperationId"] = response.get("metadata", {}).get(
+                "provisionOperationId"
+            )
+            response["sourceSnapshotId"] = response.get("metadata", {}).get(
+                "sourceSnapshotId"
+            )
+            response["lastRefreshTimestamp"] = response.get("metadata", {}).get(
+                "lastRefreshTimestamp"
+            )
+        response.pop("metadata")
+
+        for node in response.get("databaseNodes", []):
+            DBServerVM.format_response(node)
+
+        return response
 
     def _get_default_spec(self):
         return deepcopy(

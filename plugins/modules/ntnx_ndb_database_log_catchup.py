@@ -8,13 +8,34 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
+module: ntnx_ndb_database_log_catchup
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+      time_machine_uuid:
+        description:
+            - write
+        type: str
+        required: true
+      for_restore:
+        description:
+            - write
+        type: bool
+        default: false
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
 
 EXAMPLES = r"""
 """
-
 RETURN = r"""
 """
+
 import time  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
@@ -26,7 +47,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 def get_module_spec():
     module_args = dict(
-        time_machine_uuid = dict(type="str", required=True),
+        time_machine_uuid=dict(type="str", required=True),
         for_restore=dict(type="bool", required=False, default=False),
     )
     return module_args

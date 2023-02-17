@@ -48,7 +48,7 @@ class ComputeProfile(Profile):
         if payload.get("versionClusterAssociation") is not None:
             payload.pop("versionClusterAssociation")
 
-        return self.build_spec_status(payload)
+        return self.build_spec_status(payload, params)
 
     def _build_spec_create_profile(self, payload, compute=None):
         properties = payload.get("properties", [])
@@ -96,55 +96,63 @@ class NetworkProfile(Profile):
         super(NetworkProfile, self).__init__(module)
         self._type = NDB.ProfileTypes.NETWORK
 
-    def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
+    def get_default_version_update_spec(self, override_spec=None):
+        spec = {
+            "name": "",
+            "description": "",
+            "published": None,
+            "properties": [],
+            "propertiesMap": {},
+            "topology": "",
+            "engineType": "",
+        }
 
-        self.build_spec_methods.update({"network": self._build_spec_profile})
+        for key in spec:
+            if key in override_spec:
+                spec[key] = override_spec[key]
+
+        return spec
+
+    def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
+        self.build_spec_methods.update({"network": self._build_spec_create_profile})
         return super().get_create_profile_spec(
             old_spec=old_spec, params=params, **kwargs
         )
 
     def get_update_version_spec(self, old_spec=None, params=None, **kwargs):
-        payload = deepcopy(old_spec)
-
-        if not params:
-            params = self.module.params.get("network")
-
-        if params:
-            payload, err = self._build_spec_profile(payload, params)
-            if err:
-                return None, err
-
-        # remove not required fields
-        if payload.get("type") is not None:
-            payload.pop("type")
-        if payload.get("topology") is not None:
-            payload.pop("topology")
-        if payload.get("versionClusterAssociation") is not None:
-            payload.pop("versionClusterAssociation")
-
-        return self.build_spec_status(payload)
-
-    def _build_spec_profile(self, payload, profile):
-        vlans = profile.get("vlans", [])
-        payload["properties"] = []
-        if profile.get("topology") == "cluster" or len(vlans) > 1:
-            payload, err = self._build_spec_multicluster_network_profile(payload, vlans)
-            payload["properties"].append({"name": "NUM_CLUSTERS", "value": len(vlans)})
-        else:
-            payload, err = self._build_spec_single_cluster_network_profile(
-                payload, vlans[0]
-            )
-
+        self.build_spec_methods.update(
+            {"network": self._build_spec_update_profile_version}
+        )
+        payload, err = super().get_spec(old_spec=old_spec, params=params)
         if err:
             return None, err
 
-        enable_ip_address_selection = profile.get("enable_ip_address_selection", False)
-        payload["properties"].append(
-            {
-                "name": "ENABLE_IP_ADDRESS_SELECTION",
-                "value": str(enable_ip_address_selection).lower(),
-            }
-        )
+        return payload, None
+
+    def _build_spec_create_profile(self, payload, profile):
+        vlans = profile.get("vlans")
+
+        if profile.get("topology") == "cluster" or len(vlans) > 1:
+            payload, err = self._build_spec_multi_networks(payload, vlans)
+            if err:
+                return None, err
+            payload["propertiesMap"]["NUM_CLUSTERS"] = len(vlans)
+
+        else:
+            payload, err = self._build_spec_single_network(payload, vlans[0])
+            if err:
+                return None, err
+
+        payload["propertiesMap"]["ENABLE_IP_ADDRESS_SELECTION"] = str(
+            profile.get("enable_ip_address_selection", False)
+        ).lower()
+
+        properties = []
+        properties_map = payload.pop("propertiesMap")
+        for name, val in properties_map.items():
+            properties.append({"name": name, "value": val})
+
+        payload["properties"] = properties
 
         topology = profile.get("topology")
         if topology == "all":
@@ -154,40 +162,79 @@ class NetworkProfile(Profile):
 
         return payload, None
 
-    def _build_spec_multicluster_network_profile(self, payload, vlans):
-        _clusters = Cluster(self.module)
-        clusters_uuid_name_map = _clusters.get_all_clusters_uuid_name_map()
+    def _build_spec_update_profile_version(self, payload, profile):
+        vlans = profile.get("vlans")
 
-        for i in range(len(vlans)):
-            cluster_uuid, err = get_cluster_uuid(self.module, vlans[i].get("cluster"))
+        enable_ip_address_selection = payload.get("propertiesMap", {}).get(
+            "ENABLE_IP_ADDRESS_SELECTION", False
+        )
+
+        if vlans:
+            payload["propertiesMap"] = {}
+            err = None
+            if payload.get("topology") == "cluster":
+                payload, err = self._build_spec_multi_networks(payload, vlans)
+                payload["propertiesMap"]["NUM_CLUSTERS"] = len(vlans)
+            else:
+                payload, err = self._build_spec_single_network(payload, vlans[0])
             if err:
-                return err
-            payload["properties"].append(
-                self.get_property_spec("VLAN_NAME_" + str(i), vlans[i].get("vlan_name"))
-            )
-            payload["properties"].append(
-                self.get_property_spec(
-                    "CLUSTER_NAME_" + str(i), clusters_uuid_name_map[cluster_uuid]
-                )
-            )
-            payload["properties"].append(
-                self.get_property_spec("CLUSTER_ID_" + str(i), cluster_uuid)
-            )
+                return None, err
 
-        return payload, None
+        if profile.get("enable_ip_address_selection") is not None:
+            enable_ip_address_selection = str(
+                profile.get("enable_ip_address_selection", False)
+            ).lower()
+        payload["propertiesMap"][
+            "ENABLE_IP_ADDRESS_SELECTION"
+        ] = enable_ip_address_selection
 
-    def _build_spec_single_cluster_network_profile(self, payload, vlan):
+        properties = []
+        properties_map = payload.pop("propertiesMap")
+        for name, val in properties_map.items():
+            properties.append({"name": name, "value": val})
+
+        payload["properties"] = properties
+        return self.build_spec_status(payload, profile)
+
+    def _build_spec_single_network(self, payload, vlan):
         cluster = vlan.get("cluster")
         cluster_uuid, err = get_cluster_uuid(self.module, cluster)
         if err:
             return None, err
+        properties_map = payload.get("propertiesMap", {})
 
-        payload["properties"] = [
-            self.get_property_spec("VLAN_NAME", vlan.get("vlan_name"))
-        ]
+        properties_map["VLAN_NAME"] = vlan.get("vlan_name")
+        payload["propertiesMap"] = properties_map
 
         payload["versionClusterAssociation"] = [{"nxClusterId": cluster_uuid}]
 
+        return payload, None
+
+    def _build_spec_multi_networks(self, payload, vlans):
+        _clusters = Cluster(self.module)
+        clusters_uuid_name_map = _clusters.get_all_clusters_uuid_name_map()
+        clusters_name_uuid_map = _clusters.get_all_clusters_name_uuid_map()
+        properties_map = payload.get("propertiesMap", {})
+        for i in range(len(vlans)):
+
+            properties_map["VLAN_NAME_" + str(i)] = vlans[i].get("vlan_name")
+
+            cluster_name = vlans[i].get("cluster", {}).get("name")
+            cluster_uuid = vlans[i].get("cluster", {}).get("uuid")
+
+            if cluster_uuid and not cluster_name:
+                if not clusters_uuid_name_map.get(cluster_uuid):
+                    return None, "Cluster with uuid {0} not found".format(cluster_uuid)
+                cluster_name = clusters_uuid_name_map[cluster_uuid]
+
+            if not cluster_name:
+                return None, "Pleae provide uuid or name for getting cluster info"
+
+            properties_map["CLUSTER_NAME_" + str(i)] = cluster_name
+            properties_map["CLUSTER_ID_" + str(i)] = clusters_name_uuid_map[
+                cluster_name
+            ]
+        payload["propertiesMap"] = properties_map
         return payload, None
 
 
@@ -197,7 +244,12 @@ class SoftwareProfile(Profile):
         self._type = NDB.ProfileTypes.SOFTWARE
 
     def get_create_profile_spec(self, old_spec=None, params=None, **kwargs):
-        self.build_spec_methods.update({"software": self._build_spec_profile})
+        self.build_spec_methods.update(
+            {
+                "software": self._build_spec_profile,
+                "clusters": self._build_spec_clusters_availibilty,
+            }
+        )
         payload, err = super().get_create_profile_spec(
             old_spec=old_spec, params=params, **kwargs
         )
@@ -210,15 +262,13 @@ class SoftwareProfile(Profile):
         return payload, None
 
     def get_update_profile_spec(self, old_spec=None, params=None, **kwargs):
+
+        self.build_spec_methods.update(
+            {"clusters": self._build_spec_clusters_availibilty}
+        )
         payload, err = super().get_update_profile_spec(old_spec, params, **kwargs)
         if err:
             return None, err
-
-        clusters = self.module.params.get("software", {}).get("clusters", [])
-        if clusters:
-            payload, err = self._build_spec_clusters_availibilty(payload, clusters)
-            if err:
-                return None, err
 
         return payload, None
 
@@ -229,7 +279,8 @@ class SoftwareProfile(Profile):
         if not params:
             return None, "Please provide version config for creating new version"
 
-        payload, err = super(Profile).get_spec(old_spec=old_spec, params=params, **kwargs)
+        params["database_type"] = self.module.params.get("database_type")
+        payload, err = super().get_spec(old_spec=old_spec, params=params)
         if err:
             return None, err
 
@@ -253,12 +304,14 @@ class SoftwareProfile(Profile):
         if not params:
             params = self.module.params.get("software")
 
-        payload, err = super(Profile).get_spec(old_spec=old_spec, params=params, *kwargs)
+        params["database_type"] = self.module.params.get("database_type")
+
+        payload, err = super().get_spec(old_spec=old_spec, params=params)
         if err:
             return None, err
 
         # update version status and return
-        return self.build_spec_status(payload)
+        return self.build_spec_status(payload, params)
 
     def _build_spec_profile(self, payload, profile):
 
@@ -267,13 +320,6 @@ class SoftwareProfile(Profile):
         )
         if err:
             return None, err
-
-        # add cluster uuids
-        clusters = profile.get("clusters", [])
-        if clusters:
-            payload, err = self._build_spec_clusters_availibilty(payload, clusters)
-            if err:
-                return None, err
 
         topology = profile.get("topology")
         if topology == "all":
@@ -310,12 +356,12 @@ class SoftwareProfile(Profile):
                 )
             )
 
-        if version.get("db_server"):
+        if version.get("db_server_vm"):
             # importing here to avoid frozen import
             from ..db_server_vm import DBServerVM
 
             db_server_vm = DBServerVM(self.module)
-            uuid, err = db_server_vm.get_db_server_uuid(version["db_server"])
+            uuid, err = db_server_vm.get_db_server_uuid(version["db_server_vm"])
             if err:
                 return None, err
             properties.append(self.get_property_spec("SOURCE_DBSERVER_ID", uuid))
@@ -343,13 +389,13 @@ class SoftwareProfile(Profile):
         payload["updateClusterAvailability"] = True
         return payload, None
 
-    def build_spec_status(self, payload):
-        if self.module.params.get("publish"):
-            payload["published"] = self.module.params.get("publish")
+    def build_spec_status(self, payload, params):
+        if params.get("publish") is not None:
+            payload["published"] = params.get("publish")
             payload["deprecated"] = False
 
-        elif self.module.params.get("deprecate"):
-            payload["deprecated"] = self.module.params.get("deprecate")
+        elif params.get("deprecate") is not None:
+            payload["deprecated"] = params.get("deprecate")
 
         return payload, None
 
@@ -360,14 +406,20 @@ class DatabaseParameterProfile(Profile):
         super(DatabaseParameterProfile, self).__init__(module)
 
     def get_db_engine_spec(self, payload=None, params=None, **kwargs):
-        engine_type = self.module.params.get("database_type")
+        engine_type = kwargs.get("engine_type")
+        if not engine_type:
+            engine_type = self.module.params.get("database_type")
+
         db_engine, err = create_db_engine(self.module, engine_type=engine_type)
         if err:
             return None, err
 
         engine_type = db_engine.get_type()
 
-        config = params.get(engine_type)
+        config = {}
+        if params:
+            config = params.get(engine_type, {})
+
         if not payload:
             payload = {}
 
@@ -392,7 +444,7 @@ class DatabaseParameterProfile(Profile):
             return None, err
 
         if not params:
-            params = self.module.params.get("database_parameters")
+            params = self.module.params.get("database_parameter", {})
         return self.get_db_engine_spec(
             payload=payload, params=params, create_profile=True
         )
@@ -401,10 +453,10 @@ class DatabaseParameterProfile(Profile):
         payload = deepcopy(old_spec)
 
         if not params:
-            params = self.module.params.get("database_parameters")
-        payload, err = self.get_db_engine_spec(
-            payload=payload, params=params, update_version=True
-        )
+            params = self.module.params.get("database_parameter")
+
+        kwargs["update_version"] = True
+        payload, err = self.get_db_engine_spec(payload=payload, params=params, **kwargs)
         if err:
             return None, err
 
@@ -415,7 +467,7 @@ class DatabaseParameterProfile(Profile):
         if payload.get("versionClusterAssociation") is not None:
             payload.pop("versionClusterAssociation")
 
-        return self.build_spec_status(payload)
+        return self.build_spec_status(payload, params)
 
 
 # Helper methods for getting profile type objects
@@ -436,7 +488,7 @@ def get_profile_type_obj(module, profile_type=None):  # -> tuple[Profile, str]:
         "software": SoftwareProfile,
         "network": NetworkProfile,
         "compute": ComputeProfile,
-        "database_parameters": DatabaseParameterProfile,
+        "database_parameter": DatabaseParameterProfile,
     }
 
     if not profile_type:

@@ -94,6 +94,15 @@ class TimeMachine(NutanixDatabase):
 
         return uuid, None
 
+    @staticmethod
+    def format_response(response):
+        """This method formats time machine based responses.  It removes attributes as per requirement."""
+        attrs = ["metadata", "ownerId", "accessLevel", "category"]
+        for attr in attrs:
+            if attr in response:
+                response.pop(attr)
+        return response
+
     def get_log_catchup_spec(self, for_restore=False):
         return deepcopy(
             {

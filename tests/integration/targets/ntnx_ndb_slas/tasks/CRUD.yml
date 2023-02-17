@@ -1,0 +1,205 @@
+---
+- debug:
+    msg: Start testing ntnx_ndb_slas
+
+- name: Generate random profile_name 
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- set_fact:
+    suffix_name: "ansible-role-mapping"
+
+- set_fact:
+    todelete: []
+    profile1_name: "{{random_name}}{{suffix_name}}1"
+    profile2_name: "{{random_name}}{{suffix_name}}2"
+    frequency:
+      logs_retention: 4
+      snapshots_retention:
+        daily: 5
+        weekly: 6
+        monthly: 7 
+        quarterly: 8 
+################################################################        
+- name: Verify creation of slas with check mode
+  ntnx_ndb_slas:
+    name: "{{profile1_name}}"
+    desc: "testdesc"
+    frequency:
+      logs_retention: "{{frequency.logs_retention}}"
+      snapshots_retention:
+        daily: "{{frequency.snapshots_retention.daily}}"
+        weekly: "{{frequency.snapshots_retention.weekly}}"
+        monthly: "{{frequency.snapshots_retention.monthly}}"
+        quarterly: "{{frequency.snapshots_retention.quarterly}}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name ==  "{{profile1_name}}"
+      - result.response.description == "testdesc"
+      - result.response.continuousRetention == {{frequency.logs_retention}}
+      - result.response.dailyRetention == {{frequency.snapshots_retention.daily}}
+      - result.response.monthlyRetention == {{frequency.snapshots_retention.monthly}}
+      - result.response.quarterlyRetention == {{frequency.snapshots_retention.quarterly}}
+      - result.response.weeklyRetention == {{frequency.snapshots_retention.weekly}}
+
+    fail_msg: "Fail: Verify creation of slas with check mode failed "
+    success_msg: "Pass: Verify creation of slas with check mode finished succesfully "
+################################################################
+- name: Verify creation of slas
+  ntnx_ndb_slas:
+    name: "{{profile1_name}}"
+    desc: "testdesc"
+    frequency:
+      logs_retention: "{{frequency.logs_retention}}"
+      snapshots_retention:
+        daily: "{{frequency.snapshots_retention.daily}}"
+        weekly: "{{frequency.snapshots_retention.weekly}}"
+        monthly: "{{frequency.snapshots_retention.monthly}}"
+        quarterly: "{{frequency.snapshots_retention.quarterly}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.name ==  "{{profile1_name}}"
+      - result.response.description == "testdesc"
+      - result.response.continuousRetention == {{frequency.logs_retention}}
+      - result.response.dailyRetention == {{frequency.snapshots_retention.daily}}
+      - result.response.monthlyRetention == {{frequency.snapshots_retention.monthly}}
+      - result.response.quarterlyRetention == {{frequency.snapshots_retention.quarterly}}
+      - result.response.weeklyRetention == {{frequency.snapshots_retention.weekly}}
+      - result.sla_uuid is defined
+    fail_msg: "Fail:  Verify creation of slas "
+    success_msg: "Pass: Unable to create sla "
+- set_fact:
+    todelete: "{{ todelete + [  result.sla_uuid ] }}"
+################################################################
+- set_fact:
+    frequency:
+      logs_retention: 10
+      snapshots_retention:
+        daily: 11
+        weekly: 12
+        monthly: 13
+        quarterly: 14
+
+- name: verify slas update flow
+  ntnx_ndb_slas:
+    sla_uuid: "{{result.sla_uuid}}"
+    name: "{{profile2_name}}"
+    desc: "newdesc"
+    frequency:
+      logs_retention: "{{frequency.logs_retention}}"
+      snapshots_retention:
+        daily: "{{frequency.snapshots_retention.daily}}"
+        weekly: "{{frequency.snapshots_retention.weekly}}"
+        monthly: "{{frequency.snapshots_retention.monthly}}"
+        quarterly: "{{frequency.snapshots_retention.quarterly}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.name ==  "{{profile2_name}}"
+      - result.response.description == "newdesc"
+      - result.response.continuousRetention == {{frequency.logs_retention}}
+      - result.response.dailyRetention == {{frequency.snapshots_retention.daily}}
+      - result.response.monthlyRetention == {{frequency.snapshots_retention.monthly}}
+      - result.response.quarterlyRetention == {{frequency.snapshots_retention.quarterly}}
+      - result.response.weeklyRetention == {{frequency.snapshots_retention.weekly}}
+      - result.sla_uuid is defined
+    fail_msg: "Fail: Unable to update sla "
+    success_msg: "Pass: verify slas update flow finished succesfully"
+################################################################
+- name: verify slas update flow with check mode
+  ntnx_ndb_slas:
+    sla_uuid: "{{result.sla_uuid}}"
+    name: "{{profile2_name}}"
+    desc: "newdesc"
+    frequency:
+      logs_retention: "{{frequency.logs_retention}}"
+      snapshots_retention:
+        daily: "{{frequency.snapshots_retention.daily}}"
+        weekly: "{{frequency.snapshots_retention.weekly}}"
+        monthly: "{{frequency.snapshots_retention.monthly}}"
+        quarterly: "{{frequency.snapshots_retention.quarterly}}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name ==  "{{profile2_name}}"
+      - result.response.description == "newdesc"
+      - result.response.continuousRetention == {{frequency.logs_retention}}
+      - result.response.dailyRetention == {{frequency.snapshots_retention.daily}}
+      - result.response.monthlyRetention == {{frequency.snapshots_retention.monthly}}
+      - result.response.quarterlyRetention == {{frequency.snapshots_retention.quarterly}}
+      - result.response.weeklyRetention == {{frequency.snapshots_retention.weekly}}
+      - result.sla_uuid is defined
+    fail_msg: "Fail: verify slas update flow with check mode  "
+    success_msg: "Pass: verify slas update flow with check mode finished succesfully"
+################################################################
+- name: verify idempotency
+  ntnx_ndb_slas:
+    sla_uuid: "{{result.sla_uuid}}"
+    name: "{{profile2_name}}"
+    desc: "newdesc"
+    frequency:
+      logs_retention: "{{frequency.logs_retention}}"
+      snapshots_retention:
+        daily: "{{frequency.snapshots_retention.daily}}"
+        weekly: "{{frequency.snapshots_retention.weekly}}"
+        monthly: "{{frequency.snapshots_retention.monthly}}"
+        quarterly: "{{frequency.snapshots_retention.quarterly}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.msg == "Nothing to change."
+      - result.failed == false
+      - result.changed == false
+    fail_msg: "Fail: verify idempotency"
+    success_msg: "Pass: verify idempotency "
+################################################################
+- name: verify slas delete flow
+  ntnx_ndb_slas:
+    state: absent
+    sla_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "unable to delete all created slas"
+    success_msg: "All  slas deleted succesfully"
+
+- set_fact:
+    todelete: []

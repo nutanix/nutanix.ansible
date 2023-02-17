@@ -6,4 +6,6 @@
         nutanix_password: "{{ndb_password}}"
         validate_certs: false
   block:
-        - import_tasks: "crud.yml"
+        - import_tasks: "compute.yml"
+        - import_tasks: "db_params.yml"
+        - import_tasks: "network_profile.yml"

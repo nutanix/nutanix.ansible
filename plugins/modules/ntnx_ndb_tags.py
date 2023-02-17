@@ -8,10 +8,48 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-"""
-EXAMPLES = r"""
+---
+module: ntnx_ndb_tags
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+    name:
+        description:
+            - write
+        type: str
+    uuid:
+        description:
+            - write
+        type: str
+    desc:
+        description:
+            - write
+        type: str
+
+    entity_type:
+        description:
+            - write
+        type: str
+        choices: ["DATABASE", "CLONE", "TIME_MACHINE", "DATABASE_SERVER"]
+    tag_value_required:
+        description:
+            - write
+        type: bool
+    status:
+        description:
+            - write
+        type: str
+        choices: ["ENABLED", "DEPRECATED"]
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
 """
 
+EXAMPLES = r"""
+"""
 RETURN = r"""
 """
 

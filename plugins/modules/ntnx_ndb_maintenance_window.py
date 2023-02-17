@@ -6,7 +6,68 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
+DOCUMENTATION = r"""
+---
+module: ntnx_ndb_maintenance_window
+short_description: write
+version_added: 1.8.0
+description: 'write'
+options:
+    name:
+        description:
+            - write
+        type: str
+    uuid:
+        description:
+            - write
+        type: str
+    desc:
+        description:
+            - write
+        type: str
+    schedule:
+        description:
+            - write
+        type: dict
+        suboptions:
+            recurrence:
+                description:
+                    - write
+                type: str
+                choices: ["weekly", "monthly"]
+            duration:
+                description:
+                    - write
+                type: int
+            start_time:
+                description:
+                    - write
+                type: str
+            timezone:
+                description:
+                    - write
+                type: str
+                default: "Asia/Calcutta"
+            week_of_month:
+                description:
+                    - write
+                type: str
+            day_of_week:
+                description:
+                    - write
+                type: str
 
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_operations
+author:
+ - Prem Karat (@premkarat)
+"""
+
+EXAMPLES = r"""
+"""
+RETURN = r"""
+"""
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.maintenance_window import MaintenanceWindow  # noqa: E402
@@ -18,7 +79,7 @@ def get_module_spec():
         recurrence=dict(type="str", choices=["weekly", "monthly"], required=False),
         duration=dict(type="int", required=False),  # in hrs
         start_time=dict(type="str", required=False),  # in 24hrs format in HH:MM:SS
-        timezone=dict(type="str", default="Asia/Calcutta", required=False),
+        timezone=dict(type="str", required=False),
         week_of_month=dict(type="str", required=False),
         day_of_week=dict(type="str", required=False),
     )
@@ -42,10 +103,8 @@ def create_window(module, result):
     spec, err = maintenance_window.get_spec()
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for new maintenance window",
-            **result,
-        )
+        err_msg = "Failed getting spec for new maintenance window"
+        module.fail_json(msg=err_msg, **result)
 
     if module.check_mode:
         result["response"] = spec
@@ -65,7 +124,7 @@ def check_idempotency(old_spec, new_spec):
             return False
 
     # check for schedule changes
-    args = ["recurrence", "dayOfMonth", "weekOfMonth", "duration"]
+    args = ["recurrence", "dayOfWeek", "weekOfMonth", "duration", "startTime"]
     for arg in args:
         if old_spec.get("schedule", {}).get(arg, "") != new_spec.get(
             "schedule", {}
@@ -88,19 +147,15 @@ def update_window(module, result):
     spec, err = _maintenance_window.get_spec(old_spec=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for updating maintenance window",
-            **result,
-        )
+        err_msg = "Failed getting spec for updating maintenance window"
+        module.fail_json(msg=err_msg, **result)
 
     if module.check_mode:
         result["response"] = spec
         return
 
     # defining start_time will skip idempotency checks
-    if check_idempotency(
-        old_spec=maintenance_window, new_spec=spec
-    ) and not module.params.get("schedule", {}).get("start_time"):
+    if check_idempotency(old_spec=maintenance_window, new_spec=spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 

@@ -892,10 +892,8 @@ def get_provision_spec(module, result, ha=False):
         )
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting db server vm cluster spec for database instance",
-                **result,
-            )
+            err_msg = "Failed getting db server vm cluster spec for database instance"
+            module.fail_json(msg=err_msg, **result)
     else:
         # populate VM related spec
         db_vm = DBServerVM(module=module)
@@ -913,19 +911,15 @@ def get_provision_spec(module, result, ha=False):
         spec, err = db_vm.get_spec(old_spec=spec, **kwargs)
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting vm spec for database instance",
-                **result,
-            )
+            err_msg = "Failed getting vm spec for database instance"
+            module.fail_json(msg=err_msg, **result)
 
     # populate database engine related spec
     spec, err = db_instance.get_db_engine_spec(spec, provision=True)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting database engine related spec for database instance",
-            **result,
-        )
+        err_msg = "Failed getting database engine related spec for database instance"
+        module.fail_json(msg=err_msg, **result)
 
     # populate database instance related spec
     spec, err = db_instance.get_spec(old_spec=spec, provision=True)
@@ -938,10 +932,8 @@ def get_provision_spec(module, result, ha=False):
     spec, err = time_machine.get_spec(old_spec=spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting spec for time machine for database instance",
-            **result,
-        )
+        err_msg = "Failed getting spec for time machine for database instance"
+        module.fail_json(msg=err_msg, **result)
 
     # populate tags related spec
     tags = Tag(module)
@@ -949,8 +941,7 @@ def get_provision_spec(module, result, ha=False):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed getting spec for tags for database instance",
-            **result,
+            msg="Failed getting spec for tags for database instance", **result
         )
 
     # configure automated patching only during create
@@ -960,10 +951,8 @@ def get_provision_spec(module, result, ha=False):
         mw_spec, err = mw.get_spec(configure_automated_patching=True)
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for automated patching for new database  instance creation",
-                **result,
-            )
+            err_msg = "Failed getting spec for automated patching for new database  instance creation"
+            module.fail_json(msg=err_msg, **result)
         spec["maintenanceTasks"] = mw_spec
     return spec
 
@@ -998,6 +987,7 @@ def create_instance(module, result):
         operations.wait_for_completion(ops_uuid)
         query = {"detailed": True, "load-dbserver-cluster": True}
         resp = db_instance.read(db_uuid, query=query)
+        db_instance.format_response(resp)
         result["response"] = resp
 
     result["changed"] = True
@@ -1052,10 +1042,8 @@ def update_instance(module, result):
         )
         if err:
             result["error"] = err
-            module.fail_json(
-                msg="Failed getting spec for tags for updating database instance",
-                **result,
-            )
+            err_msg = "Failed getting spec for tags for updating database instance"
+            module.fail_json(msg=err_msg, **result)
 
     if module.check_mode:
         result["response"] = spec
@@ -1065,7 +1053,12 @@ def update_instance(module, result):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-    resp = _databases.update(data=spec, uuid=uuid)
+    _databases.update(data=spec, uuid=uuid)
+
+    query = {"detailed": True, "load-dbserver-cluster": True}
+    resp = _databases.read(uuid, query=query)
+    _databases.format_response(resp)
+
     result["response"] = resp
     result["db_uuid"] = uuid
     result["changed"] = True
