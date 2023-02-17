@@ -325,7 +325,11 @@ def get_module_spec():
         desc=dict(type="str"),
         name_prefix=dict(type="str"),
         cluster_ip=dict(type="str"),
-        cluster_credentials=dict(type="dict", options=credentials_spec),
+        cluster_credentials=dict(
+            type="dict",
+            required_together=[("username", "password")],
+            options=credentials_spec
+        ),
         agent_network=dict(type="dict", options=agent_network_spec),
         vlan_access=dict(type="dict", options=vlan_access_type_spec),
         storage_container=dict(type="str"),
@@ -422,6 +426,7 @@ def delete_cluster(module, result):
         result["response"] = resp
     result["changed"] = True
     result["cluster_uuid"] = cluster_uuid
+
 
 def check_for_idempotency(old_spec, update_spec):
     if old_spec == update_spec:
