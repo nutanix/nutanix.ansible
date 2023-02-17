@@ -1,9 +1,9 @@
 ---
 - module_defaults:
     group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
+        nutanix_host: "{{ ndb_ip }}"
+        nutanix_username: "{{ ndb_username }}"
+        nutanix_password: "{{ ndb_password }}"
+        validate_certs: false
   block:
         - import_tasks: "crud.yml"
