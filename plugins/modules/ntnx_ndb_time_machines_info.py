@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_time_machines_info
 short_description: info module for ndb time machines
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get tm info'
 options:
       name:
@@ -241,10 +241,10 @@ def get_tm(module, result):
 
     uuid = module.params.get("uuid")
     name = module.params.get("name")
-    resp, err = tm.get_time_machine(uuid=uuid, name=name)
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed fetching time machine info", **result)
+    if name:
+        resp = tm.get_time_machines(value=name, key="name")
+    else:
+        resp = tm.get_time_machines(value=uuid, key="uuid")
     result["response"] = resp
 
 

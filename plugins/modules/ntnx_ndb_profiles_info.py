@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_profiles_info
 short_description: info module for ndb profiles
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get profile info'
 options:
       name:
@@ -168,7 +168,7 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.profiles import Profile  # noqa: E402
+from ..module_utils.ndb.profiles.profiles import Profile  # noqa: E402
 
 
 def get_module_spec():
