@@ -21,6 +21,31 @@ Cluster:
       cluster1: 
             name: ""
             uuid: ""
+      cluster2:
+            name: ""
+            desc: ""
+            name_prefix: ""
+            cluster_ip: ""
+            cluster_credentials:
+                  username: ""
+                  password: ""
+            agent_network:
+                  dns_servers:
+                        - ""
+                        - ""
+                  ntp_servers:
+                        - ""
+                        - ""
+                        - ""
+                        - ""
+            vlan_access:
+                  prism_vlan:
+                        vlan_name: ""
+                        vlan_type: ""
+                        static_ip: ""
+                        gateway: ""
+                        subnet_mask: ""
+            storage_container: ""
 
 vm_password: ""
 vm_user: ""

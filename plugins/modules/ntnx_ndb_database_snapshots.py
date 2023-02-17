@@ -92,6 +92,9 @@ def get_module_spec():
     return module_args
 
 
+# Notes:
+# 1. Currently we only poll for source snapshot create. Replication task is not polled.
+
 # Create snapshot
 def create_snapshot(module, result):
     time_machine_uuid = module.params.get("time_machine_uuid")
@@ -111,6 +114,7 @@ def create_snapshot(module, result):
         return
 
     resp = snapshots.create_snapshot(time_machine_uuid, spec)
+    result["response"] = resp
 
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]
@@ -127,10 +131,9 @@ def create_snapshot(module, result):
             module.fail_json(
                 msg="Failed fetching snapshot info post creation", **result
             )
-
+        result["response"] = resp
         result["snapshot_uuid"] = resp.get("id")
 
-    result["response"] = resp
     result["changed"] = True
 
 

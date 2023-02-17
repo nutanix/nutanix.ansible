@@ -38,6 +38,26 @@ options:
         default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_ndb_base_module
+            - wheater the lastet version of profile or no
+        type: bool
+        default: false
+      filters:
+        description:
+            - write
+        type: dict
+        suboptions:
+            engine:
+                description:
+                    - write
+                type: str
+                choices: ["oracle_database","postgres_database","sqlserver_database","mariadb_database","mysql_database","saphana_database","mongodb_database",]
+            type:
+                description:
+                    - write
+                type: str
+                choices: ["Software","Compute","Network","Database_Parameter",]
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -173,14 +193,39 @@ from ..module_utils.ndb.profiles.profiles import Profile  # noqa: E402
 
 def get_module_spec():
 
+    filters_spec = dict(
+        engine=dict(
+            type="str",
+            choices=[
+                "oracle_database",
+                "postgres_database",
+                "sqlserver_database",
+                "mariadb_database",
+                "mysql_database",
+                "saphana_database",
+                "mongodb_database",
+            ],
+        ),
+        type=dict(
+            type="str",
+            choices=[
+                "Software",
+                "Compute",
+                "Network",
+                "Database_Parameter",
+            ],
+        ),
+    )
+
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
-        profile_type=dict(
-            type="str", choices=["Software", "Compute", "Network", "Database_Parameter"]
-        ),
         version_id=dict(type="str"),
         latest_version=dict(type="bool", default=False),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
@@ -190,8 +235,7 @@ def get_profile(module, result):
     profile = Profile(module)
     name = module.params.get("name")
     uuid = module.params.get("uuid")
-    type = module.params.get("profile_type")
-    resp, err = profile.get_profiles(uuid, name, type)
+    resp, err = profile.get_profiles(uuid, name)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed fetching profile info", **result)
@@ -201,8 +245,9 @@ def get_profile(module, result):
 
 def get_profiles(module, result):
     profile = Profile(module)
+    query_params = module.params.get("filters")
 
-    resp = profile.read()
+    resp = profile.read(query=query_params)
 
     result["response"] = resp
 
@@ -237,7 +282,6 @@ def run_module():
     elif (
         module.params.get("name")
         or module.params.get("uuid")
-        or module.params.get("profile_type")
     ):
         get_profile(module, result)
     else:

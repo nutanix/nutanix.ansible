@@ -59,11 +59,10 @@ class Snapshot(NutanixDatabase):
 
     def get_snapshot_uuid(self, time_machine_uuid, name):
         query = {
-            "value-type": time_machine_uuid,
-            "detailed": False,
-            "load-database": False,
-            "load-clones": False,
-            "time-zone": "UTC",
+            "value-type": "time-machine",
+            "value": time_machine_uuid,
+            "detailed": True,
+            "all": True
         }
 
         snapshots = self.read(query=query)
@@ -175,3 +174,23 @@ class Snapshot(NutanixDatabase):
             specs.append(uuid)
 
         return specs, None
+
+    def _build_query_params(self, query_params):
+        if query_params.get("database-ids"):
+            db_ids = ",".join(query_params["database-ids"])
+            query_params["database-ids"] = db_ids
+        return query_params
+
+    def get_snapshots(self, query_params=None):
+        if query_params:
+            queries = self._build_query_params(query_params)
+            resp = self.read(query=queries)
+        else:
+            resp = self.read()
+
+        return resp
+
+    def get_snapshot_files(self, uuid):
+        endpoint = "files"
+        resp = self.read(uuid=uuid, endpoint=endpoint)
+        return resp

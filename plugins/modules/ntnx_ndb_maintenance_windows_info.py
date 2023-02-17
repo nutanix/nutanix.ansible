@@ -30,7 +30,6 @@ EXAMPLES = r"""
 RETURN = r"""
 """
 
-
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 from ..module_utils.ndb.maintenance_window import MaintenanceWindow  # noqa: E402
 

@@ -196,13 +196,15 @@ class DatabaseInstance(NutanixDatabase):
             }
         )
 
-    def get_database(self, name=None, uuid=None):
-        default_query = {"detailed": True}
+    def get_database(self, name=None, uuid=None, query=None):
         if uuid:
-            resp = self.read(uuid=uuid, query=default_query)
+            resp = self.read(uuid=uuid, query=query, raise_error=False)
         elif name:
-            query = {"value-type": "name", "value": name}
-            query.update(deepcopy(default_query))
+            query_params = {"value-type": "name", "value": name}
+            if query:
+                query.update(query_params)
+            else:
+                query = query_params
             resp = self.read(query=query)
             if not resp:
                 return None, "Database with name {0} not found".format(name)

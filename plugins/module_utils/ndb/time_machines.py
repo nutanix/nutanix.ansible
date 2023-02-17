@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
 
-from .clusters import Cluster
+from .clusters import Cluster, get_cluster_uuid
 from .nutanix_database import NutanixDatabase
 from .slas import get_sla_uuid
 
@@ -26,18 +26,19 @@ class TimeMachine(NutanixDatabase):
         endpoint = "{0}/{1}".format(time_machine_uuid, "log-catchups")
         return self.create(data=data, endpoint=endpoint)
 
-    def get_time_machine(self, uuid=None, name=None):
+    def get_time_machine(self, uuid=None, name=None, query=None):
         """
         Fetch time machine info based on uuid or name.
         Args:
             uuid(str): uuid of time machine
             name(str): name of time machine
+            query(str): query params
         """
         if uuid:
-            resp = self.read(uuid=uuid)
+            resp = self.read(uuid=uuid, query=query)
         elif name:
             endpoint = "{0}/{1}".format("name", name)
-            resp = self.read(endpoint=endpoint)
+            resp = self.read(endpoint=endpoint, query=query)
             if isinstance(resp, list):
                 if not resp:
                     return None, "Time machine with name {0} not found".format(name)
@@ -270,3 +271,82 @@ class TimeMachine(NutanixDatabase):
 
         payload["schedule"] = schedule_spec
         return payload, None
+
+    def get_default_data_access_management_spec(self, override_spec=None):
+        spec = deepcopy({"nxClusterId": "", "type": "OTHER", "slaId": ""})
+        if override_spec:
+            for key in spec.keys():
+                if override_spec.get(key):
+                    spec[key] = deepcopy(override_spec[key])
+
+        return spec
+
+    def get_data_access_management_spec(self, old_spec=None):
+        self.build_spec_methods = {
+            "cluster": self._build_spec_cluster,
+            "type": self._build_spec_type,
+            "sla": self._build_spec_sla,
+        }
+        spec = old_spec or self.get_default_data_access_management_spec()
+        return super().get_spec(old_spec=spec)
+
+    def _build_spec_cluster(self, payload, param):
+        uuid, err = get_cluster_uuid(self.module, param)
+        if err:
+            return None, err
+        payload["nxClusterId"] = uuid
+        return payload, None
+
+    def _build_spec_type(self, payload, type):
+        payload["type"] = type
+        return payload, None
+
+    def _build_spec_sla(self, payload, param):
+        uuid, err = get_sla_uuid(self.module, param)
+        if err:
+            return None, err
+        if payload.get("slaId"):
+            payload["resetSlaId"] = True
+        payload["slaId"] = uuid
+        return payload, None
+
+    def check_if_cluster_exists(
+        self, time_machine_uuid, cluster_uuid
+    ):
+        """
+        This method checks if cluster is associated with time machine
+        """
+        query = {
+            "load-associated-clusters": True,
+        }
+        resp = self.read(uuid=time_machine_uuid, query=query)
+
+        for cluster in resp.get("associatedClusters", []):
+            if cluster.get("nxClusterId") == cluster_uuid:
+                return True
+            
+        return False
+
+    def read_data_access_instance(
+        self, time_machine_uuid, cluster_uuid
+    ):
+        endpoint = "clusters/{0}".format(cluster_uuid)
+        query = {"detailed": True}
+        return self.read(uuid=time_machine_uuid, endpoint=endpoint, query=query)
+
+    def create_data_access_instance(self, uuid=None, data=None):
+        return self.update(uuid=uuid, data=data, endpoint="clusters", method="POST")
+
+    def update_data_access_instance(self, tm_uuid=None, cluster_uuid=None, data=None):
+        endpoint = "clusters/{0}".format(cluster_uuid)
+        return self.update(
+            uuid=tm_uuid, data=data, endpoint=endpoint, method="PATCH"
+        )
+
+    def delete_data_access_instance(self, tm_uuid=None, cluster_uuid=None):
+        endpoint = "clusters/{0}".format(cluster_uuid)
+        data = {
+            "deleteReplicatedSnapshots": True,
+            "deleteReplicatedProtectionDomains": True,
+        }
+        return self.delete(uuid=tm_uuid, data=data, endpoint=endpoint)

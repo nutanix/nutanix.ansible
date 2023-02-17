@@ -660,27 +660,51 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.databases import Database  # noqa: E402
+from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
+from ..module_utils.utils import format_filters_map  # noqa: E402
 
 
 def get_module_spec():
 
+    filters_spec = dict(
+        detailed=dict(type="bool"),
+        load_dbserver_cluster=dict(type="bool"),
+        order_by_dbserver_cluster=dict(type="bool"),
+        order_by_dbserver_logical_cluster=dict(type="bool"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "ip",
+                "name",
+                "database-name",
+            ],
+        ),
+        time_zone=dict(type="str"),
+    )
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
 
 
 def get_database(module, result):
-    database = Database(module)
+    database = DatabaseInstance(module)
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
+
     if module.params.get("name"):
         name = module.params["name"]
-        resp, err = database.get_database(name=name)
+        resp, err = database.get_database(name=name, query=query_params)
     else:
         uuid = module.params["uuid"]
-        resp, err = database.get_database(uuid=uuid)
+        resp, err = database.get_database(uuid=uuid, query=query_params)
 
     if err:
         result["error"] = err
@@ -689,9 +713,11 @@ def get_database(module, result):
 
 
 def get_databases(module, result):
-    database = Database(module)
+    database = DatabaseInstance(module)
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
 
-    resp = database.read()
+    resp = database.read(query=query_params)
 
     result["response"] = resp
 

@@ -191,7 +191,6 @@
     fail_msg: "Unable to update db server vm"
     success_msg: "DB server VM updated successfully"
 
-
 - name: check idempotency
   ntnx_ndb_db_server_vms:
       wait: True

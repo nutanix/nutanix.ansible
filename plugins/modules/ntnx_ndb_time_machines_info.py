@@ -24,6 +24,46 @@ options:
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_ndb_base_module
+      filters:
+        description:
+            - write
+        type: dict
+        suboptions:
+            detailed:
+                description:
+                    - write
+                type: bool
+            load_clones:
+                description:
+                    - write
+                type: bool
+            load_databases:
+                description:
+                    - write
+                type: bool
+            clone_tms:
+                description:
+                    - write
+                type: bool
+            database_tms:
+                description:
+                    - write
+                type: bool
+            value:
+                description:
+                    - write
+                type: str
+            value_type:
+                description:
+                    - write
+                type: str
+                choices: ["ip","name",]
+            time_zone:
+                description:
+                    - write
+                type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_credentials
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -224,34 +264,62 @@ response:
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
+from ..module_utils.utils import format_filters_map  # noqa: E402
 
 
 def get_module_spec():
 
+    filters_spec = dict(
+        detailed=dict(type="bool"),
+        load_clones=dict(type="bool"),
+        load_database=dict(type="bool"),
+        clone_tms=dict(type="bool"),
+        database_tms=dict(type="bool"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "id",
+                "name",
+            ],
+        ),
+        time_zone=dict(type="str"),
+    )
+
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
 
 
-def get_tm(module, result):
+def get_time_machine(module, result):
     tm = TimeMachine(module)
 
     uuid = module.params.get("uuid")
     name = module.params.get("name")
-    if name:
-        resp = tm.get_time_machines(value=name, key="name")
-    else:
-        resp = tm.get_time_machines(value=uuid, key="uuid")
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
+
+    resp, err = tm.get_time_machine(uuid=uuid, name=name, query=query_params)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed fetching sla info", **result)
     result["response"] = resp
 
 
-def get_tms(module, result):
+def get_time_machines(module, result):
     tm = TimeMachine(module)
 
-    resp = tm.read()
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
+
+    resp = tm.read(query=query_params)
 
     result["response"] = resp
 
@@ -264,9 +332,9 @@ def run_module():
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("name") or module.params.get("uuid"):
-        get_tm(module, result)
+        get_time_machine(module, result)
     else:
-        get_tms(module, result)
+        get_time_machines(module, result)
     module.exit_json(**result)
 
 
