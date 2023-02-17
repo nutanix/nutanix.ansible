@@ -1,7 +1,7 @@
 ---
 
 - debug:
-    msg: "start ntnx_ndb_db_server_vms, ntnx_ndb_register_db_server_vm, ntnx_ndb_db_servers_info and ntnx_ndb_maintenance_tasks tests"
+    msg: "start ntnx_ndb_db_server_vms, ntnx_ndb_register_db_server_vm, ntnx_ndb_db_servers_info and ntnx_ndb_maintenance_tasks tests. Approx Time: < 30 mins"
 
 - name: Generate random name
   set_fact:
