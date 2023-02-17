@@ -1,6 +1,6 @@
 ---
 - debug:
-    msg: Start testing ntnx_ndb_slas
+    msg: Start testing ntnx_ndb_slas and ntnx_ndb_slas_info
 
 - name: Generate random profile_name 
   set_fact:
@@ -20,7 +20,7 @@
         weekly: 6
         monthly: 7 
         quarterly: 8 
-################################################################        
+################################################################ create flow ######################################### 
 - name: Verify creation of slas with check mode
   ntnx_ndb_slas:
     name: "{{profile1_name}}"
@@ -81,8 +81,8 @@
       - result.response.quarterlyRetention == {{frequency.snapshots_retention.quarterly}}
       - result.response.weeklyRetention == {{frequency.snapshots_retention.weekly}}
       - result.sla_uuid is defined
-    fail_msg: "Fail:  Verify creation of slas "
-    success_msg: "Pass: Unable to create sla "
+    fail_msg: "Fail: Unable to create sla "
+    success_msg: "Pass: sla is created successfully "
 - set_fact:
     todelete: "{{ todelete + [  result.sla_uuid ] }}"
 ################################################################
@@ -126,7 +126,7 @@
       - result.sla_uuid is defined
     fail_msg: "Fail: Unable to update sla "
     success_msg: "Pass: verify slas update flow finished succesfully"
-################################################################
+################################################################ update flow ######################################### 
 - name: verify slas update flow with check mode
   ntnx_ndb_slas:
     sla_uuid: "{{result.sla_uuid}}"
@@ -183,7 +183,75 @@
       - result.changed == false
     fail_msg: "Fail: verify idempotency"
     success_msg: "Pass: verify idempotency "
+
+######################################################################## Info module tests #################################################
+
+- debug:
+    msg: Start testing ntnx_ndb_slas_info
+
+- name: List all era slas
+  ntnx_ndb_slas_info:
+  register: slas
+
+- name: check listing status
+  assert:
+    that:
+      - slas.response is defined
+      - slas.failed == false
+      - slas.changed == false
+      - slas.response | length > 0
+    fail_msg: "Unable to list all era slas"
+    success_msg: "era slas listed successfully"
 ################################################################
+- name: get era slas using it's name  
+  ntnx_ndb_slas_info:
+    name: "{{slas.response[0].name}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{slas.response[0].name}}"
+    fail_msg: "Unable to get era slas using it's name  "
+    success_msg: "get  era slas using it's name  successfully"
+################################################################
+- name: List slas use id
+  ntnx_ndb_slas_info:
+    uuid: "{{slas.response[0].id}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{slas.response[0].name}}"
+    fail_msg: "Unable to get era slas using it's id  "
+    success_msg: "get  era slas using it's id  successfully"
+################################################################
+
+
+- name: get era slas with incorrect name
+  ntnx_ndb_slas_info:
+    name: "abcd"
+  register: result
+  no_log: true
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"
+
+######################################################################## Delete flow #################################################
 - name: verify slas delete flow
   ntnx_ndb_slas:
     state: absent
