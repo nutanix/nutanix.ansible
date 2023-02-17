@@ -301,7 +301,6 @@ class TimeMachine(NutanixDatabase):
         payload["slaId"] = uuid
         return payload, None
 
-
     def check_if_cluster_exists(
         self, time_machine_uuid, cluster_uuid
     ):

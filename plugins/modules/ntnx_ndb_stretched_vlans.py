@@ -16,7 +16,7 @@ description: Module for create, update and delete of single instance stretched v
 options:
   vlan_uuid:
     description:
-      - uuid for update or delete of stretched stretched vlan
+      - uuid for update or delete of stretched vlan
     type: str
   vlans:
     description:
@@ -161,7 +161,7 @@ def update_stretched_vlan(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating update stretched stretched vlan  spec", **result
+            msg="Failed generating update stretched vlan spec", **result
         )
 
     if module.check_mode:

@@ -220,9 +220,6 @@ def get_module_spec():
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
-        # profile_type=dict(
-        #     type="str", choices=["Software", "Compute", "Network", "Database_Parameter"]
-        # ),
         version_id=dict(type="str"),
         latest_version=dict(type="bool", default=False),
         filters=dict(
@@ -285,7 +282,6 @@ def run_module():
     elif (
         module.params.get("name")
         or module.params.get("uuid")
-        # or module.params.get("profile_type")
     ):
         get_profile(module, result)
     else:
