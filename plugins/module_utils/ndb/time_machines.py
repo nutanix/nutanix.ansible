@@ -324,7 +324,7 @@ class TimeMachine(NutanixDatabase):
     ):
         endpoint = "clusters/{0}".format(cluster_uuid)
         query = {"detailed": True}
-        return super().read(uuid=time_machine_uuid, endpoint=endpoint, query=query)  
+        return self.read(uuid=time_machine_uuid, endpoint=endpoint, query=query)
 
     def create_data_access_instance(self, uuid=None, data=None):
         return self.update(uuid=uuid, data=data, endpoint="clusters", method="POST")
@@ -341,4 +341,4 @@ class TimeMachine(NutanixDatabase):
             "deleteReplicatedSnapshots": True,
             "deleteReplicatedProtectionDomains": True,
         }
-        return super().delete(uuid=tm_uuid, data=data, endpoint=endpoint)
+        return self.delete(uuid=tm_uuid, data=data, endpoint=endpoint)
