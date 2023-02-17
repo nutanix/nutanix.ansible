@@ -125,7 +125,8 @@ class DatabaseInstance(NutanixDatabase):
             node.pop("dbserver")
 
         # format time machine's response
-        TimeMachine.format_response(response.get("timeMachine", {}))
+        if response.get("timeMachine"):
+            TimeMachine.format_response(response.get("timeMachine"))
 
         return response
 

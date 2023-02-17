@@ -44,9 +44,18 @@ def get_module_spec():
     return module_args
 
 
+def get_maintenance_window(module, result):
+    mw = MaintenanceWindow(module)
+    query = {"load-task-associations": True, "load-entities": True}
+    resp = mw.read(uuid=module.params.get("uuid"), query=query)
+    result["response"] = resp
+    result["uuid"] = module.params.get("uuid")
+
+
 def get_maintenance_windows(module, result):
     mw = MaintenanceWindow(module)
-    resp = mw.read(uuid=module.params.get("uuid"))
+    query = {"load-task-associations": True, "load-entities": True}
+    resp = mw.read(query=query)
     result["response"] = resp
 
 
@@ -56,7 +65,10 @@ def run_module():
         supports_check_mode=False,
     )
     result = {"changed": False, "error": None, "response": None}
-    get_maintenance_windows(module, result)
+    if module.params.get("uuid"):
+        get_maintenance_window(module, result)
+    else:
+        get_maintenance_windows(module, result)
     module.exit_json(**result)
 
 

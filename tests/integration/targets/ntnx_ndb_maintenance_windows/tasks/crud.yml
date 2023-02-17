@@ -143,8 +143,23 @@
       - result.failed == False
       - result.response.name == window2_name
       - result.response.id == window2_uuid
+      - result.uuid == window2_uuid
     fail_msg: "Unable to fetch window info"
     success_msg: "maintenance window info obtained successfully"
+
+- name: get all windows
+  ntnx_ndb_maintenance_windows_info:
+  register: result
+
+- name: Info module status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 1
+    fail_msg: "Unable to fetch all windows"
+    success_msg: "all maintenance window info obtained successfully"
 
 ############################################## update tests ####################################
 
