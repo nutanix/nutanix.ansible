@@ -7,10 +7,10 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .database_engines.db_engine_factory import create_db_engine
+from .db_server_vm import DBServerVM
 from .nutanix_database import NutanixDatabase
 from .profiles.profile_types import DatabaseParameterProfile
 from .time_machines import TimeMachine
-from .db_server_vm import DBServerVM
 
 
 class DatabaseClone(NutanixDatabase):

@@ -328,7 +328,7 @@ def get_module_spec():
         cluster_credentials=dict(
             type="dict",
             required_together=[("username", "password")],
-            options=credentials_spec
+            options=credentials_spec,
         ),
         agent_network=dict(type="dict", options=agent_network_spec),
         vlan_access=dict(type="dict", options=vlan_access_type_spec),
@@ -416,7 +416,7 @@ def delete_cluster(module, result):
         result["error"] = err
         module.fail_json(msg="Failed removing cluster", **result)
     result["response"] = resp
-    
+
     ops_uuid = resp["operationId"]
 
     if module.params.get("wait"):

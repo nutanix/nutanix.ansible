@@ -147,22 +147,20 @@ def update_stretched_vlan(module, result):
 
     uuid = module.params.get("stretched_vlan_uuid")
     if not uuid:
-        module.fail_json(msg="stretched_vlan_uuid is required field for update", **result)
+        module.fail_json(
+            msg="stretched_vlan_uuid is required field for update", **result
+        )
     resp, err = stretched_vlan.get_stretched_vlan(uuid=uuid)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating update stretched vlan  spec", **result
-        )
+        module.fail_json(msg="Failed generating update stretched vlan  spec", **result)
 
     old_spec = stretched_vlan.get_default_update_spec(override_spec=resp)
 
     update_spec, err = stretched_vlan.get_spec(old_spec=old_spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating update stretched vlan spec", **result
-        )
+        module.fail_json(msg="Failed generating update stretched vlan spec", **result)
 
     if module.check_mode:
         result["response"] = update_spec
@@ -184,7 +182,9 @@ def delete_stretched_vlan(module, result):
 
     uuid = module.params.get("stretched_vlan_uuid")
     if not uuid:
-        module.fail_json(msg="stretched_vlan_uuid is required field for delete", **result)
+        module.fail_json(
+            msg="stretched_vlan_uuid is required field for delete", **result
+        )
 
     resp = stretched_vlan.delete_stretched_vlan(uuid)
 
@@ -216,7 +216,12 @@ def run_module():
         supports_check_mode=True,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None, "stretched_vlan_uuid": None}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+        "stretched_vlan_uuid": None,
+    }
     if module.params["state"] == "present":
         if module.params.get("stretched_vlan_uuid"):
             update_stretched_vlan(module, result)

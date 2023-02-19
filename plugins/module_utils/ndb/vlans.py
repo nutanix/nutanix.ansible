@@ -135,9 +135,7 @@ class VLAN(NutanixDatabase):
         return payload
 
     def _build_spec_gateway(self, payload, gateway):
-        old_property = self._get_property_by_name(
-            "VLAN_GATEWAY", payload["properties"]
-        )
+        old_property = self._get_property_by_name("VLAN_GATEWAY", payload["properties"])
         if old_property:
             old_property["value"] = gateway
         else:
