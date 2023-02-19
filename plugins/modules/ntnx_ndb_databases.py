@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_databases
 short_description: Module for create, update and delete of single instance database. Currently, postgres type database is officially supported.
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: Module for create, update and delete of single instance database in Nutanix Database Service
 options:
   db_uuid:
@@ -58,6 +58,12 @@ options:
             type: str
             description: name of vm
             required: true
+          desc:
+            type: str
+            description: write
+          ip:
+            type: str
+            description: write
           pub_ssh_key:
             type: str
             description: public ssh key for access to vm
@@ -151,6 +157,7 @@ options:
             description:
               - uuid of registered vm
               - mutually_exclusive with C(name)
+
   time_machine:
     description:
       - time machine details
@@ -181,7 +188,6 @@ options:
       schedule:
           type: dict
           description: schedule for taking snapshot
-          required: True
           suboptions:
             daily:
                 type: str
@@ -223,14 +229,33 @@ options:
         type: bool
         default: true
         description: enable/disable auto tuning of log drive
+      clusters:
+        type: list
+        elements: dict
+        description: write
+        suboptions:
+            name:
+                type: str
+                description:
+                    - name of cluster
+                    - mutually_exclusive with C(uuid)
+            uuid:
+                type: str
+                description:
+                    - uuid of cluster
+                    - mutually_exclusive with C(name)
   postgres:
     type: dict
     description: action arguments for postgres type database
     suboptions:
+      archive_wal_expire_days:
+          type: str
+          description: write
+          default: "-1"
       listener_port:
           type: str
           description: listener port for db
-          required: true
+          default: "5432"
       db_name:
           type: str
           description: initial database name
@@ -255,6 +280,42 @@ options:
           type: bool
           default: false
           description: if clustered database
+      patroni_cluster_name:
+          type: str
+          description: write
+      ha_proxy:
+          type: dict
+          description: write
+          suboptions:
+                provision_virtual_ip:
+                    type: bool
+                    description: write
+                    default: true
+                write_port:
+                    type: str
+                    description: writ
+                    default: "5000"
+                read_port:
+                    type: str
+                    description: write
+                    default: "5001"
+      enable_synchronous_mode:
+          type: bool
+          default: false
+          description: write
+      enable_peer_auth:
+          type: bool
+          default: false
+          description: write
+      virtual_ip:
+          type: str
+          description: write
+      type:
+          description: write
+          type: str
+          choices: ["single", "ha"]
+          default: "single"
+
       db_size:
           type: int
           description: database instance size
@@ -265,8 +326,207 @@ options:
           required: false
       post_create_script:
           type: str
-          description: commands to run after database instance creation
+          description: write
           required: false
+  db_server_cluster:
+    description:
+      - write
+    type: dict
+    suboptions:
+        new_cluster:
+            description:
+                - write
+            type: dict
+            required: true
+            suboptions:
+                name:
+                    description:
+                        - write
+                    type: str
+                    required: true
+                desc:
+                    description:
+                        - write
+                    type: str
+                vms:
+                    description:
+                        - write
+                    type: list
+                    elements: dict
+                    required: true
+                    suboptions:
+                        name:
+                              description:
+                                  - write
+                              type: str
+                              required: true
+                        cluster:
+                          description:
+                            - era cluster details
+                          type: dict
+                          suboptions:
+                            name:
+                              type: str
+                              description:
+                                - name of cluster
+                                - mutually_exclusive with C(uuid)
+                            uuid:
+                              type: str
+                              description:
+                                - uuid of cluster
+                                - mutually_exclusive with C(name)
+                        network_profile:
+                          description:
+                            - network profile details
+                          type: dict
+                          suboptions:
+                            name:
+                              type: str
+                              description:
+                                - name of profile
+                                - mutually_exclusive with C(uuid)
+                            uuid:
+                              type: str
+                              description:
+                                - uuid of profile
+                                - mutually_exclusive with C(name)
+                        compute_profile:
+                          description:
+                            - compute profile details
+                          type: dict
+                          suboptions:
+                            name:
+                              type: str
+                              description:
+                                - name of profile
+                                - mutually_exclusive with C(uuid)
+                            uuid:
+                              type: str
+                              description:
+                                - uuid of profile
+                                - mutually_exclusive with C(name)
+                        role:
+                            description:
+                                - write
+                            type: str
+                            choices: ["Primary", "Secondary"]
+                        node_type:
+                            description:
+                                - write
+                            type: str
+                            choices: ["database", "haproxy"]
+                            default: "database"
+                        archive_log_destination:
+                            description:
+                                - write
+                            type: str
+                        ip:
+                            description:
+                                - write
+                            type: str
+                password:
+                    description:
+                        - write
+                    type: str
+                    required: true
+                pub_ssh_key:
+                    description:
+                        - write
+                    type: str
+                software_profile:
+                  description:
+                    - software profile details
+                  type: dict
+                  required: true
+                  suboptions:
+                    name:
+                      type: str
+                      description:
+                        - name of profile
+                        - mutually_exclusive with C(uuid)
+                    uuid:
+                      type: str
+                      description:
+                        - uuid of profile
+                        - mutually_exclusive with C(name)
+                    version_id:
+                      type: str
+                      description:
+                        - version id of software profile
+                        - by default latest version will be used
+                network_profile:
+                  description:
+                    - network profile details
+                  type: dict
+                  suboptions:
+                    name:
+                      type: str
+                      description:
+                        - name of profile
+                        - mutually_exclusive with C(uuid)
+                    uuid:
+                      type: str
+                      description:
+                        - uuid of profile
+                        - mutually_exclusive with C(name)
+                compute_profile:
+                  description:
+                    - compute profile details
+                  type: dict
+                  suboptions:
+                    name:
+                      type: str
+                      description:
+                        - name of profile
+                        - mutually_exclusive with C(uuid)
+                    uuid:
+                      type: str
+                      description:
+                        - uuid of profile
+                        - mutually_exclusive with C(name)
+                cluster:
+                    description:
+                        - era cluster details
+                    type: dict
+                    required: true
+                    suboptions:
+                        name:
+                            type: str
+                            description:
+                                - name of cluster
+                                - mutually_exclusive with C(uuid)
+                        uuid:
+                            type: str
+                            description:
+                                - uuid of cluster
+                                - mutually_exclusive with C(name)
+                ips:
+                    description:
+                        - write
+                    type: list
+                    elements: dict
+                    suboptions:
+                        cluster:
+                            description:
+                                - era cluster details
+                            type: dict
+                            required: true
+                            suboptions:
+                                name:
+                                    type: str
+                                    description:
+                                        - name of cluster
+                                        - mutually_exclusive with C(uuid)
+                                uuid:
+                                    type: str
+                                    description:
+                                        - uuid of cluster
+                                        - mutually_exclusive with C(name)
+                        ip:
+                            description:
+                                - write
+                            type: str
+                            required: true
   tags:
     type: dict
     description:
@@ -274,6 +534,7 @@ options:
       - update allowed
   auto_tune_staging_drive:
     type: bool
+    default: true
     description:
       - enable/disable auto tuning of stage drive
       - enabled by default
@@ -282,9 +543,18 @@ options:
     description:
       - only unregister from era in delete process
       - if not provided, database instance from db server VM will be deleted
+  delete_db_from_vm:
+    type: bool
+    description: write
   delete_time_machine:
     type: bool
     description: delete time machine as well in delete process
+  delete_db_server_vms:
+    type: bool
+    description: write
+  unregister_db_server_vms:
+    type: bool
+    description: write
   timeout:
     description:
         - timeout for polling database operations in seconds
@@ -295,6 +565,7 @@ options:
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
+  - nutanix.ncp.ntnx_AutomatedPatchingSpec
 author:
   - Prem Karat (@premkarat)
   - Pradeepsingh Bhati (@bhati-pradeep)
@@ -751,7 +1022,7 @@ def get_module_spec():
         desc=dict(type="str", required=False),
         vms=dict(type="list", elements="dict", options=cluster_vm, required=True),
         password=dict(type="str", required=True, no_log=True),
-        pub_ssh_key=dict(type="str", required=False),
+        pub_ssh_key=dict(type="str", required=False, no_log=True),
         software_profile=dict(
             type="dict",
             options=software_profile,
@@ -812,7 +1083,7 @@ def get_module_spec():
         auto_tune_log_drive=dict(type="bool", required=False, default=True),
         clusters=dict(
             type="list",
-            element="dict",
+            elements="dict",
             options=entity_by_spec,
             mutually_exclusive=mutually_exclusive,
             required=False,
