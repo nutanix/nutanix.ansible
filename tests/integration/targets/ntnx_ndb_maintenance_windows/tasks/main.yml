@@ -7,4 +7,3 @@
         validate_certs: False
   block:
         - import_tasks: "crud.yml"
-

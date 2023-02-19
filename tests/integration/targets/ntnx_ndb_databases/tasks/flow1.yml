@@ -502,7 +502,6 @@
     tags:
       ansible-databases: "single-instance-dbs"
     working_directory: "/check"
-    auto_tune_staging_drive: false
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"

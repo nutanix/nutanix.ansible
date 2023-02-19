@@ -26,10 +26,6 @@ options:
         description:
             - db server vm ip
         type: str
-extends_documentation_fragment:
-      - nutanix.ncp.ntnx_ndb_base_module
-            - server ip
-        type: str
       filters:
         description:
             - write
@@ -72,6 +68,8 @@ extends_documentation_fragment:
                 description:
                     - write
                 type: str
+extends_documentation_fragment:
+      - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)

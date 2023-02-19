@@ -11,10 +11,10 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_stretched_vlans
 short_description: Module for create, update and delete of single instance vlan. Currently, postgres type vlan is officially supported.
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: Module for create, update and delete of single instance stretched vlan in Nutanix vlan Service
 options:
-  vlan_uuid:
+  stretched_vlan_uuid:
     description:
       - uuid for update or delete of stretched vlan
     type: str

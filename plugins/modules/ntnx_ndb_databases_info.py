@@ -22,6 +22,40 @@ options:
         description:
             - database id
         type: str
+      filters:
+        description:
+            - write
+        type: dict
+        suboptions:
+            detailed:
+                description:
+                    - write
+                type: bool
+            load_dbserver_cluster:
+                description:
+                    - write
+                type: bool
+            order_by_dbserver_cluster:
+                description:
+                    - write
+                type: bool
+            order_by_dbserver_logical_cluster:
+                description:
+                    - write
+                type: bool
+            value:
+                description:
+                    - write
+                type: str
+            value_type:
+                description:
+                    - write
+                type: str
+                choices: ["ip","name","database-name"]
+            time_zone:
+                description:
+                    - write
+                type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_ndb_base_module
 author:
