@@ -279,10 +279,7 @@ def run_module():
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("version_id") or module.params.get("latest_version"):
         get_profiles_version(module, result)
-    elif (
-        module.params.get("name")
-        or module.params.get("uuid")
-    ):
+    elif module.params.get("name") or module.params.get("uuid"):
         get_profile(module, result)
     else:
         get_profiles(module, result)

@@ -65,6 +65,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 # 1. Snapshot replication to one cluster at a time is supported currently
 # 2. For snapshot on secondary cluster, this module only tracks primary cluster snapshot process
 
+
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))

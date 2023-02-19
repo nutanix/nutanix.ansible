@@ -220,7 +220,7 @@ def get_module_spec():
                 "status",
                 "protection-domain-id",
                 "time-machine",
-            ]
+            ],
         ),
         time_zone=dict(type="str"),
     )
@@ -231,7 +231,7 @@ def get_module_spec():
         filters=dict(
             type="dict",
             options=filters_spec,
-        )
+        ),
     )
 
     return module_args
