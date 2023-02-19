@@ -22,8 +22,6 @@ options:
         description:
             - time machine id
         type: str
-extends_documentation_fragment:
-    - nutanix.ncp.ntnx_ndb_base_module
       filters:
         description:
             - write
@@ -37,7 +35,7 @@ extends_documentation_fragment:
                 description:
                     - write
                 type: bool
-            load_databases:
+            load_database:
                 description:
                     - write
                 type: bool
@@ -57,13 +55,13 @@ extends_documentation_fragment:
                 description:
                     - write
                 type: str
-                choices: ["ip","name",]
+                choices: ["id","name",]
             time_zone:
                 description:
                     - write
                 type: str
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)

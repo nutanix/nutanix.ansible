@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_profiles
-short_description: info module for ndb profiles
+short_description: write
 version_added: 1.8.0
-description: 'Get profile info'
+description: 'write'
 options:
       profile_uuid:
         description:
@@ -31,7 +31,6 @@ options:
             - write
         type: str
         choices: ["software", "compute", "network", "database_parameter"]
-        required: true
       database_type:
         description:
             - write
@@ -42,6 +41,10 @@ options:
             - write
         type: dict
         suboptions:
+            publish:
+                description:
+                    - write
+                type: bool
             vcpus:
                 description:
                     - write
@@ -54,16 +57,38 @@ options:
                 description:
                     - write
                 type: int
+      clusters:
+            description:
+                - write
+            type: list
+            elements: dict
+            suboptions:
+                name:
+                    description:
+                        - write
+                    type: str
+                uuid:
+                    description:
+                        - write
+                    type: str
       software:
         description:
             - write
         type: dict
         suboptions:
+            publish:
+                description:
+                    - write
+                type: bool
+            deprecate:
+                description:
+                    - write
+                type: bool
             topology:
                 description:
                     - write
                 type: str
-                choices: ["single", "cluster", "all"]
+                choices: ["single", "cluster"]
             state:
                 description:
                     - write
@@ -95,7 +120,7 @@ options:
                         description:
                             - write
                         type: str
-            db_server:
+            db_server_vm:
                 description:
                     - write
                 type: dict
@@ -108,35 +133,20 @@ options:
                         description:
                             - write
                         type: str
-            clusters:
-                description:
-                    - write
-                type: list
-                elements: dict
-                suboptions:
-                    name:
-                        description:
-                            - write
-                        type: str
-                    uuid:
-                        description:
-                            - write
-                        type: str
-            database_type:
-                description:
-                    - write
-                type: str
-                choices: ["postgres"]
       network:
         description:
             - write
         type: dict
         suboptions:
+            publish:
+                description:
+                    - write
+                type: bool
             topology:
                 description:
                     - write
                 type: str
-                choices: ["single", "cluster", "all"]
+                choices: ["single", "cluster"]
             vlans:
                 description:
                     - write
@@ -166,11 +176,15 @@ options:
                 description:
                     - write
                 type: bool
-      database_parameters:
+      database_parameter:
         description:
             - write
         type: dict
         suboptions:
+            publish:
+                description:
+                    - write
+                type: bool
             postgres:
                 description:
                     - write
@@ -270,14 +284,7 @@ options:
                                 description:
                                     - write
                                 type: int
-      publish:
-        description:
-            - write
-        type: bool
-      deprecate:
-        description:
-            - write
-        type: bool
+
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
@@ -302,6 +309,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 profile_types_with_version_support = ["software"]
 profile_types_with_wait_support = ["software"]
+
 
 # Notes:
 # 1. publish/deprecate/unpublish can only be done using update.

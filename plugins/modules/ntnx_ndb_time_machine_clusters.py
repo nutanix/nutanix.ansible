@@ -14,7 +14,7 @@ short_description: Module for create, update and delete of single instance time_
 version_added: 1.8.0
 description: Module for create, update and delete of single instance time_machine_clusters in Nutanix time_machine_clusters Service
 options:
-  tm_uuid:
+  time_machine_uuid:
     description: write
     type: str
     required: true

@@ -32,7 +32,6 @@ options:
                     - write
                 type: bool
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)

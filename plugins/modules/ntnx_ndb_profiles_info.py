@@ -22,11 +22,6 @@ options:
         description:
             - profile id
         type: str
-      profile_type:
-        description:
-            - profile type
-        type: str
-        choices: ["Software", "Compute", "Network", "Database_Parameter"]
       version_id:
         description:
             - vrsion id
@@ -34,11 +29,6 @@ options:
       latest_version:
         description:
             - whether the lastet version of profile or no
-        type: bool
-        default: false
-extends_documentation_fragment:
-    - nutanix.ncp.ntnx_ndb_base_module
-            - wheater the lastet version of profile or no
         type: bool
         default: false
       filters:
@@ -57,7 +47,7 @@ extends_documentation_fragment:
                 type: str
                 choices: ["Software","Compute","Network","Database_Parameter",]
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
