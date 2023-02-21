@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_database_replicate_snapshots
 short_description: write
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'write'
 options:
       expiry_days:
@@ -64,6 +64,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 # Notes:
 # 1. Snapshot replication to one cluster at a time is supported currently
 # 2. For snapshot on secondary cluster, this module only tracks primary cluster snapshot process
+
 
 def get_module_spec():
     mutually_exclusive = [("name", "uuid")]

@@ -444,9 +444,6 @@
       publish: false
   register: result
 
-
-
-
 - name: check status of update
   assert:
     that:
@@ -556,4 +553,3 @@
 
     fail_msg: "Fail: Unable to delete software profile"
     success_msg: "Pass: Software profile delete successfully"
-

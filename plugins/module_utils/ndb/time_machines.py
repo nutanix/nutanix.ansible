@@ -310,9 +310,7 @@ class TimeMachine(NutanixDatabase):
         payload["slaId"] = uuid
         return payload, None
 
-    def check_if_cluster_exists(
-        self, time_machine_uuid, cluster_uuid
-    ):
+    def check_if_cluster_exists(self, time_machine_uuid, cluster_uuid):
         """
         This method checks if cluster is associated with time machine
         """
@@ -324,12 +322,10 @@ class TimeMachine(NutanixDatabase):
         for cluster in resp.get("associatedClusters", []):
             if cluster.get("nxClusterId") == cluster_uuid:
                 return True
-            
+
         return False
 
-    def read_data_access_instance(
-        self, time_machine_uuid, cluster_uuid
-    ):
+    def read_data_access_instance(self, time_machine_uuid, cluster_uuid):
         endpoint = "clusters/{0}".format(cluster_uuid)
         query = {"detailed": True}
         return self.read(uuid=time_machine_uuid, endpoint=endpoint, query=query)
@@ -339,9 +335,7 @@ class TimeMachine(NutanixDatabase):
 
     def update_data_access_instance(self, tm_uuid=None, cluster_uuid=None, data=None):
         endpoint = "clusters/{0}".format(cluster_uuid)
-        return self.update(
-            uuid=tm_uuid, data=data, endpoint=endpoint, method="PATCH"
-        )
+        return self.update(uuid=tm_uuid, data=data, endpoint=endpoint, method="PATCH")
 
     def delete_data_access_instance(self, tm_uuid=None, cluster_uuid=None):
         endpoint = "clusters/{0}".format(cluster_uuid)

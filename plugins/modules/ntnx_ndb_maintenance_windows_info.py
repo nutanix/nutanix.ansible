@@ -20,7 +20,6 @@ options:
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
-      - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
 """

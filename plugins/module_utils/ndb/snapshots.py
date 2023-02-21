@@ -62,7 +62,7 @@ class Snapshot(NutanixDatabase):
             "value-type": "time-machine",
             "value": time_machine_uuid,
             "detailed": True,
-            "all": True
+            "all": True,
         }
 
         snapshots = self.read(query=query)

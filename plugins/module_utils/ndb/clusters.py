@@ -10,7 +10,6 @@ from .nutanix_database import NutanixDatabase
 
 
 class Cluster(NutanixDatabase):
-
     def __init__(self, module):
         resource_type = "/clusters"
         super(Cluster, self).__init__(module, resource_type=resource_type)
@@ -196,7 +195,9 @@ class Cluster(NutanixDatabase):
             prism_vlan["accessType"].append("DSIP")
 
         if vlans_config.get("dbserver_vlan"):
-            dbserver_vlan = self._generate_vlan_access_spec(vlans_config["dbserver_vlan"])
+            dbserver_vlan = self._generate_vlan_access_spec(
+                vlans_config["dbserver_vlan"]
+            )
             dbserver_vlan["accessType"] = ["DBSERVER"]
             networks_info.append(dbserver_vlan)
         else:
@@ -209,26 +210,26 @@ class Cluster(NutanixDatabase):
     @staticmethod
     def _generate_vlan_access_spec(vlan):
         vlan_spec = {
-                "type": vlan["vlan_type"],
-                "networkInfo": [
-                    {
-                        "name": "vlanName",
-                        "value": vlan["vlan_name"],
-                    },
-                    {
-                        "name": "staticIP",
-                        "value": vlan["static_ip"],
-                    },
-                    {
-                        "name": "gateway",
-                        "value": vlan["gateway"],
-                    },
-                    {
-                        "name": "subnetMask",
-                        "value": vlan["subnet_mask"],
-                    },
-                ],
-            }
+            "type": vlan["vlan_type"],
+            "networkInfo": [
+                {
+                    "name": "vlanName",
+                    "value": vlan["vlan_name"],
+                },
+                {
+                    "name": "staticIP",
+                    "value": vlan["static_ip"],
+                },
+                {
+                    "name": "gateway",
+                    "value": vlan["gateway"],
+                },
+                {
+                    "name": "subnetMask",
+                    "value": vlan["subnet_mask"],
+                },
+            ],
+        }
         return vlan_spec
 
     def _build_spec_storage_container(self, payload, storage_container):

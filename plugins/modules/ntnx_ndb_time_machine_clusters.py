@@ -14,7 +14,7 @@ short_description: Module for create, update and delete of single instance time_
 version_added: 1.8.0
 description: Module for create, update and delete of single instance time_machine_clusters in Nutanix time_machine_clusters Service
 options:
-  tm_uuid:
+  time_machine_uuid:
     description: write
     type: str
     required: true
@@ -142,8 +142,8 @@ def create_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="'cluster' is required field for adding cluster in time machine", 
-            **result
+            msg="'cluster' is required field for adding cluster in time machine",
+            **result,
         )
 
     cluster_in_time_machine = tm.check_if_cluster_exists(tm_uuid, cluster_uuid)
@@ -168,9 +168,9 @@ def create_data_access_instance(module, result):
     resp = tm.create_data_access_instance(tm_uuid, spec)
 
     if (
-            module.params.get("wait")
-            and resp.get("updateOperationSummary")
-            and resp["updateOperationSummary"].get("operationId")
+        module.params.get("wait")
+        and resp.get("updateOperationSummary")
+        and resp["updateOperationSummary"].get("operationId")
     ):
         ops_uuid = resp["updateOperationSummary"]["operationId"]
         operations = Operation(module)
@@ -197,7 +197,7 @@ def update_data_access_instance(module, result):
     tm_uuid = module.params["time_machine_uuid"]
     if not module.params.get("cluster"):
         module.fail_json(msg="'cluster' is required field for update", **result)
-    
+
     cluster_uuid, err = get_cluster_uuid(module, module.params["cluster"])
     if err:
         result["error"] = err
@@ -231,14 +231,14 @@ def update_data_access_instance(module, result):
     )
 
     if (
-            module.params.get("wait")
-            and resp.get("updateOperationSummary")
-            and resp["updateOperationSummary"].get("operationId")
+        module.params.get("wait")
+        and resp.get("updateOperationSummary")
+        and resp["updateOperationSummary"].get("operationId")
     ):
         ops_uuid = resp["updateOperationSummary"]["operationId"]
         operations = Operation(module)
         operations.wait_for_completion(ops_uuid)
-    
+
     resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
     result["response"] = resp
 
@@ -256,8 +256,8 @@ def delete_data_access_instance(module, result):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="'cluster' is required field for removing cluster from time machine", 
-            **result
+            msg="'cluster' is required field for removing cluster from time machine",
+            **result,
         )
     resp = tm.delete_data_access_instance(tm_uuid, cluster_uuid)
 
@@ -273,7 +273,12 @@ def run_module():
             ("state", "present", ("sla",)),
         ],
     )
-    result = {"changed": False, "error": None, "response": None, "time_machine_uuid": None}
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+        "time_machine_uuid": None,
+    }
     if module.params["state"] == "present":
         create_data_access_instance(module, result)
     else:

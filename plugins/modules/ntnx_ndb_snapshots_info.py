@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_snapshots_info
 short_description: info module for ndb snapshots info
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get snapshots info'
 options:
       uuid:
@@ -22,7 +22,33 @@ options:
         description:
             - get snapshot files
         type: bool
-
+      filters:
+        description:
+            - write
+        type: dict
+        suboptions:
+            all:
+                description:
+                    - write
+                type: bool
+            database_ids:
+                description:
+                    - write
+                type: list
+                elements: str
+            value:
+                description:
+                    - write
+                type: str
+            value_type:
+                description:
+                    - write
+                type: str
+                choices: ["type","status","protection-domain-id","time-machine"]
+            time_zone:
+                description:
+                    - write
+                type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
 author:
@@ -211,7 +237,7 @@ def get_module_spec():
 
     filters_spec = dict(
         all=dict(type="bool"),
-        database_ids=dict(type="list"),
+        database_ids=dict(type="list", elements="str"),
         value=dict(type="str"),
         value_type=dict(
             type="str",
@@ -220,7 +246,7 @@ def get_module_spec():
                 "status",
                 "protection-domain-id",
                 "time-machine",
-            ]
+            ],
         ),
         time_zone=dict(type="str"),
     )
@@ -231,7 +257,7 @@ def get_module_spec():
         filters=dict(
             type="dict",
             options=filters_spec,
-        )
+        ),
     )
 
     return module_args
@@ -265,7 +291,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         required_by={"get_files": "uuid"},
-        mutually_exclusive=[("uuid", "queries")],
+        mutually_exclusive=[("uuid", "filters")],
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("uuid"):
