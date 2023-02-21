@@ -22,6 +22,9 @@ class Profile(NutanixDatabase):
             "desc": self.build_spec_desc,
             "database_type": self.build_spec_database_type,
         }
+    
+    def get_type(self):
+        return self._type
 
     def get_profile_uuid(self, data, type=None):
         uuid = ""
