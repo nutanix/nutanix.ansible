@@ -727,7 +727,7 @@
     fail_msg: "Unable to Get era databases using its name"
     success_msg: "Get era databases using its name finished successfully"
 ################################################################
-- name: Get era databases using its name
+- name: Get era databases using its id
   ntnx_ndb_databases_info:
     uuid: "{{databases.response[0].id}}"
   register: result
@@ -742,6 +742,28 @@
       - result.response.name == "{{databases.response[0].name}}"
     fail_msg: "Unable to Get era databases using its id"
     success_msg: "Get era databases using its id finished successfully"
+
+################################################################
+- name: Get era databases using its id and detailed response
+  ntnx_ndb_databases_info:
+    filters:
+      detailed: True
+    uuid: "{{databases.response[0].id}}"
+  register: result
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{databases.response[0].name}}"
+      - result.response.timeMachine is defined
+
+    fail_msg: "Unable to Get era databases using its id"
+    success_msg: "Get era databases using its id finished successfully"
+
 
 ################################################################
 
