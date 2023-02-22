@@ -189,6 +189,7 @@ response:
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 from ..module_utils.ndb.profiles.profiles import Profile  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
@@ -276,6 +277,7 @@ def run_module():
         required_by={"version_id": "uuid"},
         required_if=[("latest_version", True, ("uuid",))],
     )
+    remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("version_id") or module.params.get("latest_version"):
         get_profiles_version(module, result)
