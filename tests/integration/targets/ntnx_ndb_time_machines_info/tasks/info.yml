@@ -64,6 +64,27 @@
       - result.response.name == "{{tms.response[0].name}}"
     fail_msg: "Unable to get NDB tms using it's id  "
     success_msg: "get  NDB tms using it's id  successfully"
+
+################################################################
+
+- name: List tms use id and load database as well
+  ntnx_ndb_time_machines_info:
+    uuid: "{{tms.response[0].id}}"
+    filters:
+      load_database: true
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{tms.response[0].name}}"
+      - result.response.database is defined
+    fail_msg: "Unable to get NDB tms using it's id"
+    success_msg: "get  NDB tms using it's id  successfully"
+
 ################################################################
 
 - name: get NDB timemachine with incorrect name

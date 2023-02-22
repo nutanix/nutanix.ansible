@@ -6,7 +6,7 @@
   ntnx_ndb_time_machine_clusters:
     time_machine_uuid: "{{time_machine.uuid}}"
     cluster:
-      name: "{{Cluster.cluster2.name}}"
+      name: "{{cluster.cluster2.name}}"
     sla:
       name: "{{sla.name}}"
   register: out
@@ -27,7 +27,7 @@
   ntnx_ndb_time_machine_clusters:
       time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
-        name: "{{Cluster.cluster2.name}}"
+        name: "{{cluster.cluster2.name}}"
       sla:
         name: "{{sla2.name}}"
   register: result
@@ -51,7 +51,7 @@
   ntnx_ndb_time_machine_clusters:
       time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
-        name: "{{Cluster.cluster2.name}}"
+        name: "{{cluster.cluster2.name}}"
       sla:
         name: "{{sla2.name}}"
   register: result
@@ -73,10 +73,10 @@
 
 - name: create snapshot on cluster2
   ntnx_ndb_database_snapshots:
-    name: "ansible-created-snapshot-on-{{Cluster.cluster2.name}}"
+    name: "ansible-created-snapshot-on-{{cluster.cluster2.name}}"
     time_machine_uuid: "{{time_machine.uuid}}"
     clusters:
-      - name: "{{Cluster.cluster2.name}}"
+      - name: "{{cluster.cluster2.name}}"
   register: result
 
 - name: check snapshot status
@@ -85,7 +85,7 @@
       - result.response is defined
       - result.snapshot_uuid is defined
       - result.changed == true
-      - result.response.name == "ansible-created-snapshot-on-{{Cluster.cluster2.name}}"
+      - result.response.name == "ansible-created-snapshot-on-{{cluster.cluster2.name}}"
       - result.failed == false
       - result.response.status == "PENDING"
 
@@ -105,7 +105,7 @@
 - name: check snapshot status
   assert:
     that:
-      - result.response.name == "ansible-created-snapshot-on-{{Cluster.cluster2.name}}"
+      - result.response.name == "ansible-created-snapshot-on-{{cluster.cluster2.name}}"
       - result.response.status == "ACTIVE"
     fail_msg: "fail: Unable to check snapshot status post internal replication"
     success_msg: "pass: snapshot replicated successfully on secondary cluster"
@@ -114,10 +114,10 @@
 
 - name: create a snapshot on cluster1
   ntnx_ndb_database_snapshots:
-    name: "ansible-created-snapshot-on-{{Cluster.cluster1.name}}"
+    name: "ansible-created-snapshot-on-{{cluster.cluster1.name}}"
     time_machine_uuid: "{{time_machine.uuid}}"
     clusters:
-      - uuid: "{{Cluster.cluster1.uuid}}"
+      - uuid: "{{cluster.cluster1.uuid}}"
   register: result
 
 - name: check snapshot status on cluster2
@@ -126,7 +126,7 @@
       - result.response is defined
       - result.snapshot_uuid is defined
       - result.changed == true
-      - result.response.name == "ansible-created-snapshot-on-{{Cluster.cluster1.name}}"
+      - result.response.name == "ansible-created-snapshot-on-{{cluster.cluster1.name}}"
       - result.failed == false
       - result.response.nxClusterId == Cluster.cluster1.uuid
     fail_msg: "fail: Unable to create snapshot on primary cluster"
@@ -141,7 +141,7 @@
   ntnx_ndb_database_replicate_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     clusters:
-      - name: "{{Cluster.cluster2.name}}"
+      - name: "{{cluster.cluster2.name}}"
     expiry_days: 20
     timezone: "UTC"
   register: result
@@ -160,7 +160,7 @@
                 }
             },
             "nxClusterIds": [
-                "{{Cluster.cluster2.uuid}}"
+                "{{cluster.cluster2.uuid}}"
             ]
         },
         "snapshot_uuid": "{{snapshot_uuid}}"
@@ -180,7 +180,7 @@
   ntnx_ndb_database_replicate_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     clusters:
-      - name: "{{Cluster.cluster2.name}}"
+      - name: "{{cluster.cluster2.name}}"
     expiry_days: 20
     timezone: "UTC"
   register: result
@@ -203,7 +203,7 @@
       state: absent
       time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
-        uuid: "{{Cluster.cluster2.uuid}}"
+        uuid: "{{cluster.cluster2.uuid}}"
   register: result
 
 - name: check delete status
@@ -225,7 +225,7 @@
   ntnx_ndb_time_machine_clusters:
       time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
-        uuid: "{{Cluster.cluster2.uuid}}"
+        uuid: "{{cluster.cluster2.uuid}}"
       sla:
         uuid: "{{sla.uuid}}"
   register: out
@@ -245,7 +245,7 @@
   ntnx_ndb_time_machine_clusters:
       time_machine_uuid: "{{time_machine.uuid}}"
       cluster:
-        uuid: "{{Cluster.cluster2.uuid}}"
+        uuid: "{{cluster.cluster2.uuid}}"
       sla:
         uuid: "{{sla2.uuid}}"
   register: result
@@ -267,7 +267,7 @@
       state: absent
       time_machine_uuid: "{{result.time_machine_uuid}}"
       cluster:
-        uuid: "{{Cluster.cluster2.uuid}}"
+        uuid: "{{cluster.cluster2.uuid}}"
   register: result
 
 - name: check delete status
