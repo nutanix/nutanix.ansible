@@ -218,7 +218,23 @@
     success_msg: "NDB clusters listed successfully"
 
 ################################################################
+- name: get ndb cluster with count_entities
+  ntnx_ndb_clusters_info:
+    filters: 
+      count_entities: true
+  register: result
+  ignore_errors: true
 
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response[0].entityCounts is defined
+    fail_msg: "Unable to get NDB clusters with count_entities  "
+    success_msg: "get  NDB clusters using with count_entities  successfully"
+################################################################ 
 - name: get NDB clusters using it's name
   ntnx_ndb_clusters_info:
     name: "{{clusters.response[0].name}}"
