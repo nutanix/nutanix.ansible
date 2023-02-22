@@ -128,7 +128,7 @@
       - result.changed == true
       - result.response.name == "ansible-created-snapshot-on-{{cluster.cluster1.name}}"
       - result.failed == false
-      - result.response.nxClusterId == Cluster.cluster1.uuid
+      - result.response.nxClusterId == cluster.cluster1.uuid
     fail_msg: "fail: Unable to create snapshot on primary cluster"
     success_msg: "pass: snapshot created successfully on primary cluster"
 
@@ -218,7 +218,7 @@
 
 - name: wait for 2 minutes for internal cleanup to finish
   ansible.builtin.pause:
-    minutes: 2
+    minutes: 5
 
 #####################
 - name: create data access instance with cluster uuid and sla uuid
