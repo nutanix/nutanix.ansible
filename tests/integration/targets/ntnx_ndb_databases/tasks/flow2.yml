@@ -273,6 +273,7 @@
     fail_msg: "Unable to create register database spec"
     success_msg: "single instance postgres database register spec created successfully"
 
+    
 
 - name: register previously unregistered DB from previously unregistered DB server vm
   ntnx_ndb_register_database:

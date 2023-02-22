@@ -431,7 +431,7 @@
 ############################################ refresh clone ###########################################
 
 
-- name: refresh clone to a pitr timestamp
+- name: create spec for refresh clone to a pitr timestamp
   check_mode: yes
   ntnx_ndb_database_clone_refresh:
     uuid: "{{clone_uuid}}"

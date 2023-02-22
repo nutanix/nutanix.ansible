@@ -18,7 +18,6 @@
     db1_name_updated: "{{random_name[0]}}-updated"
     vm1_name: "{{random_name[0]}}-vm"
 
-
 ################################### Single instance postgres database tests #############################
 
 
@@ -484,6 +483,7 @@
       listener_port: "9999"
       db_name: testAnsible1
       db_password: "{{vm_password}}"
+      software_path: "{{postgres.software_home}}"
       db_user: "postgres"
 
     time_machine:
@@ -532,6 +532,10 @@
                 {
                     "name": "db_password",
                     "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+                },
+                {
+                    "name": "postgres_software_home",
+                    "value": "{{postgres.software_home}}"
                 }
             ]
 
@@ -625,6 +629,7 @@
     postgres:
       db_name: testAnsible1
       db_password: "{{vm_password}}"
+      software_path: "{{postgres.software_home}}"
 
     time_machine:
       name: TM1
@@ -683,6 +688,9 @@
     fail_msg: "Unable to register single instance postgres database"
     success_msg: "single instance postgres database registered successfully"
 
+
+- set_fact:
+    db_uuid: "{{result.db_uuid}}"     
 #####################################INFO Module tests#######################################################
 
 - debug:
@@ -758,7 +766,7 @@
 
 - name: unregister db along with delete time machine
   ntnx_ndb_databases:
-    db_uuid: "{{result.db_uuid}}" 
+    db_uuid: "{{db_uuid}}" 
     state: "absent"
     wait: true
     delete_time_machine: true
