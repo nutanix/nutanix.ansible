@@ -7,7 +7,6 @@ __metaclass__ = type
 from copy import deepcopy
 
 from ..constants import NDB
-from .database_engines.database_engine import DatabaseEngine
 from .database_engines.db_engine_factory import create_db_engine, get_engine_type
 from .db_server_vm import DBServerVM
 from .nutanix_database import NutanixDatabase
