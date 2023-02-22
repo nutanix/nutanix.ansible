@@ -16,10 +16,47 @@
     fail_msg: "Unable to list all NDB snapshots"
     success_msg: "NDB snapshots listed successfully"
 ################################################################
+- name: get NDB snapshots using it's UTC time_zone  
+  ntnx_ndb_snapshots_info:
+    filters:
+      time_zone: UTC
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response[0].timeZone == "UTC"
+    fail_msg: "Unable to get NDB snapshots with UTC time_zone  "
+    success_msg: "get  NDB snapshots using with utc time_zone"
+
+################################################################
+- name:  get NDB snapshots with time-machine id
+  ntnx_ndb_snapshots_info:
+    filters:
+      value: "{{snapshots.response[0].timeMachineId}}"
+      value_type: time-machine
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response[0].timeMachineId == "{{snapshots.response[0].timeMachineId}}"
+    fail_msg: "Unable to get NDB snapshots with time-machine id  "
+    success_msg: "get  NDB snapshots using with time-machine id"
+################################################################
 - name: get NDB snapshots using it's uuid  
   ntnx_ndb_snapshots_info:
     uuid: "{{snapshots.response[0].id}}"
   register: result
+  ignore_errors: true
 
 - name: check listing status
   assert:
@@ -36,6 +73,7 @@
     uuid: "{{snapshots.response[0].id}}"
     get_files: true
   register: result
+  ignore_errors: true
 
 - name: check listing status
   assert:
@@ -48,7 +86,6 @@
     fail_msg: "Unable to get NDB snapshots using it's id and get files "
     success_msg: "get  NDB snapshots using it's id and get files  successfully"
 # ################################################################
-
 - name: get NDB snapshots with incorrect uuid
   ntnx_ndb_snapshots_info:
     uuid: "abcd"
