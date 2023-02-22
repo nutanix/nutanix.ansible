@@ -38,4 +38,10 @@ options:
             - C(validate_certs). If not set then the value of the C(VALIDATE_CERTS), environment variable is used.
         type: bool
         default: true
+    timeout:
+        description:
+            - write
+        type: int
+        required: false
+        default: 2100
 """
