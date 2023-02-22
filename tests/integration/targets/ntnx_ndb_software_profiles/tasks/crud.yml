@@ -290,11 +290,6 @@
         }
     }
 
-
-
-- debug:
-    var: expected_result
-
 - name: check spec for creating spec for software profile version
   assert:
     that:

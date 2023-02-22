@@ -297,7 +297,7 @@
             "nxClusterId": "{{cluster.cluster1.uuid}}",
             "softwareProfileId": "{{postgres_ha_profiles.software_profile.uuid}}",
             "softwareProfileVersionId": "{{postgres_ha_profiles.software_profile.latest_version_id}}",
-            "sshPublicKey": "test_key",
+            "sshPublicKey": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
             "tags": [],
             "timeMachineInfo": {
                 "autoTuneLogDrive": true,
@@ -316,7 +316,6 @@
             },
             "vmPassword": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
         }
-
 
 - name: Check mode status
   assert: 
@@ -498,7 +497,6 @@
             node_type: "database"
             role: "Secondary"
             ip: "{{cluster_ips.ip2}}"
-
         
           - name: "{{cluster1_name}}-vm-3"
             node_type: "database"
