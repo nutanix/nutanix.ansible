@@ -10,6 +10,7 @@
       uuid: "{{cluster.cluster2.uuid}}"
   register: result
   ignore_errors: True
+  no_log: true
 
 - name: check listing status
   assert:
@@ -46,6 +47,7 @@
     dns_domain: "{{ndb_vlan.dns_domain}}"
   register: result
   ignore_errors: True
+  no_log: true
 
 
 - name: check listing status
@@ -79,6 +81,8 @@
 - name: List all NDB vlans
   ntnx_ndb_vlans_info:
   register: vlans
+  no_log: true
+  ignore_errors: True
 
 - name: check listing status
   assert:
@@ -96,6 +100,8 @@
   ntnx_ndb_vlans_info:
     name: "{{vlans.response[0].name}}"
   register: result
+  no_log: true
+  ignore_errors: True
 
 - name: check listing status
   assert:
@@ -113,6 +119,8 @@
   ntnx_ndb_vlans_info:
     uuid: "{{vlans.response[0].id}}"
   register: result
+  no_log: true
+  ignore_errors: True
 
 - name: check listing status
   assert:
@@ -148,6 +156,9 @@
     state: absent
     vlan_uuid: "{{  todelete[0]}}"
   register: result
+  no_log: true
+  ignore_errors: True
+
 - set_fact:
     todelete: []
 
@@ -173,6 +184,7 @@
     dns_domain: "{{ndb_vlan.dns_domain}}"
   register: result
   ignore_errors: True
+  no_log: true
 
 - name: check listing status
   assert:
@@ -208,6 +220,7 @@
       - "{{result.response.ipPools[1].id}}"
   register: result
   ignore_errors: True
+  no_log: true
 
 - name: check listing status
   assert:
@@ -239,6 +252,7 @@
         end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
   register: result
   ignore_errors: True
+  no_log: true
 
 - name: check listing status
   assert:
@@ -273,6 +287,7 @@
     dns_domain: "{{ndb_vlan.updated_dns_domain}}"
   register: result
   ignore_errors: True
+  no_log: true
 
 - name: check listing status
   assert:
@@ -298,6 +313,7 @@
     vlan_type: DHCP
   register: result
   ignore_errors: True
+  no_log: true
 
 - name: check listing status
   assert:
@@ -404,6 +420,7 @@
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True
+  no_log: true
 
 - name: check listing status
   assert:

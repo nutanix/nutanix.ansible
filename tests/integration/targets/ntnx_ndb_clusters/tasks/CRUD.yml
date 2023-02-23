@@ -82,6 +82,7 @@
       storage_container: "{{cluster.cluster2.storage_container}}"
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -104,6 +105,7 @@
       desc: newdesc
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -123,6 +125,7 @@
       storage_container: "{{cluster.cluster2.storage_container}}"
   register: out
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -147,6 +150,7 @@
           subnet_mask: "{{cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
   register: out
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -173,6 +177,7 @@
           - "{{cluster.cluster2.agent_network.ntp_servers[3]}}"
   register: out
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -191,6 +196,7 @@
       name_prefix: "{{cluster.cluster2.name_prefix}}"
   register: out
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -206,6 +212,7 @@
 - name: List all NDB clusters
   ntnx_ndb_clusters_info:
   register: clusters
+  no_log: true
 
 - name: check listing status
   assert:
@@ -224,6 +231,7 @@
       count_entities: true
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -239,6 +247,7 @@
   ntnx_ndb_clusters_info:
     name: "{{clusters.response[0].name}}"
   register: result
+  no_log: true
 
 - name: check listing status
   assert:
@@ -256,6 +265,7 @@
   ntnx_ndb_clusters_info:
     uuid: "{{clusters.response[0].id}}"
   register: result
+  no_log: true
 
 - name: check listing status
   assert:
@@ -293,6 +303,7 @@
       state: absent
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: assert when status not complete
   assert:
