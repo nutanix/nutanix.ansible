@@ -7,7 +7,7 @@
     name:  "{{ndb_vlan.name}}"
     vlan_type: DHCP
     cluster:
-      uuid: "{{Cluster.cluster2.uuid}}"
+      uuid: "{{cluster.cluster2.uuid}}"
   register: result
   ignore_errors: True
 
@@ -21,7 +21,7 @@
       - result.response.name == "{{ndb_vlan.name}}"
       - result.response.type == "DHCP"
       - result.response.managed == false
-      - result.response.clusterId == "{{Cluster.cluster2.uuid}}"
+      - result.response.clusterId == "{{cluster.cluster2.uuid}}"
     fail_msg: "fail: Unable to create Dhcp ndb vlan"
     success_msg: "pass: create Dhcp ndb vlan finished successfully"
 
@@ -158,7 +158,7 @@
     name:  "{{ndb_vlan.name}}"
     vlan_type: Static
     cluster:
-      uuid: "{{Cluster.cluster2.uuid}}"
+      uuid: "{{cluster.cluster2.uuid}}"
     gateway: "{{ndb_vlan.gateway}}"
     subnet_mask: "{{ndb_vlan.subnet_mask}}"
     ip_pools:
