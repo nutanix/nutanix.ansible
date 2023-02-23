@@ -1,0 +1,27 @@
+---
+- name: NDB time machine's cluster creation
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+        
+    - name: NDB time machine's cluster creation
+      ntnx_ndb_time_machine_clusters:
+        time_machine_uuid: "{{time_machine.uuid}}"
+        cluster:
+          name: "{{cluster.name}}"
+        sla:
+          name: "{{sla.name}}"
+        type: "{{type}}"
+      register: output
+    
+    - debug:
+        msg: "{{output}}"
