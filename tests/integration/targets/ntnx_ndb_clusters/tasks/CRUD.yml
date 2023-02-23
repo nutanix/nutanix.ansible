@@ -3,32 +3,32 @@
     msg: Start testing ntnx_ndb_clusters
 
 
-- name: Register Cluster with prism_vlan in check mode
+- name: Register cluster with prism_vlan in check mode
   ntnx_ndb_clusters:
-      name: "{{Cluster.cluster2.name}}"
-      desc: "{{Cluster.cluster2.desc}}"
-      name_prefix: "{{Cluster.cluster2.name_prefix}}"
-      cluster_ip: "{{Cluster.cluster2.cluster_ip}}"
+      name: "{{cluster.cluster2.name}}"
+      desc: "{{cluster.cluster2.desc}}"
+      name_prefix: "{{cluster.cluster2.name_prefix}}"
+      cluster_ip: "{{cluster.cluster2.cluster_ip}}"
       cluster_credentials:
-        username: "{{Cluster.cluster2.cluster_credentials.username}}"
-        password: "{{Cluster.cluster2.cluster_credentials.password}}"
+        username: "{{cluster.cluster2.cluster_credentials.username}}"
+        password: "{{cluster.cluster2.cluster_credentials.password}}"
       agent_network:
         dns_servers:
-          - "{{Cluster.cluster2.agent_network.dns_servers[0]}}"
-          - "{{Cluster.cluster2.agent_network.dns_servers[1]}}"
+          - "{{cluster.cluster2.agent_network.dns_servers[0]}}"
+          - "{{cluster.cluster2.agent_network.dns_servers[1]}}"
         ntp_servers:
-          - "{{Cluster.cluster2.agent_network.ntp_servers[0]}}"
-          - "{{Cluster.cluster2.agent_network.ntp_servers[1]}}"
-          - "{{Cluster.cluster2.agent_network.ntp_servers[2]}}"
-          - "{{Cluster.cluster2.agent_network.ntp_servers[3]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[0]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[1]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[2]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[3]}}"
       vlan_access:
         prism_vlan:
-          vlan_name: "{{Cluster.cluster2.vlan_access.prism_vlan.vlan_name}}"
-          vlan_type: "{{Cluster.cluster2.vlan_access.prism_vlan.vlan_type}}"
-          static_ip: "{{Cluster.cluster2.vlan_access.prism_vlan.static_ip}}"
-          gateway: "{{Cluster.cluster2.vlan_access.prism_vlan.gateway}}"
-          subnet_mask: "{{Cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
-      storage_container: "{{Cluster.cluster2.storage_container}}"
+          vlan_name: "{{cluster.cluster2.vlan_access.prism_vlan.vlan_name}}"
+          vlan_type: "{{cluster.cluster2.vlan_access.prism_vlan.vlan_type}}"
+          static_ip: "{{cluster.cluster2.vlan_access.prism_vlan.static_ip}}"
+          gateway: "{{cluster.cluster2.vlan_access.prism_vlan.gateway}}"
+          subnet_mask: "{{cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
+      storage_container: "{{cluster.cluster2.storage_container}}"
   register: result
   ignore_errors: true
   check_mode: true
@@ -40,46 +40,46 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.clusterName == "{{Cluster.cluster2.name}}"
-      - result.response.clusterDescription == "{{Cluster.cluster2.desc}}"
-      - result.response.agentVMPrefix == "{{Cluster.cluster2.name_prefix}}"
-      - result.response.clusterIP == "{{Cluster.cluster2.cluster_ip}}"
-      - result.response.credentialsInfo[0].value == "{{Cluster.cluster2.cluster_credentials.username}}"
-      - result.response.networksInfo[0].networkInfo[0].value == "{{Cluster.cluster2.vlan_access.prism_vlan.vlan_name}}"
-      - result.response.networksInfo[0].networkInfo[1].value == "{{Cluster.cluster2.vlan_access.prism_vlan.static_ip}}"
-      - result.response.networksInfo[0].networkInfo[2].value == "{{Cluster.cluster2.vlan_access.prism_vlan.gateway}}"
-      - result.response.networksInfo[0].networkInfo[3].value == "{{Cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
-      - result.response.networksInfo[0].type==  "{{Cluster.cluster2.vlan_access.prism_vlan.vlan_type}}"
+      - result.response.clusterName == "{{cluster.cluster2.name}}"
+      - result.response.clusterDescription == "{{cluster.cluster2.desc}}"
+      - result.response.agentVMPrefix == "{{cluster.cluster2.name_prefix}}"
+      - result.response.clusterIP == "{{cluster.cluster2.cluster_ip}}"
+      - result.response.credentialsInfo[0].value == "{{cluster.cluster2.cluster_credentials.username}}"
+      - result.response.networksInfo[0].networkInfo[0].value == "{{cluster.cluster2.vlan_access.prism_vlan.vlan_name}}"
+      - result.response.networksInfo[0].networkInfo[1].value == "{{cluster.cluster2.vlan_access.prism_vlan.static_ip}}"
+      - result.response.networksInfo[0].networkInfo[2].value == "{{cluster.cluster2.vlan_access.prism_vlan.gateway}}"
+      - result.response.networksInfo[0].networkInfo[3].value == "{{cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
+      - result.response.networksInfo[0].type==  "{{cluster.cluster2.vlan_access.prism_vlan.vlan_type}}"
     fail_msg: "fail: Wring with check mode for registring cluster"
     success_msg: "pass: retunred as expected"
 
-- name: Register Cluster with prism_vlan
+- name: Register cluster with prism_vlan
   ntnx_ndb_clusters:
       wait: true
-      name: "{{Cluster.cluster2.name}}"
-      desc: "{{Cluster.cluster2.desc}}"
-      name_prefix: "{{Cluster.cluster2.name_prefix}}"
-      cluster_ip: "{{Cluster.cluster2.cluster_ip}}"
+      name: "{{cluster.cluster2.name}}"
+      desc: "{{cluster.cluster2.desc}}"
+      name_prefix: "{{cluster.cluster2.name_prefix}}"
+      cluster_ip: "{{cluster.cluster2.cluster_ip}}"
       cluster_credentials:
-        username: "{{Cluster.cluster2.cluster_credentials.username}}"
-        password: "{{Cluster.cluster2.cluster_credentials.password}}"
+        username: "{{cluster.cluster2.cluster_credentials.username}}"
+        password: "{{cluster.cluster2.cluster_credentials.password}}"
       agent_network:
         dns_servers:
-          - "{{Cluster.cluster2.agent_network.dns_servers[0]}}"
-          - "{{Cluster.cluster2.agent_network.dns_servers[1]}}"
+          - "{{cluster.cluster2.agent_network.dns_servers[0]}}"
+          - "{{cluster.cluster2.agent_network.dns_servers[1]}}"
         ntp_servers:
-          - "{{Cluster.cluster2.agent_network.ntp_servers[0]}}"
-          - "{{Cluster.cluster2.agent_network.ntp_servers[1]}}"
-          - "{{Cluster.cluster2.agent_network.ntp_servers[2]}}"
-          - "{{Cluster.cluster2.agent_network.ntp_servers[3]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[0]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[1]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[2]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[3]}}"
       vlan_access:
         prism_vlan:
-          vlan_name: "{{Cluster.cluster2.vlan_access.prism_vlan.vlan_name}}"
-          vlan_type: "{{Cluster.cluster2.vlan_access.prism_vlan.vlan_type}}"
-          static_ip: "{{Cluster.cluster2.vlan_access.prism_vlan.static_ip}}"
-          gateway: "{{Cluster.cluster2.vlan_access.prism_vlan.gateway}}"
-          subnet_mask: "{{Cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
-      storage_container: "{{Cluster.cluster2.storage_container}}"
+          vlan_name: "{{cluster.cluster2.vlan_access.prism_vlan.vlan_name}}"
+          vlan_type: "{{cluster.cluster2.vlan_access.prism_vlan.vlan_type}}"
+          static_ip: "{{cluster.cluster2.vlan_access.prism_vlan.static_ip}}"
+          gateway: "{{cluster.cluster2.vlan_access.prism_vlan.gateway}}"
+          subnet_mask: "{{cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
+      storage_container: "{{cluster.cluster2.storage_container}}"
   register: result
   ignore_errors: true
 
@@ -89,11 +89,11 @@
       - result.response is defined
       - result.failed == false
       - result.changed == true
-      - result.response.name == "{{Cluster.cluster2.name}}"
-      - result.response.description == "{{Cluster.cluster2.desc}}"
-      - result.response.ipAddresses[0] == "{{Cluster.cluster2.cluster_ip}}"
-    fail_msg: "fail: Unable to Register Cluster with prisim_vlan"
-    success_msg: "pass: Register Cluster with prisim_vlan finished successfully"
+      - result.response.name == "{{cluster.cluster2.name}}"
+      - result.response.description == "{{cluster.cluster2.desc}}"
+      - result.response.ipAddresses[0] == "{{cluster.cluster2.cluster_ip}}"
+    fail_msg: "fail: Unable to Register cluster with prisim_vlan"
+    success_msg: "pass: Register cluster with prisim_vlan finished successfully"
 
 ################################################################
 
@@ -120,7 +120,7 @@
 - name: Negative Secnarios update storage container
   ntnx_ndb_clusters:
       uuid:  "{{result.cluster_uuid}}"
-      storage_container: "{{Cluster.cluster2.storage_container}}"
+      storage_container: "{{cluster.cluster2.storage_container}}"
   register: out
   ignore_errors: true
 
@@ -140,11 +140,11 @@
       uuid:  "{{result.cluster_uuid}}"
       vlan_access:
         prism_vlan:
-          vlan_name: "{{Cluster.cluster2.vlan_access.prism_vlan.vlan_name}}"
-          vlan_type: "{{Cluster.cluster2.vlan_access.prism_vlan.vlan_type}}"
-          static_ip: "{{Cluster.cluster2.vlan_access.prism_vlan.static_ip}}"
-          gateway: "{{Cluster.cluster2.vlan_access.prism_vlan.gateway}}"
-          subnet_mask: "{{Cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
+          vlan_name: "{{cluster.cluster2.vlan_access.prism_vlan.vlan_name}}"
+          vlan_type: "{{cluster.cluster2.vlan_access.prism_vlan.vlan_type}}"
+          static_ip: "{{cluster.cluster2.vlan_access.prism_vlan.static_ip}}"
+          gateway: "{{cluster.cluster2.vlan_access.prism_vlan.gateway}}"
+          subnet_mask: "{{cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
   register: out
   ignore_errors: true
 
@@ -164,13 +164,13 @@
       uuid:  "{{result.cluster_uuid}}"
       agent_network:
         dns_servers:
-          - "{{Cluster.cluster2.agent_network.dns_servers[0]}}"
-          - "{{Cluster.cluster2.agent_network.dns_servers[1]}}"
+          - "{{cluster.cluster2.agent_network.dns_servers[0]}}"
+          - "{{cluster.cluster2.agent_network.dns_servers[1]}}"
         ntp_servers:
-          - "{{Cluster.cluster2.agent_network.ntp_servers[0]}}"
-          - "{{Cluster.cluster2.agent_network.ntp_servers[1]}}"
-          - "{{Cluster.cluster2.agent_network.ntp_servers[2]}}"
-          - "{{Cluster.cluster2.agent_network.ntp_servers[3]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[0]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[1]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[2]}}"
+          - "{{cluster.cluster2.agent_network.ntp_servers[3]}}"
   register: out
   ignore_errors: true
 
@@ -188,7 +188,7 @@
 - name: Negative Secnarios update agent network
   ntnx_ndb_clusters:
       uuid:  "{{result.cluster_uuid}}"
-      name_prefix: "{{Cluster.cluster2.name_prefix}}"
+      name_prefix: "{{cluster.cluster2.name_prefix}}"
   register: out
   ignore_errors: true
 
