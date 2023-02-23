@@ -181,7 +181,7 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_static_routes_info | List existing static routes of a vpc. |
 | ntnx_subnets | Create or delete a Subnet. |
 | ntnx_subnets_info | List existing Subnets. |
-| ntnx_user_groups | Create, Delete user_groups |
+| ntnx_user_groups | Create, Delete user_groups. |
 | ntnx_user_groups_info | Get user groups info. |
 | ntnx_users | Create, Delete users |
 | ntnx_users_info | Get users info. |
