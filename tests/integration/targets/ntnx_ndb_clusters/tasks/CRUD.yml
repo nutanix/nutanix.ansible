@@ -118,6 +118,29 @@
 - set_fact:
     todelete:  "{{result.cluster_uuid}}"
 ################################################################
+- name: update cluster credeential in check_mode
+  ntnx_ndb_clusters:
+      uuid: "{{result.cluster_uuid}}"
+      cluster_credentials:
+        username: test
+        password: test
+  register: result
+  ignore_errors: true
+  no_log: true
+  check_mode: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.username is defined
+      - result.response.password is defined
+      - result.cluster_uuid is defined
+    fail_msg: "fail: update cluster credeential while check_mode"
+    success_msg: "pass: retunred as expected"
+################################################################
 
 - name: Negative Secnarios update storage container
   ntnx_ndb_clusters:
