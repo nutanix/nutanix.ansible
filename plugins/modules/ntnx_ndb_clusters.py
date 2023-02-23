@@ -25,13 +25,13 @@ options:
         description: Description of the cluster.
     name_prefix:
         type: str
-        description: write
+        description: Name prefix of the cluster.
     cluster_ip:
         type: str
         description: write
     cluster_credentials:
         type: dict
-        description: write
+        description: Credentials of the cluster.
         suboptions:
             username:
                 type: str
@@ -57,67 +57,67 @@ options:
         suboptions:
             prism_vlan:
                 type: dict
-                description: write
+                description: Prism vlan options
                 suboptions:
                     vlan_name:
                         type: str
-                        description: write
+                        description: Name of subnet
                     vlan_type:
                         type: str
-                        description: write
+                        description: type of subnet
                         choices: ["DHCP", "Static"]
                     static_ip:
                         type: str
-                        description: write
+                        description: ip address of subnet
                     gateway:
                         type: str
-                        description: write
+                        description: The gateway ip address
                     subnet_mask:
                         type: str
-                        description: write
+                        description: Subnet network address
             dsip_vlan:
                 type: dict
-                description: write
+                description: DSIP vlan options
                 suboptions:
                     vlan_name:
                         type: str
-                        description: write
+                        description: Name of subnet
                     vlan_type:
                         type: str
-                        description: write
+                        description: Type of subnet
                         choices: ["DHCP", "Static"]
                     static_ip:
                         type: str
-                        description: write
+                        description: ip address of subnet
                     gateway:
                         type: str
-                        description: write
+                        description: The gateway ip address
                     subnet_mask:
                         type: str
-                        description: write
+                        description: Subnet network address
             dbserver_vlan:
                 type: dict
-                description: write
+                description: DBServer vlan options
                 suboptions:
                     vlan_name:
                         type: str
-                        description: write
+                        description: Name of subnet
                     vlan_type:
                         type: str
-                        description: write
+                        description: Type of subnet
                         choices: ["DHCP", "Static"]
                     static_ip:
                         type: str
-                        description: write
+                        description: ip address of subnet
                     gateway:
                         type: str
-                        description: write
+                        description: The gateway ip address
                     subnet_mask:
                         type: str
-                        description: write
+                        description: Subnet network address
     storage_container:
         type: str
-        description: write
+        description: Name of storage container.
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
       - nutanix.ncp.ntnx_ndb_base_module

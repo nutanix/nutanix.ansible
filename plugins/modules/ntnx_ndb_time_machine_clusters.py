@@ -15,42 +15,42 @@ version_added: 1.8.0
 description: Module for create, update and delete of single instance time_machine_clusters in Nutanix time_machine_clusters Service
 options:
   time_machine_uuid:
-    description: write
+    description: UUID of the time machine
     type: str
     required: true
   cluster:
-        description: write
-        type: dict
-        suboptions:
-            name:
-                description:
-                    - Cluster Name
-                    - Mutually exclusive with C(uuid)
-                type: str
-            uuid:
-                description:
-                    - Cluster UUID
-                    - Mutually exclusive with C(name)
-                type: str
+    description: Name or UUID of the cluster
+    type: dict
+    suboptions:
+        name:
+            description:
+                - Cluster Name
+                - Mutually exclusive with C(uuid)
+            type: str
+        uuid:
+            description:
+                - Cluster UUID
+                - Mutually exclusive with C(name)
+            type: str
   type:
-    description: write
+    description: type of data access instance
     type: str
     default: "OTHER"
     choices: ["OTHER", "PRIMARY"]
   sla:
-        description: write
-        type: dict
-        suboptions:
-            name:
-                description:
-                    - Sla Name
-                    - Mutually exclusive with C(uuid)
-                type: str
-            uuid:
-                description:
-                    - Sla UUID
-                    - Mutually exclusive with C(name)
-                type: str
+    description: Name or UUID of the sla
+    type: dict
+    suboptions:
+        name:
+            description:
+                - Sla Name
+                - Mutually exclusive with C(uuid)
+            type: str
+        uuid:
+            description:
+                - Sla UUID
+                - Mutually exclusive with C(name)
+            type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
@@ -61,6 +61,44 @@ author:
 """
 
 EXAMPLES = r"""
+
+- name: create data access instance with cluster name and sla name
+  ntnx_ndb_time_machine_clusters:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    time_machine_uuid: "<time_machine-uuid>"
+    cluster:
+      name: "<cluster-uuid>"
+    sla:
+      name: "<sla-uuid>"
+  register: out
+
+- name: update data access instance with new sla name
+  ntnx_ndb_time_machine_clusters:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+      time_machine_uuid: "<time_machine-uuid>"
+      cluster:
+        name: "<cluster-uuid>"
+      sla:
+        name: "<sla-uuid>"
+  register: result
+
+- name: delete time machine 
+  ntnx_ndb_time_machine_clusters:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+      state: absent
+      time_machine_uuid: "<time_machine-uuid>"
+      cluster:
+        uuid: "<cluster-uuid>"
+  register: result
 
 """
 
