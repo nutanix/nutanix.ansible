@@ -143,9 +143,10 @@ class PostgresSingleInstance(Postgres):
                 spec = {"name": arg, "value": config[arg]}
                 action_arguments.append(spec)
 
-        action_arguments.append(
-            {"name": "postgres_software_home", "value": config["software_path"]}
-        )
+        if config.get("software_path"):
+            action_arguments.append(
+                {"name": "postgres_software_home", "value": config["software_path"]}
+            )
 
         payload["actionArguments"] = action_arguments
         return payload, None

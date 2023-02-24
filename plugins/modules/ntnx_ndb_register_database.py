@@ -318,7 +318,7 @@ def get_module_spec():
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
         db_user=dict(type="str", default="postgres", required=False),
-        software_path=dict(type="str", required=True),
+        software_path=dict(type="str", required=False),
         type=dict(type="str", choices=["single"], default="single", required=False),
     )
 
