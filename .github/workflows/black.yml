@@ -17,4 +17,4 @@ jobs:
         with:
           python-version: '3.x'
       - name: black
-        uses: psf/black@22.3.0
+        uses: psf/black@stable
