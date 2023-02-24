@@ -1,12 +1,12 @@
-# ---
-# - name: clean up the environment
-#   hosts: localhost
-#   gather_facts: false
-#   collections:
-#     - nutanix.ncp
-#   tasks:
-#   - name: include var file
-#     include_vars: ../vars/main.yml
+---
+- name: clean up the environment
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  tasks:
+  - name: include var file
+    include_vars: ../vars/main.yml
 #   - name: Delete VM
 #     ntnx_vms:
 #       vm_uuid: '{{vm.uuid }}'
