@@ -1,0 +1,26 @@
+---
+- name: Create Dhcp ndb vlan
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+        
+    - name: Create Dhcp ndb vlan
+      ntnx_ndb_stretched_vlans:
+        name: "{{st_vlan.name}}"
+        desc: "{{st_vlan.desc}}"
+        vlans:
+          - "{{vlans[0]}}"
+          - "{{vlans[1]}}"
+      register: output
+    
+    - debug:
+        msg: "{{output}}"

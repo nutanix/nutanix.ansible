@@ -114,8 +114,8 @@ EXAMPLES = r"""
     vlan_type: Static
     cluster:
       uuid: "<cluster-uuid>"
-    gateway: "<cluster-uuid>"
-    subnet_mask: "<cluster-uuid>"
+    gateway: "<gateway>"
+    subnet_mask: "<subnet_mask>"
     ip_pools:
       -
         start_ip: "<vlan_start_ip>"

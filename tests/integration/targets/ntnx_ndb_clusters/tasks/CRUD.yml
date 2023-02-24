@@ -82,6 +82,7 @@
       storage_container: "{{cluster.cluster2.storage_container}}"
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -104,6 +105,7 @@
       desc: newdesc
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -116,6 +118,29 @@
 - set_fact:
     todelete:  "{{result.cluster_uuid}}"
 ################################################################
+- name: update cluster credeential in check_mode
+  ntnx_ndb_clusters:
+      uuid: "{{result.cluster_uuid}}"
+      cluster_credentials:
+        username: test
+        password: test
+  register: result
+  ignore_errors: true
+  no_log: true
+  check_mode: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.username is defined
+      - result.response.password is defined
+      - result.cluster_uuid is defined
+    fail_msg: "fail: update cluster credeential while check_mode"
+    success_msg: "pass: retunred as expected"
+################################################################
 
 - name: Negative Secnarios update storage container
   ntnx_ndb_clusters:
@@ -123,6 +148,7 @@
       storage_container: "{{cluster.cluster2.storage_container}}"
   register: out
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -147,6 +173,7 @@
           subnet_mask: "{{cluster.cluster2.vlan_access.prism_vlan.subnet_mask}}"
   register: out
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -173,6 +200,7 @@
           - "{{cluster.cluster2.agent_network.ntp_servers[3]}}"
   register: out
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -191,6 +219,7 @@
       name_prefix: "{{cluster.cluster2.name_prefix}}"
   register: out
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -206,6 +235,7 @@
 - name: List all NDB clusters
   ntnx_ndb_clusters_info:
   register: clusters
+  no_log: true
 
 - name: check listing status
   assert:
@@ -224,6 +254,7 @@
       count_entities: true
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: check listing status
   assert:
@@ -239,6 +270,7 @@
   ntnx_ndb_clusters_info:
     name: "{{clusters.response[0].name}}"
   register: result
+  no_log: true
 
 - name: check listing status
   assert:
@@ -256,6 +288,7 @@
   ntnx_ndb_clusters_info:
     uuid: "{{clusters.response[0].id}}"
   register: result
+  no_log: true
 
 - name: check listing status
   assert:
@@ -293,6 +326,7 @@
       state: absent
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: assert when status not complete
   assert:
