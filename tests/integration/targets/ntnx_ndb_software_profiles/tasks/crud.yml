@@ -514,10 +514,19 @@
       - name: "{{cluster.cluster2.name}}"
   register: result
 
+- name: wait for 3 minutes for replication to finish from source cluster to cluster2
+  ansible.builtin.pause:
+    minutes: 3
 
 
 - set_fact:
-    clusters: ["{{cluster.cluster1.uuid}}", "{{cluster.cluster2.uuid}}"]
+    clusters: {}
+
+- name: create clusters status map
+  set_fact: 
+    clusters: "{{ clusters | default({}) | combine ({ item['nxClusterId'] : item['status'] }) }}"
+  loop: "{{result.response.profile.clusterAvailability}}"
+  no_log: True
 - name: check status of replication
   assert:
     that:
@@ -525,8 +534,8 @@
       - result.failed == False
       - result.response is defined
       - result.profile_uuid is defined
-      - result.response.profile.clusterAvailability[0].nxClusterId in clusters
-      - result.response.profile.clusterAvailability[1].nxClusterId in clusters
+      - clusters["{{cluster.cluster1.uuid}}"] == "INACTIVE"
+      - clusters["{{cluster.cluster2.uuid}}"] == "ACTIVE"
       - result.response.profile.status == "READY"
 
     fail_msg: "Fail: Unable to replicate software profile"
