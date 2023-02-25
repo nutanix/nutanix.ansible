@@ -143,6 +143,7 @@ time_machine_uuid:
   sample: "0000000-000000-00000-0000"
 """
 
+import time
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.ndb.time_machines import TimeMachine, get_cluster_uuid  # noqa: E402
@@ -212,6 +213,7 @@ def create_data_access_instance(module, result):
     ):
         ops_uuid = resp["updateOperationSummary"]["operationId"]
         operations = Operation(module)
+        time.sleep(5)  # wait for ops ID for functional
         operations.wait_for_completion(ops_uuid)
         resp = tm.read_data_access_instance(tm_uuid, cluster_uuid)
         result["response"] = resp

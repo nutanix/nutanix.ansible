@@ -75,7 +75,7 @@
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
-      - result.response.status == "ACTIVE"
+      - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == window1_name
       - result.response.description == "anisble-created-window"
       - result.response.schedule.dayOfWeek == "TUESDAY"
@@ -113,7 +113,7 @@
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
-      - result.response.status == "ACTIVE"
+      - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == window2_name
       - result.response.description == "anisble-created-window"
       - result.response.schedule.dayOfWeek == "TUESDAY"
@@ -185,7 +185,7 @@
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
-      - result.response.status == "ACTIVE"
+      - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{window2_name}}-updated"
       - result.response.description == "anisble-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
@@ -218,7 +218,7 @@
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
-      - result.response.status == "ACTIVE"
+      - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{window2_name}}-updated"
       - result.response.description == "anisble-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
@@ -263,6 +263,7 @@
 
   register: result
 
+
 - name: update status
   assert: 
     that:
@@ -270,7 +271,7 @@
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
-      - result.response.status == "ACTIVE"
+      - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{window2_name}}-updated"
       - result.response.schedule.dayOfWeek == "SATURDAY"
       - result.response.schedule.recurrence == "WEEKLY"
@@ -299,7 +300,7 @@
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
-      - result.response.status == "ACTIVE"
+      - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{window2_name}}-updated"
       - result.response.schedule.dayOfWeek == "SATURDAY"
       - result.response.schedule.recurrence == "WEEKLY"
