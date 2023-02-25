@@ -7,6 +7,4 @@
         validate_certs: false
 
   block:
-        - import_tasks: "flow1.yml"
-        - import_tasks: "flow2.yml"
-        - import_tasks: "flow3.yml"
+        - import_tasks: "tests.yml"
