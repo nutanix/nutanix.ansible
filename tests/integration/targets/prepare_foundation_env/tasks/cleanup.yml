@@ -5,8 +5,8 @@
   tasks:
     - name: include var file
       include_vars: ../vars/main.yml
-    - name: Delete files
-      file:
-        path: "{{ source }}"
-        state: absent
-      ignore_errors: true  
+    # - name: Delete files
+    #   file:
+    #     path: "{{ source }}"
+    #     state: absent
+    #   ignore_errors: true  
