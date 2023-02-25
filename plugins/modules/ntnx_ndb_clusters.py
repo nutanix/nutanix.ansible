@@ -371,7 +371,7 @@ def create_cluster(module, result):
 
     if module.params.get("wait"):
         operations = Operation(module)
-        time.sleep(5) # wait for ops to starts
+        time.sleep(5)  # wait for ops to starts
         operations.wait_for_completion(ops_uuid)
         resp = cluster.read(cluster_uuid)
 

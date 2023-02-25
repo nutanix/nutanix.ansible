@@ -88,7 +88,7 @@ EXAMPLES = r"""
         name: "<sla-uuid>"
   register: result
 
-- name: delete time machine 
+- name: delete time machine
   ntnx_ndb_time_machine_clusters:
       nutanix_host: <pc_ip>
       nutanix_username: <user>
@@ -143,7 +143,8 @@ time_machine_uuid:
   sample: "0000000-000000-00000-0000"
 """
 
-import time
+import time  # noqa: E402
+
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
 from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.ndb.time_machines import TimeMachine, get_cluster_uuid  # noqa: E402
