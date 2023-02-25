@@ -605,7 +605,7 @@
     timestamp: "{{timestamp.stdout|int + 60*60*48|int}}"
 
 - name: Get timestamp in datetime format
-  shell: "date -r {{timestamp}} +'%Y-%m-%d %T'"
+  shell: "date -d @{{timestamp}} '+%Y-%m-%d %H:%M:%S'"
   register: timestamp
 
 - set_fact:
