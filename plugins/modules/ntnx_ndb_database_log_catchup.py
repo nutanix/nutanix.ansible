@@ -81,7 +81,6 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[("time_machine", "database")],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}

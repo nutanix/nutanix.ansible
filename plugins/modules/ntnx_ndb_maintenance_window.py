@@ -47,7 +47,6 @@ options:
                 description:
                     - write
                 type: str
-                default: "Asia/Calcutta"
             week_of_month:
                 description:
                     - write
@@ -90,7 +89,7 @@ def get_module_spec():
         schedule=dict(
             type="dict",
             options=schedule,
-            required_together=["start_time", "timezone"],
+            required_together=[("start_time", "timezone")],
             required=False,
         ),
     )

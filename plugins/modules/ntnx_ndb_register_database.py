@@ -274,13 +274,13 @@ def get_module_spec():
         registered=dict(
             type="dict",
             options=registered_vm,
-            mutually_exclusive=["name", "uuid", "ip"],
+            mutually_exclusive=[("name", "uuid", "ip")],
             required=False,
         ),
         unregistered=dict(
             type="dict",
             options=unregistered_vm,
-            mutually_exclusive=["password", "private_key"],
+            mutually_exclusive=[("password", "private_key")],
             required=False,
         ),
     )
@@ -328,7 +328,7 @@ def get_module_spec():
         db_vm=dict(
             type="dict",
             options=db_vm,
-            mutually_exclusive=["registered", "unregistered"],
+            mutually_exclusive=[("registered", "unregistered")],
             required=True,
         ),
         time_machine=dict(type="dict", options=time_machine, required=True),
