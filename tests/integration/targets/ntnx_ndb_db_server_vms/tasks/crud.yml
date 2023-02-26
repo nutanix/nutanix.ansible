@@ -126,7 +126,7 @@
   set_fact: 
     properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"  
-
+  no_log: true
 
 - name: Creation Status
   assert: 
