@@ -74,22 +74,158 @@
                 ]
             }
 
+- set_fact:
+    expected_result: {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": {
+            "actionArguments": [
+                {
+                    "name": "vm_name",
+                    "value": "ansible-created-vm1-from-time-machine"
+                },
+                {
+                    "name": "client_public_key",
+                    "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+                }
+            ],
+            "computeProfileId": "test_compute_uuid",
+            "databaseType": "postgres_database",
+            "description": "ansible-created-vm1-from-time-machine-time-machine",
+            "latestSnapshot": false,
+            "maintenanceTasks": {
+                "maintenanceWindowId": "test_window_uuid",
+                "tasks": [
+                    {
+                        "payload": {
+                            "prePostCommand": {
+                                "postCommand": "ls -a",
+                                "preCommand": "ls"
+                            }
+                        },
+                        "taskType": "OS_PATCHING"
+                    },
+                    {
+                        "payload": {
+                            "prePostCommand": {
+                                "postCommand": "ls -F",
+                                "preCommand": "ls -l"
+                            }
+                        },
+                        "taskType": "DB_PATCHING"
+                    }
+                ]
+            },
+            "networkProfileId": "test_network_uuid",
+            "nxClusterId": "test_cluster_uuid",
+            "snapshotId": "test_snapshot_uuid",
+            "softwareProfileId": "",
+            "softwareProfileVersionId": "",
+            "timeMachineId": "test_uuid",
+            "timeZone": "Asia/Calcutta",
+            "vmPassword": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+        },
+        "uuid": null
+    }
+
 - name: Check mode Status
   assert: 
     that:
-      - check_mode_result.response is defined
-      - check_mode_result.changed == false
-      - check_mode_result.response.databaseType == "postgres_database"
-      - check_mode_result.response.maintenanceTasks == mainetance_tasks
-      - check_mode_result.response.snapshotId == "test_snapshot_uuid"
-      - check_mode_result.response.softwareProfileId == ""
-      - check_mode_result.response.softwareProfileVersionId == ""
-      - check_mode_result.response.timeZone == "Asia/Calcutta"
-      - check_mode_result.response.timeMachineId == "test_uuid"
-
+      - check_mode_result ==  expected_result
     fail_msg: "Unable to generate create db server vm spec with time machine as source"
     success_msg: "DB server VM spec created successfully"
 
+
+- name: create spec for db server vm using software profile and names of profile
+  check_mode: yes
+  ntnx_ndb_db_server_vms:
+    wait: True
+    name: "{{ vm1_name }}"
+    desc: "ansible-created-vm1-desc"
+    software_profile:
+      name: "{{ software_profile.name }}"
+    compute_profile:
+      name: "{{ compute_profile.name }}"
+    network_profile:
+      name: "{{ network_profile.name }}"
+    cluster:
+      name: "{{ cluster.cluster1.name }}"
+    password: "{{ vm_password }}"
+    pub_ssh_key: "{{ public_ssh_key }}"
+    time_zone: "UTC"
+    database_type: "postgres_database"
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+  register: result
+
+- set_fact:
+    expected_result: {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": {
+            "actionArguments": [
+                {
+                    "name": "vm_name",
+                    "value": "{{ vm1_name }}"
+                },
+                {
+                    "name": "client_public_key",
+                    "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+                }
+            ],
+            "computeProfileId": "{{ compute_profile.uuid }}",
+            "databaseType": "postgres_database",
+            "description": "ansible-created-vm1-desc",
+            "latestSnapshot": false,
+            "maintenanceTasks": {
+                "maintenanceWindowId": "{{ maintenance.window_uuid }}",
+                "tasks": [
+                    {
+                        "payload": {
+                            "prePostCommand": {
+                                "postCommand": "ls -a",
+                                "preCommand": "ls"
+                            }
+                        },
+                        "taskType": "OS_PATCHING"
+                    },
+                    {
+                        "payload": {
+                            "prePostCommand": {
+                                "postCommand": "ls -F",
+                                "preCommand": "ls -l"
+                            }
+                        },
+                        "taskType": "DB_PATCHING"
+                    }
+                ]
+            },
+            "networkProfileId": "{{ network_profile.uuid }}",
+            "nxClusterId": "{{ cluster.cluster1.uuid }}",
+            "softwareProfileId": "{{ software_profile.uuid }}",
+            "softwareProfileVersionId": "{{ software_profile.latest_version_id }}",
+            "timeZone": "UTC",
+            "vmPassword": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+        },
+        "uuid": null
+    }
+
+- name: Check mode Status
+  assert: 
+    that:
+      - result ==  expected_result
+    fail_msg: "Unable to generate create db server vm spec with time machine as source and given names of profile"
+    success_msg: "DB server VM spec created successfully"
 
 
 - name: create db server vm using software profile
@@ -139,10 +275,6 @@
       - result.response.description == "ansible-created-vm1-desc"
       - result.response.ipAddresses | length > 0
       - properties["application_type"] == "postgres_database"
-      - properties["compute_profile_id"] == compute_profile.uuid 
-      - properties["network_profile_id"] == network_profile.uuid 
-      - properties["software_profile_id"] == software_profile.uuid
-      - properties["software_profile_version_id"] == software_profile.latest_version_id
       - result.response.vmTimeZone == "UTC"
       - result.response.nxClusterId == cluster.cluster1.uuid
 
