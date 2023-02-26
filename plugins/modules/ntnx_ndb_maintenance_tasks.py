@@ -47,6 +47,7 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
+      - nutanix.ncp.ntnx_AutomatedPatchingSpec
 author:
  - Prem Karat (@premkarat)
 """
@@ -88,8 +89,11 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
+        automated_patching=dict(
+            type="dict", options=automated_patching, required=False
+        ),
     )
-    module_args.update(automated_patching)
+    return module_args
 
     # maintenance window ID is always required for updating maintenance tasks
     module_args["maintenance_window"]["required"] = True

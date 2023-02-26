@@ -245,7 +245,7 @@ class AutomatedPatchingSpec:
         maintenance_window=dict(
             type="dict",
             options=entity_by_spec,
-            mutuallu_exclusive=mutually_exclusive,
+            mutually_exclusive=mutually_exclusive,
             required=False,
         ),
         tasks=dict(type="list", elements="dict", options=task, required=False),
