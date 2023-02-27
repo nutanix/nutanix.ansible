@@ -26,6 +26,7 @@ options:
   vlan_type:
     description:
       - wheather the vlan is mannaged or no
+      - update allowed
     type: str
     choices: ["DHCP", "Static"]
   cluster:
@@ -46,26 +47,32 @@ options:
   gateway:
     description:
       - The gateway ip address
+      - update allowed
     type: str
   subnet_mask:
     description:
       - Subnet network address
+      - update allowed
     type: str
   primary_dns:
     description:
       - DNS servers IP
+      - update allowed
     type: str
   secondary_dns:
     description:
       - DNS servers IP
+      - update allowed
     type: str
   dns_domain:
     description:
       - The domain name
+      - update allowed
     type: str
   ip_pools:
         description:
           - Range of IPs
+          - update allowed
         type: list
         elements: dict
         suboptions:
