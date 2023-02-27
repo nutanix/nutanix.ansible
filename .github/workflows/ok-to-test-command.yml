@@ -5,6 +5,7 @@ on:
     types: [ok-to-test-command]
 jobs:
   integration_test_cases:
+    timeout-minutes: 600
     runs-on: self-hosted
     strategy:
       max-parallel: 1
