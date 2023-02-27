@@ -10,18 +10,18 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_database_log_catchup
-short_description: write
+short_description: module for performing log catchups action
 version_added: 1.8.0
-description: 'write'
+description: module for performing log catchups action
 options:
       time_machine_uuid:
         description:
-            - write
+            - time machine UUID
         type: str
         required: true
       for_restore:
         description:
-            - write
+            - enable this flag if log catchup is to be done for restore process
         type: bool
         default: false
 extends_documentation_fragment:
@@ -29,6 +29,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

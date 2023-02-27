@@ -10,26 +10,28 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_database_scale
-short_description: write
+short_description: module for scaling database instance
 version_added: 1.8.0
-description: 'write'
+description: 
+    - module for scaling database instance
+    - currently, extension of database storage is only supported
 options:
       pre_update_cmd:
         description:
-            - write
+            - complete OS command that you want to run before scaling
         type: str
       post_update_cmd:
         description:
-            - write
+            - complete OS command that you want to run post scaling
         type: str
       storage_gb:
         description:
-            - write
+            - storage to be added in GB
         type: int
         required: true
       db_uuid:
         description:
-            - write
+            - database instance uuid
         type: str
         required: true
 extends_documentation_fragment:
@@ -37,6 +39,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

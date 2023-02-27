@@ -138,7 +138,7 @@
 
 - name: create spec for replicating snapshot from cluster1 on cluster2
   check_mode: yes
-  ntnx_ndb_database_replicate_snapshots:
+  ntnx_ndb_replicate_database_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     clusters:
       - name: "{{cluster.cluster2.name}}"
@@ -177,7 +177,7 @@
 
 
 - name: replicate snapshot on cluster2
-  ntnx_ndb_database_replicate_snapshots:
+  ntnx_ndb_replicate_database_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     clusters:
       - name: "{{cluster.cluster2.name}}"

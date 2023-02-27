@@ -9,154 +9,175 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_database_clones
-short_description: write
+short_description: module for create, update and delete of ndb database clones
 version_added: 1.8.0
-description: 'write'
+description: module for create, update and delete of ndb database clones
 options:
       uuid:
         description:
-            - write
+            - uuid of database clone for update and delete
         type: str
       name:
         description:
-            - write
+            - name of database clone
+            - update is allowed
+            - mandatory for creation
         type: str
       desc:
         description:
-            - write
+            - description of database clone
+            - update is allowed
         type: str
       db_params_profile:
         description:
-            - write
+            - database parameter profile for creating database clone
+            - mandatory for creation
         type: dict
         suboptions:
-            uuid:
-                description:
-                    - write
-                type: str
             name:
                 description:
-                    - write
+                    - profile name
+                    - Mutually exclusive with C(uuid)
+                type: str
+            uuid:
+                description:
+                    - profile UUID
+                    - Mutually exclusive with C(name)
                 type: str
       db_vm:
         description:
-            - write
+            - database server vm details for hosting clone
+            - mandatory for creation
         type: dict
         suboptions:
             create_new_server:
                 description:
-                    - write
+                    - configuration for creating new database server vm for hosting db clone
+                    - Mutually exclusive with C(use_authorized_server)
                 type: dict
                 suboptions:
                     name:
                         description:
-                            - write
+                            - name of db server vm
                         type: str
                         required: true
                     desc:
                         description:
-                            - write
+                            - description of database server vm
                         type: str
                     pub_ssh_key:
                         description:
-                            - write
+                            - use SSH public key to access the database server VM
                         type: str
                         required: true
                     password:
                         description:
-                            - write
+                            - password for newly created db server vm
                         type: str
                         required: true
                     cluster:
                         description:
-                            - write
+                            - cluster details to host the vm
                         type: dict
                         required: true
                         suboptions:
-                            uuid:
-                                description:
-                                    - write
-                                type: str
                             name:
                                 description:
-                                    - write
+                                    - cluster name
+                                    - Mutually exclusive with C(uuid)
+                                type: str
+                            uuid:
+                                description:
+                                    - cluster UUID
+                                    - Mutually exclusive with C(name)
                                 type: str
                     network_profile:
                         description:
-                            - write
+                            - network profile details
                         type: dict
                         required: true
                         suboptions:
-                            uuid:
-                                description:
-                                    - write
-                                type: str
                             name:
                                 description:
-                                    - write
+                                    - profile name
+                                    - Mutually exclusive with C(uuid)
+                                type: str
+                            uuid:
+                                description:
+                                    - profile UUID
+                                    - Mutually exclusive with C(name)
                                 type: str
                     compute_profile:
                         description:
-                            - write
+                            - compute profile details
                         type: dict
                         required: true
                         suboptions:
-                            uuid:
-                                description:
-                                    - write
-                                type: str
                             name:
                                 description:
-                                    - write
+                                    - profile name
+                                    - Mutually exclusive with C(uuid)
+                                type: str
+                            uuid:
+                                description:
+                                    - profile UUID
+                                    - Mutually exclusive with C(name)
                                 type: str
 
             use_authorized_server:
                 description:
-                    - write
+                    - conifgure authorized database server VM for hosting database clone
                 type: dict
                 suboptions:
-                    uuid:
-                        description:
-                            - write
-                        type: str
                     name:
                         description:
-                            - write
+                            - authorized database server vm name
+                            - Mutually exclusive with C(uuid)
+                        type: str
+                    uuid:
+                        description:
+                            - authorized database server vm uuid
+                            - Mutually exclusive with C(name)
                         type: str
       time_machine:
         description:
-            - write
+            - source time machine details
+            - mandatory for creation
         type: dict
         suboptions:
             name:
                 description:
-                    - write
+                    - name of time machine
+                    - mutually_exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - UUId of time machine
+                    - mutually_exclusive with C(name)
                 type: str
             snapshot_uuid:
                 description:
-                    - write
+                    - source snapshot uuid
+                    - mutually exclusive with C(pitr_timestamp)
                 type: str
             timezone:
                 description:
-                    - write
+                    - timezone related to C(pitr_timestamp)
                 type: str
                 default: "Asia/Calcutta"
             pitr_timestamp:
                 description:
-                    - write
+                    - timestamp for create clone from point in time
                 type: str
       postgres:
         description:
-            - write
+            - postgres database related config
+            - mandatory for creation
         type: dict
         suboptions:
             db_password:
                 description:
-                    - write
+                    - set database password
                 type: str
                 required: true
             pre_clone_cmd:
@@ -169,76 +190,88 @@ options:
                 type: str
       tags:
         description:
-            - write
+            - list of tags name and  value pairs to be associated with clone
+            - during update, given input tags override the exiting tags of clone
         type: dict
       removal_schedule:
         description:
-            - write
+            - clone removal schedule
+            - update is allowed
         type: dict
         suboptions:
             state:
                 description:
-                    - write
+                    - state of schedule if added
+                    - create, update and delete is allowed
                 type: str
                 choices: ["present", "absent"]
                 default: "present"
             days:
                 description:
-                    - write
+                    - number of days after which clone will be removed
+                    - mutually exclusive to C(timestamp)
                 type: int
+            timestamp:
+                description:
+                    - exact timestamp to remove database clone
+                    - format is 'yyyy-mm-dd hh:mm:ss'
+                    - mutually exclusive to C(days)
+                type: str
             timezone:
                 description:
-                    - write
+                    - timezone related to C(timestamp)
                 type: str
             delete_database:
                 description:
-                    - write
+                    - whether to delete database as well from clone instance during removal
                 type: bool
                 default: false
-            timestamp:
-                description:
-                    - write
-                type: str
             remind_before_in_days:
                 description:
-                    - write
+                    - reminder in days before removal
                 type: int
       refresh_schedule:
         description:
-            - write
+            - clone refresh schedule
+            - update is allowed
         type: dict
         suboptions:
             state:
                 description:
-                    - write
+                    - state of schedule if added
+                    - create, update and delete is allowed
                 type: str
                 choices: ["present", "absent"]
                 default: "present"
             days:
                 description:
-                    - write
+                    - number of days after which clone will be refreshed
                 type: int
             timezone:
                 description:
-                    - write
+                    - timezone related to C(time) give
                 type: str
             time:
                 description:
-                    - write
+                    - exact time on particular day when clone will be refreshed
                 type: str
       delete_from_vm:
         description:
-            - write
+            - during delete, flag for deleting the database from database server vm as well
+            - mutually exclusive with C(soft_remove)
         type: bool
       soft_remove:
         description:
-            - write
+            - soft remove during delete process
+            - mutually exclusive with C(delete_from_vm)
         type: bool
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

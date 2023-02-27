@@ -10,31 +10,40 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_database_snapshots
-short_description: write
+short_description: module for creating, updating and deleting database snapshots
 version_added: 1.8.0
-description: 'write'
+description: 
+    - module for creating, updating and deleting database snapshots
+    - currently, this module only polls for snapshot create in primary source cluster
+    - it doesn't poll of replication task if multiple clusters are mentioned
+    - check_mode is not supported for snapshot update
 options:
       snapshot_uuid:
         description:
-            - write
+            - snapshot uuid for delete or update
         type: str
       name:
         description:
-            - write
+            - name of snaphsot.
+            - update is allowed
         type: str
       clusters:
         description:
-            - write
+            - list of clusters where snapshot should be present
+            - if secondary clusters of time machines are mentioned, then this module won't track the replication process
+            - clusters changes are not considered during update, for replication use ntnx_ndb_replicate_database_snapshots
         type: list
         elements: dict
         suboptions:
             name:
                 description:
-                    - write
+                    - name of cluster
+                    - mutually_exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of cluster
+                    - mutually_exclusive with c(name)
                 type: str
       expiry_days:
             description:
@@ -53,6 +62,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 

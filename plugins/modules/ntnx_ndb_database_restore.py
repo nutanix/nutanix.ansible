@@ -10,25 +10,29 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_database_restore
-short_description: write
+short_description: module for restoring database instance
 version_added: 1.8.0
-description: 'write'
+description: module for restoring database instance to certain point in time or snapshpt
 options:
       pitr_timestamp:
         description:
-            - write
+            - timestamp of point in time restore
+            - format: 'yyyy-mm-dd hh:mm:ss'
+            - mutually exclusive with C(snapshot_uuid)
+
         type: str
       snapshot_uuid:
         description:
-            - write
+            - snapshot uuid for restore
+            - mutually exclusive with C(pitr_timestamp)
         type: str
       timezone:
         description:
-            - write
+            - timezone related to given C(pitr_timestamp)
         type: str
       db_uuid:
         description:
-            - write
+            - database instance uuid
         type: str
         required: true
 extends_documentation_fragment:
@@ -36,6 +40,9 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
+ 
 """
 
 EXAMPLES = r"""

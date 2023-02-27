@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_clusters
-short_description: Create, Delete a k8s cluster with the provided configuration.
+short_description: "Create, Update and Delete NDB clusters"
 version_added: 1.8.0
-description: "Create, Update and Delete clusters"
+description: "Create, Update and Delete NDB clusters"
 options:
     name:
         type: str
@@ -45,19 +45,19 @@ options:
         suboptions:
             dns_servers:
                 type: list
-                description: write
+                description: dns servers for clusters
                 elements: str
             ntp_servers:
                 type: list
                 elements: str
-                description: write
+                description: ntp servers for clusters
     vlan_access:
         type: dict
-        description: write
+        description: VLAN access info for which you want to configure network segmentation:
         suboptions:
             prism_vlan:
                 type: dict
-                description: Prism vlan options
+                description: VLAN access info to configure a VLAN that the NDB agent VM can use to communicate with Prism
                 suboptions:
                     vlan_name:
                         type: str
@@ -77,7 +77,7 @@ options:
                         description: Subnet network address
             dsip_vlan:
                 type: dict
-                description: DSIP vlan options
+                description: VLAN access info to configure a VLAN that the agent VM can use to make connection requests to the iSCSI data services IP.
                 suboptions:
                     vlan_name:
                         type: str
@@ -97,7 +97,7 @@ options:
                         description: Subnet network address
             dbserver_vlan:
                 type: dict
-                description: DBServer vlan options
+                description: VLAN access info to configure a VLAN that is used for communications between the NDB agent VM and the database server VM on the newly registered NDB server cluster.
                 suboptions:
                     vlan_name:
                         type: str

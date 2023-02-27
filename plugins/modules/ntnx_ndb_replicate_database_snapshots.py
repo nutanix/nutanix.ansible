@@ -9,37 +9,37 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_ndb_database_replicate_snapshots
-short_description: write
+module: ntnx_ndb_replicate_database_snapshots
+short_description: module for replicating database snapshots across clusters of time machine
 version_added: 1.8.0
-description: 'write'
+description: 
+    - module for replicating snapshots across clusters of time machine
 options:
       expiry_days:
         description:
-            - write
+            - expiry days for removal of snapshot
         type: str
       snapshot_uuid:
         description:
-            - write
-        type: str
-      timezone:
-        description:
-            - write
+            - snapshot uuid
         type: str
       clusters:
         description:
-            - write
+            - cluster details where snapshot needs to be replicated
+            - currently, replication to only one cluster at once is supported
         type: list
         elements: dict
         required: true
         suboptions:
             name:
                 description:
-                    - write
+                    - cluster name
+                    - Mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - cluster UUID
+                    - Mutually exclusive with C(name)
                 type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
@@ -51,8 +51,6 @@ author:
 EXAMPLES = r"""
 """
 RETURN = r"""
-
-
 """
 import time  # noqa: E402
 
@@ -63,7 +61,6 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 # Notes:
 # 1. Snapshot replication to one cluster at a time is supported currently
-# 2. For snapshot on secondary cluster, this module only tracks primary cluster snapshot process
 
 
 def get_module_spec():
@@ -80,7 +77,6 @@ def get_module_spec():
             required=True,
         ),
         expiry_days=dict(type="str", required=False),
-        timezone=dict(type="str", required=False),
     )
     return module_args
 

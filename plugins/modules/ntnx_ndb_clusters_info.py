@@ -24,12 +24,12 @@ options:
         type: str
       filters:
         description:
-            - write
+            - params to be considered for filtering response
         type: dict
         suboptions:
             count_entities:
                 description:
-                    - write
+                    - to show dependent entities of clusters
                 type: bool
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
@@ -37,6 +37,7 @@ author:
  - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
  - Alaa Bishtawi (@alaa-bish)
+ - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
 """
 
 EXAMPLES = r"""

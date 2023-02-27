@@ -12,7 +12,9 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_databases_info
 short_description: info module for ndb database instances
 version_added: 1.8.0
-description: 'Get database instance info'
+description: 
+    - Get database instance info
+    - If name or uuid is not given then it will fetch all database instances
 options:
       name:
         description:
@@ -20,36 +22,37 @@ options:
         type: str
       uuid:
         description:
-            - database id
+            - database instance uuid
         type: str
       filters:
         description:
-            - write
+            - filters for database instance info
         type: dict
         suboptions:
             detailed:
                 description:
-                    - write
+                    - get detailed response
                 type: bool
             load_dbserver_cluster:
                 description:
-                    - write
+                    - load db serverv cluster in response
                 type: bool
             order_by_dbserver_cluster:
                 description:
-                    - write
+                    - order response by db server cluster
                 type: bool
             order_by_dbserver_logical_cluster:
                 description:
-                    - write
+                    - order response by db server logical cluster
                 type: bool
             value:
                 description:
-                    - write
+                    - value for given C(value_type)
                 type: str
             value_type:
                 description:
-                    - write
+                    - value type for given C(value)
+                    - filter response based on given value type and value
                 type: str
                 choices: ["ip","name","database-name"]
             time_zone:

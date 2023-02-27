@@ -9,33 +9,35 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_database_clone_refresh
-short_description: write
+short_description: module for database clone refresh.
 version_added: 1.8.0
-description: 'write'
+description: moudle for refreshing database clone to certain point in time or snapshot.
 options:
       uuid:
         description:
-            - write
+            - uuid of database clone
         type: str
       snapshot_uuid:
         description:
-            - write
+            - snapshot uuid for clone refresh
         type: str
       timezone:
         description:
-            - write
+            - timezone related to pitr_timestamp given
         type: str
         default: "Asia/Calcutta"
       pitr_timestamp:
         description:
-            - write
+            - timestamp for point in time database cone refresh
+            - format is 'yyyy-mm-dd hh:mm:ss'
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
-
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
 
