@@ -620,7 +620,7 @@ class DBServerVM(NutanixDatabase):
         payload["vmPassword"] = password
         return payload, None
 
-    def build_spec_vms(self, payload, vms, **kwargs):
+    def build_spec_vms(self, payload, vms, **kwargs):  # noqa: C901
         """
         This method takes list of vm input and create specs for each.
         Pass acceptable defaults in kwargs.
