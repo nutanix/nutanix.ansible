@@ -89,11 +89,8 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
-        automated_patching=dict(
-            type="dict", options=automated_patching, required=False
-        ),
     )
-    return module_args
+    module_args.update(automated_patching)
 
     # maintenance window ID is always required for updating maintenance tasks
     module_args["maintenance_window"]["required"] = True
