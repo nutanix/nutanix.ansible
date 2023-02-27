@@ -6,7 +6,7 @@
 #   3. Create HA postgres database instance with static IP and cluster IP assigments
 
 - debug:
-    msg: "start ndb databases test flow 2"
+    msg: "start ndb databases test flow for testing high availability databases"
 
 - name: Generate random name
   set_fact:
