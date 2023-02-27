@@ -9,161 +9,190 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_db_server_vms
-short_description: write
+short_description: module for create, delete and update of database server vms
 version_added: 1.8.0
-description: 'write'
+description: 
+    - module for create, delete and update of database server vms
 options:
+    state:
+        description:
+            - when C(state)=present and uuid given, it will update db server vm
+            - when C(state)=present and uuid not given, it will create new db server vm
+            - when C(state)=absent, by default it will perform unregistration process unless supported arguments are given
     name:
         description:
-            - write
+            - name of database server vm
+            - update allowed
         type: str
     uuid:
         description:
-            - write
+            - uuid of database server vm for updating or deleting vm
         type: str
     desc:
         description:
-            - write
+            - description of vm
+            - allowed for update
         type: str
     reset_name_in_ntnx_cluster:
         description:
-            - write
+            - set this to reset name of vm to name in ndb in cluster as well
         type: bool
         default: false
     reset_desc_in_ntnx_cluster:
         description:
-            - write
+            - set this to reset description of vm to name in ndb in cluster as well
         type: bool
         default: false
     cluster:
         description:
-            - write
+            - ndb cluster where the vm will be hosted
+            - required for create
         type: dict
         suboptions:
             name:
                 description:
-                    - write
+                    - name of cluster
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of cluster
+                    - mutually exclusive with C(name)
                 type: str
     network_profile:
         description:
-            - write
+            - network profile details
+            - required for create
         type: dict
         suboptions:
             name:
                 description:
-                    - write
+                    - name of profile
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of profile
+                    - mutually exclusive with C(name)
                 type: str
     compute_profile:
         description:
-            - write
+            - required for create
+            - compute profile details
         type: dict
         suboptions:
             name:
                 description:
-                    - write
+                    - name of profile
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of profile
+                    - mutually exclusive with C(name)
                 type: str
     software_profile:
         description:
-            - write
+            - use software profile as source for creating vm
+            - required for create
+            - either name or uuid is mandatory
         type: dict
         suboptions:
             name:
                 description:
-                    - write
+                    - name of profile
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of profile
+                    - mutually exclusive with C(name)
                 type: str
             version_uuid:
                 description:
-                    - write
+                    - version UUID for softwware profile
+                    - if not given then latest version will be used
                 type: str
     time_machine:
         description:
-            - write
+            - use time machine as source for creating vm
+            - either name or uuid is mandatory
         type: dict
         suboptions:
             name:
                 description:
-                    - write
+                    - name of time machine
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of time machine
+                    - mutually exclusive with C(name)
                 type: str
             snapshot_uuid:
                 description:
-                    - write
+                    - source snapshot uuid
+                    - required for create
                 type: str
     password:
         description:
-            - write
+            - password of vm
         type: str
     pub_ssh_key:
         description:
-            - write
+            - give access using user's public ssh key
         type: str
     time_zone:
         description:
-            - write
+            - timezone of vm
         type: str
         default: "Asia/Calcutta"
     database_type:
         description:
-            - write
+            - database engine type
         type: str
         choices: ["postgres_database"]
     tags:
         description:
-            - write
+            - dict of tag name as key and tag value as value
+            - update allowed
+            - during update, given input will override existing tags
         type: dict
     update_credentials:
         description:
-            - write
+            - update credentials of vm in ndb
+            - this update should be done post vm credentials update in source cluster
         type: list
         elements: dict
         suboptions:
             username:
                 description:
-                    - write
+                    - username
                 type: str
                 required: true
             password:
                 description:
-                    - write
+                    - password
                 type: str
                 required: true
     delete_from_cluster:
         description:
-            - write
+            - set this during c(state) = absent to delete vm from source cluster
         type: bool
         default: False
     delete_vgs:
         description:
-            - write
+            - set this during c(state) = absent to delete volume groups from source cluster
         type: bool
         default: False
     delete_vm_snapshots:
         description:
-            - write
+            - set this during c(state) = absent to delete vm's snapshot from source cluster
         type: bool
         default: False
     soft_remove:
         description:
-            - write
+            - set this during c(state) = absent to perform soft remove of database server vm
         type: bool
         default: False
 extends_documentation_fragment:
@@ -172,6 +201,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_AutomatedPatchingSpec
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

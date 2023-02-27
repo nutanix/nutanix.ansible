@@ -123,7 +123,6 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_together=[("expiry_days", "timezone")],
         required_if=[
             ("state", "present", ("snapshot_uuid",), True),
         ],

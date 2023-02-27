@@ -9,40 +9,43 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_maintenance_tasks
-short_description: write
+short_description: module to add and remove maintenance related tasks
 version_added: 1.8.0
-description: 'write'
+description: module to add and remove maintenance related tasks
 options:
       db_server_vms:
         description:
-            - write
+            - list of database server vms to which maintenance tasks needs to be added
         type: list
         elements: dict
         suboptions:
             name:
                 description:
-                    - write
+                    - name of db server vm
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of db server vm
+                    - mutually exclusive with C(name)
                 type: str
 
       db_server_clusters:
         description:
-            - write
+            - list of database server clusters to which maintenance tasks needs to be added
         type: list
         elements: dict
         suboptions:
             name:
                 description:
-                    - write
+                    - name of db server cluster
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of db server cluster
+                    - mutually exclusive with C(name)
                 type: str
-
 
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
@@ -50,6 +53,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_AutomatedPatchingSpec
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

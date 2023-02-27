@@ -9,44 +9,50 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_authorize_db_server_vms
-short_description: write
+short_description: module for authorizing db server vm
 version_added: 1.8.0
-description: 'write'
+description: module for authorizing db server vm with time machine
 options:
       db_server_vms:
         description:
-            - write
+            - list of database server vms details
         type: list
         elements: dict
         required: true
         suboptions:
             name:
                 description:
-                    - write
+                    - name of database server vm
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of database server vm
+                    - mutually exclusive with C(name)
                 type: str
       time_machine:
         description:
-            - write
+            - time machine details
         type: dict
         required: true
         suboptions:
             name:
                 description:
-                    - write
+                    - name of time machine
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of time machine
+                    - mutually exclusive with C(name)
                 type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

@@ -10,17 +10,18 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_profiles
-short_description: write
+short_description: module for create, update and delete of profiles
 version_added: 1.8.0
-description: 'write'
+description: 
+    - module for create, update and delete of profiles
 options:
       profile_uuid:
         description:
-            - write
+            - uuid of profile for delete or update
         type: str
       name:
         description:
-            - write
+            - name of profile
         type: str
       desc:
         description:
@@ -28,261 +29,303 @@ options:
         type: str
       type:
         description:
-            - write
+            - type of profile
+            - required for creation
         type: str
         choices: ["software", "compute", "network", "database_parameter"]
       database_type:
         description:
-            - write
+            - database engine type
+            - required for database params, network and software profile
         type: str
         choices: ["postgres"]
       compute:
         description:
-            - write
+            - for creating compute profile
+            - idempotency checks are not supported
         type: dict
         suboptions:
             publish:
                 description:
-                    - write
+                    - set to publish the profile
+                    - only valid during update
                 type: bool
             vcpus:
                 description:
-                    - write
+                    - vcpus
                 type: int
             cores_per_cpu:
                 description:
-                    - write
+                    - cores per vcpu
                 type: int
             memory:
                 description:
-                    - write
+                    - memory
                 type: int
       clusters:
             description:
-                - write
+                - list ofclusters where profiles should be present
+                - only applicable for software profile
             type: list
             elements: dict
             suboptions:
                 name:
                     description:
-                        - write
+                        - name of cluster
+                        - mutually exclusive with C(uuid)
                     type: str
                 uuid:
                     description:
-                        - write
+                        - uuid of cluster
+                        - mutually exclusive with C(name)
                     type: str
       software:
         description:
-            - write
+            - software profile configuration
+            - during create, it will create base version
+            - idempotency checks are not supported
         type: dict
         suboptions:
             publish:
                 description:
-                    - write
+                    - set to publish the profile
+                    - only valid during update
                 type: bool
             deprecate:
                 description:
-                    - write
+                    - set to deprecate the profile
+                    - only valid during update
                 type: bool
             topology:
                 description:
-                    - write
+                    - topology of profile
                 type: str
                 choices: ["single", "cluster"]
             state:
                 description:
-                    - write
+                    - when C(state)=present, it will create new version
+                    - when C(state)=absent, it will create version as per version_uuid
                 type: str
                 choices: ["present", "absent"]
                 default: "present"
             version_uuid:
                 description:
-                    - write
+                    - version uuid for version update or delete
                 type: str
             name:
                 description:
-                    - write
+                    - name of version
                 type: str
             desc:
                 description:
-                    - write
+                    - description of version
                 type: str
             notes:
                 description:
-                    - write
+                    - notes
+                    - update not supported
                 type: dict
                 suboptions:
                     os:
                         description:
-                            - write
+                            - operating system notes in profile
                         type: str
                     db_software:
                         description:
-                            - write
+                            - database software notes in profile
                         type: str
             db_server_vm:
                 description:
-                    - write
+                    - source database server vm for creating software profile
                 type: dict
                 suboptions:
                     name:
                         description:
-                            - write
+                            - name of database server vm
+                            - mutually exclusive with C(uuid)
                         type: str
                     uuid:
                         description:
-                            - write
+                            - uuid of database server vm
+                            - mutually exclusive with C(name)
                         type: str
       network:
         description:
-            - write
+            - network profile configuration
+            - idempotency checks are not supported
         type: dict
         suboptions:
             publish:
                 description:
-                    - write
+                    - set to publish the profile
+                    - only valid during update
                 type: bool
             topology:
                 description:
-                    - write
+                    - topology of profile
                 type: str
                 choices: ["single", "cluster"]
             vlans:
                 description:
-                    - write
+                    - list of vlans configuration to be added in network profile
                 type: list
                 elements: dict
                 suboptions:
                     cluster:
                         description:
-                            - write
+                            - cluster of vlan
                         type: dict
                         required: true
-                        suboptions:
-                            name:
-                                description:
-                                    - write
-                                type: str
-                            uuid:
-                                description:
-                                    - write
-                                type: str
+                        name:
+                            description:
+                                - name of cluster
+                                - mutually exclusive with C(uuid)
+                            type: str
+                        uuid:
+                            description:
+                                - uuid of cluster
+                                - mutually exclusive with C(name)
+                            type: str
                     vlan_name:
                         description:
-                            - write
+                            - name of vlan to be added
                         type: str
                         required: true
             enable_ip_address_selection:
                 description:
-                    - write
+                    - set to enable ip address selection
                 type: bool
       database_parameter:
         description:
-            - write
+            - database parameter profile configuration
+            - idempotency checks are not supported
         type: dict
         suboptions:
             publish:
                 description:
-                    - write
+                    - set to publish the profile
+                    - only valid during update
                 type: bool
             postgres:
                 description:
-                    - write
+                    - database params for postgres
                 type: dict
                 suboptions:
                             max_connections:
                                 description:
-                                    - write
+                                    - max number of connections
+                                    - default is 100
                                 type: int
                             max_replication_slots:
                                 description:
-                                    - write
+                                    - maximum replication slots
+                                    - default is 10
                                 type: int
                             max_locks_per_transaction:
                                 description:
-                                    - write
+                                    - max locks per transactions
+                                    - default is 64
                                 type: int
                             effective_io_concurrency:
                                 description:
-                                    - write
+                                    - effective I/O concurrency
+                                    - default is 1
                                 type: int
                             timezone:
                                 description:
-                                    - write
+                                    - timezone
+                                    - default is 'UTC'
                                 type: str
                             max_prepared_transactions:
                                 description:
-                                    - write
+                                    - maximum prepared transactions
+                                    - default is 0
                                 type: int
                             max_wal_senders:
                                 description:
-                                    - write
+                                    - max wal senders
+                                    - default 10
                                 type: int
                             min_wal_size:
                                 description:
-                                    - write
-                                type: str
-                            max_wal_size:
+                                    - max wal logs size in MB
+                                    - default is 80 
+                                type: int
+                            min_wal_size:
                                 description:
-                                    - write
-                                type: str
+                                    - max wal logs size in GB
+                                    - default is 1
+                                type: int
                             wal_keep_segments:
                                 description:
-                                    - write
+                                    - wal logs keep segments
+                                    - default is 700
                                 type: int
                             max_worker_processes:
                                 description:
-                                    - write
+                                    - max number of worker processes
+                                    - default is 8
                                 type: int
                             checkpoint_timeout:
                                 description:
-                                    - write
-                                type: str
+                                    - checkpoint time out in minutes
+                                    - default is 5
+                                type: int
                             autovacuum:
                                 description:
-                                    - write
+                                    - on/off autovaccum
+                                    - default is on
                                 type: str
                                 choices: ["on", "off"]
                             checkpoint_completion_target:
                                 description:
-                                    - write
+                                    - checkpoint completion target
+                                    - deafult is 0.5
                                 type: float
                             autovacuum_freeze_max_age:
                                 description:
-                                    - write
+                                    - autovacuum freeze max age
+                                    - default is 200000000
                                 type: int
                             autovacuum_vacuum_threshold:
                                 description:
-                                    - write
+                                    - auto vacuum threshold
+                                    - default is 50
                                 type: int
                             autovacuum_vacuum_scale_factor:
                                 description:
-                                    - write
+                                    - autovacuum scale factor
+                                    - default is 0.2
                                 type: float
                             autovacuum_work_mem:
                                 description:
-                                    - write
+                                    - autovacum work memory in KB
+                                    - default is -1
                                 type: int
                             autovacuum_max_workers:
                                 description:
-                                    - write
+                                    - autovacuum max workers
+                                    - deafult is 3
                                 type: int
                             autovacuum_vacuum_cost_delay:
                                 description:
-                                    - write
+                                    - autovacuum cost delay in milliseconds
+                                    - default is 2
                                 type: str
                             wal_buffers:
                                 description:
-                                    - write
+                                    - wal buffers
+                                    - default is -1
                                 type: int
                             synchronous_commit:
                                 description:
-                                    - write
+                                    - synchronous commit flag
                                 type: str
                                 choices: ["on", "off", "local", "remote_apply", "remote_write"]
                             random_page_cost:
                                 description:
-                                    - write
+                                    - random page cost
+                                    - default is 4
                                 type: int
 
 extends_documentation_fragment:
@@ -327,11 +370,11 @@ def get_module_spec():
         timezone=dict(type="str"),
         max_prepared_transactions=dict(type="int"),
         max_wal_senders=dict(type="int"),
-        min_wal_size=dict(type="str"),
-        max_wal_size=dict(type="str"),
+        min_wal_size=dict(type="int"),
+        max_wal_size=dict(type="int"),
         wal_keep_segments=dict(type="int"),
         max_worker_processes=dict(type="int"),
-        checkpoint_timeout=dict(type="str"),
+        checkpoint_timeout=dict(type="int"),
         autovacuum=dict(type="str", choices=["on", "off"]),
         checkpoint_completion_target=dict(type="float"),
         autovacuum_freeze_max_age=dict(type="int"),
@@ -339,7 +382,7 @@ def get_module_spec():
         autovacuum_vacuum_scale_factor=dict(type="float"),
         autovacuum_work_mem=dict(type="int"),
         autovacuum_max_workers=dict(type="int"),
-        autovacuum_vacuum_cost_delay=dict(type="str"),
+        autovacuum_vacuum_cost_delay=dict(type="int"),
         wal_buffers=dict(type="int"),
         synchronous_commit=dict(
             type="str", choices=["on", "off", "local", "remote_apply", "remote_write"]

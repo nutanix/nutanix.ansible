@@ -327,137 +327,6 @@
     fail_msg: "Unable to create ha instance database create spec"
     success_msg: "HA instance postgres database spec created successfully"
 
-
-- name: create HA instance postgres database with multicluster vms
-  ntnx_ndb_databases:
-    timeout: 5400
-    wait: true
-    name: "{{db1_name}}"
-    desc: "ansible-created-db-desc"
-
-    db_params_profile:
-      name: "{{postgres_ha_profiles.db_params_profile.name}}"
-    
-    db_server_cluster:
-      new_cluster:
-        name: "{{cluster1_name}}"
-        cluster: 
-          name: "{{cluster.cluster1.name}}"
-        software_profile:
-          name: "{{ postgres_ha_profiles.software_profile.name }}"
-        network_profile:
-          name: "{{ postgres_ha_profiles.multicluster_network_profile.name }}"
-        compute_profile:
-          name: "{{ postgres_ha_profiles.compute_profile.name }}"
-        password: "{{vm_password}}"
-        pub_ssh_key: "{{public_ssh_key}}"
-        vms: 
-
-          - name: "{{cluster1_name}}-vm-1"
-            node_type: "database"
-            role: "Primary"
-        
-          - name: "{{cluster1_name}}-vm-2"
-            node_type: "database"
-            role: "Secondary"
-        
-          - name: "{{cluster1_name}}-vm-3"
-            cluster:
-              name: "{{cluster.cluster2.name}}"
-            node_type: "database"
-            role: "Secondary"
-    
-    postgres:
-      type: "ha"
-      db_name: testAnsible
-      db_password: "{{ vm_password }}"
-      db_size: 200
-      patroni_cluster_name: "patroni_cluster"
-
-    time_machine:
-      name: TM1
-      desc: TM-desc
-      sla:
-        name: "{{ sla.name }}"
-      schedule: 
-        daily: "11:10:02"
-        weekly: WEDNESDAY
-        monthly: 4
-        quaterly: JANUARY
-        log_catchup: 30
-        snapshots_per_day: 2
-      clusters:
-        - name: "{{cluster.cluster1.name}}"
-        - uuid: "{{cluster.cluster2.uuid}}"
-    tags:
-      ansible-databases: "ha-instance-dbs"
-    
-    automated_patching:
-      maintenance_window:
-        name: "{{ maintenance.window_name }}"
-      tasks:
-        - type: "OS_PATCHING"
-          pre_task_cmd: "ls"
-          post_task_cmd: "ls -a"
-        - type: "DB_PATCHING"
-          pre_task_cmd: "ls -l"
-          post_task_cmd: "ls -F"
-
-  register: result
-
-
-- name: create properties map
-  set_fact: 
-      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
-  loop: "{{result.response.properties}}"
-  no_log: true
-
-
-- name: Creation Status
-  assert: 
-    that:
-      - result.response is defined
-      - result.response.status == 'READY'
-      - result.db_uuid is defined
-      - result.changed == true
-      - result.response.name == db1_name
-      - result.response.description == "ansible-created-db-desc"
-      - properties["archive_wal_expire_days"] == "-1"
-      - properties["db_parameter_profile_id"] == postgres_ha_profiles.db_params_profile.uuid
-      - properties["listener_port"] == "5432"
-      - properties["vm_ip"] is defined
-      - result.response.databaseNodes | length == 3
-      - result.response.databaseNodes[0].status == "READY"
-      - result.response.databaseNodes[1].status == "READY"
-      - result.response.databaseNodes[2].status == "READY"
-      - result.response.type == "postgres_database"
-      - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
-      - result.response.tags[0].value == "ha-instance-dbs"
-
-    fail_msg: "Unable to provision postgres HA database instance"
-    success_msg: "postgres HA database instance provision successfully"
-
-- name: unregister db along with delete time machine and db server vms
-  ntnx_ndb_databases:
-    db_uuid: "{{result.db_uuid}}" 
-    state: "absent"
-    wait: true
-    delete_time_machine: true
-    delete_db_server_vms: True
-  register: result
-
-- name: verify status of delete of database along with time machine delete
-  assert: 
-    that:
-      - result.changed == True
-      - result.failed == false
-      - result.response.status == "5"
-      - result.response.db_server_vms_delete_status.status == "5"
-    fail_msg: "database delete failed"
-    success_msg: "database deleted successfully"
-
-
 - name: create HA instance postgres database with static IP assignments
   ntnx_ndb_databases:
     wait: true
@@ -600,3 +469,135 @@
       - result.response.db_server_vms_delete_status.status == "5"
     fail_msg: "database delete failed"
     success_msg: "database deleted successfully"
+
+
+- name: create HA instance postgres database with multicluster vms
+  ntnx_ndb_databases:
+    timeout: 5400
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
+
+    db_params_profile:
+      name: "{{postgres_ha_profiles.db_params_profile.name}}"
+    
+    db_server_cluster:
+      new_cluster:
+        name: "{{cluster1_name}}"
+        cluster: 
+          name: "{{cluster.cluster1.name}}"
+        software_profile:
+          name: "{{ postgres_ha_profiles.software_profile.name }}"
+        network_profile:
+          name: "{{ postgres_ha_profiles.multicluster_network_profile.name }}"
+        compute_profile:
+          name: "{{ postgres_ha_profiles.compute_profile.name }}"
+        password: "{{vm_password}}"
+        pub_ssh_key: "{{public_ssh_key}}"
+        vms: 
+
+          - name: "{{cluster1_name}}-vm-1"
+            node_type: "database"
+            role: "Primary"
+        
+          - name: "{{cluster1_name}}-vm-2"
+            node_type: "database"
+            role: "Secondary"
+        
+          - name: "{{cluster1_name}}-vm-3"
+            cluster:
+              name: "{{cluster.cluster2.name}}"
+            node_type: "database"
+            role: "Secondary"
+    
+    postgres:
+      type: "ha"
+      db_name: testAnsible
+      db_password: "{{ vm_password }}"
+      db_size: 200
+      patroni_cluster_name: "patroni_cluster"
+
+    time_machine:
+      name: TM1
+      desc: TM-desc
+      sla:
+        name: "{{ sla.name }}"
+      schedule: 
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+      clusters:
+        - name: "{{cluster.cluster1.name}}"
+        - uuid: "{{cluster.cluster2.uuid}}"
+    tags:
+      ansible-databases: "ha-instance-dbs"
+    
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+
+  register: result
+
+
+- name: create properties map
+  set_fact: 
+      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+  loop: "{{result.response.properties}}"
+  no_log: true
+
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.response.status == 'READY'
+      - result.db_uuid is defined
+      - result.changed == true
+      - result.response.name == db1_name
+      - result.response.description == "ansible-created-db-desc"
+      - properties["archive_wal_expire_days"] == "-1"
+      - properties["db_parameter_profile_id"] == postgres_ha_profiles.db_params_profile.uuid
+      - properties["listener_port"] == "5432"
+      - properties["vm_ip"] is defined
+      - result.response.databaseNodes | length == 3
+      - result.response.databaseNodes[0].status == "READY"
+      - result.response.databaseNodes[1].status == "READY"
+      - result.response.databaseNodes[2].status == "READY"
+      - result.response.type == "postgres_database"
+      - result.response.tags | length == 1
+      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].value == "ha-instance-dbs"
+
+    fail_msg: "Unable to provision postgres HA database instance"
+    success_msg: "postgres HA database instance provision successfully"
+
+- name: unregister db along with delete time machine and db server vms
+  ntnx_ndb_databases:
+    db_uuid: "{{result.db_uuid}}" 
+    state: "absent"
+    wait: true
+    delete_time_machine: true
+    delete_db_server_vms: True
+  register: result
+
+- name: verify status of delete of database along with time machine delete
+  assert: 
+    that:
+      - result.changed == True
+      - result.failed == false
+      - result.response.status == "5"
+      - result.response.db_server_vms_delete_status.status == "5"
+    fail_msg: "database delete failed"
+    success_msg: "database deleted successfully"
+
+

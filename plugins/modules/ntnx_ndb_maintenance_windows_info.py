@@ -10,18 +10,23 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_maintenance_windows_info
-short_description: write
+short_description: module for fetching maintenance windows info
 version_added: 1.8.0
-description: 'write'
+description: 
+    - module for fetching maintenance windows info
+    - it will fetch all entities if no spec is given
+    - it will also load entities and task associations
 options:
     uuid:
         description:
-            - write
+            - uuid of maintenance window
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

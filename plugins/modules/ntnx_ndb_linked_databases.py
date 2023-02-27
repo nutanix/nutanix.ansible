@@ -10,22 +10,27 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_linked_databases
-short_description: write
+short_description: module to manage linked databases of a database instance
 version_added: 1.8.0
-description: 'write'
+description: module to manage linked databases of a database instance
 options:
+      state:
+        description:
+            - when C(state)=present, it will create databases in database instance
+            - when C(state)=absent, it will delete linked database with database_uuid
       db_instance_uuid:
         description:
-            - write
+            - database instance uuid
         type: str
         required: true
       database_uuid:
         description:
-            - write
+            - linked database uuid
+            - should be used with c(state)=absent, to delete linked database
         type: str
       databases:
         description:
-            - write
+            - list of database's name to be added in database instance
         type: list
         elements: str
 extends_documentation_fragment:
@@ -33,6 +38,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

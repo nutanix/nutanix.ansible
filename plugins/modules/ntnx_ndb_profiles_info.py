@@ -20,30 +20,30 @@ options:
         type: str
       uuid:
         description:
-            - profile id
+            - profile uuid
         type: str
       version_id:
         description:
-            - vrsion id
+            - vrsion uuid
         type: str
       latest_version:
         description:
-            - whether the lastet version of profile or no
+            - to fetch latest version of profile in case of software profile
         type: bool
         default: false
       filters:
         description:
-            - write
+            - filters for fetching info
         type: dict
         suboptions:
             engine:
                 description:
-                    - write
+                    - filter as per database engine type
                 type: str
                 choices: ["oracle_database","postgres_database","sqlserver_database","mariadb_database","mysql_database","saphana_database","mongodb_database",]
             type:
                 description:
-                    - write
+                    - filter as per profile type
                 type: str
                 choices: ["Software","Compute","Network","Database_Parameter",]
 extends_documentation_fragment:

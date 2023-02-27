@@ -12,15 +12,17 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_db_servers_info
 short_description: info module for ndb db server vms info
 version_added: 1.8.0
-description: 'Get database server info'
+description: 
+    - Get database server info
+    - Module will fetch all entities if no spec is given
 options:
       name:
         description:
-            - server name
+            - database server vm name
         type: str
       uuid:
         description:
-            - server id
+            - database server vm uuid
         type: str
       server_ip:
         description:
@@ -28,40 +30,40 @@ options:
         type: str
       filters:
         description:
-            - write
+            - query filters
         type: dict
         suboptions:
             detailed:
                 description:
-                    - write
+                    - flag to get detailed response
                 type: bool
             load_clones:
                 description:
-                    - write
+                    - flag to include clones in response
                 type: bool
             load_databases:
                 description:
-                    - write
+                    - flag to include databases in response
                 type: bool
             load_dbserver_cluster:
                 description:
-                    - write
+                    - flag to include db server cluster details in response
                 type: bool
             load_metrics:
                 description:
-                    - write
+                    - flag to include metrics
                 type: bool
             curator:
                 description:
-                    - write
+                    - get entity if its satisfies the query criteria irrespective of status
                 type: bool
             value:
                 description:
-                    - write
+                    - vlaue as per C(value_type)
                 type: str
             value_type:
                 description:
-                    - write
+                    - type of C(value)
                 type: str
                 choices: ["ip","name","vm-cluster-name","vm-cluster-uuid", "dbserver-cluster-id","nx-cluster-id", "fqdn",]
             time_zone:

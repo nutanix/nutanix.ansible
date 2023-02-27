@@ -25,11 +25,12 @@ options:
       name:
         description:
             - name of snaphsot.
+            - required for create
             - update is allowed
         type: str
       clusters:
         description:
-            - list of clusters where snapshot should be present
+            - list of clusters incase snapshots needs to be replicated to secondary clusters
             - if secondary clusters of time machines are mentioned, then this module won't track the replication process
             - clusters changes are not considered during update, for replication use ntnx_ndb_replicate_database_snapshots
         type: list
@@ -47,15 +48,16 @@ options:
                 type: str
       expiry_days:
             description:
-                - write
+                - expiry in days
             type: int
       remove_expiry:
             description:
-                - write
+                - use this flag for removing expiry schedule of snapshot
             type: bool
       time_machine_uuid:
             description:
-                - write
+                - time machine uuid
+                - required for creation
             type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module

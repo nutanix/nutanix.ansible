@@ -9,51 +9,53 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_maintenance_window
-short_description: write
+short_description: module to create, update and delete mainetance window
 version_added: 1.8.0
 description: 'write'
 options:
     name:
         description:
-            - write
+            - name of maintenance window
         type: str
     uuid:
         description:
-            - write
+            - uuid of maintenance window
+            - should be used for update or delete
         type: str
     desc:
         description:
-            - write
+            - description of maintenance window
         type: str
     schedule:
         description:
-            - write
+            - schedule of maintenance
         type: dict
         suboptions:
             recurrence:
                 description:
-                    - write
+                    - type of recurrence
                 type: str
                 choices: ["weekly", "monthly"]
             duration:
                 description:
-                    - write
+                    - duration of window in hours
                 type: int
             start_time:
                 description:
-                    - write
+                    - start time of maintenance in formate 'hh:mm:ss'
                 type: str
             timezone:
                 description:
-                    - write
+                    - time zone related to C(start_time)
+                    - required with start_time
                 type: str
             week_of_month:
                 description:
-                    - write
+                    - week of month for maitenance
                 type: str
             day_of_week:
                 description:
-                    - write
+                    - day of week for maitenance
                 type: str
 
 extends_documentation_fragment:
@@ -61,6 +63,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

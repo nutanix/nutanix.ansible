@@ -143,7 +143,6 @@
     clusters:
       - name: "{{cluster.cluster2.name}}"
     expiry_days: 20
-    timezone: "UTC"
   register: result
 
 - set_fact:
@@ -182,7 +181,6 @@
     clusters:
       - name: "{{cluster.cluster2.name}}"
     expiry_days: 20
-    timezone: "UTC"
   register: result
 
 

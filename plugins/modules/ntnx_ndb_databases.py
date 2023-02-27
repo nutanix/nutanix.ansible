@@ -12,7 +12,9 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_databases
 short_description: Module for create, update and delete of single instance database. Currently, postgres type database is officially supported.
 version_added: 1.8.0
-description: Module for create, update and delete of single instance database in Nutanix Database Service
+description: 
+  - Module for create, update and delete of single instance database in Nutanix Database Service
+  - During delete, by default it will only unregister database instance. Add allowed params to change it.
 options:
   db_uuid:
     description:
@@ -60,10 +62,10 @@ options:
             required: true
           desc:
             type: str
-            description: write
+            description: description of vm
           ip:
             type: str
-            description: write
+            description: assign IP address
           pub_ssh_key:
             type: str
             description: public ssh key for access to vm
@@ -232,7 +234,9 @@ options:
       clusters:
         type: list
         elements: dict
-        description: write
+        description: 
+          - clusters for data access management in time machine
+          - to be used for HA instance only
         suboptions:
             name:
                 type: str
@@ -250,19 +254,27 @@ options:
     suboptions:
       archive_wal_expire_days:
           type: str
-          description: write
+          description: 
+            - archived write ahead logs expiry days
+            - only allowed for HA instance
           default: "-1"
       listener_port:
           type: str
-          description: listener port for db
+          description: 
+            - listener port for db
+            - required for both HA and single instance
           default: "5432"
       db_name:
           type: str
-          description: initial database name
+          description:
+            - name of initial database added
+            - required for both HA and single instance
           required: true
       db_password:
           type: str
-          description: postgres database password
+          description: 
+            - set postgres database password
+            - required for both HA and single instance
           required: true
       auto_tune_staging_drive:
           type: bool
@@ -279,46 +291,52 @@ options:
       cluster_database:
           type: bool
           default: false
-          description: if clustered database
+          description: 
+            - this field is deprecate
+            - not required
       patroni_cluster_name:
           type: str
-          description: write
+          description: 
+            - patroni cluster name
+            - required for HA instance
       ha_proxy:
           type: dict
-          description: write
+          description: HA proxy details, set it for HA instance
           suboptions:
                 provision_virtual_ip:
                     type: bool
-                    description: write
+                    description: set for provision of virtual IP
                     default: true
                 write_port:
                     type: str
-                    description: writ
+                    description: port number for read/write request
                     default: "5000"
                 read_port:
                     type: str
-                    description: write
+                    description: port number for read request
                     default: "5001"
       enable_synchronous_mode:
           type: bool
           default: false
-          description: write
+          description: 
+            - set to enable synchronous replication
+            - allowed for HA instance
       enable_peer_auth:
           type: bool
           default: false
-          description: write
-      virtual_ip:
-          type: str
-          description: write
+          description: 
+            - set to enable peer authentication
+            - allowed for HA instance
       type:
-          description: write
+          description: 
+            - if its a HA or singe instance
+            - mandatory for creation
           type: str
           choices: ["single", "ha"]
           default: "single"
-
       db_size:
           type: int
-          description: database instance size
+          description: database instance size, required for single and ha instance
           required: true
       pre_create_script:
           type: str
@@ -326,43 +344,47 @@ options:
           required: false
       post_create_script:
           type: str
-          description: write
+          description: commands to run post database instance creation
           required: false
   db_server_cluster:
     description:
-      - write
+      - configure db server cluster
+      - required when creating HA instance
+      - for postgres, max two HA proxy nodes are allowed
+      - for postgres, minimum three database nodes are required 
     type: dict
     suboptions:
         new_cluster:
             description:
-                - write
+                - configure new database server cluster
             type: dict
             required: true
             suboptions:
                 name:
                     description:
-                        - write
+                        - name of database server cluster
                     type: str
                     required: true
                 desc:
                     description:
-                        - write
+                        - description of database server cluster
                     type: str
                 vms:
                     description:
-                        - write
+                        - list configuration of new vms/nodes to be part of database server cluster
                     type: list
                     elements: dict
                     required: true
                     suboptions:
                         name:
                               description:
-                                  - write
+                                  - name of vm
                               type: str
                               required: true
                         cluster:
                           description:
-                            - era cluster details
+                            - cluster where they will be hosted
+                            - this will overide default cluster provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -378,6 +400,7 @@ options:
                         network_profile:
                           description:
                             - network profile details
+                            - this will overide default network profile provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -392,7 +415,8 @@ options:
                                 - mutually_exclusive with C(name)
                         compute_profile:
                           description:
-                            - compute profile details
+                            - compute profile details for the node
+                            - this will overide default compute profile provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -407,31 +431,31 @@ options:
                                 - mutually_exclusive with C(name)
                         role:
                             description:
-                                - write
+                                - role of node/vm
                             type: str
                             choices: ["Primary", "Secondary"]
                         node_type:
                             description:
-                                - write
+                                - type of node
                             type: str
                             choices: ["database", "haproxy"]
                             default: "database"
                         archive_log_destination:
                             description:
-                                - write
+                                - archive log destination
                             type: str
                         ip:
                             description:
-                                - write
+                                - assign IP address to the vm
                             type: str
                 password:
                     description:
-                        - write
+                        - set password of above vms
                     type: str
                     required: true
                 pub_ssh_key:
                     description:
-                        - write
+                        - public ssh key of user for vm access
                     type: str
                 software_profile:
                   description:
@@ -471,7 +495,7 @@ options:
                         - mutually_exclusive with C(name)
                 compute_profile:
                   description:
-                    - compute profile details
+                    - compute profile details for all the vms
                   type: dict
                   suboptions:
                     name:
@@ -486,7 +510,7 @@ options:
                         - mutually_exclusive with C(name)
                 cluster:
                     description:
-                        - era cluster details
+                        - cluster on which all vms will be hosted
                     type: dict
                     required: true
                     suboptions:
@@ -502,13 +526,13 @@ options:
                                 - mutually_exclusive with C(name)
                 ips:
                     description:
-                        - write
+                        - set IP address i.e. virtual IP for db server cluster
                     type: list
                     elements: dict
                     suboptions:
                         cluster:
                             description:
-                                - era cluster details
+                                - ndb cluster details
                             type: dict
                             required: true
                             suboptions:
@@ -524,7 +548,7 @@ options:
                                         - mutually_exclusive with C(name)
                         ip:
                             description:
-                                - write
+                                - ip address
                             type: str
                             required: true
   tags:
@@ -532,6 +556,7 @@ options:
     description:
       - dict of tag name as key and tag value as value
       - update allowed
+      - during update, given input will override existing tags
   auto_tune_staging_drive:
     type: bool
     default: true
@@ -541,20 +566,29 @@ options:
   soft_delete:
     type: bool
     description:
-      - only unregister from era in delete process
+      - to be used with C(state) = absent
+      - unregister from ndb without any process
       - if not provided, database instance from db server VM will be deleted
   delete_db_from_vm:
     type: bool
-    description: write
+    description: 
+      - to be used with C(state) = absent
+      - delete database data from vm
   delete_time_machine:
     type: bool
-    description: delete time machine as well in delete process
+    description: 
+      - to be used with C(state) = absent
+      - delete time machine as well in delete process
   delete_db_server_vms:
     type: bool
-    description: write
+    description:
+      - to be used with C(state) = absent
+      - this will delete DB server vms or DB server cluster of database instance
   unregister_db_server_vms:
     type: bool
-    description: write
+    description:
+      - to be used with C(state) = absent
+      - this will unregister DB server vms or DB server cluster of database instance
   timeout:
     description:
         - timeout for polling database operations in seconds
@@ -569,6 +603,7 @@ extends_documentation_fragment:
 author:
   - Prem Karat (@premkarat)
   - Pradeepsingh Bhati (@bhati-pradeep)
+  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
@@ -1106,7 +1141,6 @@ def get_module_spec():
         enable_synchronous_mode=dict(type="bool", default=False, required=False),
         archive_wal_expire_days=dict(type="str", default="-1", required=False),
         enable_peer_auth=dict(type="bool", default=False, required=False),
-        virtual_ip=dict(type="str", required=False),
     )
     postgres.update(deepcopy(default_db_arguments))
 
