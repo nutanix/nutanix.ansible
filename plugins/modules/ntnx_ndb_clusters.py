@@ -16,22 +16,30 @@ description: "Create, Update and Delete NDB clusters"
 options:
     name:
         type: str
-        description: Name of the cluster.
+        description:
+         - Name of the cluster.
+         - Update allowed.
     uuid:
         type: str
         description: UUID of the cluster.
     desc:
         type: str
-        description: Description of the cluster.
+        description:
+        - Description of the cluster.
+        - Update allowed.
     name_prefix:
         type: str
         description: Name prefix of the cluster.
     cluster_ip:
         type: str
-        description: write
+        description:
+         - IP address of cluster.
+         - Update allowed.
     cluster_credentials:
         type: dict
-        description: Credentials of the cluster.
+        description:
+         - Credentials of the cluster.
+         - Update allowed.
         suboptions:
             username:
                 type: str
@@ -41,7 +49,7 @@ options:
                 description: Cluster password
     agent_network:
         type: dict
-        description: write
+        description: configure dns and ntp details.
         suboptions:
             dns_servers:
                 type: list
