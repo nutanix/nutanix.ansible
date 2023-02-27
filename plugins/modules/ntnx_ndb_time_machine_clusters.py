@@ -19,7 +19,9 @@ options:
     type: str
     required: true
   cluster:
-    description: Name or UUID of the cluster
+    description:
+        - Name or UUID of the cluster
+        - Update allowed
     type: dict
     suboptions:
         name:
@@ -33,12 +35,16 @@ options:
                 - Mutually exclusive with C(name)
             type: str
   type:
-    description: type of data access instance
+    description:
+        - type of data access instance
+        - Update allowed
     type: str
     default: "OTHER"
     choices: ["OTHER", "PRIMARY"]
   sla:
-    description: Name or UUID of the sla
+    description:
+        - Name or UUID of the sla
+        - Update allowed
     type: dict
     suboptions:
         name:
