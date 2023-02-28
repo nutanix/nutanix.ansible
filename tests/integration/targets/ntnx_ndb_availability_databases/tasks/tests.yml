@@ -599,5 +599,3 @@
       - result.response.db_server_vms_delete_status.status == "5"
     fail_msg: "database delete failed"
     success_msg: "database deleted successfully"
-
-

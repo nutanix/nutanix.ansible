@@ -179,16 +179,17 @@ options:
                             - cluster of vlan
                         type: dict
                         required: true
-                        name:
-                            description:
-                                - name of cluster
-                                - mutually exclusive with C(uuid)
-                            type: str
-                        uuid:
-                            description:
-                                - uuid of cluster
-                                - mutually exclusive with C(name)
-                            type: str
+                        suboptions:
+                            name:
+                                description:
+                                    - name of cluster
+                                    - mutually exclusive with C(uuid)
+                                type: str
+                            uuid:
+                                description:
+                                    - uuid of cluster
+                                    - mutually exclusive with C(name)
+                                type: str
                     vlan_name:
                         description:
                             - name of vlan to be added
@@ -254,7 +255,7 @@ options:
                                     - max wal logs size in MB
                                     - default is 80
                                 type: int
-                            min_wal_size:
+                            max_wal_size:
                                 description:
                                     - max wal logs size in GB
                                     - default is 1
@@ -314,7 +315,7 @@ options:
                                 description:
                                     - autovacuum cost delay in milliseconds
                                     - default is 2
-                                type: str
+                                type: int
                             wal_buffers:
                                 description:
                                     - wal buffers

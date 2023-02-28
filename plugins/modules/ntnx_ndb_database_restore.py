@@ -19,9 +19,8 @@ options:
       pitr_timestamp:
         description:
             - timestamp of point in time restore
-            - format: 'yyyy-mm-dd hh:mm:ss'
+            - "format: 'yyyy-mm-dd hh:mm:ss'"
             - mutually exclusive with C(snapshot_uuid)
-
         type: str
       snapshot_uuid:
         description:
