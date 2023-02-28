@@ -176,16 +176,17 @@ options:
                             - cluster of vlan
                         type: dict
                         required: true
-                        name:
-                            description:
-                                - name of cluster
-                                - mutually exclusive with C(uuid)
-                            type: str
-                        uuid:
-                            description:
-                                - uuid of cluster
-                                - mutually exclusive with C(name)
-                            type: str
+                        suboptions:
+                            name:
+                                description:
+                                    - name of cluster
+                                    - mutually exclusive with C(uuid)
+                                type: str
+                            uuid:
+                                description:
+                                    - uuid of cluster
+                                    - mutually exclusive with C(name)
+                                type: str
                     vlan_name:
                         description:
                             - name of vlan to be added
