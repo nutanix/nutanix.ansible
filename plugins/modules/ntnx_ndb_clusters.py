@@ -25,8 +25,8 @@ options:
     desc:
         type: str
         description:
-        - Description of the cluster.
-        - Update allowed.
+            - Description of the cluster.
+            - Update allowed.
     name_prefix:
         type: str
         description: Name prefix of the cluster.
@@ -61,11 +61,12 @@ options:
                 description: ntp servers for clusters
     vlan_access:
         type: dict
-        description: VLAN access info for which you want to configure network segmentation:
+        description: VLAN access info for which you want to configure network segmentation
         suboptions:
             prism_vlan:
                 type: dict
-                description: VLAN access info to configure a VLAN that the NDB agent VM can use to communicate with Prism
+                description:
+                    - VLAN access info to configure a VLAN that the NDB agent VM can use to communicate with Prism
                 suboptions:
                     vlan_name:
                         type: str
@@ -105,7 +106,9 @@ options:
                         description: Subnet network address
             dbserver_vlan:
                 type: dict
-                description: VLAN access info to configure a VLAN that is used for communications between the NDB agent VM and the database server VM on the newly registered NDB server cluster.
+                description:
+                    - VLAN access info to configure a VLAN that is used for communications between
+                      the NDB agent VM and the database server VM on the newly registered NDB server cluster.
                 suboptions:
                     vlan_name:
                         type: str

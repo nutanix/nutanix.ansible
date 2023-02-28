@@ -251,7 +251,7 @@ options:
                                     - max wal logs size in MB
                                     - default is 80
                                 type: int
-                            min_wal_size:
+                            max_wal_size:
                                 description:
                                     - max wal logs size in GB
                                     - default is 1
@@ -311,7 +311,7 @@ options:
                                 description:
                                     - autovacuum cost delay in milliseconds
                                     - default is 2
-                                type: str
+                                type: int
                             wal_buffers:
                                 description:
                                     - wal buffers
