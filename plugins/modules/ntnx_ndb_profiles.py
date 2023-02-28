@@ -17,7 +17,7 @@ description:
     - currently, compute, network, database parameters and software profiles are supported
     - only software profile supports versions operations
     - version related operations can be configured under "software"
-    - only software profile supports replication to clusters
+    - only software profile supports multi cluster availibility
 options:
       profile_uuid:
         description:
@@ -68,7 +68,7 @@ options:
                 type: int
       clusters:
             description:
-                - list ofclusters where profiles should be present
+                - list of clusters where profiles should be available
                 - only applicable for software profile
             type: list
             elements: dict
