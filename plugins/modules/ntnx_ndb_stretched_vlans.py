@@ -20,7 +20,7 @@ options:
     type: str
   vlans:
     description:
-      - write
+      - list of vlans uuids
     type: list
     elements: str
   name:
