@@ -1,13 +1,13 @@
 ---
 # Summary:
-# This playbook will test below cases:
+# This playbook will perform below cases:
 #   1. Creation of software profile
 #   2. Update software profile
 #   3. Create, update and delete version
 #   4. Publish, unpublish and deprecate profile
 #   5. Replicate profiles to multi clusters
 #   6. Delete of profile
-- name: Create stretched vlan
+- name: Create software profiles
   hosts: localhost
   gather_facts: false
   collections:
