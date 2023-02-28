@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_time_machines_info
 short_description: info module for ndb time machines
 version_added: 1.8.0
-description: 'Get tm info'
+description: Get time machine info
 options:
       name:
         description:
@@ -20,45 +20,45 @@ options:
         type: str
       uuid:
         description:
-            - time machine id
+            - time machine uuid
         type: str
       filters:
         description:
-            - write
+            - filters
         type: dict
         suboptions:
             detailed:
                 description:
-                    - write
+                    - get detailed response
                 type: bool
             load_clones:
                 description:
-                    - write
+                    - load clones
                 type: bool
             load_database:
                 description:
-                    - write
+                    - load database details in response
                 type: bool
             clone_tms:
                 description:
-                    - write
+                    - load cloned time machines
                 type: bool
             database_tms:
                 description:
-                    - write
+                    - write 
                 type: bool
             value:
                 description:
-                    - write
+                    - value correponding to C(value_type)
                 type: str
             value_type:
                 description:
-                    - write
+                    - value type corresponding to C(value)
                 type: str
                 choices: ["id","name",]
             time_zone:
                 description:
-                    - write
+                    - get responses in certain time zone
                 type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module

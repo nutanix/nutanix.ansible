@@ -9,69 +9,73 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_register_db_server_vm
-short_description: write
+short_description: module for registration of database server vm
 version_added: 1.8.0
-description: 'write'
+description:  module for registration of database server vm
 options:
     ip:
         description:
-            - write
+            - IP of vm
         type: str
         required: true
     desc:
         description:
-            - write
+            - set description of vm in ndb
         type: str
     reset_desc_in_ntnx_cluster:
         description:
-            - write
+            - reset description of vm in cluster as per C(desc) in ndb
         type: bool
         default: false
     cluster:
         description:
-            - write
+            - cluster where db server vm is hosted
         type: dict
         required: true
         suboptions:
             name:
                 description:
-                    - write
+                    - name of cluster
+                    - mutually exclusive with C(uuid)
                 type: str
             uuid:
                 description:
-                    - write
+                    - uuid of cluster
+                    - mutually exclusive with C(name)
                 type: str
     postgres:
         description:
-            - write
+            - potgres related configuration
         type: dict
         suboptions:
             listener_port:
                 description:
-                    - write
+                    - listener port of database
                 type: str
                 default: "5432"
             software_path:
                 description:
-                    - write
+                    - path where desired postgres instance is located. For ex. "/usr/pgsql-10.4"
                 type: str
                 required: true
     username:
         description:
-            - write
+            - username to access vm
         type: str
         required: true
     password:
         description:
-            - write
+            - password for accessing vm
+            - mutually_exclusive with C(private_ssh_key)
         type: str
     private_ssh_key:
         description:
-            - write
+            - private key for accessing vm
+            - mutually_exclusive with C(password)
         type: str
     working_directory:
         description:
-            - write
+            - directory path to be created and used by ndb for its scripts
         type: str
         default: "/tmp"
 
@@ -81,6 +85,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_AutomatedPatchingSpec
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

@@ -12,37 +12,37 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_snapshots_info
 short_description: info module for ndb snapshots info
 version_added: 1.8.0
-description: 'Get snapshots info'
+description: info module for ndb snapshots
 options:
       uuid:
         description:
-            - server id
+            - snapshot uuid
         type: str
       get_files:
         description:
-            - get snapshot files
+            - enable this flag to get snapshot files
         type: bool
       filters:
         description:
-            - write
+            - filters spec
         type: dict
         suboptions:
             all:
                 description:
-                    - write
+                    - include all snapshots from all clusters
                 type: bool
             database_ids:
                 description:
-                    - write
+                    - Comma separated list of database-ids for which snapshots are to be fetched
                 type: list
                 elements: str
             value:
                 description:
-                    - write
+                    - corresponding value for value type
                 type: str
             value_type:
                 description:
-                    - write
+                    - select value type for querying
                 type: str
                 choices: ["type","status","protection-domain-id","time-machine"]
             time_zone:

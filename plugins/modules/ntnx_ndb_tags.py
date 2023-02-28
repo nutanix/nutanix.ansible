@@ -10,35 +10,38 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_tags
-short_description: write
+short_description: module for create, update and delete of tags
 version_added: 1.8.0
-description: 'write'
+description: module for create, update and delete of tags
 options:
     name:
         description:
-            - write
+            - name of tag
+            - update is allowed
         type: str
     uuid:
         description:
-            - write
+            - uuid of tag for update and delete
         type: str
     desc:
         description:
-            - write
+            - description of tag
+            - allowed to update
         type: str
-
     entity_type:
         description:
-            - write
+            - entity type it needs to be associated
         type: str
         choices: ["DATABASE", "CLONE", "TIME_MACHINE", "DATABASE_SERVER"]
     tag_value_required:
         description:
-            - write
+            - if value is required by user while adding this tag to entity
+            - update is allowed
         type: bool
     status:
         description:
-            - write
+            - status of tag
+            - update is allowed
         type: str
         choices: ["ENABLED", "DEPRECATED"]
 extends_documentation_fragment:
@@ -46,6 +49,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

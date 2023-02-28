@@ -10,208 +10,227 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_register_database
-short_description: write
+short_description: module for database instance registration
 version_added: 1.8.0
-description: 'write'
+description: 
+    - module for database instance registration
+    - currently, only postgres single instance database registration is supported
 options:
     name:
         description:
-            - write
+            - name of database instance to be created in ndb
         type: str
         required: true
     desc:
         description:
-            - write
+            - description of database instance
         type: str
     db_vm:
         description:
-            - write
+            - source database server vm details
+            - either registered or non registered vm can be configured as source
         type: dict
         required: true
         suboptions:
             registered:
                 description:
-                    - write
+                    - configure a registered vm as source
                 type: dict
                 suboptions:
                     name:
                         description:
-                            - write
+                            - name of database server vm
+                            - mutually exclusive with C(uuid) and C(ip)
                         type: str
                     uuid:
                         description:
-                            - write
+                            - name of database server vm
+                            - mutually exclusive with C(name) and C(ip)
                         type: str
                     ip:
                         description:
-                            - write
+                            - ip of database server vm
+                            - mutually exclusive with C(uuid) and C(name)
                         type: str
             unregistered:
                 description:
-                    - write
+                    - configure a unregistered vm as source
+                    - registration of database will also register given vm
                 type: dict
                 suboptions:
                     ip:
                         description:
-                            - write
+                            - ip of vm
                         type: str
                         required: true
                     username:
                         description:
-                            - write
+                            - username of vm
                         type: str
                         required: true
                     private_key:
                         description:
-                            - write
+                            - private key of vm
+                            - mutually exclusive with C(password)
                         type: str
                     password:
                         description:
-                            - write
+                            - password of vm
+                            - mutually exclusive with C(private_key)
                         type: str
                     desc:
                         description:
-                            - write
+                            - set description of vm
                         type: str
                     reset_desc_in_ntnx_cluster:
                         description:
-                            - write
+                            - reset description in cluster to C(desc) given
                         type: bool
                         default: false
                     cluster:
                         description:
-                            - write
+                            - cluster where vm is present
                         type: dict
                         required: true
                         suboptions:
                             name:
                                 description:
-                                    - write
+                                    - name of cluster
+                                    - mutually exclusive with C(uuid)
                                 type: str
                             uuid:
                                 description:
-                                    - write
+                                    - uuid of cluster
+                                    - mutually exclusive with C(name)
                                 type: str
     time_machine:
         description:
-            - write
+            - configure new time machine for database instance
         type: dict
         required: true
         suboptions:
             name:
                 description:
-                    - write
+                    - name of time machine
                 type: str
                 required: true
             desc:
                 description:
-                    - write
+                    - description of time machine
                 type: str
             sla:
                 description:
-                    - write
+                    - configure sla
                 type: dict
                 required: true
                 suboptions:
                     name:
                         description:
-                            - write
+                            - name of sla
+                            - mutually exclusive with C(uuid)
                         type: str
                     uuid:
                         description:
-                            - write
+                            - uuid of sla
+                            - mutually exclusive with C(name)
                         type: str
             schedule:
                 description:
-                    - write
+                    - configure schedule of snapshots
                 type: dict
                 suboptions:
                     daily:
-                        description:
-                            - write
                         type: str
+                        description: daily snapshot time in HH:MM:SS format
                     weekly:
-                        description:
-                            - write
                         type: str
+                        description: weekly snapshot day. For Example, "WEDNESDAY"
                     monthly:
-                        description:
-                            - write
                         type: int
+                        description: monthly snapshot day in a month
                     quaterly:
-                        description:
-                            - write
                         type: str
+                        description:
+                        - quaterly snapshot month
+                        - day of month is set based on C(monthly)
+                        - C(monthly) is required for setting C(quaterly) else it is ignored
+                        - For Example, "JANUARY"
                     yearly:
-                        description:
-                            - write
                         type: str
+                        description:
+                        - yearly snapshot month
+                        - day of month is set based on C(monthly)
+                        - C(monthly) is required for setting C(yearly) else it is ignored
+                        - For Example, "JANUARY"
                     log_catchup:
-                        description:
-                            - write
                         type: int
-                        choices: [15, 30, 60, 90, 120]
+                        description: log catchup intervals in minutes
+                        choices:
+                        - 15
+                        - 30
+                        - 60
+                        - 90
+                        - 120
                     snapshots_per_day:
-                        description:
-                            - write
                         type: int
+                        description: num of snapshots per day
                         default: 1
             auto_tune_log_drive:
                 description:
-                    - write
+                    - set flag for auto tuning of log drive
                 type: bool
                 default: true
     postgres:
         description:
-            - write
+            - potgres related configuration
         type: dict
         suboptions:
             listener_port:
                 description:
-                    - write
+                    - listener port of database in vm
                 type: str
                 default: "5432"
             db_name:
                 description:
-                    - write
+                    - intial database that would be added 
                 type: str
                 required: true
             db_password:
                 description:
-                    - write
+                    - password of C(db_user) in database instance
                 type: str
                 required: true
             db_user:
                 description:
-                    - write
+                    - user name for connecting to database instance in vm
                 type: str
                 default: "postgres"
             software_path:
                 description:
-                    - write
+                    - path where desired postgres instance is located. For ex. "/usr/pgsql-10.4"
                 type: str
             type:
                 description:
-                    - write
+                    - architecture type of database
                 type: str
                 choices: ["single"]
                 default: "single"
     tags:
         description:
-            - write
+            - dict of tag name as key and tag value as value
         type: dict
     auto_tune_staging_drive:
         description:
-            - write
+            - flag for auto tuning staging drive
         type: bool
     working_directory:
         description:
-            - write
+            - directory path to be created and used by ndb for its scripts
         type: str
         default: "/tmp"
     automated_patching:
         description:
-            - write
+            - automated patching configuration
         type: dict
 
 extends_documentation_fragment:
@@ -221,6 +240,8 @@ extends_documentation_fragment:
 
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

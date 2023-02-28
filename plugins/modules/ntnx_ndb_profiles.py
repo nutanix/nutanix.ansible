@@ -42,7 +42,7 @@ options:
       compute:
         description:
             - for creating compute profile
-            - idempotency checks are not supported
+            - idempotency not supported
         type: dict
         suboptions:
             publish:
@@ -83,7 +83,7 @@ options:
         description:
             - software profile configuration
             - during create, it will create base version
-            - idempotency checks are not supported
+            - idempotency not supported
         type: dict
         suboptions:
             publish:
@@ -152,7 +152,7 @@ options:
       network:
         description:
             - network profile configuration
-            - idempotency checks are not supported
+            - idempotency not supported
         type: dict
         suboptions:
             publish:
@@ -198,7 +198,7 @@ options:
       database_parameter:
         description:
             - database parameter profile configuration
-            - idempotency checks are not supported
+            - idempotency not supported
         type: dict
         suboptions:
             publish:
@@ -333,7 +333,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
- - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+ - Pradeepsingh Bhati (@bhati-pradeep)
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""

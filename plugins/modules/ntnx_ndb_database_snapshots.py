@@ -15,7 +15,7 @@ version_added: 1.8.0
 description: 
     - module for creating, updating and deleting database snapshots
     - currently, this module only polls for snapshot create in primary source cluster
-    - it doesn't poll of replication task if multiple clusters are mentioned
+    - it doesn't poll for replication task if multiple clusters are mentioned
     - check_mode is not supported for snapshot update
 options:
       snapshot_uuid:

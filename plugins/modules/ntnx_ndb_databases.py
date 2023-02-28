@@ -15,6 +15,7 @@ version_added: 1.8.0
 description: 
   - Module for create, update and delete of single instance database in Nutanix Database Service
   - During delete, by default it will only unregister database instance. Add allowed params to change it.
+  - Currently, single and HA postgres instance is supported by this module
 options:
   db_uuid:
     description:

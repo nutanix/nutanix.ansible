@@ -20,7 +20,7 @@ options:
         type: str
       uuid:
         description:
-            - sla id
+            - sla uuid
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_ndb_base_module

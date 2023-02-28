@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_slas
-short_description: write
+short_description: moudle for creating, updating and deleting slas
 version_added: 1.8.0
-description: 'write'
+description: moudle for creating, updating and deleting slas
 options:
       name:
         description:
@@ -24,43 +24,45 @@ options:
         type: str
       sla_uuid:
         description:
-            - sla id
+            - sla uuid
         type: str
       frequency:
         description:
-            - write
+            - frequency of retention
         type: dict
         suboptions:
             logs_retention:
                 description:
-                    - write
+                    - duration in days for which the transaction logs are retained in NDB
                 type: int
             snapshots_retention:
                 description:
-                    - write
+                    - snapshot retention details
                 type: dict
                 suboptions:
                     daily:
                         description:
-                            - write
+                            - duration in days for which a daily snapshot must be retained in NDB
                         type: int
                     weekly:
                         description:
-                            - write
+                            - duration in weeks for which a weekly snapshot must be retained in NDB
                         type: int
                     monthly:
                         description:
-                            - write
+                            - duration in months for which a monthly snapshot must be retained in NDB
                         type: int
                     quarterly:
                         description:
-                            - write
+                            - duration in quarters for which a quarterly snapshot must be retained in NDB
                         type: int
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

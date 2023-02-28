@@ -10,9 +10,11 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_vlans
-short_description: Module for create, update and delete of single instance vlan. Currently, postgres type vlan is officially supported.
-version_added: 1.8.0-beta.1
-description: Module for create, update and delete of single instance vlan in Nutanix vlan Service
+short_description: Module for create, update and delete of ndb vlan.
+version_added: 1.8.0
+description: 
+  - Module for create, update and delete of ndb vlans
+  - Module for management ip pools in vlans
 options:
   vlan_uuid:
     description:
@@ -51,7 +53,7 @@ options:
     type: str
   subnet_mask:
     description:
-      - Subnet network address
+      - subnet mask
       - update allowed
     type: str
   primary_dns:

@@ -10,9 +10,11 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_time_machine_clusters
-short_description: Module for create, update and delete of single instance time_machine_clusters. Currently, postgres type time_machine is officially supported.
+short_description: Module for create, update and delete for data access management in time machines.
 version_added: 1.8.0
-description: Module for create, update and delete of single instance time_machine_clusters in Nutanix time_machine_clusters Service
+description: 
+    - Module for create, update and delete for data access management i.e. clusters for snapshots in time machines.
+    - Currently only postgres type database is tested and supported
 options:
   time_machine_uuid:
     description: UUID of the time machine
@@ -21,7 +23,8 @@ options:
   cluster:
     description:
         - Name or UUID of the cluster
-        - Update allowed
+        - if cluster is not present in time machine, then it will add it
+        - if cluster is present then it will update cluster config in time machine
     type: dict
     suboptions:
         name:
@@ -37,7 +40,7 @@ options:
   type:
     description:
         - type of data access instance
-        - Update allowed
+        - update allowed
     type: str
     default: "OTHER"
     choices: ["OTHER", "PRIMARY"]
@@ -61,9 +64,9 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
 author:
-  - "Prem Karat (@premkarat)"
-  - "Gevorg Khachatryan (@Gevorg-Khachatryan-97)"
-  - "Alaa Bishtawi (@alaa-bish)"
+  - Prem Karat (@premkarat)
+  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
+  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""

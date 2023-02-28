@@ -14,6 +14,7 @@ short_description: module for replicating database snapshots across clusters of 
 version_added: 1.8.0
 description: 
     - module for replicating snapshots across clusters of time machine
+    - replication to one cluster at a time is supported
 options:
       expiry_days:
         description:
@@ -46,6 +47,8 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_operations
 author:
  - Prem Karat (@premkarat)
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
