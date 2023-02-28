@@ -77,12 +77,13 @@ response:
   description: An intentful representation of a authorizisation status
   returned: always
   type: dict
-  sample:{
+  sample: {
             "errorCode": 0,
             "info": null,
-            "message": "The DBServer(s) [5c14b4d4-553f-4b93-a3c4-a6685da2732b] got successfully associated with the Time Machine (id:7a39664b-dfb7-4529-887c-6d91f7e18604, name:test-setup-dnd_TM)",
+            "message": "The DBServer(s) [5c14b4d4-553f-4b93-a3c4-a6685da2732b]
+                        got successfully associated with the Time Machine (id:7a39664b-dfb7-4529-887c-6d91f7e18604, name:test-setup-dnd_TM)",
             "status": "success"
-        },
+        }
 uuid:
   description: Time machine uuid
   returned: always

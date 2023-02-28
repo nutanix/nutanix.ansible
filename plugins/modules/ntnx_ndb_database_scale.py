@@ -49,8 +49,7 @@ EXAMPLES = r"""
     db_uuid: "{{db_uuid}}"
     storage_gb: 2
     pre_update_cmd: "ls"
-    pre_update_cmd: "ls -a"
-
+    post_update_cmd: "ls -a"
   register: result
 """
 RETURN = r"""
