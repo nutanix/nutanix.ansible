@@ -1,0 +1,320 @@
+---
+- name: NDB db server vms
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+
+    - name: create spec for db server vm using time machine
+      check_mode: yes
+      ntnx_ndb_db_server_vms:
+        wait: True
+        name: "ansible-created-vm1-from-time-machine"
+        desc: "ansible-created-vm1-from-time-machine-time-machine"
+        time_machine:
+          uuid: "test_uuid"
+          snapshot_uuid: "test_snapshot_uuid"
+        compute_profile:
+          uuid: "test_compute_uuid"
+        network_profile:
+          uuid: "test_network_uuid"
+        cluster:
+          uuid: "test_cluster_uuid"
+        password: "test_password"
+        pub_ssh_key: "test_public_key"
+        database_type: "postgres_database"
+        automated_patching:
+          maintenance_window:
+            uuid: "test_window_uuid"
+          tasks:
+            - type: "OS_PATCHING"
+              pre_task_cmd: "ls"
+              post_task_cmd: "ls -a"
+            - type: "DB_PATCHING"
+              pre_task_cmd: "ls -l"
+              post_task_cmd: "ls -F"
+
+      register: check_mode_result
+
+    - name: create spec for db server vm using software profile and names of profile
+      check_mode: yes
+      ntnx_ndb_db_server_vms:
+        wait: True
+        name: "{{ vm1_name }}"
+        desc: "ansible-created-vm1-desc"
+        software_profile:
+          name: "{{ software_profile.name }}"
+        compute_profile:
+          name: "{{ compute_profile.name }}"
+        network_profile:
+          name: "{{ network_profile.name }}"
+        cluster:
+          name: "{{ cluster.cluster1.name }}"
+        password: "{{ vm_password }}"
+        pub_ssh_key: "{{ public_ssh_key }}"
+        time_zone: "UTC"
+        database_type: "postgres_database"
+        automated_patching:
+          maintenance_window:
+            name: "{{ maintenance.window_name }}"
+          tasks:
+            - type: "OS_PATCHING"
+              pre_task_cmd: "ls"
+              post_task_cmd: "ls -a"
+            - type: "DB_PATCHING"
+              pre_task_cmd: "ls -l"
+              post_task_cmd: "ls -F"
+      register: result
+
+    - name: create db server vm using software profile
+      ntnx_ndb_db_server_vms:
+        wait: True
+        name: "{{ vm1_name }}"
+        desc: "ansible-created-vm1-desc"
+        software_profile:
+          name: "{{ software_profile.name }}"
+        compute_profile:
+          name: "{{ compute_profile.name }}"
+        network_profile:
+          name: "{{ network_profile.name }}"
+        cluster:
+          name: "{{ cluster.cluster1.name }}"
+        password: "{{ vm_password }}"
+        pub_ssh_key: "{{ public_ssh_key }}"
+        time_zone: "UTC"
+        database_type: "postgres_database"
+        automated_patching:
+          maintenance_window:
+            name: "{{ maintenance.window_name }}"
+          tasks:
+            - type: "OS_PATCHING"
+              pre_task_cmd: "ls"
+              post_task_cmd: "ls -a"
+            - type: "DB_PATCHING"
+              pre_task_cmd: "ls -l"
+              post_task_cmd: "ls -F"
+      register: result
+
+
+    - name: update db server vm name, desc, credentials, tags
+      ntnx_ndb_db_server_vms:
+        wait: True
+        uuid: "{{db_server_uuid}}"
+        name: "{{vm1_name_updated}}"
+        desc: "ansible-created-vm1-updated-desc"
+        reset_name_in_ntnx_cluster: True
+        reset_desc_in_ntnx_cluster: True
+        update_credentials:
+          - username: "{{vm_username}}"
+            password: "{{vm_password}}"
+        tags:
+          ansible-db-server-vms: ansible-updated
+      register: result
+
+    - name: create spec for update db server vm credentials
+      check_mode: yes
+      ntnx_ndb_db_server_vms:
+        wait: True
+        uuid: "{{db_server_uuid}}"
+        update_credentials:
+          - username: "user"
+            password: "pass"
+      register: result
+
+
+    - name: List NDB db_servers
+      ntnx_ndb_db_servers_info:
+      register: db_servers
+
+
+    - name: get NDB db_servers using it's name
+      ntnx_ndb_db_servers_info:
+        filters:
+          load_metrics: true
+          load_databases: True
+          value_type: name
+          value: "{{db_servers.response[0].name}}"
+      register: result
+
+    - name: get NDB db_servers using it's ip
+      ntnx_ndb_db_servers_info:
+        filters:
+          value_type: ip
+          value: "{{db_servers.response[0].ipAddresses[0]}}"
+      register: result
+
+    - name: get NDB db_servers using it's name
+      ntnx_ndb_db_servers_info:
+        name: "{{db_servers.response[0].name}}"
+      register: result
+
+    - name: get NDB db_servers using it's id
+      ntnx_ndb_db_servers_info:
+        uuid: "{{db_servers.response[0].id}}"
+      register: result
+
+    - name: get NDB db_servers using ip
+      ntnx_ndb_db_servers_info:
+        server_ip: "{{db_servers.response[0].ipAddresses[0]}}"
+      register: result
+
+    ################################### maintenance tasks update tasks #############################
+
+    - name: create spec for adding maintenance window tasks to db server vm
+      check_mode: yes
+      ntnx_ndb_maintenance_tasks:
+        db_server_vms:
+          - name: "{{vm1_name_updated}}"
+          - uuid: "test_vm_1"
+        db_server_clusters:
+          - uuid: "test_cluter_1"
+          - uuid: "test_cluter_2"
+        maintenance_window: 
+          name: "{{maintenance.window_name}}"
+        tasks:         
+          - type: "OS_PATCHING"
+            pre_task_cmd: "ls -a"
+            post_task_cmd: "ls"
+          - type: "DB_PATCHING"
+            pre_task_cmd: "ls -a"
+            post_task_cmd: "ls"
+      register: result
+
+    - name: create spec for removing maintenance window tasks from above created vm
+      check_mode: yes
+      ntnx_ndb_maintenance_tasks:
+        db_server_vms:
+          - uuid: "{{db_server_uuid}}"
+        maintenance_window: 
+          uuid: "{{maintenance.window_uuid}}"
+        tasks: []
+      register: result
+
+
+    - name: remove maintenance tasks
+      ntnx_ndb_maintenance_tasks:
+        db_server_vms:
+          - uuid: "{{db_server_uuid}}"
+        maintenance_window: 
+          uuid: "{{maintenance.window_uuid}}"
+        tasks: []
+      register: result
+
+    - name: Add maitenance window task for vm
+      ntnx_ndb_maintenance_tasks:
+        db_server_vms:
+          - name: "{{vm1_name_updated}}"
+        maintenance_window: 
+          name: "{{maintenance.window_name}}"
+        tasks:         
+          - type: "OS_PATCHING"
+            pre_task_cmd: "ls -a"
+            post_task_cmd: "ls"
+          - type: "DB_PATCHING"
+            pre_task_cmd: "ls -a"
+            post_task_cmd: "ls"
+      register: result
+
+    ################################### DB server VM unregistration tasks #############################
+
+    - name: generate check mode spec for unregister with default values
+      check_mode: yes
+      ntnx_ndb_db_server_vms:
+        state: "absent"
+        wait: True
+        uuid: "{{db_server_uuid}}"
+      register: result
+
+    - name: genereate check mode spec for delete vm with vgs and snapshots
+      check_mode: yes
+      ntnx_ndb_db_server_vms:
+        state: "absent"
+        uuid: "{{db_server_uuid}}"
+        delete_from_cluster: True
+        delete_vgs: True
+        delete_vm_snapshots: True
+      register: result
+
+    - name: unregister vm
+      ntnx_ndb_db_server_vms:
+        state: "absent"
+        wait: True
+        uuid: "{{db_server_uuid}}"
+        delete_from_cluster: False
+        soft_remove: True
+        delete_vgs: True
+        delete_vm_snapshots: True
+      register: result
+
+    ################################### DB server VM Registration tasks #############################
+
+
+    - name: generate spec for registeration of the previous unregistered vm using check mode
+      check_mode: yes
+      ntnx_ndb_register_db_server_vm:
+        ip: "{{vm_ip}}"
+        desc: "register-vm-desc"
+        reset_desc_in_ntnx_cluster: true
+        cluster:
+          name: "{{cluster.cluster1.name}}"
+        postgres:
+          software_path: "{{postgres.software_home}}"
+        private_ssh_key: "check-key"
+        username: "{{vm_username}}"
+        automated_patching:
+          maintenance_window:
+            name: "{{ maintenance.window_name }}"
+          tasks:
+            - type: "OS_PATCHING"
+              pre_task_cmd: "ls"
+              post_task_cmd: "ls -a"
+            - type: "DB_PATCHING"
+              pre_task_cmd: "ls -l"
+              post_task_cmd: "ls -F"
+        working_directory: "/check"
+      register: result
+
+    - name: register the previous unregistered vm
+      ntnx_ndb_register_db_server_vm:
+        ip: "{{vm_ip}}"
+        desc: "register-vm-desc"
+        cluster:
+          name: "{{cluster.cluster1.name}}"
+        postgres:
+          listener_port: 5432
+          software_path: "{{postgres.software_home}}"
+        username: "{{vm_username}}"
+        password: "{{vm_password}}"
+        automated_patching:
+          maintenance_window:
+            name: "{{ maintenance.window_name }}"
+          tasks:
+            - type: "OS_PATCHING"
+              pre_task_cmd: "ls"
+              post_task_cmd: "ls -a"
+            - type: "DB_PATCHING"
+              pre_task_cmd: "ls -l"
+              post_task_cmd: "ls -F"
+      
+      register: result
+
+    ################################### DB server VM Delete tasks #############################
+
+
+    - name: unregister db server vm
+      ntnx_ndb_db_server_vms:
+        state: "absent"
+        wait: True
+        uuid: "{{db_server_uuid}}"
+        delete_from_cluster: false
+        delete_vgs: True
+        delete_vm_snapshots: True
+      register: result
