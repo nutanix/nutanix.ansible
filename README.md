@@ -66,7 +66,7 @@ Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/exa
 NDB based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
 
 ### Notes:
-1. Currently for ntnx_ndb_databases, creation of only postgres type database instance is tested and offically supported. 
+1. Currently NDB based modules are supported and tested against postgres based databases.
  
 # Installing the collection
 **Prerequisite**
