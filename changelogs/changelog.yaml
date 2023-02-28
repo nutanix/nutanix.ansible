@@ -282,6 +282,84 @@ releases:
       - nutanix.ncp.ntnx_prism_vm_inventory - [Imprv] add functionality constructed
         to module inventory [\#235](https://github.com/nutanix/nutanix.ansible/issues/235)
     release_date: '2022-09-30'
+  1.8.0:
+    modules:
+    - description: module for authorizing db server vm
+      name: ntnx_ndb_authorize_db_server_vms
+      namespace: ''
+    - description: Create, Update and Delete NDB clusters
+      name: ntnx_ndb_clusters
+      namespace: ''
+    - description: module for database clone refresh.
+      name: ntnx_ndb_database_clone_refresh
+      namespace: ''
+    - description: module for create, update and delete of ndb database clones
+      name: ntnx_ndb_database_clones
+      namespace: ''
+    - description: module for performing log catchups action
+      name: ntnx_ndb_database_log_catchup
+      namespace: ''
+    - description: module for restoring database instance
+      name: ntnx_ndb_database_restore
+      namespace: ''
+    - description: module for scaling database instance
+      name: ntnx_ndb_database_scale
+      namespace: ''
+    - description: module for creating, updating and deleting database snapshots
+      name: ntnx_ndb_database_snapshots
+      namespace: ''
+    - description: module for create, delete and update of database server vms
+      name: ntnx_ndb_db_server_vms
+      namespace: ''
+    - description: module to manage linked databases of a database instance
+      name: ntnx_ndb_linked_databases
+      namespace: ''
+    - description: module to add and remove maintenance related tasks
+      name: ntnx_ndb_maintenance_tasks
+      namespace: ''
+    - description: module to create, update and delete mainetance window
+      name: ntnx_ndb_maintenance_window
+      namespace: ''
+    - description: module for fetching maintenance windows info
+      name: ntnx_ndb_maintenance_windows_info
+      namespace: ''
+    - description: module for create, update and delete of profiles
+      name: ntnx_ndb_profiles
+      namespace: ''
+    - description: module for database instance registration
+      name: ntnx_ndb_register_database
+      namespace: ''
+    - description: module for registration of database server vm
+      name: ntnx_ndb_register_db_server_vm
+      namespace: ''
+    - description: module for replicating database snapshots across clusters of time
+        machine
+      name: ntnx_ndb_replicate_database_snapshots
+      namespace: ''
+    - description: moudle for creating, updating and deleting slas
+      name: ntnx_ndb_slas
+      namespace: ''
+    - description: info module for ndb snapshots info
+      name: ntnx_ndb_snapshots_info
+      namespace: ''
+    - description: Module for create, update and delete of single instance vlan. Currently,
+        postgres type vlan is officially supported.
+      name: ntnx_ndb_stretched_vlans
+      namespace: ''
+    - description: module for create, update and delete of tags
+      name: ntnx_ndb_tags
+      namespace: ''
+    - description: Module for create, update and delete for data access management
+        in time machines.
+      name: ntnx_ndb_time_machine_clusters
+      namespace: ''
+    - description: Module for create, update and delete of ndb vlan.
+      name: ntnx_ndb_vlans
+      namespace: ''
+    - description: info module for ndb vlans
+      name: ntnx_ndb_vlans_info
+      namespace: ''
+    release_date: '2023-02-28'
   1.8.0-beta.1:
     modules:
     - description: info module for database clones
