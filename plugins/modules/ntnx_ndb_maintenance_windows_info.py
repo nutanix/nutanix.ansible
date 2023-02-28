@@ -22,7 +22,7 @@ options:
             - uuid of maintenance window
         type: str
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_ndb_info_base_module
 author:
  - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)

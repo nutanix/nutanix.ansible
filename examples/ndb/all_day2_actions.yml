@@ -8,7 +8,7 @@
 #   5. Scale database
 #   6. Add/Remove linked databases
 
----
+
 - name: perform day2 actions
   hosts: localhost
   gather_facts: false
@@ -109,7 +109,7 @@
         db_uuid: "{{db_uuid}}"
         storage_gb: 2
         pre_update_cmd: "ls"
-        pre_update_cmd: "ls -a"
+        post_update_cmd: "ls -a"
 
       register: result
 

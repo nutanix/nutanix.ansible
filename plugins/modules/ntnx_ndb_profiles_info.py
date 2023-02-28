@@ -47,7 +47,7 @@ options:
                 type: str
                 choices: ["Software","Compute","Network","Database_Parameter",]
 extends_documentation_fragment:
-    - nutanix.ncp.ntnx_ndb_base_module
+    - nutanix.ncp.ntnx_ndb_info_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
