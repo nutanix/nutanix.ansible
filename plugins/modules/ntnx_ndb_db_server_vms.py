@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_db_server_vms
 short_description: module for create, delete and update of database server vms
 version_added: 1.8.0
-description: 
+description:
     - module for create, delete and update of database server vms
 options:
     state:

@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_db_servers_info
 short_description: info module for ndb db server vms info
 version_added: 1.8.0
-description: 
+description:
     - Get database server info
     - Module will fetch all entities if no spec is given
 options:

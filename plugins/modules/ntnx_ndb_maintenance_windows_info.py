@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_maintenance_windows_info
 short_description: module for fetching maintenance windows info
 version_added: 1.8.0
-description: 
+description:
     - module for fetching maintenance windows info
     - it will fetch all entities if no spec is given
     - it will also load entities and task associations

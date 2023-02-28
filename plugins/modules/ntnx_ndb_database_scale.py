@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_database_scale
 short_description: module for scaling database instance
 version_added: 1.8.0
-description: 
+description:
     - module for scaling database instance
     - currently, extension of database storage is only supported
 options:

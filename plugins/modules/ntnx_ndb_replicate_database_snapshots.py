@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_replicate_database_snapshots
 short_description: module for replicating database snapshots across clusters of time machine
 version_added: 1.8.0
-description: 
+description:
     - module for replicating snapshots across clusters of time machine
     - replication to one cluster at a time is supported
 options:

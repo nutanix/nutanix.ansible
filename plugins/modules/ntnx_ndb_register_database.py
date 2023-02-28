@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_register_database
 short_description: module for database instance registration
 version_added: 1.8.0
-description: 
+description:
     - module for database instance registration
     - currently, only postgres single instance database registration is supported
 options:
@@ -192,7 +192,7 @@ options:
                 default: "5432"
             db_name:
                 description:
-                    - intial database that would be added 
+                    - intial database that would be added
                 type: str
                 required: true
             db_password:

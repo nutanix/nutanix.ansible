@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_vlans
 short_description: Module for create, update and delete of ndb vlan.
 version_added: 1.8.0
-description: 
+description:
   - Module for create, update and delete of ndb vlans
   - Module for management ip pools in vlans
 options:
