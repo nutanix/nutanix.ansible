@@ -369,7 +369,7 @@ response:
   description: An intentful representation of a clone status
   returned: always
   type: dict
-  sample:{
+  sample: {
     "id": "4b86551d-168f-405b-a888-89ac9082bdff",
     "name": "ansible-clone-updated-updated-updated-updated3s",
     "description": "ansible-clone-desc-updated-updated",
@@ -393,7 +393,12 @@ response:
         {
             "ref_id": "4b86551d-168f-405b-a888-89ac9082bdff",
             "name": "BASE_SIZE",
-            "value": "{\"clusterStorage\": {\"0a3b964f-8616-40b9-a564-99cf35f4b8d8\": {\"9b8f4814-4536-42ef-9760-73341dbdc85a\": {\"size\": 304740352, \"allocatedSize\": 0, \"usedSize\": 0, \"unit\": \"B\"}, \"ffdb3000-22bc-4994-86f5-5bb668422e5e\": {\"size\": 303677440, \"allocatedSize\": 0, \"usedSize\": 0, \"unit\": \"B\"}, \"55034431-4f5b-48e0-bc58-13676bf9ed9b\": {\"size\": 9267200, \"allocatedSize\": 0, \"usedSize\": 0, \"unit\": \"B\"}, \"57e55810-0702-4f63-87b9-ff67921b6466\": {\"size\": 5439488, \"allocatedSize\": 0, \"usedSize\": 0, \"unit\": \"B\"}}}}",
+            "value": "{\"clusterStorage\": {\"0a3b964f-8616-40b9-a564-99cf35f4b8d8\":
+                      {\"9b8f4814-4536-42ef-9760-73341dbdc85a\": {\"size\": 304740352, \"allocatedSize\": 0, \"usedSize\": 0, \"unit\": \"B\"},
+                      \"ffdb3000-22bc-4994-86f5-5bb668422e5e\":
+                      {\"size\": 303677440, \"allocatedSize\": 0, \"usedSize\": 0, \"unit\": \"B\"},
+                      \"55034431-4f5b-48e0-bc58-13676bf9ed9b\": {\"size\": 9267200, \"allocatedSize\": 0, \"usedSize\": 0, \"unit\": \"B\"},
+                      \"57e55810-0702-4f63-87b9-ff67921b6466\": {\"size\": 5439488, \"allocatedSize\": 0, \"usedSize\": 0, \"unit\": \"B\"}}}}",
             "secure": false,
             "description": null
         },
