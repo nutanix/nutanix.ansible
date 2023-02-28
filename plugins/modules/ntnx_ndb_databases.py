@@ -597,10 +597,48 @@ options:
     type: int
     required: false
     default: 2100
+  automated_patching:
+    description:
+      - configure automated patching using maintenance windows
+    type: dict
+    suboptions:
+      maintenance_window:
+        description:
+            - maintenance window details
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - name of maintenance window
+                    - mutually exclusive with C(uuid)
+                type: str
+            uuid:
+                description:
+                    - uuid of maintenance window
+                    - mutually exclusive with C(name)
+                type: str
+      tasks:
+          description:
+              - list of maintenance pre-post tasks
+          type: list
+          elements: dict
+          suboptions:
+              type:
+                  description:
+                      - type of patching
+                  type: str
+                  choices: ["OS_PATCHING", "DB_PATCHING"]
+              pre_task_cmd:
+                  description:
+                      - full os command which needs to run before patching task in db server vm
+                  type: str
+              post_task_cmd:
+                  description:
+                      - full os command which needs to run after patching task in db server vm
+                  type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
-  - nutanix.ncp.ntnx_AutomatedPatchingSpec
 author:
   - Prem Karat (@premkarat)
   - Pradeepsingh Bhati (@bhati-pradeep)
