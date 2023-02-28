@@ -1063,10 +1063,8 @@ def create_profile(module, result):
     _profile, err = get_profile_type_obj(module, profile_type=profile_type)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed getting object for profile type {0}".format(profile_type),
-            **result,
-        )
+        err_msg = "Failed getting object for profile type {0}".format(profile_type)
+        module.fail_json(msg=err_msg, **result)
 
     spec, err = _profile.get_spec(create=True)
     if err:
@@ -1129,10 +1127,8 @@ def update_profile(module, result):
     _profile, err = get_profile_type_obj(module, profile_type=profile_type)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating object for profile type {0}".format(profile_type),
-            **result,
-        )
+        err_msg = "Failed generating object for profile type {0}".format(profile_type)
+        module.fail_json(msg=err_msg, **result)
 
     # profile update operations
     default_update_spec = _profile.get_default_update_spec(override_spec=profile)

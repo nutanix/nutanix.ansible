@@ -190,10 +190,8 @@ def create_data_access_instance(module, result):
     cluster_uuid, err = get_cluster_uuid(module, module.params["cluster"])
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="'cluster' is required field for adding cluster in time machine",
-            **result,
-        )
+        err_msg = "'cluster' is required field for adding cluster in time machine"
+        module.fail_json(msg=err_msg, **result)
 
     cluster_in_time_machine = tm.check_if_cluster_exists(tm_uuid, cluster_uuid)
 
@@ -305,10 +303,8 @@ def delete_data_access_instance(module, result):
     cluster_uuid, err = get_cluster_uuid(module, module.params["cluster"])
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="'cluster' is required field for removing cluster from time machine",
-            **result,
-        )
+        err_msg = "'cluster' is required field for removing cluster from time machine"
+        module.fail_json(msg=err_msg, **result)
     resp = tm.delete_data_access_instance(tm_uuid, cluster_uuid)
 
     result["response"] = resp
