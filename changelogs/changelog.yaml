@@ -342,8 +342,7 @@ releases:
     - description: info module for ndb snapshots info
       name: ntnx_ndb_snapshots_info
       namespace: ''
-    - description: Module for create, update and delete of single instance vlan. Currently,
-        postgres type vlan is officially supported.
+    - description: Module for create, update and delete of stretched vlan.
       name: ntnx_ndb_stretched_vlans
       namespace: ''
     - description: module for create, update and delete of tags

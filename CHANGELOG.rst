@@ -37,7 +37,7 @@ New Modules
 - ntnx_ndb_slas - moudle for creating, updating and deleting slas
 - ntnx_ndb_slas_info - info module for ndb slas
 - ntnx_ndb_snapshots_info - info module for ndb snapshots info
-- ntnx_ndb_stretched_vlans - Module for create, update and delete of single instance vlan. Currently, postgres type vlan is officially supported.
+- ntnx_ndb_stretched_vlans - Module for create, update and delete of stretched vlan.
 - ntnx_ndb_tags - module for create, update and delete of tags
 - ntnx_ndb_time_machine_clusters - Module for create, update and delete for data access management in time machines.
 - ntnx_ndb_time_machines_info - info module for ndb time machines
