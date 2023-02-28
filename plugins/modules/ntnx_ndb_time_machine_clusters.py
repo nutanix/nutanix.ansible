@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_time_machine_clusters
 short_description: Module for create, update and delete for data access management in time machines.
 version_added: 1.8.0
-description: 
+description:
     - Module for create, update and delete for data access management i.e. clusters for snapshots in time machines.
     - Currently only postgres type database is tested and supported
 options:

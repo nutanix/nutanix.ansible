@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_database_snapshots
 short_description: module for creating, updating and deleting database snapshots
 version_added: 1.8.0
-description: 
+description:
     - module for creating, updating and deleting database snapshots
     - currently, this module only polls for snapshot create in primary source cluster
     - it doesn't poll for replication task if multiple clusters are mentioned

@@ -42,7 +42,6 @@ author:
  - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
  - Alaa Bishtawi (@alaa-bish)
- 
 """
 
 EXAMPLES = r"""

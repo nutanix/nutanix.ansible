@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_db_servers_info
 short_description: info module for ndb db server vms info
 version_added: 1.8.0
-description: 
+description:
     - Get database server info
     - Module will fetch all entities if no spec is given
 options:
@@ -68,7 +68,7 @@ options:
                 choices: ["ip","name","vm-cluster-name","vm-cluster-uuid", "dbserver-cluster-id","nx-cluster-id", "fqdn",]
             time_zone:
                 description:
-                    - write
+                    - timezone related to C(pitr_timestamp)
                 type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module

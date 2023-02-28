@@ -45,7 +45,7 @@ options:
                 type: bool
             database_tms:
                 description:
-                    - write 
+                    - write
                 type: bool
             value:
                 description:

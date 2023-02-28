@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_profiles
 short_description: module for create, update and delete of profiles
 version_added: 1.8.0
-description: 
+description:
     - module for create, update and delete of profiles
 options:
       profile_uuid:
@@ -25,7 +25,7 @@ options:
         type: str
       desc:
         description:
-            - write
+            - profile description
         type: str
       type:
         description:
@@ -249,7 +249,7 @@ options:
                             min_wal_size:
                                 description:
                                     - max wal logs size in MB
-                                    - default is 80 
+                                    - default is 80
                                 type: int
                             min_wal_size:
                                 description:

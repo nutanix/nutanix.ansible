@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_databases
 short_description: Module for create, update and delete of single instance database. Currently, postgres type database is officially supported.
 version_added: 1.8.0
-description: 
+description:
   - Module for create, update and delete of single instance database in Nutanix Database Service
   - During delete, by default it will only unregister database instance. Add allowed params to change it.
   - Currently, single and HA postgres instance is supported by this module
@@ -235,7 +235,7 @@ options:
       clusters:
         type: list
         elements: dict
-        description: 
+        description:
           - clusters for data access management in time machine
           - to be used for HA instance only
         suboptions:
@@ -255,13 +255,13 @@ options:
     suboptions:
       archive_wal_expire_days:
           type: str
-          description: 
+          description:
             - archived write ahead logs expiry days
             - only allowed for HA instance
           default: "-1"
       listener_port:
           type: str
-          description: 
+          description:
             - listener port for db
             - required for both HA and single instance
           default: "5432"
@@ -273,7 +273,7 @@ options:
           required: true
       db_password:
           type: str
-          description: 
+          description:
             - set postgres database password
             - required for both HA and single instance
           required: true
@@ -292,12 +292,12 @@ options:
       cluster_database:
           type: bool
           default: false
-          description: 
+          description:
             - this field is deprecate
             - not required
       patroni_cluster_name:
           type: str
-          description: 
+          description:
             - patroni cluster name
             - required for HA instance
       ha_proxy:
@@ -319,17 +319,17 @@ options:
       enable_synchronous_mode:
           type: bool
           default: false
-          description: 
+          description:
             - set to enable synchronous replication
             - allowed for HA instance
       enable_peer_auth:
           type: bool
           default: false
-          description: 
+          description:
             - set to enable peer authentication
             - allowed for HA instance
       type:
-          description: 
+          description:
             - if its a HA or singe instance
             - mandatory for creation
           type: str
@@ -352,7 +352,7 @@ options:
       - configure db server cluster
       - required when creating HA instance
       - for postgres, max two HA proxy nodes are allowed
-      - for postgres, minimum three database nodes are required 
+      - for postgres, minimum three database nodes are required
     type: dict
     suboptions:
         new_cluster:
@@ -572,12 +572,12 @@ options:
       - if not provided, database instance from db server VM will be deleted
   delete_db_from_vm:
     type: bool
-    description: 
+    description:
       - to be used with C(state) = absent
       - delete database data from vm
   delete_time_machine:
     type: bool
-    description: 
+    description:
       - to be used with C(state) = absent
       - delete time machine as well in delete process
   delete_db_server_vms:

@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_databases_info
 short_description: info module for ndb database instances
 version_added: 1.8.0
-description: 
+description:
     - Get database instance info
     - If name or uuid is not given then it will fetch all database instances
 options:
@@ -57,7 +57,7 @@ options:
                 choices: ["ip","name","database-name"]
             time_zone:
                 description:
-                    - write
+                    - timezone related to C(pitr_timestamp)
                 type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_ndb_base_module
