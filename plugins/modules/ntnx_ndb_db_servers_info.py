@@ -68,7 +68,7 @@ options:
                 choices: ["ip","name","vm-cluster-name","vm-cluster-uuid", "dbserver-cluster-id","nx-cluster-id", "fqdn",]
             time_zone:
                 description:
-                    - write
+                    - timezone related to C(pitr_timestamp)
                 type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module

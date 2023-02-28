@@ -47,7 +47,7 @@ options:
                 choices: ["type","status","protection-domain-id","time-machine"]
             time_zone:
                 description:
-                    - write
+                    - timezone related to C(pitr_timestamp)
                 type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
