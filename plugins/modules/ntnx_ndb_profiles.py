@@ -25,7 +25,7 @@ options:
         type: str
       desc:
         description:
-            - write
+            - profile description
         type: str
       type:
         description:
