@@ -95,6 +95,13 @@ EXAMPLES = r"""
     uuid: "<uuid of database>"
   register: result
 
+- name: Get era databases using its id and detailed response
+  ntnx_ndb_databases_info:
+    filters:
+      detailed: True
+    uuid: "<database_uuid>"
+  register: result
+  no_log: true
 """
 RETURN = r"""
 response:

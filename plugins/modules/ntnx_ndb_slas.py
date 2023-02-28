@@ -66,9 +66,49 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Verify creation of slas
+  ntnx_ndb_slas:
+    name: "{{profile1_name}}"
+    desc: "testdesc"
+    frequency:
+      logs_retention: "{{frequency.logs_retention}}"
+      snapshots_retention:
+        daily: "{{frequency.snapshots_retention.daily}}"
+        weekly: "{{frequency.snapshots_retention.weekly}}"
+        monthly: "{{frequency.snapshots_retention.monthly}}"
+        quarterly: "{{frequency.snapshots_retention.quarterly}}"
+  register: result
 """
 
 RETURN = r"""
+response:
+  description: slas create response
+  returned: always
+  type: dict
+  sample: {
+        "id": "13d1dabe-d4aa-4ab5-b8c4-7adb4c41af03",
+        "name": "check",
+        "uniqueName": "CHECK",
+        "description": "check",
+        "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+        "systemSla": false,
+        "dateCreated": null,
+        "dateModified": null,
+        "continuousRetention": 30,
+        "dailyRetention": 7,
+        "weeklyRetention": 2,
+        "monthlyRetention": 2,
+        "quarterlyRetention": 1,
+        "yearlyRetention": 0,
+        "referenceCount": 0,
+        "pitrEnabled": true,
+        "currentActiveFrequency": "CONTINUOUS"
+        }
+sla_uuid:
+  description: sla uuid
+  returned: always
+  type: str
+  sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
 """
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402

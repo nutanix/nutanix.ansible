@@ -12,7 +12,9 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_database_restore
 short_description: module for restoring database instance
 version_added: 1.8.0
-description: module for restoring database instance to certain point in time or snapshpt
+description: 
+    - module for restoring database instance to certain point in time or snapshot
+    - module will use latest snapshot if pitr timestamp or snapshot uuid is not given
 options:
       pitr_timestamp:
         description:
@@ -45,9 +47,76 @@ author:
 """
 
 EXAMPLES = r"""
+- name: perform restore using latest snapshot
+  ntnx_ndb_database_restore:
+    db_uuid: "{{db_uuid}}"
+    snapshot_uuid: "{{snapshot_uuid}}"
+  register: result
+
+- name: perform restore using snapshot uuid
+  ntnx_ndb_database_restore:
+    db_uuid: "{{db_uuid}}"
+    snapshot_uuid: "{{snapshot_uuid}}"
+  register: result
+
+- name: perform restore using pitr
+  ntnx_ndb_database_restore:
+    db_uuid: "{{db_uuid}}"
+    pitr_timestamp: "{{snapshot_uuid}}"
+    timezone: "UTC"
+  register: result
 """
 RETURN = r"""
-
+response:
+  description: An intentful representation of a task status post restore
+  returned: always
+  type: dict
+  sample: {
+    "entityName": "OWZWuxlTgBhX",
+    "work": null,
+    "stepGenEnabled": false,
+    "setStartTime": false,
+    "timeZone": "UTC",
+    "id": "4cdf6937-6f99-4662-9f46-46c1ad7e83b2",
+    "name": "Restore Postgres Instance to Snapshot a1d5afdb-5890-4b41-a0e1-e6e79cad70cf",
+    "uniqueName": null,
+    "type": "restore_database",
+    "startTime": "2023-02-27 19:25:48",
+    "timeout": 250,
+    "timeoutInfo": {
+        "timeoutTimestamp": "2023-02-27 23:35:48",
+        "timeRemaining": 0,
+        "timeout": 250,
+        "timezone": "UTC"
+    },
+    "endTime": "2023-02-27 19:33:50",
+    "instanceId": null,
+    "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+    "status": "5",
+    "percentageComplete": "100",
+    "steps": [],
+    "properties": [],
+    "parentId": null,
+    "parentStep": 0,
+    "message": null,
+    "metadata": {},
+    "entityId": "117760dc-c766-46f1-9ffd-126826cf37a9",
+    "entityType": "ERA_DATABASE",
+    "systemTriggered": false,
+    "userVisible": true,
+    "dbserverId": "4a19a165-d682-4ca3-b740-826ac206c18b",
+    "dateSubmitted": "2023-02-27 19:23:33",
+    "deferredBy": null,
+    "deferredByOpIds": null,
+    "scheduleTime": null,
+    "isInternal": false,
+    "nxClusterId": "0a3b964f-8616-40b9-a564-99cf35f4b8d8",
+    "dbserverStatus": "DELETED",
+    "childOperations": [],
+    "ancestorOpIds": null,
+    "userRequestedAction": "0",
+    "userRequestedActionTime": null
+} 
 
 """
 import time  # noqa: E402

@@ -52,8 +52,98 @@ author:
 """
 
 EXAMPLES = r"""
+- name: replicate snapshot with expiry
+  ntnx_ndb_replicate_database_snapshots:
+    snapshot_uuid: "{{snapshot_uuid}}"
+    clusters:
+      - name: "{{cluster.cluster2.name}}"
+    expiry_days: 20
+  register: result
 """
 RETURN = r"""
+response:
+  description: snapshot replication response
+  returned: always
+  type: dict
+  sample: {
+            "ancestorOpIds": null,
+            "childOperations": [],
+            "dateSubmitted": "2023-02-28 11:13:32",
+            "dbserverId": "e507345b-c7d1-469a-8297-3088f017f120",
+            "dbserverStatus": "UP",
+            "deferredBy": null,
+            "deferredByOpIds": null,
+            "endTime": "2023-02-28 11:14:15",
+            "entityId": "7a39664b-dfb7-4529-887c-6d91f7e18604",
+            "entityName": "test-setup-dnd_TM (DATABASE)",
+            "entityType": "ERA_TIME_MACHINE",
+            "id": "79d57f0b-4ce6-4a22-a28b-dbd1839c4d0a",
+            "instanceId": null,
+            "isInternal": false,
+            "message": null,
+            "metadata": {
+                "ancestorOpIds": null,
+                "associatedEntities": null,
+                "controlMessage": null,
+                "executionContext": {
+                    "affectedDBServers": [
+                        "e507345b-c7d1-469a-8297-3088f017f120"
+                    ],
+                    "applicationType": "generic",
+                    "extendedAffectedDBServers": [
+                        "e507345b-c7d1-469a-8297-3088f017f120"
+                    ]
+                },
+                "linkedOperations": null,
+                "linkedOperationsDescription": "Associated operation(s)",
+                "oldStatus": null,
+                "retriedOperations": null,
+                "retryImmediateParentId": null,
+                "retryParentId": null,
+                "rollbackForOperationId": null,
+                "rollbackOperation": false,
+                "scheduleTime": null,
+                "scheduledBy": "2ba56951-859a-4548-893e-9a8649362786",
+                "scheduledOn": "2023-02-28 11:13:31",
+                "switchedDbservers": null,
+                "userRequestedAction": "0",
+                "userRequestedActionTimestamp": null,
+                "workCompletionCallbackExecuted": true
+            },
+            "name": "xxxxxxxxx",
+            "nxClusterId": "94c3e490-69e2-4144-83ff-68867e47889d",
+            "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+            "parentId": null,
+            "parentStep": 0,
+            "percentageComplete": "100",
+            "properties": [],
+            "scheduleTime": null,
+            "setStartTime": false,
+            "startTime": "2023-02-28 11:13:36",
+            "status": "5",
+            "stepGenEnabled": false,
+            "steps": [],
+            "systemTriggered": false,
+            "timeZone": "UTC",
+            "timeout": 1450,
+            "timeoutInfo": {
+                "timeRemaining": 1449,
+                "timeout": 1450,
+                "timeoutTimestamp": "2023-03-01 11:23:36",
+                "timezone": "UTC"
+            },
+            "type": "replicate_snapshot",
+            "uniqueName": null,
+            "userRequestedAction": "0",
+            "userRequestedActionTime": null,
+            "userVisible": true,
+            "work": null
+        }
+snapshot_uuid:
+  description: snapshot uuid
+  returned: always
+  type: str
+  sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
 """
 import time  # noqa: E402
 

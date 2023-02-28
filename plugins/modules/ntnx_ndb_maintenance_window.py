@@ -68,8 +68,70 @@ author:
 """
 
 EXAMPLES = r"""
+- name: create window with weekly schedule
+  ntnx_ndb_maintenance_window:
+    name: "{{window1_name}}"
+    desc: "anisble-created-window"
+    schedule:
+      recurrence: "weekly"
+      duration: 2
+      start_time: "11:00:00"
+      day_of_week: "tuesday"
+      timezone: "UTC"
+  register: result
+
+- name: create window with monthly schedule
+  ntnx_ndb_maintenance_window:
+    name: "{{window2_name}}"
+    desc: "anisble-created-window"
+    schedule:
+      recurrence: "monthly"
+      duration: 2
+      start_time: "11:00:00"
+      day_of_week: "tuesday"
+      week_of_month: 2
+      timezone: "UTC"
+
+  register: result
+
 """
 RETURN = r"""
+response:
+  description: maintenance window response with associated tasks
+  returned: always
+  type: dict
+  sample: {
+        "id": "3c8704e7-e1a7-49f9-9943-a92090f8d098",
+        "name": "test-check",
+        "description": "",
+        "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+        "dateCreated": "2023-02-28 10:50:16",
+        "dateModified": "2023-02-28 10:50:16",
+        "accessLevel": null,
+        "properties": null,
+        "tags": null,
+        "schedule": {
+            "startTime": "10:50:02",
+            "recurrence": "MONTHLY",
+            "threshold": null,
+            "hour": 10,
+            "minute": 50,
+            "dayOfWeek": "TUESDAY",
+            "weekOfMonth": 4,
+            "duration": 2,
+            "timeZone": "UTC"
+        },
+        "status": "ACTIVE",
+        "nextRunTime": "2023-03-28 10:50:00",
+        "entityTaskAssoc": null,
+        "timezone": null
+    }
+uuid:
+  description: maintenance window uuid
+  returned: always
+  type: str
+  sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
+
 """
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402

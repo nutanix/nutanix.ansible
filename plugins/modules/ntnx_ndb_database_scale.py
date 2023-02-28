@@ -44,9 +44,66 @@ author:
 """
 
 EXAMPLES = r"""
+- name: extend database storage for scaling database
+  ntnx_ndb_database_scale:
+    db_uuid: "{{db_uuid}}"
+    storage_gb: 2
+    pre_update_cmd: "ls"
+    pre_update_cmd: "ls -a"
+
+  register: result
 """
 RETURN = r"""
-
+response:
+  description: An intentful representation of a task status post scaling
+  returned: always
+  type: dict
+  sample: {
+    "entityName": "OWZWuxlTgBhX",
+    "work": null,
+    "stepGenEnabled": false,
+    "setStartTime": false,
+    "timeZone": "UTC",
+    "id": "8778ef1b-9278-4f0e-a80a-7be5d8998e86",
+    "name": "Extend Database Storage",
+    "uniqueName": null,
+    "type": "extend_database_storage",
+    "startTime": "2023-02-27 19:36:39",
+    "timeout": 70,
+    "timeoutInfo": {
+        "timeoutTimestamp": "2023-02-27 20:46:39",
+        "timeRemaining": 0,
+        "timeout": 70,
+        "timezone": "UTC"
+    },
+    "endTime": "2023-02-27 19:42:42",
+    "instanceId": null,
+    "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+    "status": "5",
+    "percentageComplete": "100",
+    "steps": [],
+    "properties": [],
+    "parentId": null,
+    "parentStep": 0,
+    "message": null,
+    "metadata": {},
+    "entityId": "117760dc-c766-46f1-9ffd-126826cf37a9",
+    "entityType": "ERA_DATABASE",
+    "systemTriggered": false,
+    "userVisible": true,
+    "dbserverId": "4a19a165-d682-4ca3-b740-826ac206c18b",
+    "dateSubmitted": "2023-02-27 19:34:25",
+    "deferredBy": null,
+    "deferredByOpIds": null,
+    "scheduleTime": null,
+    "isInternal": false,
+    "nxClusterId": "0a3b964f-8616-40b9-a564-99cf35f4b8d8",
+    "dbserverStatus": "DELETED",
+    "childOperations": [],
+    "ancestorOpIds": null,
+    "userRequestedAction": "0",
+    "userRequestedActionTime": null
+}
 
 """
 import time  # noqa: E402

@@ -14,6 +14,9 @@ short_description: module for create, update and delete of profiles
 version_added: 1.8.0
 description:
     - module for create, update and delete of profiles
+    - only software profile supports versions operations
+    - version related operations can be configured under "software"
+    - only software profile supports replication to clusters
 options:
       profile_uuid:
         description:
@@ -337,11 +340,450 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
+- name: creation of db params profile
+  ntnx_ndb_profiles:
+    name: "{{profile1_name}}"
+    desc: "testdesc"
+    type: database_parameter
+    database_type: postgres
+    database_parameter:
+      postgres:
+        max_connections: "{{max_connections}}"
+        max_replication_slots: "{{max_replication_slots}}"
+        max_locks_per_transaction: "{{max_locks_per_transaction}}" 
+        effective_io_concurrency: "{{effective_io_concurrency}}"
+        timezone: "{{timezone}}"
+        max_prepared_transactions: "{{max_prepared_transactions}}"
+        max_wal_senders: "{{max_wal_senders}}"
+        min_wal_size: "{{min_wal_size}}"
+        max_wal_size: "{{max_wal_size}}"
+        wal_keep_segments: "{{wal_keep_segments}}"
+        max_worker_processes: "{{max_worker_processes}}"
+        checkpoint_timeout: "{{checkpoint_timeout}}"
+        autovacuum: "{{autovacuum}}"
+        checkpoint_completion_target: "{{checkpoint_completion_target}}"
+        autovacuum_freeze_max_age: "{{autovacuum_freeze_max_age}}"
+        autovacuum_vacuum_threshold: "{{autovacuum_vacuum_threshold}}"
+        autovacuum_vacuum_scale_factor: "{{autovacuum_vacuum_scale_factor}}"
+        autovacuum_work_mem: "{{autovacuum_work_mem}}"
+        autovacuum_max_workers: "{{autovacuum_max_workers}}"
+        autovacuum_vacuum_cost_delay:  "{{autovacuum_vacuum_cost_delay}}"
+        wal_buffers: "{{wal_buffers}}"
+        synchronous_commit: "{{synchronous_commit}}"
+        random_page_cost: "{{random_page_cost}}"
+  register: result
 
+- name: create of single cluster network profile
+  ntnx_ndb_profiles:
+    name: "{{profile1_name}}"
+    desc: "testdesc"
+    type: network
+    database_type: postgres
+    network:
+      topology: single
+      vlans:
+        - 
+          cluster:  
+            name: "{{network_profile.single.cluster.name}}"
+          vlan_name: "{{network_profile.single.vlan_name}}"
+      enable_ip_address_selection: true
+  register: result
+
+- name: create of multiple cluster network profile
+  ntnx_ndb_profiles:
+    name: "{{profile3_name}}"
+    desc: "testdesc"
+    type: network
+    database_type: postgres
+    network:
+      topology: cluster
+      vlans:
+        - 
+          cluster:  
+            name: "{{network_profile.HA.cluster1.name}}"
+          vlan_name: "{{network_profile.HA.cluster1.vlan_name}}"
+        - 
+          cluster:  
+            name: "{{network_profile.HA.cluster2.name}}"
+          vlan_name: "{{network_profile.HA.cluster2.vlan_name}}"
+
+- name: creation of compute profile
+  ntnx_ndb_profiles:
+    name: "{{profile1_name}}"
+    desc: "testdesc"
+    type: compute
+    compute:
+          vcpus: 2
+          cores_per_cpu: 4
+          memory: 8
+  register: result
+
+- name: create software profile with base version and cluster instance topology. Replicated to multiple clusters
+  ntnx_ndb_profiles:
+    name: "{{profile1_name}}-replicated"
+    desc: "{{profile1_name}}-desc-replicated"
+    type: "software"
+    database_type: "postgres"
+    software:
+      topology: "cluster"
+      name: "v1.0"
+      desc: "v1.0-desc"
+      notes:
+        os: "os_notes"
+        db_software: "db_notes"
+      db_server_vm:
+        uuid: "{{db_server_vm.uuid}}"
+    clusters:
+      - name: "{{cluster.cluster1.name}}"
+      - uuid: "{{cluster.cluster2.uuid}}"
+  register: result
+
+- name: create software profile version
+  ntnx_ndb_profiles:
+    profile_uuid: "{{profile_uuid}}"
+    database_type: "postgres"
+    software:
+      name: "v2.0"
+      desc: "v2.0-desc"
+      notes:
+        os: "os_notes for v2"
+        db_software: "db_notes for v2"
+      db_server_vm:
+        uuid: "{{db_server_vm.uuid}}"
+
+  register: result
+
+
+- name: update software profile version
+  ntnx_ndb_profiles:
+    profile_uuid: "{{profile_uuid}}"
+    database_type: "postgres"
+    software:
+      version_uuid: "{{result.version_uuid}}"
+      name: "v2.0-updated"
+      desc: "v2.0-desc-updated"
+
+  register: result
+
+- name: publish software profile version
+  ntnx_ndb_profiles:
+    profile_uuid: "{{profile_uuid}}"
+    software:
+      version_uuid: "{{version_uuid}}"
+      publish: True
+  register: result
 
 """
+
 RETURN = r"""
+response:
+  description: response when profile is created
+  returned: always
+  type: dict
+  sample: {
+            "dateCreated": "2023-02-28 10:54:56",
+            "dateModified": "2023-02-28 10:54:56",
+            "dbVersion": "ALL",
+            "description": "new_name",
+            "engineType": "postgres_database",
+            "id": "76c1d0eb-28b8-4f37-aa8a-e17dfa1c87a6",
+            "latestVersion": "1.0",
+            "latestVersionId": "801c60da-9273-45bc-ab00-81fd452a5fa2",
+            "name": "new_name1",
+            "nxClusterId": "0a3b964f-8616-40b9-a564-99cf35f4b8d8",
+            "owner": "eac70dbf-22fb-462b-9498-949796ca1f73",
+            "status": "READY",
+            "systemProfile": false,
+            "topology": "cluster",
+            "type": "Network",
+            "versions": [
+                {
+                    "dateCreated": "2023-02-28 10:54:56",
+                    "dateModified": "2023-02-28 10:54:56",
+                    "dbVersion": "ALL",
+                    "deprecated": false,
+                    "description": "new_name",
+                    "engineType": "postgres_database",
+                    "id": "801c60da-9273-45bc-ab00-81fd452a5fa2",
+                    "name": "new_name1 (1.0)",
+                    "owner": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                    "profileId": "76c1d0eb-28b8-4f37-aa8a-e17dfa1c87a6",
+                    "properties": [
+                        {
+                            "name": "CLUSTER_NAME_0",
+                            "secure": false,
+                            "value": "c1"
+                        },
+                        {
+                            "name": "CLUSTER_ID_0",
+                            "secure": false,
+                            "value": "0a3b964f-8616-40b9-a564-99cf35f4b8d8"
+                        },
+                        {
+                            "name": "CLUSTER_NAME_1",
+                            "secure": false,
+                            "value": "c2"
+                        },
+                        {
+                            "name": "CLUSTER_ID_1",
+                            "secure": false,
+                            "value": "94c3e490-69e2-4144-83ff-68867e47889d"
+                        },
+                        {
+                            "name": "VLAN_NAME_1",
+                            "secure": false,
+                            "value": "vlan.xxxxx"
+                        },
+                        {
+                            "name": "VLAN_NAME_0",
+                            "secure": false,
+                            "value": "vlan.xxxxx"
+                        },
+                        {
+                            "name": "NUM_CLUSTERS",
+                            "secure": false,
+                            "value": "2"
+                        },
+                        {
+                            "name": "ENABLE_IP_ADDRESS_SELECTION",
+                            "secure": false,
+                            "value": "false"
+                        },
+                        {
+                            "name": "VLAN_ID_1",
+                            "secure": false,
+                            "value": "91b11a7e-563f-480c-85bd-9cfe63a28e9d"
+                        },
+                        {
+                            "name": "VLAN_TYPE_1",
+                            "secure": false,
+                            "value": "DHCP"
+                        }
+                    ],
+                    "propertiesMap": {
+                        "CLUSTER_ID_0": "0a3b964f-8616-40b9-a564-99cf35f4b8d8",
+                        "CLUSTER_ID_1": "94c3e490-69e2-4144-83ff-68867e47889d",
+                        "CLUSTER_NAME_0": "c1",
+                        "CLUSTER_NAME_1": "c2",
+                        "ENABLE_IP_ADDRESS_SELECTION": "false",
+                        "NUM_CLUSTERS": "2",
+                        "VLAN_ID_1": "91b11a7e-563f-480c-85bd-9cfe63a28e9d",
+                        "VLAN_NAME_0": "vlan.xxxxx",
+                        "VLAN_NAME_1": "vlan.xxxxx",
+                        "VLAN_TYPE_1": "DHCP"
+                    },
+                    "published": false,
+                    "status": "READY",
+                    "systemProfile": false,
+                    "topology": "cluster",
+                    "type": "Network",
+                    "version": "1.0"
+                }
+            ]
+        }
+profile:
+  description: part of response when profile is updated
+  returned: always
+  type: dict
+  sample: {
+            "dateCreated": "2023-02-28 10:54:56",
+            "dateModified": "2023-02-28 10:54:56",
+            "dbVersion": "ALL",
+            "description": "new_name",
+            "engineType": "postgres_database",
+            "id": "76c1d0eb-28b8-4f37-aa8a-e17dfa1c87a6",
+            "latestVersion": "1.0",
+            "latestVersionId": "801c60da-9273-45bc-ab00-81fd452a5fa2",
+            "name": "new_name1",
+            "nxClusterId": "0a3b964f-8616-40b9-a564-99cf35f4b8d8",
+            "owner": "eac70dbf-22fb-462b-9498-949796ca1f73",
+            "status": "READY",
+            "systemProfile": false,
+            "topology": "cluster",
+            "type": "Network",
+            "versions": [
+                {
+                    "dateCreated": "2023-02-28 10:54:56",
+                    "dateModified": "2023-02-28 10:54:56",
+                    "dbVersion": "ALL",
+                    "deprecated": false,
+                    "description": "new_name",
+                    "engineType": "postgres_database",
+                    "id": "801c60da-9273-45bc-ab00-81fd452a5fa2",
+                    "name": "new_name1 (1.0)",
+                    "owner": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                    "profileId": "76c1d0eb-28b8-4f37-aa8a-e17dfa1c87a6",
+                    "properties": [
+                        {
+                            "name": "CLUSTER_NAME_0",
+                            "secure": false,
+                            "value": "c1"
+                        },
+                        {
+                            "name": "CLUSTER_ID_0",
+                            "secure": false,
+                            "value": "0a3b964f-8616-40b9-a564-99cf35f4b8d8"
+                        },
+                        {
+                            "name": "CLUSTER_NAME_1",
+                            "secure": false,
+                            "value": "c2"
+                        },
+                        {
+                            "name": "CLUSTER_ID_1",
+                            "secure": false,
+                            "value": "94c3e490-69e2-4144-83ff-68867e47889d"
+                        },
+                        {
+                            "name": "VLAN_NAME_1",
+                            "secure": false,
+                            "value": "vlan.xxxxx"
+                        },
+                        {
+                            "name": "VLAN_NAME_0",
+                            "secure": false,
+                            "value": "vlan.xxxxx"
+                        },
+                        {
+                            "name": "NUM_CLUSTERS",
+                            "secure": false,
+                            "value": "2"
+                        },
+                        {
+                            "name": "ENABLE_IP_ADDRESS_SELECTION",
+                            "secure": false,
+                            "value": "false"
+                        },
+                        {
+                            "name": "VLAN_ID_1",
+                            "secure": false,
+                            "value": "91b11a7e-563f-480c-85bd-9cfe63a28e9d"
+                        },
+                        {
+                            "name": "VLAN_TYPE_1",
+                            "secure": false,
+                            "value": "DHCP"
+                        }
+                    ],
+                    "propertiesMap": {
+                        "CLUSTER_ID_0": "0a3b964f-8616-40b9-a564-99cf35f4b8d8",
+                        "CLUSTER_ID_1": "94c3e490-69e2-4144-83ff-68867e47889d",
+                        "CLUSTER_NAME_0": "c1",
+                        "CLUSTER_NAME_1": "c2",
+                        "ENABLE_IP_ADDRESS_SELECTION": "false",
+                        "NUM_CLUSTERS": "2",
+                        "VLAN_ID_1": "91b11a7e-563f-480c-85bd-9cfe63a28e9d",
+                        "VLAN_NAME_0": "vlan.xxxxx",
+                        "VLAN_NAME_1": "vlan.xxxxx",
+                        "VLAN_TYPE_1": "DHCP"
+                    },
+                    "published": false,
+                    "status": "READY",
+                    "systemProfile": false,
+                    "topology": "cluster",
+                    "type": "Network",
+                    "version": "1.0"
+                }
+            ]
+        }
+version:
+  description: part of response denoting status of any version operation during update or delete
+  returned: always
+  type: dict
+  sample: {
+            "dateCreated": "2023-02-28 10:54:56",
+            "dateModified": "2023-02-28 10:54:56",
+            "dbVersion": "ALL",
+            "deprecated": false,
+            "description": "new_name",
+            "engineType": "postgres_database",
+            "id": "801c60da-9273-45bc-ab00-81fd452a5fa2",
+            "name": "new_name1 (1.0)",
+            "owner": "eac70dbf-22fb-462b-9498-949796ca1f73",
+            "profileId": "76c1d0eb-28b8-4f37-aa8a-e17dfa1c87a6",
+            "properties": [
+                {
+                    "name": "CLUSTER_NAME_0",
+                    "secure": false,
+                    "value": "c1"
+                },
+                {
+                    "name": "CLUSTER_ID_0",
+                    "secure": false,
+                    "value": "0a3b964f-8616-40b9-a564-99cf35f4b8d8"
+                },
+                {
+                    "name": "CLUSTER_NAME_1",
+                    "secure": false,
+                    "value": "c2"
+                },
+                {
+                    "name": "CLUSTER_ID_1",
+                    "secure": false,
+                    "value": "94c3e490-69e2-4144-83ff-68867e47889d"
+                },
+                {
+                    "name": "VLAN_NAME_1",
+                    "secure": false,
+                    "value": "vlan.xxxxx"
+                },
+                {
+                    "name": "VLAN_NAME_0",
+                    "secure": false,
+                    "value": "vlan.xxxxx"
+                },
+                {
+                    "name": "NUM_CLUSTERS",
+                    "secure": false,
+                    "value": "2"
+                },
+                {
+                    "name": "ENABLE_IP_ADDRESS_SELECTION",
+                    "secure": false,
+                    "value": "false"
+                },
+                {
+                    "name": "VLAN_ID_1",
+                    "secure": false,
+                    "value": "91b11a7e-563f-480c-85bd-9cfe63a28e9d"
+                },
+                {
+                    "name": "VLAN_TYPE_1",
+                    "secure": false,
+                    "value": "DHCP"
+                }
+            ],
+            "propertiesMap": {
+                "CLUSTER_ID_0": "0a3b964f-8616-40b9-a564-99cf35f4b8d8",
+                "CLUSTER_ID_1": "94c3e490-69e2-4144-83ff-68867e47889d",
+                "CLUSTER_NAME_0": "c1",
+                "CLUSTER_NAME_1": "c2",
+                "ENABLE_IP_ADDRESS_SELECTION": "false",
+                "NUM_CLUSTERS": "2",
+                "VLAN_ID_1": "91b11a7e-563f-480c-85bd-9cfe63a28e9d",
+                "VLAN_NAME_0": "vlan.xxxxx",
+                "VLAN_NAME_1": "vlan.xxxxx",
+                "VLAN_TYPE_1": "DHCP"
+            },
+            "published": false,
+            "status": "READY",
+            "systemProfile": false,
+            "topology": "cluster",
+            "type": "Network",
+            "version": "1.0"
+        }
+profile_uuid:
+  description: profile uuid
+  returned: always
+  type: str
+  sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
+version_uuid:
+  description: uuid of profile version when any operation is done on version of profile
+  returned: always
+  type: str
+  sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
 """
+
 import time  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402

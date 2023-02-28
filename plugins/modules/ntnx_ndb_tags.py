@@ -54,8 +54,50 @@ author:
 """
 
 EXAMPLES = r"""
+- name: create tags for clone
+  ntnx_ndb_tags:
+    name: "{{tag_name}}-clone"
+    desc: tag-created-by-ansible
+    tag_value_required: False
+    entity_type: CLONE
+  register: result
+
+- name: create tags for time machine
+  ntnx_ndb_tags:
+    name: "{{tag_name}}-tm"
+    desc: tag-created-by-ansible
+    tag_value_required: True
+    entity_type: TIME_MACHINE
+  register: result
+
+- name: create tags for database server
+  ntnx_ndb_tags:
+    name: "{{tag_name}}-database-server"
+    desc: tag-created-by-ansible
+    tag_value_required: DATABASE_SERVER
+    entity_type: CLONE
+  register: result
 """
 RETURN = r"""
+response:
+  description: tag intent response
+  returned: always
+  type: dict
+  sample: {
+            "description": "check123",
+            "entityType": "CLONE",
+            "name": "tag-ansible-updated",
+            "owner": "eac70dbf-22fb-462b-9498-949796ca1f73",
+            "required": true,
+            "status": "ENABLED",
+            "values": 0
+        }
+uuid:
+  description: tag uuid
+  returned: always
+  type: str
+  sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
+
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseModule  # noqa: E402

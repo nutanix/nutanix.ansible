@@ -34,9 +34,71 @@ author:
 """
 
 EXAMPLES = r"""
+- name: perform log catchup
+  ntnx_ndb_database_log_catchup:
+    time_machine_uuid: "{{time_machine_uuid}}"
+  register: result
+
+- name: perform log catchup for restore
+  ntnx_ndb_database_log_catchup:
+    time_machine_uuid: "{{time_machine_uuid}}"
+    for_restore: true
+  register: result
 """
 RETURN = r"""
+response:
+  description: An intentful representation of a task status post log catchup
+  returned: always
+  type: dict
+  sample: {
+    "entityName": "OWZWuxlTgBhX-time-machine",
+    "work": null,
+    "stepGenEnabled": false,
+    "setStartTime": false,
+    "timeZone": "UTC",
+    "id": "92e426d8-680c-4c93-8042-63c97aafa818",
+    "name": "Performing Log Catchup before Restore Instance OWZWuxlTgBhX on host xx.xx.xx.xx",
+    "uniqueName": null,
+    "type": "perform_log_catchup",
+    "startTime": "2023-02-27 19:12:21",
+    "timeout": 70,
+    "timeoutInfo": {
+        "timeoutTimestamp": "2023-02-27 20:22:21",
+        "timeRemaining": 0,
+        "timeout": 70,
+        "timezone": "UTC"
+    },
+    "endTime": "2023-02-27 19:14:07",
+    "instanceId": null,
+    "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+    "status": "5",
+    "percentageComplete": "100",
+    "steps": [{}, {}],
+    "properties": [],
+    "parentId": null,
+    "parentStep": 0,
+    "message": null,
+    "metadata": {},
+    "entityId": "5da0150a-c476-4fce-9ce2-cc8f28e652e5",
+    "entityType": "ERA_TIME_MACHINE",
+    "systemTriggered": false,
+    "userVisible": true,
+    "dbserverId": "4a19a165-d682-4ca3-b740-826ac206c18b",
+    "dateSubmitted": "2023-02-27 19:12:17",
+    "deferredBy": null,
+    "deferredByOpIds": null,
+    "scheduleTime": null,
+    "isInternal": false,
+    "nxClusterId": "0a3b964f-8616-40b9-a564-99cf35f4b8d8",
+    "dbserverStatus": "DELETED",
+    "childOperations": [],
+    "ancestorOpIds": null,
+    "userRequestedAction": "0",
+    "userRequestedActionTime": null
+}
+
 """
+
 
 import time  # noqa: E402
 

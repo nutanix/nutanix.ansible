@@ -70,9 +70,166 @@ author:
 
 
 EXAMPLES = r"""
+- name: create snapshot with expiry
+  ntnx_ndb_database_snapshots:
+    name: "{{snapshot_name}}2"
+    time_machine_uuid: "{{time_machine_uuid}}"
+    expiry_days: 4 
+  register: result
+
+- name: create snapshot on secondary cluster
+  ntnx_ndb_database_snapshots:
+    name: "ansible-created-snapshot-on-{{cluster.cluster2.name}}"
+    time_machine_uuid: "{{time_machine.uuid}}"
+    clusters:
+      - name: "{{cluster.cluster2.name}}"
+  register: result
 """
 
 RETURN = r"""
+response:
+  description: An intentful representation of a snapshot
+  returned: always
+  type: dict
+  sample: {
+    "id": "10a7fb55-bda4-4f09-9797-70af1f90e137",
+    "name": "test_snapshot",
+    "description": null,
+    "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+    "dateCreated": "2023-02-28 07:24:25",
+    "dateModified": "2023-02-28 09:27:51",
+    "accessLevel": null,
+    "properties": [],
+    "tags": [],
+    "snapshotId": "119454",
+    "snapshotUuid": "119454",
+    "nxClusterId": "0a3b964f-8616-40b9-a564-99cf35f4b8d8",
+    "protectionDomainId": "6f555d69-df00-4cad-a714-2a96042fec5a",
+    "parentSnapshotId": null,
+    "timeMachineId": "7a39664b-dfb7-4529-887c-6d91f7e18604",
+    "databaseNodeId": "07073f2c-8d90-437b-9bf4-ab02a11ff01d",
+    "appInfoVersion": "4",
+    "status": "ACTIVE",
+    "type": "MANUAL",
+    "applicableTypes": [
+        "MANUAL"
+    ],
+    "snapshotTimeStamp": "2023-02-28 07:23:58",
+    "info": {
+        "secureInfo": null,
+        "info": null,
+        "linkedDatabases": [
+            {
+                "id": "d013a63f-c9ba-4533-989d-57e57d8a4d6f",
+                "databaseName": "template1",
+                "status": "READY",
+                "info": {
+                    "info": {
+                        "created_by": "system"
+                    }
+                },
+                "appConsistent": false,
+                "message": null,
+                "clone": false
+            },
+            {
+                "id": "c18419fd-df31-4e54-b35a-ee004c0faafb",
+                "databaseName": "template0",
+                "status": "READY",
+                "info": {
+                    "info": {
+                        "created_by": "system"
+                    }
+                },
+                "appConsistent": false,
+                "message": null,
+                "clone": false
+            },
+            {
+                "id": "779f1f6a-502d-4ffd-9030-d21447c5ca3d",
+                "databaseName": "prad",
+                "status": "READY",
+                "info": {
+                    "info": {
+                        "created_by": "user"
+                    }
+                },
+                "appConsistent": false,
+                "message": null,
+                "clone": false
+            },
+            {
+                "id": "6e3733cf-2994-49d2-945c-c1873564be97",
+                "databaseName": "postgres",
+                "status": "READY",
+                "info": {
+                    "info": {
+                        "created_by": "system"
+                    }
+                },
+                "appConsistent": false,
+                "message": null,
+                "clone": false
+            }
+        ],
+        "databases": null,
+        "databaseGroupId": null,
+        "missingDatabases": null,
+        "replicationHistory": null
+    },
+    "metadata": {
+        "secureInfo": null,
+        "info": null,
+        "deregisterInfo": null,
+        "fromTimeStamp": "2023-02-28 07:23:58",
+        "toTimeStamp": "2023-02-28 07:23:58",
+        "replicationRetryCount": 0,
+        "lastReplicationRetryTimestamp": null,
+        "lastReplicationRetrySourceSnapshotId": null,
+        "async": false,
+        "standby": false,
+        "curationRetryCount": 0,
+        "operationsUsingSnapshot": []
+    },
+    "metric": {
+        "lastUpdatedTimeInUTC": null,
+        "storage": {
+            "lastUpdatedTimeInUTC": null,
+            "controllerNumIops": null,
+            "controllerAvgIoLatencyUsecs": null,
+            "size": 3.5749888E7,
+            "allocatedSize": 0.0,
+            "usedSize": 0.0,
+            "unit": "B"
+        }
+    },
+    "softwareSnapshotId": "e08b73dd-9503-4053-8a01-4bfe59f3feb4",
+    "softwareDatabaseSnapshot": false,
+    "dbServerStorageMetadataVersion": 2,
+    "sanitised": false,
+    "sanitisedFromSnapshotId": null,
+    "timeZone": "UTC",
+    "processed": false,
+    "databaseSnapshot": false,
+    "fromTimeStamp": "2023-02-28 07:23:58",
+    "toTimeStamp": "2023-02-28 07:23:58",
+    "dbserverId": null,
+    "dbserverName": null,
+    "dbserverIp": null,
+    "replicatedSnapshots": null,
+    "softwareSnapshot": null,
+    "sanitisedSnapshots": null,
+    "snapshotFamily": null,
+    "snapshotTimeStampDate": 1677569038000,
+    "lcmConfig": null,
+    "parentSnapshot": true,
+    "snapshotSize": 3.5749888E7
+}
+snapshot_uuid:
+  description: snapshot uuid
+  returned: always
+  type: str
+  sample: "00000000-0000-0000-0000-000000000000"
 """
 import time  # noqa: E402
 

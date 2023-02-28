@@ -43,8 +43,189 @@ author:
 """
 
 EXAMPLES = r"""
+- name: add databases in database instance
+  ntnx_ndb_linked_databases:
+    db_instance_uuid: "{{db_uuid}}"
+    databases: 
+      - test1
+      - test2
+  register: result
+
+- name: remove linked databases from database instance
+  ntnx_ndb_linked_databases:
+    state: "absent"
+    db_instance_uuid: "{{db_uuid}}"
+    database_uuid: "{{linked_databases.test1}}" 
+  register: result
 """
 RETURN = r"""
+response:
+  description: list of linked databases in database instance
+  returned: always
+  type: dict
+  sample: [
+            {
+                "databaseName": "template1",
+                "databaseStatus": "READY",
+                "dateCreated": "2023-02-24 08:07:01",
+                "dateModified": "2023-02-24 08:07:01",
+                "description": null,
+                "id": "d013a63f-c9ba-4533-989d-57e57d8a4d6f",
+                "info": {
+                    "info": {
+                        "created_by": "system"
+                    },
+                    "secureInfo": null
+                },
+                "metadata": null,
+                "metric": null,
+                "name": "template1",
+                "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                "parentDatabaseId": "50b8ce26-62ba-443b-a6b6-8739373f81eb",
+                "parentDatabaseName": null,
+                "parentDatabaseType": null,
+                "parentLinkedDatabaseId": null,
+                "snapshotId": null,
+                "status": "READY",
+                "tags": [],
+                "timeZone": null
+            },
+            {
+                "databaseName": "template0",
+                "databaseStatus": "READY",
+                "dateCreated": "2023-02-24 08:07:01",
+                "dateModified": "2023-02-24 08:07:01",
+                "description": null,
+                "id": "c18419fd-df31-4e54-b35a-ee004c0faafb",
+                "info": {
+                    "info": {
+                        "created_by": "system"
+                    },
+                    "secureInfo": null
+                },
+                "metadata": null,
+                "metric": null,
+                "name": "template0",
+                "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                "parentDatabaseId": "50b8ce26-62ba-443b-a6b6-8739373f81eb",
+                "parentDatabaseName": null,
+                "parentDatabaseType": null,
+                "parentLinkedDatabaseId": null,
+                "snapshotId": null,
+                "status": "READY",
+                "tags": [],
+                "timeZone": null
+            },
+            {
+                "databaseName": "prad",
+                "databaseStatus": "READY",
+                "dateCreated": "2023-02-24 08:07:01",
+                "dateModified": "2023-02-24 08:07:01",
+                "description": null,
+                "id": "779f1f6a-502d-4ffd-9030-d21447c5ca3d",
+                "info": {
+                    "info": {
+                        "created_by": "user"
+                    },
+                    "secureInfo": null
+                },
+                "metadata": null,
+                "metric": null,
+                "name": "prad",
+                "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                "parentDatabaseId": "50b8ce26-62ba-443b-a6b6-8739373f81eb",
+                "parentDatabaseName": null,
+                "parentDatabaseType": null,
+                "parentLinkedDatabaseId": null,
+                "snapshotId": null,
+                "status": "READY",
+                "tags": [],
+                "timeZone": null
+            },
+            {
+                "databaseName": "postgres",
+                "databaseStatus": "READY",
+                "dateCreated": "2023-02-24 08:07:01",
+                "dateModified": "2023-02-24 08:07:01",
+                "description": null,
+                "id": "6e3733cf-2994-49d2-945c-c1873564be97",
+                "info": {
+                    "info": {
+                        "created_by": "system"
+                    },
+                    "secureInfo": null
+                },
+                "metadata": null,
+                "metric": null,
+                "name": "postgres",
+                "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                "parentDatabaseId": "50b8ce26-62ba-443b-a6b6-8739373f81eb",
+                "parentDatabaseName": null,
+                "parentDatabaseType": null,
+                "parentLinkedDatabaseId": null,
+                "snapshotId": null,
+                "status": "READY",
+                "tags": [],
+                "timeZone": null
+            },
+            {
+                "databaseName": "ansible1-new",
+                "databaseStatus": "READY",
+                "dateCreated": "2023-02-28 09:53:27",
+                "dateModified": "2023-02-28 09:53:51",
+                "description": null,
+                "id": "742e41b9-1766-47ef-9c2c-97aadeac8c0f",
+                "info": {
+                    "info": {
+                        "created_by": "user"
+                    },
+                    "secureInfo": null
+                },
+                "metadata": null,
+                "metric": null,
+                "name": "ansible1-new",
+                "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                "parentDatabaseId": "50b8ce26-62ba-443b-a6b6-8739373f81eb",
+                "parentDatabaseName": null,
+                "parentDatabaseType": null,
+                "parentLinkedDatabaseId": null,
+                "snapshotId": null,
+                "status": "READY",
+                "tags": [],
+                "timeZone": null
+            },
+            {
+                "databaseName": "ansible2-new",
+                "databaseStatus": "READY",
+                "dateCreated": "2023-02-28 09:53:27",
+                "dateModified": "2023-02-28 09:53:51",
+                "description": null,
+                "id": "04d4b431-e75f-4a14-86ad-674f447d6aec",
+                "info": {
+                    "info": {
+                        "created_by": "user"
+                    },
+                    "secureInfo": null
+                },
+                "metadata": null,
+                "metric": null,
+                "name": "ansible2-new",
+                "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
+                "parentDatabaseId": "50b8ce26-62ba-443b-a6b6-8739373f81eb",
+                "parentDatabaseName": null,
+                "parentDatabaseType": null,
+                "parentLinkedDatabaseId": null,
+                "snapshotId": null,
+                "status": "READY",
+                "tags": [],
+                "timeZone": null
+            }
+        ]
+database_instance_uuid:
+  description: database instance uuid
+  returned: always
+  type: str
+  sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
 """
 import time  # noqa: E402
 

@@ -56,12 +56,38 @@ author:
 """
 
 EXAMPLES = r"""
+- name: authorize db server vms
+  ntnx_ndb_authorize_db_server_vms:
+    time_machine:
+      name: "{{tm1}}"
+    db_server_vms:
+      - name: "{{vm1_name}}"
+  register: result
 
-
+- name: deauthorize db server vms
+  ntnx_ndb_authorize_db_server_vms:
+    time_machine:
+      name: "{{tm1}}"
+    db_server_vms:
+      - name: "{{vm1_name}}"
+  register: result
 """
 RETURN = r"""
-
-
+response:
+  description: An intentful representation of a authorizisation status
+  returned: always
+  type: dict
+  sample:{
+            "errorCode": 0,
+            "info": null,
+            "message": "The DBServer(s) [5c14b4d4-553f-4b93-a3c4-a6685da2732b] got successfully associated with the Time Machine (id:7a39664b-dfb7-4529-887c-6d91f7e18604, name:test-setup-dnd_TM)",
+            "status": "success"
+        },
+uuid:
+  description: Time machine uuid
+  returned: always
+  type: str
+  sample: "00000000-0000-0000-0000-000000000000"
 """
 
 

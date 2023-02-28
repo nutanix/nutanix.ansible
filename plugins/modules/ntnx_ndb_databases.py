@@ -646,46 +646,141 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create postgres database instance using with new vm
+- name: create single instance postgres database on new db server vm
   ntnx_ndb_databases:
-    name: "test"
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
 
     db_params_profile:
-      name: "TEST_PROFILE"
-
+      name: "{{db_params_profile.name}}"
+    
     db_vm:
       create_new_server:
-        name: "test-vm"
-        password: "test-vm-password"
-        cluster:
-          name: "EraCluster"
+        ip: "{{ vm_ip }}"
+        name: "{{ vm1_name }}"
+        desc: "vm for db server"
+        password: "{{ vm_password }}"
+        cluster: 
+          name: "{{cluster.cluster1.name}}"
         software_profile:
-          name: "TEST_SOFTWARE_PROFILE"
+          name: "{{ software_profile.name }}"
         network_profile:
-          name: "TEST_NETWORK_PROFILE"
+          name: "{{ static_network_profile.name }}"
         compute_profile:
-          name: "TEST_COMPUTE_PROFILE"
-        pub_ssh_key: "<public-ssh-key>"
-
+          name: "{{ compute_profile.name }}"
+        pub_ssh_key: "{{ public_ssh_key }}"
+    
     postgres:
       listener_port: "5432"
-      db_name: ansible_test
-      db_password: "postgres-test-password"
+      db_name: testAnsible
+      db_password: "{{ vm_password }}"
       db_size: 200
+      type: "single"
 
     time_machine:
-      name: POSTGRES_SERVER_PRAD_TM_1
+      name: TM1
+      desc: TM-desc
       sla:
-        name: "TEST_SLA"
-      schedule:
+        name: "{{ sla.name }}"
+      schedule: 
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
         quaterly: JANUARY
-        yearly: FEBRUARY
         log_catchup: 30
         snapshots_per_day: 2
-  register: db
+    tags:
+      ansible-databases: "single-instance-dbs"
+    
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+  register: result
+
+- name: create HA instance postgres database with multicluster vms
+  ntnx_ndb_databases:
+    timeout: 5400
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
+
+    db_params_profile:
+      name: "{{postgres_ha_profiles.db_params_profile.name}}"
+    
+    db_server_cluster:
+      new_cluster:
+        name: "{{cluster1_name}}"
+        cluster: 
+          name: "{{cluster.cluster1.name}}"
+        software_profile:
+          name: "{{ postgres_ha_profiles.software_profile.name }}"
+        network_profile:
+          name: "{{ postgres_ha_profiles.multicluster_network_profile.name }}"
+        compute_profile:
+          name: "{{ postgres_ha_profiles.compute_profile.name }}"
+        password: "{{vm_password}}"
+        pub_ssh_key: "{{public_ssh_key}}"
+        vms: 
+
+          - name: "{{cluster1_name}}-vm-1"
+            node_type: "database"
+            role: "Primary"
+        
+          - name: "{{cluster1_name}}-vm-2"
+            node_type: "database"
+            role: "Secondary"
+        
+          - name: "{{cluster1_name}}-vm-3"
+            cluster:
+              name: "{{cluster.cluster2.name}}"
+            node_type: "database"
+            role: "Secondary"
+    
+    postgres:
+      type: "ha"
+      db_name: testAnsible
+      db_password: "{{ vm_password }}"
+      db_size: 200
+      patroni_cluster_name: "patroni_cluster"
+
+    time_machine:
+      name: TM1
+      desc: TM-desc
+      sla:
+        name: "{{ sla.name }}"
+      schedule: 
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+      clusters:
+        - name: "{{cluster.cluster1.name}}"
+        - uuid: "{{cluster.cluster2.uuid}}"
+    tags:
+      ansible-databases: "ha-instance-dbs"
+    
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+
+  register: result
 """
 
 RETURN = r"""
@@ -694,16 +789,11 @@ response:
   returned: always
   type: dict
   sample: {
-            "accessLevel": null,
             "category": "DB_GROUP_IMPLICIT",
             "clone": false,
             "clustered": false,
-            "databaseClusterType": null,
-            "databaseGroupStateInfo": null,
-            "databaseName": "POSTGRES_DATABASE_ANSIBLE",
             "databaseNodes": [
                 {
-                    "accessLevel": null,
                     "databaseId": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
                     "databaseStatus": "READY",
                     "dateCreated": "2022-10-19 18:49:25",
@@ -728,8 +818,6 @@ response:
                     "tags": []
                 }
             ],
-            "databaseStatus": "UNKNOWN",
-            "databases": null,
             "dateCreated": "2022-10-19 18:26:55",
             "dateModified": "2022-10-19 18:51:26",
             "dbserverLogicalClusterId": null,
@@ -774,8 +862,6 @@ response:
                 },
                 "secureInfo": {}
             },
-            "internal": false,
-            "lcmConfig": null,
             "linkedDatabases": [
                 {
                     "databaseName": "prad",
@@ -870,30 +956,7 @@ response:
                     "timeZone": null
                 }
             ],
-            "metadata": {
-                "baseSizeComputed": false,
-                "capabilityResetTime": null,
-                "createdDbservers": null,
-                "deregisterInfo": null,
-                "deregisteredWithDeleteTimeMachine": false,
-                "info": null,
-                "lastLogCatchUpForRestoreOperationId": null,
-                "lastRefreshTimestamp": null,
-                "lastRequestedRefreshTimestamp": null,
-                "logCatchUpForRestoreDispatched": false,
-                "originalDatabaseName": null,
-                "pitrBased": false,
-                "provisionOperationId": "d9b1924f-a768-4cd8-886b-7a69e61f5b89",
-                "refreshBlockerInfo": null,
-                "registeredDbservers": null,
-                "sanitised": false,
-                "secureInfo": null,
-                "sourceSnapshotId": null,
-                "stateBeforeRefresh": null,
-                "stateBeforeRestore": null,
-                "stateBeforeScaling": null,
-                "tmActivateOperationId": "40d6b3a3-4f57-4c17-9ba2-9279d2f247c2"
-            },
+            "provisionOperationId": "d9b1924f-a768-4cd8-886b-7a69e61f5b89",
             "metric": null,
             "name": "POSTGRES_DATABASE_ANSIBLE",
             "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
