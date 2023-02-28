@@ -74,7 +74,7 @@ EXAMPLES = r"""
   ntnx_ndb_database_snapshots:
     name: "{{snapshot_name}}2"
     time_machine_uuid: "{{time_machine_uuid}}"
-    expiry_days: 4 
+    expiry_days: 4
   register: result
 
 - name: create snapshot on secondary cluster

@@ -351,7 +351,7 @@ EXAMPLES = r"""
       postgres:
         max_connections: "{{max_connections}}"
         max_replication_slots: "{{max_replication_slots}}"
-        max_locks_per_transaction: "{{max_locks_per_transaction}}" 
+        max_locks_per_transaction: "{{max_locks_per_transaction}}"
         effective_io_concurrency: "{{effective_io_concurrency}}"
         timezone: "{{timezone}}"
         max_prepared_transactions: "{{max_prepared_transactions}}"
@@ -383,8 +383,8 @@ EXAMPLES = r"""
     network:
       topology: single
       vlans:
-        - 
-          cluster:  
+        -
+          cluster:
             name: "{{network_profile.single.cluster.name}}"
           vlan_name: "{{network_profile.single.vlan_name}}"
       enable_ip_address_selection: true
@@ -399,12 +399,12 @@ EXAMPLES = r"""
     network:
       topology: cluster
       vlans:
-        - 
-          cluster:  
+        -
+          cluster:
             name: "{{network_profile.HA.cluster1.name}}"
           vlan_name: "{{network_profile.HA.cluster1.vlan_name}}"
-        - 
-          cluster:  
+        -
+          cluster:
             name: "{{network_profile.HA.cluster2.name}}"
           vlan_name: "{{network_profile.HA.cluster2.vlan_name}}"
 

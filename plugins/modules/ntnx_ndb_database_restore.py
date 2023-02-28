@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_database_restore
 short_description: module for restoring database instance
 version_added: 1.8.0
-description: 
+description:
     - module for restoring database instance to certain point in time or snapshot
     - module will use latest snapshot if pitr timestamp or snapshot uuid is not given
 options:
@@ -115,7 +115,7 @@ response:
     "ancestorOpIds": null,
     "userRequestedAction": "0",
     "userRequestedActionTime": null
-} 
+}
 
 """
 import time  # noqa: E402

@@ -96,7 +96,7 @@ EXAMPLES = r"""
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{db_server_uuid}}"
-    maintenance_window: 
+    maintenance_window:
       uuid: "{{maintenance.window_uuid}}"
     tasks: []
   register: result
@@ -105,9 +105,9 @@ EXAMPLES = r"""
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{vm1_name_updated}}"
-    maintenance_window: 
+    maintenance_window:
       name: "{{maintenance.window_name}}"
-    tasks:         
+    tasks:
       - type: "OS_PATCHING"
         pre_task_cmd: "python3 script.py"
         post_task_cmd: "python3 script.py"

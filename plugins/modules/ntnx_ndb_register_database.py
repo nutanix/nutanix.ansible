@@ -301,14 +301,14 @@ EXAMPLES = r"""
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
         quaterly: JANUARY
         log_catchup: 30
         snapshots_per_day: 2
-    
+
     tags:
       ansible-databases: "single-instance-dbs"
 
@@ -341,14 +341,14 @@ EXAMPLES = r"""
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
         quaterly: JANUARY
         log_catchup: 30
         snapshots_per_day: 2
-    
+
     tags:
       ansible-databases: "single-instance-dbs"
   register: result
