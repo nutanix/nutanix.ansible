@@ -22,13 +22,13 @@
   - Ansible module for database server vm registration
   - Ansible module for time machine clusters
   - Ansible module for time machines info
-  - Ansible module for authorization database server vm with time machines
+  - Ansible module for authorization of database server vm with time machines
   - Ansible module for database clones
   - Ansible module for database clones info
   - Ansible module for database clones refresh
   - Ansible module for snapshots info
   - Ansible module for database snapshots
-  - Ansible module for replicate database snapshots
+  - Ansible module for replicating database snapshots
   - Ansible module for log catchups
   - Ansible module for database restore
   - Ansible module for database scale
