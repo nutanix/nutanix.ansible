@@ -46,7 +46,7 @@ EXAMPLES = r"""
 - name: add databases in database instance
   ntnx_ndb_linked_databases:
     db_instance_uuid: "{{db_uuid}}"
-    databases: 
+    databases:
       - test1
       - test2
   register: result
@@ -55,7 +55,7 @@ EXAMPLES = r"""
   ntnx_ndb_linked_databases:
     state: "absent"
     db_instance_uuid: "{{db_uuid}}"
-    database_uuid: "{{linked_databases.test1}}" 
+    database_uuid: "{{linked_databases.test1}}"
   register: result
 """
 RETURN = r"""

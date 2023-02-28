@@ -654,14 +654,14 @@ EXAMPLES = r"""
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       create_new_server:
         ip: "{{ vm_ip }}"
         name: "{{ vm1_name }}"
         desc: "vm for db server"
         password: "{{ vm_password }}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         software_profile:
           name: "{{ software_profile.name }}"
@@ -670,7 +670,7 @@ EXAMPLES = r"""
         compute_profile:
           name: "{{ compute_profile.name }}"
         pub_ssh_key: "{{ public_ssh_key }}"
-    
+
     postgres:
       listener_port: "5432"
       db_name: testAnsible
@@ -683,7 +683,7 @@ EXAMPLES = r"""
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
@@ -692,7 +692,7 @@ EXAMPLES = r"""
         snapshots_per_day: 2
     tags:
       ansible-databases: "single-instance-dbs"
-    
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
@@ -714,11 +714,11 @@ EXAMPLES = r"""
 
     db_params_profile:
       name: "{{postgres_ha_profiles.db_params_profile.name}}"
-    
+
     db_server_cluster:
       new_cluster:
         name: "{{cluster1_name}}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         software_profile:
           name: "{{ postgres_ha_profiles.software_profile.name }}"
@@ -728,22 +728,22 @@ EXAMPLES = r"""
           name: "{{ postgres_ha_profiles.compute_profile.name }}"
         password: "{{vm_password}}"
         pub_ssh_key: "{{public_ssh_key}}"
-        vms: 
+        vms:
 
           - name: "{{cluster1_name}}-vm-1"
             node_type: "database"
             role: "Primary"
-        
+
           - name: "{{cluster1_name}}-vm-2"
             node_type: "database"
             role: "Secondary"
-        
+
           - name: "{{cluster1_name}}-vm-3"
             cluster:
               name: "{{cluster.cluster2.name}}"
             node_type: "database"
             role: "Secondary"
-    
+
     postgres:
       type: "ha"
       db_name: testAnsible
@@ -756,7 +756,7 @@ EXAMPLES = r"""
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
@@ -768,7 +768,7 @@ EXAMPLES = r"""
         - uuid: "{{cluster.cluster2.uuid}}"
     tags:
       ansible-databases: "ha-instance-dbs"
-    
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"

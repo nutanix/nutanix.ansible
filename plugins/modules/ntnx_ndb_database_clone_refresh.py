@@ -274,7 +274,7 @@ response:
         }
     ],
     "databases": null,
-}  
+}
 uuid:
   description: Database clone uuid
   returned: always

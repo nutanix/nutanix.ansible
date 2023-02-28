@@ -282,13 +282,13 @@ EXAMPLES = r"""
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       create_new_server:
         name: "{{ vm1_name }}"
         desc: "vm for db server"
         password: "{{ vm_password }}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         network_profile:
           name: "{{ network_profile.name }}"
@@ -298,17 +298,17 @@ EXAMPLES = r"""
 
     postgres:
       db_password: "{{vm_password}}"
-    
+
     time_machine:
       name: "{{tm1}}"
       snapshot_uuid: "{{snapshot_uuid}}"
-    
+
     removal_schedule:
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
       delete_database: True
-    
+
     refresh_schedule:
       days: 2
       time: "12:00:00"
@@ -325,13 +325,13 @@ EXAMPLES = r"""
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       create_new_server:
         name: "{{ vm1_name }}"
         desc: "vm for db server"
         password: "{{ vm_password }}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         network_profile:
           name: "{{ network_profile.name }}"
@@ -341,18 +341,18 @@ EXAMPLES = r"""
 
     postgres:
       db_password: "{{vm_password}}"
-    
+
     time_machine:
       name: "{{tm1}}"
       pitr_timestamp: "2023-02-28 12:00:00"
       timestamp: "Asia/Calcutta"
-    
+
     removal_schedule:
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
       delete_database: True
-    
+
     refresh_schedule:
       days: 2
       time: "12:00:00"
@@ -583,7 +583,7 @@ response:
         }
     ],
     "databases": null,
-}  
+}
 uuid:
   description: Database clone uuid
   returned: always
