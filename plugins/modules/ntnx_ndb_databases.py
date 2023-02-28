@@ -293,7 +293,7 @@ options:
           type: bool
           default: false
           description:
-            - this field is deprecate
+            - this field is deprecated
             - not required
       patroni_cluster_name:
           type: str

@@ -14,6 +14,7 @@ short_description: module for create, update and delete of profiles
 version_added: 1.8.0
 description:
     - module for create, update and delete of profiles
+    - currently, compute, network, database parameters and software profiles are supported
     - only software profile supports versions operations
     - version related operations can be configured under "software"
     - only software profile supports replication to clusters

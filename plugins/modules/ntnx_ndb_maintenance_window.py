@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_maintenance_window
 short_description: module to create, update and delete mainetance window
 version_added: 1.8.0
-description: 'write'
+description: module to create, update and delete mainetance window
 options:
     name:
         description:

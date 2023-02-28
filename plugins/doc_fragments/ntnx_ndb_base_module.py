@@ -40,7 +40,7 @@ options:
         default: true
     timeout:
         description:
-            - write
+            - timeout for polling of operation, after which module will error out
         type: int
         required: false
         default: 2100

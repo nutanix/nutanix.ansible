@@ -182,11 +182,11 @@ options:
                 required: true
             pre_clone_cmd:
                 description:
-                    - write
+                    - commands to run before database clone creation
                 type: str
             post_clone_cmd:
                 description:
-                    - write
+                    - commands to run after database clone creation
                 type: str
       tags:
         description:
