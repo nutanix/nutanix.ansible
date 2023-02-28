@@ -27,11 +27,12 @@ class VLAN(NutanixDatabase):
             "cluster": self._build_spec_cluster,
         }
 
-    def get_spec(self, old_spec=None, params=None):
-        err = self._validate_module_params(old_spec)
-        if err:
-            return None, err
-        return super().get_spec(old_spec=old_spec, params=params)
+    def get_spec(self, old_spec=None, params=None, **kwargs):
+        if kwargs.get("validate_module_params"):
+            err = self._validate_module_params(old_spec)
+            if err:
+                return None, err
+        return super().get_spec(old_spec=old_spec, params=params, **kwargs)
 
     def get_uuid(
         self,

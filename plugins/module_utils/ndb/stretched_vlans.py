@@ -21,7 +21,7 @@ class StretchedVLAN(VLAN):
         }
 
     def get_spec(self, old_spec=None, params=None):
-        return super(VLAN, self).get_spec(old_spec=old_spec, params=params)
+        return super().get_spec(old_spec=old_spec, params=params)
 
     def get_stretched_vlan(self, uuid=None):
         if uuid:

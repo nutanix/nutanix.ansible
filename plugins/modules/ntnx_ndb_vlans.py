@@ -304,7 +304,7 @@ def create_vlan(module, result):
     if uuid:
         module.fail_json(msg="vlan with given name already exists", **result)
 
-    spec, err = vlan.get_spec()
+    spec, err = vlan.get_spec(validate_module_params=True)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create vlan spec", **result)
@@ -334,7 +334,7 @@ def update_vlan(module, result):
 
     old_spec = vlan.get_default_update_spec(override_spec=resp)
 
-    update_spec, err = vlan.get_spec(old_spec=old_spec)
+    update_spec, err = vlan.get_spec(old_spec=old_spec, validate_module_params=True)
 
     if err:
         result["error"] = err
