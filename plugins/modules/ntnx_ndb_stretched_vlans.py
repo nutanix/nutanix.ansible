@@ -50,39 +50,39 @@ author:
 """
 
 EXAMPLES = r"""
-# - name: create ndb stretched vlan
-#   ntnx_ndb_stretched_vlans:
-#     nutanix_host: <pc_ip>
-#     nutanix_username: <user>
-#     nutanix_password: <pass>
-#     validate_certs: false
-#     name:  test-vlan-name
-#         vlans:
-#             - "00000000-0000-0000-0000-000000000000"
-#             - "00000000-0000-0000-0000-000000000000"
-#   register: result
+ - name: create ndb stretched vlan
+   ntnx_ndb_stretched_vlans:
+     nutanix_host: <pc_ip>
+     nutanix_username: <user>
+     nutanix_password: <pass>
+     validate_certs: false
+     name:  test-vlan-name
+     vlans:
+             - "00000000-0000-0000-0000-000000000000"
+             - "00000000-0000-0000-0000-000000000000"
+   register: result
 
-# - name: update ndb stretched vlan
-#   ntnx_ndb_stretched_vlans:
-#     nutanix_host: <pc_ip>
-#     nutanix_username: <user>
-#     nutanix_password: <pass>
-#     validate_certs: false
-#     stretched_vlan_uuid: "<vlan-uuid>"
-#         vlans:
-#             - "00000000-0000-0000-0000-000000000000"
-#             - "00000000-0000-0000-0000-000000000000"
-#   register: result
+ - name: update ndb stretched vlan
+   ntnx_ndb_stretched_vlans:
+     nutanix_host: <pc_ip>
+     nutanix_username: <user>
+     nutanix_password: <pass>
+     validate_certs: false
+     stretched_vlan_uuid: "<vlan-uuid>"
+     vlans:
+             - "00000000-0000-0000-0000-000000000000"
+             - "00000000-0000-0000-0000-000000000000"
+   register: result
 
-# - name: Delete stretched vlan
-#   ntnx_ndb_stretched_vlans:
-#     nutanix_host: "<pc_ip>"
-#     nutanix_username: <user>
-#     nutanix_password: <pass>
-#     validate_certs: false
-#     state: absent
-#     stretched_vlan_uuid: "<vlan-uuid>"
-#   register: result
+ - name: Delete stretched vlan
+   ntnx_ndb_stretched_vlans:
+     nutanix_host: "<pc_ip>"
+     nutanix_username: <user>
+     nutanix_password: <pass>
+     validate_certs: false
+     state: absent
+     stretched_vlan_uuid: "<vlan-uuid>"
+   register: result
 
 """
 
