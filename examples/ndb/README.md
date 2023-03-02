@@ -5,7 +5,7 @@ These modules are based on workflow :
 
 ![NDB workflow](ndb_workflow.png)
 
-Note: Access Control update in NDB is not yet supported.
+Note: Access Control update and enabling multi-cluster in NDB is not yet supported by nutanix ansible provider.
 
 ## Usage
 Below we will discuss usage of various NDB modules.
