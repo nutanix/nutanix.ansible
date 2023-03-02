@@ -38,4 +38,10 @@ options:
             - C(validate_certs). If not set then the value of the C(VALIDATE_CERTS), environment variable is used.
         type: bool
         default: true
+    timeout:
+        description:
+            - timeout for polling of operation, after which module will error out
+        type: int
+        required: false
+        default: 2100
 """

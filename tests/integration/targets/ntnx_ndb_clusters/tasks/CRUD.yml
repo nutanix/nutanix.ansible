@@ -1,0 +1,343 @@
+---
+- debug:
+    msg: Start testing ntnx_ndb_clusters
+
+
+- name: Register cluster with prism_vlan in check mode
+  ntnx_ndb_clusters:
+      name: "{{cluster.cluster3.name}}"
+      desc: "{{cluster.cluster3.desc}}"
+      name_prefix: "{{cluster.cluster3.name_prefix}}"
+      cluster_ip: "{{cluster.cluster3.cluster_ip}}"
+      cluster_credentials:
+        username: "{{cluster.cluster3.cluster_credentials.username}}"
+        password: "{{cluster.cluster3.cluster_credentials.password}}"
+      agent_network:
+        dns_servers:
+          - "{{cluster.cluster3.agent_network.dns_servers[0]}}"
+          - "{{cluster.cluster3.agent_network.dns_servers[1]}}"
+        ntp_servers:
+          - "{{cluster.cluster3.agent_network.ntp_servers[0]}}"
+          - "{{cluster.cluster3.agent_network.ntp_servers[1]}}"
+          - "{{cluster.cluster3.agent_network.ntp_servers[2]}}"
+          - "{{cluster.cluster3.agent_network.ntp_servers[3]}}"
+      vlan_access:
+        prism_vlan:
+          vlan_name: "{{cluster.cluster3.vlan_access.prism_vlan.vlan_name}}"
+          vlan_type: "{{cluster.cluster3.vlan_access.prism_vlan.vlan_type}}"
+          static_ip: "{{cluster.cluster3.vlan_access.prism_vlan.static_ip}}"
+          gateway: "{{cluster.cluster3.vlan_access.prism_vlan.gateway}}"
+          subnet_mask: "{{cluster.cluster3.vlan_access.prism_vlan.subnet_mask}}"
+      storage_container: "{{cluster.cluster3.storage_container}}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.clusterName == "{{cluster.cluster3.name}}"
+      - result.response.clusterDescription == "{{cluster.cluster3.desc}}"
+      - result.response.agentVMPrefix == "{{cluster.cluster3.name_prefix}}"
+      - result.response.clusterIP == "{{cluster.cluster3.cluster_ip}}"
+      - result.response.credentialsInfo[0].value == "{{cluster.cluster3.cluster_credentials.username}}"
+      - result.response.networksInfo[0].networkInfo[0].value == "{{cluster.cluster3.vlan_access.prism_vlan.vlan_name}}"
+      - result.response.networksInfo[0].networkInfo[1].value == "{{cluster.cluster3.vlan_access.prism_vlan.static_ip}}"
+      - result.response.networksInfo[0].networkInfo[2].value == "{{cluster.cluster3.vlan_access.prism_vlan.gateway}}"
+      - result.response.networksInfo[0].networkInfo[3].value == "{{cluster.cluster3.vlan_access.prism_vlan.subnet_mask}}"
+      - result.response.networksInfo[0].type==  "{{cluster.cluster3.vlan_access.prism_vlan.vlan_type}}"
+    fail_msg: "fail: Wring with check mode for registring cluster"
+    success_msg: "pass: retunred as expected"
+
+- name: Register cluster with prism_vlan
+  ntnx_ndb_clusters:
+      wait: true
+      name: "{{cluster.cluster3.name}}"
+      desc: "{{cluster.cluster3.desc}}"
+      name_prefix: "{{cluster.cluster3.name_prefix}}"
+      cluster_ip: "{{cluster.cluster3.cluster_ip}}"
+      cluster_credentials:
+        username: "{{cluster.cluster3.cluster_credentials.username}}"
+        password: "{{cluster.cluster3.cluster_credentials.password}}"
+      agent_network:
+        dns_servers:
+          - "{{cluster.cluster3.agent_network.dns_servers[0]}}"
+          - "{{cluster.cluster3.agent_network.dns_servers[1]}}"
+        ntp_servers:
+          - "{{cluster.cluster3.agent_network.ntp_servers[0]}}"
+          - "{{cluster.cluster3.agent_network.ntp_servers[1]}}"
+          - "{{cluster.cluster3.agent_network.ntp_servers[2]}}"
+          - "{{cluster.cluster3.agent_network.ntp_servers[3]}}"
+      vlan_access:
+        prism_vlan:
+          vlan_name: "{{cluster.cluster3.vlan_access.prism_vlan.vlan_name}}"
+          vlan_type: "{{cluster.cluster3.vlan_access.prism_vlan.vlan_type}}"
+          static_ip: "{{cluster.cluster3.vlan_access.prism_vlan.static_ip}}"
+          gateway: "{{cluster.cluster3.vlan_access.prism_vlan.gateway}}"
+          subnet_mask: "{{cluster.cluster3.vlan_access.prism_vlan.subnet_mask}}"
+      storage_container: "{{cluster.cluster3.storage_container}}"
+  register: result
+  ignore_errors: true
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.name == "{{cluster.cluster3.name}}"
+      - result.response.description == "{{cluster.cluster3.desc}}"
+      - result.response.ipAddresses[0] == "{{cluster.cluster3.cluster_ip}}"
+    fail_msg: "fail: Unable to Register cluster with prisim_vlan"
+    success_msg: "pass: Register cluster with prisim_vlan finished successfully"
+
+################################################################
+
+- name: update cluster name , desc
+  ntnx_ndb_clusters:
+      uuid:  "{{result.cluster_uuid}}"
+      name: newname
+      desc: newdesc
+  register: result
+  ignore_errors: true
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response.name == "newname"
+      - result.cluster_uuid is defined
+      - result.response.description == "newdesc"
+    fail_msg: "fail: Unable to update cluster name , desc"
+    success_msg: "pass: update cluster name , desc finished successfully"
+- set_fact:
+    todelete:  "{{result.cluster_uuid}}"
+################################################################
+- name: update cluster credeential in check_mode
+  ntnx_ndb_clusters:
+      uuid: "{{result.cluster_uuid}}"
+      cluster_credentials:
+        username: test
+        password: test
+  register: result
+  ignore_errors: true
+  no_log: true
+  check_mode: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.username is defined
+      - result.response.password is defined
+      - result.cluster_uuid is defined
+    fail_msg: "fail: update cluster credeential while check_mode"
+    success_msg: "pass: retunred as expected"
+################################################################
+
+- name: Negative Secnarios update storage container
+  ntnx_ndb_clusters:
+      uuid:  "{{result.cluster_uuid}}"
+      storage_container: "{{cluster.cluster3.storage_container}}"
+  register: out
+  ignore_errors: true
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - out.changed == false
+      - out.failed == true
+      - out.msg == "parameters are mutually exclusive: uuid|storage_container"
+    fail_msg: "Fail: storage_continer updated "
+    success_msg: " Success: returned error as expected "
+
+################################################################
+
+- name: Negative Secnarios update vlan access
+  ntnx_ndb_clusters:
+      uuid:  "{{result.cluster_uuid}}"
+      vlan_access:
+        prism_vlan:
+          vlan_name: "{{cluster.cluster3.vlan_access.prism_vlan.vlan_name}}"
+          vlan_type: "{{cluster.cluster3.vlan_access.prism_vlan.vlan_type}}"
+          static_ip: "{{cluster.cluster3.vlan_access.prism_vlan.static_ip}}"
+          gateway: "{{cluster.cluster3.vlan_access.prism_vlan.gateway}}"
+          subnet_mask: "{{cluster.cluster3.vlan_access.prism_vlan.subnet_mask}}"
+  register: out
+  ignore_errors: true
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - out.changed == false
+      - out.failed == true
+      - out.msg == "parameters are mutually exclusive: uuid|vlan_access"
+    fail_msg: "Fail: vlan_access updated "
+    success_msg: " Success: returned error as expected "
+
+################################################################
+
+- name: Negative Secnarios update agent network
+  ntnx_ndb_clusters:
+      uuid:  "{{result.cluster_uuid}}"
+      agent_network:
+        dns_servers:
+          - "{{cluster.cluster3.agent_network.dns_servers[0]}}"
+          - "{{cluster.cluster3.agent_network.dns_servers[1]}}"
+        ntp_servers:
+          - "{{cluster.cluster3.agent_network.ntp_servers[0]}}"
+          - "{{cluster.cluster3.agent_network.ntp_servers[1]}}"
+          - "{{cluster.cluster3.agent_network.ntp_servers[2]}}"
+          - "{{cluster.cluster3.agent_network.ntp_servers[3]}}"
+  register: out
+  ignore_errors: true
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - out.changed == false
+      - out.failed == true
+      - out.msg == "parameters are mutually exclusive: uuid|agent_network"
+    fail_msg: "Fail: agent_network updated "
+    success_msg: " Success: returned error as expected "
+
+################################################################
+
+- name: Negative Secnarios update agent network
+  ntnx_ndb_clusters:
+      uuid:  "{{result.cluster_uuid}}"
+      name_prefix: "{{cluster.cluster3.name_prefix}}"
+  register: out
+  ignore_errors: true
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - out.changed == false
+      - out.failed == true
+      - out.msg == "parameters are mutually exclusive: uuid|name_prefix"
+    fail_msg: "Fail: name_prefix updated "
+    success_msg: " Success: returned error as expected "
+
+################################################################
+
+- name: List all NDB clusters
+  ntnx_ndb_clusters_info:
+  register: clusters
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - clusters.response is defined
+      - clusters.failed == false
+      - clusters.changed == false
+      - clusters.response | length > 0
+    fail_msg: "Unable to list all NDB clusters"
+    success_msg: "NDB clusters listed successfully"
+
+################################################################
+- name: get ndb cluster with count_entities
+  ntnx_ndb_clusters_info:
+    filters: 
+      count_entities: true
+  register: result
+  ignore_errors: true
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response[0].entityCounts is defined
+    fail_msg: "Unable to get NDB clusters with count_entities  "
+    success_msg: "get  NDB clusters using with count_entities  successfully"
+################################################################ 
+- name: get NDB clusters using it's name
+  ntnx_ndb_clusters_info:
+    name: "{{clusters.response[0].name}}"
+  register: result
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{clusters.response[0].name}}"
+    fail_msg: "Unable to get NDB clusters using it's name  "
+    success_msg: "get  NDB clusters using it's name  successfully"
+
+################################################################
+
+- name: List clusters use id
+  ntnx_ndb_clusters_info:
+    uuid: "{{clusters.response[0].id}}"
+  register: result
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{clusters.response[0].name}}"
+    fail_msg: "Unable to get NDB clusters using it's id  "
+    success_msg: "get  NDB clusters using it's id  successfully"
+
+################################################################
+
+- name: get NDB clusters with incorrect name
+  ntnx_ndb_clusters_info:
+    name: "abcd"
+  register: result
+  ignore_errors: True
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"
+
+################################################################
+
+- name: delete cluster
+  ntnx_ndb_clusters:
+      uuid:    "{{todelete}}"
+      state: absent
+  register: result
+  ignore_errors: true
+  no_log: true
+
+- name: assert when status not complete
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "5"
+    fail_msg: "Unable to delete custer"
+    success_msg: "cluster  deleted successfully"
+
+
+- set_fact:
+    todelete:  []

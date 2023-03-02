@@ -11,23 +11,67 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_db_servers_info
 short_description: info module for ndb db server vms info
-version_added: 1.8.0-beta.1
-description: 'Get database server info'
+version_added: 1.8.0
+description:
+    - Get database server info
+    - Module will fetch all entities if no spec is given
 options:
       name:
         description:
-            - server name
+            - database server vm name
         type: str
       uuid:
         description:
-            - server id
+            - database server vm uuid
         type: str
       server_ip:
         description:
             - db server vm ip
         type: str
+      filters:
+        description:
+            - query filters
+        type: dict
+        suboptions:
+            detailed:
+                description:
+                    - flag to get detailed response
+                type: bool
+            load_clones:
+                description:
+                    - flag to include clones in response
+                type: bool
+            load_databases:
+                description:
+                    - flag to include databases in response
+                type: bool
+            load_dbserver_cluster:
+                description:
+                    - flag to include db server cluster details in response
+                type: bool
+            load_metrics:
+                description:
+                    - flag to include metrics
+                type: bool
+            curator:
+                description:
+                    - get entity if its satisfies the query criteria irrespective of status
+                type: bool
+            value:
+                description:
+                    - vlaue as per C(value_type)
+                type: str
+            value_type:
+                description:
+                    - type of C(value)
+                type: str
+                choices: ["ip","name","vm-cluster-name","vm-cluster-uuid", "dbserver-cluster-id","nx-cluster-id", "fqdn",]
+            time_zone:
+                description:
+                    - timezone related to C(pitr_timestamp)
+                type: str
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_ndb_info_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -339,28 +383,65 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.db_servers import DBServers  # noqa: E402
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.utils import format_filters_map  # noqa: E402
 
 
 def get_module_spec():
+
+    filters_spec = dict(
+        detailed=dict(type="bool"),
+        load_clones=dict(type="bool"),
+        load_databases=dict(type="bool"),
+        load_dbserver_cluster=dict(type="bool"),
+        load_metrics=dict(type="bool"),
+        curator=dict(type="bool"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "ip",
+                "name",
+                "vm-cluster-name",
+                "vm-cluster-uuid",
+                "dbserver-cluster-id",
+                "nx-cluster-id",
+                "fqdn",
+            ],
+        ),
+        time_zone=dict(type="str"),
+    )
 
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
         server_ip=dict(type="str"),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
 
 
 def get_db_server(module, result):
-    db_server = DBServers(module)
+    db_server = DBServerVM(module)
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
+
     if module.params.get("uuid"):
-        resp, err = db_server.get_db_server(uuid=module.params["uuid"])
+        resp, err = db_server.get_db_server(
+            uuid=module.params["uuid"], query=query_params
+        )
     elif module.params.get("name"):
-        resp, err = db_server.get_db_server(name=module.params["name"])
+        resp, err = db_server.get_db_server(
+            name=module.params["name"], query=query_params
+        )
     else:
-        resp, err = db_server.get_db_server(ip=module.params["server_ip"])
+        resp, err = db_server.get_db_server(
+            ip=module.params["server_ip"], query=query_params
+        )
 
     if err:
         result["error"] = err
@@ -370,9 +451,11 @@ def get_db_server(module, result):
 
 
 def get_db_servers(module, result):
-    db_server = DBServers(module)
+    db_server = DBServerVM(module)
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
 
-    resp = db_server.read()
+    resp = db_server.read(query=query_params)
 
     result["response"] = resp
 

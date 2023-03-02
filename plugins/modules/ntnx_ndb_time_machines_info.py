@@ -11,8 +11,8 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_time_machines_info
 short_description: info module for ndb time machines
-version_added: 1.8.0-beta.1
-description: 'Get tm info'
+version_added: 1.8.0
+description: Get time machine info
 options:
       name:
         description:
@@ -20,10 +20,48 @@ options:
         type: str
       uuid:
         description:
-            - time machine id
+            - time machine uuid
         type: str
+      filters:
+        description:
+            - filters
+        type: dict
+        suboptions:
+            detailed:
+                description:
+                    - get detailed response
+                type: bool
+            load_clones:
+                description:
+                    - load clones
+                type: bool
+            load_database:
+                description:
+                    - load database details in response
+                type: bool
+            clone_tms:
+                description:
+                    - load cloned time machines
+                type: bool
+            database_tms:
+                description:
+                    - write
+                type: bool
+            value:
+                description:
+                    - value correponding to C(value_type)
+                type: str
+            value_type:
+                description:
+                    - value type corresponding to C(value)
+                type: str
+                choices: ["id","name",]
+            time_zone:
+                description:
+                    - get responses in certain time zone
+                type: str
 extends_documentation_fragment:
-    - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_ndb_info_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -224,34 +262,62 @@ response:
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
 from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
+from ..module_utils.utils import format_filters_map  # noqa: E402
 
 
 def get_module_spec():
 
+    filters_spec = dict(
+        detailed=dict(type="bool"),
+        load_clones=dict(type="bool"),
+        load_database=dict(type="bool"),
+        clone_tms=dict(type="bool"),
+        database_tms=dict(type="bool"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "id",
+                "name",
+            ],
+        ),
+        time_zone=dict(type="str"),
+    )
+
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
 
 
-def get_tm(module, result):
+def get_time_machine(module, result):
     tm = TimeMachine(module)
 
     uuid = module.params.get("uuid")
     name = module.params.get("name")
-    resp, err = tm.get_time_machine(uuid=uuid, name=name)
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
+
+    resp, err = tm.get_time_machine(uuid=uuid, name=name, query=query_params)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed fetching time machine info", **result)
+        module.fail_json(msg="Failed fetching sla info", **result)
     result["response"] = resp
 
 
-def get_tms(module, result):
+def get_time_machines(module, result):
     tm = TimeMachine(module)
 
-    resp = tm.read()
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
+
+    resp = tm.read(query=query_params)
 
     result["response"] = resp
 
@@ -264,9 +330,9 @@ def run_module():
     )
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("name") or module.params.get("uuid"):
-        get_tm(module, result)
+        get_time_machine(module, result)
     else:
-        get_tms(module, result)
+        get_time_machines(module, result)
     module.exit_json(**result)
 
 

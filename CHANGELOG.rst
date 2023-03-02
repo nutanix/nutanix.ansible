@@ -5,20 +5,44 @@ Nutanix.Ncp Release Notes
 .. contents:: Topics
 
 
-v1.8.0-beta.1
-=============
+v1.8.0
+======
 
 New Modules
 -----------
 
+- ntnx_ndb_authorize_db_server_vms - module for authorizing db server vm
 - ntnx_ndb_clones_info - info module for database clones
+- ntnx_ndb_clusters - Create, Update and Delete NDB clusters
 - ntnx_ndb_clusters_info - info module for ndb clusters info
+- ntnx_ndb_database_clone_refresh - module for database clone refresh.
+- ntnx_ndb_database_clones - module for create, update and delete of ndb database clones
+- ntnx_ndb_database_log_catchup - module for performing log catchups action
+- ntnx_ndb_database_restore - module for restoring database instance
+- ntnx_ndb_database_scale - module for scaling database instance
+- ntnx_ndb_database_snapshots - module for creating, updating and deleting database snapshots
 - ntnx_ndb_databases - Module for create, update and delete of single instance database. Currently, postgres type database is officially supported.
 - ntnx_ndb_databases_info - info module for ndb database instances
+- ntnx_ndb_db_server_vms - module for create, delete and update of database server vms
 - ntnx_ndb_db_servers_info - info module for ndb db server vms info
+- ntnx_ndb_linked_databases - module to manage linked databases of a database instance
+- ntnx_ndb_maintenance_tasks - module to add and remove maintenance related tasks
+- ntnx_ndb_maintenance_window - module to create, update and delete mainetance window
+- ntnx_ndb_maintenance_windows_info - module for fetching maintenance windows info
+- ntnx_ndb_profiles - module for create, update and delete of profiles
 - ntnx_ndb_profiles_info - info module for ndb profiles
+- ntnx_ndb_register_database - module for database instance registration
+- ntnx_ndb_register_db_server_vm - module for registration of database server vm
+- ntnx_ndb_replicate_database_snapshots - module for replicating database snapshots across clusters of time machine
+- ntnx_ndb_slas - moudle for creating, updating and deleting slas
 - ntnx_ndb_slas_info - info module for ndb slas
+- ntnx_ndb_snapshots_info - info module for ndb snapshots info
+- ntnx_ndb_stretched_vlans - Module for create, update and delete of stretched vlan.
+- ntnx_ndb_tags - module for create, update and delete of tags
+- ntnx_ndb_time_machine_clusters - Module for create, update and delete for data access management in time machines.
 - ntnx_ndb_time_machines_info - info module for ndb time machines
+- ntnx_ndb_vlans - Module for create, update and delete of ndb vlan.
+- ntnx_ndb_vlans_info - info module for ndb vlans
 
 v1.7.0
 ======

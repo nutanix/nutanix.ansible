@@ -1,0 +1,109 @@
+---
+# Here we will be deploying high availibility postgres database with static IPs assigned
+# to vms and virtul IP for HA proxy
+- name: Create stretched vlan
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+    - name: create HA instance postgres database with static IP assignments to vms and cluster IP
+      ntnx_ndb_databases:
+        wait: true
+        timeout: 5400
+        name: "<database name>"
+        desc: "ansible-created-db-desc"
+
+        db_params_profile:
+          name: "<database-parameter-profile>"
+        
+        db_server_cluster:
+          new_cluster:
+            name: "<database-server-cluster-name>"
+            cluster: 
+              name: "<cluster-name>"
+            ips:
+              - cluster:
+                  name: "<cluster-name-for-ip>"
+                ip: "<virtual-ip-for-ha-proxy>"
+
+            software_profile:
+              name: "<software-profile-name>"
+            network_profile:
+              name: "<network-profile-name>"
+            compute_profile:
+              name: "<compute-profile-name>"
+            password: "<set-vm-password>"
+            pub_ssh_key: "<public-ssh-key>"
+            vms: 
+              - name: "vm-1"
+                node_type: "database"
+                role: "Primary"
+                ip: "<vm1-ip>"
+            
+              - name: "vm-2"
+                node_type: "database"
+                role: "Secondary"
+                ip: "<vm2-ip>"
+            
+              - name: "vm-3"
+                node_type: "database"
+                role: "Secondary"
+                ip: "<vm3-ip>"
+
+              - name: "vm-ha-proxy1"
+                node_type: "haproxy"
+                ip: "<ha1-ip>"
+              
+              - name: "vm-ha-proxy2"
+                node_type: "haproxy"
+                ip: "<ha2-ip>"
+
+        postgres:
+          type: "ha"
+          db_name: testAnsible
+          db_password: "<set-database-password>"
+          db_size: 200
+          patroni_cluster_name: "<patroni-cluster-name>"
+          ha_proxy:
+            provision_virtual_ip: true
+
+        time_machine:
+          name: TM2
+          desc: TM-desc
+          sla:
+            name: "<sla-name>"
+          schedule: 
+            daily: "11:10:02"
+            weekly: WEDNESDAY
+            monthly: 4
+            quaterly: JANUARY
+            log_catchup: 30
+            snapshots_per_day: 2
+          clusters:
+            - name: "<add-clusters-to-timemachine>"
+        tags:
+          ansible-databases: "ha-instance-dbs"
+        
+        automated_patching:
+          maintenance_window:
+            name: "<maintenance-window-name>"
+          tasks:
+            - type: "OS_PATCHING"
+              pre_task_cmd: "ls"
+              post_task_cmd: "ls -a"
+            - type: "DB_PATCHING"
+              pre_task_cmd: "ls -l"
+              post_task_cmd: "ls -F"
+
+      register: result
+    
+    - debug:
+        msg: "{{result}}"

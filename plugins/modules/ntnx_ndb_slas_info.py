@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_slas_info
 short_description: info module for ndb slas
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get sla info'
 options:
       name:
@@ -20,10 +20,10 @@ options:
         type: str
       uuid:
         description:
-            - sla id
+            - sla uuid
         type: str
 extends_documentation_fragment:
-    - nutanix.ncp.ntnx_ndb_base_module
+    - nutanix.ncp.ntnx_ndb_info_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)

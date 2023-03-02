@@ -1,0 +1,45 @@
+---
+- name: NDB cluster creation
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+        
+    - name: NDB cluster creation
+      ntnx_ndb_clusters:
+        name: "{{cluster.name}}"
+        desc: "{{cluster.desc}}"
+        name_prefix: "{{cluster.name_prefix}}"
+        cluster_ip: "{{cluster.cluster_ip}}"
+        cluster_credentials:
+          username: "{{cluster_credentials.username}}"
+          password: "{{cluster_credentials.password}}"
+        agent_network:
+          dns_servers:
+            - "{{agent_network.dns_servers[0]}}"
+            - "{{agent_network.dns_servers[1]}}"
+          ntp_servers:
+            - "{{agent_network.ntp_servers[0]}}"
+            - "{{agent_network.ntp_servers[1]}}"
+            - "{{agent_network.ntp_servers[2]}}"
+            - "{{agent_network.ntp_servers[3]}}"
+        vlan_access:
+          prism_vlan:
+            vlan_name: "{{prism_vlan.vlan_name}}"
+            vlan_type: "{{prism_vlan.vlan_type}}"
+            static_ip: "{{prism_vlan.static_ip}}"
+            gateway: "{{prism_vlan.gateway}}"
+            subnet_mask: "{{prism_vlan.subnet_mask}}"
+        storage_container: "{{storage_container.name}}"
+      register: output
+    
+    - debug:
+        msg: "{{output}}"
