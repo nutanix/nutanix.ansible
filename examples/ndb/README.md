@@ -10,7 +10,7 @@ Note: Access Control update and enabling multi-cluster in NDB is not yet support
 ## Usage
 Below we will discuss usage of various NDB modules.
 
-First, we need to configure NDB setup details in the plabook. This can be done either by using module_defaults or in each individual tasks.
+First, we need to configure NDB setup details in the playbook. This can be done either by using module_defaults or in each individual tasks.
 
 ```yaml
 ---
