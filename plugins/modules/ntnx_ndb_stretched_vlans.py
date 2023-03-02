@@ -57,7 +57,7 @@ EXAMPLES = r"""
      nutanix_password: <pass>
      validate_certs: false
      name:  test-vlan-name
-         vlans:
+     vlans:
              - "00000000-0000-0000-0000-000000000000"
              - "00000000-0000-0000-0000-000000000000"
    register: result
@@ -69,7 +69,7 @@ EXAMPLES = r"""
      nutanix_password: <pass>
      validate_certs: false
      stretched_vlan_uuid: "<vlan-uuid>"
-         vlans:
+     vlans:
              - "00000000-0000-0000-0000-000000000000"
              - "00000000-0000-0000-0000-000000000000"
    register: result
