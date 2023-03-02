@@ -41,30 +41,30 @@ For example, playbook task to register AHV cluster in NDB setup is :
 ```yaml
   - name: NDB cluster registration
     ntnx_ndb_clusters:
-    name: "<name>"
-    desc: "<description>"
-    name_prefix: "<prefix_for_agent_vm>"
-    cluster_ip: "<cluster's_ip_address>"
-    cluster_credentials:
-        username: "<username>"
-        password: "<password>"
-    agent_network:
-        dns_servers:
-        - "<dns_ip1>"
-        - "<dns_ip2>"
-        ntp_servers:
-        - "<ntp_server_address1>"
-        - "<ntp_server_address1>"
-        - "<ntp_server_address1>"
-        - "<ntp_server_address1>"
-    vlan_access:
-        prism_vlan:
-            vlan_name: "<vlan_name_for_agent_vm>"
-            vlan_type: "<vlan_type>"
-            static_ip: "<ip_address_for_agent_vm>"
-            gateway: "<vlan_gateway>"
-            subnet_mask: "<subnet_mask>"
-    storage_container: "<storage_container_name>"
+        name: "<name>"
+        desc: "<description>"
+        name_prefix: "<prefix_for_agent_vm>"
+        cluster_ip: "<cluster's_ip_address>"
+        cluster_credentials:
+            username: "<username>"
+            password: "<password>"
+        agent_network:
+            dns_servers:
+                - "<dns_ip1>"
+                - "<dns_ip2>"
+            ntp_servers:
+                - "<ntp_server_address1>"
+                - "<ntp_server_address1>"
+                - "<ntp_server_address1>"
+                - "<ntp_server_address1>"
+        vlan_access:
+            prism_vlan:
+                vlan_name: "<vlan_name_for_agent_vm>"
+                vlan_type: "<vlan_type>"
+                static_ip: "<ip_address_for_agent_vm>"
+                gateway: "<vlan_gateway>"
+                subnet_mask: "<subnet_mask>"
+        storage_container: "<storage_container_name>"
     register: output
 ```
 
