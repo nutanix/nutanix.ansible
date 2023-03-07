@@ -130,7 +130,7 @@ class ImageNodes(Foundation):
                 cluster_spec["hypervisor_ntp_servers"] = self._list2str(
                     cluster.get("hypervisor_ntp_servers")
                 )
-            
+
             if cluster.get("timezone"):
                 cluster_spec["timezone"] = cluster.get("timezone")
 
