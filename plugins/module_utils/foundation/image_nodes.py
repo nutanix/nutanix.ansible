@@ -111,33 +111,36 @@ class ImageNodes(Foundation):
         payload["blocks"] = _blocks
         return payload, None
 
-    def _build_spec_cluster(self, payload, param):
-        clusters = []
-        for cluster in param:
+    def _build_spec_cluster(self, payload, clusters):
+        cluster_specs = []
+        for cluster in clusters:
             cluster_spec = self._get_default_cluster_spec(cluster)
             cluster_spec["cluster_name"] = cluster.get("name")
             cluster_spec["cluster_external_ip"] = cluster.get("cvm_vip", None)
 
-            if cluster_spec.get("cvm_ntp_servers"):
+            if cluster.get("cvm_ntp_servers"):
                 cluster_spec["cvm_ntp_servers"] = self._list2str(
                     cluster.get("cvm_ntp_servers")
                 )
-            if cluster_spec.get("cvm_dns_servers"):
+            if cluster.get("cvm_dns_servers"):
                 cluster_spec["cvm_dns_servers"] = self._list2str(
                     cluster.get("cvm_dns_servers")
                 )
-            if cluster_spec.get("hypervisor_ntp_servers"):
+            if cluster.get("hypervisor_ntp_servers"):
                 cluster_spec["hypervisor_ntp_servers"] = self._list2str(
                     cluster.get("hypervisor_ntp_servers")
                 )
+            
+            if cluster.get("timezone"):
+                cluster_spec["timezone"] = cluster.get("timezone")
 
             cluster_spec["cluster_members"] = cluster.get("cluster_members")
 
-            if len(cluster_spec["cluster_members"]) == 1:
+            if len(cluster["cluster_members"]) == 1:
                 cluster_spec["single_node_cluster"] = True
 
-            clusters.append(cluster_spec)
-        payload["clusters"] = clusters
+            cluster_specs.append(cluster_spec)
+        payload["clusters"] = cluster_specs
         return payload, None
 
     def _build_spec_hypervisor_iso(self, payload, value):
