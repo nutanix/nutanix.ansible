@@ -5,15 +5,25 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 from .groups import Groups
+from ..utils import create_filter_criteria_string
 
 # Helper functions
 
 
-def get_dvs_uuid(config, module):
+def get_dvs_uuid(config, module, cluster_uuid=None):
     if "name" in config:
         groups = Groups(module)
         name = config["name"]
-        uuid = groups.get_uuid(value=name, entity_type="distributed_virtual_switch")
+        filters = {
+            "name": name,
+            "cluster_configuration_list.cluster_uuid": cluster_uuid,
+        }
+
+        data = {
+            "entity_type": "distributed_virtual_switch",
+            "filter_criteria": create_filter_criteria_string(filters),
+        }
+        uuid = groups.get_uuid(data=data)
         if not uuid:
             error = "Virtual Switch {0} not found.".format(name)
             return None, error
