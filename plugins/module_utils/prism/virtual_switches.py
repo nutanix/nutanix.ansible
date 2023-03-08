@@ -4,8 +4,8 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-from .groups import Groups
 from ..utils import create_filter_criteria_string
+from .groups import Groups
 
 # Helper functions
 
