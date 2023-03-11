@@ -102,8 +102,10 @@ options:
               apptype_filter_by_category:
                 description: A category key and value.
                 type: dict
-              apptier:
-                description: A category value.
+              apptiers:
+                description: 
+                  - List of AppTier category values
+                  - C(apptier) is deprecated
                 type: str
               adgroup:
                 description:
