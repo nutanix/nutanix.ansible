@@ -1105,7 +1105,7 @@ def get_module_spec():
     categories_spec = dict(
         apptype=dict(type="str"),
         apptype_filter_by_category=dict(type="dict"),
-        apptier=dict(type="str"),
+        apptiers=dict(type="list", elements="str"),
         adgroup=dict(type="str"),
     )
 
