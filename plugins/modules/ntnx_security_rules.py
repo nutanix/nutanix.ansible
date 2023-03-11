@@ -103,7 +103,7 @@ options:
                 description: A category key and value.
                 type: dict
               apptiers:
-                description: 
+                description:
                   - List of AppTier category values
                   - C(apptier) is deprecated
                 type: str
@@ -360,7 +360,7 @@ options:
                 description: A category key and value.
                 type: dict
               apptiers:
-                description: 
+                description:
                   - List of AppTier category values
                   - C(apptier) is deprecated
                 type: str
@@ -617,7 +617,7 @@ options:
                 description: A category key and value.
                 type: dict
               apptiers:
-                description: 
+                description:
                   - List of AppTier category values
                   - C(apptier) is deprecated
                 type: str
