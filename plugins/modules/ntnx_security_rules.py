@@ -106,7 +106,8 @@ options:
                 description:
                   - List of AppTier category values
                   - C(apptier) is deprecated
-                type: str
+                type: list
+                elements: str
               adgroup:
                 description:
                     - A category value.
@@ -363,7 +364,8 @@ options:
                 description:
                   - List of AppTier category values
                   - C(apptier) is deprecated
-                type: str
+                type: list
+                elements: str
               adgroup:
                 description:
                     - A category value.
@@ -620,7 +622,8 @@ options:
                 description:
                   - List of AppTier category values
                   - C(apptier) is deprecated
-                type: str
+                type: list
+                elements: str
               adgroup:
                 description:
                     - A category value.
