@@ -243,11 +243,6 @@ def get_module_spec():
 
     module_args = dict(
         volume_group_uuid=dict(type="str"),
-        # kind=dict(type="str", default="volume_group"),
-        # sort_order=dict(type="str"),
-        # sort_attribute=dict(type="str"),
-        # offset=dict(type="int", default=0),
-        # length=dict(type="int", default=10),
     )
 
     return module_args
@@ -263,9 +258,7 @@ def get_volume_group(module, result):
 
 def get_volume_groups(module, result):
     volume_group = VolumeGroup(module)
-    spec, error = volume_group.get_info_spec()
 
-    # resp = volume_group.list(spec)
     resp = volume_group.read()
 
     result["response"] = resp
