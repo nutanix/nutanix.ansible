@@ -328,6 +328,7 @@ def update_volume_group(module, result):
     vg_disks = module.params.get("disks")
     vg_vms = module.params.get("vms")
     vg_clients = module.params.get("clients")
+    result["nothing_to_change"] = True
     if not volume_group_uuid:
         result["error"] = "Missing parameter volume_group_uuid in playbook"
         module.fail_json(msg="Failed updating volume_group", **result)
@@ -558,7 +559,7 @@ def check_for_idempotency(old_spec, update_spec):
     for key, value in update_spec.items():
         if key == "enabledAuthentications" and value != "NONE":
             if old_spec.get(key):
-                False
+                return False
         elif old_spec.get(key) != value:
             return False
 
@@ -590,7 +591,7 @@ def run_module():
         "response": None,
         "volume_group_uuid": None,
         "warning": [],
-        "nothing_to_change": True,
+        "nothing_to_change": False,
     }
     state = module.params["state"]
     if state == "absent":
