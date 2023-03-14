@@ -96,3 +96,4 @@ action_groups:
   - ntnx_ndb_maintenance_windows_info
   - ntnx_ndb_slas
   - ntnx_volume_groups
+  - ntnx_volume_groups_info

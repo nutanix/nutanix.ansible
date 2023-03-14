@@ -11,21 +11,16 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_volume_groups_info
 short_description: volume_group info module
-version_added: 1.0.0
+version_added: 1.9.0
 description: 'Get volume_group info'
 options:
-    kind:
-      description:
-        - The kind name
-      type: str
-      default: volume_group
     volume_group_uuid:
         description:
             - volume_group UUID
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_info
+      # - nutanix.ncp.ntnx_info
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -268,7 +263,6 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        # required_together=[("sort_order", "sort_attribute")],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}

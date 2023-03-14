@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_volume_groups
 short_description: volume_groups module which suports volume_groups CRUD operations
-version_added: 1.4.0
+version_added: 1.9.0
 description: 'Create, Update, Delete volume_group'
 options:
   state:
