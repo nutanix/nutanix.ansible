@@ -1,0 +1,187 @@
+---
+# Summary:
+# This playbook will perform below cases:
+#   1. Creation of software profile
+#   2. Update software profile
+#   3. Create, update and delete version
+#   4. Publish, unpublish and deprecate profile
+#   5. Replicate profiles to multi clusters
+#   6. Delete of profile
+- name: Create software profiles
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+    - name: create software profile create spec
+      check_mode: yes
+      ntnx_ndb_profiles:
+        name: "{{profile1_name}}"
+        desc: "{{profile1_name}}-desc"
+        type: "software"
+        database_type: "postgres"
+        software:
+          topology: "cluster"
+          name: "v1.0"
+          desc: "v1.0-desc"
+          notes:
+            os: "os_notes"
+            db_software: "db_notes"
+          db_server_vm:
+            name: "{{db_server_vm.name}}"
+        clusters:
+          - name: "<cluster1-name>"
+          - uuid: "<cluster2-uuid>"
+      register: result
+
+    - name: create software profile with base version and cluster instance topology. Replicate to multiple clusters
+      ntnx_ndb_profiles:
+        name: "{{profile1_name}}-replicated"
+        desc: "{{profile1_name}}-desc-replicated"
+        type: "software"
+        database_type: "postgres"
+        software:
+          topology: "cluster"
+          name: "v1.0"
+          desc: "v1.0-desc"
+          notes:
+            os: "os_notes"
+            db_software: "db_notes"
+          db_server_vm:
+            uuid: "{{db_server_vm.uuid}}"
+        clusters:
+          - name: "<cluster1-name>"
+          - uuid: "<cluster2-uuid>"
+      register: result
+
+    - name: create software profile with base version and single instance topology
+      ntnx_ndb_profiles:
+        name: "{{profile2_name}}"
+        desc: "{{profile2_name}}-desc"
+        type: "software"
+        database_type: "postgres"
+        software:
+          topology: "single"
+          name: "v1.0"
+          desc: "v1.0-desc"
+          notes:
+            os: "os_notes"
+            db_software: "db_notes"
+          db_server_vm:
+            uuid: "{{db_server_vm.uuid}}"
+        clusters:
+          - name: "<cluster1-name>"
+      register: result
+
+    - name: update software profile
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        name: "{{profile1_name}}-updated1"
+        desc: "{{profile1_name}}-desc-updated"
+      register: result
+
+    - name: create software profile version spec
+      check_mode: yes
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        database_type: "postgres"
+        software:
+          name: "v2.0"
+          desc: "v2.0-desc"
+          notes:
+            os: "os_notes for v2"
+            db_software: "db_notes for v2"
+          db_server_vm:
+            name: "{{db_server_vm.name}}"
+
+      register: result
+
+    - name: create software profile version
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        database_type: "postgres"
+        software:
+          name: "v2.0"
+          desc: "v2.0-desc"
+          notes:
+            os: "os_notes for v2"
+            db_software: "db_notes for v2"
+          db_server_vm:
+            uuid: "{{db_server_vm.uuid}}"
+
+      register: result
+
+    - name: create spec for update software profile version
+      check_mode: yes
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        database_type: "postgres"
+        software:
+          version_uuid: "{{result.version_uuid}}"
+          name: "v2.0-updated"
+          desc: "v2.0-desc-updated"
+
+      register: result
+
+    - name: update software profile version
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        database_type: "postgres"
+        software:
+          version_uuid: "{{result.version_uuid}}"
+          name: "v2.0-updated"
+          desc: "v2.0-desc-updated"
+
+      register: result
+
+    - name: publish software profile version
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        software:
+          version_uuid: "{{version_uuid}}"
+          publish: True
+      register: result
+
+    - name: unpublish software profile version
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        software:
+          version_uuid: "{{version_uuid}}"
+          publish: false
+      register: result
+
+    - name: deprecate software profile version
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        software:
+          version_uuid: "{{version_uuid}}"
+          deprecate: True
+      register: result
+
+    - name: delete software profile version
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        software:
+          version_uuid: "{{version_uuid}}"
+          state: "absent"
+      register: result
+
+    - name: replicate software profile
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        clusters:
+          - name: "{{cluster.cluster2.name}}"
+      register: result
+
+    - name: delete software profile
+      ntnx_ndb_profiles:
+        profile_uuid: "{{profile_uuid}}"
+        state: "absent"      
+      register: result

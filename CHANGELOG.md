@@ -1,3 +1,44 @@
+## v1.8.0 (28 Feb 2022)
+
+**Features**
+
+**Nutanix Database Service (Formerly Era)**
+
+  - Ansible module for clusters info
+  - Ansible module for clusters
+  - Ansible module for vlans
+  - Ansible module for vlans info
+  - Ansible module for stretched vlans
+  - Ansible module for profiles
+  - Ansible module for profiles info
+  - Ansible module for slas
+  - Ansible module for slas info
+  - Ansible module for tags
+  - Ansible module for database instances
+  - Ansible module for database instance registration
+  - Ansible module for database instances info
+  - Ansible module for database server vms
+  - Ansible module for database server vms info
+  - Ansible module for database server vm registration
+  - Ansible module for time machine clusters
+  - Ansible module for time machines info
+  - Ansible module for authorization of database server vm with time machines
+  - Ansible module for database clones
+  - Ansible module for database clones info
+  - Ansible module for database clones refresh
+  - Ansible module for snapshots info
+  - Ansible module for database snapshots
+  - Ansible module for replicating database snapshots
+  - Ansible module for log catchups
+  - Ansible module for database restore
+  - Ansible module for database scale
+  - Ansible module for linked databases
+  - Ansible module for maintenance windows
+  - Ansible module for maintenance windows info
+  - Ansible module for maintenance tasks
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.7.0...v1.8.0)
+
 ## v1.8.0-beta.1 (20 Oct 2022)
 
 **Features**

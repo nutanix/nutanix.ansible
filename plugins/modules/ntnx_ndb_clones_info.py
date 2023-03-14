@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_clones_info
 short_description: info module for database clones
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get clone info'
 options:
       name:
@@ -23,7 +23,7 @@ options:
             - clone id
         type: str
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_ndb_base_module
+      - nutanix.ncp.ntnx_ndb_info_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -302,7 +302,7 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.clones import Clone  # noqa: E402
+from ..module_utils.ndb.database_clones import DatabaseClone  # noqa: E402
 
 
 def get_module_spec():
@@ -316,7 +316,7 @@ def get_module_spec():
 
 
 def get_clone(module, result):
-    clone = Clone(module)
+    clone = DatabaseClone(module)
     if module.params.get("name"):
         name = module.params["name"]
         resp, err = clone.get_clone(name=name)
@@ -332,7 +332,7 @@ def get_clone(module, result):
 
 
 def get_clones(module, result):
-    clone = Clone(module)
+    clone = DatabaseClone(module)
 
     resp = clone.read()
 

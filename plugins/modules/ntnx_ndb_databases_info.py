@@ -11,8 +11,10 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_databases_info
 short_description: info module for ndb database instances
-version_added: 1.8.0-beta.1
-description: 'Get database instance info'
+version_added: 1.8.0
+description:
+    - Get database instance info
+    - If name or uuid is not given then it will fetch all database instances
 options:
       name:
         description:
@@ -20,10 +22,45 @@ options:
         type: str
       uuid:
         description:
-            - database id
+            - database instance uuid
         type: str
+      filters:
+        description:
+            - filters for database instance info
+        type: dict
+        suboptions:
+            detailed:
+                description:
+                    - get detailed response
+                type: bool
+            load_dbserver_cluster:
+                description:
+                    - load db serverv cluster in response
+                type: bool
+            order_by_dbserver_cluster:
+                description:
+                    - order response by db server cluster
+                type: bool
+            order_by_dbserver_logical_cluster:
+                description:
+                    - order response by db server logical cluster
+                type: bool
+            value:
+                description:
+                    - value for given C(value_type)
+                type: str
+            value_type:
+                description:
+                    - value type for given C(value)
+                    - filter response based on given value type and value
+                type: str
+                choices: ["ip","name","database-name"]
+            time_zone:
+                description:
+                    - timezone related to C(pitr_timestamp)
+                type: str
 extends_documentation_fragment:
-    - nutanix.ncp.ntnx_ndb_base_module
+    - nutanix.ncp.ntnx_ndb_info_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -58,6 +95,13 @@ EXAMPLES = r"""
     uuid: "<uuid of database>"
   register: result
 
+- name: Get era databases using its id and detailed response
+  ntnx_ndb_databases_info:
+    filters:
+      detailed: True
+    uuid: "<database_uuid>"
+  register: result
+  no_log: true
 """
 RETURN = r"""
 response:
@@ -660,27 +704,51 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.databases import Database  # noqa: E402
+from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
+from ..module_utils.utils import format_filters_map  # noqa: E402
 
 
 def get_module_spec():
 
+    filters_spec = dict(
+        detailed=dict(type="bool"),
+        load_dbserver_cluster=dict(type="bool"),
+        order_by_dbserver_cluster=dict(type="bool"),
+        order_by_dbserver_logical_cluster=dict(type="bool"),
+        value=dict(type="str"),
+        value_type=dict(
+            type="str",
+            choices=[
+                "ip",
+                "name",
+                "database-name",
+            ],
+        ),
+        time_zone=dict(type="str"),
+    )
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
 
 
 def get_database(module, result):
-    database = Database(module)
+    database = DatabaseInstance(module)
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
+
     if module.params.get("name"):
         name = module.params["name"]
-        resp, err = database.get_database(name=name)
+        resp, err = database.get_database(name=name, query=query_params)
     else:
         uuid = module.params["uuid"]
-        resp, err = database.get_database(uuid=uuid)
+        resp, err = database.get_database(uuid=uuid, query=query_params)
 
     if err:
         result["error"] = err
@@ -689,9 +757,11 @@ def get_database(module, result):
 
 
 def get_databases(module, result):
-    database = Database(module)
+    database = DatabaseInstance(module)
+    query_params = module.params.get("filters")
+    query_params = format_filters_map(query_params)
 
-    resp = database.read()
+    resp = database.read(query=query_params)
 
     result["response"] = resp
 

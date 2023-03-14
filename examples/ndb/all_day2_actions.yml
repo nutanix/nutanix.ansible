@@ -1,0 +1,131 @@
+---
+# Summary:
+# This playbook will do:
+#   1. Create snapshot
+#   2. Update and delete snapshots
+#   3. Perform log catchup on database
+#   4. Restore database to previously created snapshot and latest snapshot
+#   5. Scale database
+#   6. Add/Remove linked databases
+
+
+- name: perform day2 actions
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+
+    ############################################ snapshots ###########################################
+
+    - name: create snapshot with minimal spec
+      ntnx_ndb_database_snapshots:
+        name: "{{snapshot_name}}1"
+        time_machine_uuid: "{{time_machine_uuid}}"
+      register: result
+
+    - name: create snapshot with expiry
+      ntnx_ndb_database_snapshots:
+        name: "{{snapshot_name}}2"
+        time_machine_uuid: "{{time_machine_uuid}}"
+        expiry_days: 4 
+      register: result
+
+    - set_fact:
+        snapshot_uuid: "{{result.snapshot_uuid}}"
+
+    - name: rename snapshot
+      ntnx_ndb_database_snapshots: 
+        snapshot_uuid: "{{snapshot_uuid}}"
+        name: "{{snapshot_name}}2-updated"
+      register: result
+
+    - name: update expiry
+      ntnx_ndb_database_snapshots:
+        snapshot_uuid: "{{snapshot_uuid}}"
+        expiry_days: 5
+      register: result
+
+    - name: remove expiry schedule
+      ntnx_ndb_database_snapshots: 
+        snapshot_uuid: "{{snapshot_uuid}}"
+        remove_expiry: true
+      register: result
+
+    - name: Add expiry schedule and rename
+      ntnx_ndb_database_snapshots: 
+        snapshot_uuid: "{{snapshot_uuid}}"
+        name: "{{snapshot_name}}2"
+        expiry_days: 6
+      register: result
+
+
+    ############################################ log catchup ######################################
+    - name: perform log catchup for restore
+      ntnx_ndb_database_log_catchup:
+        time_machine_uuid: "{{time_machine_uuid}}"
+        for_restore: true
+      register: result
+
+    - name: perform log catchup
+      ntnx_ndb_database_log_catchup:
+        time_machine_uuid: "{{time_machine_uuid}}"
+        for_restore: true
+
+      register: result
+
+    ########################################### restore ###########################################
+
+    - name: perform using pitr timestamp
+      ntnx_ndb_database_restore:
+        db_uuid: "{{db_uuid}}"
+        pitr_timestamp: "2023-01-02 11:02:22"
+        timezone: "UTC"
+      register: result
+
+    - name: perform restore using latest snapshot
+      ntnx_ndb_database_restore:
+        db_uuid: "{{db_uuid}}"
+        snapshot_uuid: "{{snapshot_uuid}}"
+      register: result
+
+    - name: perform restore using snapshot uuid
+      ntnx_ndb_database_restore:
+        db_uuid: "{{db_uuid}}"
+        snapshot_uuid: "{{snapshot_uuid}}"
+      register: result
+  
+    ########################################### scaling ###########################################
+
+    - name: extend database storage for scaling database
+      ntnx_ndb_database_scale:
+        db_uuid: "{{db_uuid}}"
+        storage_gb: 2
+        pre_update_cmd: "ls"
+        post_update_cmd: "ls -a"
+
+      register: result
+
+    ############################################ add / remove linked databases ###########################################
+
+    - name: add databases in database instance
+      ntnx_ndb_linked_databases:
+        db_instance_uuid: "{{db_uuid}}"
+        databases: 
+          - test1
+          - test2
+      register: result
+
+    - name: remove databases in database instance
+      ntnx_ndb_linked_databases:
+        state: "absent"
+        db_instance_uuid: "{{db_uuid}}"
+        database_uuid: "{{linked_databases.test1}}" 
+      register: result

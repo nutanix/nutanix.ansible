@@ -11,8 +11,11 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_databases
 short_description: Module for create, update and delete of single instance database. Currently, postgres type database is officially supported.
-version_added: 1.8.0-beta.1
-description: Module for create, update and delete of single instance database in Nutanix Database Service
+version_added: 1.8.0
+description:
+  - Module for create, update and delete of single instance database in Nutanix Database Service
+  - During delete, by default it will only unregister database instance. Add allowed params to change it.
+  - Currently, single and HA postgres instance is supported by this module
 options:
   db_uuid:
     description:
@@ -58,6 +61,12 @@ options:
             type: str
             description: name of vm
             required: true
+          desc:
+            type: str
+            description: description of vm
+          ip:
+            type: str
+            description: assign IP address
           pub_ssh_key:
             type: str
             description: public ssh key for access to vm
@@ -151,6 +160,7 @@ options:
             description:
               - uuid of registered vm
               - mutually_exclusive with C(name)
+
   time_machine:
     description:
       - time machine details
@@ -181,7 +191,6 @@ options:
       schedule:
           type: dict
           description: schedule for taking snapshot
-          required: True
           suboptions:
             daily:
                 type: str
@@ -223,21 +232,50 @@ options:
         type: bool
         default: true
         description: enable/disable auto tuning of log drive
+      clusters:
+        type: list
+        elements: dict
+        description:
+          - clusters for data access management in time machine
+          - to be used for HA instance only
+        suboptions:
+            name:
+                type: str
+                description:
+                    - name of cluster
+                    - mutually_exclusive with C(uuid)
+            uuid:
+                type: str
+                description:
+                    - uuid of cluster
+                    - mutually_exclusive with C(name)
   postgres:
     type: dict
     description: action arguments for postgres type database
     suboptions:
+      archive_wal_expire_days:
+          type: str
+          description:
+            - archived write ahead logs expiry days
+            - only allowed for HA instance
+          default: "-1"
       listener_port:
           type: str
-          description: listener port for db
-          required: true
+          description:
+            - listener port for db
+            - required for both HA and single instance
+          default: "5432"
       db_name:
           type: str
-          description: initial database name
+          description:
+            - name of initial database added
+            - required for both HA and single instance
           required: true
       db_password:
           type: str
-          description: postgres database password
+          description:
+            - set postgres database password
+            - required for both HA and single instance
           required: true
       auto_tune_staging_drive:
           type: bool
@@ -254,10 +292,52 @@ options:
       cluster_database:
           type: bool
           default: false
-          description: if clustered database
+          description:
+            - this field is deprecated
+            - not required
+      patroni_cluster_name:
+          type: str
+          description:
+            - patroni cluster name
+            - required for HA instance
+      ha_proxy:
+          type: dict
+          description: HA proxy details, set it for HA instance
+          suboptions:
+                provision_virtual_ip:
+                    type: bool
+                    description: set for provision of virtual IP
+                    default: true
+                write_port:
+                    type: str
+                    description: port number for read/write request
+                    default: "5000"
+                read_port:
+                    type: str
+                    description: port number for read request
+                    default: "5001"
+      enable_synchronous_mode:
+          type: bool
+          default: false
+          description:
+            - set to enable synchronous replication
+            - allowed for HA instance
+      enable_peer_auth:
+          type: bool
+          default: false
+          description:
+            - set to enable peer authentication
+            - allowed for HA instance
+      type:
+          description:
+            - if its a HA or singe instance
+            - mandatory for creation
+          type: str
+          choices: ["single", "ha"]
+          default: "single"
       db_size:
           type: int
-          description: database instance size
+          description: database instance size, required for single and ha instance
           required: true
       pre_create_script:
           type: str
@@ -265,26 +345,251 @@ options:
           required: false
       post_create_script:
           type: str
-          description: commands to run after database instance creation
+          description: commands to run post database instance creation
           required: false
+  db_server_cluster:
+    description:
+      - configure db server cluster
+      - required when creating HA instance
+      - for postgres, max two HA proxy nodes are allowed
+      - for postgres, minimum three database nodes are required
+    type: dict
+    suboptions:
+        new_cluster:
+            description:
+                - configure new database server cluster
+            type: dict
+            required: true
+            suboptions:
+                name:
+                    description:
+                        - name of database server cluster
+                    type: str
+                    required: true
+                desc:
+                    description:
+                        - description of database server cluster
+                    type: str
+                vms:
+                    description:
+                        - list configuration of new vms/nodes to be part of database server cluster
+                    type: list
+                    elements: dict
+                    required: true
+                    suboptions:
+                        name:
+                              description:
+                                  - name of vm
+                              type: str
+                              required: true
+                        cluster:
+                          description:
+                            - cluster where they will be hosted
+                            - this will overide default cluster provided for all vms
+                          type: dict
+                          suboptions:
+                            name:
+                              type: str
+                              description:
+                                - name of cluster
+                                - mutually_exclusive with C(uuid)
+                            uuid:
+                              type: str
+                              description:
+                                - uuid of cluster
+                                - mutually_exclusive with C(name)
+                        network_profile:
+                          description:
+                            - network profile details
+                            - this will overide default network profile provided for all vms
+                          type: dict
+                          suboptions:
+                            name:
+                              type: str
+                              description:
+                                - name of profile
+                                - mutually_exclusive with C(uuid)
+                            uuid:
+                              type: str
+                              description:
+                                - uuid of profile
+                                - mutually_exclusive with C(name)
+                        compute_profile:
+                          description:
+                            - compute profile details for the node
+                            - this will overide default compute profile provided for all vms
+                          type: dict
+                          suboptions:
+                            name:
+                              type: str
+                              description:
+                                - name of profile
+                                - mutually_exclusive with C(uuid)
+                            uuid:
+                              type: str
+                              description:
+                                - uuid of profile
+                                - mutually_exclusive with C(name)
+                        role:
+                            description:
+                                - role of node/vm
+                            type: str
+                            choices: ["Primary", "Secondary"]
+                        node_type:
+                            description:
+                                - type of node
+                            type: str
+                            choices: ["database", "haproxy"]
+                            default: "database"
+                        archive_log_destination:
+                            description:
+                                - archive log destination
+                            type: str
+                        ip:
+                            description:
+                                - assign IP address to the vm
+                            type: str
+                password:
+                    description:
+                        - set password of above vms
+                    type: str
+                    required: true
+                pub_ssh_key:
+                    description:
+                        - public ssh key of user for vm access
+                    type: str
+                software_profile:
+                  description:
+                    - software profile details
+                  type: dict
+                  required: true
+                  suboptions:
+                    name:
+                      type: str
+                      description:
+                        - name of profile
+                        - mutually_exclusive with C(uuid)
+                    uuid:
+                      type: str
+                      description:
+                        - uuid of profile
+                        - mutually_exclusive with C(name)
+                    version_id:
+                      type: str
+                      description:
+                        - version id of software profile
+                        - by default latest version will be used
+                network_profile:
+                  description:
+                    - network profile details
+                  type: dict
+                  suboptions:
+                    name:
+                      type: str
+                      description:
+                        - name of profile
+                        - mutually_exclusive with C(uuid)
+                    uuid:
+                      type: str
+                      description:
+                        - uuid of profile
+                        - mutually_exclusive with C(name)
+                compute_profile:
+                  description:
+                    - compute profile details for all the vms
+                  type: dict
+                  suboptions:
+                    name:
+                      type: str
+                      description:
+                        - name of profile
+                        - mutually_exclusive with C(uuid)
+                    uuid:
+                      type: str
+                      description:
+                        - uuid of profile
+                        - mutually_exclusive with C(name)
+                cluster:
+                    description:
+                        - cluster on which all vms will be hosted
+                    type: dict
+                    required: true
+                    suboptions:
+                        name:
+                            type: str
+                            description:
+                                - name of cluster
+                                - mutually_exclusive with C(uuid)
+                        uuid:
+                            type: str
+                            description:
+                                - uuid of cluster
+                                - mutually_exclusive with C(name)
+                ips:
+                    description:
+                        - set IP address i.e. virtual IP for db server cluster
+                    type: list
+                    elements: dict
+                    suboptions:
+                        cluster:
+                            description:
+                                - ndb cluster details
+                            type: dict
+                            required: true
+                            suboptions:
+                                name:
+                                    type: str
+                                    description:
+                                        - name of cluster
+                                        - mutually_exclusive with C(uuid)
+                                uuid:
+                                    type: str
+                                    description:
+                                        - uuid of cluster
+                                        - mutually_exclusive with C(name)
+                        ip:
+                            description:
+                                - ip address
+                            type: str
+                            required: true
   tags:
     type: dict
     description:
       - dict of tag name as key and tag value as value
       - update allowed
+      - during update, given input will override existing tags
   auto_tune_staging_drive:
     type: bool
+    default: true
     description:
       - enable/disable auto tuning of stage drive
       - enabled by default
   soft_delete:
     type: bool
     description:
-      - only unregister from era in delete process
+      - to be used with C(state) = absent
+      - unregister from ndb without any process
       - if not provided, database instance from db server VM will be deleted
+  delete_db_from_vm:
+    type: bool
+    description:
+      - to be used with C(state) = absent
+      - delete database data from vm
   delete_time_machine:
     type: bool
-    description: delete time machine as well in delete process
+    description:
+      - to be used with C(state) = absent
+      - delete time machine as well in delete process
+  delete_db_server_vms:
+    type: bool
+    description:
+      - to be used with C(state) = absent
+      - this will delete DB server vms or DB server cluster of database instance
+  unregister_db_server_vms:
+    type: bool
+    description:
+      - to be used with C(state) = absent
+      - this will unregister DB server vms or DB server cluster of database instance
   timeout:
     description:
         - timeout for polling database operations in seconds
@@ -292,55 +597,190 @@ options:
     type: int
     required: false
     default: 2100
+  automated_patching:
+    description:
+      - configure automated patching using maintenance windows
+    type: dict
+    suboptions:
+      maintenance_window:
+        description:
+            - maintenance window details
+        type: dict
+        suboptions:
+            name:
+                description:
+                    - name of maintenance window
+                    - mutually exclusive with C(uuid)
+                type: str
+            uuid:
+                description:
+                    - uuid of maintenance window
+                    - mutually exclusive with C(name)
+                type: str
+      tasks:
+          description:
+              - list of maintenance pre-post tasks
+          type: list
+          elements: dict
+          suboptions:
+              type:
+                  description:
+                      - type of patching
+                  type: str
+                  choices: ["OS_PATCHING", "DB_PATCHING"]
+              pre_task_cmd:
+                  description:
+                      - full os command which needs to run before patching task in db server vm
+                  type: str
+              post_task_cmd:
+                  description:
+                      - full os command which needs to run after patching task in db server vm
+                  type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_ndb_base_module
   - nutanix.ncp.ntnx_operations
 author:
   - Prem Karat (@premkarat)
   - Pradeepsingh Bhati (@bhati-pradeep)
+  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
-- name: Create postgres database instance using with new vm
+- name: create single instance postgres database on new db server vm
   ntnx_ndb_databases:
-    name: "test"
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
 
     db_params_profile:
-      name: "TEST_PROFILE"
+      name: "{{db_params_profile.name}}"
 
     db_vm:
       create_new_server:
-        name: "test-vm"
-        password: "test-vm-password"
+        ip: "{{ vm_ip }}"
+        name: "{{ vm1_name }}"
+        desc: "vm for db server"
+        password: "{{ vm_password }}"
         cluster:
-          name: "EraCluster"
+          name: "{{cluster.cluster1.name}}"
         software_profile:
-          name: "TEST_SOFTWARE_PROFILE"
+          name: "{{ software_profile.name }}"
         network_profile:
-          name: "TEST_NETWORK_PROFILE"
+          name: "{{ static_network_profile.name }}"
         compute_profile:
-          name: "TEST_COMPUTE_PROFILE"
-        pub_ssh_key: "<public-ssh-key>"
+          name: "{{ compute_profile.name }}"
+        pub_ssh_key: "{{ public_ssh_key }}"
 
     postgres:
       listener_port: "5432"
-      db_name: ansible_test
-      db_password: "postgres-test-password"
+      db_name: testAnsible
+      db_password: "{{ vm_password }}"
       db_size: 200
+      type: "single"
 
     time_machine:
-      name: POSTGRES_SERVER_PRAD_TM_1
+      name: TM1
+      desc: TM-desc
       sla:
-        name: "TEST_SLA"
+        name: "{{ sla.name }}"
       schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
         quaterly: JANUARY
-        yearly: FEBRUARY
         log_catchup: 30
         snapshots_per_day: 2
-  register: db
+    tags:
+      ansible-databases: "single-instance-dbs"
+
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+  register: result
+
+- name: create HA instance postgres database with multicluster vms
+  ntnx_ndb_databases:
+    timeout: 5400
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
+
+    db_params_profile:
+      name: "{{postgres_ha_profiles.db_params_profile.name}}"
+
+    db_server_cluster:
+      new_cluster:
+        name: "{{cluster1_name}}"
+        cluster:
+          name: "{{cluster.cluster1.name}}"
+        software_profile:
+          name: "{{ postgres_ha_profiles.software_profile.name }}"
+        network_profile:
+          name: "{{ postgres_ha_profiles.multicluster_network_profile.name }}"
+        compute_profile:
+          name: "{{ postgres_ha_profiles.compute_profile.name }}"
+        password: "{{vm_password}}"
+        pub_ssh_key: "{{public_ssh_key}}"
+        vms:
+
+          - name: "{{cluster1_name}}-vm-1"
+            node_type: "database"
+            role: "Primary"
+
+          - name: "{{cluster1_name}}-vm-2"
+            node_type: "database"
+            role: "Secondary"
+
+          - name: "{{cluster1_name}}-vm-3"
+            cluster:
+              name: "{{cluster.cluster2.name}}"
+            node_type: "database"
+            role: "Secondary"
+
+    postgres:
+      type: "ha"
+      db_name: testAnsible
+      db_password: "{{ vm_password }}"
+      db_size: 200
+      patroni_cluster_name: "patroni_cluster"
+
+    time_machine:
+      name: TM1
+      desc: TM-desc
+      sla:
+        name: "{{ sla.name }}"
+      schedule:
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+      clusters:
+        - name: "{{cluster.cluster1.name}}"
+        - uuid: "{{cluster.cluster2.uuid}}"
+    tags:
+      ansible-databases: "ha-instance-dbs"
+
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+
+  register: result
 """
 
 RETURN = r"""
@@ -349,16 +789,11 @@ response:
   returned: always
   type: dict
   sample: {
-            "accessLevel": null,
             "category": "DB_GROUP_IMPLICIT",
             "clone": false,
             "clustered": false,
-            "databaseClusterType": null,
-            "databaseGroupStateInfo": null,
-            "databaseName": "POSTGRES_DATABASE_ANSIBLE",
             "databaseNodes": [
                 {
-                    "accessLevel": null,
                     "databaseId": "e9374379-de51-4cc8-8d12-b1b6eb64d129",
                     "databaseStatus": "READY",
                     "dateCreated": "2022-10-19 18:49:25",
@@ -383,8 +818,6 @@ response:
                     "tags": []
                 }
             ],
-            "databaseStatus": "UNKNOWN",
-            "databases": null,
             "dateCreated": "2022-10-19 18:26:55",
             "dateModified": "2022-10-19 18:51:26",
             "dbserverLogicalClusterId": null,
@@ -429,8 +862,6 @@ response:
                 },
                 "secureInfo": {}
             },
-            "internal": false,
-            "lcmConfig": null,
             "linkedDatabases": [
                 {
                     "databaseName": "prad",
@@ -525,30 +956,7 @@ response:
                     "timeZone": null
                 }
             ],
-            "metadata": {
-                "baseSizeComputed": false,
-                "capabilityResetTime": null,
-                "createdDbservers": null,
-                "deregisterInfo": null,
-                "deregisteredWithDeleteTimeMachine": false,
-                "info": null,
-                "lastLogCatchUpForRestoreOperationId": null,
-                "lastRefreshTimestamp": null,
-                "lastRequestedRefreshTimestamp": null,
-                "logCatchUpForRestoreDispatched": false,
-                "originalDatabaseName": null,
-                "pitrBased": false,
-                "provisionOperationId": "d9b1924f-a768-4cd8-886b-7a69e61f5b89",
-                "refreshBlockerInfo": null,
-                "registeredDbservers": null,
-                "sanitised": false,
-                "secureInfo": null,
-                "sourceSnapshotId": null,
-                "stateBeforeRefresh": null,
-                "stateBeforeRestore": null,
-                "stateBeforeScaling": null,
-                "tmActivateOperationId": "40d6b3a3-4f57-4c17-9ba2-9279d2f247c2"
-            },
+            "provisionOperationId": "d9b1924f-a768-4cd8-886b-7a69e61f5b89",
             "metric": null,
             "name": "POSTGRES_DATABASE_ANSIBLE",
             "ownerId": "eac70dbf-22fb-462b-9498-949796ca1f73",
@@ -631,8 +1039,16 @@ import time  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.databases import Database  # noqa: E402
+from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
+from ..module_utils.ndb.db_server_cluster import DBServerCluster  # noqa: E402
+from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.ndb.maintenance_window import (  # noqa: E402
+    AutomatedPatchingSpec,
+    MaintenanceWindow,
+)
 from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.ndb.tags import Tag  # noqa: E402
+from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
@@ -644,11 +1060,22 @@ def get_module_spec():
     )
     mutually_exclusive = [("name", "uuid")]
     entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-    software_profile = dict(version_id=dict(type="str"))
-    software_profile.update(deepcopy(entity_by_spec))
+    automated_patching = deepcopy(
+        AutomatedPatchingSpec.automated_patching_argument_spec
+    )
+    software_profile = dict(
+        name=dict(type="str"), uuid=dict(type="str"), version_id=dict(type="str")
+    )
+
+    ha_proxy = dict(
+        provision_virtual_ip=dict(type="bool", default=True, required=False),
+        write_port=dict(type="str", default="5000", required=False),
+        read_port=dict(type="str", default="5001", required=False),
+    )
 
     new_server = dict(
         name=dict(type="str", required=True),
+        desc=dict(type="str", required=False),
         pub_ssh_key=dict(type="str", required=True, no_log=True),
         password=dict(type="str", required=True, no_log=True),
         cluster=dict(
@@ -675,6 +1102,7 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
+        ip=dict(type="str", required=False),
     )
 
     db_vm = dict(
@@ -685,6 +1113,83 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=False,
         ),
+    )
+
+    cluster_vm = dict(
+        name=dict(type="str", required=True),
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        network_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        compute_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        role=dict(type="str", choices=["Primary", "Secondary"], required=False),
+        node_type=dict(
+            type="str",
+            choices=["database", "haproxy"],
+            default="database",
+            required=False,
+        ),
+        archive_log_destination=dict(type="str", required=False),
+        ip=dict(type="str", required=False),
+    )
+    cluster_ip_info = dict(
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        ip=dict(type="str", required=True),
+    )
+    new_cluster = dict(
+        name=dict(type="str", required=True),
+        desc=dict(type="str", required=False),
+        vms=dict(type="list", elements="dict", options=cluster_vm, required=True),
+        password=dict(type="str", required=True, no_log=True),
+        pub_ssh_key=dict(type="str", required=False, no_log=True),
+        software_profile=dict(
+            type="dict",
+            options=software_profile,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        network_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        compute_profile=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
+        cluster=dict(
+            type="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=True,
+        ),
+        ips=dict(type="list", elements="dict", options=cluster_ip_info, required=False),
+    )
+
+    # TO-DO: use_registered_clusters for oracle, ms sql, etc.
+    db_server_cluster = dict(
+        new_cluster=dict(type="dict", options=new_cluster, required=True),
     )
 
     sla = dict(
@@ -711,18 +1216,33 @@ def get_module_spec():
             mutually_exclusive=mutually_exclusive,
             required=True,
         ),
-        schedule=dict(type="dict", options=schedule, required=True),
+        schedule=dict(type="dict", options=schedule, required=False),
         auto_tune_log_drive=dict(type="bool", required=False, default=True),
+        clusters=dict(
+            type="list",
+            elements="dict",
+            options=entity_by_spec,
+            mutually_exclusive=mutually_exclusive,
+            required=False,
+        ),
     )
 
     postgres = dict(
-        listener_port=dict(type="str", required=True),
+        type=dict(
+            type="str", choices=["single", "ha"], default="single", required=False
+        ),
+        listener_port=dict(type="str", default="5432", required=False),
         db_name=dict(type="str", required=True),
         db_password=dict(type="str", required=True, no_log=True),
         auto_tune_staging_drive=dict(type="bool", default=True, required=False),
         allocate_pg_hugepage=dict(type="bool", default=False, required=False),
         auth_method=dict(type="str", default="md5", required=False),
         cluster_database=dict(type="bool", default=False, required=False),
+        patroni_cluster_name=dict(type="str", required=False),
+        ha_proxy=dict(type="dict", options=ha_proxy, required=False),
+        enable_synchronous_mode=dict(type="bool", default=False, required=False),
+        archive_wal_expire_days=dict(type="str", default="-1", required=False),
+        enable_peer_auth=dict(type="bool", default=False, required=False),
     )
     postgres.update(deepcopy(default_db_arguments))
 
@@ -742,38 +1262,127 @@ def get_module_spec():
             mutually_exclusive=[("create_new_server", "use_registered_server")],
             required=False,
         ),
+        db_server_cluster=dict(
+            type="dict",
+            options=db_server_cluster,
+            required=False,
+        ),
         time_machine=dict(type="dict", options=time_machine, required=False),
         postgres=dict(type="dict", options=postgres, required=False),
         tags=dict(type="dict", required=False),
-        auto_tune_staging_drive=dict(type="bool", required=False),
+        auto_tune_staging_drive=dict(type="bool", default=True, required=False),
+        automated_patching=dict(
+            type="dict", options=automated_patching, required=False
+        ),
         soft_delete=dict(type="bool", required=False),
+        delete_db_from_vm=dict(type="bool", required=False),
         delete_time_machine=dict(type="bool", required=False),
+        unregister_db_server_vms=dict(type="bool", required=False),
+        delete_db_server_vms=dict(type="bool", required=False),
     )
     return module_args
 
 
-def create_instance(module, result):
-    _databases = Database(module)
+def get_provision_spec(module, result, ha=False):
 
+    # create database instance obj
+    db_instance = DatabaseInstance(module=module)
+
+    # get default spec
+    spec = db_instance.get_default_provision_spec()
+
+    if ha:
+        # populate DB server VM cluster related spec
+        db_server_cluster = DBServerCluster(module=module)
+        spec, err = db_server_cluster.get_spec(
+            old_spec=spec, db_instance_provision=True
+        )
+        if err:
+            result["error"] = err
+            err_msg = "Failed getting db server vm cluster spec for database instance"
+            module.fail_json(msg=err_msg, **result)
+    else:
+        # populate VM related spec
+        db_vm = DBServerVM(module=module)
+
+        provision_new_server = (
+            True if module.params.get("db_vm", {}).get("create_new_server") else False
+        )
+        use_registered_server = not provision_new_server
+
+        kwargs = {
+            "provision_new_server": provision_new_server,
+            "use_registered_server": use_registered_server,
+            "db_instance_provision": True,
+        }
+        spec, err = db_vm.get_spec(old_spec=spec, **kwargs)
+        if err:
+            result["error"] = err
+            err_msg = "Failed getting vm spec for database instance"
+            module.fail_json(msg=err_msg, **result)
+
+    # populate database engine related spec
+    spec, err = db_instance.get_db_engine_spec(spec, provision=True)
+    if err:
+        result["error"] = err
+        err_msg = "Failed getting database engine related spec for database instance"
+        module.fail_json(msg=err_msg, **result)
+
+    # populate database instance related spec
+    spec, err = db_instance.get_spec(old_spec=spec, provision=True)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed getting spec for database instance", **result)
+
+    # populate time machine related spec
+    time_machine = TimeMachine(module)
+    spec, err = time_machine.get_spec(old_spec=spec)
+    if err:
+        result["error"] = err
+        err_msg = "Failed getting spec for time machine for database instance"
+        module.fail_json(msg=err_msg, **result)
+
+    # populate tags related spec
+    tags = Tag(module)
+    spec, err = tags.get_spec(old_spec=spec, associate_to_entity=True, type="DATABASE")
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed getting spec for tags for database instance", **result
+        )
+
+    # configure automated patching only during create
+    if module.params.get("automated_patching") and not module.params.get("uuid"):
+
+        mw = MaintenanceWindow(module)
+        mw_spec, err = mw.get_spec(configure_automated_patching=True)
+        if err:
+            result["error"] = err
+            err_msg = "Failed getting spec for automated patching for new database  instance creation"
+            module.fail_json(msg=err_msg, **result)
+        spec["maintenanceTasks"] = mw_spec
+    return spec
+
+
+def create_instance(module, result):
+    db_instance = DatabaseInstance(module)
     name = module.params["name"]
-    uuid, err = _databases.get_uuid(name)
+    uuid, err = db_instance.get_uuid(name)
     if uuid:
         module.fail_json(
             msg="Database instance with given name already exists", **result
         )
 
-    spec, err = _databases.get_spec()
-    if err:
-        result["error"] = err
-        module.fail_json(
-            msg="Failed generating create database instance spec", **result
-        )
+    ha = False
+    if module.params.get("db_server_cluster"):
+        ha = True
 
+    spec = get_provision_spec(module, result, ha=ha)
     if module.check_mode:
         result["response"] = spec
         return
 
-    resp = _databases.create(data=spec)
+    resp = db_instance.provision(data=spec)
     result["response"] = resp
     result["db_uuid"] = resp["entityId"]
     db_uuid = resp["entityId"]
@@ -783,7 +1392,9 @@ def create_instance(module, result):
         operations = Operation(module)
         time.sleep(5)  # to get operation ID functional
         operations.wait_for_completion(ops_uuid)
-        resp = _databases.read(db_uuid)
+        query = {"detailed": True, "load-dbserver-cluster": True}
+        resp = db_instance.read(db_uuid, query=query)
+        db_instance.format_response(resp)
         result["response"] = resp
 
     result["changed"] = True
@@ -814,7 +1425,7 @@ def check_for_idempotency(old_spec, update_spec):
 
 
 def update_instance(module, result):
-    _databases = Database(module)
+    _databases = DatabaseInstance(module)
 
     uuid = module.params.get("db_uuid")
     if not uuid:
@@ -823,49 +1434,94 @@ def update_instance(module, result):
     resp = _databases.read(uuid)
     old_spec = _databases.get_default_update_spec(override_spec=resp)
 
-    update_spec, err = _databases.get_spec(old_spec=old_spec)
-
-    # due to field name changes
-    if update_spec.get("databaseDescription"):
-        update_spec["description"] = update_spec.pop("databaseDescription")
-
+    spec, err = _databases.get_spec(old_spec=old_spec, update=True)
     if err:
         result["error"] = err
         module.fail_json(
             msg="Failed generating update database instance spec", **result
         )
 
+    # populate tags related spec
+    if module.params.get("tags"):
+        tags = Tag(module)
+        spec, err = tags.get_spec(
+            old_spec=spec, associate_to_entity=True, type="DATABASE"
+        )
+        if err:
+            result["error"] = err
+            err_msg = "Failed getting spec for tags for updating database instance"
+            module.fail_json(msg=err_msg, **result)
+
     if module.check_mode:
-        result["response"] = update_spec
+        result["response"] = spec
         return
 
-    if check_for_idempotency(old_spec, update_spec):
+    if check_for_idempotency(old_spec, spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-    resp = _databases.update(data=update_spec, uuid=uuid)
+    _databases.update(data=spec, uuid=uuid)
+
+    query = {"detailed": True, "load-dbserver-cluster": True}
+    resp = _databases.read(uuid, query=query)
+    _databases.format_response(resp)
+
     result["response"] = resp
     result["db_uuid"] = uuid
     result["changed"] = True
 
 
+def delete_db_servers(module, result, database_info):
+    """
+    This method deletes the associated database server vms or cluster database delete
+    """
+    if module.params.get("unregister_db_server_vms") or module.params.get(
+        "delete_db_server_vms"
+    ):
+        db_servers = None
+        uuid = None
+        if database_info.get("clustered", False):
+            db_servers = DBServerCluster(module)
+            uuid = database_info.get("dbserverlogicalCluster", {}).get(
+                "dbserverClusterId"
+            )
+        else:
+            db_servers = DBServerVM(module)
+            database_nodes = database_info.get("databaseNodes")
+            if database_nodes:
+                uuid = database_nodes[0].get("dbserverId")
+
+        if not uuid:
+            module.fail_json(
+                msg="Failed fetching uuid of associated db server vm or db server cluster",
+            )
+
+        spec = db_servers.get_default_delete_spec(
+            delete=module.params.get("delete_db_server_vms", False)
+        )
+        resp = db_servers.delete(uuid=uuid, data=spec)
+
+        ops_uuid = resp["operationId"]
+        time.sleep(5)  # to get operation ID functional
+        operations = Operation(module)
+        resp = operations.wait_for_completion(ops_uuid, delay=5)
+
+        if not result.get("response"):
+            result["response"] = {}
+        result["response"]["db_server_vms_delete_status"] = resp
+
+
 def delete_instance(module, result):
-    _databases = Database(module)
+    _databases = DatabaseInstance(module)
 
     uuid = module.params.get("db_uuid")
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
 
-    spec = _databases.get_default_delete_spec()
-    if module.params.get("soft_delete"):
-        spec["remove"] = True
-        spec["delete"] = False
-    else:
-        spec["delete"] = True
-        spec["remove"] = False
+    query = {"detailed": True, "load-dbserver-cluster": True}
+    database = _databases.read(uuid, query=query)
 
-    if module.params.get("delete_time_machine"):
-        spec["deleteTimeMachine"] = True
+    spec = _databases.get_delete_spec()
 
     if module.check_mode:
         result["response"] = spec
@@ -877,9 +1533,12 @@ def delete_instance(module, result):
         ops_uuid = resp["operationId"]
         time.sleep(5)  # to get operation ID functional
         operations = Operation(module)
-        resp = operations.wait_for_completion(ops_uuid)
+        resp = operations.wait_for_completion(ops_uuid, delay=15)
+        result["response"] = resp
 
-    result["response"] = resp
+        # delete db server vms or cluster only when database cleanup has finished
+        delete_db_servers(module, result, database_info=database)
+
     result["changed"] = True
 
 

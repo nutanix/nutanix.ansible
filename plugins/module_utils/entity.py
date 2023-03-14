@@ -211,7 +211,7 @@ class Entity(object):
         return resp
 
     # "params" can be used to override module.params to create spec by other modules backened
-    def get_spec(self, old_spec=None, params=None):
+    def get_spec(self, old_spec=None, params=None, **kwargs):
         spec = copy.deepcopy(old_spec) or self._get_default_spec()
 
         ansible_params = None

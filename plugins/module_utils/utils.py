@@ -18,13 +18,18 @@ def remove_param_with_none_value(d):
                     remove_param_with_none_value(e)
 
 
-def strip_extra_attrs(spec1, spec2):
+def strip_extra_attrs(spec1, spec2, deep=True):
+    """
+    This routine strip extra attributes from spec1 as per spec2.
+    If 'deep' is True then attributes are checked in all levels of
+    dictionary, else only first level of dict is checked.
+    """
     for k, v in spec1.copy().items():
         if k not in spec2:
             spec1.pop(k)
-        elif isinstance(v, dict):
+        elif isinstance(v, dict) and deep:
             strip_extra_attrs(spec1[k], spec2[k])
-        elif isinstance(v, list) and v and isinstance(v[0], dict):
+        elif isinstance(v, list) and v and isinstance(v[0], dict) and deep:
             for i in range(len(v)):
                 try:
                     strip_extra_attrs(spec1[k][i], spec2[k][i])
@@ -92,3 +97,15 @@ def extract_uuids_from_references_list(reference_lists):
     for spec in reference_lists:
         uuids.add(spec["uuid"])
     return uuids
+
+
+def format_filters_map(filters, except_keys=None):
+    if filters:
+        mapped_filters = {}
+        for key, value in filters.items():
+            if value is not None:
+                if except_keys is None or key not in except_keys:
+                    key = key.replace("_", "-")
+                mapped_filters.update({key: value})
+        filters = mapped_filters
+    return filters

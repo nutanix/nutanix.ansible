@@ -1,0 +1,228 @@
+- name: Generate random profile_name 
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- set_fact:
+    suffix_name: "ansible-role-mapping"
+    max_connections: 50
+    max_replication_slots: 5
+    max_locks_per_transaction: 32 
+    effective_io_concurrency: 2
+    timezone: UTC
+    max_prepared_transactions: 2
+    max_wal_senders: 5
+    min_wal_size: 9
+    max_wal_size: 1
+    wal_keep_segments: 500  
+    max_worker_processes: 4
+    checkpoint_timeout: 55
+    autovacuum: "off"
+    checkpoint_completion_target: 0.7
+    autovacuum_freeze_max_age: 100000000
+    autovacuum_vacuum_threshold: 40
+    autovacuum_vacuum_scale_factor: 0.3
+    autovacuum_work_mem: 1
+    autovacuum_max_workers: 2
+    autovacuum_vacuum_cost_delay:  22
+    wal_buffers: 1
+    synchronous_commit: local
+    random_page_cost: 3
+
+- set_fact:
+    profile1_name: "{{random_name}}{{suffix_name}}1"
+    profile2_name: "{{random_name}}{{suffix_name}}2"
+    profile3_name: "{{random_name}}{{suffix_name}}3"
+    profile4_name: "{{random_name}}{{suffix_name}}4"
+################################################################
+- name: Verify creation of db params profile
+  ntnx_ndb_profiles:
+    name: "{{profile1_name}}"
+    desc: "testdesc"
+    type: database_parameter
+    database_type: postgres
+    database_parameter:
+      postgres:
+        max_connections: "{{max_connections}}"
+        max_replication_slots: "{{max_replication_slots}}"
+        max_locks_per_transaction: "{{max_locks_per_transaction}}" 
+        effective_io_concurrency: "{{effective_io_concurrency}}"
+        timezone: "{{timezone}}"
+        max_prepared_transactions: "{{max_prepared_transactions}}"
+        max_wal_senders: "{{max_wal_senders}}"
+        min_wal_size: "{{min_wal_size}}"
+        max_wal_size: "{{max_wal_size}}"
+        wal_keep_segments: "{{wal_keep_segments}}"
+        max_worker_processes: "{{max_worker_processes}}"
+        checkpoint_timeout: "{{checkpoint_timeout}}"
+        autovacuum: "{{autovacuum}}"
+        checkpoint_completion_target: "{{checkpoint_completion_target}}"
+        autovacuum_freeze_max_age: "{{autovacuum_freeze_max_age}}"
+        autovacuum_vacuum_threshold: "{{autovacuum_vacuum_threshold}}"
+        autovacuum_vacuum_scale_factor: "{{autovacuum_vacuum_scale_factor}}"
+        autovacuum_work_mem: "{{autovacuum_work_mem}}"
+        autovacuum_max_workers: "{{autovacuum_max_workers}}"
+        autovacuum_vacuum_cost_delay:  "{{autovacuum_vacuum_cost_delay}}"
+        wal_buffers: "{{wal_buffers}}"
+        synchronous_commit: "{{synchronous_commit}}"
+        random_page_cost: "{{random_page_cost}}"
+  register: result
+  ignore_errors: true
+
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.name ==  "{{profile1_name}}"
+      - result.response.description == "testdesc"
+      - result.response.type == "Database_Parameter"
+      - result.response.versions[0].propertiesMap.autovacuum == "{{autovacuum}}"
+      - result.response.versions[0].propertiesMap.autovacuum_freeze_max_age == "{{autovacuum_freeze_max_age}}"
+      - result.response.versions[0].propertiesMap.autovacuum_max_workers == "{{autovacuum_max_workers}}"
+      - result.response.versions[0].propertiesMap.autovacuum_vacuum_cost_delay == "{{autovacuum_vacuum_cost_delay}}ms"
+      - result.response.versions[0].propertiesMap.autovacuum_vacuum_scale_factor == "{{autovacuum_vacuum_scale_factor}}"
+      - result.response.versions[0].propertiesMap.autovacuum_vacuum_threshold == "{{autovacuum_vacuum_threshold}}"
+      - result.response.versions[0].propertiesMap.autovacuum_work_mem == "{{autovacuum_work_mem}}"
+      - result.response.versions[0].propertiesMap.checkpoint_completion_target == "{{checkpoint_completion_target}}"
+      - result.response.versions[0].propertiesMap.checkpoint_timeout == "{{checkpoint_timeout}}min"
+      - result.response.versions[0].propertiesMap.effective_io_concurrency == "{{effective_io_concurrency}}"
+      - result.response.versions[0].propertiesMap.max_connections == "{{max_connections}}"
+      - result.response.versions[0].propertiesMap.max_locks_per_transaction == "{{max_locks_per_transaction}}"
+      - result.response.versions[0].propertiesMap.max_prepared_transactions == "{{max_prepared_transactions}}"
+      - result.response.versions[0].propertiesMap.max_replication_slots == "{{max_replication_slots}}"
+      - result.response.versions[0].propertiesMap.max_wal_senders == "{{max_wal_senders}}"
+      - result.response.versions[0].propertiesMap.max_wal_size == "{{max_wal_size}}GB"
+      - result.response.versions[0].propertiesMap.max_worker_processes == "{{max_worker_processes}}"
+      - result.response.versions[0].propertiesMap.min_wal_size == "{{min_wal_size}}MB"
+      - result.response.versions[0].propertiesMap.random_page_cost == "{{random_page_cost}}"
+      - result.response.versions[0].propertiesMap.synchronous_commit == "{{synchronous_commit}}"
+      - result.response.versions[0].propertiesMap.timezone == "{{timezone}}"
+      - result.response.versions[0].propertiesMap.wal_buffers == "{{wal_buffers}}"
+      - result.response.versions[0].propertiesMap.wal_keep_segments == "{{wal_keep_segments}}"
+    fail_msg: "Fail: Unable to create db params profile "
+    success_msg: "Pass: Creation of db params profile finished succesfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.profile_uuid ] }}"
+################################################################
+- name: verify update of params in database_parameter profile and publish profile
+  ntnx_ndb_profiles:
+    name: "{{profile2_name}}"
+    desc: "newdesc"
+    profile_uuid: "{{result.profile_uuid}}"
+    type: database_parameter
+    database_type: postgres
+    database_parameter:
+      publish: true
+      postgres:
+        max_connections: 1
+        max_replication_slots: 2
+        max_locks_per_transaction: 3
+        effective_io_concurrency: 4
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.profile_uuid is defined
+      - result.response.profile.name ==  "{{profile2_name}}"
+      - result.response.profile.description == "newdesc"
+      - result.response.version.published == true
+      - result.response.profile.versions[0].propertiesMap.max_connections == "1"
+      - result.response.profile.versions[0].propertiesMap.max_replication_slots == "2"
+      - result.response.profile.versions[0].propertiesMap.max_locks_per_transaction == "3"
+      - result.response.profile.versions[0].propertiesMap.effective_io_concurrency == "4"
+    fail_msg: "Fail: unable to verify update of params in database_parameter profile and publish profile "
+    success_msg: "Pass: verify update of params in database_parameter profile and publish profile finished succesfully"
+################################################################
+- name: verify unpublish flow in database_parameter profile
+  ntnx_ndb_profiles:
+    profile_uuid: "{{result.profile_uuid}}"
+    database_parameter:
+      publish: false
+    type: database_parameter
+    database_type: postgres
+  register: result
+  ignore_errors: true
+
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.profile_uuid is defined
+      - result.response.profile.versions[0].published == false
+    fail_msg: "Fail: verify unpublish flow in database_parameter profile "
+    success_msg: "Pass: verify unpublish flow in database_parameter profile finished succesfully "
+################################################################
+- name: verify creatition of db params profile with defaults
+  ntnx_ndb_profiles:
+    name: "{{profile3_name}}"
+    desc: "testdesc"
+    type: database_parameter
+    database_type: postgres
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.name ==  "{{profile3_name}}"
+      - result.response.description == "testdesc"
+      - result.response.type == "Database_Parameter"
+      - result.response.versions is defined
+    fail_msg: "Fail: Unable to verify creatition of db params profile with defaults "
+    success_msg: "Pass: verify creatition of db params profile with defaults finished succesfully "
+
+- set_fact:
+    todelete: "{{ todelete + [  result.profile_uuid ] }}"
+################################################################
+- name: verify idempotency check
+  ntnx_ndb_profiles:
+    name: "{{profile3_name}}"
+    desc: "testdesc"
+    profile_uuid: "{{result.profile_uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.profile_uuid is defined
+      - result.response.profile.name ==  "{{profile3_name}}"
+      - result.response.profile.description == "testdesc"
+    fail_msg: "Fail: Unable to verify idempotency check "
+    success_msg: "Pass: verify idempotency check finished succesfully"
+################################################################
+- name: Delete all created Database_Parameter profiles
+  ntnx_ndb_profiles:
+    state: absent
+    profile_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: True
+
+- name: check listing status
+  assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "unable to delete all created Database_Parameter profiles"
+    success_msg: "All Database_Parameter profiles deleted succesfully"
+
+- set_fact:
+    todelete: []

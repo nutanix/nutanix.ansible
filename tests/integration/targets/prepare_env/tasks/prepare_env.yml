@@ -8,204 +8,204 @@
   tasks:
   - name: include var file
     include_vars: ../vars/main.yml
-  - set_fact:
-      ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
-      username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
-      password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
-      recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')}}"
-  - name: Insert credentials  block to vars
-    blockinfile:
-      path: ../vars/main.yml
-      marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 0"
-      block: |
-        ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
-        username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
-        password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
-        recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')  }}" 
-  - name: create external subnet with NAT
-    ntnx_subnets:
-      state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: "{{external_nat_subnets.name}}"
-      external_subnet:
-        vlan_id: "{{external_nat_subnets.vlan_id}}"
-        enable_nat: True
-        cluster:
-          name: "{{ cluster.name }}"
-        ipam:
-          network_ip: "{{ external_nat_subnets.network_ip }}"
-          network_prefix: "{{ external_nat_subnets.network_prefix }}"
-          gateway_ip: "{{ external_nat_subnets.gateway_ip_address }}"
-          ip_pools:
-            - start_ip: "{{ external_nat_subnets.dhcp.start_address }}"
-              end_ip: "{{ external_nat_subnets.dhcp.end_address }}"
-    register: result
-  - name: Insert external subnet configuration block to vars
-    blockinfile:
-      path: ../vars/main.yml
-      marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 1"
-      block: |
-          external_nat_subnet:
-            name: "{{external_nat_subnets.name}}"
-            uuid: "{{result.subnet_uuid}}"
+#   - set_fact:
+#       ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
+#       username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
+#       password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
+#       recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')}}"
+#   - name: Insert credentials  block to vars
+#     blockinfile:
+#       path: ../vars/main.yml
+#       marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 0"
+#       block: |
+#         ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
+#         username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
+#         password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
+#         recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')  }}" 
+#   - name: create external subnet with NAT
+#     ntnx_subnets:
+#       state: present
+#       nutanix_host: "{{ ip }}"
+#       validate_certs: false
+#       nutanix_username: "{{ username }}"
+#       nutanix_password: "{{ password }}"
+#       name: "{{external_nat_subnets.name}}"
+#       external_subnet:
+#         vlan_id: "{{external_nat_subnets.vlan_id}}"
+#         enable_nat: True
+#         cluster:
+#           name: "{{ cluster.name }}"
+#         ipam:
+#           network_ip: "{{ external_nat_subnets.network_ip }}"
+#           network_prefix: "{{ external_nat_subnets.network_prefix }}"
+#           gateway_ip: "{{ external_nat_subnets.gateway_ip_address }}"
+#           ip_pools:
+#             - start_ip: "{{ external_nat_subnets.dhcp.start_address }}"
+#               end_ip: "{{ external_nat_subnets.dhcp.end_address }}"
+#     register: result
+#   - name: Insert external subnet configuration block to vars
+#     blockinfile:
+#       path: ../vars/main.yml
+#       marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 1"
+#       block: |
+#           external_nat_subnet:
+#             name: "{{external_nat_subnets.name}}"
+#             uuid: "{{result.subnet_uuid}}"
 
-  - name: Create min VPC with external_subnet uuid
-    ntnx_vpcs:
-      validate_certs: False
-      state: present
-      wait: true
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: "{{vpc_name}}"
-      external_subnets:
-        - subnet_uuid: "{{ result.subnet_uuid }}"
-    register: result
+#   - name: Create min VPC with external_subnet uuid
+#     ntnx_vpcs:
+#       validate_certs: False
+#       state: present
+#       wait: true
+#       nutanix_host: "{{ ip }}"
+#       nutanix_username: "{{ username }}"
+#       nutanix_password: "{{ password }}"
+#       name: "{{vpc_name}}"
+#       external_subnets:
+#         - subnet_uuid: "{{ result.subnet_uuid }}"
+#     register: result
 
-  - name: Insert  VPC configuration block to vars
-    blockinfile:
-      path: ../vars/main.yml
-      marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 2"
-      block: |
-          vpc:
-            name: "{{vpc_name}}"
-            uuid: "{{result.vpc_uuid}}"
+#   - name: Insert  VPC configuration block to vars
+#     blockinfile:
+#       path: ../vars/main.yml
+#       marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 2"
+#       block: |
+#           vpc:
+#             name: "{{vpc_name}}"
+#             uuid: "{{result.vpc_uuid}}"
 
-  - name: create vlan subnet with IPAM
-    ntnx_subnets:
-      state: present
-      nutanix_host: "{{ ip }}"
-      wait: true
-      validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: "{{static_subnet_name}}"
-      vlan_subnet:
-        vlan_id: 373
-        virtual_switch:
-          name: vs0
-        cluster:
-          name: "{{ cluster.name }}"
-        ipam:
-          network_ip: 10.30.30.0
-          network_prefix: 24
-          gateway_ip: 10.30.30.254
-          ip_pools:
-            - start_ip: 10.30.30.10
-              end_ip: 10.30.30.90
-    register: result
+#   - name: create vlan subnet with IPAM
+#     ntnx_subnets:
+#       state: present
+#       nutanix_host: "{{ ip }}"
+#       wait: true
+#       validate_certs: false
+#       nutanix_username: "{{ username }}"
+#       nutanix_password: "{{ password }}"
+#       name: "{{static_subnet_name}}"
+#       vlan_subnet:
+#         vlan_id: 373
+#         virtual_switch:
+#           name: vs0
+#         cluster:
+#           name: "{{ cluster.name }}"
+#         ipam:
+#           network_ip: 10.30.30.0
+#           network_prefix: 24
+#           gateway_ip: 10.30.30.254
+#           ip_pools:
+#             - start_ip: 10.30.30.10
+#               end_ip: 10.30.30.90
+#     register: result
 
-  - name: Insert vlan subnet configuration block to var file
-    blockinfile:
-      path: ../vars/main.yml
-      marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 3"
-      block: |
-          static:
-            name: "{{static_subnet_name}}"
-            uuid: "{{result.subnet_uuid}}"
-            network_ip: 10.30.30.0
-            network_prefix: 24
-            gateway_ip: 10.30.30.254
+#   - name: Insert vlan subnet configuration block to var file
+#     blockinfile:
+#       path: ../vars/main.yml
+#       marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 3"
+#       block: |
+#           static:
+#             name: "{{static_subnet_name}}"
+#             uuid: "{{result.subnet_uuid}}"
+#             network_ip: 10.30.30.0
+#             network_prefix: 24
+#             gateway_ip: 10.30.30.254
 
-  - name: include var file
-    include_vars: ../vars/main.yml
-  - name:  create overlay Subnet with minimum requirements
-    ntnx_subnets:
-      state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: "{{overlay_subnet.name}}"
-      overlay_subnet:
-        vpc:
-          uuid: "{{ vpc.uuid }}"
-        ipam:
-          network_ip: "{{overlay_subnet.network_ip}}"
-          network_prefix: "{{overlay_subnet.network_prefix}}"
-          gateway_ip: "{{overlay_subnet.gateway_ip}}"
-    register: result
+#   - name: include var file
+#     include_vars: ../vars/main.yml
+#   - name:  create overlay Subnet with minimum requirements
+#     ntnx_subnets:
+#       state: present
+#       nutanix_host: "{{ ip }}"
+#       validate_certs: false
+#       nutanix_username: "{{ username }}"
+#       nutanix_password: "{{ password }}"
+#       name: "{{overlay_subnet.name}}"
+#       overlay_subnet:
+#         vpc:
+#           uuid: "{{ vpc.uuid }}"
+#         ipam:
+#           network_ip: "{{overlay_subnet.network_ip}}"
+#           network_prefix: "{{overlay_subnet.network_prefix}}"
+#           gateway_ip: "{{overlay_subnet.gateway_ip}}"
+#     register: result
 
-  - name: Insert overlay subnet configuration block to var file
-    blockinfile:
-      path: ../vars/main.yml
-      marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 4"
-      block: |
-          overlay:
-            name: "{{overlay_subnet.name}}"
-            uuid: "{{result.subnet_uuid}}"
+#   - name: Insert overlay subnet configuration block to var file
+#     blockinfile:
+#       path: ../vars/main.yml
+#       marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 4"
+#       block: |
+#           overlay:
+#             name: "{{overlay_subnet.name}}"
+#             uuid: "{{result.subnet_uuid}}"
 
-  - name: create VM with overlay subnet
-    ntnx_vms:
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      name: "{{vm_name}}"
-      cluster:
-        uuid: "{{ cluster.uuid }}"
-      networks:
-          - is_connected: true
-            subnet: 
-              name: "{{overlay_subnet.name}}"
-            private_ip: "{{overlay_subnet.private_ip}}"
-    register: result
+#   - name: create VM with overlay subnet
+#     ntnx_vms:
+#       state: present
+#       nutanix_host: "{{ ip }}"
+#       nutanix_username: "{{ username }}"
+#       nutanix_password: "{{ password }}"
+#       validate_certs: False
+#       name: "{{vm_name}}"
+#       cluster:
+#         uuid: "{{ cluster.uuid }}"
+#       networks:
+#           - is_connected: true
+#             subnet: 
+#               name: "{{overlay_subnet.name}}"
+#             private_ip: "{{overlay_subnet.private_ip}}"
+#     register: result
 
-  - name: Insert vm configuration block to var file
-    blockinfile:
-      path: ../vars/main.yml
-      marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 5"
-      block: |
-          vm:
-            name: "{{vm_name}}"
-            uuid: "{{result.vm_uuid}}"
+#   - name: Insert vm configuration block to var file
+#     blockinfile:
+#       path: ../vars/main.yml
+#       marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 5"
+#       block: |
+#           vm:
+#             name: "{{vm_name}}"
+#             uuid: "{{result.vm_uuid}}"
 
-  # - name: create VM with static subnet for dr tests
-  #   ntnx_vms:
-  #     state: present
-  #     nutanix_host: "{{ ip }}"
-  #     nutanix_username: "{{ username }}"
-  #     nutanix_password: "{{ password }}"
-  #     validate_certs: False
-  #     name: "{{dr_vm_name}}"
-  #     categories:
-  #       Environment:
-  #         - Staging
-  #         - Testing
-  #     cluster:
-  #       uuid: "{{ cluster.uuid }}"
-  #     networks:
-  #         - is_connected: true
-  #           subnet: 
-  #             name: "{{static_subnet_name}}"
-  #     vcpus: 1
-  #     cores_per_vcpu: 1
-  #     memory_gb: 1
-  #   register: result
+#   # - name: create VM with static subnet for dr tests
+#   #   ntnx_vms:
+#   #     state: present
+#   #     nutanix_host: "{{ ip }}"
+#   #     nutanix_username: "{{ username }}"
+#   #     nutanix_password: "{{ password }}"
+#   #     validate_certs: False
+#   #     name: "{{dr_vm_name}}"
+#   #     categories:
+#   #       Environment:
+#   #         - Staging
+#   #         - Testing
+#   #     cluster:
+#   #       uuid: "{{ cluster.uuid }}"
+#   #     networks:
+#   #         - is_connected: true
+#   #           subnet: 
+#   #             name: "{{static_subnet_name}}"
+#   #     vcpus: 1
+#   #     cores_per_vcpu: 1
+#   #     memory_gb: 1
+#   #   register: result
 
-  # - name: Insert vm configuration block to var file
-  #   blockinfile:
-  #     path: ../vars/main.yml
-  #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
-  #     block: |
-  #         dr_vm:
-  #           name: "{{dr_vm_name}}"
-  #           uuid: "{{result.vm_uuid}}"
+#   # - name: Insert vm configuration block to var file
+#   #   blockinfile:
+#   #     path: ../vars/main.yml
+#   #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
+#   #     block: |
+#   #         dr_vm:
+#   #           name: "{{dr_vm_name}}"
+#   #           uuid: "{{result.vm_uuid}}"
 
-  - name: Downloading disk image for image related tests
-    get_url:
-      url: "{{ disk_image.url }}"
-      dest: "{{ disk_image.dest }}"
+#   - name: Downloading disk image for image related tests
+#     get_url:
+#       url: "{{ disk_image.url }}"
+#       dest: "{{ disk_image.dest }}"
 
-  # - name: create address group for network security policy related tests
-  #   ntnx_address_groups:
-  #     state: present
-  #     name: dest
-  #     desc: dest
-  #     subnets:
-  #       - network_ip: "10.1.1.0"
-  #         network_prefix: 24
+#   # - name: create address group for network security policy related tests
+#   #   ntnx_address_groups:
+#   #     state: present
+#   #     name: dest
+#   #     desc: dest
+#   #     subnets:
+#   #       - network_ip: "10.1.1.0"
+#   #         network_prefix: 24

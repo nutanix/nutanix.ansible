@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_profiles_info
 short_description: info module for ndb profiles
-version_added: 1.8.0-beta.1
+version_added: 1.8.0
 description: 'Get profile info'
 options:
       name:
@@ -20,24 +20,34 @@ options:
         type: str
       uuid:
         description:
-            - profile id
+            - profile uuid
         type: str
-      profile_type:
-        description:
-            - profile type
-        type: str
-        choices: ["Software", "Compute", "Network", "Database_Parameter"]
       version_id:
         description:
-            - vrsion id
+            - vrsion uuid
         type: str
       latest_version:
         description:
-            - whether the lastet version of profile or no
+            - to fetch latest version of profile in case of software profile
         type: bool
         default: false
+      filters:
+        description:
+            - filters for fetching info
+        type: dict
+        suboptions:
+            engine:
+                description:
+                    - filter as per database engine type
+                type: str
+                choices: ["oracle_database","postgres_database","sqlserver_database","mariadb_database","mysql_database","saphana_database","mongodb_database",]
+            type:
+                description:
+                    - filter as per profile type
+                type: str
+                choices: ["Software","Compute","Network","Database_Parameter",]
 extends_documentation_fragment:
-    - nutanix.ncp.ntnx_ndb_base_module
+    - nutanix.ncp.ntnx_ndb_info_base_module
 author:
  - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
@@ -168,19 +178,45 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.profiles import Profile  # noqa: E402
+from ..module_utils.ndb.profiles.profiles import Profile  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():
 
+    filters_spec = dict(
+        engine=dict(
+            type="str",
+            choices=[
+                "oracle_database",
+                "postgres_database",
+                "sqlserver_database",
+                "mariadb_database",
+                "mysql_database",
+                "saphana_database",
+                "mongodb_database",
+            ],
+        ),
+        type=dict(
+            type="str",
+            choices=[
+                "Software",
+                "Compute",
+                "Network",
+                "Database_Parameter",
+            ],
+        ),
+    )
+
     module_args = dict(
         name=dict(type="str"),
         uuid=dict(type="str"),
-        profile_type=dict(
-            type="str", choices=["Software", "Compute", "Network", "Database_Parameter"]
-        ),
         version_id=dict(type="str"),
         latest_version=dict(type="bool", default=False),
+        filters=dict(
+            type="dict",
+            options=filters_spec,
+        ),
     )
 
     return module_args
@@ -190,19 +226,16 @@ def get_profile(module, result):
     profile = Profile(module)
     name = module.params.get("name")
     uuid = module.params.get("uuid")
-    type = module.params.get("profile_type")
-    resp, err = profile.get_profiles(uuid, name, type)
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed fetching profile info", **result)
+    resp = profile.get_profiles(uuid, name)
 
     result["response"] = resp
 
 
 def get_profiles(module, result):
     profile = Profile(module)
+    query_params = module.params.get("filters")
 
-    resp = profile.read()
+    resp = profile.read(query=query_params)
 
     result["response"] = resp
 
@@ -231,14 +264,11 @@ def run_module():
         required_by={"version_id": "uuid"},
         required_if=[("latest_version", True, ("uuid",))],
     )
+    remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("version_id") or module.params.get("latest_version"):
         get_profiles_version(module, result)
-    elif (
-        module.params.get("name")
-        or module.params.get("uuid")
-        or module.params.get("profile_type")
-    ):
+    elif module.params.get("name") or module.params.get("uuid"):
         get_profile(module, result)
     else:
         get_profiles(module, result)

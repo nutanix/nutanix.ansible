@@ -61,12 +61,12 @@ Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/exa
 ## Nutanix Database Service (ERA)
 > For the 1.8.0-beta.1 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against era versions v2.4.1 and v2.4.0
 
+> For the 1.8.0 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against era versions v2.5.0 and v2.5.1
+
 NDB based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
 
-Nutanix Ansible support for Nutanix Database Service is currently at beta stage.
-
 ### Notes:
-1. Currently for ntnx_ndb_databases, creation of only postgres type database instance is tested and offically supported. 
+1. Currently NDB based modules are supported and tested against postgres based databases.
  
 # Installing the collection
 **Prerequisite**
@@ -152,14 +152,6 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_karbon_clusters_info | Get clusters info. |
 | ntnx_karbon_registries | Create, Delete a karbon private registry entry |
 | ntnx_karbon_registries_info | Get karbon private registry registry info. |
-| ntnx_ndb_databases | Create, Update and Delete single instance database. |
-| ntnx_ndb_databases_info | Get database info. |
-| ntnx_ndb_db_servers_info | Get db servers vm info. |
-| ntnx_ndb_clusters_info | Get clusters info. |
-| ntnx_ndb_slas_info | Get slas info |
-| ntnx_ndb_profiles_info | Get profiles info. |
-| ntnx_ndb_time_machines_info | Get time machines info. |
-| ntnx_ndb_clones_info | Get database clones info. |
 | ntnx_pbrs | Create or delete a PBR. |
 | ntnx_pbrs_info | List existing PBRs. |
 | ntnx_permissions_info | List permissions info |
@@ -181,7 +173,7 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_static_routes_info | List existing static routes of a vpc. |
 | ntnx_subnets | Create or delete a Subnet. |
 | ntnx_subnets_info | List existing Subnets. |
-| ntnx_user_groups | Create, Delete user_groups |
+| ntnx_user_groups | Create, Delete user_groups. |
 | ntnx_user_groups_info | Get user groups info. |
 | ntnx_users | Create, Delete users |
 | ntnx_users_info | Get users info. |
@@ -203,6 +195,38 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_foundation_central_api_keys_info | List all the api keys created in Foundation Central. |
 | ntnx_foundation_central_imaged_clusters_info | List all the clusters created using Foundation Central. |
 | ntnx_foundation_central_imaged_nodes_info | List all the nodes registered with Foundation Central. |
+| ntnx_ndb_databases_info | Get ndb database instance info |
+| ntnx_ndb_clones_info | Get ndb database clones info. |
+| ntnx_ndb_time_machines_info | Get ndb time machines info. |
+| ntnx_ndb_profiles_info | Get ndb profiles info.  |
+| ntnx_ndb_db_servers_info | Get ndb database server vms info.  |
+| ntnx_ndb_databases | Create, update and delete database instances. |
+| ntnx_ndb_register_database | Register database instance. |
+| ntnx_ndb_db_server_vms | Create, update and delete database server vms. |
+| ntnx_ndb_clusters_info | Get clusters info. |
+| ntnx_ndb_clusters | Create, update and delete clusters in NDB |
+| ntnx_ndb_snapshots_info | Get snapshots info |
+| ntnx_ndb_vlans | Create, update and delete vlans |
+| ntnx_ndb_vlans_info | Get vlans info in NDB |
+| ntnx_ndb_stretched_vlans | Get stretched vlans inf in NDB |
+| ntnx_ndb_time_machine_clusters | Manage clusters in NDB time machines |
+| ntnx_ndb_tags | Create, update and delete tags |
+| ntnx_ndb_database_clones | Create, update and delete database clones |
+| ntnx_ndb_database_snapshots | Create, update and delete database snapshots |
+| ntnx_ndb_database_clone_refresh | Perform database clone refresh |
+| ntnx_ndb_authorize_db_server_vms | authorize database server vms with time machines |
+| ntnx_ndb_profiles | create, update and delete all kind of profiles |
+| ntnx_ndb_database_log_catchup | perform log catchup |
+| ntnx_ndb_database_restore | perform database restore |
+| ntnx_ndb_database_scale | perform database scaling |
+| ntnx_ndb_linked_databases | Add and remove linked databases of database instance |
+| ntnx_ndb_replicate_database_snapshots | replicate snapshots accross clusters in time machines |
+| ntnx_ndb_register_db_server_vm | register database server vm |
+| ntnx_ndb_maintenance_tasks | Add and remove maintenance tasks in window |
+| ntnx_ndb_maintenance_window | Create, update and delete maintenance window |
+| ntnx_ndb_maintenance_windows_info | Get maintenance window info |
+| ntnx_ndb_slas | Create, update and delete sla |
+| ntnx_ndb_slas_info | Get slas info |
 
 ## Inventory Plugins
 

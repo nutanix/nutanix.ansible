@@ -2,7 +2,7 @@
 - debug:
     msg: Start testing ntnx_ndb_time_machines_info
 
-- name: List all era tms
+- name: List all NDB tms
   ntnx_ndb_time_machines_info:
   register: tms
 
@@ -13,10 +13,28 @@
       - tms.failed == false
       - tms.changed == false
       - tms.response | length > 0
-    fail_msg: "Unable to list all era tms"
-    success_msg: "era tms listed successfully"
+    fail_msg: "Unable to list all NDB tms"
+    success_msg: "NDB tms listed successfully"
 ################################################################
-- name: get era tms using it's name  
+- name: List all NDB tms using filter
+  ntnx_ndb_time_machines_info:
+    filters:
+      value_type: name
+      value: "{{tms.response[0].name}}"
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response | length > 0
+      - result.response[0].id == "{{tms.response[0].id}}"
+    fail_msg: "Unable to list all NDB tms using filter"
+    success_msg: "NDB tms listed successfully using filter"
+################################################################
+- name: get NDB tms using it's name  
   ntnx_ndb_time_machines_info:
     name: "{{tms.response[0].name}}"
   register: result
@@ -29,8 +47,8 @@
       - result.failed == false
       - result.changed == false
       - result.response.id == "{{tms.response[0].id}}"
-    fail_msg: "Unable to get era tms using it's name  "
-    success_msg: "get  era tms using it's name  successfully"
+    fail_msg: "Unable to get NDB tms using it's name  "
+    success_msg: "get  NDB tms using it's name  successfully"
 ################################################################
 - name: List tms use id
   ntnx_ndb_time_machines_info:
@@ -44,11 +62,32 @@
       - result.failed == false
       - result.changed == false
       - result.response.name == "{{tms.response[0].name}}"
-    fail_msg: "Unable to get era tms using it's id  "
-    success_msg: "get  era tms using it's id  successfully"
+    fail_msg: "Unable to get NDB tms using it's id  "
+    success_msg: "get  NDB tms using it's id  successfully"
+
 ################################################################
 
-- name: get era timemachine with incorrect name
+- name: List tms use id and load database as well
+  ntnx_ndb_time_machines_info:
+    uuid: "{{tms.response[0].id}}"
+    filters:
+      load_database: true
+  register: result
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{tms.response[0].name}}"
+      - result.response.database is defined
+    fail_msg: "Unable to get NDB tms using it's id"
+    success_msg: "get  NDB tms using it's id  successfully"
+
+################################################################
+
+- name: get NDB timemachine with incorrect name
   ntnx_ndb_time_machines_info:
     name: "abcd"
   register: result
