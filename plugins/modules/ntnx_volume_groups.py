@@ -377,8 +377,9 @@ def update_volume_group(module, result):
 
     # update clients
     if vg_clients:
+        authentication_is_enabled = True if resp.get("enabledAuthentications") else False
         update_volume_group_clients(
-            module, volume_group, vg_clients, volume_group_uuid, result
+            module, volume_group, vg_clients, volume_group_uuid, result, authentication_is_enabled
         )
 
     clients_resp = volume_group.get_clients(volume_group_uuid)
@@ -507,7 +508,7 @@ def update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, res
 
 
 def update_volume_group_clients(
-    module, volume_group, vg_clients, volume_group_uuid, result
+    module, volume_group, vg_clients, volume_group_uuid, result, authentication_is_enabled
 ):
     client = Clients(module)
     for vg_client in vg_clients:
@@ -522,7 +523,7 @@ def update_volume_group_clients(
 
             else:
                 resp = client.read(client_uuid).get("data")
-                spec, err = client.get_client_spec(vg_client, resp)
+                spec, err = client.get_client_spec(vg_client, authentication_is_enabled)
                 if err:
                     result["nothing_to_change"] = False
                     result["warning"].append(
@@ -541,7 +542,7 @@ def update_volume_group_clients(
 
         else:
             result["nothing_to_change"] = False
-            spec, err = client.get_client_spec(vg_client)
+            spec, err = client.get_client_spec(vg_client, authentication_is_enabled)
             if err:
                 result["warning"].append(
                     "Client is not created. Error: {0}".format(err)
