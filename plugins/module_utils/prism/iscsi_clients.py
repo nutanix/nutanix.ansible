@@ -45,8 +45,8 @@ class Clients(Prism):
         payload = self._get_default_spec()
         if (
             self.module.params.get("CHAP_auth") == "enable"
-            or old_spec
-            and old_spec.get("enabledAuthentications")
+            or (old_spec
+                and old_spec.get("enabledAuthentications"))
         ):
             chap_auth = True
         else:
