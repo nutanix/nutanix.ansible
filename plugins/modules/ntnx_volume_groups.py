@@ -512,7 +512,7 @@ def update_volume_group_clients(
     client = Clients(module)
     for vg_client in vg_clients:
 
-        if vg_client.get("uuid"):
+        if vg_client.get("uuid") and (vg_client.get("state") or vg_client.get("client_password")):
             client_uuid = vg_client["uuid"]
             if vg_client.get("state") == "absent":
                 result["nothing_to_change"] = False
