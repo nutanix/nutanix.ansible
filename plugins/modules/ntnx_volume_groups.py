@@ -355,6 +355,8 @@ def update_volume_group(module, result):
         result["nothing_to_change"] = False
         volume_group.update(update_spec, uuid=volume_group_uuid, method="PATCH")
 
+        result["changed"] = True
+
         resp = volume_group.read(volume_group_uuid)
         resp = resp.get("data")
     result["response"] = resp
@@ -389,7 +391,6 @@ def update_volume_group(module, result):
         module.exit_json(
             msg="Nothing to change. Refer docs to check for fields which can be updated"
         )
-    result["changed"] = True
 
 
 def delete_volume_group(module, result):
@@ -444,6 +445,7 @@ def update_volume_group_disks(
             if disk.get("state") == "absent":
                 result["nothing_to_change"] = False
                 vdisk_resp = volume_group.delete_disk(volume_group_uuid, disk_uuid)
+                result["changed"] = True
 
             else:
                 vdisk = volume_group.get_vdisks(volume_group_uuid, disk_uuid).get(
@@ -467,7 +469,7 @@ def update_volume_group_disks(
                 vdisk_resp = volume_group.update_disk(
                     spec, volume_group_uuid, disk_uuid
                 )
-
+                result["changed"] = True
         else:
             result["nothing_to_change"] = False
             spec, err = VDisks.get_spec(module, disk)
@@ -476,6 +478,8 @@ def update_volume_group_disks(
                 result["skipped"] = True
                 continue
             vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
+
+            result["changed"] = True
 
         task_uuid = vdisk_resp["task_uuid"]
         wait_for_task_completion(module, {"task_uuid": task_uuid})
@@ -493,6 +497,8 @@ def update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, res
                 result["warning"].append("VM is not detached. Error: {0}".format(err))
                 result["skipped"] = True
                 continue
+            result["changed"] = True
+
         else:
             spec, err = volume_group.get_vm_spec(vm)
             if err:
@@ -502,6 +508,8 @@ def update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, res
 
             result["nothing_to_change"] = False
             vm_resp = volume_group.attach_vm(spec, volume_group_uuid)
+
+            result["changed"] = True
 
         task_uuid = vm_resp["task_uuid"]
         wait_for_task_completion(module, {"task_uuid": task_uuid})
@@ -520,6 +528,8 @@ def update_volume_group_clients(
                 client_resp = volume_group.detach_iscsi_client(
                     volume_group_uuid, client_uuid
                 )
+
+                result["changed"] = True
 
             else:
                 resp = client.read(client_uuid).get("data")
@@ -540,6 +550,8 @@ def update_volume_group_clients(
                 result["nothing_to_change"] = False
                 client_resp = client.update(spec, client_uuid, method="PATCH")
 
+                result["changed"] = True
+
         else:
             result["nothing_to_change"] = False
             spec, err = client.get_client_spec(vg_client, authentication_is_enabled)
@@ -550,6 +562,8 @@ def update_volume_group_clients(
                 result["skipped"] = True
                 continue
             client_resp = volume_group.attach_iscsi_client(spec, volume_group_uuid)
+
+        result["changed"] = True
 
         task_uuid = client_resp["task_uuid"]
         wait_for_task_completion(module, {"task_uuid": task_uuid})
