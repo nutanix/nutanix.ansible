@@ -185,9 +185,9 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.ndb.profiles.profile_types import NetworkProfile  # noqa: E402
 from ..module_utils.ndb.profiles.profiles import Profile  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.ndb.profiles.profile_types import NetworkProfile
 
 
 def get_module_spec():
