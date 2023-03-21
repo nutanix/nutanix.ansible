@@ -46,13 +46,13 @@ options:
                     - filter as per profile type
                 type: str
                 choices: ["Software","Compute","Network","Database_Parameter",]
-        include_available_ips:
-          description:
-            - include available ips for each subnet in response
-            - only to be used for network profiles having NDB managed subnets
-            - only to be used for fetching profile using C(name) or C(uuid)
-          default: false
-          type: bool
+      include_available_ips:
+        description:
+          - include available ips for each subnet in response
+          - only to be used for network profiles having NDB managed subnets
+          - only to be used for fetching profile using C(name) or C(uuid)
+        default: false
+        type: bool
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_ndb_info_base_module
 author:
