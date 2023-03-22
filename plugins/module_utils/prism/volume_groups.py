@@ -45,14 +45,18 @@ class VolumeGroup(Prism):
 
     def create_vdisk(self, spec, volume_group_uuid):
         endpoint = "disks"
-        resp = self.update(spec, volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False)
+        resp = self.update(
+            spec, volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False
+        )
         resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
         return resp
 
     def attach_vm(self, spec, volume_group_uuid):
         endpoint = "$actions/attach-vm"
 
-        resp = self.update(spec, volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False)
+        resp = self.update(
+            spec, volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False
+        )
         if resp.get("data") and resp["data"].get("error"):
             err = resp["data"]["error"]
             if isinstance(err, list):
@@ -66,14 +70,20 @@ class VolumeGroup(Prism):
 
     def attach_iscsi_client(self, spec, volume_group_uuid):
         endpoint = "/$actions/attach-iscsi-client"
-        resp = self.update(spec, volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False)
+        resp = self.update(
+            spec, volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False
+        )
         resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
         return resp
 
     def update_disk(self, spec, volume_group_uuid, disk_uuid):
         endpoint = "disks/{0}".format(disk_uuid)
         resp = self.update(
-            spec, uuid=volume_group_uuid, method="PATCH", endpoint=endpoint, raise_error=False
+            spec,
+            uuid=volume_group_uuid,
+            method="PATCH",
+            endpoint=endpoint,
+            raise_error=False,
         )
         resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
         return resp
@@ -96,13 +106,17 @@ class VolumeGroup(Prism):
         else:
             vm_uuid = vm["extId"]
         endpoint = "$actions/detach-vm/{0}".format(vm_uuid)
-        resp = self.update(uuid=volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False)
+        resp = self.update(
+            uuid=volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False
+        )
         resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
         return resp, None
 
     def detach_iscsi_client(self, volume_group_uuid, client_uuid):
         endpoint = "$actions/detach-iscsi-client/{0}".format(client_uuid)
-        resp = self.update(uuid=volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False)
+        resp = self.update(
+            uuid=volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False
+        )
         resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
         return resp
 
