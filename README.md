@@ -211,6 +211,7 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_ndb_stretched_vlans | Get stretched vlans inf in NDB |
 | ntnx_ndb_time_machine_clusters | Manage clusters in NDB time machines |
 | ntnx_ndb_tags | Create, update and delete tags |
+| ntnx_ndb_tags_info | Get tags info |
 | ntnx_ndb_database_clones | Create, update and delete database clones |
 | ntnx_ndb_database_snapshots | Create, update and delete database snapshots |
 | ntnx_ndb_database_clone_refresh | Perform database clone refresh |
