@@ -273,7 +273,7 @@ def create_volume_group(module, result):
         for disk in vg_disks:
             spec, err = VDisks.get_spec(module, disk)
             if err:
-                result["warning"] = "Disk is not created. Error: {0}".format(err)
+                result["warning"].append("Disk is not created. Error: {0}".format(err))
                 result["skipped"] = True
                 continue
 
@@ -294,11 +294,15 @@ def create_volume_group(module, result):
 
             spec, err = volume_group.get_vm_spec(vm)
             if err:
-                result["warning"] = "VM is not attached. Error: {0}".format(err)
+                result["warning"].append("VM is not attached. Error: {0}".format(err))
                 result["skipped"] = True
                 continue
 
-            attach_resp = volume_group.attach_vm(spec, volume_group_uuid)
+            attach_resp, err = volume_group.attach_vm(spec, volume_group_uuid)
+            if err:
+                result["warning"].append("VM is not attached. Error: {0}".format(err))
+                result["skipped"] = True
+                continue
 
             task_uuid = attach_resp["task_uuid"]
             attach_resp, err = wait_for_task_completion(module, {"task_uuid": task_uuid}, raise_error=False)
@@ -317,7 +321,7 @@ def create_volume_group(module, result):
 
             spec, err = client.get_client_spec(vg_client)
             if err:
-                result["warning"] = "Client is not attached. Error: {0}".format(err)
+                result["warning"].append("Client is not attached. Error: {0}".format(err))
                 result["skipped"] = True
                 continue
 
