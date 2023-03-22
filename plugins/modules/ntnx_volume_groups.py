@@ -280,9 +280,13 @@ def create_volume_group(module, result):
             vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
 
             task_uuid = vdisk_resp["task_uuid"]
-            vdisk_resp, err = wait_for_task_completion(module, {"task_uuid": task_uuid}, raise_error=False)
+            vdisk_resp, err = wait_for_task_completion(
+                module, {"task_uuid": task_uuid}, raise_error=False
+            )
             if err:
-                result["warning"].append("Disk creating task is failed. Error: {0}".format(err))
+                result["warning"].append(
+                    "Disk creating task is failed. Error: {0}".format(err)
+                )
                 result["skipped"] = True
                 continue
         disks_resp = volume_group.get_vdisks(volume_group_uuid)
@@ -301,9 +305,13 @@ def create_volume_group(module, result):
             attach_resp = volume_group.attach_vm(spec, volume_group_uuid)
 
             task_uuid = attach_resp["task_uuid"]
-            attach_resp, err = wait_for_task_completion(module, {"task_uuid": task_uuid}, raise_error=False)
+            attach_resp, err = wait_for_task_completion(
+                module, {"task_uuid": task_uuid}, raise_error=False
+            )
             if err:
-                result["warning"].append("VM attaching task is failed. Error: {0}".format(err))
+                result["warning"].append(
+                    "VM attaching task is failed. Error: {0}".format(err)
+                )
                 result["skipped"] = True
                 continue
 
@@ -324,9 +332,13 @@ def create_volume_group(module, result):
             attach_resp = volume_group.attach_iscsi_client(spec, volume_group_uuid)
 
             task_uuid = attach_resp["task_uuid"]
-            attach_resp, err = wait_for_task_completion(module, {"task_uuid": task_uuid}, raise_error=False)
+            attach_resp, err = wait_for_task_completion(
+                module, {"task_uuid": task_uuid}, raise_error=False
+            )
             if err:
-                result["warning"].append("Client attaching task is failed. Error: {0}".format(err))
+                result["warning"].append(
+                    "Client attaching task is failed. Error: {0}".format(err)
+                )
                 result["skipped"] = True
                 continue
 
@@ -392,10 +404,17 @@ def update_volume_group(module, result):
 
     # update clients
     if vg_clients:
-        authentication_is_enabled = True if resp.get("enabledAuthentications") else False
+        authentication_is_enabled = (
+            True if resp.get("enabledAuthentications") else False
+        )
         detach_volume_group_vms(module, volume_group, volume_group_uuid, result)
         update_volume_group_clients(
-            module, volume_group, vg_clients, volume_group_uuid, result, authentication_is_enabled
+            module,
+            volume_group,
+            vg_clients,
+            volume_group_uuid,
+            result,
+            authentication_is_enabled,
         )
 
     clients_resp = volume_group.get_clients(volume_group_uuid)
@@ -506,7 +525,9 @@ def update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, res
                 continue
 
         task_uuid = vm_resp["task_uuid"]
-        resp, err = wait_for_task_completion(module, {"task_uuid": task_uuid}, raise_error=False)
+        resp, err = wait_for_task_completion(
+            module, {"task_uuid": task_uuid}, raise_error=False
+        )
 
         if err:
             result["warning"].append("VM update task is failed. Error: {0}".format(err))
@@ -517,12 +538,19 @@ def update_volume_group_vms(module, volume_group, vg_vms, volume_group_uuid, res
 
 
 def update_volume_group_clients(
-    module, volume_group, vg_clients, volume_group_uuid, result, authentication_is_enabled
+    module,
+    volume_group,
+    vg_clients,
+    volume_group_uuid,
+    result,
+    authentication_is_enabled,
 ):
     client = Clients(module)
     for vg_client in vg_clients:
 
-        if vg_client.get("uuid") and (vg_client.get("state") or vg_client.get("client_password")):
+        if vg_client.get("uuid") and (
+            vg_client.get("state") or vg_client.get("client_password")
+        ):
             client_uuid = vg_client["uuid"]
             if vg_client.get("state") == "absent":
                 result["nothing_to_change"] = False
@@ -538,7 +566,9 @@ def update_volume_group_clients(
                 if err or resp.get("error"):
                     result["nothing_to_change"] = False
                     result["warning"].append(
-                        "Client is not updated. Error: {0}".format(resp.get("error") or err)
+                        "Client is not updated. Error: {0}".format(
+                            resp.get("error") or err
+                        )
                     )
                     result["skipped"] = True
                     continue
@@ -567,9 +597,13 @@ def update_volume_group_clients(
         result["changed"] = True
 
         task_uuid = client_resp["task_uuid"]
-        resp, err = wait_for_task_completion(module, {"task_uuid": task_uuid}, raise_error=False)
+        resp, err = wait_for_task_completion(
+            module, {"task_uuid": task_uuid}, raise_error=False
+        )
         if err:
-            result["warning"].append("Client update task is failed. Error: {0}".format(err))
+            result["warning"].append(
+                "Client update task is failed. Error: {0}".format(err)
+            )
             result["skipped"] = True
             continue
 
@@ -582,9 +616,13 @@ def detach_volume_group_clients(module, volume_group, volume_group_uuid, result)
         detach_resp = volume_group.detach_iscsi_client(volume_group_uuid, client_uuid)
 
         task_uuid = detach_resp["task_uuid"]
-        resp, err = wait_for_task_completion(module, {"task_uuid": task_uuid}, raise_error=False)
+        resp, err = wait_for_task_completion(
+            module, {"task_uuid": task_uuid}, raise_error=False
+        )
         if err:
-            result["warning"].append("Client detaching task is failed. Error: {0}".format(err))
+            result["warning"].append(
+                "Client detaching task is failed. Error: {0}".format(err)
+            )
             result["skipped"] = True
             continue
         detached_clients.append(client_uuid)
@@ -602,9 +640,13 @@ def detach_volume_group_vms(module, volume_group, volume_group_uuid, result):
             result["skipped"] = True
             continue
         task_uuid = detach_resp["task_uuid"]
-        resp, err = wait_for_task_completion(module, {"task_uuid": task_uuid}, raise_error=False)
+        resp, err = wait_for_task_completion(
+            module, {"task_uuid": task_uuid}, raise_error=False
+        )
         if err:
-            result["warning"].append("VM detaching task is failed. Error: {0}".format(err))
+            result["warning"].append(
+                "VM detaching task is failed. Error: {0}".format(err)
+            )
             result["skipped"] = True
             continue
         detached_vms.append(vm["extId"])

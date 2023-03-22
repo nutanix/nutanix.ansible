@@ -43,10 +43,7 @@ class Clients(Prism):
 
     def get_client_spec(self, iscsi_client, authentication_is_enabled=False):
         payload = self._get_default_spec()
-        if (
-            self.module.params.get("CHAP_auth") == "enable"
-            or authentication_is_enabled
-        ):
+        if self.module.params.get("CHAP_auth") == "enable" or authentication_is_enabled:
             chap_auth = True
         else:
             chap_auth = False
