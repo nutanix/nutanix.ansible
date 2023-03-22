@@ -277,8 +277,11 @@ def create_volume_group(module, result):
                 result["skipped"] = True
                 continue
 
-            vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
-
+            vdisk_resp, err = volume_group.create_vdisk(spec, volume_group_uuid)
+            if err:
+                result["warning"].append("Disk is not created. Error: {0}".format(err))
+                result["skipped"] = True
+                continue
             task_uuid = vdisk_resp["task_uuid"]
             vdisk_resp, err = wait_for_task_completion(
                 module, {"task_uuid": task_uuid}, raise_error=False
@@ -492,8 +495,11 @@ def update_volume_group_disks(
                 result["warning"].append("Disk is not created. Error: {0}".format(err))
                 result["skipped"] = True
                 continue
-            vdisk_resp = volume_group.create_vdisk(spec, volume_group_uuid)
-
+            vdisk_resp, err = volume_group.create_vdisk(spec, volume_group_uuid)
+            if err:
+                result["warning"].append("Disk is not created. Error: {0}".format(err))
+                result["skipped"] = True
+                continue
             result["changed"] = True
 
         task_uuid = vdisk_resp["task_uuid"]

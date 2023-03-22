@@ -48,8 +48,15 @@ class VolumeGroup(Prism):
         resp = self.update(
             spec, volume_group_uuid, method="POST", endpoint=endpoint, raise_error=False
         )
+        if resp.get("data") and resp["data"].get("error"):
+            err = resp["data"]["error"]
+            if isinstance(err, list):
+                err = err[0]
+                if err.get("message"):
+                    err = err["message"]
+            return None, err
         resp["task_uuid"] = resp["data"]["extId"].split(":")[1]
-        return resp
+        return resp, None
 
     def attach_vm(self, spec, volume_group_uuid):
         endpoint = "$actions/attach-vm"
