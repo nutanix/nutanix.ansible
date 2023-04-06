@@ -117,6 +117,12 @@ def create_pool(module, result):
     node_pool = NodePool(module)
     cluster_name = module.params["cluster_name"]
     pool_name = module.params["node_pool_name"]
+
+    pool = node_pool.get_node(cluster_name, pool_name)
+    if pool:
+        update_pool(module, result, pool)
+        return
+
     spec, error = node_pool.get_pool_spec()
     if error:
         result["error"] = error
@@ -129,7 +135,7 @@ def create_pool(module, result):
     resp = node_pool.add_node_pool(cluster_name, spec)
     task_uuid = resp["task_uuid"]
     result["cluster_name"] = cluster_name
-    result["pool_name"] = pool_name
+    result["node_pool_name"] = pool_name
     result["changed"] = True
 
     if module.params.get("wait"):
@@ -140,22 +146,57 @@ def create_pool(module, result):
     result["response"] = resp
 
 
-def update_pool(module, result):
+def update_pool(module, result, pool=None):
     node_pool = NodePool(module)
     cluster_name = module.params["cluster_name"]
-    pool_name = module.params["pool_name"]
+    pool_name = module.params["node_pool_name"]
+    nodes_expected_count = module.params.get("pool_config", {}).get("num_instances")
+    nodes_actual_count = len(pool.get("nodes", []))
+    add_labels = module.params.get("add_labels")
+    remove_labels = module.params.get("remove_labels")
+    nothing_to_change = False
 
-    node_pool = node_pool.read_node_pool(cluster_name, pool_name)
+    if not (nodes_expected_count or add_labels or remove_labels):
+        result["error"] = "Missing parameter in playbook." \
+                          "On of attributes pool_config.num_instances|add_labels|remove_labels is required"
+        module.fail_json(msg="Failed updating node pool", **result)
+
     # resize pool
-    if module.params.get("count"):
-        if module.params.get("count") > node_pool["count"]:
-            resp = node_pool.add_node(cluster_name, pool_name)
+    if nodes_expected_count:
+        if nodes_expected_count != nodes_actual_count:
+            resp = node_pool.update_nodes_count(cluster_name, pool_name, nodes_actual_count, nodes_expected_count)
+            task_uuid = resp.get("task_uuid")
+            result["nodes_update_response"] = resp
+            if task_uuid:
+                task = Task(module)
+                task.wait_for_completion(task_uuid)
         else:
-            resp = node_pool.remove_node(cluster_name, pool_name)
-        pass
+            nothing_to_change = True
+
     # update labels
-    if module.params.get("add_labels") or module.params.get("remove_labels"):
-        resp = node_pool.update_labels()
+    if add_labels or remove_labels:
+        labels_spec = node_pool.get_labels_spec()
+        if module.check_mode:
+            result["response"] = labels_spec
+            return
+
+        resp = node_pool.update_labels(cluster_name, pool_name, labels_spec)
+        result["labels_update_response"] = resp
+        task_uuid = resp.get("task_uuid")
+
+        if task_uuid:
+            task = Task(module)
+            task.wait_for_completion(task_uuid)
+    else:
+        if nothing_to_change:
+            result["skipped"] = True
+            module.exit_json(msg="Nothing to change.")
+
+    pool = node_pool.get_node(cluster_name, pool_name)
+    result["response"] = pool
+    result["cluster_name"] = cluster_name
+    result["node_pool_name"] = pool_name
+    result["changed"] = True
 
 
 def delete_nodes_of_pool(module, result):
@@ -186,7 +227,7 @@ def delete_pool(module, result):
 
     result["changed"] = True
     result["cluster_name"] = cluster_name
-    result["pool_name"] = pool_name
+    result["node_pool_name"] = pool_name
     task_uuid = resp["task_uuid"]
     result["task_uuid"] = task_uuid
 

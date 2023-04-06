@@ -48,10 +48,21 @@ class NodePool(Cluster):
 
     def get_pool_spec(self):
         default_pool_spec = self._get_default_pool_spec()
+        error = self.validate_pool_resources()
+        if error:
+            return None, error
         spec, error = self._build_pool_spec(default_pool_spec, self.module.params)
         if error:
-            return spec, error
+            return None, error
         return spec, None
+
+    def get_labels_spec(self):
+        return deepcopy(
+            {
+                "add_labels": self.module.params.get("add_labels"),
+                "remove_labels": self.module.params.get("remove_labels")
+            }
+        )
 
     def add_node_pool(self, cluster_name, data=None):
 
@@ -64,21 +75,19 @@ class NodePool(Cluster):
         )
         return resp
 
-    def get_nodes_count(self, cluster_name, node_name):
+    def get_nodes_count(self, cluster_name, pool_name):
         nodes_count = 0
-        node_pools = self.read_node_pools(cluster_name)
-        for pool in node_pools:
-            if pool.get("name") == node_name:
-                nodes_count = len(pool.get("nodes"))
-                break
+        pool = self.get_node(cluster_name, pool_name)
+        if pool:
+            nodes_count = len(pool.get("nodes"))
         return nodes_count
 
-    def remove_nodes_of_pool(self, cluster_name, node_name):
-        nodes_count = self.get_nodes_count(cluster_name, node_name)
+    def remove_nodes_of_pool(self, cluster_name, pool_name):
+        nodes_count = self.get_nodes_count(cluster_name, pool_name)
         resp = {}
         if nodes_count:
             spec = {"count": nodes_count}
-            endpoint = "node-pools/{0}/remove-nodes".format(node_name)
+            endpoint = "node-pools/{0}/remove-nodes".format(pool_name)
             resp = self.update(
                 data=spec,
                 uuid=cluster_name,
@@ -87,9 +96,9 @@ class NodePool(Cluster):
             )
         return resp
 
-    def remove_node_pool(self, cluster_name, node_name):
+    def remove_node_pool(self, cluster_name, pool_name):
 
-        endpoint = "node-pools/{0}".format(node_name)
+        endpoint = "node-pools/{0}".format(pool_name)
         resp = self.delete(
             uuid=cluster_name,
             endpoint=endpoint,
@@ -105,32 +114,56 @@ class NodePool(Cluster):
         )
         return resp
 
-    def add_node(self, cluster_name, node_name, data=None):
+    def get_node(self, cluster_name, pool_name):
+        node_pools = self.read_node_pools(cluster_name)
+        for pool in node_pools:
+            if pool.get("name") == pool_name:
+                return pool
+        return None
 
-        endpoint = "node-pools/{0}/add-nodes".format(node_name)
+    def update_nodes_count(self, cluster_name, pool_name, actual_count, expected_count):
+        residual_count = expected_count - actual_count
+        spec = {"count": abs(residual_count)}
+        if residual_count > 0:
+            resp = self.add_node(cluster_name, pool_name, spec)
+        else:
+            resp = self.remove_node(cluster_name, pool_name, spec)
+        return resp
+
+    def add_node(self, cluster_name, pool_name, data=None):
+
+        endpoint = "node-pools/{0}/add-nodes".format(pool_name)
         resp = self.update(
             data=data,
             uuid=cluster_name,
             endpoint=endpoint,
+            method="POST",
         )
         return resp
 
-    def remove_node(self, cluster_name, node_name, data=None):
+    def remove_node(self, cluster_name, pool_name, data=None):
 
-        endpoint = "node-pools/{0}/remove-nodes".format(node_name)
+        endpoint = "node-pools/{0}/remove-nodes".format(pool_name)
         resp = self.update(
             data=data,
             uuid=cluster_name,
             endpoint=endpoint,
+            method="POST",
         )
         return resp
 
-    def update_labels(self, cluster_name, node_name, data=None):
+    def update_labels(self, cluster_name, pool_name, data=None):
 
-        endpoint = "node-pools/{0}/update-labels".format(node_name)
+        endpoint = "node-pools/{0}/update-labels".format(pool_name)
         resp = self.update(
             data=data,
             uuid=cluster_name,
             endpoint=endpoint,
+            method="POST",
         )
         return resp
+
+    def validate_pool_resources(self):
+        if not self.module.params.get("node_subnet"):
+            return "missing required arguments: node_subnet"
+        return None
