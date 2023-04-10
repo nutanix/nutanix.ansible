@@ -6,8 +6,6 @@ __metaclass__ = type
 
 from copy import deepcopy
 
-from ..prism.clusters import get_cluster_uuid
-from ..prism.subnets import get_subnet_uuid
 from .clusters import Cluster
 
 
@@ -16,22 +14,21 @@ class NodePool(Cluster):
 
     def __init__(self, module, resource_type="/v1-alpha.1/k8s/clusters"):
         super(NodePool, self).__init__(module, resource_type=resource_type)
-        self.build_spec_methods = {
-        }
+        self.build_spec_methods = {}
 
     def _get_default_pool_spec(self):
         return deepcopy(
-            {"name": "",
-             "num_instances": 0,
-             "ahv_config": {
-                 "cpu": 0,
-                 "disk_mib": 0,
-                 "memory_mib": 0,
-                 "network_uuid": "",
-                 "iscsi_network_uuid": ""
-             }
-             }
-
+            {
+                "name": "",
+                "num_instances": 0,
+                "ahv_config": {
+                    "cpu": 0,
+                    "disk_mib": 0,
+                    "memory_mib": 0,
+                    "network_uuid": "",
+                    "iscsi_network_uuid": "",
+                },
+            }
         )
 
     def _build_pool_spec(self, payload, config):
@@ -42,7 +39,9 @@ class NodePool(Cluster):
         payload["ahv_config"]["disk_mib"] = config["pool_config"]["disk_gb"] * 1024
         payload["ahv_config"]["network_uuid"] = config["node_subnet"]["uuid"]
         if config.get("node_iscsi_subnet"):
-            payload["ahv_config"]["iscsi_network_uuid"] = config["node_iscsi_subnet"].get("uuid")
+            payload["ahv_config"]["iscsi_network_uuid"] = config[
+                "node_iscsi_subnet"
+            ].get("uuid")
 
         return payload, None
 
@@ -60,7 +59,7 @@ class NodePool(Cluster):
         return deepcopy(
             {
                 "add_labels": self.module.params.get("add_labels"),
-                "remove_labels": self.module.params.get("remove_labels")
+                "remove_labels": self.module.params.get("remove_labels"),
             }
         )
 
@@ -89,10 +88,7 @@ class NodePool(Cluster):
             spec = {"count": nodes_count}
             endpoint = "node-pools/{0}/remove-nodes".format(pool_name)
             resp = self.update(
-                data=spec,
-                uuid=cluster_name,
-                endpoint=endpoint,
-                method="POST"
+                data=spec, uuid=cluster_name, endpoint=endpoint, method="POST"
             )
         return resp
 

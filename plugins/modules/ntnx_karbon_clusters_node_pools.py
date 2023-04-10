@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_clusters_node_pools
 short_description: Create, Delete a k8s cluster with the provided configuration.
-version_added: 1.6.0
+version_added: 1.9.0
 description: "Create, Update and Delete node pools"
 options:
     cluster_name:
@@ -42,12 +42,13 @@ options:
             uuid:
                 type: str
                 description: Subnet UUID
-    pool_configs:
+    pool_config:
         type: dict
         description: write
         suboptions:
             num_instances:
                 type: int
+                default: 1
                 description: Number of nodes in the node pool.
             cpu:
                 type: int
@@ -61,6 +62,16 @@ options:
                 type: int
                 description: Memory allocated for each VM on the PE cluster in GiB.
                 default: 8
+    add_labels:
+        type: dict
+        description: write
+    remove_labels:
+        type: list
+        description: write
+        elements: str
+    nodes_count:
+        type: int
+        description: write
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
@@ -106,8 +117,7 @@ def get_module_spec():
         ),
         nodes_count=dict(type="int"),
         add_labels=dict(type="dict"),
-        remove_labels=dict(type="list"),
-
+        remove_labels=dict(type="list", elements="str"),
     )
 
     return module_args
@@ -157,14 +167,18 @@ def update_pool(module, result, pool=None):
     nothing_to_change = False
 
     if not (nodes_expected_count or add_labels or remove_labels):
-        result["error"] = "Missing parameter in playbook." \
-                          "On of attributes pool_config.num_instances|add_labels|remove_labels is required"
+        result["error"] = (
+            "Missing parameter in playbook."
+            "On of attributes pool_config.num_instances|add_labels|remove_labels is required"
+        )
         module.fail_json(msg="Failed updating node pool", **result)
 
     # resize pool
     if nodes_expected_count:
         if nodes_expected_count != nodes_actual_count:
-            resp = node_pool.update_nodes_count(cluster_name, pool_name, nodes_actual_count, nodes_expected_count)
+            resp = node_pool.update_nodes_count(
+                cluster_name, pool_name, nodes_actual_count, nodes_expected_count
+            )
             task_uuid = resp.get("task_uuid")
             result["nodes_update_response"] = resp
             if task_uuid:
@@ -242,10 +256,8 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[
-        ],
-        required_together=[
-        ],
+        required_if=[],
+        required_together=[],
     )
     utils.remove_param_with_none_value(module.params)
     result = {"response": {}, "error": None, "changed": False}
