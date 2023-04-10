@@ -7,6 +7,7 @@ __metaclass__ = type
 from copy import deepcopy
 
 from .clusters import Cluster
+from ..prism.subnets import get_subnet_uuid
 
 
 class NodePool(Cluster):
@@ -37,11 +38,15 @@ class NodePool(Cluster):
         payload["ahv_config"]["cpu"] = config["pool_config"]["cpu"]
         payload["ahv_config"]["memory_mib"] = config["pool_config"]["memory_gb"] * 1024
         payload["ahv_config"]["disk_mib"] = config["pool_config"]["disk_gb"] * 1024
-        payload["ahv_config"]["network_uuid"] = config["node_subnet"]["uuid"]
+        subnet_uuid, err = get_subnet_uuid(config["node_subnet"], self.module)
+        if err:
+            return None, err
+        payload["ahv_config"]["network_uuid"] = subnet_uuid
         if config.get("node_iscsi_subnet"):
-            payload["ahv_config"]["iscsi_network_uuid"] = config[
-                "node_iscsi_subnet"
-            ].get("uuid")
+            iscsi_subnet_uuid, err = get_subnet_uuid(config["node_iscsi_subnet"], self.module)
+            if err:
+                return None, err
+            payload["ahv_config"]["iscsi_network_uuid"] = iscsi_subnet_uuid
 
         return payload, None
 
