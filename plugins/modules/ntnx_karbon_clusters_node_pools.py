@@ -108,7 +108,7 @@ def get_module_spec():
     module_args = dict(
         cluster_name=dict(type="str", required=True),
         node_pool_name=dict(type="str", required=True),
-        pool_config=dict(type="dict", options=resource_spec),
+        pool_config=dict(type="dict", apply_defaults=True, options=resource_spec),
         node_subnet=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),

@@ -34,10 +34,11 @@ class NodePool(Cluster):
 
     def _build_pool_spec(self, payload, config):
         payload["name"] = config["node_pool_name"]
-        payload["num_instances"] = config["pool_config"]["num_instances"]
-        payload["ahv_config"]["cpu"] = config["pool_config"]["cpu"]
-        payload["ahv_config"]["memory_mib"] = config["pool_config"]["memory_gb"] * 1024
-        payload["ahv_config"]["disk_mib"] = config["pool_config"]["disk_gb"] * 1024
+        if config.get("pool_config"):
+            payload["num_instances"] = config["pool_config"]["num_instances"]
+            payload["ahv_config"]["cpu"] = config["pool_config"]["cpu"]
+            payload["ahv_config"]["memory_mib"] = config["pool_config"]["memory_gb"] * 1024
+            payload["ahv_config"]["disk_mib"] = config["pool_config"]["disk_gb"] * 1024
         subnet_uuid, err = get_subnet_uuid(config["node_subnet"], self.module)
         if err:
             return None, err
