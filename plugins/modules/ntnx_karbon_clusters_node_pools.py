@@ -115,7 +115,6 @@ def get_module_spec():
         node_iscsi_subnet=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
-        nodes_count=dict(type="int"),
         add_labels=dict(type="dict"),
         remove_labels=dict(type="list", elements="str"),
     )
