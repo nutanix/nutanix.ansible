@@ -44,7 +44,9 @@ options:
                 description: Subnet UUID
     pool_config:
         type: dict
-        description: Configuration of the node pools that the workers belong to. The worker nodes require a minimum of 8,192 MiB memory and 122,880 MiB disk space.
+        description:
+                -  Configuration of the node pools that the workers belong to.
+                -  The worker nodes require a minimum of 8,192 MiB memory and 122,880 MiB disk space.
         suboptions:
             num_instances:
                 type: int
