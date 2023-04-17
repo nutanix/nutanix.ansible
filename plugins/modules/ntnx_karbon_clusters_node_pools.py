@@ -44,7 +44,7 @@ options:
                 description: Subnet UUID
     pool_config:
         type: dict
-        description: write
+        description: Configuration of the node pools that the workers belong to. The worker nodes require a minimum of 8,192 MiB memory and 122,880 MiB disk space.
         suboptions:
             num_instances:
                 type: int
@@ -64,14 +64,11 @@ options:
                 default: 8
     add_labels:
         type: dict
-        description: write
+        description: Map of user-provided labels for the nodes in the node pool.
     remove_labels:
         type: list
-        description: write
+        description: Map of user-provided labels for the nodes in the node pool to remove.
         elements: str
-    nodes_count:
-        type: int
-        description: write
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations
