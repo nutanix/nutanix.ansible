@@ -53,9 +53,9 @@
         nutanix_cluster_password: "{{nutanix_cluster_password}}"
         nutanix_cluster_username: "{{nutanix_cluster_username}}"
         default_storage_class: True
-        name: "{{storage_class.name}}"
+        name: test-storage-class
         reclaim_policy: Delete
-        storage_container: "{{storage_class.storage_container.name}}"
+        storage_container: "{{storage_class.name}}"
         file_system: ext4
         flash_mode: False
     register: result
@@ -100,9 +100,9 @@
         nutanix_cluster_password: "{{nutanix_cluster_password}}"
         nutanix_cluster_username: "{{nutanix_cluster_username}}"
         default_storage_class: True
-        name: "{{storage_class.name}}"
+        name: test-storage-class
         reclaim_policy: Retain
-        storage_container: "{{storage_class.storage_container.name}}"
+        storage_container: "{{storage_class.name}}"
         file_system: xfs
         flash_mode: true
     register: result
@@ -126,9 +126,9 @@
         nutanix_cluster_password: "{{nutanix_cluster_password}}"
         nutanix_cluster_username: "{{nutanix_cluster_username}}"
         default_storage_class: True
-        name: "{{storage_class.name}}"
+        name: test-storage-class
         reclaim_policy: Delete
-        storage_container: "{{storage_class.storage_container.name}}"
+        storage_container: "{{storage_container.name}}"
         file_system: ext4
         flash_mode: False
       control_plane_virtual_ip: "{{control_plane_virtual_ip}}"
