@@ -16,20 +16,27 @@ class FileServer(NutanixFiles):
     def __init__(self, module):
 
         super(FileServer, self).__init__(module, self.resource_type)
-        self.build_spec_methods = {
-            "name": self._build_spec_name,
-            "version": self._build_spec_version,
-            "cluster": self._build_spec_cluster,
-            "size_gb": self._build_spec_size_gb,
-            "vms_config": self._build_spec_vms_config,
-            "dns_domain_name": self._build_spec_dns_domain_name,
-            "dns_servers": self._build_spec_dns_servers,
-            "ntp_servers": self._build_spec_ntp_servers,
-            "file_blocking_extensions": self._build_spec_file_blocking_extensions,
-            "external_networks": self._build_spec_external_networks,
-            "internal_networks": self._build_spec_internal_networks
-        }
 
+    def read(self, uuid=None, endpoint=None, query=None, raise_error=True, no_response=False, timeout=30, **kwargs):
+        if not query:
+            query = {}
+
+        # For getting response without reserved objects info
+        query["$mode"] = "pretty"
+        return super().read(uuid, endpoint, query, raise_error, no_response, timeout, **kwargs)
+
+    def update(self, data=None, uuid=None, endpoint=None, query=None, raise_error=True, no_response=False, timeout=30, method="PUT", **kwargs):
+        etag = kwargs.get("etag")
+        if not etag:
+            return "'etag' is mandatory for update operations"
+
+        kwargs.update({
+            "additional_headers" : {
+                "If-Match": etag
+            }
+        })
+        return super().update(data, uuid, endpoint, query, raise_error, no_response, timeout, method, **kwargs)
+    
     def get_file_servers_by_name(self, name):
         query = {
             "filter": "name%20eq%20'{0}'".format(name)
@@ -45,20 +52,55 @@ class FileServer(NutanixFiles):
 
     def _get_default_spec(self):
         return deepcopy({
-            "dnsDomainName": "",
+            "dnsDomainName": None,
             "dnsServers": [],
             "externalNetworks":[],
             "internalNetworks":[],
-            "memoryGib": 12,
-            "name": "",
+            "memoryGib": None,
+            "name": None,
             "ntpServers": [],
-            "nvmsCount": 1,
-            "sizeInGib": 1024,
-            "vcpus": 4,
-            "version": "",
+            "nvmsCount": None,
+            "sizeInGib": None,
+            "vcpus": None,
+            "version": None,
         })
+    
+    def get_spec(self, old_spec=None, params=None, **kwargs):
+        if kwargs.get("create"):
+            return self.get_create_spec(old_spec, params, **kwargs)
+        elif kwargs.get("update"):
+            return self.get_update_spec(old_spec, params, **kwargs)
+        return super().get_spec(old_spec, params, **kwargs)
 
     # spec builders
+    def get_create_spec(self, old_spec=None, params=None, **kwargs):
+        self.build_spec_methods = {
+            "name": self._build_spec_name,
+            "version": self._build_spec_version,
+            "cluster": self._build_spec_cluster,
+            "size_gb": self._build_spec_size_gb,
+            "vms_config": self._build_spec_vms_config,
+            "dns_domain_name": self._build_spec_dns_domain_name,
+            "dns_servers": self._build_spec_dns_servers,
+            "ntp_servers": self._build_spec_ntp_servers,
+            "file_blocking_extensions": self._build_spec_file_blocking_extensions,
+            "external_networks": self._build_spec_external_networks,
+            "internal_networks": self._build_spec_internal_networks
+        }
+        return super().get_spec(old_spec, params, **kwargs)
+    
+    def get_update_spec(self, old_spec=None, params=None, **kwargs):
+        self.build_spec_methods = {
+            "name": self._build_spec_name,
+            "size_gb": self._build_spec_size_gb,
+            "vms_config": self._build_spec_vms_config,
+            "dns_domain_name": self._build_spec_dns_domain_name,
+            "dns_servers": self._build_spec_dns_servers,
+            "ntp_servers": self._build_spec_ntp_servers,
+            "file_blocking_extensions": self._build_spec_file_blocking_extensions,
+        }
+        return super().get_spec(old_spec, params, **kwargs)
+
     def _build_spec_name(self, payload, name):
         payload["name"] = name
         return payload, None

@@ -67,6 +67,7 @@ class Entity(object):
         raise_error=True,
         no_response=False,
         timeout=30,
+        **kwargs
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -79,6 +80,7 @@ class Entity(object):
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
+            **kwargs
         )
 
     def update(
@@ -91,6 +93,7 @@ class Entity(object):
         no_response=False,
         timeout=30,
         method="PUT",
+        **kwargs
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -104,6 +107,7 @@ class Entity(object):
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
+            **kwargs
         )
 
     # source is the file path of resource where ansible yaml runs
@@ -327,18 +331,22 @@ class Entity(object):
         return urlunparse(url)
 
     def _fetch_url(
-        self, url, method, data=None, raise_error=True, no_response=False, timeout=30
+        self, url, method, data=None, raise_error=True, no_response=False, timeout=30, **kwargs
     ):
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
         if self.headers["Content-Type"] == "application/json" and data is not None:
             data = self.module.jsonify(data)
+        
+        headers = copy.deepcopy(self.headers)
+        if kwargs.get("additional_headers"):
+            headers.update(kwargs.get("additional_headers"))
 
         resp, info = fetch_url(
             self.module,
             url,
             data=data,
             method=method,
-            headers=self.headers,
+            headers=headers,
             cookies=self.cookies,
             timeout=timeout,
         )
@@ -376,7 +384,7 @@ class Entity(object):
             return resp_json
 
         if status_code >= 300:
-            if resp_json and resp_json.get("message"):  # for ndb apis
+            if resp_json and isinstance(resp_json, dict) and resp_json.get("message"):  # for ndb apis
                 err = resp_json["message"]
             elif info.get("msg"):
                 err = info["msg"]
@@ -400,6 +408,8 @@ class Entity(object):
                 response=resp_json,
             )
 
+        if kwargs.get("include_etag"):
+            resp_json["etag"] = info.get("etag")
         return resp_json
 
     # upload file in chunks to the given url

@@ -50,6 +50,7 @@ def get_module_spec():
     )
 
     module_args = dict(
+        uuid = dict(type="str"),
         name = dict(type="str"),
         version = dict(type="str"),
         cluster = dict(type="dict", options=entity_by_spec, mutually_exclusive=[("name", "uuid")]),
@@ -66,8 +67,9 @@ def get_module_spec():
 
 
 def create_file_server(module, result):
-    file_servers = FileServer(module)
-    spec, err = file_servers.get_spec()
+    _file_server = FileServer(module)
+    kwargs = {"create": True}
+    spec, err = _file_server.get_spec(**kwargs)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating file server create spec", **result)
@@ -79,9 +81,9 @@ def create_file_server(module, result):
     name = spec.get("name")
     cluster_uuid = spec.get("clusterExtId")
 
-    resp = file_servers.create(spec)
+    resp = _file_server.create(spec)
     task_uuid = resp.get("data", {}).get("extId")
-    uuid = file_servers.get_file_server_uuid(name=name, cluster_uuid=cluster_uuid)
+    uuid = _file_server.get_file_server_uuid(name=name, cluster_uuid=cluster_uuid)
 
     result["task_uuid"] = task_uuid
     result["uuid"] = uuid
@@ -90,17 +92,67 @@ def create_file_server(module, result):
         task = Task(module)
         task.wait_for_completion(task_uuid)
     
-    resp = file_servers.read(uuid=uuid, query={"$mode":"pretty"})
+    resp = _file_server.read(uuid=uuid).get("data")
     result["response"] = resp
     result["changed"] = True
 
 
 
 def update_file_server(module, result):
-    pass
+    uuid = module.params.get("uuid")
+    if not uuid:
+        return module.fail_json("'uuid' is mandatory for update", **result)
+    
+    _file_server = FileServer(module)
+    resp = _file_server.read(uuid, include_etag=True)
+    file_server = resp.get("data")
+    if not file_server:
+        return module.fail_json("unable to fetch file server's info", **result)
+    
+    # get etag
+    if not resp.get("etag"):
+        return module.fail_json("unable to fetch etag from file server's info", **result)
+
+    etag = resp.pop("etag")
+
+    # create update spec
+    kwargs={"update": True}
+    update_spec, err = _file_server.get_spec(old_spec=file_server, **kwargs)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating file server update spec", **result)
+    
+    result["uuid"] = uuid
+
+    if module.check_mode:
+        result["response"] = update_spec
+        return
+    
+    # update platform related fields
+    resp = _file_server.update(data=update_spec, uuid=uuid, etag=etag)
+    task_uuid = resp.get("data", {}).get("extId")
+    if task_uuid and module.params.get("wait"):
+        task = Task(module)
+        task.wait_for_completion(task_uuid)
+    
+    resp = _file_server.read(uuid=uuid).get("data")
+    result["response"] = resp
+    result["changed"] = True
 
 def delete_file_server(module, result):
-    pass
+    uuid = module.params.get("uuid")
+    if not uuid:
+        return module.fail_json("'uuid' is mandatory for update", **result)
+    
+    _file_server = FileServer(module)
+    resp = _file_server.delete(uuid=uuid)
+    task_uuid = resp.get("data", {}).get("extId")
+    if task_uuid and module.params.get("wait"):
+        task = Task(module)
+        resp = task.wait_for_completion(task_uuid)
+    
+    result["response"] = resp
+    result["changed"] = True
 
 
 def run_module():
