@@ -87,7 +87,6 @@ def convert_to_secs(value, unit):
 
     return value * conversion_multiplier[unit], None
 
-
 def extract_uuids_from_references_list(reference_lists):
     """
     This routine extracts uuids from list of references to entities
@@ -97,6 +96,12 @@ def extract_uuids_from_references_list(reference_lists):
     for spec in reference_lists:
         uuids.add(spec["uuid"])
     return uuids
+
+def list_to_string(lst):
+    """
+    This routine create comma seperated string from list of strings
+    """
+    return ",".join(lst)
 
 
 def format_filters_map(filters, except_keys=None):
