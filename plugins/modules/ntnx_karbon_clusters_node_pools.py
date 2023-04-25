@@ -228,9 +228,6 @@ def delete_nodes_of_pool(module, result):
 def delete_pool(module, result):
     cluster_name = module.params["cluster_name"]
     pool_name = module.params["node_pool_name"]
-    if not pool_name:
-        result["error"] = "Missing parameter node_pool_name in playbook"
-        module.fail_json(msg="Failed deleting node pool", **result)
 
     delete_nodes_of_pool(module, result)
 
