@@ -86,12 +86,12 @@ class NodePool(Cluster):
 
     def get_nodes_count(self, cluster_name, pool_name):
         nodes_count = 0
-        pool = self.get_node(cluster_name, pool_name)
+        pool = self.get_node_pool(cluster_name, pool_name)
         if pool:
             nodes_count = len(pool.get("nodes"))
         return nodes_count
 
-    def remove_nodes_of_pool(self, cluster_name, pool_name):
+    def remove_pool_nodes(self, cluster_name, pool_name):
         nodes_count = self.get_nodes_count(cluster_name, pool_name)
         resp = {}
         if nodes_count:
@@ -120,7 +120,7 @@ class NodePool(Cluster):
         )
         return resp
 
-    def get_node(self, cluster_name, pool_name):
+    def get_node_pool(self, cluster_name, pool_name):
         node_pools = self.read_node_pools(cluster_name)
         for pool in node_pools:
             if pool.get("name") == pool_name:

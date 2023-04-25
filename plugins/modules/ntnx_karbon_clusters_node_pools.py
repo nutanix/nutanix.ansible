@@ -126,7 +126,7 @@ def create_pool(module, result):
     cluster_name = module.params["cluster_name"]
     pool_name = module.params["node_pool_name"]
 
-    pool = node_pool.get_node(cluster_name, pool_name)
+    pool = node_pool.get_node_pool(cluster_name, pool_name)
     if pool:
         update_pool(module, result, pool)
         return
@@ -167,7 +167,7 @@ def update_pool(module, result, pool=None):
     if not (nodes_expected_count or add_labels or remove_labels):
         result["error"] = (
             "Missing parameter in playbook."
-            "On of attributes pool_config.num_instances|add_labels|remove_labels is required"
+            "One of attributes pool_config.num_instances|add_labels|remove_labels is required"
         )
         module.fail_json(msg="Failed updating node pool", **result)
 
@@ -204,7 +204,7 @@ def update_pool(module, result, pool=None):
             result["skipped"] = True
             module.exit_json(msg="Nothing to change.")
 
-    pool = node_pool.get_node(cluster_name, pool_name)
+    pool = node_pool.get_node_pool(cluster_name, pool_name)
     result["response"] = pool
     result["cluster_name"] = cluster_name
     result["node_pool_name"] = pool_name
@@ -216,7 +216,7 @@ def delete_nodes_of_pool(module, result):
     pool_name = module.params["node_pool_name"]
 
     node_pool = NodePool(module)
-    resp = node_pool.remove_nodes_of_pool(cluster_name, pool_name)
+    resp = node_pool.remove_pool_nodes(cluster_name, pool_name)
     result["changed"] = True
     task_uuid = resp.get("task_uuid")
 
@@ -254,8 +254,7 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[],
-        required_together=[],
+        required_if=[("state", "absent", ("cluster_name", "node_pool_name"))],
     )
     utils.remove_param_with_none_value(module.params)
     result = {"response": {}, "error": None, "changed": False}
