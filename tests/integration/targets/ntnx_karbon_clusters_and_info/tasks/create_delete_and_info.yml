@@ -273,6 +273,183 @@
     fail_msg: " Fail: Unable to get particular Cluster and it's kube config "
     success_msg: " Pass: Cluster info obtained successfully with it's kube config  "
 #############################
+- name: Generate random node_pool name 
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=9,upper = false)[0]}}"
+
+- set_fact:
+    suffix_name: "ansible"
+
+- set_fact:
+    node1_name:  "{{random_name}}{{suffix_name}}1"
+    node2_name:  "{{random_name}}{{suffix_name}}2"
+    node3_name:  "{{random_name}}{{suffix_name}}3"
+
+- debug:
+    msg: Start testing ntnx_karbon_clusters_node_pools
+
+- name: Create node pool  with subnet uuid 
+  ntnx_karbon_clusters_node_pools:
+    node_subnet:
+      uuid: "{{network.dhcp.uuid}}"
+    node_pool_name:  "{{node1_name}}"
+    cluster_name:  "{{karbon_name}}"
+    pool_config:
+      num_instances: 2
+      cpu: 4
+      memory_gb: 8 # for etcd min 8
+      disk_gb: 120   
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.cluster_name == "{{karbon_name}}"
+      - result.response is defined
+      - result.node_pool_name is defined
+      - result.node_pool_name=="{{node1_name}}"
+    fail_msg: "Fail: Unable to Create node pool "
+    success_msg: "Passed: Create node pool finished successfully "
+#################################
+- name: try to update node pool config with same values 
+  ntnx_karbon_clusters_node_pools:
+    node_pool_name:  "{{node1_name}}"
+    cluster_name:  "{{karbon_name}}"
+    pool_config:
+      num_instances: 2
+      cpu: 4
+      memory_gb: 8 # for etcd min 8
+      disk_gb: 120   
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    fail_msg: "Fail: idempotecy check fail "
+    success_msg: "Passed: Returned as expected "
+#################################
+- name: update pool by increasing cpu,memory_gb,num_instances and add add_labels
+  ntnx_karbon_clusters_node_pools:
+    wait: True
+    node_pool_name:  "{{node1_name}}"
+    cluster_name:  "{{karbon_name}}"
+    pool_config:
+        cpu: 6
+        memory_gb: 10 # for etcd min 8
+        disk_gb: 150
+        num_instances: 4
+    add_labels:
+      property1: "test-property1"
+      property2: "test-property2"
+      property3: "test-property3"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.cluster_name == "{{karbon_name}}"
+      - result.response is defined
+      - result.node_pool_name is defined
+      - result.node_pool_name=="{{node1_name}}"
+    fail_msg: "Fail: Unable to update pool by increasing cpu,memory_gb,num_instances and add add_labels "
+    success_msg: "Passed: update pool by increasing cpu,memory_gb,num_instances and add add_labels finished successfully "
+#################################
+- name: update pool by decreasing cpu,memory_gb,num_instances and add remove labels
+  ntnx_karbon_clusters_node_pools:
+    wait: True
+    node_pool_name:  "{{node1_name}}"
+    cluster_name:  "{{karbon_name}}"
+    pool_config:
+        cpu: 5
+        memory_gb: 9 # for etcd min 8
+        disk_gb: 140
+        num_instances: 3
+    remove_labels:
+      - property2
+      - property3
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.cluster_name == "{{karbon_name}}"
+      - result.response is defined
+      - result.node_pool_name is defined
+      - result.node_pool_name=="{{node1_name}}"
+    fail_msg: "Fail: Unable to update pool by decreasing cpu,memory_gb,num_instances and add remove labels "
+    success_msg: "Passed: update pool by decreasing cpu,memory_gb,num_instances and add remove labels finished successfully "
+################################
+- name: delete pool
+  ntnx_karbon_clusters_node_pools:
+    state: absent
+    node_pool_name:  "{{node1_name}}"
+    cluster_name:  "{{karbon_name}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+      - result.failed == false
+      - result.changed == true
+    fail_msg: " Unable to delete node pool "
+    success_msg: " node pool has been deleted successfully "
+#################################
+
+- name: Create node pool  with subnet name  with default values
+  ntnx_karbon_clusters_node_pools:
+    node_subnet:
+      name: "{{network.dhcp.name}}"
+    node_pool_name:  "{{node2_name}}"
+    cluster_name:  "{{karbon_name}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.cluster_name == "{{karbon_name}}"
+      - result.response is defined
+      - result.node_pool_name is defined
+      - result.node_pool_name=="{{node2_name}}"
+    fail_msg: "Fail: Unable to  Create node pool  with subnet name  with default values "
+    success_msg: "Passed:  Create node pool  with subnet name  with default values finished successfully "
+#################################
+- name: delete pool
+  ntnx_karbon_clusters_node_pools:
+    state: absent
+    node_pool_name:  "{{node2_name}}"
+    cluster_name:  "{{karbon_name}}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+      - result.failed == false
+      - result.changed == true
+    fail_msg: " Unable to delete node pool "
+    success_msg: " node pool has been deleted successfully "
+#################################
 - name: delete  dev cluster
   ntnx_karbon_clusters:
     state: absent
