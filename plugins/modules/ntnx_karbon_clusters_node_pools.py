@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_clusters_node_pools
-short_description: Create, Delete a k8s cluster with the provided configuration.
+short_description: Create, Delete a Node pools with the provided configuration.
 version_added: 1.9.0
 description: "Create, Update and Delete node pools"
 options:
@@ -20,7 +20,9 @@ options:
         required: true
     node_pool_name:
         type: str
-        description: Unique name of the k8s cluster's node pool.
+        description:
+            - Unique name of the k8s cluster's node pool.
+            - We can create or delete by using the  name
         required: true
     node_subnet:
         type: dict
@@ -28,25 +30,36 @@ options:
         suboptions:
             name:
                 type: str
-                description: Subnet name
+                description:
+                 - Subnet name
+                 - Mutually exclusive with C(uuid)
             uuid:
                 type: str
-                description: Subnet UUID
+                description:
+                    - Subnet UUID
+                    - Mutually exclusive with C(name)
     node_iscsi_subnet:
         type: dict
-        description: Configuration of the node pools that the nodes in the etcd,workers,master cluster belong to
+        description:
+            - Configuration of the node pools that the nodes in the etcd,workers,master cluster belong to
         suboptions:
             name:
                 type: str
-                description: Subnet name
+                description:
+                 - Subnet name
+                 - Mutually exclusive with C(uuid)
             uuid:
                 type: str
-                description: Subnet UUID
+                description:
+                    - Subnet UUID
+                    - Mutually exclusive with C(name)
     pool_config:
         type: dict
         description:
                 -  Configuration of the node pools that the workers belong to.
                 -  The worker nodes require a minimum of 8,192 MiB memory and 122,880 MiB disk space.
+                - disk space >=120880 Mib
+                - Memory >= 8192 Mib
         suboptions:
             num_instances:
                 type: int
