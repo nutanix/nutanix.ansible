@@ -175,6 +175,7 @@ def update_pool(module, result, pool=None):
     nodes_actual_count = len(pool.get("nodes", []))
     add_labels = module.params.get("add_labels")
     remove_labels = module.params.get("remove_labels")
+    wait = module.params.get("wait")
     nothing_to_change = False
 
     if not (nodes_expected_count or add_labels or remove_labels):
@@ -192,7 +193,7 @@ def update_pool(module, result, pool=None):
             )
             task_uuid = resp.get("task_uuid")
             result["nodes_update_response"] = resp
-            if task_uuid:
+            if task_uuid and wait:
                 task = Task(module)
                 task.wait_for_completion(task_uuid)
         else:
@@ -209,7 +210,7 @@ def update_pool(module, result, pool=None):
         result["labels_update_response"] = resp
         task_uuid = resp.get("task_uuid")
 
-        if task_uuid:
+        if task_uuid and wait:
             task = Task(module)
             task.wait_for_completion(task_uuid)
     else:
