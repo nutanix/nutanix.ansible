@@ -193,6 +193,7 @@ def update_pool(module, result, pool=None):
             )
             task_uuid = resp.get("task_uuid")
             result["nodes_update_response"] = resp
+            result["changed"] = True
             if task_uuid and wait:
                 task = Task(module)
                 task.wait_for_completion(task_uuid)
@@ -205,14 +206,22 @@ def update_pool(module, result, pool=None):
         if module.check_mode:
             result["response"] = labels_spec
             return
-
-        resp = node_pool.update_labels(cluster_name, pool_name, labels_spec)
+        raise_error = False if result["changed"] else True
+        resp = node_pool.update_labels(cluster_name, pool_name, labels_spec, raise_error)
         result["labels_update_response"] = resp
         task_uuid = resp.get("task_uuid")
 
-        if task_uuid and wait:
-            task = Task(module)
-            task.wait_for_completion(task_uuid)
+        if task_uuid:
+            result["changed"] = True
+            if wait:
+                task = Task(module)
+                resp = task.wait_for_completion(task_uuid, raise_error)
+                state = resp.get("status")
+                if state == "FAILED":
+                    result["skipped"] = True
+                    result["error"] = resp.get("error_detail")
+        else:
+            result["skipped"] = True
     else:
         if nothing_to_change:
             result["skipped"] = True
@@ -222,7 +231,6 @@ def update_pool(module, result, pool=None):
     result["response"] = pool
     result["cluster_name"] = cluster_name
     result["node_pool_name"] = pool_name
-    result["changed"] = True
 
 
 def delete_nodes_of_pool(module, result):

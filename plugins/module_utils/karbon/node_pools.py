@@ -158,7 +158,7 @@ class NodePool(Cluster):
         )
         return resp
 
-    def update_labels(self, cluster_name, pool_name, data=None):
+    def update_labels(self, cluster_name, pool_name, data=None, raise_error=True):
 
         endpoint = "node-pools/{0}/update-labels".format(pool_name)
         resp = self.update(
@@ -166,6 +166,7 @@ class NodePool(Cluster):
             uuid=cluster_name,
             endpoint=endpoint,
             method="POST",
+            raise_error=raise_error,
         )
         return resp
 
