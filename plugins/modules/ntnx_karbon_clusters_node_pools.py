@@ -207,7 +207,9 @@ def update_pool(module, result, pool=None):
             result["response"] = labels_spec
             return
         raise_error = False if result["changed"] else True
-        resp = node_pool.update_labels(cluster_name, pool_name, labels_spec, raise_error)
+        resp = node_pool.update_labels(
+            cluster_name, pool_name, labels_spec, raise_error
+        )
         result["labels_update_response"] = resp
         task_uuid = resp.get("task_uuid")
 
