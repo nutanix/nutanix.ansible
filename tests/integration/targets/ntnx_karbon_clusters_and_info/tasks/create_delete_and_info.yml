@@ -335,7 +335,31 @@
     fail_msg: "Fail: idempotecy check fail "
     success_msg: "Passed: Returned as expected "
 #################################
-- name: update pool by increasing cpu,memory_gb,num_instances and add add_labels
+- name: try to update node pool config with wrong labels 
+  ntnx_karbon_clusters_node_pools:
+    node_pool_name:  "{{node1_name}}"
+    cluster_name:  "{{karbon_name}}"
+    pool_config:
+      num_instances: 2
+      cpu: 4
+      memory_gb: 8 # for etcd min 8
+      disk_gb: 120
+    add_labels:
+      propert.-+]y5: "string"
+      propert5: "string"
+      property4: "string+-.3-@" 
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Fail: node pool updated with wrong labels "
+    success_msg: "Passed: Returned as expected "
+#################################
+- name: update pool by increasing cpu,memory_gb,num_instances and try to add wrong labels
   ntnx_karbon_clusters_node_pools:
     wait: True
     node_pool_name:  "{{node1_name}}"
@@ -345,6 +369,32 @@
         memory_gb: 10 # for etcd min 8
         disk_gb: 150
         num_instances: 4
+    add_labels:
+      property1: "test-property1"
+      property2: "test-property2"
+      property3: "test-property3"
+      propert.-+]y5: "string"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.cluster_name == "{{karbon_name}}"
+      - result.response is defined
+      - result.node_pool_name is defined
+      - result.node_pool_name=="{{node1_name}}"
+      - result.skipped == true
+    fail_msg: "Fail: Unable to update pool by increasing cpu,memory_gb,num_instances and try to add wrong labels "
+    success_msg: "Passed: update pool by increasing cpu,memory_gb,num_instances and try to add wrong labels  finished successfully "
+# #################################
+- name: update pool by add  labels
+  ntnx_karbon_clusters_node_pools:
+    wait: True
+    node_pool_name:  "{{node1_name}}"
+    cluster_name:  "{{karbon_name}}"
     add_labels:
       property1: "test-property1"
       property2: "test-property2"
@@ -361,8 +411,8 @@
       - result.response is defined
       - result.node_pool_name is defined
       - result.node_pool_name=="{{node1_name}}"
-    fail_msg: "Fail: Unable to update pool by increasing cpu,memory_gb,num_instances and add add_labels "
-    success_msg: "Passed: update pool by increasing cpu,memory_gb,num_instances and add add_labels finished successfully "
+    fail_msg: "Fail: Unable to update pool by add  labels "
+    success_msg: "Passed: update pool by add  labels  finished successfully "
 #################################
 - name: update pool by decreasing cpu,memory_gb,num_instances and add remove labels
   ntnx_karbon_clusters_node_pools:
