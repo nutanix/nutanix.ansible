@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_clusters_node_pools
-short_description: Create, Delete a Node pools with the provided configuration.
+short_description: Create,Update and Delete a Node pools with the provided configuration.
 version_added: 1.9.0
-description: "Create, Update and Delete node pools"
+description: "Createand and Delete node pools"
 options:
     cluster_name:
         type: str
@@ -22,7 +22,7 @@ options:
         type: str
         description:
             - Unique name of the k8s cluster's node pool.
-            - We can create or delete by using the  name
+            - We can create, update or delete by using the  name
         required: true
     node_subnet:
         type: dict
