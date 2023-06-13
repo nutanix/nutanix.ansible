@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_tags_info
 short_description: info module for ndb tags info
-version_added: 1.8.1
+version_added: 1.9.0
 description: info module for ndb tags
 options:
       uuid:
