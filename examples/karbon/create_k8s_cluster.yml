@@ -20,7 +20,9 @@
         name: <subnet_name>
         uuid: <subnet_uuid>
       storage_class:
-        name: <container_name>
+              name: <storage_class_name>
+      storage_container:
+              name: <storage_container_name>
       cni:
         node_cidr_mask_size: 24
         service_ipv4_cidr: "172.19.0.0/16"
@@ -53,9 +55,9 @@
         nutanix_cluster_password: "{{nutanix_cluster_password}}"
         nutanix_cluster_username: "{{nutanix_cluster_username}}"
         default_storage_class: True
-        name: test-storage-class
+        name: "{{storage_class.name}}"
         reclaim_policy: Delete
-        storage_container: "{{storage_class.name}}"
+        storage_container: "{{storage_container.name}}"
         file_system: ext4
         flash_mode: False
     register: result
@@ -100,9 +102,9 @@
         nutanix_cluster_password: "{{nutanix_cluster_password}}"
         nutanix_cluster_username: "{{nutanix_cluster_username}}"
         default_storage_class: True
-        name: test-storage-class
+        name: "{{storage_class.name}}"
         reclaim_policy: Retain
-        storage_container: "{{storage_class.name}}"
+        storage_container: "{{storage_container.name}}"
         file_system: xfs
         flash_mode: true
     register: result
@@ -126,7 +128,7 @@
         nutanix_cluster_password: "{{nutanix_cluster_password}}"
         nutanix_cluster_username: "{{nutanix_cluster_username}}"
         default_storage_class: True
-        name: test-storage-class
+        name: "{{storage_class.name}}"
         reclaim_policy: Delete
         storage_container: "{{storage_container.name}}"
         file_system: ext4
