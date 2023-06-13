@@ -46,6 +46,13 @@ options:
                     - filter as per profile type
                 type: str
                 choices: ["Software","Compute","Network","Database_Parameter",]
+      include_available_ips:
+        description:
+          - include available ips for each subnet in response
+          - only to be used for network profiles having NDB managed subnets
+          - only to be used for fetching profile using C(name) or C(uuid)
+        default: false
+        type: bool
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_ndb_info_base_module
 author:
@@ -178,6 +185,7 @@ response:
 """
 
 from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.ndb.profiles.profile_types import NetworkProfile  # noqa: E402
 from ..module_utils.ndb.profiles.profiles import Profile  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
@@ -217,6 +225,7 @@ def get_module_spec():
             type="dict",
             options=filters_spec,
         ),
+        include_available_ips=dict(type="bool", default=False),
     )
 
     return module_args
@@ -229,6 +238,11 @@ def get_profile(module, result):
     resp = profile.get_profiles(uuid, name)
 
     result["response"] = resp
+
+    if module.params.get("include_available_ips", False):
+        uuid = resp.get("id")
+        ntw_profile = NetworkProfile(module)
+        result["response"]["available_ips"] = ntw_profile.get_available_ips(uuid=uuid)
 
 
 def get_profiles(module, result):
