@@ -86,7 +86,7 @@ options:
                         default: 4
                     disk_gb:
                         type: int
-                        description: Size of local storage for each VM on the PE cluster in GiB.
+                        description: Size of local storage for each VM on the PE cluster in GiB and the minimum size is 40 GIB.
                         default: 120
                     memory_gb:
                         type: int

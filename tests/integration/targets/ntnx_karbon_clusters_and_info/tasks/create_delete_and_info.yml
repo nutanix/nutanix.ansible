@@ -183,7 +183,7 @@
         num_instances: 1
         cpu: 4
         memory_gb: 8
-        disk_gb: 120
+        disk_gb: 40
       masters:
         num_instances: 1
         cpu: 4
