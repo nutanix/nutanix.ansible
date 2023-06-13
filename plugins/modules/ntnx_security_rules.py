@@ -102,9 +102,12 @@ options:
               apptype_filter_by_category:
                 description: A category key and value.
                 type: dict
-              apptier:
-                description: A category value.
-                type: str
+              apptiers:
+                description:
+                  - List of AppTier category values
+                  - C(apptier) is deprecated
+                type: list
+                elements: str
               adgroup:
                 description:
                     - A category value.
@@ -357,9 +360,12 @@ options:
               apptype_filter_by_category:
                 description: A category key and value.
                 type: dict
-              apptier:
-                description: A category value.
-                type: str
+              apptiers:
+                description:
+                  - List of AppTier category values
+                  - C(apptier) is deprecated
+                type: list
+                elements: str
               adgroup:
                 description:
                     - A category value.
@@ -612,9 +618,12 @@ options:
               apptype_filter_by_category:
                 description: A category key and value.
                 type: dict
-              apptier:
-                description: A category value.
-                type: str
+              apptiers:
+                description:
+                  - List of AppTier category values
+                  - C(apptier) is deprecated
+                type: list
+                elements: str
               adgroup:
                 description:
                     - A category value.
@@ -1105,7 +1114,7 @@ def get_module_spec():
     categories_spec = dict(
         apptype=dict(type="str"),
         apptype_filter_by_category=dict(type="dict"),
-        apptier=dict(type="str"),
+        apptiers=dict(type="list", elements="str"),
         adgroup=dict(type="str"),
     )
 
