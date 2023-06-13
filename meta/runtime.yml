@@ -95,3 +95,4 @@ action_groups:
   - ntnx_ndb_maintenance_window
   - ntnx_ndb_maintenance_windows_info
   - ntnx_ndb_slas
+  - ntnx_karbon_clusters_node_pools
