@@ -61,7 +61,7 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "Fail: unable to delete all users"
-    success_msg: "Pass: all users deleted succesfully"
+    success_msg: "Pass: all users deleted successfully"
 - set_fact:
     todelete: []
 #################################################
@@ -135,7 +135,7 @@
       - result.response.status.state == "COMPLETE"
       - result.response.status.name == "testing_user"
     fail_msg: "Fail: unable to create idp user"
-    success_msg: "Pass: idp user created succesfully"
+    success_msg: "Pass: idp user created successfully"
 
 - set_fact:
      todelete: "{{ todelete + [  result.user_uuid ] }}"
@@ -153,7 +153,7 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "Fail: unable to delete all users"
-    success_msg: "Pass: all users deleted succesfully"
+    success_msg: "Pass: all users deleted successfully"
 - set_fact:
     todelete: []
 
@@ -182,4 +182,4 @@
       - result.response is defined
       - result.response.status == 'SUCCEEDED'
     fail_msg: "Fail: unable to delete users"
-    success_msg: "Pass: users deleted succesfully"
+    success_msg: "Pass: users deleted successfully"

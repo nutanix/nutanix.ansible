@@ -104,7 +104,7 @@
       - result.response.category_values.entities|length == 1
       - result.response.category_values.entities.0.value == "{{values.0}}"
     fail_msg: "Fail: unable to update existing category by deleting some values "
-    success_msg: "Passed: update existing category by deleting some values finished succesfully"
+    success_msg: "Passed: update existing category by deleting some values finished successfully"
 #################
 - name: update existing category by deleting all values
   ntnx_categories:
@@ -129,7 +129,7 @@
       - result.response is defined
       - result.response.category_values.entities|length == 0
     fail_msg: "Fail: unable to update existing category by deleting all values "
-    success_msg: "Passed: update existing category by deleting all values finished succesfully"
+    success_msg: "Passed: update existing category by deleting all values finished successfully"
 #################
 - name: Delte the category 
   ntnx_categories:
@@ -151,7 +151,7 @@
       - result.failed == false
       - result.response == {}
     fail_msg: "Fail: unable to Delete the category "
-    success_msg: "Passed: Delete the category finished succesfully"
+    success_msg: "Passed: Delete the category finished successfully"
 
 #################
 - name: Create category key and value together with check_mode

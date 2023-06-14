@@ -70,7 +70,7 @@
       - result.response.ipPools[1].endIP == "{{ndb_vlan.ip_pools.1.end_ip}}"
       - result.response.ipPools[1].startIP == "{{ndb_vlan.ip_pools.1.start_ip}}"
     fail_msg: "fail: unable to update ndb vlan type for static"
-    success_msg: "pass: update ndb vlan type for static finished succesfully"
+    success_msg: "pass: update ndb vlan type for static finished successfully"
 
 - set_fact:
     todelete: []
@@ -206,7 +206,7 @@
       - result.response.ipPools[1].endIP == "{{ndb_vlan.ip_pools.1.end_ip}}"
       - result.response.ipPools[1].startIP == "{{ndb_vlan.ip_pools.1.start_ip}}"
     fail_msg: "fail: unable to create static ndb vlan"
-    success_msg: "pass: create static ndb vlan finished succesfully"
+    success_msg: "pass: create static ndb vlan finished successfully"
 - set_fact:
     todelete: "{{ todelete + [  result.vlan_uuid ] }}"
 
@@ -239,7 +239,7 @@
       - result.response.propertiesMap.VLAN_SUBNET_MASK ==  "{{ndb_vlan.subnet_mask}}"
       - result.response.ipPools == []
     fail_msg: "fail: unable to update  ndb vlan by removing ip pool"
-    success_msg: "pass: update ndb vlan by removing ip pool finished succesfully"
+    success_msg: "pass: update ndb vlan by removing ip pool finished successfully"
 
 ################################################################
 
@@ -273,7 +273,7 @@
       - result.response.ipPools[0].endIP == "{{ndb_vlan.ip_pools.0.end_ip}}"
       - result.response.ipPools[0].startIP == "{{ndb_vlan.ip_pools.0.start_ip}}"
     fail_msg: "fail: unable to update ndb vlan by adding a pool "
-    success_msg: "pass: update ndb vlan by adding a pool finished succesfully"
+    success_msg: "pass: update ndb vlan by adding a pool finished successfully"
 
 ################################################################
 
@@ -303,7 +303,7 @@
       - result.response.propertiesMap.VLAN_SECONDARY_DNS ==  "{{ndb_vlan.updated_secondary_dns}}"
       - result.response.propertiesMap.VLAN_SUBNET_MASK ==  "{{ndb_vlan.updated_subnet_mask}}"
     fail_msg: "fail: unable to  update ndb vLAN Configuration"
-    success_msg: "pass: update ndb vLAN Configuration finished succesfully"
+    success_msg: "pass: update ndb vLAN Configuration finished successfully"
 
 ################################################################
 
@@ -327,7 +327,7 @@
       - result.vlan_uuid is defined
       - result.response.properties == []
     fail_msg: "fail: unable to update ndb vlan type "
-    success_msg: "pass: update ndb vlan type  finished succesfully"
+    success_msg: "pass: update ndb vlan type  finished successfully"
 
 ################################################################
 
@@ -429,6 +429,6 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "unable to delete all created vlan's"
-    success_msg: "All vlan'sdeleted succesfully"
+    success_msg: "All vlan'sdeleted successfully"
 - set_fact:
     todelete: []
