@@ -448,7 +448,7 @@
       - result.response.userPitrTimestamp == "2023-02-04 07:29:36"
       - result.response.timeZone == "UTC"
     fail_msg: "creation refresh db clone spec failed"
-    success_msg: "refresh db clone spec created succesfully"
+    success_msg: "refresh db clone spec created successfully"
 
 
 - name: refresh db clone

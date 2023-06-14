@@ -26,7 +26,7 @@
       - result.response.status.state == 'COMPLETE'
       - result.changed == true      
     fail_msg: 'Fail: Unable to update static routes of vpc'
-    success_msg: 'Succes: static routes updated succesfully'
+    success_msg: 'Succes: static routes updated successfully'
 
 ###########################################################################################################
 

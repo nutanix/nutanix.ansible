@@ -42,7 +42,7 @@
       - result.response.versions[0].propertiesMap.VLAN_NAME == "{{network_profile.single.vlan_name}}"
       - result.response.versions[0].published == false
     fail_msg: "Fail: unable to verify create of single cluster network profile"
-    success_msg: "Pass: verify create of single cluster network profile finished succesfully "
+    success_msg: "Pass: verify create of single cluster network profile finished successfully "
 ################################################################
 - name: update the profile for single cluster by  name , desc , publish
   ntnx_ndb_profiles:
@@ -68,7 +68,7 @@
       - result.response.profile.versions[0].propertiesMap.VLAN_NAME == "{{network_profile.single.vlan_name}}"
       - result.response.profile.versions[0].published == true
     fail_msg: "Fail: unable to update the profile for single cluster by  name , desc , publish "
-    success_msg: "Pass: update the profile for single cluster by  name , desc , publish finished succesfully "
+    success_msg: "Pass: update the profile for single cluster by  name , desc , publish finished successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.profile_uuid ] }}"
@@ -89,7 +89,7 @@
       - result.changed == false
       - result.profile_uuid is defined
     fail_msg: "Fail: unable to verify idempotency check"
-    success_msg: "Pass: verify idempotency check finished succesfully "
+    success_msg: "Pass: verify idempotency check finished successfully "
 ################################################################
 - name: verify create of multiple cluster network profile
   ntnx_ndb_profiles:
@@ -186,7 +186,7 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "unable to delete all created network profiles"
-    success_msg: "All network profiles deleted succesfully"
+    success_msg: "All network profiles deleted successfully"
 
 - set_fact:
     todelete: []

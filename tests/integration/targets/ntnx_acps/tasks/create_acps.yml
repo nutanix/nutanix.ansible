@@ -181,7 +181,7 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "unable to delete all created acp's"
-    success_msg: "All acp's deleted succesfully"
+    success_msg: "All acp's deleted successfully"
 
 - set_fact:
     todelete: []

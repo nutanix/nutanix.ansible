@@ -40,7 +40,7 @@
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
       
     fail_msg: 'Fail: Unable to update static routes of vpc'
-    success_msg: 'Succes: static routes updated succesfully'
+    success_msg: 'Succes: static routes updated successfully'
 
 ###########################################################################################################
 
@@ -69,7 +69,7 @@
       - result.failed == false
       - "'Nothing to update' in result.msg"
     fail_msg: "Static routes"
-    success_msg: "Static routes update skipped succesfully due to no changes in spec"
+    success_msg: "Static routes update skipped successfully due to no changes in spec"
 
 ###########################################################################################################
 

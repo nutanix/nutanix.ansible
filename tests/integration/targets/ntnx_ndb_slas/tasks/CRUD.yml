@@ -51,7 +51,7 @@
       - result.response.weeklyRetention == {{frequency.snapshots_retention.weekly}}
 
     fail_msg: "Fail: Verify creation of slas with check mode failed "
-    success_msg: "Pass: Verify creation of slas with check mode finished succesfully "
+    success_msg: "Pass: Verify creation of slas with check mode finished successfully "
 ################################################################
 - name: Verify creation of slas
   ntnx_ndb_slas:
@@ -125,7 +125,7 @@
       - result.response.weeklyRetention == {{frequency.snapshots_retention.weekly}}
       - result.sla_uuid is defined
     fail_msg: "Fail: Unable to update sla "
-    success_msg: "Pass: verify slas update flow finished succesfully"
+    success_msg: "Pass: verify slas update flow finished successfully"
 ################################################################ update flow ######################################### 
 - name: verify slas update flow with check mode
   ntnx_ndb_slas:
@@ -158,7 +158,7 @@
       - result.response.weeklyRetention == {{frequency.snapshots_retention.weekly}}
       - result.sla_uuid is defined
     fail_msg: "Fail: verify slas update flow with check mode  "
-    success_msg: "Pass: verify slas update flow with check mode finished succesfully"
+    success_msg: "Pass: verify slas update flow with check mode finished successfully"
 ################################################################
 - name: verify idempotency
   ntnx_ndb_slas:
@@ -267,7 +267,7 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "unable to delete all created slas"
-    success_msg: "All  slas deleted succesfully"
+    success_msg: "All  slas deleted successfully"
 
 - set_fact:
     todelete: []
