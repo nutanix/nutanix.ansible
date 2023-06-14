@@ -7,4 +7,4 @@
         validate_certs: "{{ validate_certs }}"
   block:
         - import_tasks: "create_delete_and_info.yml"
-        - import_tasks: "negativ_scenarios.yml"
+        - import_tasks: "negative_scenarios.yml"
