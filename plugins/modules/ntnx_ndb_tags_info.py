@@ -20,7 +20,7 @@ options:
         type: str
       name:
         description:
-            - get tags based on uuid
+            - get tags based on name
             - since there can be multiple tags with same name,
               use C(entity_type) in C(filters) to get correct tag info
         type: str
