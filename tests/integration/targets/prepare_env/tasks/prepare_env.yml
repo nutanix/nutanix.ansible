@@ -8,20 +8,20 @@
   tasks:
   - name: include var file
     include_vars: ../vars/main.yml
-#   - set_fact:
-#       ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
-#       username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
-#       password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
-#       recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')}}"
-#   - name: Insert credentials  block to vars
-#     blockinfile:
-#       path: ../vars/main.yml
-#       marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 0"
-#       block: |
-#         ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
-#         username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
-#         password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
-#         recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')  }}" 
+  - set_fact:
+      ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
+      username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
+      password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
+      recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')}}"
+  - name: Insert credentials  block to vars
+    blockinfile:
+      path: ../vars/main.yml
+      marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 0"
+      block: |
+        ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
+        username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
+        password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
+        recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')  }}" 
 #   - name: create external subnet with NAT
 #     ntnx_subnets:
 #       state: present
