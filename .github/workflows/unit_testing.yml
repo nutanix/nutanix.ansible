@@ -9,7 +9,7 @@ on:
       - main
 jobs:
   sanity:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       matrix:
         python-version: ['3.9']
