@@ -13,6 +13,7 @@
       username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
       password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
       recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')}}"
+      validate_certs: false
   - name: Insert credentials  block to vars
     blockinfile:
       path: ../vars/main.yml
@@ -22,6 +23,7 @@
         username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
         password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
         recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')  }}" 
+        validate_certs: false
 #   - name: create external subnet with NAT
 #     ntnx_subnets:
 #       state: present
