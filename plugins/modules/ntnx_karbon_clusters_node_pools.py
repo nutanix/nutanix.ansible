@@ -129,7 +129,7 @@ response:
   description: List of node worker pools
   returned: always
   type: dict
-  sample:{
+  sample: {
             "ahv_config": {
                 "cpu": 8,
                 "disk_mib": 122880,
@@ -153,7 +153,7 @@ response:
                 }
             ],
             "num_instances": 1
-            }
+    }
 cluster_name:
   description: kubernetes cluster name
   returned: always
@@ -161,8 +161,8 @@ cluster_name:
   sample: "test_cluster"
 node_pool_name:
   description: worker node pool name
-  returned: str
-  type: list
+  returned: always
+  type: str
   sample: "node_pool_A"
 """
 

@@ -155,10 +155,6 @@
           hypervisor_ntp_servers: 
             - "{{nodes.ntp_servers[0]}}"
             - "{{nodes.ntp_servers[1]}}"
-          enable_ns: true
-          backplane_vlan: "{{nodes.backplane_vlan}}"
-          backplane_subnet: "{{nodes.backplane_subnet}}"
-          backplane_netmask: "{{nodes.backplane_netmask}}"
     register: result
     no_log: true
     ignore_errors: True
