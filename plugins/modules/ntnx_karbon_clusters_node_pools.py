@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_karbon_clusters_node_pools
-short_description: Create,Update and Delete a Node pools with the provided configuration.
+short_description: Create,Update and Delete a worker node pools with the provided configuration.
 version_added: 1.9.0
-description: "Createand and Delete node pools"
+description: "Create, update and and Delete worker node pools"
 options:
     cluster_name:
         type: str
@@ -94,9 +94,76 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create node pool with subnet uuid 
+  ntnx_karbon_clusters_node_pools:
+    node_subnet:
+      uuid: "<uuid>"
+    node_pool_name:  "node_pool_name"
+    cluster_name:  "cluster_name"
+    pool_config:
+      num_instances: 2
+      cpu: 4
+      memory_gb: 8
+      disk_gb: 120   
+  register: result
+  ignore_errors: true
+
+- name: update pool by increasing cpu,memory_gb,num_instances and add labels
+  ntnx_karbon_clusters_node_pools:
+    wait: True
+    node_pool_name:  "node_name"
+    cluster_name:  "cluster_name"
+    pool_config:
+        cpu: 6
+        memory_gb: 10
+        disk_gb: 150
+        num_instances: 4
+    add_labels:
+      property1: "test-property1"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
+response:
+  description: List of node worker pools
+  returned: always
+  type: list
+  sample:{
+                "ahv_config": {
+                    "cpu": 8,
+                    "disk_mib": 122880,
+                    "memory_mib": 8192,
+                    "network_name": "",
+                    "network_uuid": "",
+                    "prism_element_cluster_uuid": ""
+                },
+                "assigned_gpu_config_list": [],
+                "category": "worker",
+                "default": true,
+                "labels": {
+                    "nke-default": "true"
+                },
+                "name": "test-module21-worker-pool",
+                "node_os_version": "ntnx-1.5",
+                "nodes": [
+                    {
+                        "hostname": "test-module21-b5fe00-worker-0",
+                        "ipv4_address": ""
+                    }
+                ],
+                "num_instances": 1
+            }
+cluster_name:
+  description: kubernetes cluster name
+  returned: always
+  type: str
+  sample:
+node_pool_name:
+  description: worker node pool name
+  returned: str
+  type: list
+  sample:
 """
 
 from ..module_utils import utils  # noqa: E402
@@ -162,7 +229,7 @@ def create_pool(module, result):
     if module.params.get("wait"):
         task = Task(module)
         task.wait_for_completion(task_uuid)
-        resp = node_pool.read_node_pools(cluster_name)
+        resp = node_pool.get_node_pool(cluster_name, pool_name)
 
     result["response"] = resp
 

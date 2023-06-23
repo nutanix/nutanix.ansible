@@ -109,6 +109,35 @@
         flash_mode: true
     register: result
 
+  - name: Create worker node pool with subnet uuid 
+    ntnx_karbon_clusters_node_pools:
+      node_subnet:
+        uuid: "<uuid>"
+      node_pool_name:  "{{karbon_name}}"
+      cluster_name: "{{cluster.name}}"
+      pool_config:
+        num_instances: 2
+        cpu: 4
+        memory_gb: 8
+        disk_gb: 120   
+    register: result
+    ignore_errors: true
+
+  - name: update pool by increasing cpu,memory_gb,num_instances and add labels
+    ntnx_karbon_clusters_node_pools:
+      wait: True
+      node_pool_name:  "{{karbon_name}}"
+      cluster_name:  "{{cluster.name}}"
+      pool_config:
+          cpu: 6
+          memory_gb: 10
+          disk_gb: 150
+          num_instances: 4
+      add_labels:
+        property1: "test-property1"
+    register: result
+    ignore_errors: true
+
   - name:  create prod cluster
     ntnx_karbon_clusters:
       cluster:

@@ -409,7 +409,8 @@ releases:
       - ntnx_security_rules - [Imprv] Flow Network Security Multi-Tier support in
         Security Policy definition [\#319](https://github.com/nutanix/nutanix.ansible/issues/319)
     modules:
-    - description: Create,Update and Delete a Node pools with the provided configuration.
+    - description: Create,Update and Delete a worker node pools with the provided
+        configuration.
       name: ntnx_karbon_clusters_node_pools
       namespace: ''
     - description: info module for ndb tags info

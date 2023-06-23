@@ -31,7 +31,7 @@ Bugfixes
 New Modules
 -----------
 
-- ntnx_karbon_clusters_node_pools - Create,Update and Delete a Node pools with the provided configuration.
+- ntnx_karbon_clusters_node_pools - Create,Update and Delete a worker node pools with the provided configuration.
 - ntnx_ndb_tags_info - info module for ndb tags info
 
 v1.8.0
