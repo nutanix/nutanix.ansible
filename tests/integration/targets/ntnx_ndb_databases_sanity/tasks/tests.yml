@@ -1,0 +1,578 @@
+---
+# Summary:
+# This playbook will test basic database flows
+
+
+- debug:
+    msg: "start ndb databases crud tests"
+
+- name: Generate random name
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+
+- set_fact:
+    db1_name: "{{random_name[0]}}"
+    db1_name_updated: "{{random_name[0]}}-updated"
+    vm1_name: "{{random_name[0]}}-vm"
+
+################################### Single instance postgres database tests #############################
+
+
+- name: create spec for single instance postgres database on new db server vm
+  check_mode: yes
+  ntnx_ndb_databases:
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
+
+    db_params_profile:
+      name: "{{db_params_profile.name}}"
+    
+    db_vm:
+      create_new_server:
+        name: "{{ vm1_name }}"
+        desc: vm for db server
+        password: "test_password"
+        cluster: 
+          name: "{{cluster.cluster1.name}}"
+        software_profile:
+          name: "{{ software_profile.name }}"
+        network_profile:
+          name: "{{ network_profile.name }}"
+        compute_profile:
+          name: "{{ compute_profile.name }}"
+        pub_ssh_key: "test_key"
+    
+    postgres:
+      listener_port: "9999"
+      db_name: testAnsible
+      db_password: "test_password"
+      db_size: 200
+      type: "single"
+      auto_tune_staging_drive: false
+      allocate_pg_hugepage: true
+      pre_create_script: "ls"
+      post_create_script: "ls -a"
+
+    time_machine:
+      name: TM1
+      desc: TM-desc
+      sla:
+        name: "{{ sla.name }}"
+      schedule: 
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+    auto_tune_staging_drive: False
+    tags:
+      ansible-databases: "single-instance-dbs"
+    
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+  register: result
+
+- set_fact:
+    expected_action_arguments: [
+                {
+                    "name": "dbserver_description",
+                    "value": "vm for db server"
+                },
+                {
+                    "name": "listener_port",
+                    "value": "9999"
+                },
+                {
+                    "name": "auto_tune_staging_drive",
+                    "value": false
+                },
+                {
+                    "name": "allocate_pg_hugepage",
+                    "value": True
+                },
+                {
+                    "name": "cluster_database",
+                    "value": false
+                },
+                {
+                    "name": "auth_method",
+                    "value": "md5"
+                },
+                {
+                    "name": "db_password",
+                    "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+                },
+                {
+                    "name": "pre_create_script",
+                    "value": "ls"
+                },
+                {
+                    "name": "post_create_script",
+                    "value": "ls -a"
+                },
+                {
+                    "name": "database_names",
+                    "value": "testAnsible"
+                },
+                {
+                    "name": "database_size",
+                    "value": "200"
+                }
+            ]
+
+- set_fact:
+    expected_time_machine_info: {
+                "autoTuneLogDrive": true,
+                "description": "TM-desc",
+                "name": "TM1",
+                "schedule": {
+                    "continuousSchedule": {
+                        "enabled": true,
+                        "logBackupInterval": 30,
+                        "snapshotsPerDay": 2
+                    },
+                    "monthlySchedule": {
+                        "dayOfMonth": 4,
+                        "enabled": true
+                    },
+                    "quartelySchedule": {
+                        "dayOfMonth": 4,
+                        "enabled": true,
+                        "startMonth": "JANUARY"
+                    },
+                    "snapshotTimeOfDay": {
+                        "hours": 11,
+                        "minutes": 10,
+                        "seconds": 2
+                    },
+                    "weeklySchedule": {
+                        "dayOfWeek": "WEDNESDAY",
+                        "enabled": true
+                    }
+                },
+                "slaId": "{{sla.uuid}}"
+            }
+
+- set_fact:
+    mainetance_tasks: {
+                "maintenanceWindowId": "{{maintenance.window_uuid}}",
+                "tasks": [
+                    {
+                        "payload": {
+                            "prePostCommand": {
+                                "postCommand": "ls -a",
+                                "preCommand": "ls"
+                            }
+                        },
+                        "taskType": "OS_PATCHING"
+                    },
+                    {
+                        "payload": {
+                            "prePostCommand": {
+                                "postCommand": "ls -F",
+                                "preCommand": "ls -l"
+                            }
+                        },
+                        "taskType": "DB_PATCHING"
+                    }
+                ]
+            }
+
+- name: Check mode status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.response.name == db1_name
+      - result.response.databaseDescription == "ansible-created-db-desc"
+      - result.response.actionArguments == expected_action_arguments
+      - result.response.computeProfileId == "{{compute_profile.uuid}}"
+      - result.response.networkProfileId == "{{network_profile.uuid}}"
+      - result.response.dbParameterProfileId == "{{db_params_profile.uuid}}"
+      - result.response.softwareProfileId == "{{software_profile.uuid}}"
+      - result.response.autoTuneStagingDrive == False
+      - result.response.timeMachineInfo == expected_time_machine_info
+      - result.response.nodes | length == 1
+      - result.response.nodeCount == 1
+      - result.response.nodes[0].nxClusterId == "{{cluster.cluster1.uuid}}"
+      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.createDbserver == True
+    fail_msg: "Unable to create single instance postgres database provision spec"
+    success_msg: "single instance postgres database provision spec created successfully"
+
+
+
+- name: create single instance postgres database on new db server vm
+  ntnx_ndb_databases:
+    wait: true
+    name: "{{db1_name}}"
+    desc: "ansible-created-db-desc"
+
+    db_params_profile:
+      name: "{{db_params_profile.name}}"
+    
+    db_vm:
+      create_new_server:
+        ip: "{{ vm_ip }}"
+        name: "{{ vm1_name }}"
+        desc: "vm for db server"
+        password: "{{ vm_password }}"
+        cluster: 
+          name: "{{cluster.cluster1.name}}"
+        software_profile:
+          name: "{{ software_profile.name }}"
+        network_profile:
+          name: "{{ static_network_profile.name }}"
+        compute_profile:
+          name: "{{ compute_profile.name }}"
+        pub_ssh_key: "{{ public_ssh_key }}"
+    
+    postgres:
+      listener_port: "5432"
+      db_name: testAnsible
+      db_password: "{{ vm_password }}"
+      db_size: 200
+      type: "single"
+
+    time_machine:
+      name: TM1
+      desc: TM-desc
+      sla:
+        name: "{{ sla.name }}"
+      schedule: 
+        daily: "11:10:02"
+        weekly: WEDNESDAY
+        monthly: 4
+        quaterly: JANUARY
+        log_catchup: 30
+        snapshots_per_day: 2
+    tags:
+      ansible-databases: "single-instance-dbs"
+    
+    automated_patching:
+      maintenance_window:
+        name: "{{ maintenance.window_name }}"
+      tasks:
+        - type: "OS_PATCHING"
+          pre_task_cmd: "ls"
+          post_task_cmd: "ls -a"
+        - type: "DB_PATCHING"
+          pre_task_cmd: "ls -l"
+          post_task_cmd: "ls -F"
+  register: result
+
+- set_fact:
+    db_uuid: "{{result.db_uuid}}"
+
+- name: create properties map
+  set_fact: 
+      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+  loop: "{{result.response.properties}}" 
+  no_log: true
+
+- name: Creation Status
+  assert: 
+    that:
+      - result.response is defined
+      - result.response.status == 'READY'
+      - result.db_uuid is defined
+      - result.changed == true
+      - result.response.name == db1_name
+      - result.response.description == "ansible-created-db-desc"
+      - result.response.type == "postgres_database"
+      - properties["vm_ip"] == vm_ip
+      - properties["listener_port"] == "5432"
+      - properties["db_parameter_profile_id"] == db_params_profile.uuid
+      - properties["auth"] == "md5"
+      - result.response.databaseNodes[0].status == "READY"
+      - result.response.tags | length == 1
+      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].value == "single-instance-dbs"
+
+    fail_msg: "Unable to create single instance postgres database"
+    success_msg: "single instance postgres database created successfully"
+
+- set_fact:
+    db_server_uuid: "{{result.response.databaseNodes[0].dbserverId}}"
+
+- name: get vm details associated to the database instance created above and verify
+  ntnx_ndb_db_servers_info:
+    uuid: "{{db_server_uuid}}"
+  register: result
+
+- name: Verify DB server VM status
+  assert: 
+    that:
+      - result.response is defined
+      - result.response.status == 'UP'
+      - result.changed == False
+      - result.response.name == vm1_name
+      - result.response.nxClusterId == cluster.cluster1.uuid
+      - result.response.description == "vm for db server"
+    fail_msg: "Unable to verify db server vm"
+    success_msg: "db server vm created by database instance creation verified successfully"
+
+################################### update tests #############################
+
+
+- name: update database with check mode
+  check_mode: yes
+  ntnx_ndb_databases:
+    wait: true
+    db_uuid: "{{db_uuid}}" 
+    name: "{{db1_name_updated}}"
+    desc: "ansible-created-db-desc-updated"
+    
+    tags:
+      ansible-databases: "single-instance-dbs-updated"
+  register: result
+
+- name: check mode status 
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.response.name == db1_name_updated
+      - result.response.description == "ansible-created-db-desc-updated"
+
+    fail_msg: "Unable to create single instance postgres database update spec"
+    success_msg: "single instance postgres database update spec generated successfully"
+
+- name: update database
+  ntnx_ndb_databases:
+    wait: true
+    db_uuid: "{{db_uuid}}" 
+    name: "{{db1_name_updated}}"
+    desc: "ansible-created-db-desc-updated"
+    
+    tags:
+      ansible-databases: "single-instance-dbs-updated"
+  register: result
+
+- name: update status
+  assert: 
+    that:
+      - result.response is defined
+      - result.response.status == 'READY'
+      - result.db_uuid is defined
+      - result.changed == true
+      - result.response.name == db1_name_updated
+      - result.response.description == "ansible-created-db-desc-updated"
+      - result.response.tags | length == 1
+      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].value == "single-instance-dbs-updated"
+
+
+    fail_msg: "Unable to update single instance postgres database"
+    success_msg: "single instance postgres database updated successfully"
+
+
+- name: idempotency checks
+  ntnx_ndb_databases:
+    wait: true
+    db_uuid: "{{db_uuid}}" 
+    name: "{{db1_name_updated}}"
+    desc: "ansible-created-db-desc-updated"
+    
+    tags:
+      ansible-databases: "single-instance-dbs-updated"
+  register: result
+
+- name: check idempotency status
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - "'Nothing to change' in result.msg"
+    fail_msg: "database got updated"
+    success_msg: "database update skipped successfully due to no changes in spec"
+
+################################### delete tests #############################
+
+- name: create spec for delete db from vm
+  check_mode: yes
+  ntnx_ndb_databases:
+    state: "absent"
+    db_uuid: "{{db_uuid}}" 
+    wait: true
+    delete_db_from_vm: true
+  register: result
+
+- name: verify delete check mode spec
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.delete == True
+      - result.response.remove == False
+      - result.response.deleteTimeMachine == False
+    fail_msg: "creation of spec for delete db from vm failed"
+    success_msg: "spec for delete db from vm created successfully"
+
+
+
+- name: create spec for soft remove
+  check_mode: yes
+  ntnx_ndb_databases:
+    state: "absent"
+    db_uuid: "{{db_uuid}}" 
+    wait: true
+    soft_delete: true
+    delete_time_machine: true
+  register: result
+
+- name: verify soft remove check mode spec
+  assert: 
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.delete == False
+      - result.response.remove == False
+      - result.response.softRemove == True
+      - result.response.deleteTimeMachine == True
+    fail_msg: "creation of spec for soft remove with time machine delete failed"
+    success_msg: "spec for soft remove with time machine delete created successfully"
+
+  
+#####################################INFO Module tests#######################################################
+
+- debug:
+    msg: Start testing ntnx_ndb_databases_info based on created database
+
+- name: List ndb databases
+  ntnx_ndb_databases_info:
+  register: databases
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - databases.response is defined
+      - databases.failed == false
+      - databases.changed == false
+      - databases.response | length > 0
+    fail_msg: "Unable to list all era databases"
+    success_msg: "era databases listed successfully"
+################################################################
+- name: Get era databases using its name
+  ntnx_ndb_databases_info:
+    name: "{{databases.response[0].name}}"
+  register: result
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.id == "{{databases.response[0].id}}"
+    fail_msg: "Unable to Get era databases using its name"
+    success_msg: "Get era databases using its name finished successfully"
+################################################################
+- name: Get era databases using its id
+  ntnx_ndb_databases_info:
+    uuid: "{{databases.response[0].id}}"
+  register: result
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{databases.response[0].name}}"
+    fail_msg: "Unable to Get era databases using its id"
+    success_msg: "Get era databases using its id finished successfully"
+
+################################################################
+- name: Get era databases using its id and detailed response
+  ntnx_ndb_databases_info:
+    filters:
+      detailed: True
+    uuid: "{{databases.response[0].id}}"
+  register: result
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{databases.response[0].name}}"
+      - result.response.timeMachine is defined
+
+    fail_msg: "Unable to Get era databases using its id"
+    success_msg: "Get era databases using its id finished successfully"
+
+
+################################################################
+
+- name: get era database with incorrect name
+  ntnx_ndb_databases_info:
+    name: "xxxxxxx"
+  register: result
+  ignore_errors: True
+  no_log: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.error is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"
+
+############################################################################################
+
+
+- name: unregister db along with delete time machine
+  ntnx_ndb_databases:
+    db_uuid: "{{db_uuid}}" 
+    state: "absent"
+    wait: true
+    delete_time_machine: true
+  register: result
+
+- name: verify status of delete of database along with time machine delete
+  assert: 
+    that:
+      - result.changed == True
+      - result.failed == false
+      - result.response.status == "5"
+    fail_msg: "database delete failed"
+    success_msg: "database deleted successfully"
+
+
+- name: delete db server vm
+  ntnx_ndb_db_server_vms:
+    state: "absent"
+    wait: True
+    uuid: "{{db_server_uuid}}"
+    delete_from_cluster: True
+    delete_vgs: True
+    delete_vm_snapshots: True
+  register: result
+
+- name: check delete status
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.response.status == "5"
+
+    fail_msg: "Unable to delete db server vm"
+    success_msg: "DB server VM deleted successfully"

@@ -37,13 +37,18 @@ This collection requires Python 2.7 or greater
 
 > For the 1.7.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4 and pc2022.1.0.2.
 
-> For the 1.8.0-beta.1 release of the ansible plugin it will have N compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2022.6 .
+> For the 1.8.0 release of the ansible plugin it will have N compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2022.6 .
+
+> For the 1.9.0 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2023.1 and pc.2023.1.0.1 .
+
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
 
 2. Adding cluster references in projects module (ntnx_projects) is supported for PC versions >= pc.2022.1
 
 3. For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding Identity Provider (IdP) & Organizational Unit (OU) based users/groups are supported for PC versions >= pc.2022.1
+
+4. ntnx_security_rules - The ``apptier`` option in target group has been removed. New option called ``apptiers`` has been added to support multi tier policy.
 
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
@@ -60,12 +65,15 @@ Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/t
 ## Karbon
 > For the 1.6.0 release of the ansible plugin, it will have N-2 compatibility with the Karbon. This release was tested against Karbon versions v2.3.0, v2.4.0 and v2.5.0 
 
+> For the 1.9.0 release of the ansible plugin, it was tested against Karbon versions v2.6.0, v2.7.0 and v2.8.0 
+
 Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
 
 ## Nutanix Database Service (ERA)
-> For the 1.8.0-beta.1 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against era versions v2.4.1 and v2.4.0
 
-> For the 1.8.0 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against era versions v2.5.0 and v2.5.1
+> For the 1.8.0 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against NDB versions v2.5.0 and v2.5.1
+
+> For the 1.9.0 release of the ansible plugin, it was tested against NDB versions v2.5.0.2
 
 NDB based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
 
@@ -154,6 +162,7 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_image_placement_policies_info | List existing image placement policies. |
 | ntnx_karbon_clusters | Create, Delete k8s clusters |
 | ntnx_karbon_clusters_info | Get clusters info. |
+| ntnx_karbon_clusters_node_pools | Update node pools of kubernetes cluster |
 | ntnx_karbon_registries | Create, Delete a karbon private registry entry |
 | ntnx_karbon_registries_info | Get karbon private registry registry info. |
 | ntnx_pbrs | Create or delete a PBR. |

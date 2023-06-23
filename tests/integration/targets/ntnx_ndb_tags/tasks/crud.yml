@@ -71,7 +71,7 @@
     name: "{{tag_name}}-database-server"
     desc: tag-created-by-ansible
     tag_value_required: True
-    entity_type: CLONE
+    entity_type: DATABASE_SERVER
   register: result
 
 - name: Check create status
@@ -81,7 +81,7 @@
       - result.changed == true
       - result.uuid is defined
       - result.response.name ==  "{{tag_name}}-database-server"
-      - result.response.entityType == "CLONE"
+      - result.response.entityType == "DATABASE_SERVER"
       - result.response.status == "ENABLED"
       - result.response.description == "tag-created-by-ansible"
       - result.response.required == true
@@ -96,7 +96,7 @@
     name: "{{tag_name}}-time-machine"
     desc: tag-created-by-ansible
     tag_value_required: True
-    entity_type: CLONE
+    entity_type: TIME_MACHINE
   register: result
 
 - name: Check create status
@@ -106,7 +106,7 @@
       - result.changed == true
       - result.uuid is defined
       - result.response.name ==  "{{tag_name}}-time-machine"
-      - result.response.entityType == "CLONE"
+      - result.response.entityType == "TIME_MACHINE"
       - result.response.status == "ENABLED"
       - result.response.description == "tag-created-by-ansible"
       - result.response.required == true

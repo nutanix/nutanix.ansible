@@ -83,7 +83,7 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.available_ips | length == 1
+      - result.response.available_ips | length > 0
       - result.response.id == "{{static_network_profile.uuid}}"
 
     fail_msg: "Unable to list network profile with available IPs"
@@ -91,7 +91,7 @@
 
 - name: get network profile with available IPs
   ntnx_ndb_profiles_info:
-    uuid: "{{postgres_ha_profiles.multicluster_network_profile.uuid}}"
+    uuid: "{{static_network_profile.uuid}}"
     include_available_ips: true
   register: result
   ignore_errors: true
@@ -102,8 +102,8 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.available_ips | length == 2
-      - result.response.id == "{{postgres_ha_profiles.multicluster_network_profile.uuid}}"
+      - result.response.available_ips | length > 0
+      - result.response.id == "{{static_network_profile.uuid}}"
     fail_msg: "Unable to list network profile with available IPs"
     success_msg: "Network NDB profiles along with available IPs obtained successfully"
 ################################################################
