@@ -128,31 +128,31 @@ RETURN = r"""
 response:
   description: List of node worker pools
   returned: always
-  type: list
+  type: dict
   sample:{
-                "ahv_config": {
-                    "cpu": 8,
-                    "disk_mib": 122880,
-                    "memory_mib": 8192,
-                    "network_name": "",
-                    "network_uuid": "",
-                    "prism_element_cluster_uuid": ""
-                },
-                "assigned_gpu_config_list": [],
-                "category": "worker",
-                "default": true,
-                "labels": {
-                    "nke-default": "true"
-                },
-                "name": "test-module21-worker-pool",
-                "node_os_version": "ntnx-1.5",
-                "nodes": [
-                    {
-                        "hostname": "test-module21-b5fe00-worker-0",
-                        "ipv4_address": ""
-                    }
-                ],
-                "num_instances": 1
+            "ahv_config": {
+                "cpu": 8,
+                "disk_mib": 122880,
+                "memory_mib": 8192,
+                "network_name": "",
+                "network_uuid": "",
+                "prism_element_cluster_uuid": ""
+            },
+            "assigned_gpu_config_list": [],
+            "category": "worker",
+            "default": true,
+            "labels": {
+                "nke-default": "true"
+            },
+            "name": "test-module21-worker-pool",
+            "node_os_version": "ntnx-1.5",
+            "nodes": [
+                {
+                    "hostname": "test-module21-b5fe00-worker-0",
+                    "ipv4_address": ""
+                }
+            ],
+            "num_instances": 1
             }
 cluster_name:
   description: kubernetes cluster name
