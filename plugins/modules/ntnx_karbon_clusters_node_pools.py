@@ -94,7 +94,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create node pool with subnet uuid 
+- name: Create node pool with subnet uuid
   ntnx_karbon_clusters_node_pools:
     node_subnet:
       uuid: "<uuid>"
@@ -104,7 +104,7 @@ EXAMPLES = r"""
       num_instances: 2
       cpu: 4
       memory_gb: 8
-      disk_gb: 120   
+      disk_gb: 120
   register: result
   ignore_errors: true
 
@@ -158,12 +158,12 @@ cluster_name:
   description: kubernetes cluster name
   returned: always
   type: str
-  sample:
+  sample: "test_cluster"
 node_pool_name:
   description: worker node pool name
   returned: str
   type: list
-  sample:
+  sample: "node_pool_A"
 """
 
 from ..module_utils import utils  # noqa: E402
