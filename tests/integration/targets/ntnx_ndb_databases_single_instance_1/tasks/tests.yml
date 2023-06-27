@@ -277,11 +277,14 @@
 - set_fact:
     db_uuid: "{{result.db_uuid}}"
 
+# skip jekyll/Liquid syntax check
+# {% raw %}
 - name: create properties map
   set_fact: 
       properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}" 
   no_log: true
+# {% endraw %}
 
 - name: Creation Status
   assert: 
@@ -660,11 +663,14 @@
 
   register: result
 
+# skip jekyll/Liquid syntax check
+# {% raw %}
 - name: create properties map
   set_fact: 
     properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"  
   no_log: true
+# {% endraw %}
 
 - name: Creation Status
   assert: 

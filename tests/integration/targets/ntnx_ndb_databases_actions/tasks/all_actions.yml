@@ -623,12 +623,15 @@
       - test2
   register: result
 
+# {% raw %}
+
 - name: create linked databases to its uuid map
   set_fact: 
       linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
   loop: "{{result.response}}" 
   no_log: true
 
+# {% endraw %}
 
 - name: check linked database update status
   assert: 
@@ -648,12 +651,15 @@
     database_uuid: "{{linked_databases.test1}}" 
   register: result
 
+# {% raw %}
+
 - name: create linked database map 
   set_fact: 
       linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
   loop: "{{result.response}}" 
   no_log: true
 
+# {% endraw %}
 
 - name: check linked database update status
   assert: 

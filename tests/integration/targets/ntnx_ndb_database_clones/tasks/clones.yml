@@ -284,11 +284,14 @@
       ansible-clones: ansible-test-db-clones
   register: result
 
+# skip jekyll/Liquid syntax check
+# {% raw %}
 - name: create properties map
   set_fact: 
-      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+    properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
   no_log: true
+# {% endraw %}
 
 - name: Clone create status
   assert: 

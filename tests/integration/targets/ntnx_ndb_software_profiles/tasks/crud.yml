@@ -522,11 +522,15 @@
 - set_fact:
     clusters: {}
 
+# skip jekyll/Liquid syntax check
+# {% raw %}
 - name: create clusters status map
   set_fact: 
     clusters: "{{ clusters | default({}) | combine ({ item['nxClusterId'] : item['status'] }) }}"
   loop: "{{result.response.profile.clusterAvailability}}"
   no_log: True
+# {% endraw %}
+
 - name: check status of replication
   assert:
     that:
