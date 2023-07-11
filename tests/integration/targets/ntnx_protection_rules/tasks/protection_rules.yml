@@ -337,7 +337,7 @@
       - temp_result.changed == false
       - temp_result.response.spec.name == "test-ansible-updated-check-mode"    
     fail_msg: "Unable to generate update spec using check mode"
-    success_msg: "Protection policy update spec generated succesfully"
+    success_msg: "Protection policy update spec generated successfully"
 
 
 ############################################################## DELETE Protection Policy Tests ##################################################################

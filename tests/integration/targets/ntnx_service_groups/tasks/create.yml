@@ -174,7 +174,7 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "unable to delete all created service groups"
-    success_msg: "All service groups deleted succesfully"
+    success_msg: "All service groups deleted successfully"
 
 - set_fact:
     todelete: []

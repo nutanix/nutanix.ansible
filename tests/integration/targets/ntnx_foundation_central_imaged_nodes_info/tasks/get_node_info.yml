@@ -31,7 +31,7 @@
       - result.response is defined
       - result.response.node_serial == nodes.response.imaged_nodes.0.node_serial
     fail_msg: "fail: unable to get node by uuid"
-    success_msg: "succes:  get node by uuid succesfully "
+    success_msg: "succes:  get node by uuid successfully "
 
 - name: get imaged node using custom filter
   ntnx_foundation_central_imaged_nodes_info:

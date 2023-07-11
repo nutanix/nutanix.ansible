@@ -179,7 +179,7 @@
       - result.response.timeMachineId == time_machine_uuid
       - result.response.lcmConfig.expiryDetails.expireInDays == 4
     fail_msg: "Unable to create snapshot with expiry config"
-    success_msg: "Snapshot with expiry config created succesfully"
+    success_msg: "Snapshot with expiry config created successfully"
 
 
 
@@ -257,7 +257,7 @@
       - result.response.lcmConfig.expiryDetails.expireInDays == 6
 
     fail_msg: "Unable to add expiry schedule and rename it"
-    success_msg: "Snapshot updated succesfully"
+    success_msg: "Snapshot updated successfully"
 
 
 - name: Idempotency check
@@ -623,12 +623,15 @@
       - test2
   register: result
 
+# {% raw %}
+
 - name: create linked databases to its uuid map
   set_fact: 
       linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
   loop: "{{result.response}}" 
   no_log: true
 
+# {% endraw %}
 
 - name: check linked database update status
   assert: 
@@ -648,12 +651,15 @@
     database_uuid: "{{linked_databases.test1}}" 
   register: result
 
+# {% raw %}
+
 - name: create linked database map 
   set_fact: 
       linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
   loop: "{{result.response}}" 
   no_log: true
 
+# {% endraw %}
 
 - name: check linked database update status
   assert: 

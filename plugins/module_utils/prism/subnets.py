@@ -46,14 +46,17 @@ class Subnet(Prism):
         payload["spec"]["resources"]["vlan_id"] = config["vlan_id"]
         payload["spec"]["resources"]["is_external"] = False
 
-        dvs_uuid, error = get_dvs_uuid(config["virtual_switch"], self.module)
-        if error:
-            return None, error
-        payload["spec"]["resources"]["virtual_switch_uuid"] = dvs_uuid
         cluster_uuid, error = get_cluster_uuid(config["cluster"], self.module)
         if error:
             return None, error
         payload["spec"]["cluster_reference"] = self._get_cluster_ref_spec(cluster_uuid)
+
+        dvs_uuid, error = get_dvs_uuid(
+            config["virtual_switch"], self.module, cluster_uuid=cluster_uuid
+        )
+        if error:
+            return None, error
+        payload["spec"]["resources"]["virtual_switch_uuid"] = dvs_uuid
 
         if "ipam" in config:
             payload["spec"]["resources"]["ip_config"] = self._get_ipam_spec(config)

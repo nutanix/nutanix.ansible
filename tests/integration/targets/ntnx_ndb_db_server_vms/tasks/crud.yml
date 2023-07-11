@@ -43,11 +43,14 @@
 
   register: check_mode_result
 
+# skip jekyll/Liquid syntax check
+# {% raw %}
 - name: create action_arguments map
   set_fact: 
     action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{check_mode_result.response.actionArguments}}"  
   no_log: true
+# {% endraw %}
 
 - set_fact:
     mainetance_tasks: {
@@ -257,12 +260,14 @@
           post_task_cmd: "ls -F"
   register: result
 
-
+# skip jekyll/Liquid syntax check
+# {% raw %}
 - name: create properties map
   set_fact: 
     properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"  
   no_log: true
+# {% endraw %}
 
 - name: Creation Status
   assert: 
@@ -340,7 +345,7 @@
       - result.failed == false
       - "'Nothing to change' in result.msg"
     fail_msg: "db server vm got updated"
-    success_msg: "db server vm update skipped succesfully due to no changes in state"
+    success_msg: "db server vm update skipped successfully due to no changes in state"
 
 
 - name: update db server vm name with check mode and check defaults
@@ -821,11 +826,15 @@
 - set_fact:
     action_arguments: {}
 
+# skip jekyll/Liquid syntax check
+# {% raw %}
 - name: create action_arguments map
   set_fact: 
         action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.actionArguments}}"
   no_log: true
+
+# {% endraw %}
 
 - set_fact:
     maintenance_tasks: {
@@ -895,11 +904,14 @@
   
   register: result
   
+# skip jekyll/Liquid syntax check
+# {% raw %}
 - name: create properties map
   set_fact: 
         properties1: "{{ properties1 | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
   no_log: true
+# {% endraw %}
 
 - name: Creation Status
   assert: 

@@ -80,6 +80,7 @@ action_groups:
   - ntnx_ndb_stretched_vlans
   - ntnx_ndb_time_machine_clusters
   - ntnx_ndb_tags
+  - ntnx_ndb_tags_info
   - ntnx_ndb_database_clones
   - ntnx_ndb_database_snapshots
   - ntnx_ndb_database_clone_refresh
@@ -95,3 +96,4 @@ action_groups:
   - ntnx_ndb_maintenance_window
   - ntnx_ndb_maintenance_windows_info
   - ntnx_ndb_slas
+  - ntnx_karbon_clusters_node_pools

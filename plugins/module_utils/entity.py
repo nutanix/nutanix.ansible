@@ -471,7 +471,7 @@ class Entity(object):
 
     @staticmethod
     def _parse_filters(filters):
-        return ",".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
+        return ";".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
 
     @staticmethod
     def _filter_entities(entities, custom_filters):

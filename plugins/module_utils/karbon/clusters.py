@@ -159,6 +159,7 @@ class Cluster(Karbon):
         min_cpu = 4
         min_memory = 8
         min_disk_size = 120
+        min_etcd_disk_size = 40
         err = "{0} cannot be less then {1}"
         if (
             resource_type == "master"
@@ -176,6 +177,10 @@ class Cluster(Karbon):
             return None, err.format("cpu", min_cpu)
         if resources["memory_gb"] < min_memory:
             return None, err.format("memory_gb", min_memory)
-        if resources["disk_gb"] < min_disk_size:
-            return None, err.format("disk_gb", min_disk_size)
+        if resource_type == "etcd":
+            if resources["disk_gb"] < min_etcd_disk_size:
+                return None, err.format("disk_gb", min_etcd_disk_size)
+        else:
+            if resources["disk_gb"] < min_disk_size:
+                return None, err.format("disk_gb", min_disk_size)
         return resources, None

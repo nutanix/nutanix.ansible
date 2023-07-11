@@ -32,4 +32,4 @@
         fail_msg: ' fail: unable to update quarantine_rule by adding inbound and outbound list '
         success_msg: >-
           pass: update quarantine_rule by adding inbound and outbound list
-          succesfully 
+          successfully 

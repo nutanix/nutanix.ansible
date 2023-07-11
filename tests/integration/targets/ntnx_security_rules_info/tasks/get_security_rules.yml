@@ -91,5 +91,5 @@
       - result.failed == false
       - result.response.status == 'SUCCEEDED'
     fail_msg: ' fail: unable to delete secutiry rule '
-    success_msg: 'pass: security rule deleted succesfully '
+    success_msg: 'pass: security rule deleted successfully '
 ###################################

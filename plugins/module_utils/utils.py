@@ -109,3 +109,22 @@ def format_filters_map(filters, except_keys=None):
                 mapped_filters.update({key: value})
         filters = mapped_filters
     return filters
+
+
+def create_filter_criteria_string(filters):
+    """
+    This method creates filter criteria string as per filters map for v3 apis
+    example filter criteria format: "name==test_name;cluster_uuid=test_uuid"
+    """
+    filter_criteria = ""
+    if not filters:
+        return filter_criteria
+
+    for key, val in filters.items():
+        if val:
+            filter_criteria = filter_criteria + "{0}=={1};".format(key, val)
+
+    # remove ";" from ending
+    filter_criteria = filter_criteria[:-1]
+
+    return filter_criteria

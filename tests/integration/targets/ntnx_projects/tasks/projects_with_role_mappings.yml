@@ -14,6 +14,9 @@
     project2_name: "{{random_name}}{{suffix_name}}2"
     project3_name: "{{random_name}}{{suffix_name}}3"
 
+- set_fact:
+    ignore_errors: false
+
 - name: Create Project with min spec
   ntnx_projects:
     name: "{{project1_name}}"
@@ -25,7 +28,7 @@
         user:
           uuid: "{{users[0]}}"
   register: result
-  ignore_errors: false
+  ignore_errors: "{{ignore_errors}}"
 
 - set_fact:
     response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
@@ -90,8 +93,7 @@
         role:
           name: "{{roles[3]}}"
   register: result
-  ignore_errors: true
-
+  ignore_errors: "{{ignore_errors}}"
 
 - set_fact:
     expected_subnets: ["{{ network.dhcp.uuid }}", "{{ static.uuid }}", "{{ overlay.uuid }}"]
@@ -126,6 +128,8 @@
 - set_fact:
     todelete: "{{ todelete + [  result.project_uuid ] }}"
 
+- set_fact:
+    user_group_to_delete: "{{result.response.status.project_status.resources.external_user_group_reference_list[0].uuid}}"
 
 
 - name: Update Project role mappings and subnets and quotas
@@ -312,3 +316,20 @@
 
 - set_fact:
     todelete: []
+
+- name: delete user group
+  ntnx_user_groups:
+    state: absent
+    user_group_uuid: "{{user_group_to_delete}}"
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
+    fail_msg: "Unable to delete user  group  "
+    success_msg: "user group deletd successfully"
