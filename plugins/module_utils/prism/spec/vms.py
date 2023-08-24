@@ -40,7 +40,8 @@ class DefaultVMSpec:
 
     gc_spec = dict(
         type=dict(type="str", choices=["cloud_init", "sysprep"], required=True),
-        script_path=dict(type="path", required=True),
+        script=dict(type="str", required=False),
+        script_path=dict(type="path", required=False),
         is_overridable=dict(type="bool", default=False),
     )
 

@@ -158,6 +158,28 @@ EXAMPLES = r"""
         script_path: "./cloud_init.yml"
         is_overridable: True
 
+  - name: VM with CentOS-7-cloud-init image where cloud_init is from an Ansible template
+    ntnx_vms:
+      state: present
+      name: VM with CentOS-7-cloud-init image
+      timezone: "UTC"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      cluster:
+        name: "{{ cluster_name }}"
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          clone_image:
+            name:  "{{ centos }}"
+          bus: "SCSI"
+      guest_customization:
+        type: "cloud_init"
+        script: "{{ lookup('template', 'cloud_init.j2') }}"
+        is_overridable: True
+
   - name: VM with Cluster, Network, Universal time zone, one Disk
     ntnx_vms:
       state: present
