@@ -365,7 +365,7 @@ class VM(Prism):
             with open(fpath, "rb") as f:
                 content = base64.b64encode(f.read())
         else:
-            content = param["script"]
+            content = base64.b64encode(param["script"])
         gc_spec = {"guest_customization": {}}
 
         if "sysprep" in param["type"]:
