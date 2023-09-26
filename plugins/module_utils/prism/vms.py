@@ -425,7 +425,7 @@ class VM(Prism):
 
         else:
             if vdisk.get("size_gb"):
-                disk_size_bytes = vdisk["size_gb"] * 1024 * 1024 * 1024
+                disk_size_bytes = int(vdisk["size_gb"]) * 1024 * 1024 * 1024
                 if not vdisk.get("uuid") or (
                     "disk_size_bytes" in disk
                     and disk_size_bytes >= disk.get("disk_size_bytes", 0)
