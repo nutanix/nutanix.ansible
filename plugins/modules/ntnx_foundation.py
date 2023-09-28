@@ -15,7 +15,7 @@ version_added: 1.1.0
 description: 'Nutanix module to image nodes and optionally create clusters'
 options:
     hypervisor_nameserver:
-        description: name servers for hypervisors
+        description: name server for hypervisors
         type: str
         required: false
     cvm_gateway:
