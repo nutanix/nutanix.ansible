@@ -15,7 +15,7 @@ version_added: 1.1.0
 description: 'Nutanix module to image nodes and optionally create clusters'
 options:
     hypervisor_nameserver:
-        description: to-write
+        description: name servers for hypervisors
         type: str
         required: false
     cvm_gateway:
@@ -1244,7 +1244,7 @@ def image_nodes(module, result):
 
     # add cluster urls if any cluster created
     cluster_urls = []
-    if spec["clusters"]:
+    if spec.get("clusters"):
         for cluster in spec["clusters"]:
             cluster_urls.append(
                 {
