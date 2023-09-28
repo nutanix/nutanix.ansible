@@ -432,7 +432,7 @@ class VM(Prism):
                 ):
                     if disk.get("bus") in ["IDE", "SATA"]:
                         self.require_vm_restart = True
-                    disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
+                    disk["disk_size_bytes"] = disk_size_bytes
                 else:
                     if disk.get("device_properties", {}).get("device_type") == "CDROM":
                         self.module.fail_json(
