@@ -274,11 +274,21 @@
 - set_fact:
     db_uuid: "{{result.db_uuid}}"
 
-- name: create properties map
-  set_fact: 
-    properties: "{ {" properties | default({}) | combine({item['name']: item['value']}) } }"
-  loop: "{{result.response.properties}}"
+- name: Ensure properties is defined
+  set_fact:
+    properties: "{}"
+  when: properties is undefined
+
+- name: Combine properties
+  block:
+    - set_fact:
+        temp_dict: "{ '{{' }} item['name']: item['value'] {{ '}}' }}"
+    - set_fact:
+        properties: "{{ properties | combine(temp_dict) }}"
+  loop: "{{ result.response.properties }}"
   no_log: true
+
+
 
 - name: Creation Status
   assert: 
