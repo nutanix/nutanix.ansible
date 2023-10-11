@@ -15,6 +15,7 @@ from .groups import get_entity_uuid
 from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
+from .users import User
 from .spec.categories_mapping import CategoriesMapping
 from .subnets import get_subnet_uuid
 
@@ -32,6 +33,7 @@ class VM(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "project": self._build_spec_project,
+            "owner": self._build_spec_owner,
             "cluster": self._build_spec_cluster,
             "vcpus": self._build_spec_vcpus,
             "cores_per_vcpu": self._build_spec_cores,
@@ -217,6 +219,23 @@ class VM(Prism):
 
         payload["metadata"].update(
             {"project_reference": {"uuid": uuid, "kind": "project"}}
+        )
+        return payload, None
+
+    def _build_spec_owner(self, payload, param):
+        if "name" in param:
+            owner = User(self.module)
+            name = param["name"]
+            uuid = owner.get_uuid(name, key="username")
+            if not uuid:
+                error = "Owner {0} not found.".format(name)
+                return None, error
+
+        elif "uuid" in param:
+            uuid = param["uuid"]
+
+        payload["metadata"].update(
+            {"owner_reference": {"uuid": uuid, "kind": "user"}}
         )
         return payload, None
 
