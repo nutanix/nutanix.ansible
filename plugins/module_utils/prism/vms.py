@@ -15,9 +15,9 @@ from .groups import get_entity_uuid
 from .images import get_image_uuid
 from .prism import Prism
 from .projects import Project
-from .users import User
 from .spec.categories_mapping import CategoriesMapping
 from .subnets import get_subnet_uuid
+from .users import User
 
 
 class VM(Prism):
@@ -234,9 +234,7 @@ class VM(Prism):
         elif "uuid" in param:
             uuid = param["uuid"]
 
-        payload["metadata"].update(
-            {"owner_reference": {"uuid": uuid, "kind": "user"}}
-        )
+        payload["metadata"].update({"owner_reference": {"uuid": uuid, "kind": "user"}})
         return payload, None
 
     def _build_spec_cluster(self, payload, param):
