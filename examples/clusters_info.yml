@@ -28,3 +28,11 @@
       sort_order: "ASCENDING"
       sort_attribute: "name"
     register: result
+
+  - name: List clusters using filter and custom_filter
+    ntnx_clusters_info:
+      filter:
+        name: <name>
+      custom_filter:
+        external_ip: <external_ip>
+    register: result

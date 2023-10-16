@@ -31,3 +31,12 @@
         sort_attribute: "vm_name"
       register: result
       ignore_errors: True
+
+    - name: List vms using filter and custom_filter
+      ntnx_vms_info:
+        filter:
+          vm_name: <name>
+        custom_filter:
+          num_sockets: <num_sockets>
+
+      register: result
