@@ -82,7 +82,7 @@ from ..module_utils.prism import vms  # noqa: E402
 
 
 class Mock_Module:
-    def __init__(self, host, port, username, password, timeout=60, validate_certs=False):
+    def __init__(self, host, port, username, password, validate_certs=False, timeout=30):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
             "nutanix_host": host,
@@ -136,7 +136,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_username,
             self.nutanix_password,
             self.validate_certs,
-            self.timeout,
+            self.timeout
         )
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
