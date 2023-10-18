@@ -901,7 +901,8 @@ def delete_db_clone(module, result):
         )
 
     if module.check_mode:
-        result["response"] = spec
+        result["uuid"] = uuid
+        result["response"] = "Db clone with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = _clones.delete(uuid, data=spec)
@@ -912,6 +913,7 @@ def delete_db_clone(module, result):
         operations = Operation(module)
         resp = operations.wait_for_completion(ops_uuid, delay=5)
 
+    result["uuid"] = uuid
     result["response"] = resp
     result["changed"] = True
 

@@ -1280,6 +1280,11 @@ def delete_security_rule(module, result):
         result["error"] = "Missing parameter security_rule_uuid in playbook"
         module.fail_json(msg="Failed deleting security_rule", **result)
 
+    if module.check_mode:
+        result["security_rule_uuid"] = security_rule_uuid
+        result["response"] = "Security rule with uuid:{0} will be deleted.".format(security_rule_uuid)
+        return
+
     security_rule = SecurityRule(module)
     resp = security_rule.delete(security_rule_uuid)
     result["changed"] = True

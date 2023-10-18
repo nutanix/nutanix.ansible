@@ -289,7 +289,14 @@ def update_role(module, result):
 def delete_role(module, result):
     roles = Role(module)
     role_uuid = module.params["role_uuid"]
+
+    if module.check_mode:
+        result["role_uuid"] = role_uuid
+        result["response"] = "Role with uuid:{0} will be deleted.".format(role_uuid)
+        return
+
     resp = roles.delete(uuid=role_uuid)
+    result["role_uuid"] = role_uuid
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
     result["changed"] = True
 

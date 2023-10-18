@@ -742,7 +742,14 @@ def delete_project(module, result):
         module.fail_json(msg="Failed deleting Project", **result)
 
     projects = Project(module)
+
+    if module.check_mode:
+        result["uuid"] = uuid
+        result["response"] = "Project with uuid:{0} will be deleted.".format(uuid)
+        return
+
     resp = projects.delete(uuid)
+    result["uuid"] = uuid
     result["response"] = resp
     result["changed"] = True
     task_uuid = resp["status"]["execution_context"]["task_uuid"]

@@ -715,6 +715,11 @@ def deleteCluster(module, result):
     cluster_uuid = module.params.get("imaged_cluster_uuid")
     cluster = ImagedCluster(module)
 
+    if module.check_mode:
+        result["imaged_cluster_uuid"] = cluster_uuid
+        result["response"] = "Cluster with uuid:{0} will be deleted.".format(cluster_uuid)
+        return
+
     resp = cluster.delete(cluster_uuid, no_response=True)
     result["response"] = resp
     result["imaged_cluster_uuid"] = cluster_uuid

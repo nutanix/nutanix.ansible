@@ -502,6 +502,12 @@ def delete_pbr(module, result):
     pbr_uuid = module.params["pbr_uuid"]
 
     pbr = Pbr(module)
+
+    if module.check_mode:
+        result["pbr_uuid"] = pbr_uuid
+        result["response"] = "Pbr with uuid:{0} will be deleted.".format(pbr_uuid)
+        return
+
     resp = pbr.delete(pbr_uuid)
     result["changed"] = True
     result["response"] = resp

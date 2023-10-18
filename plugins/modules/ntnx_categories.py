@@ -278,6 +278,11 @@ def delete_categories(module, result):
             category_key_values.append(v["value"])
         delete_category_values(module, name, category_key_values)
 
+        if module.check_mode:
+            result["category_name"] = name
+            result["response"] = "Category with name:{0} will be deleted.".format(name)
+            return
+
         # delete the category
         resp = _category_key.delete(uuid=name, no_response=True)
         result["response"] = {
@@ -286,6 +291,7 @@ def delete_categories(module, result):
             )
         }
 
+    result["category_name"] = name
     result["changed"] = True
 
 

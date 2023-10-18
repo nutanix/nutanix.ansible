@@ -947,6 +947,12 @@ def delete_vm(module, result):
         module.fail_json(msg="Failed deleting VM", **result)
 
     vm = VM(module)
+
+    if module.check_mode:
+        result["vm_uuid"] = vm_uuid
+        result["response"] = "VM with uuid:{0} will be deleted.".format(vm_uuid)
+        return
+
     resp = vm.delete(vm_uuid)
     result["changed"] = True
     result["response"] = resp

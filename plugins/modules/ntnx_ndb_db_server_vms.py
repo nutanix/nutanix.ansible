@@ -684,7 +684,8 @@ def delete_db_server(module, result):
     spec["remove"] = not spec["delete"]
 
     if module.check_mode:
-        result["response"] = spec
+        result["uuid"] = uuid
+        result["response"] = "Db server with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = db_servers.delete(data=spec, uuid=uuid)

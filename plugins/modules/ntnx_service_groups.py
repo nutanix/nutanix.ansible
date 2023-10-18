@@ -237,6 +237,11 @@ def delete_service_group(module, result):
         result["error"] = "Missing parameter service_group_uuid in playbook"
         module.fail_json(msg="Failed deleting service_groups", **result)
 
+    if module.check_mode:
+        result["service_group_uuid"] = service_group_uuid
+        result["response"] = "Service group with uuid:{0} will be deleted.".format(service_group_uuid)
+        return
+
     service_group = ServiceGroup(module)
     resp = service_group.delete(service_group_uuid, no_response=True)
     result["changed"] = True

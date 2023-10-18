@@ -199,7 +199,13 @@ def delete_tags(module, result):
     if not uuid:
         module.fail_json(msg="'uuid' is required field for delete", **result)
 
+    if module.check_mode:
+        result["uuid"] = uuid
+        result["response"] = "Tag with uuid:{0} will be deleted.".format(uuid)
+        return
+
     resp = tags.delete(uuid=uuid)
+    result["uuid"] = uuid
     result["response"] = resp
     result["changed"] = True
 

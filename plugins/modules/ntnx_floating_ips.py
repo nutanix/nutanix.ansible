@@ -230,6 +230,11 @@ def create_floating_ip(module, result):
 def delete_floating_ip(module, result):
     fip_uuid = module.params["fip_uuid"]
 
+    if module.check_mode:
+        result["fip_uuid"] = fip_uuid
+        result["response"] = "Floating IP with uuid:{0} will be deleted.".format(fip_uuid)
+        return
+
     floating_ip = FloatingIP(module)
     resp = floating_ip.delete(fip_uuid)
     result["changed"] = True
