@@ -455,7 +455,7 @@ task_uuid:
   type: str
   sample: "ae015bd7-eada-4e23-a225-4f02f9b2b21e"
 """
-
+from ..module_utils import utils
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.subnets import Subnet  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
@@ -550,6 +550,46 @@ def get_module_spec():
 
     return module_args
 
+def update_subnet(module, result):
+    subnet = Subnet(module)
+    subnet_uuid = module.params.get("subnet_uuid")
+    result["subnet_uuid"] = subnet_uuid
+
+    # read the current state of subnet
+    resp = subnet.read(subnet_uuid)
+    utils.strip_extra_attrs(resp["status"], resp["spec"])
+    resp["spec"] = resp.pop("status")
+
+    # new spec for updating subnet
+    update_spec, error = subnet.get_spec(resp)
+    if error:
+        result["error"] = error
+        module.fail_json(msg="Failed generating Subnet update spec", **result)
+    
+    # check for idempotency
+    if resp == update_spec:
+        result["skipped"] = True
+        module.exit_json(
+            msg="Nothing to change. Refer docs to check for fields which can be updated"
+        )
+
+    if module.check_mode:
+        result["response"] = update_spec
+        return
+
+    # update subnet
+    resp = subnet.update(update_spec, uuid=subnet_uuid)
+    task_uuid = resp["status"]["execution_context"]["task_uuid"]
+
+    # wait for subnet update to finish
+    if module.params.get("wait"):
+        task = Task(module)
+        task.wait_for_completion(task_uuid)
+        # get the subnet
+        resp = subnet.read(subnet_uuid)
+
+    result["changed"] = True
+    result["response"] = resp
 
 def create_subnet(module, result):
     subnet = Subnet(module)
@@ -618,7 +658,10 @@ def run_module():
     }
     state = module.params["state"]
     if state == "present":
-        create_subnet(module, result)
+        if module.params.get("subnet_uuid"):
+            update_subnet(module, result)
+        else:
+            create_subnet(module, result)
     elif state == "absent":
         delete_subnet(module, result)
 
