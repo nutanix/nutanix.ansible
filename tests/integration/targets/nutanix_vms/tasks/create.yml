@@ -41,6 +41,41 @@
 
   - set_fact:
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+# ##################################################################################
+  - name: VM with owner name
+    ntnx_vms:
+      state: present
+      name: none
+      timezone: GMT
+      project:
+        uuid: "{{ project.uuid }}"
+      cluster:
+        name: "{{ cluster.name }}"
+      categories:
+        AppType:
+          - Apache_Spark
+      owner:
+        name: "{{ vm_owner.name }}"
+      disks:
+        - type: DISK
+          size_gb: 5
+          bus: SCSI
+    register: result
+    ignore_errors: true
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.response.status.state == 'COMPLETE'
+        - result.response.metadata.owner_reference.name == "{{ vm_owner.name }}"
+        - result.response.metadata.owner_reference.uuid == "{{ vm_owner.uuid }}"
+        - result.response.metadata.owner_reference.kind == "user"
+      fail_msg: 'Unable to Create VM with owner'
+      success_msg: 'VM with owner created successfully '
+
+  - set_fact:
+      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 ##################################################################################
   - name: VM with ubuntu image and different specifications 
     ntnx_vms:

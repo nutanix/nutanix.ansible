@@ -194,4 +194,19 @@ options:
           - CDROM
           - DISK
           - NETWORK
+  owner:
+    description: Name or UUID of the owner
+    required: false
+    type: dict
+    suboptions:
+      name:
+        description:
+          - Owner Name
+          - Mutually exclusive with C(uuid)
+        type: str
+      uuid:
+        description:
+          - Owner UUID
+          - Mutually exclusive with C(name)
+        type: str
 """
