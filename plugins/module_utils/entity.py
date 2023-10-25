@@ -178,7 +178,9 @@ class Entity(object):
             custom_filters = self.module.params.get("custom_filter")
 
             if custom_filters:
-                entities_list = self._filter_entities(resp[self.entity_type], custom_filters)
+                entities_list = self._filter_entities(
+                    resp[self.entity_type], custom_filters
+                )
                 entities_count = len(entities_list)
 
                 resp[self.entity_type] = entities_list
