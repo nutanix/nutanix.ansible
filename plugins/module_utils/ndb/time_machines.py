@@ -39,7 +39,7 @@ class TimeMachine(NutanixDatabase):
         elif name:
             if not query:
                 query = {}
-            query["vaue_type"] = "name"
+            query["value_type"] = "name"
             query["value"] = name
             resp = self.read(query=query)
             if isinstance(resp, list):
