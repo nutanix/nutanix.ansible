@@ -20,9 +20,8 @@
         
   - name: hard power off the vm
     ntnx_vms:
-        state: present
+        state: hard_poweroff
         vm_uuid: "{{ vm_uuid }}"
-        operation: hard_poweroff
     register: result
     ignore_errors: true
     
