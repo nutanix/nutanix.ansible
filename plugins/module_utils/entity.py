@@ -283,10 +283,14 @@ class Entity(object):
             else:
                 spec.pop(key)
 
-        if params.get("filter", {}).get("name") and params.get("kind") == "vm":
-            spec["filter"]["vm_name"] = spec["filter"].pop("name")
+        if params.get("filter"):
+            if params.get("filter", {}).get("name") and params.get("kind") == "vm":
+                spec["filter"]["vm_name"] = spec["filter"].pop("name")
 
-        spec["filter"] = self._parse_filters(params.get("filter", {}))
+            spec["filter"] = self._parse_filters(params.get("filter", {}))
+
+        elif params.get("filter_string"):
+            spec["filter"] = params["filter_string"]
 
         return spec, None
 
