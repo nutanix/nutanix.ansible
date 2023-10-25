@@ -30,10 +30,10 @@
     register: result
     ignore_errors: True
 
-    - name: List hosts using filter and custom_filter
-      ntnx_hosts_info:
-        filter:
-          name: <name>
-        custom_filter:
-          serial_number: <serial_number>
-      register: result
+  - name: List hosts using filter and custom_filter
+    ntnx_hosts_info:
+      filter:
+        name: <name>
+      custom_filter:
+        serial_number: <serial_number>
+    register: result
