@@ -301,7 +301,7 @@ def get_module_spec():
         snapshot_uuid=dict(type="str", required=False),
         timezone=dict(type="str", default="Asia/Calcutta", required=False),
         pitr_timestamp=dict(type="str", required=False),
-        latest_snapshot=dict(tyoe="bool", required=False)
+        latest_snapshot=dict(type="bool", required=False)
     )
     return module_args
 
