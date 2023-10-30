@@ -1,7 +1,7 @@
 plugin: nutanix.ncp.ntnx_prism_vm_inventory
-nutanix_host: <pc_ip>
-nutanix_username: <user>
-nutanix_password: <pass>
+nutanix_hostname: <pc_ip>
+nutanix_username: <username>
+nutanix_password: <password>
 validate_certs: false
 data: {"offset": 0, "length": 1000}
 groups:
