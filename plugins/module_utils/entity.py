@@ -175,6 +175,17 @@ class Entity(object):
             timeout=timeout,
         )
         if resp:
+            custom_filters = self.module.params.get("custom_filter")
+
+            if custom_filters:
+                entities_list = self._filter_entities(
+                    resp[self.entity_type], custom_filters
+                )
+                entities_count = len(entities_list)
+
+                resp[self.entity_type] = entities_list
+                resp["metadata"]["length"] = entities_count
+
             return resp
         entities_list = []
         main_length = data.get("length")
