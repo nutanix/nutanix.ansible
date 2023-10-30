@@ -460,6 +460,11 @@ class VM(Prism):
                         msg="Unsupported operation: Unable to decrease disk size.",
                         disk=disk,
                     )
+            elif not vdisk.get("uuid"):
+                self.module.fail_json(
+                    msg="Unsupported operation: Unable to create disk, 'size_gb' is required.",
+                    disk=disk,
+                )
 
             if vdisk.get("storage_container"):
                 disk.pop("data_source_reference", None)
