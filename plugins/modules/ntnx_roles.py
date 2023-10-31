@@ -292,7 +292,7 @@ def delete_role(module, result):
 
     if module.check_mode:
         result["role_uuid"] = role_uuid
-        result["response"] = "Role with uuid:{0} will be deleted.".format(role_uuid)
+        result["msg"] = "Role with uuid:{0} will be deleted.".format(role_uuid)
         return
 
     resp = roles.delete(uuid=role_uuid)

@@ -253,7 +253,7 @@ def delete_user_group(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "User group with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "User group with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = user_group.delete(uuid)

@@ -467,7 +467,7 @@ def delete_cluster(module, result):
 
     if module.check_mode:
         result["cluster_name"] = cluster_name
-        result["response"] = "Cluster with name:{0} will be deleted.".format(cluster_name)
+        result["msg"] = "Cluster with name:{0} will be deleted.".format(cluster_name)
         return
 
     cluster = Cluster(module)

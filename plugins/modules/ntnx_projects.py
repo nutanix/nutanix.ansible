@@ -745,7 +745,7 @@ def delete_project(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "Project with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Project with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = projects.delete(uuid)

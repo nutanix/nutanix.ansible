@@ -196,7 +196,7 @@ def delete_address_group(module, result):
 
     if module.check_mode:
         result["address_group_uuid"] = uuid
-        result["response"] = "Address group with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Address group with uuid:{0} will be deleted.".format(uuid)
         return
 
     address_group.delete(uuid=uuid, no_response=True)

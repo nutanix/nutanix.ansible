@@ -1185,7 +1185,7 @@ def delete_profile(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "Profile with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Profile with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = profiles.delete(uuid)

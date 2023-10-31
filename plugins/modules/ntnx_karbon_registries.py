@@ -128,7 +128,7 @@ def delete_registry(module, result):
 
     if module.check_mode:
         result["name"] = registry_name
-        result["response"] = "Registry with name:{0} will be deleted.".format(registry_name)
+        result["msg"] = "Registry with name:{0} will be deleted.".format(registry_name)
         return
 
     registry = Registry(module)

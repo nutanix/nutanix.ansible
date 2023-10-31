@@ -1104,7 +1104,7 @@ def delete_recovery_plan(module, result):
 
     if module.check_mode:
         result["plan_uuid"] = plan_uuid
-        result["response"] = "Recovery plan with uuid:{0} will be deleted.".format(plan_uuid)
+        result["msg"] = "Recovery plan with uuid:{0} will be deleted.".format(plan_uuid)
         return
 
     resp = recovery_plan.delete(uuid=plan_uuid)

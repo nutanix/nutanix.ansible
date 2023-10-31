@@ -468,7 +468,7 @@ def delete_acp(module, result):
 
     if module.check_mode:
         result["acp_uuid"] = acp_uuid
-        result["response"] = "Acp with uuid:{0} will be deleted.".format(acp_uuid)
+        result["msg"] = "Acp with uuid:{0} will be deleted.".format(acp_uuid)
         return
 
     acp = ACP(module)

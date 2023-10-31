@@ -325,7 +325,7 @@ def delete_pool(module, result):
     if module.check_mode:
         result["cluster_name"] = cluster_name
         result["node_pool_name"] = pool_name
-        result["response"] = "Pool with name:{0} will be deleted.".format(pool_name)
+        result["msg"] = "Pool with name:{0} will be deleted.".format(pool_name)
         return
 
     node_pool = NodePool(module, resource_type="/v1-beta.1/k8s/clusters")

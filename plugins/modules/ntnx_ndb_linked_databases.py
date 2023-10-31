@@ -286,7 +286,7 @@ def remove_database(module, result):
     if module.check_mode:
         result["db_instance_uuid"] = instance_uuid
         result["db_uuid"] = database_uuid
-        result["response"] = "Database with uuid:{0} will be removed.".format(database_uuid)
+        result["msg"] = "Database with uuid:{0} will be removed.".format(database_uuid)
         return
 
     _databases = DatabaseInstance(module)

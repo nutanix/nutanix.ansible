@@ -232,7 +232,7 @@ def delete_floating_ip(module, result):
 
     if module.check_mode:
         result["fip_uuid"] = fip_uuid
-        result["response"] = "Floating IP with uuid:{0} will be deleted.".format(fip_uuid)
+        result["msg"] = "Floating IP with uuid:{0} will be deleted.".format(fip_uuid)
         return
 
     floating_ip = FloatingIP(module)

@@ -188,7 +188,7 @@ def delete_stretched_vlan(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "Stretched vlan with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Stretched vlan with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = stretched_vlan.delete_stretched_vlan(uuid)

@@ -454,7 +454,7 @@ def delete_image(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "Image with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Image with uuid:{0} will be deleted.".format(uuid)
         return
 
     image = Image(module)

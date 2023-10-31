@@ -368,7 +368,7 @@ def delete_snapshot(module, result):
 
     if module.check_mode:
         result["snapshot_uuid"] = snapshot_uuid
-        result["response"] = "Snapshot with uuid:{0} will be deleted.".format(snapshot_uuid)
+        result["msg"] = "Snapshot with uuid:{0} will be deleted.".format(snapshot_uuid)
         return
 
     if module.params.get("wait"):

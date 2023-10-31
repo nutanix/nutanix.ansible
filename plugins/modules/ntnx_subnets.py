@@ -582,7 +582,7 @@ def delete_subnet(module, result):
 
     if module.check_mode:
         result["subnet_uuid"] = subnet_uuid
-        result["response"] = "Subnet with uuid:{0} will be deleted.".format(subnet_uuid)
+        result["msg"] = "Subnet with uuid:{0} will be deleted.".format(subnet_uuid)
         return
 
     resp = subnet.delete(subnet_uuid)

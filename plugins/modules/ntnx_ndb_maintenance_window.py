@@ -239,7 +239,7 @@ def delete_window(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "Window with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Window with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = _maintenance_window.delete(uuid=uuid, data={})

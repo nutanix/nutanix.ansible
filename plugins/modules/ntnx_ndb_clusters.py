@@ -426,7 +426,7 @@ def delete_cluster(module, result):
 
     if module.check_mode:
         result["cluster_uuid"] = cluster_uuid
-        result["response"] = "Cluster with uuid:{0} will be deleted.".format(cluster_uuid)
+        result["msg"] = "Cluster with uuid:{0} will be deleted.".format(cluster_uuid)
         return
 
     resp, err = cluster.delete(cluster_uuid)

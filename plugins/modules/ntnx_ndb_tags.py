@@ -201,7 +201,7 @@ def delete_tags(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "Tag with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Tag with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = tags.delete(uuid=uuid)

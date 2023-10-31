@@ -1502,7 +1502,7 @@ def delete_db_servers(module, result, database_info):
 
         if module.check_mode:
             result["uuid"] = uuid
-            result["response"] = "Db server with uuid:{0} will be deleted.".format(uuid)
+            result["msg"] = "Db server with uuid:{0} will be deleted.".format(uuid)
             return
 
         resp = db_servers.delete(uuid=uuid, data=spec)
@@ -1530,8 +1530,9 @@ def delete_instance(module, result):
     spec = _databases.get_delete_spec()
 
     if module.check_mode:
+        result["response"] = spec
         result["uuid"] = uuid
-        result["response"] = "Instance with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Instance with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = _databases.delete(uuid, data=spec)

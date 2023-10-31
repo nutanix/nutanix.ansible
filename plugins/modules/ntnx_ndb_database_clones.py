@@ -902,7 +902,7 @@ def delete_db_clone(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "Db clone with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Db clone with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = _clones.delete(uuid, data=spec)

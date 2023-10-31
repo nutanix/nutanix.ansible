@@ -376,7 +376,7 @@ def delete_vlan(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "Vlan with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "Vlan with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = vlan.delete(uuid)

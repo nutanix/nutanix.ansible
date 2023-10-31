@@ -280,7 +280,7 @@ def delete_categories(module, result):
 
         if module.check_mode:
             result["category_name"] = name
-            result["response"] = "Category with name:{0} will be deleted.".format(name)
+            result["msg"] = "Category with name:{0} will be deleted.".format(name)
             return
 
         # delete the category

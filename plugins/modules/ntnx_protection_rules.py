@@ -723,7 +723,7 @@ def delete_protection_rule(module, result):
 
     if module.check_mode:
         result["rule_uuid"] = rule_uuid
-        result["response"] = "Role with uuid:{0} will be deleted.".format(rule_uuid)
+        result["msg"] = "Role with uuid:{0} will be deleted.".format(rule_uuid)
         return
 
     resp = protection_rule.delete(uuid=rule_uuid)

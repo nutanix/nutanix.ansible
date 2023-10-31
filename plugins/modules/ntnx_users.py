@@ -268,7 +268,7 @@ def delete_user(module, result):
 
     if module.check_mode:
         result["uuid"] = uuid
-        result["response"] = "User with uuid:{0} will be deleted.".format(uuid)
+        result["msg"] = "User with uuid:{0} will be deleted.".format(uuid)
         return
 
     result["response"] = resp

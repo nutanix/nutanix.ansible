@@ -260,7 +260,7 @@ def delete_vpc(module, result):
 
     if module.check_mode:
         result["vpc_uuid"] = vpc_uuid
-        result["response"] = "VPC with uuid:{0} will be deleted.".format(vpc_uuid)
+        result["msg"] = "VPC with uuid:{0} will be deleted.".format(vpc_uuid)
         return
 
     resp = vpc.delete(vpc_uuid)
