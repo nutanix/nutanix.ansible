@@ -366,7 +366,9 @@ class VM(Prism):
 
     def _build_spec_boot_config(self, payload, param):
         if not payload["spec"]["resources"].get("boot_config"):
-            payload["spec"]["resources"]["boot_config"] = self._get_default_boot_config_spec()
+            payload["spec"]["resources"][
+                "boot_config"
+            ] = self._get_default_boot_config_spec()
         boot_config = payload["spec"]["resources"]["boot_config"]
 
         if "LEGACY" == param["boot_type"] and "boot_order" in param:
