@@ -889,6 +889,8 @@ def delete_db_clone(module, result):
     _clones = DatabaseClone(module)
 
     uuid = module.params.get("uuid")
+    result["uuid"] = uuid
+
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
 
@@ -901,7 +903,7 @@ def delete_db_clone(module, result):
         )
 
     if module.check_mode:
-        result["uuid"] = uuid
+        result["response"] = spec
         result["msg"] = "Db clone with uuid:{0} will be deleted.".format(uuid)
         return
 
@@ -913,7 +915,6 @@ def delete_db_clone(module, result):
         operations = Operation(module)
         resp = operations.wait_for_completion(ops_uuid, delay=5)
 
-    result["uuid"] = uuid
     result["response"] = resp
     result["changed"] = True
 
