@@ -171,6 +171,14 @@ class VM(Prism):
             }
         )
 
+    def _get_default_boot_config_spec(self):
+        return deepcopy(
+            {
+                "boot_type": "LEGACY",
+                "boot_device_order_list": ["CDROM", "DISK", "NETWORK"],
+            }
+        )
+
     def _get_default_network_spec(self):
         return deepcopy(
             {
@@ -241,7 +249,7 @@ class VM(Prism):
         uuid, err = get_cluster_uuid(param, self.module)
         if err:
             return None, err
-        payload["spec"]["cluster_reference"]["uuid"] = uuid
+        payload["spec"]["cluster_reference"] = {"kind": "cluster", "uuid": uuid}
         return payload, None
 
     def _build_spec_vcpus(self, payload, vcpus):
@@ -357,7 +365,10 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_boot_config(self, payload, param):
+        if not payload["spec"]["resources"].get("boot_config"):
+            payload["spec"]["resources"]["boot_config"] = self._get_default_boot_config_spec()
         boot_config = payload["spec"]["resources"]["boot_config"]
+
         if "LEGACY" == param["boot_type"] and "boot_order" in param:
             boot_config["boot_device_order_list"] = param["boot_order"]
 

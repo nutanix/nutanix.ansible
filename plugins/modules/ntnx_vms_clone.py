@@ -285,6 +285,7 @@ def get_module_spec():
 
 def clone_vm(module, result):
     src_vm_uuid = module.params["src_vm_uuid"]
+    result["src_vm_uuid"] = src_vm_uuid
 
     vm = VM(module)
 
@@ -305,7 +306,8 @@ def clone_vm(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp = vm.read(src_vm_uuid)
+        vm_uuid = result["response"]["entity_reference_list"][0]["uuid"]
+        resp = vm.read(vm_uuid)
         result["response"] = resp
 
 
