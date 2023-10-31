@@ -31,6 +31,10 @@ options:
             - timestamp for point in time database cone refresh
             - format is 'yyyy-mm-dd hh:mm:ss'
         type: str
+      latest_snapshot:
+        description:
+            - write
+        type: bool
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
@@ -301,7 +305,7 @@ def get_module_spec():
         snapshot_uuid=dict(type="str", required=False),
         timezone=dict(type="str", default="Asia/Calcutta", required=False),
         pitr_timestamp=dict(type="str", required=False),
-        latest_snapshot=dict(type="bool", required=False)
+        latest_snapshot=dict(type="bool", required=False),
     )
     return module_args
 
@@ -346,7 +350,14 @@ def run_module():
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[("state", "present", ("snapshot_uuid", "pitr_timestamp", "latest_snapshot"), True)],
+        required_if=[
+            (
+                "state",
+                "present",
+                ("snapshot_uuid", "pitr_timestamp", "latest_snapshot"),
+                True,
+            )
+        ],
         mutually_exclusive=mutually_exclusive_list,
     )
     remove_param_with_none_value(module.params)

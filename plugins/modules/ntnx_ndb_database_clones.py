@@ -169,6 +169,10 @@ options:
                 description:
                     - timestamp for create clone from point in time
                 type: str
+            latest_snapshot:
+                description:
+                    - write
+                type: bool
       postgres:
         description:
             - postgres database related config
