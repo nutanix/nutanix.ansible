@@ -12,10 +12,29 @@
       validate_certs: false
 
   tasks:
+    - set_fact:
+        clone_db:
+          name: <Clone Db Name>
+        db_params_profile:
+          name: <Db Profile Name>
+        vm:
+          name: <Vm Name>
+          password: <Vm password>
+        cluster:
+          name: <Cluster Name>
+        network_profile:
+          name: <Network Profile Name>
+        compute_profile:
+          name: <Compute Profile Name>
+        public_ssh_key: <Public SSH Key>
+        time_machine:
+          name: <Time Machine Name>
+        snapshot:
+          uuid: <Snapshot UUID>
 
     - name: create clone using snapshot
       ntnx_ndb_database_clones:
-        name: "{{clone_db1}}"
+        name: "{{clone_db.name}}"
         desc: "ansible-created-clone"
 
         db_params_profile:
@@ -23,11 +42,11 @@
 
         db_vm:
           create_new_server:
-            name: "{{ vm1_name }}"
+            name: "{{ vm.name }}"
             desc: "vm for db server"
-            password: "{{ vm_password }}"
+            password: "{{ vm.password }}"
             cluster:
-              name: "{{cluster.cluster1.name}}"
+              name: "{{cluster.name}}"
             network_profile:
               name: "{{ network_profile.name }}"
             compute_profile:
@@ -35,11 +54,11 @@
             pub_ssh_key: "{{ public_ssh_key }}"
 
         postgres:
-          db_password: "{{vm_password}}"
+          db_password: "{{vm.password}}"
 
         time_machine:
-          name: "{{tm1}}"
-          snapshot_uuid: "{{snapshot_uuid}}"
+          name: "{{time_machine.name}}"
+          snapshot_uuid: "{{snapshot.uuid}}"
 
         removal_schedule:
           days: 2
@@ -59,7 +78,7 @@
   
     - name: create clone using point in time
       ntnx_ndb_database_clones:
-        name: "{{clone_db1}}"
+        name: "{{clone_db.name}}"
         desc: "ansible-created-clone"
 
         db_params_profile:
@@ -67,11 +86,11 @@
 
         db_vm:
           create_new_server:
-            name: "{{ vm1_name }}"
+            name: "{{ vm.name }}"
             desc: "vm for db server"
-            password: "{{ vm_password }}"
+            password: "{{ vm.password }}"
             cluster:
-              name: "{{cluster.cluster1.name}}"
+              name: "{{cluster.name}}"
             network_profile:
               name: "{{ network_profile.name }}"
             compute_profile:
@@ -79,10 +98,10 @@
             pub_ssh_key: "{{ public_ssh_key }}"
 
         postgres:
-          db_password: "{{vm_password}}"
+          db_password: "{{vm.password}}"
 
         time_machine:
-          name: "{{tm1}}"
+          name: "{{time_machine.name}}"
           pitr_timestamp: "2023-02-28 12:00:00"
           timestamp: "Asia/Calcutta"
 
