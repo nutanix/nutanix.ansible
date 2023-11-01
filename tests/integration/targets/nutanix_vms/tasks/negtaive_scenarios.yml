@@ -28,6 +28,36 @@
         - result.error == "Project project not found."
       success_msg: ' Success: returned error as expected '
 #############################################################
+  - name: Check if error is produced when disk size is not given for storage container
+    check_mode: yes
+    ntnx_vms:
+      state: present
+      name: VM with storage container
+      timezone: GMT
+      cluster:
+        name: "{{ cluster.name }}"
+      categories:
+        AppType:
+          - Apache_Spark
+      disks:
+        - type: DISK
+          bus: SCSI
+          storage_container:
+            name: "{{ storage_container.name }}"
+      vcpus: 1
+      cores_per_vcpu: 1
+      memory_gb: 1
+    register: result
+    ignore_errors: True
+    
+  - name: Creation Status
+    assert:
+      that:
+        - result.msg == "Unsupported operation: Unable to create disk, 'size_gb' is required for using storage container."
+        - result.failed == True
+        - result.failed is defined
+      success_msg: ' Success: returned error as expected '
+##################################################################################
   - name: Unknown Cluster
     ntnx_vms:
       state: present
