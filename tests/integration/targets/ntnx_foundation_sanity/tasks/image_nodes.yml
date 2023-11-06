@@ -130,16 +130,16 @@
         - block_id: "{{nodes.block_id}}"
           nodes:
             - manual_mode:
-                cvm_ip: "{{nodes.node2.cvm_ip}}"
+                cvm_ip: "{{nodes.node1.cvm_ip}}"
                 cvm_gb_ram: 50
-                hypervisor_hostname: "{{nodes.node2.hypervisor_hostname}}"
-                ipmi_netmask: "{{nodes.node2.ipmi_netmask}}"
-                ipmi_gateway: "{{nodes.node2.ipmi_gateway}}"
-                ipmi_ip: "{{nodes.node2.ipmi_ip}}"
-                ipmi_password: "{{nodes.node2.ipmi_password}}"
-                hypervisor: "{{nodes.node2.hypervisor}}"
-                hypervisor_ip: "{{nodes.node2.hypervisor_ip}}"
-                node_position: "{{nodes.node2.node_position}}"
+                hypervisor_hostname: "{{nodes.node1.hypervisor_hostname}}"
+                ipmi_netmask: "{{nodes.node1.ipmi_netmask}}"
+                ipmi_gateway: "{{nodes.node1.ipmi_gateway}}"
+                ipmi_ip: "{{nodes.node1.ipmi_ip}}"
+                ipmi_password: "{{nodes.node1.ipmi_password}}"
+                hypervisor: "{{nodes.node1.hypervisor}}"
+                hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
+                node_position: "{{nodes.node1.node_position}}"
     register: result
     no_log: true
     ignore_errors: True
