@@ -8,6 +8,8 @@
     acp2_name: "{{random_name[0]}}2"
     acp3_name: "{{random_name[0]}}3"
     acp4_name: "{{random_name[0]}}4"
+    acp5_name: "{{random_name[0]}}5"
+
 
 - name: Create min ACP
   ntnx_acps:
@@ -56,7 +58,7 @@
 - name: Create ACP with user reference
   ntnx_acps:
     state: present
-    name: acp_with_user_reference2
+    name: "{{acp5_name}}"
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -69,7 +71,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == 'acp_with_user_reference2'
+      - result.response.spec.name == "{{acp5_name}}"
       - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
       - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
     fail_msg: " Unable to Create ACP with user reference "
