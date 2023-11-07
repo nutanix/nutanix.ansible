@@ -274,9 +274,14 @@
 - set_fact:
     db_uuid: "{{result.db_uuid}}"
 
+- name: Ensure properties is defined
+  set_fact:
+    properties: "{}"
+  when: properties is undefined
+
 - name: create properties map
   set_fact: 
-      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+      properties: "{{ properties | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}" 
   no_log: true
 
