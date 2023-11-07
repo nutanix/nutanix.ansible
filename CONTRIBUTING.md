@@ -115,3 +115,41 @@
 6. Link the pull request in `issue#<id>`
 
 7. After the pull request is merged, close the `issue#<id>`
+
+
+## Testing
+
+# Integration Testing for Ansible Modules
+
+To perform integration tests for any specific Ansible module such as the `ntnx_vms` module, follow these step-by-step procedures:
+
+## Prerequisites
+- Ensure you are in the collection directory where the module is located.
+
+## Setting up Variables
+1. Navigate to the `tests/integration/targets` directory within the collection.
+2. Fill in the necessary variables inside `prepare_env/vars/main.yml`.
+3. Run the 'prepare_env' playbook by executing the command:
+    ```bash
+    ansible-playbook prepare_env/tasks/prepare_env.yml
+    ```
+
+## Running Integration Tests
+4. Run the integration tests for all modules using:
+    ```bash
+    ansible-integration
+    ```
+
+5. To perform an integration test for a specific module, use:
+    ```bash
+    ansible-integration module_test_name
+    ```
+    Replace `module_test_name` with the actual module's name.
+
+## Cleanup
+6. After completing all integration tests, clean up the environment by running:
+    ```bash
+    ansible-playbook prepare_env/tasks/cleanup.yml
+    ```
+
+By following these steps, you can conduct comprehensive integration testing for the specified Ansible module and ensure a clean testing environment afterward.
