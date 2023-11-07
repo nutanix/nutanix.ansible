@@ -276,7 +276,7 @@
 
 - name: Ensure properties is defined
   set_fact:
-    properties: "{}"
+    properties: {}
   when: properties is undefined
 
 # skip jekyll/Liquid syntax check
