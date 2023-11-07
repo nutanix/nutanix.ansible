@@ -1,0 +1,167 @@
+network_profile:
+  name: "EXAMPLE_NETWORK_PROFILE_NAME"
+  uuid: "EXAMPLE_NETWORK_PROFILE_UUID"
+  single:
+    cluster:
+      name: "EXAMPLE_CLUSTER_NAME"
+    vlan_name: "EXAMPLE_VLAN_NAME"
+  HA:
+    cluster1:
+      name: "EXAMPLE_CLUSTER1_NAME"
+      vlan_name: "EXAMPLE_VLAN_NAME"
+      vlan_name2: "EXAMPLE_VLAN_NAME"
+    cluster2:
+      name: "EXAMPLE_CLUSTER2_NAME"
+      vlan_name: "EXAMPLE_VLAN_NAME"
+      vlan_name2: "EXAMPLE_VLAN_NAME"
+
+software_profile:
+  name: "EXAMPLE_SOFTWARE_PROFILE_NAME"
+  uuid: "EXAMPLE_SOFTWARE_PROFILE_UUID"
+  latest_version_id: "EXAMPLE_LATEST_VERSION_ID"
+
+compute_profile:
+  name: "EXAMPLE_COMPUTE_PROFILE_NAME"
+  uuid: "EXAMPLE_COMPUTE_PROFILE_UUID"
+
+db_params_profile:
+  name: "EXAMPLE_DB_PARAMS_PROFILE_NAME"
+  uuid: "EXAMPLE_DB_PARAMS_PROFILE_UUID"
+
+static_network_profile:
+  name: "EXAMPLE_STATIC_NETWORK_PROFILE_NAME"
+  uuid: "EXAMPLE_STATIC_NETWORK_PROFILE_UUID"
+
+postgres_ha_profiles:
+  static_network_profile:
+    name: "EXAMPLE_STATIC_HA_STATIC_NAME"
+    uuid: "EXAMPLE_STATIC_HA_STATIC_UUID"
+
+  multicluster_network_profile:
+    name: "EXAMPLE_HA_MULTICLUSTER_NAME"
+    uuid: "EXAMPLE_HA_MULTICLUSTER_UUID"
+
+  software_profile:
+    name: "EXAMPLE_POSTGRES_SOFTWARE_PROFILE_NAME"
+    uuid: "EXAMPLE_POSTGRES_SOFTWARE_PROFILE_UUID"
+    latest_version_id: "EXAMPLE_LATEST_VERSION_ID"
+
+  compute_profile:
+    name: "EXAMPLE_COMPUTE_PROFILE_NAME"
+    uuid: "EXAMPLE_COMPUTE_PROFILE_UUID"
+
+  db_params_profile:
+    name: "EXAMPLE_POSTGRES_HA_PARAMS_NAME"
+    uuid: "EXAMPLE_POSTGRES_HA_PARAMS_UUID"
+
+public_ssh_key: "EXAMPLE_PUBLIC_SSH_KEY"
+
+maintenance:
+  window_name: "EXAMPLE_MAINTENANCE_WINDOW_NAME"
+  window_uuid: "EXAMPLE_MAINTENANCE_WINDOW_UUID"
+
+sla:
+  name: "EXAMPLE_SLA_NAME"
+  uuid: "EXAMPLE_SLA_UUID"
+
+sla2:
+  name: "EXAMPLE_SLA2_NAME"
+  uuid: "EXAMPLE_SLA2_UUID"
+
+cluster:
+  cluster1:
+    name: "EXAMPLE_CLUSTER1_NAME"
+    uuid: "EXAMPLE_CLUSTER1_UUID"
+  cluster2:
+    name: "EXAMPLE_CLUSTER2_NAME"
+    uuid: "EXAMPLE_CLUSTER2_UUID"
+  cluster3:
+    name: "EXAMPLE_CLUSTER3_NAME"
+    uuid: ""
+    desc: "EXAMPLE_CLUSTER3_DESC"
+    name_prefix: "EXAMPLE_CLUSTER3_NAME_PREFIX"
+    cluster_ip: "EXAMPLE_CLUSTER3_IP"
+    update_cluster_ip: "EXAMPLE_UPDATE_CLUSTER_IP"
+    cluster_credentials:
+      username: "EXAMPLE_CLUSTER_CREDENTIALS_USERNAME"
+      password: "EXAMPLE_CLUSTER_CREDENTIALS_PASSWORD"
+    agent_network:
+      dns_servers:
+        - "EXAMPLE_DNS_SERVER_1"
+        - "EXAMPLE_DNS_SERVER_2"
+      ntp_servers:
+        - "EXAMPLE_NTP_SERVER_1"
+        - "EXAMPLE_NTP_SERVER_2"
+        - "EXAMPLE_NTP_SERVER_3"
+        - "EXAMPLE_NTP_SERVER_4"
+      vlan_access:
+        prism_vlan:
+          vlan_name: "EXAMPLE_PRISM_VLAN_NAME"
+          vlan_type: "EXAMPLE_VLAN_TYPE"
+          static_ip: "EXAMPLE_STATIC_IP"
+          gateway: "EXAMPLE_GATEWAY"
+          subnet_mask: "EXAMPLE_SUBNET_MASK"
+    storage_container: "EXAMPLE_STORAGE_CONTAINER"
+
+vm_password: "EXAMPLE_VM_PASSWORD"
+vm_username: "EXAMPLE_VM_USERNAME"
+
+db_server_vm:
+  name: "EXAMPLE_DB_SERVER_VM_NAME"
+  uuid: "EXAMPLE_DB_SERVER_VM_UUID"
+
+tags:
+  db_server_vm:
+    name: "EXAMPLE_DB_SERVER_VM_TAGS_NAME"
+    uuid: "EXAMPLE_DB_SERVER_VM_TAGS_UUID"
+  databases:
+    name: "EXAMPLE_DATABASES_NAME"
+    uuid: "EXAMPLE_DATABASES_UUID"
+  clones:
+    name: "EXAMPLE_CLONES_NAME"
+    uuid: "EXAMPLE_CLONES_UUID"
+
+time_machine:
+  name: "EXAMPLE_TIME_MACHINE_NAME"
+  uuid: "EXAMPLE_TIME_MACHINE_UUID"
+  snapshot_uuid: ""
+
+postgres:
+  software_home: "EXAMPLE_SOFTWARE_HOME"
+
+vm_ip: "EXAMPLE_VM_IP"
+
+cluster_ips:
+  ip1: "EXAMPLE_IP_1"
+  ip2: "EXAMPLE_IP_2"
+  ip3: "EXAMPLE_IP_3"
+  ip4: "EXAMPLE_IP_4"
+  ip5: "EXAMPLE_IP_5"
+  vip: "EXAMPLE_VIP"
+
+ndb_vlan:
+  name: "EXAMPLE_NDB_VLAN_NAME"
+  ip_pools:
+    - start_ip: "EXAMPLE_START_IP_1"
+      end_ip: "EXAMPLE_END_IP_1"
+    - start_ip: "EXAMPLE_START_IP_2"
+      end_ip: "EXAMPLE_END_IP_2"
+    - start_ip: "EXAMPLE_START_IP_3"
+      end_ip: "EXAMPLE_END_IP_3"
+    - start_ip: "EXAMPLE_START_IP_4"
+      end_ip: "EXAMPLE_END_IP_4"
+  gateway: "EXAMPLE_GATEWAY"
+  subnet_mask: "EXAMPLE_SUBNET_MASK"
+  primary_dns: "EXAMPLE_PRIMARY_DNS"
+  secondary_dns: "EXAMPLE_SECONDARY_DNS"
+  dns_domain: "EXAMPLE_DNS_DOMAIN"
+  updated_gateway: "EXAMPLE_UPDATED_GATEWAY"
+  updated_subnet_mask: "EXAMPLE_UPDATED_SUBNET_MASK"
+  updated_primary_dns: "EXAMPLE_UPDATED_PRIMARY_DNS"
+  updated_secondary_dns: "EXAMPLE_UPDATED_SECONDARY_DNS"
+
+todelete: []
+
+ndb_ip: "EXAMPLE_NDB_IP"
+ndb_username: "EXAMPLE_NDB_USERNAME"
+ndb_password: "EXAMPLE_NDB_PASSWORD"

@@ -139,6 +139,51 @@ To run this playbook, use <font color=royalblue>ansible-playbook</font> command 
 ansible-playbook <playbook_name>
 ansible-playbook examples/iaas/iaas.yml
 ```
+# Testing
+
+## Integration Testing for Ansible Modules
+
+To conduct integration tests for a specific Ansible module such as the `ntnx_vms` module, the following step-by-step procedures can be followed:
+
+### Prerequisites
+- Ensure you are in the collection directory where the module is located.
+
+### Setting up Variables
+1. Navigate to the `tests/integration/targets` directory within the collection.
+2. Define the necessary variables within the feature-specific var files, such as `prepare_env/vars/main.yml`, `prepare_foundation_env/vars/main.yml`,`prepare_ndb_env/tasks/prepare_env.yml`, etc. Note: For Karbon and FC tests, use the PC vars exclusively, as these features rely on this setup. Not all variables are mandatory; define only the required variables for the particular feature to be tested.
+3. Run the playbook for the specific feature you intend to test:
+    - For PC, NDB, and Foundation tests, execute the relevant commands:
+      ```bash
+      ansible-playbook prepare_env/tasks/prepare_env.yml
+      ansible-playbook prepare_ndb_env/tasks/prepare_env.yml
+      ansible-playbook prepare_foundation_env/tasks/prepare_foundation_env.yml
+      ```
+      Replace 'feature' with the specific feature you aim to test.
+
+### Running Integration Tests
+4. Conduct integration tests for all modules using:
+    ```bash
+    ansible-integration
+    ```
+
+5. To perform integration tests for a specific module:
+    ```bash
+    ansible-integration module_test_name
+    ```
+    Replace `module_test_name` with the actual module's name.
+
+### Cleanup
+6. After completing the integration tests, perform a cleanup specific to the tested feature:
+    - For PC tests, execute the command:
+      ```bash
+      ansible-playbook prepare_env/tasks/clean_up.yml
+      ```
+    - For Foundation tests, execute the command:
+      ```bash
+      ansible-playbook prepare_foundation_env/tasks/clean_up.yml
+      ```
+
+By following these steps, you can perform comprehensive integration testing for the specified Ansible module and ensure a clean testing environment afterward. Define only the necessary variables for the specific feature you intend to test, using PC vars for Karbon and FC tests.
 
 # Included Content
 

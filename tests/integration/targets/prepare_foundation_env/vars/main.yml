@@ -1,0 +1,79 @@
+foundation_host: "EXAMPLE_FOUNDATION_HOST"
+cvm_gateway: "EXAMPLE_CVM_GATEWAY"
+cvm_netmask: "EXAMPLE_CVM_NETMASK"
+hypervisor_gateway: "EXAMPLE_HYPERVISOR_GATEWAY"
+hypervisor_netmask: "EXAMPLE_HYPERVISOR_NETMASK"
+source: 'EXAMPLE_SOURCE_PATH'
+image_url: "EXAMPLE_IMAGE_URL"
+nos_package: "EXAMPLE_NOS_PACKAGE"
+default_ipmi_user: "EXAMPLE_IPMI_USER"
+IBIS_node:
+  block_id: "EXAMPLE_BLOCK_ID"
+  node1:
+    node_serial: "EXAMPLE_NODE_SERIAL_1"
+    hypervisor_hostname: "EXAMPLE_HYPERVISOR_HOSTNAME_1"
+    cvm_ip: EXAMPLE_CVM_IP_1
+    hypervisor_ip: EXAMPLE_HYPERVISOR_IP_1
+    node_position: "EXAMPLE_NODE_POSITION_1"
+    hypervisor: "EXAMPLE_HYPERVISOR_1"
+    ipmi_password: "EXAMPLE_IPMI_PASSWORD_1"
+    ipmi_ip: EXAMPLE_IPMI_IP_1
+    ipmi_netmask: "EXAMPLE_IPMI_NETMASK_1"
+    ipmi_gateway: EXAMPLE_IPMI_GATEWAY_1
+  node2:
+    node_serial: "EXAMPLE_NODE_SERIAL_2"
+    hypervisor_hostname: "EXAMPLE_HYPERVISOR_HOSTNAME_2"
+    cvm_ip: EXAMPLE_CVM_IP_2
+    hypervisor_ip: EXAMPLE_HYPERVISOR_IP_2
+    node_position: "EXAMPLE_NODE_POSITION_2"
+    hypervisor: "EXAMPLE_HYPERVISOR_2"
+    ipmi_password: "EXAMPLE_IPMI_PASSWORD_2"
+    ipmi_ip: EXAMPLE_IPMI_IP_2
+  node3:
+    node_serial: "EXAMPLE_NODE_SERIAL_3"
+    hypervisor_hostname: "EXAMPLE_HYPERVISOR_HOSTNAME_3"
+    cvm_ip: EXAMPLE_CVM_IP_3
+    hypervisor_ip: EXAMPLE_HYPERVISOR_IP_3
+    node_position: "EXAMPLE_NODE_POSITION_3"
+    hypervisor: "EXAMPLE_HYPERVISOR_3"
+    ipmi_password: "EXAMPLE_IPMI_PASSWORD_3"
+    ipmi_ip: EXAMPLE_IPMI_IP_3
+  node4:
+    node_serial: "EXAMPLE_NODE_SERIAL_4"
+    hypervisor_hostname: "EXAMPLE_HYPERVISOR_HOSTNAME_4"
+    cvm_ip: EXAMPLE_CVM_IP_4
+    hypervisor_ip: EXAMPLE_HYPERVISOR_IP_4
+    node_position: "EXAMPLE_NODE_POSITION_4"
+    hypervisor: "EXAMPLE_HYPERVISOR_4"
+    ipmi_password: "EXAMPLE_IPMI_PASSWORD_4"
+    ipmi_ip: EXAMPLE_IPMI_IP_4
+nodes:
+  current_cvm_vlan_tag: "EXAMPLE_CVM_VLAN_TAG"
+  block_id: "EXAMPLE_BLOCK_ID_NODES"
+  node1:
+    cvm_ip: EXAMPLE_CVM_IP_NODE1
+    hypervisor: "EXAMPLE_HYPERVISOR_NODE1"
+    hypervisor_ip: EXAMPLE_HYPERVISOR_IP_NODE1
+    node_position: "EXAMPLE_NODE_POSITION_NODE1"
+    hypervisor_hostname: "EXAMPLE_HYPERVISOR_HOSTNAME_NODE1"
+    node_serial: "EXAMPLE_NODE_SERIAL_NODE1"
+    ipmi_password: "EXAMPLE_IPMI_PASSWORD_NODE1"
+    ipmi_ip: EXAMPLE_IPMI_IP_NODE1
+    ipmi_netmask: "EXAMPLE_IPMI_NETMASK_NODE1"
+    ipmi_gateway: EXAMPLE_IPMI_GATEWAY_NODE1
+  ntp_servers:
+        - "EXAMPLE_NTP_SERVER_1"
+        - "EXAMPLE_NTP_SERVER_2"
+  dns_servers:
+        - "EXAMPLE_DNS_SERVER_1"
+        - "EXAMPLE_DNS_SERVER_2"
+  backplane_vlan: "EXAMPLE_BACKPLANE_VLAN"
+  backplane_subnet: "EXAMPLE_BACKPLANE_SUBNET"
+  backplane_netmask: "EXAMPLE_BACKPLANE_NETMASK"
+bmc:
+  ipmi_user: "EXAMPLE_IPMI_USER_BMC"
+  ipmi_password: "EXAMPLE_IPMI_PASSWORD_BMC"
+  ipmi_netmask: "EXAMPLE_IPMI_NETMASK_BMC"
+  ipmi_gateway: EXAMPLE_IPMI_GATEWAY_BMC
+  ipmi_mac: "EXAMPLE_IPMI_MAC"
+  ipmi_ip: EXAMPLE_IPMI_IP_BMC
