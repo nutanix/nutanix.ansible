@@ -128,11 +128,21 @@ To perform integration tests for any specific Ansible module such as the `ntnx_v
 
 ## Setting up Variables
 1. Navigate to the `tests/integration/targets` directory within the collection.
-2. Fill in the necessary variables inside `prepare_env/vars/main.yml`.
-3. Run the 'prepare_env' playbook by executing the command:
-    ```bash
-    ansible-playbook prepare_env/tasks/prepare_env.yml
-    ```
+2. Fill in the necessary variables inside different feature-specific var files, such as `prepare_nv_env/vars/main.yml`, `prepare_ndb_env/vars/main.yml`, `prepare_foundation_env/vars/main.yml`, etc. Note: Not all variables are compulsory; define only the required variables for the specific feature you want to test.
+3. Run the playbook for the specific feature you intend to test:
+    - For PC tests, execute the command:
+      ```bash
+      ansible-playbook prepare_env/tasks/prepare_env.yml
+      ```
+    - For NDB tests, execute the command:
+      ```bash
+      ansible-playbook prepare_ndb_env/tasks/prepare_env.yml
+      ```
+    - For Foundation tests, execute the command:
+      ```bash
+      ansible-playbook prepare_foundation_env/tasks/prepare_foundation_env.yml
+      ```
+    - Replace 'feature' with the specific feature you intend to test.
 
 ## Running Integration Tests
 4. Run the integration tests for all modules using:
@@ -147,9 +157,15 @@ To perform integration tests for any specific Ansible module such as the `ntnx_v
     Replace `module_test_name` with the actual module's name.
 
 ## Cleanup
-6. After completing all integration tests, clean up the environment by running:
-    ```bash
-    ansible-playbook prepare_env/tasks/cleanup.yml
-    ```
+6. After completing all integration tests, perform a cleanup specific to the tested feature:
+    - For PC tests, execute the command:
+      ```bash
+      ansible-playbook prepare_env/tasks/clean_up.yml
+      ```
+    - For Foundation tests, execute the command:
+      ```bash
+      ansible-playbook prepare_foundation_env/tasks/clean_up.yml
+      ```
 
-By following these steps, you can conduct comprehensive integration testing for the specified Ansible module and ensure a clean testing environment afterward.
+By following these steps, you can conduct comprehensive integration testing for the specified Ansible module and ensure a clean testing environment afterward. Define only the necessary variables for the specific feature you intend to test.
+
