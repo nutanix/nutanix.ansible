@@ -1,0 +1,95 @@
+# foundation host to be ued in tests
+foundation_host: "TEST_FOUNDATION_HOST"
+
+# the dir in local machine where test setup will install nos image and pick during image upload tests
+source: 'TEST_SOURCE_PATH'
+
+# nos image url for images tests
+image_url: "TEST_IMAGE_URL"
+
+# nos package name
+nos_package: "TEST_NOS_PACKAGE"
+
+# common details for all nodes used under test
+cvm_gateway: "TEST_CVM_GATEWAY"
+cvm_netmask: "TEST_CVM_NETMASK"
+hypervisor_gateway: "TEST_HYPERVISOR_GATEWAY"
+hypervisor_netmask: "TEST_HYPERVISOR_NETMASK"
+default_ipmi_user: "TEST_IPMI_USER"
+
+# IBIS_node is just a random name we used for our tests
+# this nodes where used for tests related to bare metal, dos and aos installed nodes.
+IBIS_node:
+  block_id: "TEST_BLOCK_ID"
+  node1:
+    node_serial: "TEST_NODE_SERIAL_1"
+    hypervisor_hostname: "TEST_HYPERVISOR_HOSTNAME_1"
+    cvm_ip: TEST_CVM_IP_1
+    hypervisor_ip: TEST_HYPERVISOR_IP_1
+    node_position: "TEST_NODE_POSITION_1"
+    hypervisor: "TEST_HYPERVISOR_1"
+    ipmi_password: "TEST_IPMI_PASSWORD_1"
+    ipmi_ip: TEST_IPMI_IP_1
+    ipmi_netmask: "TEST_IPMI_NETMASK_1"
+    ipmi_gateway: TEST_IPMI_GATEWAY_1
+  node2:
+    node_serial: "TEST_NODE_SERIAL_2"
+    hypervisor_hostname: "TEST_HYPERVISOR_HOSTNAME_2"
+    cvm_ip: TEST_CVM_IP_2
+    hypervisor_ip: TEST_HYPERVISOR_IP_2
+    node_position: "TEST_NODE_POSITION_2"
+    hypervisor: "TEST_HYPERVISOR_2"
+    ipmi_password: "TEST_IPMI_PASSWORD_2"
+    ipmi_ip: TEST_IPMI_IP_2
+  node3:
+    node_serial: "TEST_NODE_SERIAL_3"
+    hypervisor_hostname: "TEST_HYPERVISOR_HOSTNAME_3"
+    cvm_ip: TEST_CVM_IP_3
+    hypervisor_ip: TEST_HYPERVISOR_IP_3
+    node_position: "TEST_NODE_POSITION_3"
+    hypervisor: "TEST_HYPERVISOR_3"
+    ipmi_password: "TEST_IPMI_PASSWORD_3"
+    ipmi_ip: TEST_IPMI_IP_3
+  node4:
+    node_serial: "TEST_NODE_SERIAL_4"
+    hypervisor_hostname: "TEST_HYPERVISOR_HOSTNAME_4"
+    cvm_ip: TEST_CVM_IP_4
+    hypervisor_ip: TEST_HYPERVISOR_IP_4
+    node_position: "TEST_NODE_POSITION_4"
+    hypervisor: "TEST_HYPERVISOR_4"
+    ipmi_password: "TEST_IPMI_PASSWORD_4"
+    ipmi_ip: TEST_IPMI_IP_4
+
+# we used this nodes for our sanity tests.
+nodes:
+  current_cvm_vlan_tag: "TEST_CVM_VLAN_TAG"
+  block_id: "TEST_BLOCK_ID_NODES"
+  node1:
+    cvm_ip: TEST_CVM_IP_NODE1
+    hypervisor: "TEST_HYPERVISOR_NODE1"
+    hypervisor_ip: TEST_HYPERVISOR_IP_NODE1
+    node_position: "TEST_NODE_POSITION_NODE1"
+    hypervisor_hostname: "TEST_HYPERVISOR_HOSTNAME_NODE1"
+    node_serial: "TEST_NODE_SERIAL_NODE1"
+    ipmi_password: "TEST_IPMI_PASSWORD_NODE1"
+    ipmi_ip: TEST_IPMI_IP_NODE1
+    ipmi_netmask: "TEST_IPMI_NETMASK_NODE1"
+    ipmi_gateway: TEST_IPMI_GATEWAY_NODE1
+  ntp_servers:
+        - "TEST_NTP_SERVER_1"
+        - "TEST_NTP_SERVER_2"
+  dns_servers:
+        - "TEST_DNS_SERVER_1"
+        - "TEST_DNS_SERVER_2"
+  backplane_vlan: "TEST_BACKPLANE_VLAN"
+  backplane_subnet: "TEST_BACKPLANE_SUBNET"
+  backplane_netmask: "TEST_BACKPLANE_NETMASK"
+
+# this is for bmc ipmi config related tests
+bmc:
+  ipmi_user: "TEST_IPMI_USER_BMC"
+  ipmi_password: "TEST_IPMI_PASSWORD_BMC"
+  ipmi_netmask: "TEST_IPMI_NETMASK_BMC"
+  ipmi_gateway: TEST_IPMI_GATEWAY_BMC
+  ipmi_mac: "TEST_IPMI_MAC"
+  ipmi_ip: TEST_IPMI_IP_BMC
