@@ -1,120 +1,145 @@
-ip: EXAMPLE_IP
-username: EXAMPLE_USERNAME
-password: EXAMPLE_PASSWORD
-validate_certs: false
+ip: TEST_PC_IP
+username: TEST_PC_USERNAME
+password: TEST_PC_PASSWORD
+validate_certs: TEST_VALIDATE_CERT_FLAG
+
+# for NKE related tests 
+k8s_version: TEST_K8S_VERSION
+host_os: TEST_HOST_OS
+nutanix_cluster_password: TEST_CLUSTER_PASSWORD
+nutanix_cluster_username: TEST_CLUSTER_USERNAME
+cni:
+  node_cidr_mask_size: "TEST_MASK_CIDR"
+  service_ipv4_cidr: "TEST_SERVICE_CIDR"
+  pod_ipv4_cidr: "TEST_POD_CIDR"
+
+# docker registry url for nke tests
+url: TEST_REGISTRIES_URL
+
+# cluster reference for several tests
 cluster:
-  name: EXAMPLE_CLUSTER_NAME
-  uuid: EXAMPLE_CLUSTER_UUID
-k8s_version: EXAMPLE_K8S_VERSION
-host_os: EXAMPLE_HOST_OS
+  name: TEST_CLUSTER_NAME
+  uuid: TEST_CLUSTER_UUID
+
+# For tests like vms, etc.
 network:
   dhcp:
-    name: EXAMPLE_VLAN_NAME
-    uuid: EXAMPLE_VLAN_UUID
+    name: TEST_VLAN_NAME
+    uuid: TEST_VLAN_UUID
   static:
-    ip: EXAMPLE_STATIC_IP
-nutanix_cluster_password: EXAMPLE_CLUSTER_PASSWORD
-nutanix_cluster_username: EXAMPLE_CLUSTER_USERNAME
+    ip: TEST_STATIC_IP
 
-cni:
-  node_cidr_mask_size: "EXAMPLE_MASK_CIDR"
-  service_ipv4_cidr: "EXAMPLE_SERVICE_CIDR"
-  pod_ipv4_cidr: "EXAMPLE_POD_CIDR"
 vm_owner:
-  name: EXAMPLE_OWNER_NAME
-  uuid: EXAMPLE_OWNER_UUID
+  name: TEST_OWNER_NAME
+  uuid: TEST_OWNER_UUID
 
+# can be skipped
 todelete: []
 
+# for ntnx_image tests
 disk_image:
-  url: EXAMPLE_IMAGE_URL
-  dest: EXAMPLE_DEST_PATH
-  checksum: EXAMPLE_CHECKSUM
-  centos: "EXAMPLE_CENTOS"
+  url: TEST_IMAGE_URL
+  dest: TEST_DEST_PATH
+  checksum: TEST_CHECKSUM
+  centos: "TEST_CENTOS"
 
+# used in test setup for creation of networks and some networking tests
 external_nat_subnets:
-  name: EXAMPLE_NAT_NAME
-  vlan_id: EXAMPLE_VLAN_ID
-  gateway_ip_address: EXAMPLE_GATEWAY_IP
-  network_prefix: EXAMPLE_PREFIX
-  network_ip: EXAMPLE_NETWORK_IP
+  name: TEST_NAT_NAME
+  vlan_id: TEST_VLAN_ID
+  gateway_ip_address: TEST_GATEWAY_IP
+  network_prefix: TEST_PREFIX
+  network_ip: TEST_NETWORK_IP
   dhcp:
-    start_address: EXAMPLE_START_DHCP
-    end_address: EXAMPLE_END_DHCP
+    start_address: TEST_START_DHCP
+    end_address: TEST_END_DHCP
   static:
-    start_address: EXAMPLE_START_STATIC
-    end_address: EXAMPLE_END_STATIC
+    start_address: TEST_START_STATIC
+    end_address: TEST_END_STATIC
 
-vpc_name: EXAMPLE_VPC_NAME
-vm_name: EXAMPLE_VM_NAME
-static_subnet_name: EXAMPLE_STATIC_SUBNET
+# Details for creating this resources during test setup and same are used related tests
+vpc_name: TEST_VPC_NAME
+vm_name: TEST_VM_NAME
+static_subnet_name: TEST_STATIC_SUBNET
 overlay_subnet:
-  name: EXAMPLE_OVERLAY_NAME
-  network_ip: EXAMPLE_OVERLAY_NETWORK_IP
-  network_prefix: EXAMPLE_OVERLAY_PREFIX
-  gateway_ip: EXAMPLE_OVERLAY_GATEWAY_IP
-  private_ip: EXAMPLE_OVERLAY_PRIVATE_IP
+  name: TEST_OVERLAY_NAME
+  network_ip: TEST_OVERLAY_NETWORK_IP
+  network_prefix: TEST_OVERLAY_PREFIX
+  gateway_ip: TEST_OVERLAY_GATEWAY_IP
+  private_ip: TEST_OVERLAY_PRIVATE_IP
 
-quarantine_rule_uuid: EXAMPLE_QUARANTINE_UUID
+# security rule related tests
+quarantine_rule_uuid: TEST_QUARANTINE_UUID
 categories:
   apptiers:
     - Default
     - sub_app_1
-centos: "EXAMPLE_CENTOS"
-ubuntu: "EXAMPLE_UBUNTU"
 
+# name of images in setup for vms test
+centos: "TEST_CENTOS"
+ubuntu: "TEST_UBUNTU"
+
+# virtual switch reference primarily for vms test
 virtual_switch:
-  name: EXAMPLE_SWITCH_NAME
-  uuid: EXAMPLE_SWITCH_UUID
+  name: TEST_SWITCH_NAME
+  uuid: TEST_SWITCH_UUID
 
+# storage reference primarily for vms test
 storage_container:
-  name: EXAMPLE_CONTAINER_NAME
-  uuid: EXAMPLE_CONTAINER_UUID
+  name: TEST_CONTAINER_NAME
+  uuid: TEST_CONTAINER_UUID
 
+# user and user groups from AD for user and user groups tests
 users:
-  - EXAMPLE_USER_UUID_1
-  - EXAMPLE_USER_UUID_2
+  - TEST_USER_UUID_1
+  - TEST_USER_UUID_2
 user_groups:
-  - EXAMPLE_GROUP_UUID
+  - TEST_GROUP_UUID
 
+# project reference for vms test
 project:
-  name: EXAMPLE_PROJECT_NAME
-  uuid: EXAMPLE_PROJECT_UUID
+  name: TEST_PROJECT_NAME
+  uuid: TEST_PROJECT_UUID
 
+# list of roles for advanced projects tests
 roles:
-  - "EXAMPLE_ROLES_NAME_1"
-  - "EXAMPLE_ROLES_NAME_2"
-  - "EXAMPLE_ROLES_NAME_3"
-  - "EXAMPLE_ROLES_NAME_4"
+  - "TEST_ROLES_NAME_1"
+  - "TEST_ROLES_NAME_2"
+  - "TEST_ROLES_NAME_3"
+  - "TEST_ROLES_NAME_4"
 
+# account reference for advanced projects related tests
 accounts:
   - name: "NTNX_LOCAL_AZ"
-    uuid: "EXAMPLE_ACCOUNT_UUID"
+    uuid: "TEST_ACCOUNT_UUID"
 
-new_user: "EXAMPLE_NEW_USER_EMAIL"
+# user and user groups for projects tests when new users are to be added
+new_user: "TEST_NEW_USER_EMAIL"
+new_user_group: "TEST_NEW_USER_GROUP_DN"
 
-new_user_group: "EXAMPLE_NEW_USER_GROUP_DN"
-
+# acp tests related vars
 acp:
   role:
     name: "Project Admin"
-    uuid: EXAMPLE_ROLE_UUID
-  user_uuid: EXAMPLE_USER_UUID
-  user_group_uuid: EXAMPLE_GROUP_UUID
+    uuid: TEST_ROLE_UUID
+  user_uuid: TEST_USER_UUID
+  user_group_uuid: TEST_GROUP_UUID
 
-distinguished_name: "EXAMPLE_DISTINGUISHED_NAME"
-principal_name: "EXAMPLE_PRINCIPAL_NAME"
-directory_service_uuid: "EXAMPLE_DIRECTORY_UUID"
-identity_provider_uuid: "EXAMPLE_IDENTITY_UUID"
+# auth details for projects, acps, user and user groups related tests
+distinguished_name: "TEST_DISTINGUISHED_NAME"
+principal_name: "TEST_PRINCIPAL_NAME"
+directory_service_uuid: "TEST_DIRECTORY_UUID"
+identity_provider_uuid: "TEST_IDENTITY_UUID"
 
-dr_vm_name: EXAMPLE_VM_NAME
+# vm created during test setup for dr tests
+dr_vm_name: TEST_VM_NAME
+
+# dr related tests vars
 dr:
-  primary_az_url: EXAMPLE_PRIMARY_URL
-  recovery_az_url: EXAMPLE_RECOVERY_URL
-  recovery_site_network: "EXAMPLE_RECOVERY_NETWORK"
-  recovery_ip1: EXAMPLE_RECOVERY_IP1
-  recovery_ip2: EXAMPLE_RECOVERY_IP2
-  gateway_ip: EXAMPLE_GATEWAY_IP
-  prefix: EXAMPLE_PREFIX
-
-url: EXAMPLE_URL
+  primary_az_url: TEST_PRIMARY_URL
+  recovery_az_url: TEST_RECOVERY_URL
+  recovery_site_network: "TEST_RECOVERY_NETWORK"
+  recovery_ip1: TEST_RECOVERY_IP1
+  recovery_ip2: TEST_RECOVERY_IP2
+  gateway_ip: TEST_GATEWAY_IP
+  prefix: TEST_PREFIX
