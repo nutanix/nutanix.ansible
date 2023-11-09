@@ -11,7 +11,6 @@ v1.9.1
 Minor Changes
 -------------
 
-- crud modules - [Imprv] add functionality configure timeout value to module any module, for example vms.py [[\#409](https://github.com/nutanix/nutanix.ansible/issues/409)]
 - docs - [Imprv] add doc regarding running integration tests locally [[\#435](https://github.com/nutanix/nutanix.ansible/issues/435)]
 - info modules - [Imprv] add examples for custom_filter  [[\#416](https://github.com/nutanix/nutanix.ansible/issues/416)]
 - ndb clones - [Imprv] Enable database clones and clone refresh using latest snapshot flag [[\#391](https://github.com/nutanix/nutanix.ansible/issues/391)]
