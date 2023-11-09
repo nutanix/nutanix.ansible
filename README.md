@@ -268,7 +268,7 @@ To conduct integration tests for a specific Ansible module such as the `ntnx_vms
 
 ### Prerequisites
 - Ensure you are in the installed collection directory where the module is located. For example: 
-`/Users/pradeep.bhati/.ansible/collections/ansible_collections/nutanix/ncp`
+`/Users/mac.user1/.ansible/collections/ansible_collections/nutanix/ncp`
 
 ### Setting up Variables
 1. Navigate to the `tests/integration/targets` directory within the collection.
