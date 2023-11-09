@@ -41,6 +41,8 @@ This collection requires Python 2.7 or greater
 
 > For the 1.9.0 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2023.1 and pc.2023.1.0.1 .
 
+> For the 1.9.1 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2023.3 and pc.2023.1.0.2 .
+
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
 
@@ -55,6 +57,8 @@ Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/ma
 ## Foundation
 > For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation. This release was tested against Foundation versions v5.2 and v5.1.1
 
+> For the 1.9.1 release of the ansible plugin, it was tested against NDB versions v2.5.2
+
 Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation
 
 ## Foundation Central
@@ -67,6 +71,8 @@ Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/t
 
 > For the 1.9.0 release of the ansible plugin, it was tested against Karbon versions v2.6.0, v2.7.0 and v2.8.0 
 
+> For the 1.9.1 release of the ansible plugin, it was tested against Karbon version v2.8.0 
+
 Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
 
 ## Nutanix Database Service (ERA)
@@ -74,6 +80,8 @@ Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/exa
 > For the 1.8.0 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against NDB versions v2.5.0 and v2.5.1
 
 > For the 1.9.0 release of the ansible plugin, it was tested against NDB versions v2.5.0.2
+
+> For the 1.9.1 release of the ansible plugin, it was tested against NDB versions v2.5.1.1
 
 NDB based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
 
