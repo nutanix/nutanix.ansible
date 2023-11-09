@@ -175,6 +175,17 @@ class Entity(object):
             timeout=timeout,
         )
         if resp:
+            custom_filters = self.module.params.get("custom_filter")
+
+            if custom_filters:
+                entities_list = self._filter_entities(
+                    resp[self.entity_type], custom_filters
+                )
+                entities_count = len(entities_list)
+
+                resp[self.entity_type] = entities_list
+                resp["metadata"]["length"] = entities_count
+
             return resp
         entities_list = []
         main_length = data.get("length")
@@ -283,10 +294,14 @@ class Entity(object):
             else:
                 spec.pop(key)
 
-        if params.get("filter", {}).get("name") and params.get("kind") == "vm":
-            spec["filter"]["vm_name"] = spec["filter"].pop("name")
+        if params.get("filter"):
+            if params.get("filter", {}).get("name") and params.get("kind") == "vm":
+                spec["filter"]["vm_name"] = spec["filter"].pop("name")
 
-        spec["filter"] = self._parse_filters(params.get("filter", {}))
+            spec["filter"] = self._parse_filters(params.get("filter", {}))
+
+        elif params.get("filter_string"):
+            spec["filter"] = params["filter_string"]
 
         return spec, None
 

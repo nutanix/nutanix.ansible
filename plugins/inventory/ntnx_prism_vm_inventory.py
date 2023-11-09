@@ -179,6 +179,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             for key, value in entity["status"]["resources"].items():
                 self.inventory.set_variable(vm_name, key, value)
 
+            if "metadata" in entity and "categories" in entity["metadata"]:
+                self.inventory.set_variable(
+                    vm_name, "ntnx_categories", entity["metadata"]["categories"]
+                )
+
             # Add variables created by the user's Jinja2 expressions to the host
             self._set_composite_vars(
                 self.get_option("compose"),

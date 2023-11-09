@@ -169,6 +169,10 @@ options:
                 description:
                     - timestamp for create clone from point in time
                 type: str
+            latest_snapshot:
+                description:
+                    - write
+                type: bool
       postgres:
         description:
             - postgres database related config
@@ -652,6 +656,7 @@ def get_module_spec():
         uuid=dict(type="str", required=False),
         snapshot_uuid=dict(type="str", required=False),
         pitr_timestamp=dict(type="str", required=False),
+        latest_snapshot=dict(type="bool", required=False),
         timezone=dict(type="str", default="Asia/Calcutta", required=False),
     )
 
@@ -700,7 +705,7 @@ def get_module_spec():
         time_machine=dict(
             type="dict",
             options=time_machine,
-            mutually_exclusive=[("snapshot_uuid", "pitr_timestamp")],
+            mutually_exclusive=[("snapshot_uuid", "pitr_timestamp", "latest_snapshot")],
             required=False,
         ),
         postgres=dict(type="dict", options=postgres, required=False),

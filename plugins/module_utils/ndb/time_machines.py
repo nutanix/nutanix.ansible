@@ -37,8 +37,11 @@ class TimeMachine(NutanixDatabase):
         if uuid:
             resp = self.read(uuid=uuid, query=query)
         elif name:
-            endpoint = "{0}/{1}".format("name", name)
-            resp = self.read(endpoint=endpoint, query=query)
+            if not query:
+                query = {}
+            query["value_type"] = "name"
+            query["value"] = name
+            resp = self.read(query=query)
             if isinstance(resp, list):
                 if not resp:
                     return None, "Time machine with name {0} not found".format(name)

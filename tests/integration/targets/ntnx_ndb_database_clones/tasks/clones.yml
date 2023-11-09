@@ -431,7 +431,7 @@
     fail_msg: "schedules update failed"
     success_msg: "schedules removed succefully"
 
-############################################ refresh clone ###########################################
+########################################### refresh clone ###########################################
 
 
 - name: create spec for refresh clone to a pitr timestamp
@@ -472,7 +472,7 @@
     fail_msg: "database refresh failed"
     success_msg: "database refresh completed succefully"
 
-############################################ delete clone tests ###########################################
+########################################### delete clone tests###########################################
 
 
 - name: create soft remove spec
@@ -536,7 +536,7 @@
     fail_msg: "database delete failed"
     success_msg: "database deleted successfully"
 
-############################################ authorize and deauthorize db server vms###########################################
+########################################### authorize and deauthorize db server vms###########################################
 
 
 - name: authorize db server vms
@@ -600,20 +600,8 @@
 ############################################ clone on authorized db server vm ###########################################
 
 
-- name: Get timestamp in secs
-  shell: "date +'%s'"
-  register: timestamp
-
 - set_fact:
-    timestamp: "{{timestamp.stdout|int + 60*60*48|int}}"
-
-- name: Get timestamp in datetime format
-  shell: "date -d @{{timestamp}} '+%Y-%m-%d %H:%M:%S'"
-  register: timestamp
-
-- set_fact:
-    timestamp: "{{timestamp.stdout}}"
-
+    timestamp: "2123-11-08 12:36:15"
 - name: create clone using snapshot on authorized server
   ntnx_ndb_database_clones:
     name: "{{clone_db1}}"
@@ -665,6 +653,98 @@
       - result.response.parentTimeMachineId ==  time_machine_uuid
     fail_msg: "Unable to create clone"
     success_msg: "Database clone created succefully"
+
+- set_fact:
+    delete_clone_uuid: "{{result.uuid}}"
+
+- name: delete clone db
+  ntnx_ndb_database_clones:
+    state: "absent"
+    uuid: "{{delete_clone_uuid}}"
+    delete_from_vm: true
+  register: result
+
+- name: verify status of db clone delete
+  assert: 
+    that:
+      - result.changed == True
+      - result.failed == false
+      - result.response.status == "5"
+    fail_msg: "database delete failed"
+    success_msg: "database deleted successfully"
+
+########################################### create clone from latest snapshot ##################################
+
+- name: authorize again db server vm
+  ntnx_ndb_authorize_db_server_vms:
+    time_machine:
+      name: "{{tm1}}"
+    db_server_vms:
+      - name: "{{vm1_name}}"
+  register: result
+
+
+
+- name: verify status of authorization of db server vms
+  assert: 
+    that:
+      - result.changed == True
+      - result.failed == false
+      - result.response.status == "success"
+    fail_msg: "database authorization with time machine failed"
+    success_msg: "database authorization with time machine successfully"
+
+- name: create clone using latest snapshot on authorized server
+  ntnx_ndb_database_clones:
+    name: "{{clone_db1}}fromLatestSnapshot"
+    desc: "ansible-created-clone from latest snapshot"
+
+    db_params_profile:
+      name: "{{db_params_profile.name}}"
+    
+    db_vm:
+      use_authorized_server:
+        name: "{{ vm1_name }}"
+
+    postgres:
+      db_password: "{{vm_password}}"
+    
+    time_machine:
+      uuid: "{{time_machine_uuid}}"
+      latest_snapshot: True
+    
+    removal_schedule:
+      timestamp: "{{timestamp}}"
+      timezone: "Asia/Calcutta"
+      remind_before_in_days: 1
+      delete_database: True
+    
+    refresh_schedule:
+      days: 2
+      time: "12:00:00"
+      timezone: "Asia/Calcutta"
+
+    tags:
+      ansible-clones: ansible-test-db-clones
+  register: result
+
+
+
+- name: Clone create status on authorized db server vm
+  assert: 
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.uuid is defined
+      - result.uuid == result.response.id
+      - result.response.status == "READY"
+      - result.response.name == "{{clone_db1}}fromLatestSnapshot"
+      - result.response.description == "ansible-created-clone from latest snapshot"
+      - result.response.clone == True
+      - result.response.databaseNodes[0].dbserverId == db_server_uuid
+      - result.response.parentTimeMachineId ==  time_machine_uuid
+    fail_msg: "Unable to create clone from latest snapshot"
+    success_msg: "Database clone created from latest snapshot successfully"
 
 
 

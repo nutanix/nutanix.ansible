@@ -17,6 +17,19 @@
         script_path: ""
         subnet_name: ""
         image_name: ""
+        password: ""
+        fqdn: ""
+
+  - name: Create Cloud-init Script file
+    copy:
+      dest: "cloud_init.yml"
+      content: |
+         #cloud-config
+         chpasswd:
+           list: |
+             root: "{{ password }}"
+             expire: False
+         fqdn: "{{ fqdn }}"
 
   - name: create Vm
     ntnx_vms:
@@ -47,7 +60,7 @@
       memory_gb: 1
       guest_customization:
         type: "cloud_init"
-        script_path: "{{ script_path }}"
+        script_path: "./cloud_init.yml"
         is_overridable: True
     register: output
 

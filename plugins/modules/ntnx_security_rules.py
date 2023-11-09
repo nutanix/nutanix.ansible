@@ -879,45 +879,47 @@ EXAMPLES = r"""
 - name: create app security rule
   ntnx_security_rules:
     name: test_app_rule
+    allow_ipv6_traffic: true
+    policy_hitlog: true
     app_rule:
+      policy_mode: MONITOR
       target_group:
         categories:
             apptype: Apache_Spark
         default_internal_policy: DENY_ALL
-      inbound:
+      inbounds:
         - categories:
               AppFamily:
                 - Databases
                 - DevOps
-          icmp:
-            - code: 1
-              type: 1
+          protocol:
+            icmp:
+              - code: 1
+                type: 1
         - categories:
               AppFamily:
                 - Databases
                 - DevOps
-          tcp:
-            - start_port: 22
-              end_port: 80
+          protocol:
+            tcp:
+              - start_port: 22
+                end_port: 80
         - categories:
               AppFamily:
                 - Databases
                 - DevOps
-          udp:
-            - start_port: 82
-              end_port: 8080
-        - ip_subnet:
-            prefix_length: 24
-            ip: 192.168.1.1
+          protocol:
+            udp:
+              - start_port: 82
+                end_port: 8080
           description: test description
-          protocol: ALL
-      outbound:
+        - ip_subnet:
+            ip: 192.168.1.0
+            prefix_length: 24
+      outbounds:
         - categories:
               AppFamily:
                 - Databases
-      policy_mode: MONITOR
-    allow_ipv6_traffic: true
-    policy_hitlog:: true
   register: result
 - name: update app security rule with outbound list
   ntnx_security_rules:

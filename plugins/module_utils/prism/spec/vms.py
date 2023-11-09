@@ -50,6 +50,9 @@ class DefaultVMSpec:
         project=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
+        owner=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
         cluster=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),

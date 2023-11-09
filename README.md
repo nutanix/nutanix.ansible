@@ -41,6 +41,8 @@ This collection requires Python 2.7 or greater
 
 > For the 1.9.0 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2023.1 and pc.2023.1.0.1 .
 
+> For the 1.9.1 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2023.3 and pc.2023.1.0.2 .
+
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
 
@@ -55,6 +57,8 @@ Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/ma
 ## Foundation
 > For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation. This release was tested against Foundation versions v5.2 and v5.1.1
 
+> For the 1.9.1 release of the ansible plugin, it was tested against NDB versions v2.5.2
+
 Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation
 
 ## Foundation Central
@@ -67,6 +71,8 @@ Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/t
 
 > For the 1.9.0 release of the ansible plugin, it was tested against Karbon versions v2.6.0, v2.7.0 and v2.8.0 
 
+> For the 1.9.1 release of the ansible plugin, it was tested against Karbon version v2.8.0 
+
 Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
 
 ## Nutanix Database Service (ERA)
@@ -74,6 +80,8 @@ Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/exa
 > For the 1.8.0 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against NDB versions v2.5.0 and v2.5.1
 
 > For the 1.9.0 release of the ansible plugin, it was tested against NDB versions v2.5.0.2
+
+> For the 1.9.1 release of the ansible plugin, it was tested against NDB versions v2.5.1.1
 
 NDB based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
 
@@ -259,6 +267,56 @@ We glady welcome contributions from the community. From updating the documentati
 
 * [Contributing Guide](CONTRIBUTING.md)
 * [Code of Conduct](CODE_OF_CONDUCT.md)
+
+# Testing
+
+## Integration Testing for Nutanix Ansible Modules
+
+To conduct integration tests for a specific Ansible module such as the `ntnx_vms` module, the following step-by-step procedures can be followed:
+
+### Prerequisites
+- Ensure you are in the installed collection directory where the module is located. For example: 
+`/Users/mac.user1/.ansible/collections/ansible_collections/nutanix/ncp`
+
+### Setting up Variables
+1. Navigate to the `tests/integration/targets` directory within the collection.
+
+2. Define the necessary variables within the feature-specific var files, such as `tests/integration/targets/prepare_env/vars/main.yml`, `tests/integration/targets/prepare_foundation_env/vars/main.yml`,`tests/integration/targets/prepare_ndb_env/tasks/prepare_env.yml`, etc. 
+
+Note: For Karbon and FC tests, use the PC vars exclusively, as these features rely on pc setup. Not all variables are mandatory; define only the required variables for the particular feature to be tested.
+
+3. Run the test setup playbook for the specific feature you intend to test to create entities in setup:
+    - For PC, NDB, and Foundation tests, execute the relevant commands:
+      ```bash
+      ansible-playbook prepare_env/tasks/prepare_env.yml
+      ansible-playbook prepare_ndb_env/tasks/prepare_env.yml
+      ansible-playbook prepare_foundation_env/tasks/prepare_foundation_env.yml
+      ```
+
+### Running Integration Tests
+1. Conduct integration tests for all modules using:
+    ```bash
+    ansible-test integration
+    ```
+
+2. To perform integration tests for a specific module:
+    ```bash
+    ansible-test integration module_test_name
+    ```
+    Replace `module_test_name` with test directory name under tests/integration/targets.
+
+### Cleanup
+1. After completing the integration tests, perform a cleanup specific to the tested feature:
+    - For PC tests, execute the command:
+      ```bash
+      ansible-playbook prepare_env/tasks/clean_up.yml
+      ```
+    - For Foundation tests, execute the command:
+      ```bash
+      ansible-playbook prepare_foundation_env/tasks/clean_up.yml
+      ```
+
+By following these steps, you can perform comprehensive integration testing for the specified Ansible module and ensure a clean testing environment afterward. Define only the necessary variables for the specific feature you intend to test.
 
 # Examples
 ## Playbook for IaaS provisioning on Nutanix
