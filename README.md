@@ -296,12 +296,12 @@ Note: For Karbon and FC tests, use the PC vars exclusively, as these features re
 ### Running Integration Tests
 1. Conduct integration tests for all modules using:
     ```bash
-    ansible-integration
+    ansible-test integration
     ```
 
 2. To perform integration tests for a specific module:
     ```bash
-    ansible-integration module_test_name
+    ansible-test integration module_test_name
     ```
     Replace `module_test_name` with test directory name under tests/integration/targets.
 
