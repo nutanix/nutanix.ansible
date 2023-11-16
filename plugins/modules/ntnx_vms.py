@@ -44,7 +44,9 @@ options:
     required: false
     type: str
   vm_uuid:
-    description: VM UUID
+    description:
+        - VM UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   remove_categories:
     description:

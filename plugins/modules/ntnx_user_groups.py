@@ -18,10 +18,7 @@ options:
         description:
         - Specify state
         - If C(state) is set to C(present) then the operation will be  create the item.
-        - if C(state) is set to C(present) and C(user_group_uuid) is given then it will update that user_group.
-        - >-
-            If C(state) is set to C(absent) and if the item exists, then
-            item is removed.
+        - If C(state) is set to C(absent) and if the item exists, then item is removed.
         choices:
         - present
         - absent

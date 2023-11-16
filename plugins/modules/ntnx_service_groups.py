@@ -18,9 +18,7 @@ options:
     description:
       - Specify state of service_groups
       - If C(state) is set to C(present) then service_groups is created.
-      - >-
-        If C(state) is set to C(absent) and if the service_groups exists, then
-        service_groups is removed.
+      - If C(state) is set to C(absent) and if the service_groups exists, then service_groups is removed.
     choices:
       - present
       - absent
@@ -36,7 +34,9 @@ options:
     required: False
     type: str
   service_group_uuid:
-    description: service_group UUID
+    description:
+        - service_group UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   desc:
     description: service_groups description

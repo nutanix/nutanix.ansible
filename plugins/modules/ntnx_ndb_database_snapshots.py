@@ -21,6 +21,7 @@ options:
       snapshot_uuid:
         description:
             - snapshot uuid for delete or update
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       name:
         description:

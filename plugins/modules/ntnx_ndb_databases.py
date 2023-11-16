@@ -20,6 +20,7 @@ options:
   db_uuid:
     description:
       - uuid for update or delete of database instance
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   name:
     description:

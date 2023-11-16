@@ -29,6 +29,7 @@ options:
     address_group_uuid:
         description:
             - uuid of the address group
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
             - only required while updating or deleting
         required: false
         type: str

@@ -20,7 +20,7 @@ options:
     uuid:
         description:
             - uuid of maintenance window
-            - should be used for update or delete
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
     desc:
         description:

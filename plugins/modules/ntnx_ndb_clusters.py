@@ -21,7 +21,9 @@ options:
          - Update allowed.
     uuid:
         type: str
-        description: UUID of the cluster.
+        description:
+            - UUID of the cluster.
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     desc:
         type: str
         description:
