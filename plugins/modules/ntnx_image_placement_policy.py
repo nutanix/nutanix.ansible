@@ -20,9 +20,7 @@ options:
         - If C(state) is set to C(present) then the operation will be  create the item.
         - if C(state) is set to C(present) and C(policy_uuid) is given then it will update that image placement policy.
         - if C(state) is set to C(present) then C(image_uuid) or one of C(name), C(image_categories), C(cluster_categories) needs to be set.
-        - >-
-            If C(state) is set to C(absent) and if the item exists, then
-            item is removed.
+        - If C(state) is set to C(absent) and if the item exists, then item is removed.
         choices:
         - present
         - absent
@@ -41,8 +39,9 @@ options:
         type: str
     policy_uuid:
         description:
-            - image placement policy of existig uuid
+            - image placement policy of existing uuid
             - required only when updating or deleting
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
         required: false
     desc:
