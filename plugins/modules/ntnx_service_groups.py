@@ -239,7 +239,9 @@ def delete_service_group(module, result):
 
     if module.check_mode:
         result["service_group_uuid"] = service_group_uuid
-        result["msg"] = "Service group with uuid:{0} will be deleted.".format(service_group_uuid)
+        result["msg"] = "Service group with uuid:{0} will be deleted.".format(
+            service_group_uuid
+        )
         return
 
     service_group = ServiceGroup(module)

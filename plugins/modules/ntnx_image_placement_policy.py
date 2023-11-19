@@ -381,7 +381,9 @@ def delete_policy(module, result):
 
     if module.check_mode:
         result["policy_uuid"] = policy_uuid
-        result["msg"] = "Placement policy with uuid:{0} will be deleted.".format(policy_uuid)
+        result["msg"] = "Placement policy with uuid:{0} will be deleted.".format(
+            policy_uuid
+        )
         return
 
     policy_obj = ImagePlacementPolicy(module)

@@ -1282,7 +1282,9 @@ def delete_security_rule(module, result):
 
     if module.check_mode:
         result["security_rule_uuid"] = security_rule_uuid
-        result["msg"] = "Security rule with uuid:{0} will be deleted.".format(security_rule_uuid)
+        result["msg"] = "Security rule with uuid:{0} will be deleted.".format(
+            security_rule_uuid
+        )
         return
 
     security_rule = SecurityRule(module)
