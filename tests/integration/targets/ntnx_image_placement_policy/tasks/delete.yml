@@ -23,6 +23,24 @@
     fail_msg: "Unable to create image placement policy with minimal spec"
     success_msg: "Image placement policy with minimal spec created successfully"
 
+- name: Delete image with check mode
+  ntnx_image_placement_policy:
+    state: absent
+    policy_uuid: "{{ result.response.metadata.uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Placement policy with uuid:{{  result.response.metadata.uuid }} will be deleted."
+      - output.policy_uuid == "{{ result.response.metadata.uuid  }}"
+    fail_msg: "Image Policy been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
 - name: Delete image placement policy created above
   ntnx_image_placement_policy:
     state: absent

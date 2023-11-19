@@ -319,6 +319,23 @@
     success_msg: "module errored out correctly when incorrect name is given"
 
 ################################################################
+- name: Delete Cluster with check mode
+  ntnx_ndb_clusters:
+    state: absent
+    uuid: "{{ todelete  }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Cluster with uuid:{{  todelete }} will be deleted."
+      - output.cluster_uuid == "{{  todelete  }}"
+    fail_msg: "Cluster been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
 
 - name: delete cluster
   ntnx_ndb_clusters:

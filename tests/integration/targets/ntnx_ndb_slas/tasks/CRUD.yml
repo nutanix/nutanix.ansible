@@ -252,6 +252,25 @@
     success_msg: "module errored out correctly when incorrect name is given"
 
 ######################################################################## Delete flow #################################################
+
+- name: Delete Sla with check mode
+  ntnx_ndb_slas:
+    state: absent
+    sla_uuid: "{{ todelete[0] }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Sla with uuid:{{  todelete[0] }} will be deleted."
+      - output.uuid == "{{  todelete[0]  }}"
+    fail_msg: "Sla been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+  
 - name: verify slas delete flow
   ntnx_ndb_slas:
     state: absent

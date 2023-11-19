@@ -87,6 +87,23 @@
     fail_msg: "Fail: unable to create registry with username and password"
     success_msg: "Pass: create registry with username and password finished successfully"
     ###############################################################
+- name: Delete registry with check mode
+  ntnx_karbon_registries:
+    state: absent
+    name: "{{ registry_name }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Registry with name:{{  registry_name }} will be deleted."
+    fail_msg: "registry been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
 - name: delete registry
   ntnx_karbon_registries:
     name: "{{registry_name}}"

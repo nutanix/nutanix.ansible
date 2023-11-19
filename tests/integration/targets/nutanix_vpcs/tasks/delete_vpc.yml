@@ -21,6 +21,24 @@
     success_msg: " VPC with all specfactions created successfully "
 
 
+- name: Delete vpc with check mode
+  ntnx_vpcs:
+    state: absent
+    vpc_uuid: "{{ result.vpc_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="VPC with uuid:{{ result.vpc_uuid }} will be deleted."
+      - output.vpc_uuid == "{{ result.vpc_uuid }}"
+    fail_msg: "vpc has been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
 - name: Delete vpc
   ntnx_vpcs:
     state: absent

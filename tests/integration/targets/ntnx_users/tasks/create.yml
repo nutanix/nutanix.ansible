@@ -48,6 +48,24 @@
 - set_fact:
       todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
+- name: Delete user with check mode
+  ntnx_users:
+    state: absent
+    user_uuid: "{{  result.user_uuid  }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =='User with uuid:{{  result.user_uuid }} will be deleted.'
+      - output.uuid == '{{ result.user_uuid  }}'
+    fail_msg: "user has been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+#################################################
 - name: Delete created users
   ntnx_users:
     state: absent

@@ -412,6 +412,23 @@
 #    success_msg: "pass:  update ndb_stretched subnet_mask, gateway finished successfully"
 
 ################################################################
+- name: Delete vlan with check mode
+  ntnx_ndb_vlans:
+    state: absent
+    vlan_uuid: "{{ result.vlan_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Vlan with uuid:{{ result.vlan_uuid }} will be deleted."
+      - output.uuid == "{{ result.vlan_uuid }}"
+    fail_msg: "vlan has been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
 
 - name: Delete all created vlan's
   ntnx_ndb_vlans:
