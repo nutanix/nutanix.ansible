@@ -1,6 +1,6 @@
 pip~=21.3.1
 ipaddress~=1.0.23
-setuptools~=68.2.2
+setuptools~=68.0.0
 ansible~=4.6.0
 requests~=2.26.0
 black==21.7b0
