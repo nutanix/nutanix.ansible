@@ -939,6 +939,23 @@
     db_server_uuid: "{{result.uuid}}"
 
 ################################### DB server VM Delete test #############################
+- name: Delete db server vm with check mode
+  ntnx_ndb_db_server_vms:
+    state: absent
+    uuid: "{{ db_server_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Db server with uuid:{{  db_server_uuid }} will be deleted."
+      - output.uuid == "{{ db_server_uuid  }}"
+    fail_msg: "db server vm been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
 
 
 - name: unregister db server vm

@@ -518,6 +518,24 @@
     fail_msg: "creation of spec for unregistration failed"
     success_msg: "spec for unregistration created successfully"
 
+- name: Delete clone db with check mode
+  ntnx_ndb_database_clones:
+    state: absent
+    uuid: "{{clone_uuid}}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Db clone with uuid:{{  clone_uuid }} will be deleted."
+      - output.uuid == "{{  clone_uuid }}"
+    fail_msg: "clone db been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
 - name: delete clone db
   ntnx_ndb_database_clones:
     state: "absent"

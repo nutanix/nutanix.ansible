@@ -341,6 +341,23 @@
 
 
 ############################################################## DELETE Protection Policy Tests ##################################################################
+- name: Delete protection with check mode
+  ntnx_protection_rules:
+    state: absent
+    rule_uuid: "{{ result.rule_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Role with uuid:{{ result.rule_uuid}} will be deleted."
+      - output.rule_uuid == "{{ result.rule_uuid }}"
+    fail_msg: "protection policy been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
 
 - name: Delete created protection policy
   ntnx_protection_rules:

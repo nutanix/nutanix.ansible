@@ -147,6 +147,23 @@
     fail_msg: " Fail: unable to  create  DEV cluster with Flannel network provider"
     success_msg: " Pass:  create  DEV cluster with Flannel network provider successfully "
 #############################
+- name: Delete Cluster with check mode
+  ntnx_karbon_clusters:
+    state: absent
+    name: "{{ result.response.name }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Cluster with name:{{  result.response.name }} will be deleted."
+    fail_msg: "Cluster been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
 - name: delete  dev cluster  with Flannel network provider
   ntnx_karbon_clusters:
     state: absent
@@ -163,7 +180,7 @@
       - result.response.status == "SUCCEEDED"
     fail_msg: " Fail: unable to delete  dev cluster  with Flannel network provider"
     success_msg: " Pass: delete  dev cluster  with Flannel network provider finished successfully"
-#############################
+############################
 - name: create  DEV cluster with Calico network provider
   ntnx_karbon_clusters:
     cluster:
@@ -442,6 +459,26 @@
     fail_msg: "Fail: Unable to update pool by decreasing cpu,memory_gb,num_instances and add remove labels "
     success_msg: "Passed: update pool by decreasing cpu,memory_gb,num_instances and add remove labels finished successfully "
 ################################
+- name: Delete pool with check mode
+  ntnx_karbon_clusters_node_pools:
+    state: absent
+    node_pool_name:  "{{node1_name}}"
+    cluster_name:  "{{karbon_name}}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Pool with name:{{ node1_name }} will be deleted."
+      - output.cluster_name == "{{karbon_name}}"
+      - output.node_pool_name == "{{node1_name}}"
+    fail_msg: "pool been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
 - name: delete pool
   ntnx_karbon_clusters_node_pools:
     state: absent

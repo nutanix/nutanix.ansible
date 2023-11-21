@@ -128,6 +128,25 @@
 #     fail_msg: "Unable to list user groups using ascending name sorting"
 #     success_msg: "user groups listed successfully using ascending name sorting"
 
+
+- name: Delete user group with check mode
+  ntnx_user_groups:
+    state: absent
+    user_group_uuid: "{{ user_group_to_delete }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =='User group with uuid:{{ user_group_to_delete }} will be deleted.'
+      - output.uuid == '{{ user_group_to_delete  }}'
+    fail_msg: "user group has been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
 - name: delete user group
   ntnx_user_groups:
     state: absent

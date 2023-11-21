@@ -31,6 +31,23 @@
     success_msg: "Roles with given permissions created susccessfully"
 
 ###################################################################################################
+- name: Delete rule with check mode
+  ntnx_roles:
+    state: absent
+    role_uuid: "{{ test_role.role_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Role with uuid:{{ test_role.role_uuid}} will be deleted."
+      - output.role_uuid == "{{ test_role.role_uuid }}"
+    fail_msg: "Role been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
 
 - name: delete role
   ntnx_roles:

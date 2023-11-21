@@ -80,10 +80,11 @@ def get_module_spec():
 
 def upload_image(module, result):
     image = Image(module)
+    fname = module.params["filename"]
+    result["image_name"] = fname
     if module.check_mode:
         result["response"] = module.params
         return
-    fname = module.params["filename"]
     itype = module.params["installer_type"]
     source = module.params["source"]
     timeout = module.params["timeout"]
@@ -96,6 +97,12 @@ def delete_image(module, result):
     image = Image(module, delete_image=True)
     fname = module.params["filename"]
     itype = module.params["installer_type"]
+    result["image_name"] = fname
+
+    if module.check_mode:
+        result["msg"] = "Image with name:{0} will be deleted.".format(fname)
+        return
+
     resp = image.delete_image(fname, itype)
 
     result["changed"] = True

@@ -243,6 +243,24 @@
 - set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##################################################################################################################
+- name: Delete Pbr with check mode
+  ntnx_pbrs:
+    state: absent
+    pbr_uuid: "{{ result.pbr_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Pbr with uuid:{{ result.pbr_uuid}} will be deleted."
+      - output.pbr_uuid == "{{ result.pbr_uuid }}"
+    fail_msg: "Pbr been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
 - name: Delete all created pbrs
   ntnx_pbrs:
     state: absent
