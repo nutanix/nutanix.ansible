@@ -47,13 +47,13 @@ jobs:
           args="${{ github.event.client_payload.slash_command.args.all }}"
           flag=""
           if [ "$args" = "allow-disabled" ]
-                      then 
+                      then
                           flag="--allow-disabled"
           fi
           echo '${{ secrets.FOUNDATION_CONFIG }}' > tests/integration/targets/prepare_foundation_env/vars/main.yml
           echo '${{ secrets.FC_CONFIG }}' > tests/integration/targets/prepare_fc_env/vars/main.yml
-          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml 
-          echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml 
+          echo '${{ secrets.PC_CONFIG }}' > tests/integration/targets/prepare_env/vars/main.yml
+          echo '${{ secrets.NDB_CONFIG }}' > tests/integration/targets/prepare_ndb_env/vars/main.yml
           ansible-playbook tests/integration/targets/prepare_env/tasks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_ndb_env/tasks/prepare_env.yml
           ansible-playbook tests/integration/targets/prepare_fc_env/tasks/prepare_fc_env.yml
@@ -105,7 +105,7 @@ jobs:
           number: ${{ github.event.client_payload.pull_request.number }}
           job: ${{ github.job }}
           # Conveniently, job.status maps to https://developer.github.com/v3/checks/runs/#update-a-check-run
-          conclusion: ${{ job.status }} 
+          conclusion: ${{ job.status }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

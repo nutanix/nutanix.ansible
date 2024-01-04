@@ -23,11 +23,11 @@
 
         db_params_profile:
           name: "<database-parameter-profile>"
-        
+
         db_server_cluster:
           new_cluster:
             name: "<database-server-cluster-name>"
-            cluster: 
+            cluster:
               name: "<cluster-name>"
             ips:
               - cluster:
@@ -42,17 +42,17 @@
               name: "<compute-profile-name>"
             password: "<set-vm-password>"
             pub_ssh_key: "<public-ssh-key>"
-            vms: 
+            vms:
               - name: "vm-1"
                 node_type: "database"
                 role: "Primary"
                 ip: "<vm1-ip>"
-            
+
               - name: "vm-2"
                 node_type: "database"
                 role: "Secondary"
                 ip: "<vm2-ip>"
-            
+
               - name: "vm-3"
                 node_type: "database"
                 role: "Secondary"
@@ -61,7 +61,7 @@
               - name: "vm-ha-proxy1"
                 node_type: "haproxy"
                 ip: "<ha1-ip>"
-              
+
               - name: "vm-ha-proxy2"
                 node_type: "haproxy"
                 ip: "<ha2-ip>"
@@ -80,7 +80,7 @@
           desc: TM-desc
           sla:
             name: "<sla-name>"
-          schedule: 
+          schedule:
             daily: "11:10:02"
             weekly: WEDNESDAY
             monthly: 4
@@ -91,7 +91,7 @@
             - name: "<add-clusters-to-timemachine>"
         tags:
           ansible-databases: "ha-instance-dbs"
-        
+
         automated_patching:
           maintenance_window:
             name: "<maintenance-window-name>"
@@ -104,6 +104,6 @@
               post_task_cmd: "ls -F"
 
       register: result
-    
+
     - debug:
-        msg: "{{result}}"
+        msg: "{{ result }}"

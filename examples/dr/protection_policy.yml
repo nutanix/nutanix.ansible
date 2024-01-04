@@ -51,7 +51,7 @@
       nutanix_password: "<pc-password>"
       validate_certs: false
       state: "absent"
-      rule_uuid: "{{pr.rule_uuid}}"
+      rule_uuid: "{{ pr.rule_uuid }}"
 
   - name: Create protection rule with async schedule
     ntnx_protection_rules:
@@ -98,7 +98,7 @@
           remote_retention_policy:
             num_snapshots: 1
     register: result
-  
+
   - name: Update previously created protection policy
     ntnx_protection_rules:
       nutanix_host: "<pc-ip>"
@@ -144,18 +144,18 @@
           remote_retention_policy:
             num_snapshots: 2
     register: pr
-  
+
   - name: Get protection policy info and its associated vms info
     ntnx_protection_rules_info:
       nutanix_host: "<pc-ip>"
       nutanix_username: "<pc-username>"
       nutanix_password: "<pc-password>"
       validate_certs: false
-      rule_uuid: "{{pr.rule_uuid}}"
+      rule_uuid: "{{ pr.rule_uuid }}"
     register: result
 
   - debug:
-      msg: "{{result}}"
+      msg: "{{ result }}"
 
   - name: delete the protection rule
     ntnx_protection_rules:
@@ -164,5 +164,4 @@
       nutanix_password: "<pc-password>"
       validate_certs: false
       state: "absent"
-      rule_uuid: "{{pr.rule_uuid}}"
-  
+      rule_uuid: "{{ pr.rule_uuid }}"
