@@ -43,7 +43,7 @@ DOCUMENTATION = r"""
                 - name: NUTANIX_PASSWORD
         nutanix_port:
             description: Prism central port
-            default: 9440
+            default: "9440"
             type: str
             env:
                 - name: NUTANIX_PORT
