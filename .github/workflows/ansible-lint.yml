@@ -1,3 +1,4 @@
+---
 name: ansible-lint
 on:
   push:
@@ -16,6 +17,6 @@ jobs:
       - name: Set up Python 3.x (latest)
         uses: actions/setup-python@v2
         with:
-          python-version: '3.x'
+          python-version: 3.x
       - name: Run ansible-lint
         uses: ansible/ansible-lint@main

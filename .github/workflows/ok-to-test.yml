@@ -1,7 +1,7 @@
-name: 'Ok-To-Test'
+---
+name: Ok-To-Test
 
 on: [issue_comment]
-
 jobs:
   test:
     runs-on: ubuntu-latest
