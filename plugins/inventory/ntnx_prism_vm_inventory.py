@@ -9,7 +9,6 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
     name: ntnx_prism_vm_inventory
-    plugin_type: inventory
     short_description: Get a list of Nutanix VMs for ansible dynamic inventory.
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory.
@@ -17,7 +16,9 @@ DOCUMENTATION = r"""
     author:
         - "Balu George (@balugeorge)"
         - "Prem Karat (@premkarat)"
-    inventory: ntnx_prism_vm_inventory
+    requirements:
+      - "json"
+      - "tempfile"
     options:
         plugin:
             description: Name of the plugin
