@@ -13,6 +13,8 @@ DOCUMENTATION = r"""
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory.
     version_added: "1.0.0"
+    notes:
+        - "This module requires view API access to function."
     author:
         - "Balu George (@balugeorge)"
         - "Prem Karat (@premkarat)"
