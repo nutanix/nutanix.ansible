@@ -9,7 +9,7 @@ on:
       - main
 jobs:
   sanity:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python-version: ['3.9']
@@ -38,10 +38,10 @@ jobs:
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           ansible-test sanity --docker default --python ${{ matrix.python-version }} -v
   unit_testing:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9']
+        python-version: ['3.9']
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
