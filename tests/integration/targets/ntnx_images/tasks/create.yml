@@ -1,5 +1,5 @@
 ---
-- debug:
+- ansible.builtin.debug:
     msg: start ntnx_image create tests
 
 - name: Create image with minimal spec and source uri
@@ -12,18 +12,18 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.response.status.resources.image_type == "DISK_IMAGE"
       - result.response.status.name == 'integration-test-image-with-uri'
       - result.response.status.resources.source_uri == "{{ disk_image.url }}"
-    fail_msg: "Unable to create image using source_uri"
-    success_msg: "Image with given source_uri created successfully"
+    fail_msg: Unable to create image using source_uri
+    success_msg: Image with given source_uri created successfully
 
-- set_fact:
-    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+- ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["response"]["metadata"]["uuid"]] }}'
 
 ##################################################################################
 
@@ -31,71 +31,71 @@
   ntnx_images:
     state: present
     name: integration-test-image-with-upload
-    desc: "uploaded image during integration test"
+    desc: uploaded image during integration test
     source_path: "{{ disk_image.dest }}"
-    image_type: "DISK_IMAGE"
+    image_type: DISK_IMAGE
     categories:
       Environment:
-        - "Dev"
+        - Dev
       AppType:
-        - "Default"
+        - Default
     version:
-      product_name: "test"
-      product_version: "1.2.0"
+      product_name: test
+      product_version: 1.2.0
     clusters:
       - name: "{{ cluster.name }}"
     checksum:
-      checksum_algorithm: "SHA_1"
+      checksum_algorithm: SHA_1
       checksum_value: "{{ disk_image.checksum }}"
     wait: true
   register: result
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.response.status.resources.image_type == "DISK_IMAGE"
       - result.response.metadata.categories_mapping['AppType'] == ['Default']
       - result.response.metadata.categories_mapping['Environment'] == ['Dev']
-      - result.response.status.resources.initial_placement_ref_list[0]['uuid'] == "{{ cluster.uuid }}" 
+      - result.response.status.resources.initial_placement_ref_list[0]['uuid'] == "{{ cluster.uuid }}"
       - result.response.status.resources.checksum.checksum_value == "{{ disk_image.checksum }}"
       - result.response.status.resources.version.product_name == "test"
       - result.response.status.resources.version.product_version == "1.2.0"
-    fail_msg: "Unable to create image and upload local image with all specification"
-    success_msg: "Image with given local path created successfully"
+    fail_msg: Unable to create image and upload local image with all specification
+    success_msg: Image with given local path created successfully
 
-- set_fact:
-    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+- ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["response"]["metadata"]["uuid"]] }}'
 
 ###############################################################################################
 
 - name: Verify check mode for ntnx_image
-  check_mode: yes
+  check_mode: true
   ntnx_images:
     state: present
     name: integration-test-image
-    desc: "uploaded image during integration test"
+    desc: uploaded image during integration test
     source_uri: "{{ disk_image.url }}"
-    image_type: "DISK_IMAGE"
+    image_type: DISK_IMAGE
     categories:
       Environment:
-        - "Dev"
+        - Dev
       AppType:
-        - "Default"
+        - Default
     version:
-      product_name: "test"
-      product_version: "1.2.0"
+      product_name: test
+      product_version: 1.2.0
     clusters:
-      - name: "{{ cluster.name }}" 
+      - name: "{{ cluster.name }}"
     checksum:
-      checksum_algorithm: "SHA_1"
+      checksum_algorithm: SHA_1
       checksum_value: "{{ disk_image.checksum }}"
     wait: true
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -110,38 +110,38 @@
       - result.response.spec.resources.version.product_name == "test"
       - result.response.spec.resources.version.product_version == "1.2.0"
     success_msg: "Success: check mode spec returned  as expected"
-    fail_msg: "Check mode for ntnx_image failed"
+    fail_msg: Check mode for ntnx_image failed
 
 ##############################################################################################
 
-- name: "Negative scenario when create image with invalid source uri"
+- name: Negative scenario when create image with invalid source uri
   ntnx_images:
     state: present
-    source_uri: "www.google.com"
-    image_type: "DISK_IMAGE"
+    source_uri: www.google.com
+    image_type: DISK_IMAGE
     name: integration-test-image-with-uri
     wait: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == True
       - result.status_code == "500"
       - "'INTERNAL_ERROR' in result.error"
     success_msg: "Success: returned error as expected"
-    fail_msg: "Image create didn't failed for invalid source uri"
+    fail_msg: Image create didn't failed for invalid source uri
 
 ###################################################################################################
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_images:
     state: absent
     image_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []

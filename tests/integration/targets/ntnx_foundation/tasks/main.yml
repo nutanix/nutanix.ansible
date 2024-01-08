@@ -1,7 +1,7 @@
 ---
 - module_defaults:
     nutanix.ncp.ntnx_foundation:
-        nutanix_host: "{{ foundation_host }}"
+      nutanix_host: "{{ foundation_host }}"
   block:
-        - import_tasks: "image_nodes.yml"
-        - import_tasks: "negative_scenarios.yml"
+    - ansible.builtin.import_tasks: image_nodes.yml
+    - ansible.builtin.import_tasks: negative_scenarios.yml

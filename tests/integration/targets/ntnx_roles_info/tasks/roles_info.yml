@@ -1,4 +1,5 @@
-- debug:
+---
+- ansible.builtin.debug:
     msg: start testing ntnx_roles_info
 ##################################################
 
@@ -6,20 +7,20 @@
   ntnx_roles_info:
     length: 2
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.metadata.total_matches > 0
       - result.response.entities | length > 0
-    fail_msg: "Unable to list all roles"
-    success_msg: "roles info obtained successfully"
+    fail_msg: Unable to list all roles
+    success_msg: roles info obtained successfully
 
-- set_fact:
+- ansible.builtin.set_fact:
     test_role_name: "{{result.response.entities.1.status.name}}"
-- set_fact:
+- ansible.builtin.set_fact:
     test_role_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
 ################################################## 
@@ -28,30 +29,30 @@
   ntnx_roles_info:
     role_uuid: "{{ test_role_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
       - result.failed == false
       - result.response.status.name == "{{ test_role_name }}"
       - result.response.metadata.kind == "role"
-    fail_msg: "Unable to list role using uuid"
-    success_msg: "role info obtained successfully"
+    fail_msg: Unable to list role using uuid
+    success_msg: role info obtained successfully
 
 ################################################## 
 
 - name: List roles using filter criteria
   ntnx_roles_info:
-    filter: 
+    filter:
       name: "{{ test_role_name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -59,8 +60,8 @@
       - result.response.entities[0].status.name == "{{ test_role_name }}"
       - result.response.metadata.kind == "role"
       - result.response.metadata.total_matches == 1
-    fail_msg: "Unable to list roles using filter"
-    success_msg: "role info obtained successfully"
+    fail_msg: Unable to list roles using filter
+    success_msg: role info obtained successfully
 
 ################################################## 
 
@@ -69,15 +70,15 @@
     length: 1
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
       - result.failed == false
       - result.response.entities | length == 1
-    fail_msg: "Unable to list roles using length and offset"
-    success_msg: "roles listed successfully using length and offset"
+    fail_msg: Unable to list roles using length and offset
+    success_msg: roles listed successfully using length and offset
 ##################################################

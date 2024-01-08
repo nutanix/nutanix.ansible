@@ -21,15 +21,15 @@
           boot_file: "{{ dhcp_settings.boot_file }}"
   register: result
   ignore_errors: true
-  
+
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create Overlay Subnet with IP_pools and DHCP "
     success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
-      
+
 - name: Delete subnet
   ntnx_subnets:
     state: absent

@@ -1,10 +1,10 @@
 ---
 - module_defaults:
     group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
   block:
-        - import_tasks: "crud.yml"
-        - import_tasks: "negative_scenarios.yml"
+    - ansible.builtin.import_tasks: crud.yml
+    - ansible.builtin.import_tasks: negative_scenarios.yml

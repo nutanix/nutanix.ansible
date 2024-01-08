@@ -1,3 +1,4 @@
+---
 - name: Roles crud playbook. Here we will create, update, read and delete the role.
   hosts: localhost
   gather_facts: false
@@ -13,18 +14,18 @@
     - name: get some permissions for adding in roles
       ntnx_permissions_info:
       register: permissions
-    
+
     - name: Create a role with 2 permissions. Here we will be using name or uuid for referenceing permissions
       ntnx_roles:
         state: present
         name: test-ansible-role-1
-        desc: 
+        desc:
         permissions:
           - name: "{{ permissions.response.entities[0].status.name }}"
           - uuid: "{{ permissions.response.entities[1].metadata.uuid }}"
         wait: true
       register: role1
-  
+
     - name: Update role
       ntnx_roles:
         state: present
@@ -34,17 +35,17 @@
           - name: "{{ permissions.response.entities[2].status.name }}"
         wait: true
       register: updated_role1
-    
+
     - name: Read the updated role
       ntnx_roles_info:
         role_uuid: "{{ updated_role1.role_uuid }}"
       register: role1_info
-    
+
     - name: Print the role details
       debug:
         msg: "{{role1_info}}"
 
-    - name: Delete the role. 
+    - name: Delete the role.
       ntnx_roles:
         state: absent
         role_uuid: "{{ updated_role1.role_uuid }}"

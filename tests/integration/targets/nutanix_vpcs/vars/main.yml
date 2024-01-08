@@ -1,4 +1,5 @@
-dns_servers: ["8.8.8.8", "8.8.4.4"]
+---
+dns_servers: [8.8.8.8, 8.8.4.4]
 routable_ips:
   network_ip: 192.168.2.0
   network_prefix: 24

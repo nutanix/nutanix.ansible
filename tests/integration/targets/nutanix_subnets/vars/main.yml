@@ -1,3 +1,4 @@
+---
 vlan_subnets_ids: [221, 222, 223, 224, 225, 226]
 ip_address_management:
   network_ip: 192.168.0.0
@@ -12,11 +13,11 @@ ip_address_pools:
 
 dhcp_settings:
   dns_servers: [8.8.8.8, 8.8.4.4]
-  domain_search: ["calm.nutanix.com", "eng.nutanix.com"]
+  domain_search: [calm.nutanix.com, eng.nutanix.com]
   domain_name: nutanix.com
   tftp_server_name: 10.5.0.10
   boot_file: pxelinux.0
-  
+
 dhcp_server_address: 192.168.0.35
 external_nat_subnet:
   vlan_id: 205

@@ -1,12 +1,12 @@
 ---
-- debug:
+- ansible.builtin.debug:
     msg: start ntnx_image_placement_policy create tests
 
 - name: Create image placement policy with minimal spec
   ntnx_image_placement_policy:
-    name: "test_policy_1"
+    name: test_policy_1
     placement_type: soft
-    image_categories: 
+    image_categories:
       AnalyticsExclusions:
         - AnomalyDetection
     cluster_categories:
@@ -15,7 +15,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -24,25 +24,25 @@
       - result.response.status.resources.cluster_entity_filter.params["AppTier"][0] == 'Default'
       - result.response.status.resources.image_entity_filter.params["AnalyticsExclusions"][0] == 'AnomalyDetection'
       - result.response.status.resources.placement_type == 'AT_LEAST'
-    fail_msg: "Unable to create image placement policy with minimal spec"
-    success_msg: "Image placement policy with minimal spec created successfully"
+    fail_msg: Unable to create image placement policy with minimal spec
+    success_msg: Image placement policy with minimal spec created successfully
 
-- set_fact:
-    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+- ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["response"]["metadata"]["uuid"]] }}'
 
 ################################################################################################################
 
 - name: Create image placement policy with all specs and hard type
   ntnx_image_placement_policy:
-    name: "test_policy_2"
-    desc: "test_policy_2_desc"
+    name: test_policy_2
+    desc: test_policy_2_desc
     placement_type: hard
     categories:
       Environment:
-        - "Dev"
+        - Dev
       AppType:
-        - "Default"
-    image_categories: 
+        - Default
+    image_categories:
       AnalyticsExclusions:
         - EfficiencyMeasurement
         - AnomalyDetection
@@ -52,27 +52,27 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.response.status.description == 'test_policy_2_desc'
       - result.response.status.resources.placement_type == 'EXACTLY'
-    fail_msg: "Unable to create image placement policy with all specifications"
-    success_msg: "Image placement policy with all specifications created successfully"
+    fail_msg: Unable to create image placement policy with all specifications
+    success_msg: Image placement policy with all specifications created successfully
 
-- set_fact:
-    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+- ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["response"]["metadata"]["uuid"]] }}'
 
 ################################################################################################################
 
 - name: Create image placement policy in check mode
-  check_mode: yes
+  check_mode: true
   ntnx_image_placement_policy:
-    name: "test_policy_3"
-    desc: "test_policy_3_desc"
+    name: test_policy_3
+    desc: test_policy_3_desc
     placement_type: hard
-    image_categories: 
+    image_categories:
       AnalyticsExclusions:
         - EfficiencyMeasurement
         - AnomalyDetection
@@ -82,20 +82,20 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
       - result.failed == false
-    fail_msg: "Unable to use check mode in image placement policy"
-    success_msg: "Image placement policy in check mode runs successfully"
+    fail_msg: Unable to use check mode in image placement policy
+    success_msg: Image placement policy in check mode runs successfully
 
 ################################################################################################################
 
 - name: Create image placement policy with incorrect category
   ntnx_image_placement_policy:
-    name: "test_policy_4"
-    image_categories: 
+    name: test_policy_4
+    image_categories:
       Wrong:
         - Category
     cluster_categories:
@@ -105,17 +105,17 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
       - result.failed == true
-    fail_msg: "Image placement policy didn't failed with incorrect category"
-    success_msg: "Image placement policy with incorrect category errored out successfully"
+    fail_msg: Image placement policy didn't failed with incorrect category
+    success_msg: Image placement policy with incorrect category errored out successfully
 
 ##################################################CLEANUP#######################################################
 
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ item }}"
@@ -123,5 +123,5 @@
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []

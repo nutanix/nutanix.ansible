@@ -11,23 +11,23 @@
       nutanix_password: <pass>
       validate_certs: false
 
-  tasks:        
-  - set_fact:
-      cluster_name: <cluster_name>
+  tasks:
+    - set_fact:
+        cluster_name: <cluster_name>
 
-  - name: test getting cluster using name 
-    ntnx_karbon_clusters_info:
-      cluster_name: "{{cluster_name}}"
-    register: result
+    - name: test getting cluster using name
+      ntnx_karbon_clusters_info:
+        cluster_name: "{{cluster_name}}"
+      register: result
 
-  - name: test getting cluster with ssh config using cluster name
-    ntnx_karbon_clusters_info:
-      cluster_name: "{{cluster_name}}"
-      fetch_ssh_credentials: true
-    register: result
+    - name: test getting cluster with ssh config using cluster name
+      ntnx_karbon_clusters_info:
+        cluster_name: "{{cluster_name}}"
+        fetch_ssh_credentials: true
+      register: result
 
-  - name: test getting cluster with kubeconfig config using cluster name
-    ntnx_karbon_clusters_info:
-      cluster_name: "{{cluster_name}}"
-      fetch_kubeconfig: true
-    register: result
+    - name: test getting cluster with kubeconfig config using cluster name
+      ntnx_karbon_clusters_info:
+        cluster_name: "{{cluster_name}}"
+        fetch_kubeconfig: true
+      register: result

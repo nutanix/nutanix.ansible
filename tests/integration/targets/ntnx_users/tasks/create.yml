@@ -1,52 +1,51 @@
 ---
-- debug:
-    msg: "start ntnx_users  tests"
+- ansible.builtin.debug:
+    msg: start ntnx_users  tests
 ##################################################
-- name: create local user  with check mode
+- name: Create local user  with check mode
   ntnx_users:
-    principal_name: "{{principal_name}}"
-    directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
-      uuid: "{{project.uuid}}"
+    principal_name: "{{ principal_name }}"
+    directory_service_uuid: "{{ directory_service_uuid }}"
+    project:
+      uuid: "{{ project.uuid }}"
   register: result
   ignore_errors: true
   check_mode: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
       - result.failed == false
       - result.user_uuid ==  None
-      - result.response.spec.resources.directory_service_user.directory_service_reference.uuid == "{{directory_service_uuid}}"
+      - result.response.spec.resources.directory_service_user.directory_service_reference.uuid == "{{ directory_service_uuid }}"
     fail_msg: "fail: user created whil check mode on"
     success_msg: "pass: returned as expected"
 
-
 #################################################
-- name: create local user
+- name: Create local user
   ntnx_users:
-    principal_name: "{{principal_name}}"
-    directory_service_uuid:  "{{directory_service_uuid}}"
+    principal_name: "{{ principal_name }}"
+    directory_service_uuid: "{{ directory_service_uuid }}"
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
       - result.failed == false
       - result.user_uuid is defined
       - result.response.status.state == "COMPLETE"
-      - result.response.status.name == "{{principal_name}}"
-      - result.response.status.resources.directory_service_user.directory_service_reference.uuid == "{{directory_service_uuid}}"
-    fail_msg: "fail"
-    success_msg: "pass"
+      - result.response.status.name == "{{ principal_name }}"
+      - result.response.status.resources.directory_service_user.directory_service_reference.uuid == "{{ directory_service_uuid }}"
+    fail_msg: fail
+    success_msg: pass
 
-- set_fact:
-      todelete: "{{ todelete + [  result.user_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.user_uuid] }}"
 #################################################
 - name: Delete created users
   ntnx_users:
@@ -55,62 +54,62 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "Fail: unable to delete all users"
     success_msg: "Pass: all users deleted successfully"
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []
 #################################################
-- name: create local user  with project and categories 
+- name: Create local user  with project and categories
   ntnx_users:
-    principal_name: "{{principal_name}}"
-    directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
-      uuid: "{{project.uuid}}"
+    principal_name: "{{ principal_name }}"
+    directory_service_uuid: "{{ directory_service_uuid }}"
+    project:
+      uuid: "{{ project.uuid }}"
     categories:
       Environment:
-        - "Dev"
+        - Dev
       AppType:
-        - "Default"
+        - Default
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
       - result.failed == false
       - result.user_uuid is defined
       - result.response.status.state == "COMPLETE"
-      - result.response.status.name == "{{principal_name}}"
-      - result.response.status.resources.directory_service_user.directory_service_reference.uuid == "{{directory_service_uuid}}"
-    fail_msg: "fail"
-    success_msg: "pass"
+      - result.response.status.name == "{{ principal_name }}"
+      - result.response.status.resources.directory_service_user.directory_service_reference.uuid == "{{ directory_service_uuid }}"
+    fail_msg: fail
+    success_msg: pass
 
-- set_fact:
-      todelete: "{{ todelete + [  result.user_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.user_uuid] }}"
 #################################################
-- name: create local user  not in the directory_service
+- name: Create local user  not in the directory_service
   ntnx_users:
     principal_name: wrong_name
-    directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
-      uuid: "{{project.uuid}}"
+    directory_service_uuid: "{{ directory_service_uuid }}"
+    project:
+      uuid: "{{ project.uuid }}"
     categories:
       Environment:
-        - "Dev"
+        - Dev
       AppType:
-        - "Default"
+        - Default
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == true
@@ -147,24 +146,24 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "Fail: unable to delete all users"
     success_msg: "Pass: all users deleted successfully"
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []
 
 ############# DELETE TEST ##############################
 
-- name: create local user
+- name: Create local user
   ntnx_users:
-    principal_name: "{{principal_name}}"
-    directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
-      uuid: "{{project.uuid}}"
+    principal_name: "{{ principal_name }}"
+    directory_service_uuid: "{{ directory_service_uuid }}"
+    project:
+      uuid: "{{ project.uuid }}"
   register: result
   ignore_errors: true
 
@@ -175,8 +174,8 @@
   register: result
   ignore_errors: true
 
-- name: check delete status
-  assert:
+- name: Check delete status
+  ansible.builtin.assert:
     that:
       - result.changed == true
       - result.response is defined

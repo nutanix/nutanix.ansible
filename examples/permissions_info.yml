@@ -1,3 +1,4 @@
+---
 ########## Permissions Info Module Examples ################################
 - name: PC permissions
   hosts: localhost
@@ -6,27 +7,27 @@
     - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
-        nutanix_host: "<pc-ip>"
-        nutanix_username: "<username>"
-        nutanix_password: "<password>"
-        validate_certs: false
+      nutanix_host: <pc-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
 
   tasks:
-  - name: get all permissions
-    ntnx_permissions_info:
-    register: op1
+    - name: get all permissions
+      ntnx_permissions_info:
+      register: op1
 
-  - name: get permissions using filter
-    ntnx_permissions_info:
-      filter:
-        name: <permission_name>
-    register: op2
+    - name: get permissions using filter
+      ntnx_permissions_info:
+        filter:
+          name: <permission_name>
+      register: op2
 
-  - name: get permission using uuid
-    ntnx_permissions_info:
-      permission_uuid: <permission_uuid>
-    register: op3
+    - name: get permission using uuid
+      ntnx_permissions_info:
+        permission_uuid: <permission_uuid>
+      register: op3
 
-  - name: output
-    debug:
-      msg: "{{ op3 }}"
+    - name: output
+      debug:
+        msg: "{{ op3 }}"

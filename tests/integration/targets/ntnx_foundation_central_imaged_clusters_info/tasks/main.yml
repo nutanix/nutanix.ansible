@@ -1,9 +1,9 @@
 ---
 - module_defaults:
     nutanix.ncp.ntnx_foundation_central_imaged_clusters_info:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
   block:
-        - import_tasks: "get_cluster_info.yml"
+    - ansible.builtin.import_tasks: get_cluster_info.yml
