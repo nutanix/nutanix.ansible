@@ -4,7 +4,7 @@
   gather_facts: false
   collections:
     - nutanix.ncp
-  
+
   tasks:
-  - name: include var file
-    include_vars: ../vars/main.yml
+    - name: include var file
+      include_vars: ../vars/main.yml

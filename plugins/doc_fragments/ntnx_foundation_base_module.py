@@ -22,7 +22,7 @@ options:
         description:
             - PC port
         type: str
-        default: 8000
+        default: "8000"
         required: false
     timeout:
         description:

@@ -1,6 +1,6 @@
 ---
 - name: Include PBR  task
-  include_tasks: pbr.yml
+  ansible.builtin.include_tasks: pbr.yml
   with_items:
-    - { vpc_name: "{{vpc_names[0]}}", priority: 101, nip: 10.1.2.0, prefix: 24 }
-    - { vpc_name: "{{vpc_names[1]}}", priority: 101, nip: 10.1.2.0, prefix: 24 }
+    - { vpc_name: "{{ vpc_names[0] }}", priority: 101, nip: 10.1.2.0, prefix: 24 }
+    - { vpc_name: "{{ vpc_names[1] }}", priority: 101, nip: 10.1.2.0, prefix: 24 }

@@ -1,36 +1,35 @@
 ---
-- debug:
+- ansible.builtin.debug:
     msg: Start testing ntnx_ndb_profiles
 
-
 ################################################################
-- name: Generate random profile_name 
-  set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+- name: Generate random profile_name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
 
-- set_fact:
-    suffix_name: "ansible-role-mapping"
+- ansible.builtin.set_fact:
+    suffix_name: ansible-role-mapping
 
-- set_fact:
-    profile1_name: "{{random_name}}{{suffix_name}}1"
-    profile2_name: "{{random_name}}{{suffix_name}}2"
+- ansible.builtin.set_fact:
+    profile1_name: "{{ random_name }}{{ suffix_name }}1"
+    profile2_name: "{{ random_name }}{{ suffix_name }}2"
 ################################################################
 - name: Verify creation of compute profile with defaults in check mode
   ntnx_ndb_profiles:
-    name: "{{profile1_name}}"
-    desc: "testdesc"
+    name: "{{ profile1_name }}"
+    desc: testdesc
     type: compute
   register: result
   ignore_errors: true
   check_mode: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name ==  "{{profile1_name}}"
+      - result.response.name ==  "{{ profile1_name }}"
       - result.response.description == "testdesc"
       - result.response.type == "Compute"
       - result.response.properties[0].name=="CPUS"
@@ -42,26 +41,26 @@
     fail_msg: "Fail: unable to Verify creation of compute profile with defaults in check mode   "
     success_msg: "Pass: Verify creation of compute profile with defaults in check mode "
 ################################################################
-- name: verify creation of compute profile
+- name: Verify creation of compute profile
   ntnx_ndb_profiles:
-    name: "{{profile1_name}}"
-    desc: "testdesc"
+    name: "{{ profile1_name }}"
+    desc: testdesc
     type: compute
     compute:
-          vcpus: 2
-          cores_per_cpu: 4
-          memory: 8
+      vcpus: 2
+      cores_per_cpu: 4
+      memory: 8
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == true
       - result.profile_uuid is defined
-      - result.response.name ==  "{{profile1_name}}"
+      - result.response.name ==  "{{ profile1_name }}"
       - result.response.description == "testdesc"
       - result.response.type == "Compute"
       - result.response.versions[0].propertiesMap.CORE_PER_CPU == "4"
@@ -71,15 +70,14 @@
     fail_msg: "Fail: create compute profile finished successfully "
     success_msg: "Pass: Unable to create compute profile"
 
-
-- set_fact:
-    todelete: "{{ todelete + [  result.profile_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.profile_uuid] }}"
 ################################################################
-- name: verify update of params in compute profile and publish profile
+- name: Verify update of params in compute profile and publish profile
   ntnx_ndb_profiles:
-    name: "{{profile2_name}}"
-    desc: "newdesc"
-    profile_uuid: "{{result.profile_uuid}}"
+    name: "{{ profile2_name }}"
+    desc: newdesc
+    profile_uuid: "{{ result.profile_uuid }}"
     type: compute
     compute:
       vcpus: 6
@@ -89,15 +87,14 @@
   register: result
   ignore_errors: true
 
-
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == true
       - result.profile_uuid is defined
-      - result.response.profile.name ==  "{{profile2_name}}"
+      - result.response.profile.name ==  "{{ profile2_name }}"
       - result.response.profile.description == "newdesc"
       - result.response.profile.type == "Compute"
       - result.response.version.propertiesMap.CORE_PER_CPU == "4"
@@ -107,16 +104,16 @@
     fail_msg: "Fail: unable to verify update of params in compute profile and publish profile"
     success_msg: "Pass:  verify update of params in compute profile and publish profile finished successfully"
 ################################################################
-- name:  verify idempotency check  in compute profile
+- name: Verify idempotency check  in compute profile
   ntnx_ndb_profiles:
-    profile_uuid: "{{result.profile_uuid}}"
-    name: "{{profile2_name}}"
-    desc: "newdesc"
+    profile_uuid: "{{ result.profile_uuid }}"
+    name: "{{ profile2_name }}"
+    desc: newdesc
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -125,19 +122,18 @@
     fail_msg: "Fail: unable to verify idempotency check  in compute profile"
     success_msg: "Pass: verify idempotency check  in compute profile finished successfully"
 ################################################################
-- name: verify unpublish flow in compute profile
+- name: Verify unpublish flow in compute profile
   ntnx_ndb_profiles:
-    profile_uuid: "{{result.profile_uuid}}"
-    
+    profile_uuid: "{{ result.profile_uuid }}"
+
     type: compute
     compute:
       publish: false
   register: result
   ignore_errors: true
 
-
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -153,16 +149,16 @@
     profile_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed is defined
       - result.changed == true
       - result.msg == "All items completed"
-    fail_msg: "unable to delete all created compute profiles"
-    success_msg: "All compute profiles deleted successfully"
+    fail_msg: unable to delete all created compute profiles
+    success_msg: All compute profiles deleted successfully
 
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []

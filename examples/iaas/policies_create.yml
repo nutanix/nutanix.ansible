@@ -12,7 +12,7 @@
       validate_certs: false
   tasks:
     - name: Include vars file
-      include_vars:
+      ansible.builtin.include_vars:
         file: vars.yml
-    - include_role:
+    - ansible.builtin.include_role:
         name: pbr

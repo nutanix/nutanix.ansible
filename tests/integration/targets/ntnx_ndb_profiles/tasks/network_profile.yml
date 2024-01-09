@@ -1,88 +1,88 @@
-- name: Generate random profile_name 
-  set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+---
+- name: Generate random profile_name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
 
-- set_fact:
-    suffix_name: "ansible-role-mapping"
+- ansible.builtin.set_fact:
+    suffix_name: ansible-role-mapping
 
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []
-    profile1_name: "{{random_name}}{{suffix_name}}1"
-    profile2_name: "{{random_name}}{{suffix_name}}2"
-    profile3_name: "{{random_name}}{{suffix_name}}3"
+    profile1_name: "{{ random_name }}{{ suffix_name }}1"
+    profile2_name: "{{ random_name }}{{ suffix_name }}2"
+    profile3_name: "{{ random_name }}{{ suffix_name }}3"
 ################################################################
-- name: verify create of single cluster network profile
+- name: Verify create of single cluster network profile
   ntnx_ndb_profiles:
-    name: "{{profile1_name}}"
-    desc: "testdesc"
+    name: "{{ profile1_name }}"
+    desc: testdesc
     type: network
     database_type: postgres
     network:
       topology: single
       vlans:
-        - 
-          cluster:  
-            name: "{{network_profile.single.cluster.name}}"
-          vlan_name: "{{network_profile.single.vlan_name}}"
+        - cluster:
+            name: "{{ network_profile.single.cluster.name }}"
+          vlan_name: "{{ network_profile.single.vlan_name }}"
       enable_ip_address_selection: true
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == true
-      - result.response.name ==  "{{profile1_name}}"
+      - result.response.name ==  "{{ profile1_name }}"
       - result.response.description == "testdesc"
       - result.response.type == "Network"
       - result.response.topology == "single"
       - result.response.versions[0].propertiesMap.ENABLE_IP_ADDRESS_SELECTION == "true"
-      - result.response.versions[0].propertiesMap.VLAN_NAME == "{{network_profile.single.vlan_name}}"
+      - result.response.versions[0].propertiesMap.VLAN_NAME == "{{ network_profile.single.vlan_name }}"
       - result.response.versions[0].published == false
     fail_msg: "Fail: unable to verify create of single cluster network profile"
     success_msg: "Pass: verify create of single cluster network profile finished successfully "
 ################################################################
-- name: update the profile for single cluster by  name , desc , publish
+- name: Update the profile for single cluster by  name , desc , publish
   ntnx_ndb_profiles:
-    name: "{{profile2_name}}"
-    desc: "testdesc2"
+    name: "{{ profile2_name }}"
+    desc: testdesc2
     network:
       publish: true
-    profile_uuid: "{{result.profile_uuid}}"
+    profile_uuid: "{{ result.profile_uuid }}"
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == true
-      - result.response.profile.name == "{{profile2_name}}"
+      - result.response.profile.name == "{{ profile2_name }}"
       - result.response.profile.description == "testdesc2"
       - result.response.profile.type == "Network"
       - result.response.profile.topology == "single"
       - result.response.profile.versions[0].propertiesMap.ENABLE_IP_ADDRESS_SELECTION == "true"
-      - result.response.profile.versions[0].propertiesMap.VLAN_NAME == "{{network_profile.single.vlan_name}}"
+      - result.response.profile.versions[0].propertiesMap.VLAN_NAME == "{{ network_profile.single.vlan_name }}"
       - result.response.profile.versions[0].published == true
     fail_msg: "Fail: unable to update the profile for single cluster by  name , desc , publish "
     success_msg: "Pass: update the profile for single cluster by  name , desc , publish finished successfully "
 
-- set_fact:
-    todelete: "{{ todelete + [  result.profile_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.profile_uuid] }}"
 ################################################################
-- name: verify idempotency check
+- name: Verify idempotency check
   ntnx_ndb_profiles:
-    name: "{{profile2_name}}"
-    desc: "testdesc2"
-    profile_uuid: "{{result.profile_uuid}}"
+    name: "{{ profile2_name }}"
+    desc: testdesc2
+    profile_uuid: "{{ result.profile_uuid }}"
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -177,16 +177,16 @@
     profile_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed is defined
       - result.changed == true
       - result.msg == "All items completed"
-    fail_msg: "unable to delete all created network profiles"
-    success_msg: "All network profiles deleted successfully"
+    fail_msg: unable to delete all created network profiles
+    success_msg: All network profiles deleted successfully
 
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []

@@ -1,36 +1,37 @@
-- debug:
+---
+- ansible.builtin.debug:
     msg: start testing ntnx_permissions_info
 ##################################################
 
 - name: List all permissions
   ntnx_permissions_info:
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.metadata.total_matches > 0
       - result.response.entities | length > 0
 
-    fail_msg: "Unable to list all permissions"
-    success_msg: "permissions info obtained successfully"
+    fail_msg: Unable to list all permissions
+    success_msg: permissions info obtained successfully
 
 ##################################################
 
-- set_fact:
-    test_permission_name: "Create_Playbook"
+- ansible.builtin.set_fact:
+    test_permission_name: Create_Playbook
 
 - name: List permissions using filter criteria
   ntnx_permissions_info:
-    filter: 
+    filter:
       name: "{{ test_permission_name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -38,10 +39,10 @@
       - result.response.entities[0].status.name == "{{ test_permission_name }}"
       - result.response.metadata.kind == "permission"
       - result.response.metadata.total_matches == 1
-    fail_msg: "Unable to list permissions using filter"
-    success_msg: "permission info obtained successfully"
+    fail_msg: Unable to list permissions using filter
+    success_msg: permission info obtained successfully
 
-- set_fact:
+- ansible.builtin.set_fact:
     test_permission_uuid: "{{result.response.entities.0.metadata.uuid}}"
 
 ################################################## 
@@ -50,19 +51,18 @@
   ntnx_permissions_info:
     permission_uuid: "{{ test_permission_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
       - result.failed == false
       - result.response.status.name == "{{ test_permission_name }}"
       - result.response.metadata.kind == "permission"
-    fail_msg: "Unable to list permission using uuid"
-    success_msg: "permission info obtained successfully"
-
+    fail_msg: Unable to list permission using uuid
+    success_msg: permission info obtained successfully
 
 ################################################## 
 
@@ -71,15 +71,15 @@
     length: 1
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
       - result.failed == false
       - result.response.entities | length == 1
-    fail_msg: "Unable to list permissions using length and offset"
-    success_msg: "permissions listed successfully using length and offset"
+    fail_msg: Unable to list permissions using length and offset
+    success_msg: permissions listed successfully using length and offset
 ##################################################

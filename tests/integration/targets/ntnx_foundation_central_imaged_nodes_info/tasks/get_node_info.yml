@@ -1,13 +1,14 @@
-- debug:
+---
+- ansible.builtin.debug:
     msg: start testing ntnx_foundation_central_imaged_nodes_info module
 
-- name:  get all imaged nodes
+- name: Get all imaged nodes
   ntnx_foundation_central_imaged_nodes_info:
   register: nodes
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - nodes.changed==true
       - nodes.failed==false
@@ -17,14 +18,14 @@
     fail_msg: "fail: unable to get all imaged nodes   "
     success_msg: "succes:  get all imaged nodes sucessfully  "
 
-- name: get node by uuid
+- name: Get node by uuid
   ntnx_foundation_central_imaged_nodes_info:
     imaged_node_uuid: "{{nodes.response.imaged_nodes.0.imaged_node_uuid}}"
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed==true
       - result.failed==false
@@ -33,19 +34,19 @@
     fail_msg: "fail: unable to get node by uuid"
     success_msg: "succes:  get node by uuid successfully "
 
-- name: get imaged node using custom filter
+- name: Get imaged node using custom filter
   ntnx_foundation_central_imaged_nodes_info:
-    custom_filter: 
+    custom_filter:
       node_serial: "{{nodes.response.imaged_nodes.0.node_serial}}"
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed==true
-      - result.failed==false 
-      - result.response.imaged_nodes.0.imaged_node_uuid == nodes.response.imaged_nodes.0.imaged_node_uuid 
+      - result.failed==false
+      - result.response.imaged_nodes.0.imaged_node_uuid == nodes.response.imaged_nodes.0.imaged_node_uuid
       - result.response.metadata.length <=1
     fail_msg: "fail: unable to get imaged node using custom filter "
     success_msg: "succes: get imaged node using custom filter sucessfully"

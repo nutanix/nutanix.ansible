@@ -1,40 +1,38 @@
 ---
-- debug:
+- ansible.builtin.debug:
     msg: Start testing ntnx_clusters_info
 
-- name: test getting all clusters
+- name: Test getting all clusters
   ntnx_clusters_info:
   register: clusters
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - clusters.response is defined
       - clusters.changed == false
       - clusters.failed == false
       - clusters.response.entities[0].metadata.uuid is defined
-    fail_msg: "Unable to list all cluster"
-    success_msg: "clusters listed successfully"
+    fail_msg: Unable to list all cluster
+    success_msg: clusters listed successfully
 
-
-- name: test getting particular cluster using uuid
+- name: Test getting particular cluster using uuid
   ntnx_clusters_info:
-    cluster_uuid: '{{ clusters.response.entities[0].metadata.uuid }}'
+    cluster_uuid: "{{ clusters.response.entities[0].metadata.uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == false
       - result.response.metadata.uuid == "{{ clusters.response.entities[0].metadata.uuid }}"
       - result.response.status.state == "COMPLETE"
-    fail_msg: "Unable to get particular cluster"
-    success_msg: "custer info obtained successfully"
-
+    fail_msg: Unable to get particular cluster
+    success_msg: custer info obtained successfully
 
 # commenting due to technical issue
 # - name: List clusters using length, offset, sort order and priority sort attribute

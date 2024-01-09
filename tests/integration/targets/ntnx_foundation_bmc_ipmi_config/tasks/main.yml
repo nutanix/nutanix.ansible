@@ -1,6 +1,6 @@
 ---
 - module_defaults:
     nutanix.ncp.ntnx_foundation_bmc_ipmi_config:
-        nutanix_host: "{{ foundation_host }}"
+      nutanix_host: "{{ foundation_host }}"
   block:
-        - import_tasks: "configure_ipmi.yml"
+    - ansible.builtin.import_tasks: configure_ipmi.yml

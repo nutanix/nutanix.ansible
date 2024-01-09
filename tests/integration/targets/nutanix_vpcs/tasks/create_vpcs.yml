@@ -1,13 +1,14 @@
+---
 - name: Create min VPC with subnet name
   ntnx_vpcs:
     state: present
-    wait: True
+    wait: true
     name: MinVPC
     external_subnets:
       - subnet_name: "{{ external_nat_subnet.name }}"
   register: result
   check_mode: true
-  ignore_errors: True
+  ignore_errors: true
 ##########################################################
 - name: Create min VPC with external_nat_subnet uuid
   ntnx_vpcs:
@@ -18,18 +19,18 @@
       - subnet_uuid: "{{ external_nat_subnet.uuid }}"
   check_mode: false
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create Min vpc with external subnet uuid "
     success_msg: " Min vpc with external subnet uuid created successfully "
 
-- set_fact:
-    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.vpc_uuid] }}"
 ##########################################################
 - name: Delete all created vpcs
   ntnx_vpcs:
@@ -37,9 +38,9 @@
     vpc_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []
 ##########################################################
 - name: Create VPC with routable_ips
@@ -48,20 +49,20 @@
     name: vpc_with_routable_ips
     routable_ips:
       - network_ip: "{{ routable_ips.network_ip }}"
-        network_prefix:  "{{ routable_ips.network_prefix }}"
+        network_prefix: "{{ routable_ips.network_prefix }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create vpc with routable_ips "
     success_msg: " VPC with routable ips created successfully "
 
-- set_fact:
-    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.vpc_uuid] }}"
 ##########################################################
 - name: Create VPC with routable_ips and external subnet
   ntnx_vpcs:
@@ -71,20 +72,20 @@
       - subnet_name: "{{ external_nat_subnet.name }}"
     routable_ips:
       - network_ip: "{{ routable_ips.network_ip_2 }}"
-        network_prefix:  "{{ routable_ips.network_prefix_2 }}"
+        network_prefix: "{{ routable_ips.network_prefix_2 }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create vpc with routable_ips and external subnet "
     success_msg: " VPC with routable ips and external subnet created successfully "
 
-- set_fact:
-    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.vpc_uuid] }}"
 ##########################################################
 - name: Create VPC with dns_servers
   ntnx_vpcs:
@@ -93,11 +94,10 @@
     dns_servers: "{{ dns_servers }}"
     wait: false
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-
-- set_fact:
-    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.vpc_uuid] }}"
 ##########################################################
 - name: Delete all created vpcs
   ntnx_vpcs:
@@ -105,9 +105,9 @@
     vpc_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []
 ##########################################################
 - name: Create VPC with all specfactions
@@ -119,20 +119,20 @@
     dns_servers: "{{ dns_servers }}"
     routable_ips:
       - network_ip: "{{ routable_ips.network_ip }}"
-        network_prefix:  "{{ routable_ips.network_prefix }}"
+        network_prefix: "{{ routable_ips.network_prefix }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create vpc all specfactions "
     success_msg: " VPC with all specfactions created successfully "
 
-- set_fact:
-    todelete: "{{ todelete + [  result.vpc_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.vpc_uuid] }}"
 ##########################################################
 - name: Delete all created vpcs
   ntnx_vpcs:
@@ -140,4 +140,4 @@
     vpc_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true

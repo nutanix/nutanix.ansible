@@ -1,11 +1,11 @@
 ---
 - module_defaults:
     group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
   block:
-        - import_tasks: "create_subnet.yml"
-        - import_tasks: "delete_subnet.yml"
-        - import_tasks: "negative_scenarios.yml"
+    - ansible.builtin.import_tasks: create_subnet.yml
+    - ansible.builtin.import_tasks: delete_subnet.yml
+    - ansible.builtin.import_tasks: negative_scenarios.yml

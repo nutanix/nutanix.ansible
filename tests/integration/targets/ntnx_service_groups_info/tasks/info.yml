@@ -1,43 +1,43 @@
 ---
-- debug:
-    msg: "start ntnx_service_groups_info tests"
+- ansible.builtin.debug:
+    msg: start ntnx_service_groups_info tests
 
-- name: test getting all service groups 
+- name: Test getting all service groups
   ntnx_service_groups_info:
   register: service_groups
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - service_groups.response is defined
       - service_groups.changed == false
       - service_groups.failed == false
       - service_groups.response.entities is defined
       - service_groups.response.metadata.kind == "service_group"
-    fail_msg: "Unable to list all service groups"
-    success_msg: "service groups listed successfully"
+    fail_msg: Unable to list all service groups
+    success_msg: service groups listed successfully
 ################################################################
 - name: List service_group using length, offset, sort order and name sort attribute
   ntnx_service_groups_info:
     length: 1
     offset: 1
-    sort_order: "ASCENDING"
-    sort_attribute: "name"
+    sort_order: ASCENDING
+    sort_attribute: name
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
       - result.failed == false
       - result.response.entities is defined
       - result.response.metadata.kind == "service_group"
-    fail_msg: "Unable to list all service groups  using length, offset, sort order and name sort attribute"
-    success_msg: "service groups listed successfully  using length, offset, sort order and name sort attribute"
+    fail_msg: Unable to list all service groups  using length, offset, sort order and name sort attribute
+    success_msg: service groups listed successfully  using length, offset, sort order and name sort attribute
 ################################################################
-- name: test getting particular service_group using filter
+- name: Test getting particular service_group using filter
   ntnx_service_groups_info:
     filter:
       name: "{{ service_groups.response.entities[0].service_group.name }}"
@@ -45,8 +45,8 @@
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -54,21 +54,21 @@
       - result.response.entities[0] is defined
       - result.response.metadata.kind == "service_group"
       - result.response.entities[0].uuid == "{{ service_groups.response.entities[0].uuid }}"
-    fail_msg: "Unable to get particular service_group"
-    success_msg: "service_group info obtained successfully"
+    fail_msg: Unable to get particular service_group
+    success_msg: service_group info obtained successfully
 ################################################################
-- name: test getting particular service_group using uuid
+- name: Test getting particular service_group using uuid
   ntnx_service_groups_info:
-    service_group_uuid: '{{ result.response.entities[0].uuid }}'
+    service_group_uuid: "{{ result.response.entities[0].uuid }}"
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
       - result.failed == false
       - result.response.service_group.name == "{{ service_groups.response.entities[0].service_group.name }}"
-    fail_msg: "Unable to get particular service_group"
-    success_msg: "service_group info obtained successfully"
+    fail_msg: Unable to get particular service_group
+    success_msg: service_group info obtained successfully

@@ -1,5 +1,6 @@
-- debug:
-      msg: "Started Negative Creation Cases"
+---
+- ansible.builtin.debug:
+    msg: Started Negative Creation Cases
 
 - name: Create PBR with unknown vpc name
   ntnx_pbrs:
@@ -12,21 +13,21 @@
         ip: "{{ network.ip }}"
         prefix: "{{ network.prefix }}"
     destination:
-      external: True
+      external: true
     action:
-      reroute: "{{reroute_ip}}"
+      reroute: "{{ reroute_ip }}"
     protocol:
       icmp:
         type: "*"
         code: "*"
-  register: result 
-  ignore_errors: True
-    
+  register: result
+  ignore_errors: true
+
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.failed is defined
-    success_msg: ' Success: returned error as expected '
+    success_msg: " Success: returned error as expected "
 ##################################################################  
 - name: Create PBR with priority less than 10
   ntnx_pbrs:
@@ -39,21 +40,21 @@
         ip: "{{ network.ip }}"
         prefix: "{{ network.prefix }}"
     destination:
-      external: True
+      external: true
     action:
-      reroute: "{{reroute_ip}}"
+      reroute: "{{ reroute_ip }}"
     protocol:
       icmp:
         type: "*"
         code: "*"
-  register: result 
-  ignore_errors: True
-    
+  register: result
+  ignore_errors: true
+
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.failed is defined
-    success_msg: ' Success: returned error as expected '
+    success_msg: " Success: returned error as expected "
 ###################################################################
 - name: Create PBR with invalid network ip
   ntnx_pbrs:
@@ -66,18 +67,18 @@
         ip: 192.168.0.5
         prefix: 24
     destination:
-      external: True
+      external: true
     action:
-      reroute: "{{reroute_ip}}"
+      reroute: "{{ reroute_ip }}"
     protocol:
       icmp:
         code: "{{ icmp.code }}"
         type: "{{ icmp.type }}"
-  register: result 
-  ignore_errors: True
+  register: result
+  ignore_errors: true
 
-- set_fact:
-    todelete: "{{ todelete + [  result.pbr_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.pbr_uuid] }}"
 #################################################################
 - name: Create PBR with unknown vpc uuid
   ntnx_pbrs:
@@ -90,21 +91,21 @@
         ip: "{{ network.ip }}"
         prefix: "{{ network.prefix }}"
     destination:
-      external: True
+      external: true
     action:
-      reroute: "{{reroute_ip}}"
+      reroute: "{{ reroute_ip }}"
     protocol:
       icmp:
         type: "*"
         code: "*"
-  register: result 
-  ignore_errors: True
-    
+  register: result
+  ignore_errors: true
+
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.failed is defined
-    success_msg: ' Success: returned error as expected '
+    success_msg: " Success: returned error as expected "
 #################################################################
 - name: Create PBR with invalid type and code values for icmp
   ntnx_pbrs:
@@ -117,21 +118,21 @@
         ip: "{{ network.ip }}"
         prefix: "{{ network.prefix }}"
     destination:
-      external: True
+      external: true
     action:
-      reroute: "{{reroute_ip}}"
+      reroute: "{{ reroute_ip }}"
     protocol:
       icmp:
         type: "*"
         code: "10"
-  register: result 
-  ignore_errors: True
-    
+  register: result
+  ignore_errors: true
+
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.failed is defined
-    success_msg: ' Success: returned error as expected '
+    success_msg: " Success: returned error as expected "
 #####################################################################
 - name: Delete pbrs with unknown uuid
   ntnx_pbrs:
@@ -139,21 +140,21 @@
     pbr_uuid: 5
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.failed is defined
-    success_msg: ' Success: returned error as expected '
+    success_msg: " Success: returned error as expected "
 #######################################################################
 - name: Delete pbrs with unknown uuid
   ntnx_pbrs:
     state: absent
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.failed is defined
-    success_msg: ' Success: returned error as expected '
+    success_msg: " Success: returned error as expected "

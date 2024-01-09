@@ -1,117 +1,118 @@
+---
 - name:
-  debug:
-    msg: "Start ntnx_project tests with role mappings"
+  ansible.builtin.debug:
+    msg: Start ntnx_project tests with role mappings
 
-- name: Generate random project_name 
-  set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+- name: Generate random project_name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
 
-- set_fact:
-    suffix_name: "ansible-role-mapping"
+- ansible.builtin.set_fact:
+    suffix_name: ansible-role-mapping
 
-- set_fact:
-    project1_name: "{{random_name}}{{suffix_name}}1"
-    project2_name: "{{random_name}}{{suffix_name}}2"
-    project3_name: "{{random_name}}{{suffix_name}}3"
+- ansible.builtin.set_fact:
+    project1_name: "{{ random_name }}{{ suffix_name }}1"
+    project2_name: "{{ random_name }}{{ suffix_name }}2"
+    project3_name: "{{ random_name }}{{ suffix_name }}3"
 
-- set_fact:
+- ansible.builtin.set_fact:
     ignore_errors: false
 
 - name: Create Project with min spec
   ntnx_projects:
-    name: "{{project1_name}}"
-    desc: "project with role mappings"
-    collaboration: True
+    name: "{{ project1_name }}"
+    desc: project with role mappings
+    collaboration: true
     role_mappings:
       - role:
-          name: "{{roles[0]}}"
+          name: "{{ roles[0] }}"
         user:
-          uuid: "{{users[0]}}"
+          uuid: "{{ users[0] }}"
   register: result
   ignore_errors: "{{ignore_errors}}"
 
-- set_fact:
-    response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
+- ansible.builtin.set_fact:
+    response_acp: "{{ result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources }}"
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.project_status.name == "{{project1_name}}"
+      - result.response.status.project_status.name == "{{ project1_name }}"
       - result.response.status.project_status.description == "project with role mappings"
       - result.response.status.access_control_policy_list_status | length == 1
       - response_acp.filter_list.context_list[0].entity_filter_expression_list[0].left_hand_side.entity_type == "ALL"
       - response_acp.filter_list.context_list | length == 3
-      - response_acp.role_reference.name == "{{roles[0]}}"
-      - response_acp.user_reference_list[0].uuid ==  "{{users[0]}}"
-    fail_msg: "Unable to create project with minimal spec of role mappings"
-    success_msg: "Project with minimal spec of role mappings created successfully"
+      - response_acp.role_reference.name == "{{ roles[0] }}"
+      - response_acp.user_reference_list[0].uuid ==  "{{ users[0] }}"
+    fail_msg: Unable to create project with minimal spec of role mappings
+    success_msg: Project with minimal spec of role mappings created successfully
 
-- set_fact:
-    todelete: "{{ todelete + [  result.project_uuid ] }}"
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.project_uuid] }}"
 
 ################################################################
 
 - name: Creat project with all specs
   ntnx_projects:
-    name: "{{project2_name}}"
+    name: "{{ project2_name }}"
     desc: desc-123
     clusters:
       - "{{ cluster.uuid }}"
-    subnets: 
+    subnets:
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
       - name: "{{ overlay.name }}"
     default_subnet:
       name: "{{ network.dhcp.name }}"
     accounts:
-      - name: "{{accounts[0].name}}"
+      - name: "{{ accounts[0].name }}"
     vpcs:
-      - name: "{{vpc.name}}"
+      - name: "{{ vpc.name }}"
     resource_limits:
       - resource_type: VCPUS
         limit: 1
     collaboration: false
     role_mappings:
-      - user: 
-          uuid: "{{users[0]}}"
-        role:
-          name: "{{roles[0]}}"
       - user:
-          uuid: "{{users[1]}}"
-        role: 
-          name: "{{roles[1]}}"
-      - user:
-          principal_name: "{{new_user}}"
-          directory_service_uuid: "{{directory_service_uuid}}"
+          uuid: "{{ users[0] }}"
         role:
-          name: "{{roles[2]}}"
+          name: "{{ roles[0] }}"
+      - user:
+          uuid: "{{ users[1] }}"
+        role:
+          name: "{{ roles[1] }}"
+      - user:
+          principal_name: "{{ new_user }}"
+          directory_service_uuid: "{{ directory_service_uuid }}"
+        role:
+          name: "{{ roles[2] }}"
       - user_group:
-          distinguished_name: "{{new_user_group}}"
+          distinguished_name: "{{ new_user_group }}"
         role:
-          name: "{{roles[3]}}"
+          name: "{{ roles[3] }}"
   register: result
   ignore_errors: "{{ignore_errors}}"
 
-- set_fact:
+- ansible.builtin.set_fact:
     expected_subnets: ["{{ network.dhcp.uuid }}", "{{ static.uuid }}", "{{ overlay.uuid }}"]
-    response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
+    response_acp: "{{ result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources }}"
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.project_status.name == "{{project2_name}}"
+      - result.response.status.project_status.name == "{{ project2_name }}"
       - result.response.status.project_status.description == 'desc-123'
-      - result.response.status.project_status.resources.resource_domain.resources[0].limit == 1 
+      - result.response.status.project_status.resources.resource_domain.resources[0].limit == 1
       - result.response.status.project_status.resources.resource_domain.resources[0].resource_type == 'VCPUS'
       - result.response.status.project_status.resources.subnet_reference_list | length == 3
-      - result.response.status.project_status.resources.subnet_reference_list[0].uuid in "{{expected_subnets}}"
-      - result.response.status.project_status.resources.subnet_reference_list[1].uuid in "{{expected_subnets}}"
-      - result.response.status.project_status.resources.subnet_reference_list[2].uuid in "{{expected_subnets}}"
+      - result.response.status.project_status.resources.subnet_reference_list[0].uuid in "{{ expected_subnets }}"
+      - result.response.status.project_status.resources.subnet_reference_list[1].uuid in "{{ expected_subnets }}"
+      - result.response.status.project_status.resources.subnet_reference_list[2].uuid in "{{ expected_subnets }}"
       - result.response.status.project_status.resources.external_user_group_reference_list[0].name == "{{ new_user_group }}"
       - result.response.status.project_status.resources.default_subnet_reference.uuid == "{{ network.dhcp.uuid }}"
       - result.response.status.project_status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
@@ -121,22 +122,20 @@
       - result.response.status.access_control_policy_list_status | length == 4
       - response_acp.filter_list.context_list | length == 3
       - response_acp.filter_list.context_list[0].entity_filter_expression_list[0].left_hand_side.entity_type == "SELF_OWNED"
-    fail_msg: "Unable to create project with all specifications"
-    success_msg: "Project with all specifications created successfully"
+    fail_msg: Unable to create project with all specifications
+    success_msg: Project with all specifications created successfully
 
+- ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.project_uuid] }}"
 
-- set_fact:
-    todelete: "{{ todelete + [  result.project_uuid ] }}"
-
-- set_fact:
-    user_group_to_delete: "{{result.response.status.project_status.resources.external_user_group_reference_list[0].uuid}}"
-
+- ansible.builtin.set_fact:
+    user_group_to_delete: "{{ result.response.status.project_status.resources.external_user_group_reference_list[0].uuid }}"
 
 - name: Update Project role mappings and subnets and quotas
   ntnx_projects:
-    project_uuid: "{{result.project_uuid}}"
-    name: "{{project3_name}}"
-    subnets: 
+    project_uuid: "{{ result.project_uuid }}"
+    name: "{{ project3_name }}"
+    subnets:
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
     default_subnet:
@@ -148,82 +147,68 @@
         limit: 2147483648
       - resource_type: MEMORY
         limit: 2147483648
-    collaboration: True
+    collaboration: true
     role_mappings:
       - role:
-          name: "{{acp.role.name}}"
+          name: "{{ acp.role.name }}"
         user:
-          uuid: "{{users[0]}}"
+          uuid: "{{ users[0] }}"
       - role:
-          uuid: "{{acp.role.uuid}}"
+          uuid: "{{ acp.role.uuid }}"
         user:
-          uuid: "{{users[1]}}"
+          uuid: "{{ users[1] }}"
       - role:
-          name: "{{acp.role.name}}"
-        user_group: 
-          uuid: "{{user_groups[0]}}"
-  
+          name: "{{ acp.role.name }}"
+        user_group:
+          uuid: "{{ user_groups[0] }}"
+
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- ansible.builtin.set_fact:
     expected_subnets: ["{{ network.dhcp.uuid }}", "{{ static.uuid }}"]
-- set_fact:
-    response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
-- set_fact:
-    acp_users: ["{{response_acp.user_reference_list[0].uuid}}", "{{response_acp.user_reference_list[1].uuid}}"]
-- set_fact:   
-    sorted_acp_users: '{{ acp_users | sort() }}'
-- set_fact:    
-    expected_users: ["{{users[0]}}", "{{users[1]}}"]
-- set_fact:    
-    expected_users_sorted: '{{ expected_users | sort() }}'
-- set_fact:    
-    project_user_reference_list: ["{{result.response.status.project_status.resources.user_reference_list[0].uuid}}", "{{result.response.status.project_status.resources.user_reference_list[1].uuid}}"]
-- set_fact:    
-    project_user_references_sorted: '{{ project_user_reference_list|sort() }}'
-- set_fact:
-    expected_quotas: [
-                      {
-                          "limit": 5,
-                          "resource_type": "VCPUS",
-                          "units": "COUNT",
-                          "value": 0
-                      },
-                      {
-                          "limit": 2147483648,
-                          "resource_type": "STORAGE",
-                          "units": "BYTES",
-                          "value": 0
-                      },
-                      {
-                          "limit": 2147483648,
-                          "resource_type": "MEMORY",
-                          "units": "BYTES",
-                          "value": 0
-                      }
-                  ]
-- set_fact:
-    quotas: "{{result.response.status.project_status.resources.resource_domain.resources}}"
+- ansible.builtin.set_fact:
+    response_acp: "{{ result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources }}"
+- ansible.builtin.set_fact:
+    acp_users: ["{{ response_acp.user_reference_list[0].uuid }}", "{{ response_acp.user_reference_list[1].uuid }}"]
+- ansible.builtin.set_fact:
+    sorted_acp_users: "{{ acp_users | sort() }}"
+- ansible.builtin.set_fact:
+    expected_users: ["{{ users[0] }}", "{{ users[1] }}"]
+- ansible.builtin.set_fact:
+    expected_users_sorted: "{{ expected_users | sort() }}"
+- ansible.builtin.set_fact:
+    project_user_reference_list:
+      - "{{ result.response.status.project_status.resources.user_reference_list[0].uuid }}"
+      - "{{ result.response.status.project_status.resources.user_reference_list[1].uuid }}"
+- ansible.builtin.set_fact:
+    project_user_references_sorted: "{{ project_user_reference_list | sort() }}"
+- ansible.builtin.set_fact:
+    expected_quotas:
+      - { limit: 5, resource_type: VCPUS, units: COUNT, value: 0 }
+      - { limit: 2147483648, resource_type: STORAGE, units: BYTES, value: 0 }
+      - { limit: 2147483648, resource_type: MEMORY, units: BYTES, value: 0 }
+- ansible.builtin.set_fact:
+    quotas: "{{ result.response.status.project_status.resources.resource_domain.resources }}"
 
-- set_fact:
-    sorted_quotas: "{{ quotas| sort(attribute='resource_type') }}" 
-    sorted_expected_quotas: "{{ expected_quotas | sort(attribute='resource_type') }}" 
+- ansible.builtin.set_fact:
+    sorted_quotas: "{{ quotas | sort(attribute='resource_type') }}"
+    sorted_expected_quotas: "{{ expected_quotas | sort(attribute='resource_type') }}"
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.project_status.name == "{{project3_name}}"
+      - result.response.status.project_status.name == "{{ project3_name }}"
       - result.response.status.project_status.description == 'desc-123'
       - sorted_expected_quotas == sorted_quotas
       - result.response.status.project_status.resources.subnet_reference_list | length == 2
-      - result.response.status.project_status.resources.subnet_reference_list[0].uuid in "{{expected_subnets}}"
-      - result.response.status.project_status.resources.subnet_reference_list[1].uuid in "{{expected_subnets}}"
-      - result.response.status.project_status.resources.user_reference_list[0].uuid in "{{expected_users}}"
-      - result.response.status.project_status.resources.user_reference_list[1].uuid in "{{expected_users}}"
-      - result.response.status.project_status.resources.external_user_group_reference_list[0].uuid == "{{user_groups[0]}}"
+      - result.response.status.project_status.resources.subnet_reference_list[0].uuid in "{{ expected_subnets }}"
+      - result.response.status.project_status.resources.subnet_reference_list[1].uuid in "{{ expected_subnets }}"
+      - result.response.status.project_status.resources.user_reference_list[0].uuid in "{{ expected_users }}"
+      - result.response.status.project_status.resources.user_reference_list[1].uuid in "{{ expected_users }}"
+      - result.response.status.project_status.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
       - result.response.status.project_status.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
       - result.response.status.project_status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
       - result.response.status.project_status.resources.vpc_reference_list[0].uuid == "{{ vpc.uuid }}"
@@ -232,17 +217,17 @@
       - result.response.status.access_control_policy_list_status | length == 1
       - response_acp.filter_list.context_list | length == 3
       - response_acp.filter_list.context_list[0].entity_filter_expression_list[0].left_hand_side.entity_type == "ALL"
-      - response_acp.role_reference.name == "{{acp.role.name}}"
+      - response_acp.role_reference.name == "{{ acp.role.name }}"
       - expected_users_sorted == sorted_acp_users
       - project_user_references_sorted == expected_users_sorted
-    fail_msg: "Unable to update project with all specifications"
-    success_msg: "Project with all specifications updated successfully"
+    fail_msg: Unable to update project with all specifications
+    success_msg: Project with all specifications updated successfully
 
 - name: Idempotency check
   ntnx_projects:
-    project_uuid: "{{result.project_uuid}}"
-    name: "{{project3_name}}"
-    subnets: 
+    project_uuid: "{{ result.project_uuid }}"
+    name: "{{ project3_name }}"
+    subnets:
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
     default_subnet:
@@ -254,56 +239,54 @@
         limit: 2147483648
       - resource_type: MEMORY
         limit: 2147483648
-    collaboration: True
+    collaboration: true
     role_mappings:
       - role:
-          name: "{{acp.role.name}}"
+          name: "{{ acp.role.name }}"
         user:
-          uuid: "{{users[0]}}"
+          uuid: "{{ users[0] }}"
       - role:
-          uuid: "{{acp.role.uuid}}"
+          uuid: "{{ acp.role.uuid }}"
         user:
-          uuid: "{{users[1]}}"
+          uuid: "{{ users[1] }}"
       - role:
-          name: "{{acp.role.name}}"
-        user_group: 
-          uuid: "{{user_groups[0]}}"
+          name: "{{ acp.role.name }}"
+        user_group:
+          uuid: "{{ user_groups[0] }}"
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - "'Nothing to update' in result.msg"
-    fail_msg: "Project update didnt got skipped for update spec same as existing project"
-    success_msg: "Project got skipped successfully for no change in spec"
-
+    fail_msg: Project update didnt got skipped for update spec same as existing project
+    success_msg: Project got skipped successfully for no change in spec
 
 - name: Create project with existing name
   ntnx_projects:
-    name: "{{project3_name}}"
-    collaboration: True
+    name: "{{ project3_name }}"
+    collaboration: true
     role_mappings:
       - role:
-          name: "{{acp.role.name}}"
+          name: "{{ acp.role.name }}"
         user:
-          uuid: "{{users[0]}}"
+          uuid: "{{ users[0] }}"
       - role:
-          uuid: "{{acp.role.uuid}}"
+          uuid: "{{ acp.role.uuid }}"
         user:
-          uuid: "{{users[1]}}"
+          uuid: "{{ users[1] }}"
   register: result
   ignore_errors: true
 
-
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - "'Project with given name already exists' in result.msg"
-    fail_msg: "Project creation didnt failed for existing name"
-    success_msg: "Project creation failed as expected"
+    fail_msg: Project creation didnt failed for existing name
+    success_msg: Project creation failed as expected
 
 #################################################################
 - name: Delete all Created Projects
@@ -312,24 +295,24 @@
     project_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- ansible.builtin.set_fact:
     todelete: []
 
-- name: delete user group
+- name: Delete user group
   ntnx_user_groups:
     state: absent
-    user_group_uuid: "{{user_group_to_delete}}"
+    user_group_uuid: "{{ user_group_to_delete }}"
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
-    success_msg: "user group deletd successfully"
+    success_msg: user group deletd successfully

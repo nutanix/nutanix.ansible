@@ -1,49 +1,48 @@
 ---
-- debug:
+- ansible.builtin.debug:
     msg: start ntnx_address_groups delete tests
 
-- name: Generate random project_name 
-  set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+- name: Generate random project_name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
 
-- set_fact:
-    suffix_name: "ansible-ag"
+- ansible.builtin.set_fact:
+    suffix_name: ansible-ag
 
-- set_fact:
-    ag1: "{{random_name}}{{suffix_name}}1"
-
+- ansible.builtin.set_fact:
+    ag1: "{{ random_name }}{{ suffix_name }}1"
 
 - name: Create address group
   ntnx_address_groups:
     state: present
-    name: "{{ag1}}"
+    name: "{{ ag1 }}"
     desc: test-ansible-address-group-4-desc
     subnets:
-      - network_ip: "10.0.1.0"
+      - network_ip: 10.0.1.0
         network_prefix: 24
   register: test_ag
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - test_ag.response is defined
       - test_ag.changed == True
-    fail_msg: "Unable to create address group"
-    success_msg: "address group created susccessfully"
+    fail_msg: Unable to create address group
+    success_msg: address group created susccessfully
 
 ###################################################################################################
 
-- name: delete address group
+- name: Delete address group
   ntnx_address_groups:
     state: absent
     address_group_uuid: "{{ test_ag.address_group_uuid }}"
   register: result
 
-- name: delete Status
-  assert: 
+- name: Delete Status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
 
-    fail_msg: "address group delete failed"
-    success_msg: "address group deleted successfully"
+    fail_msg: address group delete failed
+    success_msg: address group deleted successfully

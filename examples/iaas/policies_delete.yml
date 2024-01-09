@@ -11,5 +11,5 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
-    - include_role:
+    - ansible.builtin.include_role:
         name: pbr_delete
