@@ -12,10 +12,9 @@
       validate_certs: false
 
   tasks:
-
     - name: Create ACP with all specfactions
       ntnx_acps:
-        validate_certs: False
+        validate_certs: false
         state: present
         nutanix_host: "{{ IP }}"
         nutanix_username: "{{ username }}"

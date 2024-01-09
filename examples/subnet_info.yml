@@ -11,24 +11,24 @@
       nutanix_password: <pass>
       validate_certs: false
 
-  tasks:        
+  tasks:
     - name: List subnets using subnet_type filter criteria
       ntnx_subnets_info:
         filter:
-         subnet_type: "VLAN"
+          subnet_type: VLAN
         kind: subnet
       register: result
-      ignore_errors: True
-    
+      ignore_errors: true
+
     - name: List subnets using length, offset and vlan_id ascending sorting
       ntnx_subnets_info:
         length: 1
         offset: 2
-        sort_order: "ASCENDING"
-        sort_attribute: "vlan_id"
+        sort_order: ASCENDING
+        sort_attribute: vlan_id
       check_mode: true
       register: result
-      ignore_errors: True
+      ignore_errors: true
 
     - name: List subnets filter and custom_filter
       ntnx_subnets_info:

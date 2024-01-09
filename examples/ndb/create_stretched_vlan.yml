@@ -14,12 +14,12 @@
   tasks:
     - name: Create stretched vlan
       ntnx_ndb_stretched_vlans:
-        name: "{{st_vlan.name}}"
-        desc: "{{st_vlan.desc}}"
+        name: "{{ st_vlan.name }}"
+        desc: "{{ st_vlan.desc }}"
         vlans:
           - <vlan_uuid_1>
           - <vlan_uuid_2>
       register: output
 
-    - debug:
-        msg: "{{output}}"
+    - ansible.builtin.debug:
+        msg: "{{ output }}"

@@ -1,4 +1,5 @@
-- name: projects crud playbook. Here we will create, update, read and delete the project with role mappings.
+---
+- name: Projects crud playbook. Here we will create, update, read and delete the project with role mappings.
   hosts: localhost
   gather_facts: false
   collections:
@@ -12,15 +13,15 @@
   tasks:
     - name: Create a project with role mappings
       ntnx_projects:
-        name: "test-ansible-project-1"
-        desc: "desc-123"
+        name: test-ansible-project-1
+        desc: desc-123
         clusters:
           - <cluster-uuid>
-        subnets: 
-          - name: "s1"
-          - name: "overlay-s2"
+        subnets:
+          - name: s1
+          - name: overlay-s2
         default_subnet:
-          name: "s1"
+          name: s1
         resource_limits:
           - resource_type: STORAGE
             limit: 2046000
@@ -30,65 +31,63 @@
           - name: <vpc-1>
         accounts:
           - name: <account-1>
-        collaboration: True
+        collaboration: true
         role_mappings:
           - user:
               uuid: <user1-uuid>
             role:
-              name: "Project Admin"
+              name: Project Admin
           - user_group:
-              uuid:  <usergroup1-uuid>
+              uuid: <usergroup1-uuid>
             role:
-              name: "Developer"
+              name: Developer
           - user:
-              uuid:  <user2-uuid>
+              uuid: <user2-uuid>
             role:
-              name: "Consumer"
+              name: Consumer
           - user:
               # for creating new user
               principal_name: <principal-name-1>
               directory_service_uuid: <directory-service-uuid>
             role:
-              name: "Consumer"
+              name: Consumer
           - user_group:
               # for creating new user group
               distinguished_name: <user-group-distinguished-name>
             role:
-              name: "Consumer"
+              name: Consumer
       register: project1
-  
-    - name: update role mappings of project
+
+    - name: Update role mappings of project
       ntnx_projects:
         state: present
-        project_uuid: "{{project1.project_uuid}}"
-        name: "test-ansible-project-1"
-        desc: "test-ansible-project-1-updated"
-        collaboration: True
+        project_uuid: "{{ project1.project_uuid }}"
+        name: test-ansible-project-1
+        desc: test-ansible-project-1-updated
+        collaboration: true
         role_mappings:
           - user:
               uuid: <user3-uuid>
             role:
-              name: "all-permissions"
+              name: all-permissions
           - user_group:
               uuid: <usergroup3-uuid>
             role:
-              name: "all-permissions"
+              name: all-permissions
       register: updated_project
-    
+
     - name: Read the updated project
       ntnx_projects_info:
-        project_uuid: "{{updated_project.project_uuid}}"
+        project_uuid: "{{ updated_project.project_uuid }}"
         include_acps: true
       register: project_info
-    
+
     - name: Print the project details
-      debug:
-        msg: "{{project_info}}"
+      ansible.builtin.debug:
+        msg: "{{ project_info }}"
 
     - name: Delete the project
       ntnx_projects:
         state: absent
-        project_uuid: "{{updated_project.project_uuid}}"
+        project_uuid: "{{ updated_project.project_uuid }}"
       register: op
-  
-    

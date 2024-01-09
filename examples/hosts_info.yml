@@ -11,29 +11,29 @@
       nutanix_password: <pass>
       validate_certs: false
 
-  tasks:        
-  - name: test getting all hosts
-    ntnx_hosts_info:
-    register: hosts
+  tasks:
+    - name: Test getting all hosts
+      ntnx_hosts_info:
+      register: hosts
 
-  - name: test getting particular host using uuid
-    ntnx_hosts_info:
-      host_uuid: '{{ hosts.response.entities[0].metadata.uuid }}'
-    register: result
+    - name: Test getting particular host using uuid
+      ntnx_hosts_info:
+        host_uuid: "{{ hosts.response.entities[0].metadata.uuid }}"
+      register: result
 
-  - name: List hosts using length, offset, sort order and name sort attribute
-    ntnx_hosts_info:
-      length: 2
-      offset: 0
-      sort_order: "ASCENDING"
-      sort_attribute: "name"
-    register: result
-    ignore_errors: True
+    - name: List hosts using length, offset, sort order and name sort attribute
+      ntnx_hosts_info:
+        length: 2
+        offset: 0
+        sort_order: ASCENDING
+        sort_attribute: name
+      register: result
+      ignore_errors: true
 
-  - name: List hosts using filter and custom_filter
-    ntnx_hosts_info:
-      filter:
-        name: <name>
-      custom_filter:
-        serial_number: <serial_number>
-    register: result
+    - name: List hosts using filter and custom_filter
+      ntnx_hosts_info:
+        filter:
+          name: <name>
+        custom_filter:
+          serial_number: <serial_number>
+      register: result

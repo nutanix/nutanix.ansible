@@ -72,12 +72,12 @@
                     ip: xx.xx.xx.xx
       register: result
 
-    - debug:
+    - ansible.builtin.debug:
         msg: "{{ result }}"
 
     - name: Update recovery plan by adding more stages and remove custom IP to enable dynamic IP allocation
       ntnx_recovery_plans:
-        plan_uuid: "{{result.plan_uuid}}"
+        plan_uuid: "{{ result.plan_uuid }}"
         nutanix_host: <pcip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -117,17 +117,17 @@
 
     #################################### Lets recover the vms on recovery site using ntnx_recovery_plan_jobs ################
 
-    - name: recovery plan info and its affected entities get
+    - name: Recovery plan info and its affected entities get
       ntnx_recovery_plans_info:
         nutanix_host: <pcip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
         validate_certs: false
-        plan_uuid: "{{recovery_plan.plan_uuid}}"
+        plan_uuid: "{{ recovery_plan.plan_uuid }}"
       register: recovery_plan_info
 
-    - debug:
-        msg: "{{recovery_plan_info}}"
+    - ansible.builtin.debug:
+        msg: "{{ recovery_plan_info }}"
 
     # We can also perform FAILOVER, LIVE_MIGRATE and FAILOVER here
     - name: Run migrate (planned failover)
@@ -139,7 +139,7 @@
         state: present
         name: test-failover-123
         recovery_plan:
-          uuid: "{{recovery_plan.plan_uuid}}"
+          uuid: "{{ recovery_plan.plan_uuid }}"
         failed_site:
           url: <primary-site-url>
         recovery_site:
@@ -148,8 +148,8 @@
         ignore_validation_failures: true
       register: migrate_job
 
-    - debug:
-        msg: "{{migrate_job}}"
+    - ansible.builtin.debug:
+        msg: "{{ migrate_job }}"
 
     - name: Get recovery plan job status using info module
       ntnx_recovery_plan_jobs_info:
@@ -157,11 +157,11 @@
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
         validate_certs: false
-        job_uuid: "{{migrate_job.job_uuid}}"
+        job_uuid: "{{ migrate_job.job_uuid }}"
       register: result
       ignore_errors: true
 
-    - debug:
+    - ansible.builtin.debug:
         msg: "{{ result }}"
 
     ###################################### delete the recovery plan #################
@@ -172,7 +172,7 @@
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
         validate_certs: false
-        job_uuid: "{{migrate_job.job_uuid}}"
-        plan_uuid: "{{recovery_plan.plan_uuid}}"
+        job_uuid: "{{ migrate_job.job_uuid }}"
+        plan_uuid: "{{ recovery_plan.plan_uuid }}"
         state: absent
       register: result

@@ -12,33 +12,32 @@
       validate_certs: false
 
   tasks:
-        
     - name: Create Dhcp ndb vlan
       ntnx_ndb_vlans:
-        name:  "{{ndb_vlan.name}}"
+        name: "{{ ndb_vlan.name }}"
         vlan_type: DHCP
         cluster:
-          uuid: "{{cluster.uuid}}"
+          uuid: "{{ cluster.uuid }}"
       register: output
-    
-    - debug:
-        msg: "{{output}}"
+
+    - ansible.builtin.debug:
+        msg: "{{ output }}"
 
     - name: Create Static ndb vlan
       ntnx_ndb_vlans:
-        name:  "{{ndb_vlan.name}}"
+        name: "{{ ndb_vlan.name }}"
         vlan_type: Static
-        gateway: "{{ndb_vlan.gateway}}"
-        subnet_mask: "{{ndb_vlan.subnet_mask}}"
+        gateway: "{{ ndb_vlan.gateway }}"
+        subnet_mask: "{{ ndb_vlan.subnet_mask }}"
         ip_pools:
           - start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
             end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
           - start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
             end_ip: "{{ndb_vlan.ip_pools.1.end_ip}}"
-        primary_dns: "{{ndb_vlan.primary_dns}}"
-        secondary_dns: "{{ndb_vlan.secondary_dns}}"
-        dns_domain: "{{ndb_vlan.dns_domain}}"
+        primary_dns: "{{ ndb_vlan.primary_dns }}"
+        secondary_dns: "{{ ndb_vlan.secondary_dns }}"
+        dns_domain: "{{ ndb_vlan.dns_domain }}"
       register: output
 
-    - debug:
-        msg: "{{output}}"
+    - ansible.builtin.debug:
+        msg: "{{ output }}"

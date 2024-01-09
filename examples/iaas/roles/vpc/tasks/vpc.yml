@@ -1,14 +1,14 @@
 ---
 - name: Create {{ item.name }} VPC with external connectivity to "{{ item.subnet_name }}"
   ntnx_vpcs:
-        state: present
-        name: "{{ item.name }}"
-        external_subnets:
-          - subnet_name: "{{ item.subnet_name }}"
+    state: present
+    name: "{{ item.name }}"
+    external_subnets:
+      - subnet_name: "{{ item.subnet_name }}"
   register: vpc
-- debug:
+- ansible.builtin.debug:
     msg:
-        - "name: {{ vpc.response.status.name }}"
-        - "uuid: {{ vpc.vpc_uuid }}"
-- set_fact:
-    vpc_uuids: "{{ vpc_uuids + [ vpc.vpc_uuid ] }}"
+      - "name: {{ vpc.response.status.name }}"
+      - "uuid: {{ vpc.vpc_uuid }}"
+- ansible.builtin.set_fact:
+    vpc_uuids: "{{ vpc_uuids + [vpc.vpc_uuid] }}"

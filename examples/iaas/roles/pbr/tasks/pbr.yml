@@ -7,16 +7,16 @@
     priority: "{{ item.priority }}"
     source:
       network:
-        ip: "{{item.nip}}"
-        prefix: "{{item.prefix}}"
+        ip: "{{ item.nip }}"
+        prefix: "{{ item.prefix }}"
     destination:
-      external: True
+      external: true
     protocol:
-      any: True
+      any: true
     action:
-      deny: True
+      deny: true
   register: pbr
-- debug:
+- ansible.builtin.debug:
     msg:
-        - "vpc_name: {{ item.vpc_name }}"
-        - "uuid: {{ pbr.pbr_uuid }}"
+      - "vpc_name: {{ item.vpc_name }}"
+      - "uuid: {{ pbr.pbr_uuid }}"

@@ -12,24 +12,23 @@
       validate_certs: false
   tasks:
     - name: Setting Variables
-      set_fact:
+      ansible.builtin.set_fact:
         vpc_name: ""
-        
+
     - name: List VPC using name filter criteria
       ntnx_vpcs_info:
         filter:
           name: "{{ vpc_name }}"
         kind: vpc
       register: result
-      ignore_errors: True
+      ignore_errors: true
 
-    
     - name: List VPC using length, offset and descending name sorting
       ntnx_vpcs_info:
         length: 4
         offset: 1
-        sort_order: "DESCENDING"
-        sort_attribute: "name"
+        sort_order: DESCENDING
+        sort_attribute: name
       check_mode: true
       register: result
-      ignore_errors: True
+      ignore_errors: true

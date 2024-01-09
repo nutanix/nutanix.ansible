@@ -12,13 +12,13 @@
           name: "{{ item.subnet_name }}"
         private_ip: "{{ item.private_ip }}"
     disks:
-        - type: "DISK"
-          size_gb: 30
-          bus: "SATA"
-          clone_image:
-            name: "{{ item.image_name }}"
+      - type: DISK
+        size_gb: 30
+        bus: SATA
+        clone_image:
+          name: "{{ item.image_name }}"
   register: vm
-- debug:
+- ansible.builtin.debug:
     msg:
-        - "name: {{ vm.response.status.name }}"
-        - "uuid: {{ vm.vm_uuid }}"
+      - "name: {{ vm.response.status.name }}"
+      - "uuid: {{ vm.vm_uuid }}"

@@ -12,26 +12,26 @@
       validate_certs: false
   tasks:
     - name: Setting Variables
-      set_fact:
+      ansible.builtin.set_fact:
         cluster_name: ""
         cluster_uuid: ""
         priority: ""
         vpc_uuid: ""
-        
-    - name: create PBR with vpc uuid with any source or destination or protocol with deny action
+
+    - name: Create PBR with vpc uuid with any source or destination or protocol with deny action
       ntnx_pbrs:
-          state: present
-          priority: "{{ priority }}"
-          vpc:
-            uuid: "{{ vpc_uuid }}"
-          source:
-            any: True
-          destination:
-            any: True
-          action:
-            deny: True
-          protocol:
-            any: True
+        state: present
+        priority: "{{ priority }}"
+        vpc:
+          uuid: "{{ vpc_uuid }}"
+        source:
+          any: true
+        destination:
+          any: true
+        action:
+          deny: true
+        protocol:
+          any: true
       register: result
     - name: Delete  pbrs
       ntnx_pbrs:

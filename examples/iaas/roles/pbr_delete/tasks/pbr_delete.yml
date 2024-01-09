@@ -4,6 +4,6 @@
     state: absent
     pbr_uuid: "{{ item.pbr_uuid }}"
   register: pbr
-- debug:
+- ansible.builtin.debug:
     msg:
-        - "uuid: {{ pbr.pbr_uuid }}"
+      - "uuid: {{ pbr.pbr_uuid }}"

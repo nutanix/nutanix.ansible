@@ -11,7 +11,7 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
-    - name: get some permissions for adding in roles
+    - name: Get some permissions for adding in roles
       ntnx_permissions_info:
       register: permissions
 
@@ -42,8 +42,8 @@
       register: role1_info
 
     - name: Print the role details
-      debug:
-        msg: "{{role1_info}}"
+      ansible.builtin.debug:
+        msg: "{{ role1_info }}"
 
     - name: Delete the role.
       ntnx_roles:

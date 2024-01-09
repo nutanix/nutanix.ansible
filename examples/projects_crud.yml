@@ -1,4 +1,5 @@
-- name: projects crud playbook. Here we will create, update, read and delete the project.
+---
+- name: Projects crud playbook. Here we will create, update, read and delete the project.
   hosts: localhost
   gather_facts: false
   collections:
@@ -12,16 +13,16 @@
   tasks:
     - name: Create a project
       ntnx_projects:
-        name: "test-ansible-project-1"
-        desc: "desc-123"
-        subnets: 
-          - name: "s1"
+        name: test-ansible-project-1
+        desc: desc-123
+        subnets:
+          - name: s1
         default_subnet:
-          name: "s1"
+          name: s1
         users:
-          - "<user1-uuid>"
+          - <user1-uuid>
         external_user_groups:
-          - "<usergroup1-uuid>"
+          - <usergroup1-uuid>
         resource_limits:
           - resource_type: STORAGE
             limit: 2046000
@@ -30,33 +31,31 @@
         accounts:
           - name: <account-name>
       register: project1
-  
-    - name: update project
+
+    - name: Update project
       ntnx_projects:
         state: present
-        project_uuid: "{{project1.project_uuid}}"
-        name: "test-ansible-project-1"
-        desc: "test-ansible-project-1-updated"
+        project_uuid: "{{ project1.project_uuid }}"
+        name: test-ansible-project-1
+        desc: test-ansible-project-1-updated
         resource_limits:
           - resource_type: STORAGE
             limit: 4096000
           - resource_type: MEMORY
             limit: 4096000
       register: updated_project
-    
+
     - name: Read the updated project
       ntnx_projects_info:
-        project_uuid: "{{updated_project.project_uuid}}"
+        project_uuid: "{{ updated_project.project_uuid }}"
       register: project_info
-    
+
     - name: Print the project details
-      debug:
-        msg: "{{project_info}}"
+      ansible.builtin.debug:
+        msg: "{{ project_info }}"
 
     - name: Delete the project
       ntnx_projects:
         state: absent
-        project_uuid: "{{updated_project.project_uuid}}"
+        project_uuid: "{{ updated_project.project_uuid }}"
       register: op
-  
-    

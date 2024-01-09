@@ -1,3 +1,4 @@
+---
 - name: Address group crud playbook. Here we will create, update, read and delete the address group.
   hosts: localhost
   gather_facts: false
@@ -16,20 +17,20 @@
         name: test-ansible-group-1
         desc: test-ansible-group-1-desc
         subnets:
-          - network_ip: "10.1.1.0"
+          - network_ip: 10.1.1.0
             network_prefix: 24
-          - network_ip: "10.1.2.2"
+          - network_ip: 10.1.2.2
             network_prefix: 32
       register: ag
 
-    - name: update address group
+    - name: Update address group
       ntnx_address_groups:
         state: present
         address_group_uuid: "{{ ag.address_group_uuid }}"
         name: test-ansible-group-1-updated
         desc: test-ansible-group-1-desc-updated
         subnets:
-          - network_ip: "10.1.3.0"
+          - network_ip: 10.1.3.0
             network_prefix: 24
       register: updated_ag
 
@@ -39,7 +40,7 @@
       register: ag_info
 
     - name: Print the address group details
-      debug:
+      ansible.builtin.debug:
         msg: "{{ ag_info }}"
 
     - name: Delete the address group.

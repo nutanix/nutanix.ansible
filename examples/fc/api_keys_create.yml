@@ -15,6 +15,6 @@
         alias: test-alias
       register: output
 
-    - name: output of api_key
-      debug:
+    - name: Output of api_key
+      ansible.builtin.debug:
         msg: "{{ output }}"
