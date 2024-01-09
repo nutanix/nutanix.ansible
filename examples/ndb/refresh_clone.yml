@@ -20,7 +20,7 @@
 
     - name: Create spec for refresh clone to a pitr timestamp
       check_mode: true
-      ntnx_ndb_database_clone_refresh:
+      nutanix.ncp.ntnx_ndb_database_clone_refresh:
         uuid: "{{ clone_db.uuid }}"
         pitr_timestamp: "2023-02-04 07:29:36"
         timezone: UTC
@@ -30,7 +30,7 @@
         msg: "{{ output }}"
 
     - name: Refresh db clone
-      ntnx_ndb_database_clone_refresh:
+      nutanix.ncp.ntnx_ndb_database_clone_refresh:
         uuid: "{{ clone_db.uuid }}"
         snapshot_uuid: "{{ snapshot.uuid }}"
       register: output

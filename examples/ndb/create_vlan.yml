@@ -13,7 +13,7 @@
 
   tasks:
     - name: Create Dhcp ndb vlan
-      ntnx_ndb_vlans:
+      nutanix.ncp.ntnx_ndb_vlans:
         name: "{{ ndb_vlan.name }}"
         vlan_type: DHCP
         cluster:
@@ -24,7 +24,7 @@
         msg: "{{ output }}"
 
     - name: Create Static ndb vlan
-      ntnx_ndb_vlans:
+      nutanix.ncp.ntnx_ndb_vlans:
         name: "{{ ndb_vlan.name }}"
         vlan_type: Static
         gateway: "{{ ndb_vlan.gateway }}"

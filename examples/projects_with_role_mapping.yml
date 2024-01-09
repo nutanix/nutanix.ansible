@@ -12,7 +12,7 @@
       validate_certs: false
   tasks:
     - name: Create a project with role mappings
-      ntnx_projects:
+      nutanix.ncp.ntnx_projects:
         name: test-ansible-project-1
         desc: desc-123
         clusters:
@@ -59,7 +59,7 @@
       register: project1
 
     - name: Update role mappings of project
-      ntnx_projects:
+      nutanix.ncp.ntnx_projects:
         state: present
         project_uuid: "{{ project1.project_uuid }}"
         name: test-ansible-project-1
@@ -77,7 +77,7 @@
       register: updated_project
 
     - name: Read the updated project
-      ntnx_projects_info:
+      nutanix.ncp.ntnx_projects_info:
         project_uuid: "{{ updated_project.project_uuid }}"
         include_acps: true
       register: project_info
@@ -87,7 +87,7 @@
         msg: "{{ project_info }}"
 
     - name: Delete the project
-      ntnx_projects:
+      nutanix.ncp.ntnx_projects:
         state: absent
         project_uuid: "{{ updated_project.project_uuid }}"
       register: op

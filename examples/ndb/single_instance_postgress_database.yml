@@ -13,7 +13,7 @@
 
   tasks:
     - name: Create single instance postgres database
-      ntnx_ndb_databases:
+      nutanix.ncp.ntnx_ndb_databases:
 
         name: POSTGRES_DATABASE_ANSIBLE
 

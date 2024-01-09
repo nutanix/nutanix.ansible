@@ -1,6 +1,6 @@
 ---
 - name: Create {{ item.name }} VPC with external connectivity to "{{ item.subnet_name }}"
-  ntnx_vpcs:
+  nutanix.ncp.ntnx_vpcs:
     state: present
     name: "{{ item.name }}"
     external_subnets:

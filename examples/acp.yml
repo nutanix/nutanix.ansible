@@ -13,7 +13,7 @@
 
   tasks:
     - name: Create ACP with all specfactions
-      ntnx_acps:
+      nutanix.ncp.ntnx_acps:
         validate_certs: false
         state: present
         nutanix_host: "{{ IP }}"
@@ -40,7 +40,7 @@
                 collection: ALL
 
     - name: Delete ACP
-      ntnx_acps:
+      nutanix.ncp.ntnx_acps:
         state: absent
         acp_uuid: "{{ acp_uuid }}"
       register: result

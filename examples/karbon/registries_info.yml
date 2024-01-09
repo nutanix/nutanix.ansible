@@ -13,10 +13,10 @@
 
   tasks:
     - name: Test getting all registries
-      ntnx_karbon_registries_info:
+      nutanix.ncp.ntnx_karbon_registries_info:
       register: registries
 
     - name: Test getting particular register using name
-      ntnx_karbon_registries_info:
+      nutanix.ncp.ntnx_karbon_registries_info:
         registry_name: "{{ registries.response[1].name }}"
       register: result

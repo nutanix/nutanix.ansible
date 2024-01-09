@@ -13,7 +13,7 @@
 
   tasks:
     - name: Soft delete single instance database and time machine associated
-      ntnx_ndb_databases:
+      nutanix.ncp.ntnx_ndb_databases:
         state: absent
         db_uuid: c0a4433a-49f2-40f3-ae52-d88788d2824b
         soft_delete: true

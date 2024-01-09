@@ -22,7 +22,7 @@
   tasks:
     - name: Create software profile create spec
       check_mode: true
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         name: "{{ profile1_name }}"
         desc: "{{ profile1_name }}-desc"
         type: software
@@ -42,7 +42,7 @@
       register: result
 
     - name: Create software profile with base version and cluster instance topology. Replicate to multiple clusters
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         name: "{{ profile1_name }}-replicated"
         desc: "{{ profile1_name }}-desc-replicated"
         type: software
@@ -62,7 +62,7 @@
       register: result
 
     - name: Create software profile with base version and single instance topology
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         name: "{{ profile2_name }}"
         desc: "{{ profile2_name }}-desc"
         type: software
@@ -81,7 +81,7 @@
       register: result
 
     - name: Update software profile
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         name: "{{ profile1_name }}-updated1"
         desc: "{{ profile1_name }}-desc-updated"
@@ -89,7 +89,7 @@
 
     - name: Create software profile version spec
       check_mode: true
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         database_type: postgres
         software:
@@ -104,7 +104,7 @@
       register: result
 
     - name: Create software profile version
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         database_type: postgres
         software:
@@ -120,7 +120,7 @@
 
     - name: Create spec for update software profile version
       check_mode: true
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         database_type: postgres
         software:
@@ -131,7 +131,7 @@
       register: result
 
     - name: Update software profile version
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         database_type: postgres
         software:
@@ -142,7 +142,7 @@
       register: result
 
     - name: Publish software profile version
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         software:
           version_uuid: "{{ version_uuid }}"
@@ -150,7 +150,7 @@
       register: result
 
     - name: Unpublish software profile version
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         software:
           version_uuid: "{{ version_uuid }}"
@@ -158,7 +158,7 @@
       register: result
 
     - name: Deprecate software profile version
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         software:
           version_uuid: "{{ version_uuid }}"
@@ -166,7 +166,7 @@
       register: result
 
     - name: Delete software profile version
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         software:
           version_uuid: "{{ version_uuid }}"
@@ -174,14 +174,14 @@
       register: result
 
     - name: Replicate software profile
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         clusters:
           - name: "{{ cluster.cluster2.name }}"
       register: result
 
     - name: Delete software profile
-      ntnx_ndb_profiles:
+      nutanix.ncp.ntnx_ndb_profiles:
         profile_uuid: "{{ profile_uuid }}"
         state: absent
       register: result

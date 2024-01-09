@@ -7,7 +7,7 @@
 
   tasks:
     - name: Imaged-Node details with imaged_node_uuid
-      ntnx_foundation_central_imaged_nodes_info:
+      nutanix.ncp.ntnx_foundation_central_imaged_nodes_info:
         nutanix_host: "{{ pc }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"
@@ -16,7 +16,7 @@
       register: output
 
     - name: Imaged-Node details with filters
-      ntnx_foundation_central_imaged_nodes_info:
+      nutanix.ncp.ntnx_foundation_central_imaged_nodes_info:
         nutanix_host: "{{ pc }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"
@@ -26,7 +26,7 @@
       register: output
 
     - name: Imaged-Node details with custom filter
-      ntnx_foundation_central_imaged_nodes_info:
+      nutanix.ncp.ntnx_foundation_central_imaged_nodes_info:
         nutanix_host: "{{ pc }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"

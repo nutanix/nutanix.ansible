@@ -17,7 +17,7 @@
         vm_name: ""
 
     - name: Create min VPC with subnet name
-      ntnx_vpcs:
+      nutanix.ncp.ntnx_vpcs:
         state: present
         wait: true
         name: MinVPC
@@ -26,7 +26,7 @@
       register: result
 
     - name: Delete all created vpcs
-      ntnx_vpcs:
+      nutanix.ncp.ntnx_vpcs:
         state: absent
         vpc_uuid: "{{ result.vpc_uuid }}"
       register: result

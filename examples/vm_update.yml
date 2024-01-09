@@ -27,7 +27,7 @@
         subnet_uuid: ""
 
     - name: Update VM
-      ntnx_vms:
+      nutanix.ncp.ntnx_vms:
         vm_uuid: "{{ vm_uuid }}"
         name: updated
         desc: updated
@@ -59,7 +59,7 @@
       register: result
 
     - name: Update VM by deleting and editing disks and subnets
-      ntnx_vms:
+      nutanix.ncp.ntnx_vms:
         vm_uuid: "{{ vm_uuid }}"
         name: update diks
         desc: update disks
@@ -75,7 +75,7 @@
       register: result
 
     - name: Update VM by deleting it
-      ntnx_vms:
+      nutanix.ncp.ntnx_vms:
         state: absent
         vm_uuid: "{{ vm_uuid }}"
       register: result

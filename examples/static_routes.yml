@@ -20,7 +20,7 @@
           uuid: ""
 
     - name: Create static routes and default static routes with external nat subnet
-      ntnx_static_routes:
+      nutanix.ncp.ntnx_static_routes:
         vpc_uuid: "{{ vpc_uuid }}"
         static_routes:
           - destination: "0.0.0.0/0"
@@ -41,6 +41,6 @@
                 uuid: "{{ vpn_uuid }}"
 
     - name: Remove all routes excluding dynamic and local routes
-      ntnx_static_routes:
+      nutanix.ncp.ntnx_static_routes:
         vpc_uuid: "{{ vpc_uuid }}"
         remove_all_routes: true

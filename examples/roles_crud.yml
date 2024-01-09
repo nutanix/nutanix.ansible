@@ -12,11 +12,11 @@
       validate_certs: false
   tasks:
     - name: Get some permissions for adding in roles
-      ntnx_permissions_info:
+      nutanix.ncp.ntnx_permissions_info:
       register: permissions
 
     - name: Create a role with 2 permissions. Here we will be using name or uuid for referenceing permissions
-      ntnx_roles:
+      nutanix.ncp.ntnx_roles:
         state: present
         name: test-ansible-role-1
         desc:
@@ -27,7 +27,7 @@
       register: role1
 
     - name: Update role
-      ntnx_roles:
+      nutanix.ncp.ntnx_roles:
         state: present
         role_uuid: "{{ role1.role_uuid }}"
         name: test-ansible-role-1
@@ -37,7 +37,7 @@
       register: updated_role1
 
     - name: Read the updated role
-      ntnx_roles_info:
+      nutanix.ncp.ntnx_roles_info:
         role_uuid: "{{ updated_role1.role_uuid }}"
       register: role1_info
 
@@ -46,7 +46,7 @@
         msg: "{{ role1_info }}"
 
     - name: Delete the role.
-      ntnx_roles:
+      nutanix.ncp.ntnx_roles:
         state: absent
         role_uuid: "{{ updated_role1.role_uuid }}"
         wait: true

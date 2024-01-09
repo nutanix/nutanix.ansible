@@ -20,18 +20,18 @@
         identity_provider_uuid: ""
 
     - name: Create local user
-      ntnx_users:
+      nutanix.ncp.ntnx_users:
         principal_name: "{{ principal_name }}"
         directory_service_uuid: "{{ directory_service_uuid }}"
       register: result
 
     - name: Delete created user
-      ntnx_users:
+      nutanix.ncp.ntnx_users:
         state: absent
         user_uuid: "{{ result.user_uuid }}"
 
     - name: Create local user  with project and categories
-      ntnx_users:
+      nutanix.ncp.ntnx_users:
         principal_name: "{{ principal_name }}"
         directory_service_uuid: "{{ directory_service_uuid }}"
         project:
@@ -44,18 +44,18 @@
       register: result
 
     - name: Delete created user
-      ntnx_users:
+      nutanix.ncp.ntnx_users:
         state: absent
         user_uuid: "{{ result.user_uuid }}"
 
     - name: Create idp user
-      ntnx_users:
+      nutanix.ncp.ntnx_users:
         identity_provider_uuid: "{{ identity_provider_uuid }}"
         username: testing_user
       register: result
       ignore_errors: true
 
     - name: Delete created user
-      ntnx_users:
+      nutanix.ncp.ntnx_users:
         state: absent
         user_uuid: "{{ result.user_uuid }}"

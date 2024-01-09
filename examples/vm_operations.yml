@@ -19,14 +19,14 @@
         vm_uuid: ""
 
     - name: Hard power off the vm
-      ntnx_vms:
+      nutanix.ncp.ntnx_vms:
         state: hard_poweroff
         vm_uuid: "{{ vm_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Create_ova_image  while vm is on
-      ntnx_vms_ova:
+      nutanix.ncp.ntnx_vms_ova:
         state: present
         src_vm_uuid: "{{ vm_uuid }}"
         name: integration_test_VMDK_ova
@@ -36,7 +36,7 @@
       ignore_errors: true
 
     - name: Clone vm while it's off also add network and script
-      ntnx_vms_clone:
+      nutanix.ncp.ntnx_vms_clone:
         state: present
         src_vm_uuid: "{{ vm_uuid }}"
         networks:

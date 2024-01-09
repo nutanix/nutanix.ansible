@@ -19,7 +19,7 @@
         clusters_name: ""
 
     - name: Create image from local workstation
-      ntnx_images:
+      nutanix.ncp.ntnx_images:
         state: present
         source_path: "{{ source_path }}"
         clusters:
@@ -39,7 +39,7 @@
         wait: true
 
     - name: Create image from with source as remote server file location
-      ntnx_images:
+      nutanix.ncp.ntnx_images:
         state: present
         source_uri: "{{ source_uri }}"
         clusters:
@@ -59,7 +59,7 @@
         wait: true
 
     - name: Override categories of existing image
-      ntnx_images:
+      nutanix.ncp.ntnx_images:
         state: present
         image_uuid: "{{ image - uuid }}"
         categories:
@@ -70,14 +70,14 @@
         wait: true
 
     - name: Dettach all categories from existing image
-      ntnx_images:
+      nutanix.ncp.ntnx_images:
         state: present
         image_uuid: "00000000-0000-0000-0000-000000000000"
         remove_categories: true
         wait: true
 
     - name: Delete existing image
-      ntnx_images:
+      nutanix.ncp.ntnx_images:
         state: absent
         image_uuid: "00000000-0000-0000-0000-000000000000"
         wait: true

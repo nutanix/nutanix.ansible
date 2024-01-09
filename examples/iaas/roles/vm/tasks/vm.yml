@@ -1,6 +1,6 @@
 ---
 - name: Create "{{ item.name }}" VM
-  ntnx_vms:
+  nutanix.ncp.ntnx_vms:
     state: present
     name: "{{ item.name }}"
     desc: "{{ item.desc }}"

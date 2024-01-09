@@ -13,7 +13,7 @@
 
   tasks:
     - name: List ACPs using ascending, sorting and name filter
-      ntnx_floating_ips_info:
+      nutanix.ncp.ntnx_floating_ips_info:
         filter:
           name: "{{ acp_name }}"
         kind: access_control_policy
@@ -23,7 +23,7 @@
       ignore_errors: true
 
     - name: List ACPs using length and offset
-      ntnx_floating_ips_info:
+      nutanix.ncp.ntnx_floating_ips_info:
         length: 3
         offset: 0
       register: result

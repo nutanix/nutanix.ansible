@@ -1,6 +1,6 @@
 ---
 - name: Create {{ item.name }} external subnet
-  ntnx_subnets:
+  nutanix.ncp.ntnx_subnets:
     state: present
     name: "{{ item.name }}"
     external_subnet:

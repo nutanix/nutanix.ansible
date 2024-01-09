@@ -14,7 +14,7 @@
   tasks:
     - name: Create spec for db server vm using time machine
       check_mode: true
-      ntnx_ndb_db_server_vms:
+      nutanix.ncp.ntnx_ndb_db_server_vms:
         wait: true
         name: ansible-created-vm1-from-time-machine
         desc: ansible-created-vm1-from-time-machine-time-machine
@@ -45,7 +45,7 @@
 
     - name: Create spec for db server vm using software profile and names of profile
       check_mode: true
-      ntnx_ndb_db_server_vms:
+      nutanix.ncp.ntnx_ndb_db_server_vms:
         wait: true
         name: "{{ vm1_name }}"
         desc: ansible-created-vm1-desc
@@ -74,7 +74,7 @@
       register: result
 
     - name: Create db server vm using software profile
-      ntnx_ndb_db_server_vms:
+      nutanix.ncp.ntnx_ndb_db_server_vms:
         wait: true
         name: "{{ vm1_name }}"
         desc: ansible-created-vm1-desc
@@ -103,7 +103,7 @@
       register: result
 
     - name: Update db server vm name, desc, credentials, tags
-      ntnx_ndb_db_server_vms:
+      nutanix.ncp.ntnx_ndb_db_server_vms:
         wait: true
         uuid: "{{ db_server_uuid }}"
         name: "{{ vm1_name_updated }}"
@@ -119,7 +119,7 @@
 
     - name: Create spec for update db server vm credentials
       check_mode: true
-      ntnx_ndb_db_server_vms:
+      nutanix.ncp.ntnx_ndb_db_server_vms:
         wait: true
         uuid: "{{ db_server_uuid }}"
         update_credentials:
@@ -128,11 +128,11 @@
       register: result
 
     - name: List NDB db_servers
-      ntnx_ndb_db_servers_info:
+      nutanix.ncp.ntnx_ndb_db_servers_info:
       register: db_servers
 
     - name: Get NDB db_servers using it's name
-      ntnx_ndb_db_servers_info:
+      nutanix.ncp.ntnx_ndb_db_servers_info:
         filters:
           load_metrics: true
           load_databases: true
@@ -141,24 +141,24 @@
       register: result
 
     - name: Get NDB db_servers using it's ip
-      ntnx_ndb_db_servers_info:
+      nutanix.ncp.ntnx_ndb_db_servers_info:
         filters:
           value_type: ip
           value: "{{ db_servers.response[0].ipAddresses[0] }}"
       register: result
 
     - name: Get NDB db_servers using it's name
-      ntnx_ndb_db_servers_info:
+      nutanix.ncp.ntnx_ndb_db_servers_info:
         name: "{{ db_servers.response[0].name }}"
       register: result
 
     - name: Get NDB db_servers using it's id
-      ntnx_ndb_db_servers_info:
+      nutanix.ncp.ntnx_ndb_db_servers_info:
         uuid: "{{ db_servers.response[0].id }}"
       register: result
 
     - name: Get NDB db_servers using ip
-      ntnx_ndb_db_servers_info:
+      nutanix.ncp.ntnx_ndb_db_servers_info:
         server_ip: "{{ db_servers.response[0].ipAddresses[0] }}"
       register: result
 
@@ -166,7 +166,7 @@
 
     - name: Create spec for adding maintenance window tasks to db server vm
       check_mode: true
-      ntnx_ndb_maintenance_tasks:
+      nutanix.ncp.ntnx_ndb_maintenance_tasks:
         db_server_vms:
           - name: "{{ vm1_name_updated }}"
           - uuid: test_vm_1
@@ -186,7 +186,7 @@
 
     - name: Create spec for removing maintenance window tasks from above created vm
       check_mode: true
-      ntnx_ndb_maintenance_tasks:
+      nutanix.ncp.ntnx_ndb_maintenance_tasks:
         db_server_vms:
           - uuid: "{{ db_server_uuid }}"
         maintenance_window:
@@ -195,7 +195,7 @@
       register: result
 
     - name: Remove maintenance tasks
-      ntnx_ndb_maintenance_tasks:
+      nutanix.ncp.ntnx_ndb_maintenance_tasks:
         db_server_vms:
           - uuid: "{{ db_server_uuid }}"
         maintenance_window:
@@ -204,7 +204,7 @@
       register: result
 
     - name: Add maitenance window task for vm
-      ntnx_ndb_maintenance_tasks:
+      nutanix.ncp.ntnx_ndb_maintenance_tasks:
         db_server_vms:
           - name: "{{ vm1_name_updated }}"
         maintenance_window:
@@ -222,7 +222,7 @@
 
     - name: Generate check mode spec for unregister with default values
       check_mode: true
-      ntnx_ndb_db_server_vms:
+      nutanix.ncp.ntnx_ndb_db_server_vms:
         state: absent
         wait: true
         uuid: "{{ db_server_uuid }}"
@@ -230,7 +230,7 @@
 
     - name: Genereate check mode spec for delete vm with vgs and snapshots
       check_mode: true
-      ntnx_ndb_db_server_vms:
+      nutanix.ncp.ntnx_ndb_db_server_vms:
         state: absent
         uuid: "{{ db_server_uuid }}"
         delete_from_cluster: true
@@ -239,7 +239,7 @@
       register: result
 
     - name: Unregister vm
-      ntnx_ndb_db_server_vms:
+      nutanix.ncp.ntnx_ndb_db_server_vms:
         state: absent
         wait: true
         uuid: "{{ db_server_uuid }}"
@@ -253,7 +253,7 @@
 
     - name: Generate spec for registeration of the previous unregistered vm using check mode
       check_mode: true
-      ntnx_ndb_register_db_server_vm:
+      nutanix.ncp.ntnx_ndb_register_db_server_vm:
         ip: "{{ vm_ip }}"
         desc: register-vm-desc
         reset_desc_in_ntnx_cluster: true
@@ -277,7 +277,7 @@
       register: result
 
     - name: Register the previous unregistered vm
-      ntnx_ndb_register_db_server_vm:
+      nutanix.ncp.ntnx_ndb_register_db_server_vm:
         ip: "{{ vm_ip }}"
         desc: register-vm-desc
         cluster:
@@ -303,7 +303,7 @@
     ################################### DB server VM Delete tasks #############################
 
     - name: Unregister db server vm
-      ntnx_ndb_db_server_vms:
+      nutanix.ncp.ntnx_ndb_db_server_vms:
         state: absent
         wait: true
         uuid: "{{ db_server_uuid }}"

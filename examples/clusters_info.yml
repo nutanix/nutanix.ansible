@@ -13,16 +13,16 @@
 
   tasks:
     - name: Test getting all clusters
-      ntnx_clusters_info:
+      nutanix.ncp.ntnx_clusters_info:
       register: clusters
 
     - name: Test getting particular cluster using uuid
-      ntnx_clusters_info:
+      nutanix.ncp.ntnx_clusters_info:
         cluster_uuid: "{{ clusters.response.entities[0].metadata.uuid }}"
       register: result
 
     - name: List clusters using length, offset, sort order and priority sort attribute
-      ntnx_clusters_info:
+      nutanix.ncp.ntnx_clusters_info:
         length: 2
         offset: 0
         sort_order: ASCENDING
@@ -30,7 +30,7 @@
       register: result
 
     - name: List clusters using filter and custom_filter
-      ntnx_clusters_info:
+      nutanix.ncp.ntnx_clusters_info:
         filter:
           name: <name>
         custom_filter:

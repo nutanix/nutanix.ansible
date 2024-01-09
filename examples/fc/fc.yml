@@ -7,7 +7,7 @@
 
   tasks:
     - name: Nodes Imaging with Cluster Creation with manual mode.
-      ntnx_foundation_central:
+      nutanix.ncp.ntnx_foundation_central:
         nutanix_host: "{{ pc }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"
@@ -63,7 +63,7 @@
       register: output
 
     - name: Nodes Imaging without Cluster Creation with discovery mode.
-      ntnx_foundation_central:
+      nutanix.ncp.ntnx_foundation_central:
         nutanix_host: "{{ pc }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"

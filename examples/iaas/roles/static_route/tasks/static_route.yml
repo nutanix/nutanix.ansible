@@ -1,6 +1,6 @@
 ---
 - name: Create static route
-  ntnx_static_routes:
+  nutanix.ncp.ntnx_static_routes:
     state: present
     vpc_uuid: "{{ item.vpc_uuid }}"
     static_routes:

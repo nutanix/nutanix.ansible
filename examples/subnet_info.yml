@@ -13,7 +13,7 @@
 
   tasks:
     - name: List subnets using subnet_type filter criteria
-      ntnx_subnets_info:
+      nutanix.ncp.ntnx_subnets_info:
         filter:
           subnet_type: VLAN
         kind: subnet
@@ -21,7 +21,7 @@
       ignore_errors: true
 
     - name: List subnets using length, offset and vlan_id ascending sorting
-      ntnx_subnets_info:
+      nutanix.ncp.ntnx_subnets_info:
         length: 1
         offset: 2
         sort_order: ASCENDING
@@ -31,7 +31,7 @@
       ignore_errors: true
 
     - name: List subnets filter and custom_filter
-      ntnx_subnets_info:
+      nutanix.ncp.ntnx_subnets_info:
         filter:
           name: <name>
         custom_filter:

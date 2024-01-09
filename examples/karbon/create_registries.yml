@@ -20,20 +20,20 @@
         password: <pass>
 
     - name: Create registry
-      ntnx_karbon_registries:
+      nutanix.ncp.ntnx_karbon_registries:
         name: "{{ registry_name }}"
         url: "{{ url }}"
         port: "{{ port_number }}"
       register: result
 
     - name: Delete registry
-      ntnx_karbon_registries:
+      nutanix.ncp.ntnx_karbon_registries:
         name: "{{ registry_name }}"
         state: absent
       register: result
 
     - name: Create registry with username and password
-      ntnx_karbon_registries:
+      nutanix.ncp.ntnx_karbon_registries:
         name: "{{ registry_name }}"
         url: "{{ url }}"
         username: "{{ username }}"

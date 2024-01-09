@@ -19,7 +19,7 @@
         vpc_uuid: ""
 
     - name: Create PBR with vpc uuid with any source or destination or protocol with deny action
-      ntnx_pbrs:
+      nutanix.ncp.ntnx_pbrs:
         state: present
         priority: "{{ priority }}"
         vpc:
@@ -34,6 +34,6 @@
           any: true
       register: result
     - name: Delete  pbrs
-      ntnx_pbrs:
+      nutanix.ncp.ntnx_pbrs:
         state: absent
         pbr_uuid: "{{ result.pbr_uuid }}"

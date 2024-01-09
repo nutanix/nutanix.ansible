@@ -1,6 +1,6 @@
 ---
 - name: Create PBR for vpc "{{ item.vpc_name }}"
-  ntnx_pbrs:
+  nutanix.ncp.ntnx_pbrs:
     state: present
     vpc:
       name: "{{ item.vpc_name }}"

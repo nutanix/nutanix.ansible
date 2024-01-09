@@ -13,7 +13,7 @@
 
   tasks:
     - name: NDB time machine's cluster creation
-      ntnx_ndb_time_machine_clusters:
+      nutanix.ncp.ntnx_ndb_time_machine_clusters:
         time_machine_uuid: "{{ time_machine.uuid }}"
         cluster:
           name: "{{ cluster.name }}"

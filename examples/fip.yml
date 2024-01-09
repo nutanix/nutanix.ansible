@@ -17,7 +17,7 @@
         vm_name: ""
 
     - name: Create floating ip with external subnet uuid
-      ntnx_floating_ips:
+      nutanix.ncp.ntnx_floating_ips:
         state: present
         wait: true
         external_subnet:
@@ -25,7 +25,7 @@
       register: result
 
     - name: Assign floating ip to vm
-      ntnx_floating_ips:
+      nutanix.ncp.ntnx_floating_ips:
         state: present
         external_subnet:
           name: "{{ external_subnet.name }}"
@@ -34,7 +34,7 @@
       register: result
 
     - name: Delete all created floating ips
-      ntnx_floating_ips:
+      nutanix.ncp.ntnx_floating_ips:
         state: absent
         fip_uuid: "{{ result.fip_uuid }}"
       register: result

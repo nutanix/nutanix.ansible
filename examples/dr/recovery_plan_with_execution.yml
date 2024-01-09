@@ -1,10 +1,10 @@
 ---
 ######## Description ###########
 # Tasks done by this playbook:
-#   1. Create Recovery plan using ntnx_recovery_plans
+#   1. Create Recovery plan using nutanix.ncp.ntnx_recovery_plans
 #   2. Update  recovery plan stages and networks
 #   3. Get created recovery plan info and affected entities
-#   4. Use this info to run test failover on recovery site using ntnx_recovery_plan_jobs
+#   4. Use this info to run test failover on recovery site using nutanix.ncp.ntnx_recovery_plan_jobs
 #   5. Run cleanup of vms created by test failover on recovery site
 #   6. Get final status of both recovery plan jobs using info module
 #   7. Delete recovery plan from primary site.
@@ -15,9 +15,9 @@
   collections:
     - nutanix.ncp
   tasks:
-    ################################# Create recovery plans using ntnx_recovery_plans #############
+    ################################# Create recovery plans using nutanix.ncp.ntnx_recovery_plans #############
     - name: Create recovery plan with custom ip network mapping
-      ntnx_recovery_plans:
+      nutanix.ncp.ntnx_recovery_plans:
         nutanix_host: <pcip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -76,7 +76,7 @@
         msg: "{{ result }}"
 
     - name: Update recovery plan by adding more stages and remove custom IP to enable dynamic IP allocation
-      ntnx_recovery_plans:
+      nutanix.ncp.ntnx_recovery_plans:
         plan_uuid: "{{ result.plan_uuid }}"
         nutanix_host: <pcip>
         nutanix_username: <pc-username>
@@ -115,10 +115,10 @@
                 name: <subnet-name>
       register: recovery_plan
 
-    #################################### Lets recover the vms on recovery site using ntnx_recovery_plan_jobs ################
+    #################################### Lets recover the vms on recovery site using nutanix.ncp.ntnx_recovery_plan_jobs ################
 
     - name: Recovery plan info and its affected entities get
-      ntnx_recovery_plans_info:
+      nutanix.ncp.ntnx_recovery_plans_info:
         nutanix_host: <pcip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -131,7 +131,7 @@
 
     # We can also perform FAILOVER, LIVE_MIGRATE and FAILOVER here
     - name: Run migrate (planned failover)
-      ntnx_recovery_plan_jobs:
+      nutanix.ncp.ntnx_recovery_plan_jobs:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -152,7 +152,7 @@
         msg: "{{ migrate_job }}"
 
     - name: Get recovery plan job status using info module
-      ntnx_recovery_plan_jobs_info:
+      nutanix.ncp.ntnx_recovery_plan_jobs_info:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -167,7 +167,7 @@
     ###################################### delete the recovery plan #################
 
     - name: Delete recovery plan
-      ntnx_recovery_plans:
+      nutanix.ncp.ntnx_recovery_plans:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>

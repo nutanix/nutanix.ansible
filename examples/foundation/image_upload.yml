@@ -8,7 +8,7 @@
   tasks:
     - name: Image upload
       # check_mode: yes
-      ntnx_foundation_image_upload:
+      nutanix.ncp.ntnx_foundation_image_upload:
         nutanix_host: 10.xx.xx.xx
         # change state to "absent" to delete this image. For delete, source is not required
         state: present

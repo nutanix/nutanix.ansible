@@ -12,7 +12,7 @@
       validate_certs: false
   tasks:
     - name: Create a address group
-      ntnx_address_groups:
+      nutanix.ncp.ntnx_address_groups:
         state: present
         name: test-ansible-group-1
         desc: test-ansible-group-1-desc
@@ -24,7 +24,7 @@
       register: ag
 
     - name: Update address group
-      ntnx_address_groups:
+      nutanix.ncp.ntnx_address_groups:
         state: present
         address_group_uuid: "{{ ag.address_group_uuid }}"
         name: test-ansible-group-1-updated
@@ -35,7 +35,7 @@
       register: updated_ag
 
     - name: Read the updated address group
-      ntnx_address_groups_info:
+      nutanix.ncp.ntnx_address_groups_info:
         address_group_uuid: "{{ updated_ag.address_group_uuid }}"
       register: ag_info
 
@@ -44,7 +44,7 @@
         msg: "{{ ag_info }}"
 
     - name: Delete the address group.
-      ntnx_address_groups:
+      nutanix.ncp.ntnx_address_groups:
         state: absent
         address_group_uuid: "{{ updated_ag.address_group_uuid }}"
       register: op

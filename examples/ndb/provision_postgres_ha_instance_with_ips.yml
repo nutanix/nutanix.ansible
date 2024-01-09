@@ -15,7 +15,7 @@
 
   tasks:
     - name: Create HA instance postgres database with static IP assignments to vms and cluster IP
-      ntnx_ndb_databases:
+      nutanix.ncp.ntnx_ndb_databases:
         wait: true
         timeout: 5400
         name: <database name>

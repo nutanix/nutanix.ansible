@@ -32,7 +32,7 @@
         vpc_uuid: ""
 
     - name: VLAN subnet with IPAM, IP pools and DHCP
-      ntnx_subnets:
+      nutanix.ncp.ntnx_subnets:
         state: present
         name: VLAN subnet with IPAM IP pools and DHCP
         vlan_subnet:
@@ -59,7 +59,7 @@
       ignore_errors: true
 
     - name: External subnet with NAT
-      ntnx_subnets:
+      nutanix.ncp.ntnx_subnets:
         state: present
         name: " External subnet with NAT "
         external_subnet:
@@ -78,7 +78,7 @@
       ignore_errors: true
 
     - name: Overlay Subnet with IP_pools and DHCP
-      ntnx_subnets:
+      nutanix.ncp.ntnx_subnets:
         state: present
         name: Overlay Subnet with IP_pools and DHCP
         overlay_subnet:

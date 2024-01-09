@@ -33,7 +33,7 @@
           uuid: <Snapshot UUID>
 
     - name: Create clone using snapshot
-      ntnx_ndb_database_clones:
+      nutanix.ncp.ntnx_ndb_database_clones:
         name: "{{ clone_db.name }}"
         desc: ansible-created-clone
 
@@ -77,7 +77,7 @@
         msg: "{{ output }}"
 
     - name: Create clone using point in time
-      ntnx_ndb_database_clones:
+      nutanix.ncp.ntnx_ndb_database_clones:
         name: "{{ clone_db.name }}"
         desc: ansible-created-clone
 

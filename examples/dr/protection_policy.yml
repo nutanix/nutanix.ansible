@@ -13,7 +13,7 @@
     - nutanix.ncp
   tasks:
     - name: Create protection rule with synchronous schedule
-      ntnx_protection_rules:
+      nutanix.ncp.ntnx_protection_rules:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -44,7 +44,7 @@
       register: pr
 
     - name: Delete the protection rule
-      ntnx_protection_rules:
+      nutanix.ncp.ntnx_protection_rules:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -53,7 +53,7 @@
         rule_uuid: "{{ pr.rule_uuid }}"
 
     - name: Create protection rule with async schedule
-      ntnx_protection_rules:
+      nutanix.ncp.ntnx_protection_rules:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -99,7 +99,7 @@
       register: result
 
     - name: Update previously created protection policy
-      ntnx_protection_rules:
+      nutanix.ncp.ntnx_protection_rules:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -145,7 +145,7 @@
       register: pr
 
     - name: Get protection policy info and its associated vms info
-      ntnx_protection_rules_info:
+      nutanix.ncp.ntnx_protection_rules_info:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>
@@ -157,7 +157,7 @@
         msg: "{{ result }}"
 
     - name: Delete the protection rule
-      ntnx_protection_rules:
+      nutanix.ncp.ntnx_protection_rules:
         nutanix_host: <pc-ip>
         nutanix_username: <pc-username>
         nutanix_password: <pc-password>

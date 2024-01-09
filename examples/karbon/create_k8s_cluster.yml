@@ -36,7 +36,7 @@
 
     #############################
     - name: Create  DEV cluster with Flannel network provider
-      ntnx_karbon_clusters:
+      nutanix.ncp.ntnx_karbon_clusters:
         cluster:
           uuid: "{{ cluster.uuid }}"
         name: "{{ karbon_name }}"
@@ -62,13 +62,13 @@
       register: result
 
     - name: Delete  dev cluster
-      ntnx_karbon_clusters:
+      nutanix.ncp.ntnx_karbon_clusters:
         state: absent
         name: "{{ result.response.name }}"
       register: result
 
     - name: Create  DEV cluster with Calico network provider
-      ntnx_karbon_clusters:
+      nutanix.ncp.ntnx_karbon_clusters:
         cluster:
           name: "{{ cluster.name }}"
         name: "{{ karbon_name }}"
@@ -109,7 +109,7 @@
       register: result
 
     - name: Create worker node pool with subnet uuid
-      ntnx_karbon_clusters_node_pools:
+      nutanix.ncp.ntnx_karbon_clusters_node_pools:
         node_subnet:
           uuid: <uuid>
         node_pool_name: "{{ karbon_name }}"
@@ -123,7 +123,7 @@
       ignore_errors: true
 
     - name: Update pool by increasing cpu,memory_gb,num_instances and add labels
-      ntnx_karbon_clusters_node_pools:
+      nutanix.ncp.ntnx_karbon_clusters_node_pools:
         wait: true
         node_pool_name: "{{ karbon_name }}"
         cluster_name: "{{ cluster.name }}"
@@ -138,7 +138,7 @@
       ignore_errors: true
 
     - name: Create prod cluster
-      ntnx_karbon_clusters:
+      nutanix.ncp.ntnx_karbon_clusters:
         cluster:
           uuid: "{{ cluster.uuid }}"
         name: "{{ karbon_name }}"

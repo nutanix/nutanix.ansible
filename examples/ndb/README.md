@@ -27,7 +27,7 @@ First, we need to configure NDB setup details in the playbook. This can be done 
       validate_certs: true
   tasks:
     - name: create tags
-      ntnx_ndb_tags:
+      nutanix.ncp.ntnx_ndb_tags:
         nutanix_host: <ndb_setup_ip>
         nutanix_username: <ndb_setup_username>
         nutanix_password: <ndb_setup_password>
@@ -40,7 +40,7 @@ For example, playbook task to register AHV cluster in NDB setup is :
 
 ```yaml
   - name: NDB cluster registration
-    ntnx_ndb_clusters:
+    nutanix.ncp.ntnx_ndb_clusters:
         name: "<name>"
         desc: "<description>"
         name_prefix: "<prefix_for_agent_vm>"
@@ -76,7 +76,7 @@ Example playbook task to deploy single instance postgres type database in NDB is
 
 ```yaml
   - name: Create single instance postgres database
-    ntnx_ndb_databases:
+    nutanix.ncp.ntnx_ndb_databases:
         name: POSTGRES_DATABASE_ANSIBLE
         db_params_profile:
             name: DEFAULT_POSTGRES_PARAMS
@@ -84,7 +84,7 @@ Example playbook task to deploy single instance postgres type database in NDB is
             create_new_server:
                 name: postgres_server_ansible
                 password: temp_password
-                cluster: 
+                cluster:
                     name: TempCluster
                 software_profile:
                     name: POSTGRES_10.4_OOB
@@ -93,7 +93,7 @@ Example playbook task to deploy single instance postgres type database in NDB is
                 compute_profile:
                     name: DEFAULT_OOB_SMALL_COMPUTE
                 pub_ssh_key: "<publickey-for-vm-access>"
-        
+
         postgres:
             listener_port: "5432"
             db_name: test_ansible

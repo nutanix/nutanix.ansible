@@ -14,17 +14,17 @@
 
   tasks:
     - name: Get all permissions
-      ntnx_permissions_info:
+      nutanix.ncp.ntnx_permissions_info:
       register: op1
 
     - name: Get permissions using filter
-      ntnx_permissions_info:
+      nutanix.ncp.ntnx_permissions_info:
         filter:
           name: <permission_name>
       register: op2
 
     - name: Get permission using uuid
-      ntnx_permissions_info:
+      nutanix.ncp.ntnx_permissions_info:
         permission_uuid: <permission_uuid>
       register: op3
 

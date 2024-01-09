@@ -16,18 +16,18 @@
         cluster_name: <cluster_name>
 
     - name: Test getting cluster using name
-      ntnx_karbon_clusters_info:
+      nutanix.ncp.ntnx_karbon_clusters_info:
         cluster_name: "{{ cluster_name }}"
       register: result
 
     - name: Test getting cluster with ssh config using cluster name
-      ntnx_karbon_clusters_info:
+      nutanix.ncp.ntnx_karbon_clusters_info:
         cluster_name: "{{ cluster_name }}"
         fetch_ssh_credentials: true
       register: result
 
     - name: Test getting cluster with kubeconfig config using cluster name
-      ntnx_karbon_clusters_info:
+      nutanix.ncp.ntnx_karbon_clusters_info:
         cluster_name: "{{ cluster_name }}"
         fetch_kubeconfig: true
       register: result

@@ -13,14 +13,14 @@
 
   tasks:
     - name: List pbrs using length and offset
-      ntnx_pbrs_info:
+      nutanix.ncp.ntnx_pbrs_info:
         length: 1
         offset: 0
       register: result
       ignore_errors: true
 
     - name: List pbrs using ascending priority sorting
-      ntnx_pbrs_info:
+      nutanix.ncp.ntnx_pbrs_info:
         sort_order: ASCENDING
         sort_attribute: priority
       register: result

@@ -1,5 +1,5 @@
 ---
-# Here we will image three kind of nodes with different methods. 
+# Here we will image three kind of nodes with different methods.
 # We will image one node using manual mode. Second node, which can be dos running node, will be imaged using discovery mode using cvm
 # Third node, which can be nutanix imaged(aos running) node, will be imaged using discovery mode using IPMI
 - name: Image nodes
@@ -9,7 +9,7 @@
     - nutanix.ncp
   tasks:
     - name: Image nodes using manual and discovery modes. Create cluster
-      ntnx_foundation:
+      nutanix.ncp.ntnx_foundation:
         timeout: 4500
         nutanix_host: 10.xx.xx.xx
         cvm_gateway: 10.xx.xx.xx

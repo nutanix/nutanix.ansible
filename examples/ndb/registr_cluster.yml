@@ -13,7 +13,7 @@
 
   tasks:
     - name: NDB cluster creation
-      ntnx_ndb_clusters:
+      nutanix.ncp.ntnx_ndb_clusters:
         name: "{{ cluster.name }}"
         desc: "{{ cluster.desc }}"
         name_prefix: "{{ cluster.name_prefix }}"

@@ -12,14 +12,14 @@
       validate_certs: false
   tasks:
     - name: Create only category key with description
-      ntnx_categories:
+      nutanix.ncp.ntnx_categories:
         state: present
         name: test-cat-1
         desc: test-cat-1-desc
       register: cat1
 
     - name: Add category values to test-cat-1
-      ntnx_categories:
+      nutanix.ncp.ntnx_categories:
         state: present
         name: test-cat-1
         values:
@@ -27,7 +27,7 @@
           - val2
 
     - name: Create category key with values
-      ntnx_categories:
+      nutanix.ncp.ntnx_categories:
         state: present
         name: test-cat-2
         desc: test-cat-2-desc
@@ -37,7 +37,7 @@
       register: cat2
 
     - name: Add more category values to test-cat-2
-      ntnx_categories:
+      nutanix.ncp.ntnx_categories:
         state: present
         name: test-cat-2
         values:
@@ -45,25 +45,25 @@
           - val6
 
     - name: Get categories info
-      ntnx_categories_info:
+      nutanix.ncp.ntnx_categories_info:
         name: test-cat-1
       register: cat1_info
 
     - name: Delete val1 category value from test-cat-1
-      ntnx_categories:
+      nutanix.ncp.ntnx_categories:
         state: absent
         name: test-cat-1
         values:
           - val1
 
     - name: Delete all category values from test-cat-1
-      ntnx_categories:
+      nutanix.ncp.ntnx_categories:
         state: absent
         name: test-cat-1
         remove_values: true
 
     - name: Delete category key test-cat-2 including its all values
-      ntnx_categories:
+      nutanix.ncp.ntnx_categories:
         state: absent
         name: test-cat-2
         remove_values: true
