@@ -26,6 +26,28 @@
     fail_msg: ' Unable to create VM with minimum requiremnts '
     success_msg: ' VM with minimum requiremnts created successfully '
 ####################################################################
+- name: update vm by set owner by uuid
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    owner:
+      uuid: "{{vm_owner.uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+      - result.response.metadata.owner_reference.name == "{{ vm_owner.name }}"
+      - result.response.metadata.owner_reference.uuid == "{{ vm_owner.uuid }}"
+      - result.response.metadata.owner_reference.kind == "user"
+    fail_msg: ' Unable to update vm by setting owner '
+    success_msg: ' VM updated successfully by setting owner '
+####################################################################
+
 - debug:
     msg: Start update tests for memory vcpus cores_per_vcpu 
 

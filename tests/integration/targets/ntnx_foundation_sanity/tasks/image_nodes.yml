@@ -116,6 +116,43 @@
       fail_msg: " Fail : unable to create spec for imaging nodes"
       success_msg: "Succes: spec generated successfully"
 
+  - name: Image nodes without cluster creation
+    ntnx_foundation:
+      timeout: 4500
+      cvm_gateway: "{{cvm_gateway}}"
+      cvm_netmask: "{{cvm_netmask}}"
+      hypervisor_gateway: "{{hypervisor_gateway}}"
+      hypervisor_netmask: "{{hypervisor_netmask}}"
+      default_ipmi_user: "{{default_ipmi_user}}"
+      current_cvm_vlan_tag: "{{nodes.current_cvm_vlan_tag}}"
+      nos_package: "{{images.aos_packages[0]}}"
+      blocks:
+        - block_id: "{{nodes.block_id}}"
+          nodes:
+            - manual_mode:
+                cvm_ip: "{{nodes.node1.cvm_ip}}"
+                cvm_gb_ram: 50
+                hypervisor_hostname: "{{nodes.node1.hypervisor_hostname}}"
+                ipmi_netmask: "{{nodes.node1.ipmi_netmask}}"
+                ipmi_gateway: "{{nodes.node1.ipmi_gateway}}"
+                ipmi_ip: "{{nodes.node1.ipmi_ip}}"
+                ipmi_password: "{{nodes.node1.ipmi_password}}"
+                hypervisor: "{{nodes.node1.hypervisor}}"
+                hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
+                node_position: "{{nodes.node1.node_position}}"
+    register: result
+    no_log: true
+    ignore_errors: True
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.response is defined
+        - result.failed==false
+        - result.changed==true
+      fail_msg: " Fail : unable to image nodes"
+      success_msg: "Succes: node imaging done successfully"
+
   - name: Image nodes and create cluster out of it
     ntnx_foundation:
       timeout: 4500
