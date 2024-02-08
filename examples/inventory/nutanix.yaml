@@ -11,3 +11,5 @@ keyed_groups:
   - prefix: "host"
     separator: ':'
     key: "ansible_host"
+hostnames:
+  - status.name | lower # trasforms all inventory name to vm name in lowercase

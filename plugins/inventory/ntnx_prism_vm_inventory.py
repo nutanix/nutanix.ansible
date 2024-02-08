@@ -4,7 +4,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
-
+from ansible.module_utils._text import to_text, to_native
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -61,6 +61,14 @@ DOCUMENTATION = r"""
             type: boolean
             env:
                 - name: VALIDATE_CERTS
+        hostnames:
+            description:
+            - A list of templates in order of precedence to compose inventory_hostname.
+            - Ignores template if resulted in an empty string or None value.
+            - You can use property specified in I(properties) as variables in the template.
+            type: list
+            elements: string
+            default: ['status.name']
     notes: "null"
     requirements: "null"
     extends_documentation_fragment:
@@ -122,6 +130,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
 
+        hostnames = self.get_option('hostnames')
+
         module = Mock_Module(
             self.nutanix_hostname,
             self.nutanix_port,
@@ -148,6 +158,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         for entity in resp["entities"]:
             cluster = entity["status"]["cluster_reference"]["name"]
             vm_name = entity["status"]["name"]
+            #print("The variable, entity is of type:", type(entity["status"]))
+            vm_name = self._get_hostname(entity,hostnames,strict=strict)
             vm_uuid = entity["metadata"]["uuid"]
             vm_ip = None
 
@@ -206,3 +218,27 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 vm_name,
                 strict=strict,
             )
+
+    def _get_hostname(self, properties, hostnames, strict=False):
+        hostname = None
+        errors = []
+
+        for preference in hostnames:
+            try:
+                hostname = self._compose(preference, properties)
+            
+            except Exception as e:  # pylint: disable=broad-except
+                if strict:
+                    raise AnsibleError("Could not compose %s as hostnames - %s" % (preference, to_native(e)))
+                else:
+                    errors.append(
+                        (preference, str(e))
+                    )
+            if hostname:
+                return to_text(hostname)
+
+        raise AnsibleError(
+            'Could not template any hostname for host, errors for each preference: %s' % (
+                ', '.join(['%s: %s' % (pref, err) for pref, err in errors])
+            )
+        )
