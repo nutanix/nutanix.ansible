@@ -1,0 +1,13 @@
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+nutanix_hostname: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=path/to/pc/secret:hostname') }}"
+nutanix_username: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=path/to/pc/secret:username') }}"
+nutanix_password: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=path/to/pc/secret:password') }}"
+validate_certs: false
+data: {"offset": 0, "length": 1000}
+groups:
+  group_1: "'<name_prefix>' in name"
+  group_2: "'<vm_name>'==name"
+keyed_groups:
+  - prefix: "host"
+    separator: ':'
+    key: "ansible_host"

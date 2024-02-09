@@ -24,25 +24,33 @@ DOCUMENTATION = r"""
             required: true
             choices: ['ntnx_prism_vm_inventory', 'nutanix.ncp.ntnx_prism_vm_inventory']
         nutanix_hostname:
-            description: Prism central hostname or IP address
+            description:
+              - Prism central hostname or IP address
+              - Accepts Jinja to template the value
             required: true
             type: str
             env:
                 - name: NUTANIX_HOSTNAME
         nutanix_username:
-            description: Prism central username
+            description:
+              - Prism central username
+              - Accepts Jinja to template the value
             required: true
             type: str
             env:
                 - name: NUTANIX_USERNAME
         nutanix_password:
-            description: Prism central password
+            description: 
+              - Prism central password
+              - Accepts Jinja to template the value
             required: true
             type: str
             env:
                 - name: NUTANIX_PASSWORD
         nutanix_port:
-            description: Prism central port
+            description: 
+              - Prism central port
+                - Accepts Jinja to template the value
             default: 9440
             type: str
             env:
@@ -121,6 +129,19 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.validate_certs = self.get_option("validate_certs")
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
+
+        if self.templar.is_template(self.nutanix_hostname):
+            self.nutanix_hostname=self.templar.template(variable=self.nutanix_hostname,disable_lookups=False)
+        
+        if self.templar.is_template(self.nutanix_username):
+            self.nutanix_username=self.templar.template(variable=self.nutanix_username,disable_lookups=False)
+        
+        if self.templar.is_template(self.nutanix_password):
+            self.nutanix_password=self.templar.template(variable=self.nutanix_password,disable_lookups=False)
+
+        if self.templar.is_template(self.nutanix_port):
+            self.nutanix_port=self.templar.template(variable=self.nutanix_port,disable_lookups=False)
+
 
         module = Mock_Module(
             self.nutanix_hostname,
