@@ -122,6 +122,15 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
 
+        if self.templar.is_template(self.nutanix_hostname):
+            self.nutanix_hostname=self.templar.template(variable=self.nutanix_hostname,disable_lookups=False)
+        
+        if self.templar.is_template(self.nutanix_username):
+            self.nutanix_username=self.templar.template(variable=self.nutanix_username,disable_lookups=False)
+        
+        if self.templar.is_template(self.nutanix_password):
+            self.nutanix_password=self.templar.template(variable=self.nutanix_password,disable_lookups=False)            
+
         module = Mock_Module(
             self.nutanix_hostname,
             self.nutanix_port,
