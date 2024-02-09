@@ -1,0 +1,13 @@
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+nutanix_hostname: "{{ lookup('ansible.builtin.env', 'PC_1_HOSTNAME') }}"
+nutanix_username: "{{ lookup('ansible.builtin.env', 'PC_1_USERNAME') }}"
+nutanix_password: "{{ lookup('ansible.builtin.env', 'PC_1_PASSWORD') }}"
+validate_certs: false
+data: {"offset": 0, "length": 1000}
+groups:
+  group_1: "'<name_prefix>' in name"
+  group_2: "'<vm_name>'==name"
+keyed_groups:
+  - prefix: "host"
+    separator: ':'
+    key: "ansible_host"
