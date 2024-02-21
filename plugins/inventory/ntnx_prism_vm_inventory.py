@@ -162,7 +162,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                             continue
 
             # Add inventory groups and hosts to inventory groups
-            self.inventory.add_group(cluster)
+            cluster = self.inventory.add_group(cluster)
             self.inventory.add_child("all", cluster)
             self.inventory.add_host(vm_name, group=cluster)
             self.inventory.set_variable(vm_name, "ansible_host", vm_ip)
