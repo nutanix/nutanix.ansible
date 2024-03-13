@@ -364,7 +364,10 @@ class Entity(object):
 
         # buffer size with ref. to max read size of http.client.HTTPResponse.read() defination
         buffer_size = 65536
-        if not resp:
+
+        # From ansible-core>=2.13, incase of http error, urllib.HTTPError object is returned in resp
+        # as per the docs of ansible we need to use body in that case.
+        if not resp or status_code >= 400:
             # get body containing error
             body = info.get("body")
         else:
