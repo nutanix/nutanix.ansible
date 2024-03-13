@@ -26,10 +26,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r tests/integration/requirements.txt
-      - name: Print ansible & python version and install dependent roles
-        run: |
-          ansible --version
-          ansible-galaxy collection install community.general
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
