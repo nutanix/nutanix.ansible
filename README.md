@@ -29,9 +29,9 @@ This collection requires Python 2.7 or greater
 
 > For the 1.2.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.5.
 
-> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
+> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4.
 
-> For the 1.4.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
+> For the 1.4.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4.
 
 > For the 1.5.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4.0.2 and pc2022.1.0.2.
 
@@ -57,7 +57,7 @@ Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/ma
 ## Foundation
 > For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation. This release was tested against Foundation versions v5.2 and v5.1.1
 
-> For the 1.9.1 release of the ansible plugin, it was tested against NDB versions v2.5.2
+> For the 1.9.1 release of the ansible plugin, it was tested against versions v5.2
 
 Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation
 
@@ -67,11 +67,11 @@ Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main
 Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc
 
 ## Karbon
-> For the 1.6.0 release of the ansible plugin, it will have N-2 compatibility with the Karbon. This release was tested against Karbon versions v2.3.0, v2.4.0 and v2.5.0 
+> For the 1.6.0 release of the ansible plugin, it will have N-2 compatibility with the Karbon. This release was tested against Karbon versions v2.3.0, v2.4.0 and v2.5.0
 
-> For the 1.9.0 release of the ansible plugin, it was tested against Karbon versions v2.6.0, v2.7.0 and v2.8.0 
+> For the 1.9.0 release of the ansible plugin, it was tested against Karbon versions v2.6.0, v2.7.0 and v2.8.0
 
-> For the 1.9.1 release of the ansible plugin, it was tested against Karbon version v2.8.0 
+> For the 1.9.1 release of the ansible plugin, it was tested against Karbon version v2.8.0
 
 Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
 
@@ -87,7 +87,7 @@ NDB based examples : https://github.com/nutanix/nutanix.ansible/tree/main/exampl
 
 ### Notes:
 1. Currently NDB based modules are supported and tested against postgres based databases.
- 
+
 # Installing the collection
 **Prerequisite**
 
@@ -275,13 +275,13 @@ We glady welcome contributions from the community. From updating the documentati
 To conduct integration tests for a specific Ansible module such as the `ntnx_vms` module, the following step-by-step procedures can be followed:
 
 ### Prerequisites
-- Ensure you are in the installed collection directory where the module is located. For example: 
+- Ensure you are in the installed collection directory where the module is located. For example:
 `/Users/mac.user1/.ansible/collections/ansible_collections/nutanix/ncp`
 
 ### Setting up Variables
 1. Navigate to the `tests/integration/targets` directory within the collection.
 
-2. Define the necessary variables within the feature-specific var files, such as `tests/integration/targets/prepare_env/vars/main.yml`, `tests/integration/targets/prepare_foundation_env/vars/main.yml`,`tests/integration/targets/prepare_ndb_env/tasks/prepare_env.yml`, etc. 
+2. Define the necessary variables within the feature-specific var files, such as `tests/integration/targets/prepare_env/vars/main.yml`, `tests/integration/targets/prepare_foundation_env/vars/main.yml`,`tests/integration/targets/prepare_ndb_env/tasks/prepare_env.yml`, etc.
 
 Note: For Karbon and FC tests, use the PC vars exclusively, as these features rely on pc setup. Not all variables are mandatory; define only the required variables for the particular feature to be tested.
 
