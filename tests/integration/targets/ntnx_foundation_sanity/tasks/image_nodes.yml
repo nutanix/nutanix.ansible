@@ -102,7 +102,7 @@
             "hypervisor_gateway": "{{hypervisor_gateway}}",
             "hypervisor_iso": {},
             "hypervisor_netmask": "{{hypervisor_netmask}}",
-            "ipmi_user": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+            "ipmi_user": "{{default_ipmi_user}}",
             "nos_package": "{{images.aos_packages[0]}}"
         }
 
