@@ -34,17 +34,17 @@
                 node_position: "{{nodes.node1.node_position}}"
       clusters:
         - redundancy_factor: 1
-          cluster_members: 
+          cluster_members:
             - "{{nodes.node1.cvm_ip}}"
           name: "test-cluster"
           timezone: "Asia/Calcutta"
-          cvm_ntp_servers: 
+          cvm_ntp_servers:
             - "{{nodes.ntp_servers[0]}}"
             - "{{nodes.ntp_servers[1]}}"
           cvm_dns_servers:
             - "{{nodes.dns_servers[0]}}"
             - "{{nodes.dns_servers[1]}}"
-          hypervisor_ntp_servers: 
+          hypervisor_ntp_servers:
             - "{{nodes.ntp_servers[0]}}"
             - "{{nodes.ntp_servers[1]}}"
           enable_ns: true
@@ -102,11 +102,11 @@
             "hypervisor_gateway": "{{hypervisor_gateway}}",
             "hypervisor_iso": {},
             "hypervisor_netmask": "{{hypervisor_netmask}}",
-            "ipmi_user": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+            "ipmi_user": "{{default_ipmi_user}}",
             "nos_package": "{{images.aos_packages[0]}}"
         }
 
-  - name: Verify spec 
+  - name: Verify spec
     assert:
       that:
         - spec.response is defined
@@ -179,17 +179,17 @@
                 node_position: "{{nodes.node1.node_position}}"
       clusters:
         - redundancy_factor: 1
-          cluster_members: 
+          cluster_members:
             - "{{nodes.node1.cvm_ip}}"
           name: "test-cluster"
           timezone: "Asia/Calcutta"
-          cvm_ntp_servers: 
+          cvm_ntp_servers:
             - "{{nodes.ntp_servers[0]}}"
             - "{{nodes.ntp_servers[1]}}"
           cvm_dns_servers:
             - "{{nodes.dns_servers[0]}}"
             - "{{nodes.dns_servers[1]}}"
-          hypervisor_ntp_servers: 
+          hypervisor_ntp_servers:
             - "{{nodes.ntp_servers[0]}}"
             - "{{nodes.ntp_servers[1]}}"
     register: result
