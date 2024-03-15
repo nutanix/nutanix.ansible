@@ -8,6 +8,11 @@ Nutanix.Ncp Release Notes
 v1.9.1
 ======
 
+Release Summary
+---------------
+
+This release included bug fixes and improvement. We have also deprecated support for ansible-core less than v2.14.0
+
 Minor Changes
 -------------
 
@@ -20,6 +25,11 @@ Minor Changes
 - ntnx_vms - [Imprv] add possibility to specify / modify vm user ownership and project [[\#378](https://github.com/nutanix/nutanix.ansible/issues/378)]
 - ntnx_vms - owner association upon vm creation module [[\#359](https://github.com/nutanix/nutanix.ansible/issues/359)]
 - ntnx_vms_info - [Imprv] add examples with guest customization for module ntnx_vms [[\#395](https://github.com/nutanix/nutanix.ansible/issues/395)]
+
+Breaking Changes / Porting Guide
+--------------------------------
+
+- nutanix.ncp collection - Due to all versions of ansible-core less than v2.14.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.14.0
 
 Bugfixes
 --------

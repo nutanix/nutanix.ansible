@@ -17,12 +17,10 @@ Ansible Nutanix Provider leverages the community-supported model. See [Open Sour
 # Version compatibility
 
 ## Ansible
-This collection and examples has been tested against following versions :
-  1. ansible==5.0.1
-  2. ansible-core==2.12.3
+This collection requires ansible-core>=2.14.0
 
 ## Python
-This collection requires Python 2.7 or greater
+This collection requires Python 3.9 or greater
 
 ## Prism Central
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
