@@ -140,6 +140,9 @@
                 hypervisor: "{{nodes.node1.hypervisor}}"
                 hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
                 node_position: "{{nodes.node1.node_position}}"
+                bond_lacp_rate: "{{nodes.node1.bond_lacp_rate}}"
+                bond_mode: "{{nodes.node1.bond_mode}}"
+
     register: result
     no_log: true
     ignore_errors: True
@@ -177,6 +180,8 @@
                 hypervisor: "{{nodes.node1.hypervisor}}"
                 hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
                 node_position: "{{nodes.node1.node_position}}"
+                bond_lacp_rate: "{{nodes.node1.bond_lacp_rate}}"
+                bond_mode: "{{nodes.node1.bond_mode}}"
       clusters:
         - redundancy_factor: 1
           cluster_members:
