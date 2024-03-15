@@ -6,7 +6,7 @@
   ntnx_image_placement_policy:
     placement_type: soft
     name: "test_policy_1"
-    image_categories: 
+    image_categories:
       AnalyticsExclusions:
         - AnomalyDetection
     cluster_categories:
@@ -18,7 +18,7 @@
   ntnx_image_placement_policy:
     placement_type: soft
     name: "test_policy_2"
-    image_categories: 
+    image_categories:
       AnalyticsExclusions:
         - AnomalyDetection
     cluster_categories:
@@ -36,7 +36,7 @@
 - name: test getting all image placement policies
   ntnx_image_placement_policies_info:
   register: result
-  
+
 - name: check listing status
   assert:
     that:
@@ -54,7 +54,7 @@
     length: 1
     offset: 0
   register: result
-  
+
 - name: check listing status
   assert:
     that:
@@ -69,7 +69,7 @@
   ntnx_image_placement_policies_info:
     policy_uuid: "{{ policy_2.response.metadata.uuid }}"
   register: result
-  
+
 - name: check listing status
   assert:
     that:

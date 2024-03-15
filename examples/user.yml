@@ -30,11 +30,11 @@
       state: absent
       user_uuid: "{{ result.user_uuid }}"
 
-  - name: create local user  with project and categories 
+  - name: create local user  with project and categories
     ntnx_users:
       principal_name: "{{principal_name}}"
       directory_service_uuid:  "{{directory_service_uuid}}"
-      project: 
+      project:
         uuid: "{{project.uuid}}"
       categories:
         Environment:

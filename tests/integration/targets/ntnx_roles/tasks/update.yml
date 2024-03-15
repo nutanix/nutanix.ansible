@@ -29,7 +29,7 @@
   register: test_role
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - test_role.response is defined
       - test_role.changed == True
@@ -51,7 +51,7 @@
   register: result
 
 - name: Update status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.role_uuid is defined
@@ -79,7 +79,7 @@
   register: result
 
 - name: idempotency check status
-  assert: 
+  assert:
     that:
       - result.changed == False
       - result.failed == False
@@ -103,7 +103,7 @@
   register: result
 
 - name: check mode Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False

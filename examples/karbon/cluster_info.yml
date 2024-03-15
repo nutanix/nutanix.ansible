@@ -11,11 +11,11 @@
       nutanix_password: <pass>
       validate_certs: false
 
-  tasks:        
+  tasks:
   - set_fact:
       cluster_name: <cluster_name>
 
-  - name: test getting cluster using name 
+  - name: test getting cluster using name
     ntnx_karbon_clusters_info:
       cluster_name: "{{cluster_name}}"
     register: result

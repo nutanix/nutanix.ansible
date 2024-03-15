@@ -75,7 +75,7 @@
 
     - debug:
         msg: "{{output}}"
-  
+
     - name: create clone using point in time
       ntnx_ndb_database_clones:
         name: "{{clone_db.name}}"
@@ -116,6 +116,6 @@
           time: "12:00:00"
           timezone: "Asia/Calcutta"
       register: output
-    
+
     - debug:
         msg: "{{output}}"

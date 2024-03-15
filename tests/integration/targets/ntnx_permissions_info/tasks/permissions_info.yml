@@ -24,7 +24,7 @@
 
 - name: List permissions using filter criteria
   ntnx_permissions_info:
-    filter: 
+    filter:
       name: "{{ test_permission_name }}"
   register: result
   ignore_errors: True
@@ -44,7 +44,7 @@
 - set_fact:
     test_permission_uuid: "{{result.response.entities.0.metadata.uuid}}"
 
-################################################## 
+##################################################
 
 - name: List permission using uuid criteria
   ntnx_permissions_info:
@@ -64,7 +64,7 @@
     success_msg: "permission info obtained successfully"
 
 
-################################################## 
+##################################################
 
 - name: List permissions using length and offset
   ntnx_permissions_info:

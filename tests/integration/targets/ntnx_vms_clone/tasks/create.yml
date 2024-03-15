@@ -20,13 +20,13 @@
         name: "{{ cluster.name }}"
       disks:
         - type: "DISK"
-          clone_image: 
+          clone_image:
             name: "{{ ubuntu }}"
           bus: "SCSI"
           size_gb: 20
   register: vm
   ignore_errors: true
-    
+
 - name: Creation Status
   assert:
     that:
@@ -68,7 +68,7 @@
             uuid: "{{ static.uuid }}"
   register: result
   ignore_errors: true
-  
+
 - name: Creation Status
   assert:
     that:
@@ -101,7 +101,7 @@
     success_msg: ' Success: returned response as expected '
     fail_msg: ' Fail: clone vm with check_mode  '
 ###########################################
-- name: clone vm  with script 
+- name: clone vm  with script
   ntnx_vms_clone:
       src_vm_uuid: "{{ vm.vm_uuid }}"
       guest_customization:
@@ -122,13 +122,13 @@
 - set_fact:
       todelete: '{{ todelete + [  result.vm_uuid ] }}'
 ###########################################
-- name: Delete all Created VMs 
+- name: Delete all Created VMs
   ntnx_vms:
       state: absent
       vm_uuid: '{{ item }}'
   loop: '{{ todelete }}'
 
-- name: Delete all Created VMs 
+- name: Delete all Created VMs
   ntnx_vms:
       state: absent
       vm_uuid: '{{ vm.vm_uuid }}'

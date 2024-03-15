@@ -16,7 +16,7 @@ dhcp_settings:
   domain_name: nutanix.com
   tftp_server_name: 10.5.0.10
   boot_file: pxelinux.0
-  
+
 dhcp_server_address: 192.168.0.35
 external_nat_subnet:
   vlan_id: 205

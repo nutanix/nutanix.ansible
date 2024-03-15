@@ -4,13 +4,13 @@
   gather_facts: false
   collections:
     - nutanix.ncp
-  
+
   tasks:
   - name: include var file
     include_vars: ../vars/main.yml
   - set_fact:
-      ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
-      username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
+      ip:  "{{lookup('env', 'NUTANIX_HOST')  }}"
+      username: "{{lookup('env', 'NUTANIX_USERNAME')  }}"
       password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
       recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')}}"
       validate_certs: false
@@ -19,10 +19,10 @@
       path: ../vars/main.yml
       marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 0"
       block: |
-        ip:  "{{lookup('env', 'NUTANIX_HOST')  }}" 
-        username: "{{lookup('env', 'NUTANIX_USERNAME')  }}" 
+        ip:  "{{lookup('env', 'NUTANIX_HOST')  }}"
+        username: "{{lookup('env', 'NUTANIX_USERNAME')  }}"
         password: "{{lookup('env', 'NUTANIX_PASSWORD')  }}"
-        recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')  }}" 
+        recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')  }}"
         validate_certs: false
   - name: create external subnet with NAT
     ntnx_subnets:
@@ -152,7 +152,7 @@
         uuid: "{{ cluster.uuid }}"
       networks:
           - is_connected: true
-            subnet: 
+            subnet:
               name: "{{overlay_subnet.name}}"
             private_ip: "{{overlay_subnet.private_ip}}"
     register: result
@@ -182,7 +182,7 @@
 #   #       uuid: "{{ cluster.uuid }}"
 #   #     networks:
 #   #         - is_connected: true
-#   #           subnet: 
+#   #           subnet:
 #   #             name: "{{static_subnet_name}}"
 #   #     vcpus: 1
 #   #     cores_per_vcpu: 1

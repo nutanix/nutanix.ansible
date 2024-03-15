@@ -1,5 +1,5 @@
 ---
-- name: get registeries info 
+- name: get registeries info
   hosts: localhost
   gather_facts: false
   collections:

@@ -26,11 +26,11 @@
 
     db_params_profile:
       name: "{{postgres_ha_profiles.db_params_profile.name}}"
-    
+
     db_server_cluster:
       new_cluster:
         name: "{{cluster1_name}}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         software_profile:
           name: "{{ postgres_ha_profiles.software_profile.name }}"
@@ -40,7 +40,7 @@
           name: "{{ postgres_ha_profiles.compute_profile.name }}"
         password: "temp_password"
         pub_ssh_key: "test_key"
-        vms: 
+        vms:
           - name: "{{cluster1_name}}-vm-1"
             node_type: "database"
             role: "Primary"
@@ -61,8 +61,8 @@
             cluster:
               name: "{{cluster.cluster2.name}}"
             node_type: "haproxy"
-            
-    
+
+
     postgres:
       type: "ha"
       db_name: testAnsible
@@ -318,7 +318,7 @@
         }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -336,11 +336,11 @@
 
     db_params_profile:
       name: "{{postgres_ha_profiles.db_params_profile.name}}"
-    
+
     db_server_cluster:
       new_cluster:
         name: "{{cluster1_name}}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         ips:
           - cluster:
@@ -355,18 +355,18 @@
           name: "{{ postgres_ha_profiles.compute_profile.name }}"
         password: "{{vm_password}}"
         pub_ssh_key: "{{public_ssh_key}}"
-        vms: 
+        vms:
 
           - name: "{{cluster1_name}}-vm-1"
             node_type: "database"
             role: "Primary"
             ip: "{{cluster_ips.ip1}}"
-        
+
           - name: "{{cluster1_name}}-vm-2"
             node_type: "database"
             role: "Secondary"
             ip: "{{cluster_ips.ip2}}"
-        
+
           - name: "{{cluster1_name}}-vm-3"
             node_type: "database"
             role: "Secondary"
@@ -375,7 +375,7 @@
           - name: "{{cluster1_name}}-vm-ha-proxy1"
             node_type: "haproxy"
             ip: "{{cluster_ips.ip4}}"
-          
+
           - name: "{{cluster1_name}}-vm-ha-proxy2"
             node_type: "haproxy"
             ip: "{{cluster_ips.ip5}}"
@@ -394,7 +394,7 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
@@ -405,7 +405,7 @@
         - name: "{{cluster.cluster1.name}}"
     tags:
       ansible-databases: "ha-instance-dbs"
-    
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
@@ -422,14 +422,14 @@
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: create properties map
-  set_fact: 
+  set_fact:
       properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
   no_log: true
 # {% endraw %}
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -439,7 +439,7 @@
       - result.response.description == "ansible-created-db-desc"
       - properties["db_parameter_profile_id"] == postgres_ha_profiles.db_params_profile.uuid
       - properties["listener_port"] == "5432"
-      - properties["cluster_ip"] == "['{{cluster_ips.vip}}']"     
+      - properties["cluster_ip"] == "['{{cluster_ips.vip}}']"
       - result.response.databaseNodes | length == 3
       - result.response.databaseNodes[0].status == "READY"
       - result.response.databaseNodes[1].status == "READY"
@@ -455,7 +455,7 @@
 
 - name: unregister db along with delete time machine and db server vms
   ntnx_ndb_databases:
-    db_uuid: "{{result.db_uuid}}" 
+    db_uuid: "{{result.db_uuid}}"
     state: "absent"
     wait: true
     delete_time_machine: true
@@ -463,7 +463,7 @@
   register: result
 
 - name: verify status of delete of database along with time machine delete
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -482,11 +482,11 @@
 
     db_params_profile:
       name: "{{postgres_ha_profiles.db_params_profile.name}}"
-    
+
     db_server_cluster:
       new_cluster:
         name: "{{cluster1_name}}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         software_profile:
           name: "{{ postgres_ha_profiles.software_profile.name }}"
@@ -496,22 +496,22 @@
           name: "{{ postgres_ha_profiles.compute_profile.name }}"
         password: "{{vm_password}}"
         pub_ssh_key: "{{public_ssh_key}}"
-        vms: 
+        vms:
 
           - name: "{{cluster1_name}}-vm-1"
             node_type: "database"
             role: "Primary"
-        
+
           - name: "{{cluster1_name}}-vm-2"
             node_type: "database"
             role: "Secondary"
-        
+
           - name: "{{cluster1_name}}-vm-3"
             cluster:
               name: "{{cluster.cluster2.name}}"
             node_type: "database"
             role: "Secondary"
-    
+
     postgres:
       type: "ha"
       db_name: testAnsible
@@ -524,7 +524,7 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
@@ -536,7 +536,7 @@
         - uuid: "{{cluster.cluster2.uuid}}"
     tags:
       ansible-databases: "ha-instance-dbs"
-    
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
@@ -553,14 +553,14 @@
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: create properties map
-  set_fact: 
+  set_fact:
       properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
   no_log: true
 # {% endraw %}
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -586,7 +586,7 @@
 
 - name: unregister db along with delete time machine and db server vms
   ntnx_ndb_databases:
-    db_uuid: "{{result.db_uuid}}" 
+    db_uuid: "{{result.db_uuid}}"
     state: "absent"
     wait: true
     delete_time_machine: true
@@ -594,7 +594,7 @@
   register: result
 
 - name: verify status of delete of database along with time machine delete
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false

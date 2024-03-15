@@ -25,7 +25,7 @@
       - result.changed == false
       - result.failed == true
       - result.msg == "Failed generating create vlan spec"
-    fail_msg: "fail: create Dhcp ndb vlan with static Configuration finished successfully" 
+    fail_msg: "fail: create Dhcp ndb vlan with static Configuration finished successfully"
     success_msg: "pass: Returnerd error as expected"
 # ###############################
 - name: create static ndb vlan with missing Configuration
@@ -72,7 +72,7 @@
     success_msg: "pass: create Dhcp ndb vlan finished successfully"
 
 - set_fact:
-    todelete: "{{ todelete + [  result.vlan_uuid ] }}"  
+    todelete: "{{ todelete + [  result.vlan_uuid ] }}"
 ######################
 - name: update dhcp ndb vlan with static Configuration
   ntnx_ndb_vlans:
@@ -99,7 +99,7 @@
       - result.changed == false
       - result.failed == true
       - result.msg == "Failed generating update vlan spec"
-    fail_msg: "fail: update dhcp ndb vlan with static Configuration finished successfully" 
+    fail_msg: "fail: update dhcp ndb vlan with static Configuration finished successfully"
     success_msg: "pass: Returnerd error as expected"
 
 ##################################

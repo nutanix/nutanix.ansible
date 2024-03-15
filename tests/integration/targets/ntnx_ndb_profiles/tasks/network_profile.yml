@@ -1,4 +1,4 @@
-- name: Generate random profile_name 
+- name: Generate random profile_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -20,8 +20,8 @@
     network:
       topology: single
       vlans:
-        - 
-          cluster:  
+        -
+          cluster:
             name: "{{network_profile.single.cluster.name}}"
           vlan_name: "{{network_profile.single.vlan_name}}"
       enable_ip_address_selection: true
@@ -100,12 +100,12 @@
 #     network:
 #       topology: cluster
 #       vlans:
-#         - 
-#           cluster:  
+#         -
+#           cluster:
 #             name: "{{network_profile.HA.cluster1.name}}"
 #           vlan_name: "{{network_profile.HA.cluster1.vlan_name}}"
-#         - 
-#           cluster:  
+#         -
+#           cluster:
 #             name: "{{network_profile.HA.cluster2.name}}"
 #           vlan_name: "{{network_profile.HA.cluster2.vlan_name}}"
 
@@ -141,12 +141,12 @@
 #       publish: true
 #       topology: cluster
 #       vlans:
-#         - 
-#           cluster:  
+#         -
+#           cluster:
 #             name: "{{network_profile.HA.cluster1.name}}"
 #           vlan_name: "{{network_profile.HA.cluster1.vlan_name2}}"
-#         - 
-#           cluster:  
+#         -
+#           cluster:
 #             name: "{{network_profile.HA.cluster2.name}}"
 #           vlan_name: "{{network_profile.HA.cluster2.vlan_name2}}"
 #   register: result

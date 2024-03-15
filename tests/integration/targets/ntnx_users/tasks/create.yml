@@ -6,7 +6,7 @@
   ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
+    project:
       uuid: "{{project.uuid}}"
   register: result
   ignore_errors: true
@@ -65,11 +65,11 @@
 - set_fact:
     todelete: []
 #################################################
-- name: create local user  with project and categories 
+- name: create local user  with project and categories
   ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
+    project:
       uuid: "{{project.uuid}}"
     categories:
       Environment:
@@ -99,7 +99,7 @@
   ntnx_users:
     principal_name: wrong_name
     directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
+    project:
       uuid: "{{project.uuid}}"
     categories:
       Environment:
@@ -163,7 +163,7 @@
   ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
+    project:
       uuid: "{{project.uuid}}"
   register: result
   ignore_errors: true

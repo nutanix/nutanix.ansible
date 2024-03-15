@@ -12,7 +12,7 @@
       validate_certs: false
 
   tasks:
-        
+
     - name: NDB cluster creation
       ntnx_ndb_clusters:
         name: "{{cluster.name}}"
@@ -40,6 +40,6 @@
             subnet_mask: "{{prism_vlan.subnet_mask}}"
         storage_container: "{{storage_container.name}}"
       register: output
-    
+
     - debug:
         msg: "{{output}}"

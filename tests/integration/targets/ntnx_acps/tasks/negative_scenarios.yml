@@ -1,6 +1,6 @@
   - debug:
       msg: "Started Negative Creation Cases"
-      
+
   - name: Unknown role name
     ntnx_acps:
       state: present

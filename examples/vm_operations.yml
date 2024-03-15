@@ -17,14 +17,14 @@
         script_path: ""
         subnet_name: ""
         vm_uuid: ""
-        
+
   - name: hard power off the vm
     ntnx_vms:
         state: hard_poweroff
         vm_uuid: "{{ vm_uuid }}"
     register: result
     ignore_errors: true
-    
+
   - name: create_ova_image  while vm is on
     ntnx_vms_ova:
         state: present

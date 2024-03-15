@@ -82,7 +82,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-    
+
 - name: Delete all Created Subnets
   ntnx_subnets:
     state: absent
@@ -124,7 +124,7 @@
 
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
-    
+
 - name: Delete all Created Subnets
   ntnx_subnets:
     state: absent
@@ -132,7 +132,7 @@
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True
-  
+
 - set_fact:
     todelete: []
 #################################################################
@@ -299,7 +299,7 @@
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create Overlay Subnet with minimum requirements "
     success_msg: " Overlay Subnet with minimum requirements created successfully "
-    
+
 - set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
@@ -310,7 +310,7 @@
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True
-  
+
 - set_fact:
     todelete: []
 #################################################################
@@ -334,7 +334,7 @@
           domain_name: "{{ dhcp_settings.domain_name }}"
           tftp_server_name: "{{ dhcp_settings.tftp_server_name }}"
           boot_file: "{{ dhcp_settings.boot_file }}"
-          
+
   register: result
   ignore_errors: true
 - name: Creation Status
@@ -397,4 +397,3 @@
   register: result
   loop: "{{ todelete }}"
   ignore_errors: True
-  

@@ -16,7 +16,7 @@
       - result.blocks.0.nodes.0.ipv6_address is defined
     fail_msg: " Fail : unable to Discover nodes "
     success_msg: "Succes: Discover nodes finished successfully "
-  
+
 - name: Discover all nodes
   ntnx_foundation_discover_nodes_info:
     include_configured: true

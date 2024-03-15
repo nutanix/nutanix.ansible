@@ -14,7 +14,7 @@
   register: setup_acp
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - setup_acp.response is defined
       - setup_acp.response.status.state == 'COMPLETE'
@@ -38,7 +38,7 @@
   register: result
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -56,14 +56,14 @@
     desc: "description after update"
     filters:
       - scope_filter:
-          - 
+          -
             lhs: PROJECT
             operator: IN
             rhs:
               uuid_list:
                 - "{{ project.uuid }}"
         entity_filter:
-          - 
+          -
             lhs: ALL
             operator: IN
             rhs:
@@ -71,7 +71,7 @@
   register: result
 
 - name: Update Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -97,14 +97,14 @@
     desc: "description after update"
     filters:
       - scope_filter:
-          - 
+          -
             lhs: PROJECT
             operator: IN
             rhs:
               uuid_list:
                 - "{{ project.uuid }}"
         entity_filter:
-          - 
+          -
             lhs: ALL
             operator: IN
             rhs:
@@ -112,7 +112,7 @@
   register: result
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false

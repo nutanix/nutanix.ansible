@@ -14,7 +14,7 @@
     - name: Setting Variables
       set_fact:
         vpc_name: ""
-        
+
     - name: List VPC using name filter criteria
       ntnx_vpcs_info:
         filter:
@@ -23,7 +23,7 @@
       register: result
       ignore_errors: True
 
-    
+
     - name: List VPC using length, offset and descending name sorting
       ntnx_vpcs_info:
         length: 4
