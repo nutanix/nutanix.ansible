@@ -22,7 +22,7 @@
 - set_fact:
     test_role_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
-################################################## 
+##################################################
 
 - name: List role using uuid criteria
   ntnx_roles_info:
@@ -41,11 +41,11 @@
     fail_msg: "Unable to list role using uuid"
     success_msg: "role info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List roles using filter criteria
   ntnx_roles_info:
-    filter: 
+    filter:
       name: "{{ test_role_name }}"
   register: result
   ignore_errors: True
@@ -62,7 +62,7 @@
     fail_msg: "Unable to list roles using filter"
     success_msg: "role info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List roles using length and offset
   ntnx_roles_info:

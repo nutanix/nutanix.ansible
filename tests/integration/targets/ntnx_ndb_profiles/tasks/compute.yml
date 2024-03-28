@@ -4,7 +4,7 @@
 
 
 ################################################################
-- name: Generate random profile_name 
+- name: Generate random profile_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -128,7 +128,7 @@
 - name: verify unpublish flow in compute profile
   ntnx_ndb_profiles:
     profile_uuid: "{{result.profile_uuid}}"
-    
+
     type: compute
     compute:
       publish: false

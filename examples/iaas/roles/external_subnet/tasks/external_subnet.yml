@@ -17,6 +17,6 @@
               end_ip: "{{ item.eip }}"
     register: external_network
   - debug:
-      msg: 
-        - "name: Ext_Nat" 
+      msg:
+        - "name: Ext_Nat"
         - "uuid: {{ external_network.subnet_uuid }}"

@@ -8,14 +8,14 @@
             apptype_filter_by_category:
               AppFamily:
                 - Backup
-            apptiers: 
+            apptiers:
               - "{{categories.apptiers[0]}}"
               - "{{categories.apptiers[1]}}"
 
           default_internal_policy: DENY_ALL
 
       inbounds:
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
@@ -25,7 +25,7 @@
               tcp:
                 - start_port: 22
                   end_port: 80
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
@@ -34,38 +34,38 @@
                 icmp:
                   - code: 1
                     type: 1
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
                 - DevOps
-            protocol: 
+            protocol:
               udp:
                 - start_port: 82
                   end_port: 8080
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
                 - DevOps
-            protocol: 
+            protocol:
               service:
                 name: 6a44
-        - 
+        -
             ip_subnet:
               prefix_length: 24
               ip: 192.168.1.0
             description: test description
-        - 
+        -
           address:
             name: dest
       outbounds:
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
                 - DevOps
-            protocol: 
+            protocol:
               icmp:
                 - code: 1
                   type: 1
@@ -93,12 +93,12 @@
     app_rule:
       policy_mode: APPLY
       inbounds:
-        - 
+        -
           rule_id: "{{result.response.spec.resources.app_rule.inbound_allow_list.0.rule_id}}"
           state: absent
       outbounds:
           -
-            protocol: 
+            protocol:
               icmp:
                 - code: 1
                   type: 1
@@ -145,7 +145,7 @@
             apptype_filter_by_category:
               AppFamily:
                 - Backup
-            apptiers: 
+            apptiers:
               - "{{categories.apptiers[0]}}"
               - "{{categories.apptiers[1]}}"
           default_internal_policy: DENY_ALL

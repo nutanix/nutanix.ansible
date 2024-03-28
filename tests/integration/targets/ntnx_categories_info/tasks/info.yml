@@ -25,7 +25,7 @@
         - 'value-b'
         - 'value-c'
 
-- name: Create category key 
+- name: Create category key
   ntnx_categories:
     state: "present"
     name: "{{category_name}}"
@@ -66,7 +66,7 @@
     fail_msg: "Unable to get particular category with it's name"
     success_msg: "category info obtained successfully by it's name"
 #####################################################################################################
-- name: delete the category  
+- name: delete the category
   ntnx_categories:
     state: "absent"
     name: "{{category_name}}"
@@ -74,7 +74,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == true

@@ -17,17 +17,17 @@
       reroute: "{{reroute_ip}}"
     protocol:
       icmp:
-        type: "*"
-        code: "*"
-  register: result 
+        code: "{{ icmp.code }}"
+        type: "{{ icmp.type }}"
+  register: result
   ignore_errors: True
-    
+
 - name: Creation Status
   assert:
     that:
       - result.failed is defined
     success_msg: ' Success: returned error as expected '
-##################################################################  
+##################################################################
 - name: Create PBR with priority less than 10
   ntnx_pbrs:
     state: present
@@ -44,11 +44,11 @@
       reroute: "{{reroute_ip}}"
     protocol:
       icmp:
-        type: "*"
-        code: "*"
-  register: result 
+        code: "{{ icmp.code }}"
+        type: "{{ icmp.type }}"
+  register: result
   ignore_errors: True
-    
+
 - name: Creation Status
   assert:
     that:
@@ -73,11 +73,15 @@
       icmp:
         code: "{{ icmp.code }}"
         type: "{{ icmp.type }}"
-  register: result 
+  register: result
   ignore_errors: True
 
-- set_fact:
-    todelete: "{{ todelete + [  result.pbr_uuid ] }}"
+- name: Check failure status
+  assert:
+    that:
+      - result.failed == true
+    success_msg: ' Success: returned error as expected '
+
 #################################################################
 - name: Create PBR with unknown vpc uuid
   ntnx_pbrs:
@@ -95,11 +99,11 @@
       reroute: "{{reroute_ip}}"
     protocol:
       icmp:
-        type: "*"
-        code: "*"
-  register: result 
+        code: "{{ icmp.code }}"
+        type: "{{ icmp.type }}"
+  register: result
   ignore_errors: True
-    
+
 - name: Creation Status
   assert:
     that:
@@ -122,11 +126,11 @@
       reroute: "{{reroute_ip}}"
     protocol:
       icmp:
-        type: "*"
-        code: "10"
-  register: result 
+        type: 10
+        code: 10
+  register: result
   ignore_errors: True
-    
+
 - name: Creation Status
   assert:
     that:
@@ -138,19 +142,6 @@
     state: absent
     pbr_uuid: 5
   register: result
-  loop: "{{ todelete }}"
-  ignore_errors: True
-- name: Creation Status
-  assert:
-    that:
-      - result.failed is defined
-    success_msg: ' Success: returned error as expected '
-#######################################################################
-- name: Delete pbrs with unknown uuid
-  ntnx_pbrs:
-    state: absent
-  register: result
-  loop: "{{ todelete }}"
   ignore_errors: True
 - name: Creation Status
   assert:

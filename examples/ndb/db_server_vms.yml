@@ -177,9 +177,9 @@
         db_server_clusters:
           - uuid: "test_cluter_1"
           - uuid: "test_cluter_2"
-        maintenance_window: 
+        maintenance_window:
           name: "{{maintenance.window_name}}"
-        tasks:         
+        tasks:
           - type: "OS_PATCHING"
             pre_task_cmd: "ls -a"
             post_task_cmd: "ls"
@@ -193,7 +193,7 @@
       ntnx_ndb_maintenance_tasks:
         db_server_vms:
           - uuid: "{{db_server_uuid}}"
-        maintenance_window: 
+        maintenance_window:
           uuid: "{{maintenance.window_uuid}}"
         tasks: []
       register: result
@@ -203,7 +203,7 @@
       ntnx_ndb_maintenance_tasks:
         db_server_vms:
           - uuid: "{{db_server_uuid}}"
-        maintenance_window: 
+        maintenance_window:
           uuid: "{{maintenance.window_uuid}}"
         tasks: []
       register: result
@@ -212,9 +212,9 @@
       ntnx_ndb_maintenance_tasks:
         db_server_vms:
           - name: "{{vm1_name_updated}}"
-        maintenance_window: 
+        maintenance_window:
           name: "{{maintenance.window_name}}"
-        tasks:         
+        tasks:
           - type: "OS_PATCHING"
             pre_task_cmd: "ls -a"
             post_task_cmd: "ls"
@@ -303,7 +303,7 @@
             - type: "DB_PATCHING"
               pre_task_cmd: "ls -l"
               post_task_cmd: "ls -F"
-      
+
       register: result
 
     ################################### DB server VM Delete tasks #############################

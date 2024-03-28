@@ -33,13 +33,13 @@
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       create_new_server:
         name: "{{ vm1_name }}-db"
         desc: "vm for db server"
         password: "{{ vm_password }}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         software_profile:
           name: "{{ software_profile.name }}"
@@ -48,7 +48,7 @@
         compute_profile:
           name: "{{ compute_profile.name }}"
         pub_ssh_key: "{{ public_ssh_key }}"
-    
+
     postgres:
       listener_port: "5432"
       db_name: testAnsible1
@@ -61,14 +61,14 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
         quaterly: JANUARY
         log_catchup: 30
         snapshots_per_day: 2
-    
+
   register: result
 
 - set_fact:
@@ -78,7 +78,7 @@
     time_machine_uuid: "{{result.response.timeMachineId}}"
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -130,7 +130,7 @@
     }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -148,7 +148,7 @@
 
 
 - name: snapshot create status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -162,7 +162,7 @@
   ntnx_ndb_database_snapshots:
     name: "{{snapshot_name}}2"
     time_machine_uuid: "{{time_machine_uuid}}"
-    expiry_days: 4 
+    expiry_days: 4
   register: result
 
 
@@ -170,7 +170,7 @@
     snapshot_uuid: "{{result.snapshot_uuid}}"
 
 - name: snapshot create status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -184,13 +184,13 @@
 
 
 - name: rename snapshot
-  ntnx_ndb_database_snapshots: 
+  ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     name: "{{snapshot_name}}2-updated"
   register: result
 
 - name: check rename status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -209,7 +209,7 @@
   register: result
 
 - name: snapshot expiry update status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -222,13 +222,13 @@
 
 
 - name: remove expiry schedule
-  ntnx_ndb_database_snapshots: 
+  ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     remove_expiry: true
   register: result
 
 - name: snapshot expiry update status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -240,14 +240,14 @@
 
 
 - name: Add expiry schedule and rename
-  ntnx_ndb_database_snapshots: 
+  ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     name: "{{snapshot_name}}2"
     expiry_days: 6
   register: result
 
 - name: snapshot update status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -261,13 +261,13 @@
 
 
 - name: Idempotency check
-  ntnx_ndb_database_snapshots: 
+  ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
     expiry_days: 6
   register: result
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -307,7 +307,7 @@
 
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_response
     fail_msg: "Unable to create log catcup spec"
@@ -343,7 +343,7 @@
 
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_response
     fail_msg: "Unable to create log catcup spec"
@@ -358,7 +358,7 @@
   register: result
 
 - name: verify log catchup status
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -397,7 +397,7 @@
     }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using pitr timestamp spec"
@@ -432,7 +432,7 @@
 
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using latest snapshot spec"
@@ -468,7 +468,7 @@
     }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using snapshot uuid spec"
@@ -482,7 +482,7 @@
   register: result
 
 - name: restore status
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -498,7 +498,7 @@
   register: result
 
 - name: restore status
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -548,7 +548,7 @@
     }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_result
     fail_msg: "Unable to create database scaling spec"
@@ -565,7 +565,7 @@
   register: result
 
 - name: database scaling status
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -580,7 +580,7 @@
   check_mode: yes
   ntnx_ndb_linked_databases:
     db_instance_uuid: "{{db_uuid}}"
-    databases: 
+    databases:
       - test1
       - test2
       - test3
@@ -608,7 +608,7 @@
     }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_result
     fail_msg: "Unable to create spec for adding databases in database instance"
@@ -618,7 +618,7 @@
 - name: add databases in database instance
   ntnx_ndb_linked_databases:
     db_instance_uuid: "{{db_uuid}}"
-    databases: 
+    databases:
       - test1
       - test2
   register: result
@@ -626,15 +626,15 @@
 # {% raw %}
 
 - name: create linked databases to its uuid map
-  set_fact: 
+  set_fact:
       linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
-  loop: "{{result.response}}" 
+  loop: "{{result.response}}"
   no_log: true
 
 # {% endraw %}
 
 - name: check linked database update status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.db_instance_uuid is defined
@@ -648,21 +648,21 @@
   ntnx_ndb_linked_databases:
     state: "absent"
     db_instance_uuid: "{{db_uuid}}"
-    database_uuid: "{{linked_databases.test1}}" 
+    database_uuid: "{{linked_databases.test1}}"
   register: result
 
 # {% raw %}
 
-- name: create linked database map 
-  set_fact: 
+- name: create linked database map
+  set_fact:
       linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
-  loop: "{{result.response}}" 
+  loop: "{{result.response}}"
   no_log: true
 
 # {% endraw %}
 
 - name: check linked database update status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.db_instance_uuid is defined
@@ -683,7 +683,7 @@
   register: result
 
 - name: verify status of delete of database along with time machine and db server vm delete
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false

@@ -69,7 +69,7 @@
     fail_msg: 'Fail: Unable to create VMDK ova_image '
     success_msg: 'Success: create VMDK ova_image successfully '
 #########################################
-- name: Delete all Created VMs 
+- name: Delete all Created VMs
   ntnx_vms:
     state: absent
     vm_uuid: "{{ vm.vm_uuid }}"

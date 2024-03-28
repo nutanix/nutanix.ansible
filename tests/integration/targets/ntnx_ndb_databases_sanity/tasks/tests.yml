@@ -27,13 +27,13 @@
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       create_new_server:
         name: "{{ vm1_name }}"
         desc: vm for db server
         password: "test_password"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         software_profile:
           name: "{{ software_profile.name }}"
@@ -42,7 +42,7 @@
         compute_profile:
           name: "{{ compute_profile.name }}"
         pub_ssh_key: "test_key"
-    
+
     postgres:
       listener_port: "9999"
       db_name: testAnsible
@@ -59,7 +59,7 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
@@ -68,8 +68,8 @@
         snapshots_per_day: 2
     auto_tune_staging_drive: False
     tags:
-      ansible-databases: "single-instance-dbs"
-    
+      databases: "single-instance-dbs"
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
@@ -189,7 +189,7 @@
             }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -220,14 +220,14 @@
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       create_new_server:
         ip: "{{ vm_ip }}"
         name: "{{ vm1_name }}"
         desc: "vm for db server"
         password: "{{ vm_password }}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         software_profile:
           name: "{{ software_profile.name }}"
@@ -236,7 +236,7 @@
         compute_profile:
           name: "{{ compute_profile.name }}"
         pub_ssh_key: "{{ public_ssh_key }}"
-    
+
     postgres:
       listener_port: "5432"
       db_name: testAnsible
@@ -249,7 +249,7 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
@@ -257,8 +257,8 @@
         log_catchup: 30
         snapshots_per_day: 2
     tags:
-      ansible-databases: "single-instance-dbs"
-    
+      databases: "single-instance-dbs"
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
@@ -280,16 +280,16 @@
   when: properties is undefined
 
 # skip jekyll/Liquid syntax check
-# 
+#
 - name: create properties map
-  set_fact: 
+  set_fact:
       properties: "{{ properties | combine ({ item['name'] : item['value'] }) }}"
-  loop: "{{result.response.properties}}" 
+  loop: "{{result.response.properties}}"
   no_log: true
 #
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -319,7 +319,7 @@
   register: result
 
 - name: Verify DB server VM status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'UP'
@@ -337,16 +337,16 @@
   check_mode: yes
   ntnx_ndb_databases:
     wait: true
-    db_uuid: "{{db_uuid}}" 
+    db_uuid: "{{db_uuid}}"
     name: "{{db1_name_updated}}"
     desc: "ansible-created-db-desc-updated"
-    
+
     tags:
-      ansible-databases: "single-instance-dbs-updated"
+      databases: "single-instance-dbs-updated"
   register: result
 
-- name: check mode status 
-  assert: 
+- name: check mode status
+  assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -359,16 +359,16 @@
 - name: update database
   ntnx_ndb_databases:
     wait: true
-    db_uuid: "{{db_uuid}}" 
+    db_uuid: "{{db_uuid}}"
     name: "{{db1_name_updated}}"
     desc: "ansible-created-db-desc-updated"
-    
+
     tags:
-      ansible-databases: "single-instance-dbs-updated"
+      databases: "single-instance-dbs-updated"
   register: result
 
 - name: update status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -388,16 +388,16 @@
 - name: idempotency checks
   ntnx_ndb_databases:
     wait: true
-    db_uuid: "{{db_uuid}}" 
+    db_uuid: "{{db_uuid}}"
     name: "{{db1_name_updated}}"
     desc: "ansible-created-db-desc-updated"
-    
+
     tags:
-      ansible-databases: "single-instance-dbs-updated"
+      databases: "single-instance-dbs-updated"
   register: result
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -411,13 +411,13 @@
   check_mode: yes
   ntnx_ndb_databases:
     state: "absent"
-    db_uuid: "{{db_uuid}}" 
+    db_uuid: "{{db_uuid}}"
     wait: true
     delete_db_from_vm: true
   register: result
 
 - name: verify delete check mode spec
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -433,14 +433,14 @@
   check_mode: yes
   ntnx_ndb_databases:
     state: "absent"
-    db_uuid: "{{db_uuid}}" 
+    db_uuid: "{{db_uuid}}"
     wait: true
     soft_delete: true
     delete_time_machine: true
   register: result
 
 - name: verify soft remove check mode spec
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -451,7 +451,7 @@
     fail_msg: "creation of spec for soft remove with time machine delete failed"
     success_msg: "spec for soft remove with time machine delete created successfully"
 
-  
+
 #####################################INFO Module tests#######################################################
 
 - debug:
@@ -549,14 +549,14 @@
 
 - name: unregister db along with delete time machine
   ntnx_ndb_databases:
-    db_uuid: "{{db_uuid}}" 
+    db_uuid: "{{db_uuid}}"
     state: "absent"
     wait: true
     delete_time_machine: true
   register: result
 
 - name: verify status of delete of database along with time machine delete
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -576,7 +576,7 @@
   register: result
 
 - name: check delete status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True

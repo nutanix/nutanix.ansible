@@ -11,7 +11,7 @@
       nutanix_password: <pass>
       validate_certs: false
 
-  tasks:        
+  tasks:
   - set_fact:
       cluster:
         name: <cluster_name>
@@ -61,7 +61,7 @@
         file_system: ext4
         flash_mode: False
     register: result
-  
+
   - name: delete  dev cluster
     ntnx_karbon_clusters:
       state: absent
@@ -109,7 +109,7 @@
         flash_mode: true
     register: result
 
-  - name: Create worker node pool with subnet uuid 
+  - name: Create worker node pool with subnet uuid
     ntnx_karbon_clusters_node_pools:
       node_subnet:
         uuid: "<uuid>"
@@ -119,7 +119,7 @@
         num_instances: 2
         cpu: 4
         memory_gb: 8
-        disk_gb: 120   
+        disk_gb: 120
     register: result
     ignore_errors: true
 

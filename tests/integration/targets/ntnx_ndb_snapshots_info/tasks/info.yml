@@ -16,7 +16,7 @@
     fail_msg: "Unable to list all NDB snapshots"
     success_msg: "NDB snapshots listed successfully"
 ################################################################
-- name: get NDB snapshots using it's UTC time_zone  
+- name: get NDB snapshots using it's UTC time_zone
   ntnx_ndb_snapshots_info:
     filters:
       time_zone: UTC
@@ -52,7 +52,7 @@
     fail_msg: "Unable to get NDB snapshots with time-machine id  "
     success_msg: "get  NDB snapshots using with time-machine id"
 ################################################################
-- name: get NDB snapshots using it's uuid  
+- name: get NDB snapshots using it's uuid
   ntnx_ndb_snapshots_info:
     uuid: "{{snapshots.response[0].id}}"
   register: result

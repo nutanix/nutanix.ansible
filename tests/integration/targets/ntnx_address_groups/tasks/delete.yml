@@ -2,7 +2,7 @@
 - debug:
     msg: start ntnx_address_groups delete tests
 
-- name: Generate random project_name 
+- name: Generate random project_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -24,7 +24,7 @@
   register: test_ag
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - test_ag.response is defined
       - test_ag.changed == True
@@ -40,7 +40,7 @@
   register: result
 
 - name: delete Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True

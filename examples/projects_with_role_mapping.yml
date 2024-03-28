@@ -16,7 +16,7 @@
         desc: "desc-123"
         clusters:
           - <cluster-uuid>
-        subnets: 
+        subnets:
           - name: "s1"
           - name: "overlay-s2"
         default_subnet:
@@ -56,7 +56,7 @@
             role:
               name: "Consumer"
       register: project1
-  
+
     - name: update role mappings of project
       ntnx_projects:
         state: present
@@ -74,13 +74,13 @@
             role:
               name: "all-permissions"
       register: updated_project
-    
+
     - name: Read the updated project
       ntnx_projects_info:
         project_uuid: "{{updated_project.project_uuid}}"
         include_acps: true
       register: project_info
-    
+
     - name: Print the project details
       debug:
         msg: "{{project_info}}"
@@ -90,5 +90,3 @@
         state: absent
         project_uuid: "{{updated_project.project_uuid}}"
       register: op
-  
-    

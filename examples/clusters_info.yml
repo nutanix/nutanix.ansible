@@ -11,7 +11,7 @@
       nutanix_password: <pass>
       validate_certs: false
 
-  tasks:        
+  tasks:
   - name: test getting all clusters
     ntnx_clusters_info:
     register: clusters

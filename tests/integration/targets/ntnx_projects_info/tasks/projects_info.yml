@@ -2,7 +2,7 @@
   debug:
     msg: "Start ntnx_project_info tests"
 
-- name: Generate random project_name 
+- name: Generate random project_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -25,7 +25,7 @@
     name: "{{project2_name}}"
     collaboration: True
     role_mappings:
-      - role: 
+      - role:
           name: "{{roles[0]}}"
         user:
           uuid: "{{users[0]}}"
@@ -38,7 +38,7 @@
 - set_fact:
     todelete: "{{ todelete + [  project_2.project_uuid ] }}"
 
-################################################## 
+##################################################
 
 - name: List project using name filter criteria
   ntnx_projects_info:
@@ -55,7 +55,7 @@
     fail_msg: "Unable to list projects using filter"
     success_msg: "Project info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List all projects
   ntnx_projects_info:
@@ -70,7 +70,7 @@
     fail_msg: "Unable to list all projects"
     success_msg: "Project info of all projects obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List project using project uuid criteria
   ntnx_projects_info:
@@ -87,7 +87,7 @@
     fail_msg: "Unable to list projects using uuid"
     success_msg: "Project info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List project using project uuid criteria including acps
   ntnx_projects_info:
@@ -101,13 +101,13 @@
     that:
       - result.response is defined
       - result.response.status.name == "{{ project2_name }}"
-      - result.response.acps is defined 
+      - result.response.acps is defined
       - result.response.acps | length == 1
       - result.response.metadata.kind == "project"
     fail_msg: "Unable to list projects with acps using uuid"
     success_msg: "Project info obtained successfully"
 
-################################################## 
+##################################################
 - name: List project using length and offset
   ntnx_projects_info:
     length: 1

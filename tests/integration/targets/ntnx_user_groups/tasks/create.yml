@@ -49,7 +49,7 @@
 - set_fact:
     test_user_group_uuid: "{{user_groups.response.entities.0.metadata.uuid}}"
 
-################################################## 
+##################################################
 
 - name: List user_groups using user_group uuid criteria
   ntnx_user_groups_info:
@@ -68,11 +68,11 @@
     fail_msg: "Unable to list user group using uuid"
     success_msg: "user group info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List user_groups using filter criteria
   ntnx_user_groups_info:
-    filter: 
+    filter:
       name: "{{ test_user_group_name }}"
   register: result
   ignore_errors: True
@@ -89,7 +89,7 @@
     fail_msg: "Unable to list user groups using filter"
     success_msg: "user group info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List user groups using length and offset
   ntnx_user_groups_info:
@@ -106,7 +106,7 @@
       - result.failed == false
       - result.response.metadata.total_matches > 0
       - result.response.metadata.length == 2
-      
+
 
     fail_msg: "Unable to list user groups using length and offset"
     success_msg: "user groups listed successfully using length and offset"

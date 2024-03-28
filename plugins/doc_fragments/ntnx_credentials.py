@@ -24,7 +24,7 @@ options:
       - Prism central port
       - C(nutanix_port). If not set then the value of the C(NUTANIX_PORT), environment variable is used.
     type: str
-    default: 9440
+    default: "9440"
   nutanix_username:
     description:
       - Prism central username

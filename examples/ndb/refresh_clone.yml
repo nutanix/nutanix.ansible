@@ -26,7 +26,7 @@
         timezone: "UTC"
       register: output
 
-    
+
     - debug:
         msg: "{{output}}"
 

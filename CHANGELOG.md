@@ -23,6 +23,10 @@
 - ntnx_vms_clone - [Bug] cannot change boot_config when cloning in module ntnx_vms_clone [[\#360](https://github.com/nutanix/nutanix.ansible/issues/359)]
 - website - [Bug] Github page deployment action is failing. [[\#483](https://github.com/nutanix/nutanix.ansible/issues/483)]
 
+**Breaking Changes:**
+
+- nutanix.ncp collection - Due to all versions of ansible-core less than v2.14.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.14.0
+
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.9.0...v1.9.1)
 
 ## v1.9.0 (11 July 2023)
@@ -190,7 +194,7 @@
 **Prism Central**
 - Ansible module for Image Management
 - Ansible info module for Image Management
-- Ansible module for Image Placement Policy 
+- Ansible module for Image Placement Policy
 - Ansible info module for Image Placement Policies
 - Ansible module for Network Security Rules
 - Ansible info module for Network Security Rules

@@ -1,4 +1,4 @@
-# Here we will image three kind of nodes with different methods. 
+# Here we will image three kind of nodes with different methods.
 # We will image one node using manual mode. Second node, which can be dos running node, will be imaged using discovery mode using cvm
 # Third node, which can be nutanix imaged(aos running) node, will be imaged using discovery mode using IPMI
 - name: Image nodes
@@ -52,7 +52,7 @@
                   hypervisor_hostname: "superman3"
       clusters:
           - redundancy_factor: 2
-            cluster_members: 
+            cluster_members:
               - "10.xx.xx.xx"
               - "10.xx.xx.xx"
               - "10.xx.xx.xx"

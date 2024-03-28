@@ -6,7 +6,7 @@
     karbon_name:  "test-module21"
 
 #############################
-- name:  Verify check mode for PROD karbon cluster 
+- name:  Verify check mode for PROD karbon cluster
   ntnx_karbon_clusters:
     cluster:
       uuid: "{{cluster.uuid}}"
@@ -63,7 +63,7 @@
       - result.response.cni_config.service_ipv4_cidr ==  "{{cni.service_ipv4_cidr}}"
     success_msg: "Success: check mode spec returned  as expected"
     fail_msg: "Check mode for PROD cluster failed"
-#############################     
+#############################
 
 - name:  Verify check mode for ntnx_karbon_clusters
   ntnx_karbon_clusters:
@@ -105,7 +105,7 @@
       - result.response.cni_config.service_ipv4_cidr ==  "{{cni.service_ipv4_cidr}}"
     success_msg: "Success: check mode spec returned  as expected"
     fail_msg: "Check mode for ntnx_karbon_clusters failed"
-############################     
+############################
 - name: create  DEV cluster with Flannel network provider
   ntnx_karbon_clusters:
     cluster:
@@ -222,7 +222,7 @@
     success_msg: " Pass: create  DEV cluster with Calico network provider finished successfully"
 #############################
 
-- name: test getting  dev cluster using name 
+- name: test getting  dev cluster using name
   ntnx_karbon_clusters_info:
     cluster_name: "{{karbon_cluster.response.name}}"
   register: result
@@ -273,7 +273,7 @@
     fail_msg: " Fail: Unable to get particular Cluster and it's kube config "
     success_msg: " Pass: Cluster info obtained successfully with it's kube config  "
 #############################
-- name: Generate random node_pool name 
+- name: Generate random node_pool name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=9,upper = false)[0]}}"
 
@@ -288,7 +288,7 @@
 - debug:
     msg: Start testing ntnx_karbon_clusters_node_pools
 
-- name: Create node pool  with subnet uuid 
+- name: Create node pool  with subnet uuid
   ntnx_karbon_clusters_node_pools:
     node_subnet:
       uuid: "{{network.dhcp.uuid}}"
@@ -298,12 +298,12 @@
       num_instances: 2
       cpu: 4
       memory_gb: 8 # for etcd min 8
-      disk_gb: 120   
+      disk_gb: 120
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.failed == false
@@ -314,7 +314,7 @@
     fail_msg: "Fail: Unable to Create node pool "
     success_msg: "Passed: Create node pool finished successfully "
 #################################
-- name: try to update node pool config with same values 
+- name: try to update node pool config with same values
   ntnx_karbon_clusters_node_pools:
     node_pool_name:  "{{node1_name}}"
     cluster_name:  "{{karbon_name}}"
@@ -322,12 +322,12 @@
       num_instances: 2
       cpu: 4
       memory_gb: 8 # for etcd min 8
-      disk_gb: 120   
+      disk_gb: 120
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -335,7 +335,7 @@
     fail_msg: "Fail: idempotecy check fail "
     success_msg: "Passed: Returned as expected "
 #################################
-- name: try to update node pool config with wrong labels 
+- name: try to update node pool config with wrong labels
   ntnx_karbon_clusters_node_pools:
     node_pool_name:  "{{node1_name}}"
     cluster_name:  "{{karbon_name}}"
@@ -347,12 +347,12 @@
     add_labels:
       propert.-+]y5: "string"
       propert5: "string"
-      property4: "string+-.3-@" 
+      property4: "string+-.3-@"
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == true
@@ -378,7 +378,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.failed == false
@@ -403,7 +403,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.failed == false
@@ -431,7 +431,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.failed == false
@@ -471,7 +471,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.failed == false

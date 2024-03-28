@@ -35,6 +35,6 @@
         model: "<node-model>"
     register: output
 
-  - name: details of imaged node 
+  - name: details of imaged node
     debug:
       msg: '{{ output }}'

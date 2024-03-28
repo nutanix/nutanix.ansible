@@ -15,7 +15,7 @@
       set_fact:
         external_subnet_name: ""
         vm_name: ""
-        
+
     - name: Create floating ip with external subnet uuid
       ntnx_floating_ips:
         state: present
@@ -24,7 +24,7 @@
           name: "{{ external_subnet_name }}"
       register: result
 
-    - name: Assign floating ip to vm 
+    - name: Assign floating ip to vm
       ntnx_floating_ips:
         state: present
         external_subnet:
