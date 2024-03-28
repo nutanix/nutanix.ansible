@@ -24,7 +24,7 @@
         values:
           - "val1"
           - "val2"
-    
+
     - name: Create category key with values
       ntnx_categories:
         state: "present"
@@ -34,7 +34,7 @@
           - "val3"
           - "val4"
       register: cat2
-    
+
     - name: Add more category values to test-cat-2
       ntnx_categories:
         state: "present"
@@ -47,28 +47,22 @@
       ntnx_categories_info:
         name: "test-cat-1"
       register: cat1_info
-    
+
     - name: Delete val1 category value from test-cat-1
       ntnx_categories:
         state: absent
         name: "test-cat-1"
         values:
           - val1
-    
+
     - name: delete all category values from test-cat-1
       ntnx_categories:
         state: absent
         name: "test-cat-1"
         remove_values: true
 
-    - name: delete category key test-cat-2 including its all values 
+    - name: delete category key test-cat-2 including its all values
       ntnx_categories:
         state: absent
         name: "test-cat-2"
         remove_values: true
-    
-    
-    
-    
-
-    

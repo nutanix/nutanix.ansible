@@ -1,7 +1,7 @@
 - set_fact:
     todelete: []
 
-- name: Creat anohter VM with same name 
+- name: Creat anohter VM with same name
   ntnx_vms:
     name: "{{ vm.name }}"
     cluster:
@@ -9,7 +9,7 @@
     state: "power_off"
   register: output
   ignore_errors: true
-  
+
 - name: Creation Status
   assert:
     that:
@@ -37,7 +37,7 @@
       - result.response.metadata.total_matches == 1
     fail_msg: " Unable to list vms using filter_string"
     success_msg: " VMs listed successfully using filter_string "
-################################################## 
+##################################################
 - name: List vms using name filter criteria
   ntnx_vms_info:
     filter:
@@ -53,7 +53,7 @@
       - result.response is defined
     fail_msg: " Unable to list vms "
     success_msg: " VMs listed successfully "
-################################################## 
+##################################################
 - name: List vms using length and offset
   ntnx_vms_info:
     length: 10
@@ -84,7 +84,7 @@
     fail_msg: " Unable to list vms "
     success_msg: " VMs listed successfully "
 ####################################################
-- name: Delete all Created VMs 
+- name: Delete all Created VMs
   ntnx_vms:
     state: absent
     vm_uuid: '{{ item }}'

@@ -71,7 +71,7 @@
     fip_uuid: 5
   register: result
   ignore_errors: True
-  
+
 - name: Creation Status
   assert:
     that:

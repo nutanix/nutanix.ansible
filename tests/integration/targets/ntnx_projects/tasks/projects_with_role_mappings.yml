@@ -2,7 +2,7 @@
   debug:
     msg: "Start ntnx_project tests with role mappings"
 
-- name: Generate random project_name 
+- name: Generate random project_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -60,7 +60,7 @@
     desc: desc-123
     clusters:
       - "{{ cluster.uuid }}"
-    subnets: 
+    subnets:
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
       - name: "{{ overlay.name }}"
@@ -75,13 +75,13 @@
         limit: 1
     collaboration: false
     role_mappings:
-      - user: 
+      - user:
           uuid: "{{users[0]}}"
         role:
           name: "{{roles[0]}}"
       - user:
           uuid: "{{users[1]}}"
-        role: 
+        role:
           name: "{{roles[1]}}"
       - user:
           principal_name: "{{new_user}}"
@@ -106,7 +106,7 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.project_status.name == "{{project2_name}}"
       - result.response.status.project_status.description == 'desc-123'
-      - result.response.status.project_status.resources.resource_domain.resources[0].limit == 1 
+      - result.response.status.project_status.resources.resource_domain.resources[0].limit == 1
       - result.response.status.project_status.resources.resource_domain.resources[0].resource_type == 'VCPUS'
       - result.response.status.project_status.resources.subnet_reference_list | length == 3
       - result.response.status.project_status.resources.subnet_reference_list[0].uuid in "{{expected_subnets}}"
@@ -136,7 +136,7 @@
   ntnx_projects:
     project_uuid: "{{result.project_uuid}}"
     name: "{{project3_name}}"
-    subnets: 
+    subnets:
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
     default_subnet:
@@ -160,9 +160,9 @@
           uuid: "{{users[1]}}"
       - role:
           name: "{{acp.role.name}}"
-        user_group: 
+        user_group:
           uuid: "{{user_groups[0]}}"
-  
+
   register: result
   ignore_errors: True
 
@@ -172,15 +172,15 @@
     response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
 - set_fact:
     acp_users: ["{{response_acp.user_reference_list[0].uuid}}", "{{response_acp.user_reference_list[1].uuid}}"]
-- set_fact:   
+- set_fact:
     sorted_acp_users: '{{ acp_users | sort() }}'
-- set_fact:    
+- set_fact:
     expected_users: ["{{users[0]}}", "{{users[1]}}"]
-- set_fact:    
+- set_fact:
     expected_users_sorted: '{{ expected_users | sort() }}'
-- set_fact:    
+- set_fact:
     project_user_reference_list: ["{{result.response.status.project_status.resources.user_reference_list[0].uuid}}", "{{result.response.status.project_status.resources.user_reference_list[1].uuid}}"]
-- set_fact:    
+- set_fact:
     project_user_references_sorted: '{{ project_user_reference_list|sort() }}'
 - set_fact:
     expected_quotas: [
@@ -207,8 +207,8 @@
     quotas: "{{result.response.status.project_status.resources.resource_domain.resources}}"
 
 - set_fact:
-    sorted_quotas: "{{ quotas| sort(attribute='resource_type') }}" 
-    sorted_expected_quotas: "{{ expected_quotas | sort(attribute='resource_type') }}" 
+    sorted_quotas: "{{ quotas| sort(attribute='resource_type') }}"
+    sorted_expected_quotas: "{{ expected_quotas | sort(attribute='resource_type') }}"
 
 - name: Creation Status
   assert:
@@ -242,7 +242,7 @@
   ntnx_projects:
     project_uuid: "{{result.project_uuid}}"
     name: "{{project3_name}}"
-    subnets: 
+    subnets:
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
     default_subnet:
@@ -266,7 +266,7 @@
           uuid: "{{users[1]}}"
       - role:
           name: "{{acp.role.name}}"
-        user_group: 
+        user_group:
           uuid: "{{user_groups[0]}}"
   register: result
   ignore_errors: true

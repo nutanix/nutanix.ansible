@@ -10,7 +10,7 @@
       nutanix_username: <user>
       nutanix_password: <pass>
       validate_certs: false
-      
+
   tasks:
 
     - name: List pbrs using length and offset
@@ -19,7 +19,7 @@
         offset: 0
       register: result
       ignore_errors: True
-    
+
     - name: List pbrs using ascending priority sorting
       ntnx_pbrs_info:
         sort_order: "ASCENDING"

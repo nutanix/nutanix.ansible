@@ -38,7 +38,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'UP'
@@ -62,11 +62,11 @@
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       use_registered_server:
         name: "{{ vm1_name }}"
-    
+
     postgres:
       db_name: testAnsible
       db_password: "{{ vm_password }}"
@@ -77,7 +77,7 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
@@ -95,7 +95,7 @@
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: create properties map
-  set_fact: 
+  set_fact:
       properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
   no_log: true
@@ -103,7 +103,7 @@
 # {% endraw %}
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -132,14 +132,14 @@
 - name: unregister db along with delete time machine and unregister db servr vm
   ntnx_ndb_databases:
     state: "absent"
-    db_uuid: "{{db_uuid}}" 
+    db_uuid: "{{db_uuid}}"
     wait: true
     delete_time_machine: true
     unregister_db_server_vms: True
   register: result
 
 - name: verify status of unregister of database with time machine delete
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -176,10 +176,10 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-    
+
     tags:
       ansible-databases: "single-instance-dbs"
-    
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
@@ -257,7 +257,7 @@
             }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -277,7 +277,7 @@
     fail_msg: "Unable to create register database spec"
     success_msg: "single instance postgres database register spec created successfully"
 
-    
+
 
 - name: register previously unregistered DB from previously unregistered DB server vm
   ntnx_ndb_register_database:
@@ -306,17 +306,17 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
         quaterly: JANUARY
         log_catchup: 30
         snapshots_per_day: 2
-    
+
     tags:
       ansible-databases: "single-instance-dbs"
-    
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
@@ -333,15 +333,15 @@
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: create properties map
-  set_fact: 
+  set_fact:
     properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
-  loop: "{{result.response.properties}}"  
+  loop: "{{result.response.properties}}"
   no_log: true
 
 # {% endraw %}
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -368,15 +368,15 @@
 
 - name: delete db along with delete time machine and db server vms
   ntnx_ndb_databases:
-    db_uuid: "{{result.db_uuid}}" 
+    db_uuid: "{{result.db_uuid}}"
     state: "absent"
     wait: true
     delete_time_machine: true
-    unregister_db_server_vms: True 
+    unregister_db_server_vms: True
   register: result
 
 - name: verify status of delete of database along with time machine delete
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false

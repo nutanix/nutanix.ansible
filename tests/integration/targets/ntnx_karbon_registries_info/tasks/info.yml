@@ -2,7 +2,7 @@
 - debug:
     msg: "start ntnx_karbon_registries_info tests"
 
-- name: Generate random registry_name 
+- name: Generate random registry_name
   set_fact:
     random_name1: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
     random_name2: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"

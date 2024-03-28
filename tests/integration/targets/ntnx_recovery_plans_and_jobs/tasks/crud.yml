@@ -265,7 +265,7 @@
 
   register: result
 
-- set_fact: 
+- set_fact:
     plan_uuid: "{{result.plan_uuid}}"
 
 - name: Creation Status
@@ -334,7 +334,7 @@
                                     }
                                 ]
                             }
-                        ] 
+                        ]
     expected_network_mapping_list: [
                             {
                                 "are_networks_stretched": false,
@@ -413,7 +413,7 @@
                                     ]
                                 }
                             }
-        
+
 - name: Checkmode spec for Update recovery plan. Update networks and stages.
   check_mode: yes
   ntnx_recovery_plans:
@@ -576,7 +576,7 @@
   register: result
 
 - name: idempotency check status
-  assert: 
+  assert:
     that:
       - result.changed == False
       - result.failed == False
@@ -606,7 +606,7 @@
   register: result
 
 - name: assert job status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == true
@@ -634,7 +634,7 @@
 
 
 - name: assert job status
-  assert: 
+  assert:
     that:
       - test_failover_job.changed == true
       - test_failover_job.failed == false
@@ -660,7 +660,7 @@
 
 
 - name: assert job status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.failed == false
@@ -681,7 +681,7 @@
   register: result
 
 - name: delete Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True

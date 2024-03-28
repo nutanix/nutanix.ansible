@@ -44,7 +44,7 @@
                     hypervisor_hostname: "IBIS2"
         clusters:
             - redundancy_factor: 2
-              cluster_members: 
+              cluster_members:
                 - "{{IBIS_node.node1.cvm_ip}}"
                 - "{{IBIS_node.node3.cvm_ip}}"
                 - "{{IBIS_node.node2.cvm_ip}}"

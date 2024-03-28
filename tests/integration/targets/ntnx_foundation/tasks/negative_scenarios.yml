@@ -1,4 +1,4 @@
-    - name: Image nodes with check mode 
+    - name: Image nodes with check mode
       check_mode: yes
       ntnx_foundation:
         timeout: 3660
@@ -24,13 +24,13 @@
                   node_position: "{{IBIS_node.node1.node_position}}"
         clusters:
             - redundancy_factor: 2
-              cluster_members: 
+              cluster_members:
                 - "{{IBIS_node.node1.cvm_ip}}"
                 - "{{IBIS_node.node3.cvm_ip}}"
                 - "{{IBIS_node.node2.cvm_ip}}"
               name: "test-cluster"
       register: result
-    
+
     - name: Creation Status
       assert:
         that:
@@ -74,7 +74,7 @@
                     hypervisor: "{{IBIS_node.node3.hypervisor}}"
       register: result
       ignore_errors: True
-          
+
     - name: Creation Status
       assert:
         that:
@@ -97,7 +97,7 @@
         blocks:
           - block_id: "{{IBIS_node.block_id}}"
             nodes:
-              - discovery_mode: 
+              - discovery_mode:
                   cvm_gb_ram: 50
                   node_serial: wrong_serial
                   device_hint: "vm_installer"

@@ -73,7 +73,7 @@
 
 
   - debug:
-      msg: "{{result}}"
+      msg: "{{ result }}"
 
 
   - name: Update recovery plan by adding more stages and remove custom IP to enable dynamic IP allocation
@@ -164,7 +164,7 @@
     ignore_errors: True
 
   - debug:
-      msg: "{{result}}"
+      msg: "{{ result }}"
 
   ###################################### delete the recovery plan #################
 

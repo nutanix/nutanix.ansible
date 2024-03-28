@@ -17,7 +17,7 @@
         source_path: ""
         source_uri: ""
         clusters_name:  ""
-  
+
     - name: create image from local workstation
       ntnx_images:
         state: "present"
@@ -81,4 +81,3 @@
         state: "absent"
         image_uuid: "00000000-0000-0000-0000-000000000000"
         wait: true
-        

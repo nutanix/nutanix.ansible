@@ -2,7 +2,7 @@
 - debug:
     msg: Start testing ntnx_ndb_slas and ntnx_ndb_slas_info
 
-- name: Generate random profile_name 
+- name: Generate random profile_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -18,9 +18,9 @@
       snapshots_retention:
         daily: 5
         weekly: 6
-        monthly: 7 
-        quarterly: 8 
-################################################################ create flow ######################################### 
+        monthly: 7
+        quarterly: 8
+################################################################ create flow #########################################
 - name: Verify creation of slas with check mode
   ntnx_ndb_slas:
     name: "{{profile1_name}}"
@@ -126,7 +126,7 @@
       - result.sla_uuid is defined
     fail_msg: "Fail: Unable to update sla "
     success_msg: "Pass: verify slas update flow finished successfully"
-################################################################ update flow ######################################### 
+################################################################ update flow #########################################
 - name: verify slas update flow with check mode
   ntnx_ndb_slas:
     sla_uuid: "{{result.sla_uuid}}"
@@ -203,7 +203,7 @@
     fail_msg: "Unable to list all era slas"
     success_msg: "era slas listed successfully"
 ################################################################
-- name: get era slas using it's name  
+- name: get era slas using it's name
   ntnx_ndb_slas_info:
     name: "{{slas.response[0].name}}"
   register: result

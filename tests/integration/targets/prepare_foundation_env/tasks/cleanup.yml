@@ -9,4 +9,4 @@
     #   file:
     #     path: "{{ source }}"
     #     state: absent
-    #   ignore_errors: true  
+    #   ignore_errors: true

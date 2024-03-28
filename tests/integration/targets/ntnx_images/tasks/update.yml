@@ -18,7 +18,7 @@
       product_name: "test"
       product_version: "1.2.0"
     clusters:
-      - name: "{{ cluster.name }}" 
+      - name: "{{ cluster.name }}"
     checksum:
       checksum_algorithm: "SHA_1"
       checksum_value: "{{ disk_image.checksum }}"
@@ -27,7 +27,7 @@
   register: setup_image
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - setup_image.response is defined
       - setup_image.response.status.state == 'COMPLETE'
@@ -40,7 +40,7 @@
 ############################################# UPDATE TESTS ########################################
 
 - name: check idempotency
-  ntnx_images: 
+  ntnx_images:
     state: present
     image_uuid: "{{ setup_image.image_uuid }}"
     name: integration-test-image-update
@@ -54,7 +54,7 @@
   register: result
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -65,7 +65,7 @@
 ########################################################################################
 
 - name: Update name, desc and categories
-  ntnx_images: 
+  ntnx_images:
     state: present
     image_uuid: "{{ setup_image.image_uuid }}"
     name: integration-test-image-after-update
@@ -79,7 +79,7 @@
   register: result
 
 - name: Update Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -94,15 +94,15 @@
 ########################################################################################
 
 - name: test removal of all categories from image
-  ntnx_images: 
+  ntnx_images:
     state: present
     image_uuid: "{{ setup_image.image_uuid }}"
     remove_categories: true
   register: result
 
-  
+
 - name: Update Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'

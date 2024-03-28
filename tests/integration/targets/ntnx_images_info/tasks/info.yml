@@ -5,7 +5,7 @@
 - name: test getting all images
   ntnx_images_info:
   register: result
-  
+
 - name: check listing status
   assert:
     that:
@@ -19,7 +19,7 @@
     filter:
       name: "{{ disk_image.centos }}"
   register: result
-  
+
 - name: check listing status
   assert:
     that:
@@ -40,7 +40,7 @@
   ntnx_images_info:
     image_uuid: '{{ result.response.entities[0].metadata.uuid }}'
   register: result
-  
+
 - name: check listing status
   assert:
     that:

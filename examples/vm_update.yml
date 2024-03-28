@@ -36,7 +36,7 @@
           - Apache_Spark
       disks:
         - type: "DISK"
-          clone_image: 
+          clone_image:
             name: "{{ image_name }}"
           bus: "SCSI"
           size_gb: 20

@@ -183,5 +183,5 @@
     - name: delete software profile
       ntnx_ndb_profiles:
         profile_uuid: "{{profile_uuid}}"
-        state: "absent"      
+        state: "absent"
       register: result

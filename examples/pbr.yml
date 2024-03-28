@@ -17,7 +17,7 @@
         cluster_uuid: ""
         priority: ""
         vpc_uuid: ""
-        
+
     - name: create PBR with vpc uuid with any source or destination or protocol with deny action
       ntnx_pbrs:
           state: present
