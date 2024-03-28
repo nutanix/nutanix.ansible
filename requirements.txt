@@ -1,7 +1,7 @@
 pip~=21.3.1
 ipaddress~=1.0.23
 setuptools~=44.1.1
-ansible-core==2.14.0
+ansible-core==2.15.9
 requests~=2.26.0
 black==21.7b0
 flake8==4.0.1
