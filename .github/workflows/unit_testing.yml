@@ -24,7 +24,7 @@ jobs:
         uses: docker-practice/actions-setup-docker@master
       - name: Install ansible
         run: |
-          pip install -r requirements.txt
+          pip install -r tests/integration/requirements.txt
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
