@@ -9,7 +9,38 @@ on:
     branches:
       - main
 jobs:
-  sanity:
+  sanity1:
+    name: Sanity tests with ansible-core==2.15.0
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Setup Docker
+        uses: docker-practice/actions-setup-docker@master
+      - name: Install ansible
+        run: |
+          pip install -r tests/integration/requirements.txt
+      - name: Build and install the collection
+        run: |
+          NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
+          COLLECTION_NAME=$(cat galaxy.yml | shyaml get-value name)
+          VERSION=$(cat galaxy.yml | shyaml get-value version)
+          echo "NAMESPACE=${NAMESPACE}" >> $GITHUB_ENV
+          echo "COLLECTION_NAME=${COLLECTION_NAME}" >> $GITHUB_ENV
+          ansible-galaxy collection build --force
+          ansible-galaxy collection install ${NAMESPACE}-${COLLECTION_NAME}-${VERSION}.tar.gz --force
+      - name: Run tests
+        run: |
+          cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
+          ansible-test sanity --docker default --python ${{ matrix.python-version }} -v
+  sanity2:
+    name: Sanity tests with ansible-core==2.14.0
     runs-on: ubuntu-20.04
     strategy:
       matrix:

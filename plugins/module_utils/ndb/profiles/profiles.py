@@ -109,6 +109,7 @@ class Profile(NutanixDatabase):
         return resp
 
     def get_all_name_uuid_map(self):
+        query = None
         if self._type:
             query = {"type": self._type}
 
