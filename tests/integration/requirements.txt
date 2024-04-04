@@ -3,7 +3,7 @@ ipaddress~=1.0.23
 setuptools~=44.1.1
 ansible-core==2.15.0
 requests~=2.26.0
-black==22.8.0
+black==24.3.0
 flake8==4.0.1
 isort==5.9.3
 coverage==6.5.0
