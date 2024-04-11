@@ -1,3 +1,14 @@
+## v1.9.2 (11 April 2024)
+
+
+**Breaking Changes:**
+
+- nutanix.ncp collection - Due to all versions of ansible-core less than v2.14.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.14.0
+                            [[\#457](https://github.com/nutanix/nutanix.ansible/issues/457)]
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.9.1...v1.9.2)
+
+
 ## v1.9.1 (09 November 2023)
 
 
@@ -22,10 +33,6 @@
 - ntnx_vms - [Bug] hard_poweroff has been moved to state from operation [[\#415](https://github.com/nutanix/nutanix.ansible/issues/415)]
 - ntnx_vms_clone - [Bug] cannot change boot_config when cloning in module ntnx_vms_clone [[\#360](https://github.com/nutanix/nutanix.ansible/issues/359)]
 - website - [Bug] Github page deployment action is failing. [[\#483](https://github.com/nutanix/nutanix.ansible/issues/483)]
-
-**Breaking Changes:**
-
-- nutanix.ncp collection - Due to all versions of ansible-core less than v2.14.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.14.0
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.9.0...v1.9.1)
 
