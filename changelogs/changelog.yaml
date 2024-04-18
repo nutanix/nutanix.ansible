@@ -419,10 +419,6 @@ releases:
     release_date: '2023-07-11'
   1.9.1:
     changes:
-      breaking_changes:
-      - nutanix.ncp collection - Due to all versions of ansible-core less than v2.14.0
-        are EOL, we are also deprecating support for same and minimum version to use
-        this collection is ansible-core==2.14.0
       bugfixes:
       - ntnx_foundation - [Bug] Error when Clusters Block is missing in module ntnx_foundation
         [[\#397](https://github.com/nutanix/nutanix.ansible/issues/397)]
@@ -451,6 +447,13 @@ releases:
       - ntnx_vms - owner association upon vm creation module [[\#359](https://github.com/nutanix/nutanix.ansible/issues/359)]
       - ntnx_vms_info - [Imprv] add examples with guest customization for module ntnx_vms
         [[\#395](https://github.com/nutanix/nutanix.ansible/issues/395)]
-      release_summary: This release included bug fixes and improvement. We have also
-        deprecated support for ansible-core less than v2.14.0
+      release_summary: This release included bug fixes and improvement.
     release_date: '2023-10-09'
+  1.9.2:
+    changes:
+      breaking_changes:
+      - nutanix.ncp collection - Due to all versions of ansible-core version less than v2.14.0
+        are EOL, we are also deprecating support for same and minimum version to use
+        this collection is ansible-core==2.14.0. [[\#457](https://github.com/nutanix/nutanix.ansible/issues/457)]
+      release_summary: Deprecating support for ansible-core less than v2.14.0
+    release_date: '2024-04-11'
