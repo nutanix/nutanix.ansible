@@ -421,6 +421,10 @@ def check_acp_idempotency(old_spec, update_spec):
         if context not in update_context_list:
             return False
 
+    for context in update_context_list:
+        if context not in old_context_list:
+            return False
+
     return True
 
 
