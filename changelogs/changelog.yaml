@@ -452,8 +452,8 @@ releases:
   1.9.2:
     changes:
       breaking_changes:
-      - nutanix.ncp collection - Due to all versions of ansible-core version less than v2.14.0
+      - nutanix.ncp collection - Due to all versions of ansible-core version less than v2.15.0
         are EOL, we are also deprecating support for same and minimum version to use
-        this collection is ansible-core==2.14.0. [[\#457](https://github.com/nutanix/nutanix.ansible/issues/457)]
-      release_summary: Deprecating support for ansible-core less than v2.14.0
+        this collection is ansible-core==2.15.0. [[\#457](https://github.com/nutanix/nutanix.ansible/issues/457)]
+      release_summary: Deprecating support for ansible-core less than v2.15.0
     release_date: '2024-04-11'

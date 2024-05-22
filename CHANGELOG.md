@@ -3,7 +3,7 @@
 
 **Breaking Changes:**
 
-- nutanix.ncp collection - Due to all versions of ansible-core less than v2.14.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.14.0
+- nutanix.ncp collection - Due to all versions of ansible-core less than v2.15.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.15.0
                             [[\#457](https://github.com/nutanix/nutanix.ansible/issues/457)]
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.9.1...v1.9.2)
