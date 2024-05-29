@@ -17,11 +17,6 @@ Breaking Changes / Porting Guide
 
 - nutanix.ncp collection - Due to all versions of ansible-core version less than v2.15.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.15.0. [[\#479](https://github.com/nutanix/nutanix.ansible/issues/479)]
 
-Known Issues
-------------
-
-- IAM feature modules - IAM v3 APIs are deprecated from pc.2024.1, module consuming them are failing [[\#480](https://github.com/nutanix/nutanix.ansible/issues/480)]
-
 v1.9.1
 ======
 
