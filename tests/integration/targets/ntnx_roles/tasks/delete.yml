@@ -23,7 +23,7 @@
   register: test_role
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - test_role.response is defined
       - test_role.changed == True
@@ -39,7 +39,7 @@
   register: result
 
 - name: delete Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True

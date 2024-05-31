@@ -20,7 +20,7 @@
     profile1_name_updated:  "{{random_name[0]}}-updated"
     profile2_name: "{{random_name[0]}}2"
 
-    
+
 
 - name: create software profile create spec
   check_mode: yes
@@ -525,7 +525,7 @@
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: create clusters status map
-  set_fact: 
+  set_fact:
     clusters: "{{ clusters | default({}) | combine ({ item['nxClusterId'] : item['status'] }) }}"
   loop: "{{result.response.profile.clusterAvailability}}"
   no_log: True
@@ -548,7 +548,7 @@
 - name: delete software profile
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
-    state: "absent"      
+    state: "absent"
   register: result
 
 

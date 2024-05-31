@@ -2,7 +2,7 @@
 - debug:
     msg: Start negative test cases for ntnx_karbon_registries
 
-- name: create registry with wrong port number 
+- name: create registry with wrong port number
   ntnx_karbon_registries:
     name: test_regitry
     url: "{{url}}"

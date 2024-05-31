@@ -19,7 +19,7 @@
     protocol:
       icmp:
         type: 25
-  register: result 
+  register: result
   ignore_errors: True
 
 - name: Creation Status
@@ -237,7 +237,7 @@
       icmp:
         code: "{{ icmp.code }}"
         type: "{{ icmp.type }}"
-  register: result 
+  register: result
   ignore_errors: True
 
 - set_fact:

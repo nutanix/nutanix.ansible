@@ -98,8 +98,8 @@
     fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True 
- 
+  ignore_errors: True
+
 - set_fact:
     todelete: []
 #########################################################
@@ -130,8 +130,8 @@
     fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True 
- 
+  ignore_errors: True
+
 - set_fact:
     todelete: []
 #########################################################

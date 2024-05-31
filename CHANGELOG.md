@@ -1,3 +1,14 @@
+## v1.9.2 (30 May 2024)
+
+
+**Breaking Changes:**
+
+- nutanix.ncp collection - Due to all versions of ansible-core less than v2.15.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.15.0
+                            [[\#479](https://github.com/nutanix/nutanix.ansible/issues/479)]
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.9.1...v1.9.2)
+
+
 ## v1.9.1 (09 November 2023)
 
 
@@ -190,7 +201,7 @@
 **Prism Central**
 - Ansible module for Image Management
 - Ansible info module for Image Management
-- Ansible module for Image Placement Policy 
+- Ansible module for Image Placement Policy
 - Ansible info module for Image Placement Policies
 - Ansible module for Network Security Rules
 - Ansible info module for Network Security Rules

@@ -14,7 +14,7 @@
       validate_certs: false
       alias: "test-alias"
     register: output
-    
+
   - name: output of api_key
     debug:
       msg: '{{ output }}'

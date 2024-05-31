@@ -34,7 +34,7 @@
     fail_msg: "Unable to list all NDB tms using filter"
     success_msg: "NDB tms listed successfully using filter"
 ################################################################
-- name: get NDB tms using it's name  
+- name: get NDB tms using it's name
   ntnx_ndb_time_machines_info:
     name: "{{tms.response[0].name}}"
   register: result

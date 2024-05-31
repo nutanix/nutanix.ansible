@@ -14,10 +14,10 @@
     - name: Setting Variables
       set_fact:
         vm_name: ""
-        
+
     - name: List vms using name filter criteria
       ntnx_vms_info:
-        filter: 
+        filter:
           vm_name: "{{ vm_name }}"
         kind: vm
       register: result
@@ -29,7 +29,7 @@
       register: result
       ignore_errors: True
 
-    - name: List vms using length, offset and ascending vm_name sorting 
+    - name: List vms using length, offset and ascending vm_name sorting
       ntnx_vms_info:
         length: 10
         offset: 1

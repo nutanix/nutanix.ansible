@@ -21,7 +21,7 @@
 - name: Generate random alias for api key
   set_fact:
     random_alias: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
-  
+
 
 - name: create api key with random alias
   ntnx_foundation_central_api_keys:

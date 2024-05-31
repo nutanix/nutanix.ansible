@@ -1,4 +1,4 @@
-- name: Generate random profile_name 
+- name: Generate random profile_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -6,14 +6,14 @@
     suffix_name: "ansible-role-mapping"
     max_connections: 50
     max_replication_slots: 5
-    max_locks_per_transaction: 32 
+    max_locks_per_transaction: 32
     effective_io_concurrency: 2
     timezone: UTC
     max_prepared_transactions: 2
     max_wal_senders: 5
     min_wal_size: 9
     max_wal_size: 1
-    wal_keep_segments: 500  
+    wal_keep_segments: 500
     max_worker_processes: 4
     checkpoint_timeout: 55
     autovacuum: "off"
@@ -44,7 +44,7 @@
       postgres:
         max_connections: "{{max_connections}}"
         max_replication_slots: "{{max_replication_slots}}"
-        max_locks_per_transaction: "{{max_locks_per_transaction}}" 
+        max_locks_per_transaction: "{{max_locks_per_transaction}}"
         effective_io_concurrency: "{{effective_io_concurrency}}"
         timezone: "{{timezone}}"
         max_prepared_transactions: "{{max_prepared_transactions}}"

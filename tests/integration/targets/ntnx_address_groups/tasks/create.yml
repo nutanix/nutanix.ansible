@@ -2,7 +2,7 @@
 - debug:
     msg: start ntnx_address_groups create tests
 
-- name: Generate random project_name 
+- name: Generate random project_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -27,7 +27,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.address_group_uuid is defined
@@ -58,7 +58,7 @@
   ignore_errors: True
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.msg == "Address group with given name already exists"
       - result.changed == False
@@ -81,7 +81,7 @@
   register: result
 
 - name: Check mode Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False

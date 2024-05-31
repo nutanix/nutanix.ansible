@@ -12,19 +12,19 @@
       validate_certs: false
 
   tasks:
-        
+
     - name: Create single instance postgres database on registered db server vm
       ntnx_ndb_databases:
-        
-        name: POSTGRES_DATABASE_ANSIBLE       
-        
+
+        name: POSTGRES_DATABASE_ANSIBLE
+
         db_params_profile:
           name: DEFAULT_POSTGRES_PARAMS
-        
+
         db_vm:
           use_registered_server:
             name: otiakmxh
-        
+
         postgres:
           listener_port: "5432"
           db_name: prad
@@ -35,7 +35,7 @@
           name: POSTGRES_DATABASE_ANSIBLE_TM
           sla:
             name: DEFAULT_OOB_GOLD_SLA
-          schedule: 
+          schedule:
             daily: "11:00:00"
             weekly: WEDNESDAY
             monthly: 4
@@ -45,6 +45,6 @@
             snapshots_per_day: 2
 
       register: output
-    
+
     - debug:
         msg: "{{output}}"

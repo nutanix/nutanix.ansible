@@ -46,9 +46,9 @@
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: create action_arguments map
-  set_fact: 
+  set_fact:
     action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
-  loop: "{{check_mode_result.response.actionArguments}}"  
+  loop: "{{check_mode_result.response.actionArguments}}"
   no_log: true
 # {% endraw %}
 
@@ -133,7 +133,7 @@
     }
 
 - name: Check mode Status
-  assert: 
+  assert:
     that:
       - check_mode_result ==  expected_result
     fail_msg: "Unable to generate create db server vm spec with time machine as source"
@@ -224,7 +224,7 @@
     }
 
 - name: Check mode Status
-  assert: 
+  assert:
     that:
       - result ==  expected_result
     fail_msg: "Unable to generate create db server vm spec with time machine as source and given names of profile"
@@ -263,14 +263,14 @@
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: create properties map
-  set_fact: 
+  set_fact:
     properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
-  loop: "{{result.response.properties}}"  
+  loop: "{{result.response.properties}}"
   no_log: true
 # {% endraw %}
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'UP'
@@ -311,7 +311,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'UP'
@@ -339,7 +339,7 @@
   register: result
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -359,7 +359,7 @@
   register: result
 
 - name: check mode Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -530,9 +530,9 @@
     db_server_clusters:
       - uuid: "test_cluter_1"
       - uuid: "test_cluter_2"
-    maintenance_window: 
+    maintenance_window:
       name: "{{maintenance.window_name}}"
-    tasks:         
+    tasks:
       - type: "OS_PATCHING"
         pre_task_cmd: "ls -a"
         post_task_cmd: "ls"
@@ -583,7 +583,7 @@
     }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_result
 
@@ -596,7 +596,7 @@
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{db_server_uuid}}"
-    maintenance_window: 
+    maintenance_window:
       uuid: "{{maintenance.window_uuid}}"
     tasks: []
   register: result
@@ -619,7 +619,7 @@
     }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_result
 
@@ -631,7 +631,7 @@
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{db_server_uuid}}"
-    maintenance_window: 
+    maintenance_window:
       uuid: "{{maintenance.window_uuid}}"
     tasks: []
   register: result
@@ -646,14 +646,14 @@
   when: entity_tasks_associations == ""
 
 - name: creating list of tasks associated to db server vm
-  set_fact: 
+  set_fact:
     tasks: "{{ tasks | default([]) | union ([item]]) }}"
-  loop: "{{entity_tasks_associations}}"  
+  loop: "{{entity_tasks_associations}}"
   when: item['entity']['id'] == db_server_uuid
   no_log: true
 
 - name: Check update status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.failed == false
@@ -667,9 +667,9 @@
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{vm1_name_updated}}"
-    maintenance_window: 
+    maintenance_window:
       name: "{{maintenance.window_name}}"
-    tasks:         
+    tasks:
       - type: "OS_PATCHING"
         pre_task_cmd: "ls -a"
         post_task_cmd: "ls"
@@ -690,14 +690,14 @@
   when: entity_tasks_associations == None
 
 - name: creating list of tasks associated with db server vm
-  set_fact: 
+  set_fact:
     tasks: "{{ tasks | default([]) | union ([item]) }}"
-  loop: "{{entity_tasks_associations}}"  
+  loop: "{{entity_tasks_associations}}"
   when: item['entity']['id'] == db_server_uuid
   no_log: true
 
 - name: Check update status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.failed == false
@@ -710,13 +710,13 @@
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{db_server_uuid}}"
-    maintenance_window: 
+    maintenance_window:
       uuid: "{{maintenance.window_uuid}}"
     tasks: []
   register: result
 
 - name: Check update status
-  assert: 
+  assert:
     that:
       - result.changed == true
       - result.failed == false
@@ -736,7 +736,7 @@
   register: result
 
 - name: check mode Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -761,7 +761,7 @@
   register: result
 
 - name: check mode Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -787,7 +787,7 @@
   register: result
 
 - name: check mode Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -829,7 +829,7 @@
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: create action_arguments map
-  set_fact: 
+  set_fact:
         action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.actionArguments}}"
   no_log: true
@@ -862,7 +862,7 @@
             }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -901,20 +901,20 @@
         - type: "DB_PATCHING"
           pre_task_cmd: "ls -l"
           post_task_cmd: "ls -F"
-  
+
   register: result
-  
+
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: create properties map
-  set_fact: 
+  set_fact:
         properties1: "{{ properties1 | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
   no_log: true
 # {% endraw %}
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'UP'
@@ -952,7 +952,7 @@
   register: result
 
 - name: check mode Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True

@@ -3,7 +3,7 @@
     msg: start ntnx_address_groups update tests
 
 
-- name: Generate random project_name 
+- name: Generate random project_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -17,7 +17,7 @@
 
 ##############################################################################################
 
-- name: Create address group with 
+- name: Create address group with
   ntnx_address_groups:
     state: present
     name: "{{ag1}}"
@@ -30,7 +30,7 @@
   register: test_ag
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - test_ag.response is defined
       - test_ag.changed == True
@@ -52,7 +52,7 @@
   register: result
 
 - name: Update status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.address_group_uuid is defined
@@ -80,7 +80,7 @@
   register: result
 
 - name: idempotency check status
-  assert: 
+  assert:
     that:
       - result.changed == False
       - result.failed == False
@@ -106,7 +106,7 @@
   register: result
 
 - name: check mode Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.address_group_uuid is defined

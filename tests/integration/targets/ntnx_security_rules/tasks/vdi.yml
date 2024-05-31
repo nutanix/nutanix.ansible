@@ -8,7 +8,7 @@
           default_internal_policy: DENY_ALL
       allow_all_outbounds: true
       inbounds:
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
@@ -18,7 +18,7 @@
               tcp:
                 - start_port: 22
                   end_port: 80
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
@@ -27,24 +27,24 @@
                 icmp:
                   - code: 1
                     type: 1
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
                 - DevOps
-            protocol: 
+            protocol:
               udp:
                 - start_port: 82
                   end_port: 8080
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
                 - DevOps
-            protocol: 
+            protocol:
               service:
                 name: 6a44
-        - 
+        -
           address:
             name: dest
       policy_mode: MONITOR
@@ -67,7 +67,7 @@
     security_rule_uuid: '{{ result.response.metadata.uuid }}'
     vdi_rule:
       inbounds:
-        - 
+        -
           ip_subnet:
             prefix_length: 8
             ip: 10.0.0.0

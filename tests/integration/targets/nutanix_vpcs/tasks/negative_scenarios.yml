@@ -1,6 +1,6 @@
   - debug:
       msg: "Started Negative Creation Cases"
-      
+
   - name: Unknown subnet name
     ntnx_vpcs:
       state: present
@@ -44,7 +44,7 @@
           network_prefix:  24
     register: result
     ignore_errors: True
-    
+
   - name: Creation Status
     assert:
       that:

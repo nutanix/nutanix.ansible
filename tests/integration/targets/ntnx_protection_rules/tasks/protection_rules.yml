@@ -49,7 +49,7 @@
       - result.response.spec.resources.availability_zone_connectivity_list[1]["source_availability_zone_index"] == 1
       - result.response.spec.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["auto_suspend_timeout_secs"] == 10
       - result.response.spec.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 0
-      
+
     fail_msg: "Unable to create spec for protection rule with synchronous schedule with check mode"
     success_msg: "Protection policy with with synchronous schedule spec generated using check mode"
 
@@ -102,7 +102,7 @@
       - result.response.status.resources.availability_zone_connectivity_list[1]["source_availability_zone_index"] == 1
       - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["auto_suspend_timeout_secs"] == 10
       - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 0
-      
+
     fail_msg: "Unable to create protection rule with synchronous schedule"
     success_msg: "Protection policy with with synchronous schedule created successfully"
 
@@ -308,7 +308,7 @@
   register: temp_result
 
 - name: idempotency check status
-  assert: 
+  assert:
     that:
       - temp_result.changed == False
       - temp_result.failed == False
@@ -335,7 +335,7 @@
     that:
       - temp_result.response is defined
       - temp_result.changed == false
-      - temp_result.response.spec.name == "test-ansible-updated-check-mode"    
+      - temp_result.response.spec.name == "test-ansible-updated-check-mode"
     fail_msg: "Unable to generate update spec using check mode"
     success_msg: "Protection policy update spec generated successfully"
 
@@ -350,7 +350,7 @@
   register: result
 
 - name: delete Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True

@@ -1,7 +1,8 @@
+---
 name: PR Labeler
 
 on:
-- pull_request
+  - pull_request
 
 jobs:
   label:
@@ -9,4 +10,4 @@ jobs:
     steps:
       - uses: actions/labeler@v2
         with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

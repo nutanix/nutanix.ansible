@@ -95,6 +95,6 @@
         url: "<hypervisor-url>"
     register: output
 
-  - name: output of list 
+  - name: output of list
     debug:
       msg: '{{ output }}'

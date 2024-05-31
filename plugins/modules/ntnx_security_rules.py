@@ -22,7 +22,7 @@ options:
     description:
       - PC port
     type: str
-    default: 9440
+    default: "9440"
     required: false
   nutanix_username:
     description:

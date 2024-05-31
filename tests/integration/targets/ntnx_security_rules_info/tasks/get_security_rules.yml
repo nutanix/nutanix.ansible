@@ -83,7 +83,7 @@
     security_rule_uuid: '{{ first_rule.response.metadata.uuid }}'
   register: result
   ignore_errors: true
-  
+
 - name: Creation Status
   assert:
     that:

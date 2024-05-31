@@ -10,7 +10,7 @@
 - set_fact:
     window1_name: "{{random_name[0]}}1"
     window2_name: "{{random_name[0]}}2"
-  
+
 ############################################## create tests ####################################
 - name: create spec for maintenance window
   check_mode: yes
@@ -46,7 +46,7 @@
     }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result == expected_result
     fail_msg: "Unable to create spec for creating window"
@@ -69,7 +69,7 @@
     window1_uuid: "{{result.uuid}}"
 
 - name: create status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -107,7 +107,7 @@
     window2_uuid: "{{result.uuid}}"
 
 - name: create status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -122,8 +122,8 @@
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == 2
       - result.response.schedule.duration == 2
-      
-    
+
+
     fail_msg: "Unable to create maintenance window with monthly schedule"
     success_msg: "maintenance window with monthly schedule created successfully"
 
@@ -136,7 +136,7 @@
   register: result
 
 - name: Info module status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -152,7 +152,7 @@
   register: result
 
 - name: Info module status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -179,7 +179,7 @@
   register: result
 
 - name: update status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -194,7 +194,7 @@
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == 3
       - result.response.schedule.duration == 3
-      
+
 
     fail_msg: "Unable to update maintenance window"
     success_msg: "maintenance window updated successfully"
@@ -212,7 +212,7 @@
   register: result
 
 - name: create status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -227,7 +227,7 @@
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == None
       - result.response.schedule.duration == 3
-      
+
 
     fail_msg: "Unable to update maintenance window"
     success_msg: "maintenance window updated successfully"
@@ -247,7 +247,7 @@
   register: result
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -265,7 +265,7 @@
 
 
 - name: update status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -279,7 +279,7 @@
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == None
       - result.response.schedule.duration == 3
-      
+
 
     fail_msg: "Unable to update maintenance window"
     success_msg: "maintenance window updated successfully"
@@ -315,14 +315,14 @@
 
 ############################################## delete tests ####################################
 
-- name: delete window 1 
+- name: delete window 1
   ntnx_ndb_maintenance_window:
     uuid: "{{window1_uuid}}"
     state: "absent"
   register: result
 
 - name: check delete status
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -338,7 +338,7 @@
 
 
 - name: check delete status
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false

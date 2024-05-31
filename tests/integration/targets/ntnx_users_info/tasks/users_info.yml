@@ -20,7 +20,7 @@
 - set_fact:
     test_user_uuid: "{{users.response.entities.2.metadata.uuid}}"
 
-################################################## 
+##################################################
 
 - name: List users using user uuid criteria
   ntnx_users_info:
@@ -39,11 +39,11 @@
     fail_msg: "Unable to list user using uuid"
     success_msg: "user info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List users using filter criteria
   ntnx_users_info:
-    filter: 
+    filter:
       username: "{{ test_user_name }}"
   register: result
   ignore_errors: True
@@ -60,7 +60,7 @@
     fail_msg: "Unable to list user using filter"
     success_msg: "user info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List users using length and offset
   ntnx_users_info:

@@ -3,7 +3,7 @@
   hosts: localhost
   gather_facts: false
   collections:
-    - nutanix.ncp    
+    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>

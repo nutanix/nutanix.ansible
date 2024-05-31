@@ -1,5 +1,5 @@
 ---
-- name: create registeries 
+- name: create registeries
   hosts: localhost
   gather_facts: false
   collections:
@@ -11,7 +11,7 @@
       nutanix_password: <pass>
       validate_certs: false
 
-  tasks:        
+  tasks:
   - set_fact:
       registry_name: <registry_name>
       url: <url>
