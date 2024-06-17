@@ -33,6 +33,7 @@ class BaseModule(AnsibleModule):
         ),
         state=dict(type="str", choices=["present", "absent"], default="present"),
         wait=dict(type="bool", default=True),
+        timeout=dict(type="int", required=False),
     )
 
     def __init__(self, **kwargs):
