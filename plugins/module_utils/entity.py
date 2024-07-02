@@ -412,7 +412,7 @@ class Entity(object):
 
         if resp_json is None:
             self.module.fail_json(
-                msg="Failed to convert API response to json",
+                msg="{0}".format(info.get("msg")),
                 status_code=status_code,
                 error=body,
                 response=resp_json,
