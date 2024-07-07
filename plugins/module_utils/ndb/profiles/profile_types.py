@@ -96,6 +96,11 @@ class NetworkProfile(Profile):
         super(NetworkProfile, self).__init__(module)
         self._type = NDB.ProfileTypes.NETWORK
 
+    def get_available_ips(self, uuid):
+        endpoint = "{0}/get-available-ips".format(uuid)
+        resp = self.read(endpoint=endpoint)
+        return resp
+
     def get_default_version_update_spec(self, override_spec=None):
         spec = {
             "name": "",

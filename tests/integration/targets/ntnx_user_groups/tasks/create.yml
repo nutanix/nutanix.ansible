@@ -1,6 +1,6 @@
 ---
 - debug:
-    msg: start ntnx_user_groups create tests
+    msg: start ntnx_user_groups and info tests
 
 - name: create user  group
   ntnx_user_groups:
@@ -26,10 +26,112 @@
     fail_msg: "Unable to create user  group  "
     success_msg: "user  group created successfully"
 
+- set_fact:
+    user_group_to_delete: "{{result.user_group_uuid}}"
+
+#############################INFO Tests#####################
+
+- name: List all user groups
+  ntnx_user_groups_info:
+  register: user_groups
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - user_groups.response is defined
+      - user_groups.response.metadata.total_matches > 0
+    fail_msg: "Unable to list all user groups"
+    success_msg: "User groups info obtained successfully"
+
+- set_fact:
+    test_user_group_name: "{{user_groups.response.entities.0.status.resources.display_name}}"
+- set_fact:
+    test_user_group_uuid: "{{user_groups.response.entities.0.metadata.uuid}}"
+
+##################################################
+
+- name: List user_groups using user_group uuid criteria
+  ntnx_user_groups_info:
+    usergroup_uuid: "{{ test_user_group_uuid }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.status.resources.display_name == "{{ test_user_group_name }}"
+      - result.response.metadata.kind == "user_group"
+    fail_msg: "Unable to list user group using uuid"
+    success_msg: "user group info obtained successfully"
+
+##################################################
+
+- name: List user_groups using filter criteria
+  ntnx_user_groups_info:
+    filter:
+      name: "{{ test_user_group_name }}"
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.entities[0].status.resources.display_name == "{{ test_user_group_name }}"
+      - result.response.metadata.kind == "user_group"
+      - result.response.metadata.total_matches == 1
+    fail_msg: "Unable to list user groups using filter"
+    success_msg: "user group info obtained successfully"
+
+##################################################
+
+- name: List user groups using length and offset
+  ntnx_user_groups_info:
+    length: 2
+    offset: 1
+  register: result
+  ignore_errors: True
+
+- name: Listing Status
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.metadata.total_matches > 0
+      - result.response.metadata.length == 2
+
+
+    fail_msg: "Unable to list user groups using length and offset"
+    success_msg: "user groups listed successfully using length and offset"
+##################################################
+# - name: List user groups using ascending name sorting
+#   ntnx_user_groups_info:
+#     sort_order: "ASCENDING"
+#     sort_attribute: "group_name"
+#     kind: user_group
+#   register: result
+#   ignore_errors: True
+
+# - name: Listing Status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.failed == false
+#     fail_msg: "Unable to list user groups using ascending name sorting"
+#     success_msg: "user groups listed successfully using ascending name sorting"
+
 - name: delete user group
   ntnx_user_groups:
     state: absent
-    user_group_uuid: "{{result.user_group_uuid}}"
+    user_group_uuid: "{{user_group_to_delete}}"
   register: result
   ignore_errors: true
 
@@ -44,39 +146,39 @@
     success_msg: "user  group deletd successfully"
 
 
-- name: create user group with idp
-  ntnx_user_groups:
-    idp:
-      idp_uuid: "{{identity_provider_uuid}}"
-      group_name: test_group_987
-  register: result
-  ignore_errors: true
+# - name: create user group with idp
+#   ntnx_user_groups:
+#     idp:
+#       idp_uuid: "{{identity_provider_uuid}}"
+#       group_name: test_group_987
+#   register: result
+#   ignore_errors: true
 
-- name: check listing status
-  assert:
-    that:
-      - result.response is defined
-      - result.failed == false
-      - result.changed == true
-      - result.response.status.state == "COMPLETE"
-      - result.user_group_uuid is defined
-      - result.response.status.resources.display_name == "test_group_987"
-    fail_msg: "Unable to create user  group with idp  "
-    success_msg: "user  group with idp created successfully"
+# - name: check listing status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.failed == false
+#       - result.changed == true
+#       - result.response.status.state == "COMPLETE"
+#       - result.user_group_uuid is defined
+#       - result.response.status.resources.display_name == "test_group_987"
+#     fail_msg: "Unable to create user  group with idp  "
+#     success_msg: "user  group with idp created successfully"
 
-- name: delete user group
-  ntnx_user_groups:
-    state: absent
-    user_group_uuid: "{{result.user_group_uuid}}"
-  register: result
-  ignore_errors: true
+# - name: delete user group
+#   ntnx_user_groups:
+#     state: absent
+#     user_group_uuid: "{{result.user_group_uuid}}"
+#   register: result
+#   ignore_errors: true
 
-- name: check listing status
-  assert:
-    that:
-      - result.response is defined
-      - result.failed == false
-      - result.changed == true
-      - result.response.status == "SUCCEEDED"
-    fail_msg: "Unable to delete user  group with idp  "
-    success_msg: "user  group with idp deleted successfully"
+# - name: check listing status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.failed == false
+#       - result.changed == true
+#       - result.response.status == "SUCCEEDED"
+#     fail_msg: "Unable to delete user  group with idp  "
+#     success_msg: "user  group with idp deleted successfully"

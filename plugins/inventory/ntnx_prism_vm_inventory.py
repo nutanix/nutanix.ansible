@@ -9,15 +9,18 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
     name: ntnx_prism_vm_inventory
-    plugin_type: inventory
     short_description: Get a list of Nutanix VMs for ansible dynamic inventory.
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory.
     version_added: "1.0.0"
+    notes:
+        - User needs to have API View access for resources for this inventory module to work.
     author:
         - "Balu George (@balugeorge)"
         - "Prem Karat (@premkarat)"
-    inventory: ntnx_prism_vm_inventory
+    requirements:
+        - "json"
+        - "tempfile"
     options:
         plugin:
             description: Name of the plugin
@@ -43,7 +46,7 @@ DOCUMENTATION = r"""
                 - name: NUTANIX_PASSWORD
         nutanix_port:
             description: Prism central port
-            default: 9440
+            default: "9440"
             type: str
             env:
                 - name: NUTANIX_PORT
@@ -61,8 +64,6 @@ DOCUMENTATION = r"""
             type: boolean
             env:
                 - name: VALIDATE_CERTS
-    notes: "null"
-    requirements: "null"
     extends_documentation_fragment:
         - constructed
 """
@@ -178,6 +179,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
 
             for key, value in entity["status"]["resources"].items():
                 self.inventory.set_variable(vm_name, key, value)
+
+            if "metadata" in entity and "categories" in entity["metadata"]:
+                self.inventory.set_variable(
+                    vm_name, "ntnx_categories", entity["metadata"]["categories"]
+                )
 
             # Add variables created by the user's Jinja2 expressions to the host
             self._set_composite_vars(

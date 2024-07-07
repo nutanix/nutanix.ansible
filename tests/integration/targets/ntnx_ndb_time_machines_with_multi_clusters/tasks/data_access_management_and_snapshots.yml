@@ -57,7 +57,7 @@
   register: result
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -92,7 +92,7 @@
     fail_msg: "fail: Unable to create snapshot for secondary cluster"
     success_msg: "pass: snapshot created successfully for secondary cluster"
 
-      
+
 - name: wait for 2 minutes for replication to finish from source cluster to cluster2
   ansible.builtin.pause:
     minutes: 2
@@ -196,7 +196,7 @@
 
 #######################
 
-- name: delete time machine 
+- name: delete time machine
   ntnx_ndb_time_machine_clusters:
       state: absent
       time_machine_uuid: "{{time_machine.uuid}}"
@@ -260,8 +260,8 @@
     fail_msg: "fail: Unable to update data access instance with sla uuid"
     success_msg: "pass: update data access instance with sla uuid finished successfully"
 
-- name: delete time machine 
-  ntnx_ndb_time_machine_clusters:   
+- name: delete time machine
+  ntnx_ndb_time_machine_clusters:
       state: absent
       time_machine_uuid: "{{result.time_machine_uuid}}"
       cluster:

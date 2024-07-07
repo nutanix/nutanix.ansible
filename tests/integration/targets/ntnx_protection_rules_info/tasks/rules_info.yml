@@ -105,7 +105,7 @@
 - set_fact:
     test_rule_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
-################################################## 
+##################################################
 
 - name: List protection rule using uuid criteria
   ntnx_protection_rules_info:
@@ -126,11 +126,11 @@
     fail_msg: "Unable to list rule using uuid"
     success_msg: "rule info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List protection rules using filter criteria
   ntnx_protection_rules_info:
-    filter: 
+    filter:
       name: "{{ test_rule_name }}"
   register: result
   ignore_errors: True
@@ -147,7 +147,7 @@
     fail_msg: "Unable to list protection rules using filter"
     success_msg: "protection rule info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List rules using length and offset
   ntnx_protection_rules_info:

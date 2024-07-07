@@ -1,8 +1,15 @@
 ---
+- name: Generate random name
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+
+- set_fact:
+    acp1_name: "{{random_name[0]}}1"
+
 - name: Create ACP with all specfactions
   ntnx_acps:
     state: present
-    name: acp_with_all_specfactions1
+    name: "{{acp1_name}}"
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -11,14 +18,14 @@
       - "{{ acp.user_group_uuid }}"
     filters:
       - scope_filter:
-          - 
+          -
             lhs: PROJECT
             operator: IN
             rhs:
               uuid_list:
                 - "{{ project.uuid }}"
         entity_filter:
-          - 
+          -
             lhs: ALL
             operator: IN
             rhs:

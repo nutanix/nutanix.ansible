@@ -6,7 +6,7 @@
   ntnx_image_placement_policy:
     name: "test_policy_1"
     placement_type: soft
-    image_categories: 
+    image_categories:
       AnalyticsExclusions:
         - AnomalyDetection
     cluster_categories:
@@ -15,7 +15,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -42,7 +42,7 @@
         - "Dev"
       AppType:
         - "Default"
-    image_categories: 
+    image_categories:
       AnalyticsExclusions:
         - EfficiencyMeasurement
         - AnomalyDetection
@@ -52,7 +52,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -72,7 +72,7 @@
     name: "test_policy_3"
     desc: "test_policy_3_desc"
     placement_type: hard
-    image_categories: 
+    image_categories:
       AnalyticsExclusions:
         - EfficiencyMeasurement
         - AnomalyDetection
@@ -82,7 +82,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -95,7 +95,7 @@
 - name: Create image placement policy with incorrect category
   ntnx_image_placement_policy:
     name: "test_policy_4"
-    image_categories: 
+    image_categories:
       Wrong:
         - Category
     cluster_categories:
@@ -105,7 +105,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == false

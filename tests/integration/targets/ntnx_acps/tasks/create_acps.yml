@@ -1,9 +1,21 @@
 ---
+- name: Generate random name
+  set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+
+- set_fact:
+    acp1_name: "{{random_name[0]}}1"
+    acp2_name: "{{random_name[0]}}2"
+    acp3_name: "{{random_name[0]}}3"
+    acp4_name: "{{random_name[0]}}4"
+    acp5_name: "{{random_name[0]}}5"
+
+
 - name: Create min ACP
   ntnx_acps:
     state: present
     wait: True
-    name: MinACP2
+    name: "{{acp1_name}}"
     role:
       uuid: "{{ acp.role.uuid }}"
   register: result
@@ -16,15 +28,15 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.spec.name == 'MinACP2'
+      - result.response.spec.name == "{{acp1_name}}"
     fail_msg: " Unable to create Min ACP with check mode "
     success_msg: " Min ACP with check mode passed"
-##########################################################
+# ##########################################################
 - name: Create min ACP
   ntnx_acps:
     state: present
     wait: true
-    name: MinACP2
+    name: "{{acp2_name}}"
     role:
       uuid: '{{ acp.role.uuid }}'
   check_mode: false
@@ -36,7 +48,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == 'MinACP2'
+      - result.response.spec.name == "{{acp2_name}}"
     fail_msg: " Unable to create Min ACP "
     success_msg: " Min ACP created successfully "
 
@@ -46,7 +58,7 @@
 - name: Create ACP with user reference
   ntnx_acps:
     state: present
-    name: acp_with_user_reference2
+    name: "{{acp5_name}}"
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -59,7 +71,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == 'acp_with_user_reference2'
+      - result.response.spec.name == "{{acp5_name}}"
       - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
       - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
     fail_msg: " Unable to Create ACP with user reference "
@@ -71,7 +83,7 @@
 - name: Create ACP with user ad user group reference
   ntnx_acps:
     state: present
-    name: acp_with_user_and_user_group_reference2
+    name: "{{acp3_name}}"
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -86,7 +98,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == 'acp_with_user_and_user_group_reference2'
+      - result.response.spec.name == "{{acp3_name}}"
       - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
       - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
       - result.response.status.resources.user_group_reference_list.0.uuid == "{{ acp.user_group_uuid }}"
@@ -99,7 +111,7 @@
 - name: Create ACP with all specfactions
   ntnx_acps:
     state: present
-    name: acp_with_all_specfactions1
+    name: "{{acp4_name}}"
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -181,7 +193,7 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "unable to delete all created acp's"
-    success_msg: "All acp's deleted succesfully"
+    success_msg: "All acp's deleted successfully"
 
 - set_fact:
     todelete: []

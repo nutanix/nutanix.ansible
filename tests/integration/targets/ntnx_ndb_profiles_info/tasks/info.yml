@@ -68,6 +68,44 @@
       - result.response[0].type == "Network"
     fail_msg: "Unable to list all Network NDB profile"
     success_msg: "Network NDB profiles listed successfully"
+
+################################################################
+- name: get network profile with available IPs
+  ntnx_ndb_profiles_info:
+    name: "{{static_network_profile.name}}"
+    include_available_ips: true
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.available_ips | length > 0
+      - result.response.id == "{{static_network_profile.uuid}}"
+
+    fail_msg: "Unable to list network profile with available IPs"
+    success_msg: "Network NDB profiles along with available IPs obtained successfully"
+
+- name: get network profile with available IPs
+  ntnx_ndb_profiles_info:
+    uuid: "{{static_network_profile.uuid}}"
+    include_available_ips: true
+  register: result
+  ignore_errors: true
+
+- name: check listing status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.available_ips | length > 0
+      - result.response.id == "{{static_network_profile.uuid}}"
+    fail_msg: "Unable to list network profile with available IPs"
+    success_msg: "Network NDB profiles along with available IPs obtained successfully"
 ################################################################
 - name: List Compute profiles
   ntnx_ndb_profiles_info:
@@ -105,7 +143,7 @@
 ################################################################
 - name: get NDB profile using NDB profile name
   ntnx_ndb_profiles_info:
-    name: "{{profiles.response[0].name}}" 
+    name: "{{profiles.response[0].name}}"
   register: result
   ignore_errors: true
 
@@ -115,13 +153,13 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.id == "{{profiles.response[0].id}}" 
+      - result.response.id == "{{profiles.response[0].id}}"
     fail_msg: "Unable to get NDB profile using NDB profile name"
     success_msg: "get NDB profile using NDB profile name finished successfully"
 ################################################################
 - name: List profiles
   ntnx_ndb_profiles_info:
-    uuid: "{{profiles.response[0].id}}" 
+    uuid: "{{profiles.response[0].id}}"
     latest_version: true
   register: result
   ignore_errors: true
@@ -132,7 +170,7 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name == "{{profiles.response[0].name}}" 
+      - result.response.name == "{{profiles.response[0].name}}"
     fail_msg: "Unable to get NDB profile using NDB profile id"
     success_msg: "get NDB profile using NDB profile id finished successfully"
 ################################################################

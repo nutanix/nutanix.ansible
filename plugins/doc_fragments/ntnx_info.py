@@ -31,10 +31,14 @@ options:
     type: int
   filter:
     description:
-      - The filter in FIQL syntax used for the results
+      - The filter in key-value syntax used for the results
     type: dict
   custom_filter:
     description:
-      - The filter in FIQL syntax used for the results
+      - The filter in key-value syntax used for the results
     type: dict
+  filter_string:
+    description:
+      - The filter in FIQL syntax used for the results
+    type: str
 """

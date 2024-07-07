@@ -10,5 +10,5 @@
               name: "{{ item.subnet_name }}"
     register: static_route
   - debug:
-      msg: 
+      msg:
         - "uuid: {{ static_route.response.metadata.uuid }}"

@@ -2,7 +2,7 @@
   debug:
     msg: "Start ntnx_project create tests"
 
-- name: Generate random project_name 
+- name: Generate random project_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
@@ -40,7 +40,7 @@
   ntnx_projects:
     name: "{{project2_name}}"
     desc: desc-123
-    subnets: 
+    subnets:
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
     default_subnet:
@@ -63,7 +63,7 @@
       - result.changed == false
       - result.response.spec.name == "{{project2_name}}"
       - result.response.spec.description == 'desc-123'
-      - result.response.spec.resources.resource_domain.resources[0].limit == 2046 
+      - result.response.spec.resources.resource_domain.resources[0].limit == 2046
       - result.response.spec.resources.resource_domain.resources[0].resource_type == 'STORAGE'
       - result.response.spec.resources.user_reference_list[0].uuid == "{{ users[0] }}"
       - result.response.spec.resources.user_reference_list[1].uuid == "{{ users[1] }}"
@@ -83,7 +83,7 @@
     desc: desc-123
     clusters:
       - "{{ cluster.uuid }}"
-    subnets: 
+    subnets:
       - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
       - name: "{{ overlay.name }}"
@@ -115,7 +115,7 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.name == "{{project2_name}}"
       - result.response.status.description == 'desc-123'
-      - result.response.status.resources.resource_domain.resources[0].limit == 2046 
+      - result.response.status.resources.resource_domain.resources[0].limit == 2046
       - result.response.status.resources.resource_domain.resources[0].resource_type == 'STORAGE'
       - result.response.status.resources.subnet_reference_list | length == 3
       - result.response.status.resources.subnet_reference_list[0].uuid in "{{expected_subnets}}"

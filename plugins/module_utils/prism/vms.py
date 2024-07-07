@@ -17,6 +17,7 @@ from .prism import Prism
 from .projects import Project
 from .spec.categories_mapping import CategoriesMapping
 from .subnets import get_subnet_uuid
+from .users import User
 
 
 class VM(Prism):
@@ -32,6 +33,7 @@ class VM(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "project": self._build_spec_project,
+            "owner": self._build_spec_owner,
             "cluster": self._build_spec_cluster,
             "vcpus": self._build_spec_vcpus,
             "cores_per_vcpu": self._build_spec_cores,
@@ -169,6 +171,14 @@ class VM(Prism):
             }
         )
 
+    def _get_default_boot_config_spec(self):
+        return deepcopy(
+            {
+                "boot_type": "LEGACY",
+                "boot_device_order_list": ["CDROM", "DISK", "NETWORK"],
+            }
+        )
+
     def _get_default_network_spec(self):
         return deepcopy(
             {
@@ -220,11 +230,26 @@ class VM(Prism):
         )
         return payload, None
 
+    def _build_spec_owner(self, payload, param):
+        if "name" in param:
+            owner = User(self.module)
+            name = param["name"]
+            uuid = owner.get_uuid(name, key="username")
+            if not uuid:
+                error = "Owner {0} not found.".format(name)
+                return None, error
+
+        elif "uuid" in param:
+            uuid = param["uuid"]
+
+        payload["metadata"].update({"owner_reference": {"uuid": uuid, "kind": "user"}})
+        return payload, None
+
     def _build_spec_cluster(self, payload, param):
         uuid, err = get_cluster_uuid(param, self.module)
         if err:
             return None, err
-        payload["spec"]["cluster_reference"]["uuid"] = uuid
+        payload["spec"]["cluster_reference"] = {"kind": "cluster", "uuid": uuid}
         return payload, None
 
     def _build_spec_vcpus(self, payload, vcpus):
@@ -340,7 +365,12 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_boot_config(self, payload, param):
+        if not payload["spec"]["resources"].get("boot_config"):
+            payload["spec"]["resources"][
+                "boot_config"
+            ] = self._get_default_boot_config_spec()
         boot_config = payload["spec"]["resources"]["boot_config"]
+
         if "LEGACY" == param["boot_type"] and "boot_order" in param:
             boot_config["boot_device_order_list"] = param["boot_order"]
 
@@ -425,14 +455,14 @@ class VM(Prism):
 
         else:
             if vdisk.get("size_gb"):
-                disk_size_bytes = vdisk["size_gb"] * 1024 * 1024 * 1024
+                disk_size_bytes = int(vdisk["size_gb"]) * 1024 * 1024 * 1024
                 if not vdisk.get("uuid") or (
                     "disk_size_bytes" in disk
                     and disk_size_bytes >= disk.get("disk_size_bytes", 0)
                 ):
                     if disk.get("bus") in ["IDE", "SATA"]:
                         self.require_vm_restart = True
-                    disk["disk_size_bytes"] = vdisk["size_gb"] * 1024 * 1024 * 1024
+                    disk["disk_size_bytes"] = disk_size_bytes
                 else:
                     if disk.get("device_properties", {}).get("device_type") == "CDROM":
                         self.module.fail_json(
@@ -456,6 +486,11 @@ class VM(Prism):
                     return None, error
 
                 disk["storage_config"]["storage_container_reference"]["uuid"] = uuid
+                if not vdisk.get("uuid") and not vdisk.get("size_gb"):
+                    self.module.fail_json(
+                        msg="Unsupported operation: Unable to create disk, 'size_gb' is required for using storage container.",
+                        disk=disk,
+                    )
 
             elif vdisk.get("clone_image"):
                 uuid, error = get_image_uuid(vdisk["clone_image"], self.module)

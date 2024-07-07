@@ -6,7 +6,7 @@
     - nutanix.ncp
 
   tasks:
-  - name: API key response with alias 
+  - name: API key response with alias
     ntnx_foundation_central_api_keys:
       nutanix_host: "{{ pc }}"
       nutanix_username: "{{ username }}"
@@ -15,7 +15,7 @@
       alias: "test"
     register: output
 
-  - name: API key response with key_uuid 
+  - name: API key response with key_uuid
     ntnx_foundation_central_api_keys:
       nutanix_host: "{{ pc }}"
       nutanix_username: "{{ username }}"
@@ -23,7 +23,7 @@
       validate_certs: false
       key_uuid: "<key_uuid>"
     register: output
-    
+
   - name: output of api_key
     debug:
       msg: '{{ output }}'

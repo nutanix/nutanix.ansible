@@ -200,10 +200,12 @@ class DatabaseClone(NutanixDatabase):
             payload["snapshotId"] = self.module.params.get("snapshot_uuid")
         elif self.module.params.get("pitr_timestamp"):
             payload["userPitrTimestamp"] = self.module.params.get("pitr_timestamp")
+        elif self.module.params.get("latest_snapshot", False):
+            payload["latestSnapshot"] = True
         else:
             return (
                 None,
-                "snapshot_uuid or pitr_timestamp is required for database clone refresh",
+                "One of snapshot_uuid, pitr_timestamp or latest_snapshot is required for database clone refresh",
             )
 
         payload["timeZone"] = self.module.params.get("timezone")
@@ -237,10 +239,12 @@ class DatabaseClone(NutanixDatabase):
             payload["snapshotId"] = time_machine.get("snapshot_uuid")
         elif time_machine.get("pitr_timestamp"):
             payload["userPitrTimestamp"] = time_machine.get("pitr_timestamp")
+        elif time_machine.get("latest_snapshot", False):
+            payload["latestSnapshot"] = True
         else:
             return (
                 None,
-                "Required snapshot_uuid or pitr_timestamp for source of db clone",
+                "Required one of snapshot_uuid, pitr_timestamp or latest_snapshot for source of db clone",
             )
 
         payload["timeZone"] = time_machine.get("timezone")

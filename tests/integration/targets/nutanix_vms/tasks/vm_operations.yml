@@ -11,13 +11,13 @@
         name: "{{ cluster.name }}"
       disks:
         - type: "DISK"
-          clone_image: 
+          clone_image:
             name: "{{ ubuntu }}"
           bus: "SCSI"
           size_gb: 20
   register: vm
   ignore_errors: true
-    
+
 - name: Creation Status
   assert:
     that:
@@ -35,7 +35,7 @@
         name: "{{ cluster.name }}"
       disks:
         - type: "DISK"
-          clone_image: 
+          clone_image:
             name: "{{ ubuntu }}"
           bus: "SCSI"
           size_gb: 20
@@ -116,7 +116,7 @@
 #     success_msg: ' VM soft_shutdown  successfully '
 ###########################################
 ###############################
-# - name: VM with minimum requiremnts and soft_shutdown 
+# - name: VM with minimum requiremnts and soft_shutdown
 #   ntnx_vms:
 #       state: present
 #       name: integration_test_opperations_vm
@@ -125,7 +125,7 @@
 #         name: "{{ cluster.name }}"
 #       disks:
 #         - type: "DISK"
-#           clone_image: 
+#           clone_image:
 #             name: "{{ centos }}"
 #           bus: "SCSI"
 #           size_gb: 20
@@ -176,7 +176,7 @@
       wait: false
   register: result
   ignore_errors: true
- 
+
 - name: Creation Status
   assert:
     that:
@@ -191,13 +191,13 @@
       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 
-- name: Delete all Created VMs 
+- name: Delete all Created VMs
   ntnx_vms:
       state: absent
       vm_uuid: '{{ item }}'
   loop: '{{ todelete }}'
 
-- name: Delete all Created VMs 
+- name: Delete all Created VMs
   ntnx_vms:
       state: absent
       vm_uuid: '{{ vm.vm_uuid }}'

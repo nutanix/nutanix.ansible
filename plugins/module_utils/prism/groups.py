@@ -14,17 +14,19 @@ class Groups(Prism):
 
     def get_uuid(
         self,
-        value,
+        value="",
         key="name",
         data=None,
         entity_type="",
         raise_error=True,
         no_response=False,
     ):
-        data = {
-            "entity_type": entity_type,
-            "filter_criteria": "{0}=={1}".format(key, value),
-        }
+        if not data:
+            data = {
+                "entity_type": entity_type,
+                "filter_criteria": "{0}=={1}".format(key, value),
+            }
+
         resp = self.list(
             data, use_base_url=True, raise_error=raise_error, no_response=no_response
         )

@@ -12,7 +12,7 @@
       validate_certs: false
 
   tasks:
-        
+
     - name: List floating_ips using ascending ip sorting and floating_ip filter
       ntnx_floating_ips_info:
         filter:
@@ -29,3 +29,12 @@
         offset: 0
       register: result
       ignore_errors: True
+
+
+    - name: List floating_ips using filter and custom_filter
+      ntnx_floating_ips_info:
+        filter:
+          name: <name>
+        custom_filter:
+          private_ip: <private_ip>
+      register: result

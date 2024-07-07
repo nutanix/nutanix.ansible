@@ -32,13 +32,13 @@
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       create_new_server:
         name: "{{ vm1_name }}-db"
         desc: "vm for db server"
         password: "{{ vm_password }}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         software_profile:
           name: "{{ software_profile.name }}"
@@ -47,7 +47,7 @@
         compute_profile:
           name: "{{ compute_profile.name }}"
         pub_ssh_key: "{{ public_ssh_key }}"
-    
+
     postgres:
       listener_port: "5432"
       db_name: testAnsible
@@ -60,14 +60,14 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
         quaterly: JANUARY
         log_catchup: 30
         snapshots_per_day: 2
-    
+
   register: result
 
 - set_fact:
@@ -77,7 +77,7 @@
     time_machine_uuid: "{{result.response.timeMachineId}}"
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -97,7 +97,7 @@
   register: result
 
 - name: snapshot status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -121,13 +121,13 @@
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       create_new_server:
         name: "{{ vm1_name }}"
         desc: "vm for db server"
         password: "{{ vm_password }}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         network_profile:
           name: "{{ network_profile.name }}"
@@ -139,18 +139,18 @@
       db_password: "{{vm_password}}"
       pre_clone_cmd: "ls"
       post_clone_cmd: "ls -a"
-    
+
     time_machine:
       name: "{{tm1}}"
       pitr_timestamp: "2023-02-04 07:29:36"
       timezone: "UTC"
-    
+
     removal_schedule:
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
       delete_database: True
-    
+
     refresh_schedule:
       days: 2
       time: "12:00:00"
@@ -232,7 +232,7 @@
         }
 
 - name: Check mode status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -248,13 +248,13 @@
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       create_new_server:
         name: "{{ vm1_name }}"
         desc: "vm for db server"
         password: "{{ vm_password }}"
-        cluster: 
+        cluster:
           name: "{{cluster.cluster1.name}}"
         network_profile:
           name: "{{ network_profile.name }}"
@@ -264,17 +264,17 @@
 
     postgres:
       db_password: "{{vm_password}}"
-    
+
     time_machine:
       name: "{{tm1}}"
       snapshot_uuid: "{{snapshot_uuid}}"
-    
+
     removal_schedule:
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
       delete_database: True
-    
+
     refresh_schedule:
       days: 2
       time: "12:00:00"
@@ -284,14 +284,17 @@
       ansible-clones: ansible-test-db-clones
   register: result
 
+# skip jekyll/Liquid syntax check
+# {% raw %}
 - name: create properties map
-  set_fact: 
-      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+  set_fact:
+    properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
   no_log: true
+# {% endraw %}
 
 - name: Clone create status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -309,7 +312,7 @@
       - result.response.lcmConfig.refreshDetails.refreshInDays == 2
       - result.response.lcmConfig.refreshDetails.refreshTime == "12:00:00"
       - properties["db_parameter_profile_id"] == db_params_profile.uuid
-      - result.response.tags | length == 1  
+      - result.response.tags | length == 1
       - result.response.tags[0].tagName == "{{tags.clones.name}}"
       - result.response.tags[0].value == "ansible-test-db-clones"
       - result.response.sourceSnapshotId == snapshot_uuid
@@ -331,13 +334,13 @@
     uuid: "{{clone_uuid}}"
     name: "{{clone_db1}}-updated"
     desc: "ansible-created-clone-updated"
-    
+
     removal_schedule:
       timestamp: "2023-02-10 07:29:36"
       timezone: "Asia/Calcutta"
       remind_before_in_days: 4
       delete_database: false
-    
+
     refresh_schedule:
       days: 4
       time: "14:00:00"
@@ -348,7 +351,7 @@
   register: result
 
 - name: Clone update status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -362,7 +365,7 @@
       - result.response.lcmConfig.expiryDetails.deleteDatabase == False
       - result.response.lcmConfig.refreshDetails.refreshInDays == 4
       - result.response.lcmConfig.refreshDetails.refreshTime == "14:00:00"
-      - result.response.tags | length == 1  
+      - result.response.tags | length == 1
       - result.response.tags[0].tagName == "{{tags.clones.name}}"
       - result.response.tags[0].value == "ansible-test-db-clones-updated"
 
@@ -374,13 +377,13 @@
     uuid: "{{clone_uuid}}"
     name: "{{clone_db1}}-updated"
     desc: "ansible-created-clone-updated"
-    
+
     removal_schedule:
       timestamp: "2023-02-10 07:29:36"
       timezone: "Asia/Calcutta"
       remind_before_in_days: 4
       delete_database: false
-    
+
     refresh_schedule:
       days: 4
       time: "14:00:00"
@@ -393,7 +396,7 @@
 
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -405,10 +408,10 @@
 - name: remove schedules
   ntnx_ndb_database_clones:
     uuid: "{{clone_uuid}}"
-    
+
     removal_schedule:
       state: "absent"
-    
+
     refresh_schedule:
       state: "absent"
 
@@ -417,7 +420,7 @@
 
 
 - name: Check schedule remove status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -428,7 +431,7 @@
     fail_msg: "schedules update failed"
     success_msg: "schedules removed succefully"
 
-############################################ refresh clone ###########################################
+########################################### refresh clone ###########################################
 
 
 - name: create spec for refresh clone to a pitr timestamp
@@ -440,15 +443,15 @@
   register: result
 
 
-- name: Check refresh db with pitr spec 
-  assert: 
+- name: Check refresh db with pitr spec
+  assert:
     that:
       - result.response is defined
       - result.changed == False
       - result.response.userPitrTimestamp == "2023-02-04 07:29:36"
       - result.response.timeZone == "UTC"
     fail_msg: "creation refresh db clone spec failed"
-    success_msg: "refresh db clone spec created succesfully"
+    success_msg: "refresh db clone spec created successfully"
 
 
 - name: refresh db clone
@@ -460,7 +463,7 @@
 
 
 - name: Check database refresh status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -469,7 +472,7 @@
     fail_msg: "database refresh failed"
     success_msg: "database refresh completed succefully"
 
-############################################ delete clone tests ###########################################
+########################################### delete clone tests###########################################
 
 
 - name: create soft remove spec
@@ -483,7 +486,7 @@
 
 
 - name: verify soft remove  spec
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -505,7 +508,7 @@
 
 
 - name: verify unregistration spec
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -525,7 +528,7 @@
 
 
 - name: verify status of db clone delete
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -533,7 +536,7 @@
     fail_msg: "database delete failed"
     success_msg: "database deleted successfully"
 
-############################################ authorize and deauthorize db server vms###########################################
+########################################### authorize and deauthorize db server vms###########################################
 
 
 - name: authorize db server vms
@@ -547,7 +550,7 @@
 
 
 - name: verify status of authorization of db server vms
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -565,9 +568,9 @@
   register: result
 
 
-  
+
 - name: verify status of deauthorization of db server vms
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -586,7 +589,7 @@
 
 
 - name: verify status of authorization of db server vms
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -597,20 +600,8 @@
 ############################################ clone on authorized db server vm ###########################################
 
 
-- name: Get timestamp in secs
-  shell: "date +'%s'"
-  register: timestamp
-
 - set_fact:
-    timestamp: "{{timestamp.stdout|int + 60*60*48|int}}"
-
-- name: Get timestamp in datetime format
-  shell: "date -d @{{timestamp}} '+%Y-%m-%d %H:%M:%S'"
-  register: timestamp
-
-- set_fact:
-    timestamp: "{{timestamp.stdout}}"
-
+    timestamp: "2123-11-08 12:36:15"
 - name: create clone using snapshot on authorized server
   ntnx_ndb_database_clones:
     name: "{{clone_db1}}"
@@ -618,24 +609,24 @@
 
     db_params_profile:
       name: "{{db_params_profile.name}}"
-    
+
     db_vm:
       use_authorized_server:
         name: "{{ vm1_name }}"
 
     postgres:
       db_password: "{{vm_password}}"
-    
+
     time_machine:
       uuid: "{{time_machine_uuid}}"
       snapshot_uuid: "{{snapshot_uuid}}"
-    
+
     removal_schedule:
       timestamp: "{{timestamp}}"
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
       delete_database: True
-    
+
     refresh_schedule:
       days: 2
       time: "12:00:00"
@@ -648,7 +639,7 @@
 
 
 - name: Clone create status on authorized db server vm
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -662,6 +653,98 @@
       - result.response.parentTimeMachineId ==  time_machine_uuid
     fail_msg: "Unable to create clone"
     success_msg: "Database clone created succefully"
+
+- set_fact:
+    delete_clone_uuid: "{{result.uuid}}"
+
+- name: delete clone db
+  ntnx_ndb_database_clones:
+    state: "absent"
+    uuid: "{{delete_clone_uuid}}"
+    delete_from_vm: true
+  register: result
+
+- name: verify status of db clone delete
+  assert:
+    that:
+      - result.changed == True
+      - result.failed == false
+      - result.response.status == "5"
+    fail_msg: "database delete failed"
+    success_msg: "database deleted successfully"
+
+########################################### create clone from latest snapshot ##################################
+
+- name: authorize again db server vm
+  ntnx_ndb_authorize_db_server_vms:
+    time_machine:
+      name: "{{tm1}}"
+    db_server_vms:
+      - name: "{{vm1_name}}"
+  register: result
+
+
+
+- name: verify status of authorization of db server vms
+  assert:
+    that:
+      - result.changed == True
+      - result.failed == false
+      - result.response.status == "success"
+    fail_msg: "database authorization with time machine failed"
+    success_msg: "database authorization with time machine successfully"
+
+- name: create clone using latest snapshot on authorized server
+  ntnx_ndb_database_clones:
+    name: "{{clone_db1}}fromLatestSnapshot"
+    desc: "ansible-created-clone from latest snapshot"
+
+    db_params_profile:
+      name: "{{db_params_profile.name}}"
+
+    db_vm:
+      use_authorized_server:
+        name: "{{ vm1_name }}"
+
+    postgres:
+      db_password: "{{vm_password}}"
+
+    time_machine:
+      uuid: "{{time_machine_uuid}}"
+      latest_snapshot: True
+
+    removal_schedule:
+      timestamp: "{{timestamp}}"
+      timezone: "Asia/Calcutta"
+      remind_before_in_days: 1
+      delete_database: True
+
+    refresh_schedule:
+      days: 2
+      time: "12:00:00"
+      timezone: "Asia/Calcutta"
+
+    tags:
+      ansible-clones: ansible-test-db-clones
+  register: result
+
+
+
+- name: Clone create status on authorized db server vm
+  assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.uuid is defined
+      - result.uuid == result.response.id
+      - result.response.status == "READY"
+      - result.response.name == "{{clone_db1}}fromLatestSnapshot"
+      - result.response.description == "ansible-created-clone from latest snapshot"
+      - result.response.clone == True
+      - result.response.databaseNodes[0].dbserverId == db_server_uuid
+      - result.response.parentTimeMachineId ==  time_machine_uuid
+    fail_msg: "Unable to create clone from latest snapshot"
+    success_msg: "Database clone created from latest snapshot successfully"
 
 
 
@@ -686,7 +769,7 @@
     fail_msg: "Unable to list all era clones"
     success_msg: "era clones listed successfully"
 ################################################################
-- name: get era clones using it's name  
+- name: get era clones using it's name
   ntnx_ndb_clones_info:
     name: "{{clones.response[0].name}}"
   register: result
@@ -744,7 +827,7 @@
 
 
 - name: verify status of db clone delete
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -761,7 +844,7 @@
   register: result
 
 - name: verify status of delete of db server vm used for clone
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false
@@ -779,7 +862,7 @@
   register: result
 
 - name: verify status of delete of database along with time machine and db server vm delete
-  assert: 
+  assert:
     that:
       - result.changed == True
       - result.failed == false

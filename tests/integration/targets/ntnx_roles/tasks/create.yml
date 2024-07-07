@@ -33,7 +33,7 @@
     p2: "{{ result.response.status.resources.permission_reference_list[1].uuid }}"
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.role_uuid is defined
@@ -63,7 +63,7 @@
   ignore_errors: True
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.msg == "Role with given name already exists"
       - result.changed == False
@@ -85,7 +85,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == False

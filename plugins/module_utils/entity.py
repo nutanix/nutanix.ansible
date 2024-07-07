@@ -175,6 +175,17 @@ class Entity(object):
             timeout=timeout,
         )
         if resp:
+            custom_filters = self.module.params.get("custom_filter")
+
+            if custom_filters:
+                entities_list = self._filter_entities(
+                    resp[self.entity_type], custom_filters
+                )
+                entities_count = len(entities_list)
+
+                resp[self.entity_type] = entities_list
+                resp["metadata"]["length"] = entities_count
+
             return resp
         entities_list = []
         main_length = data.get("length")
@@ -283,10 +294,14 @@ class Entity(object):
             else:
                 spec.pop(key)
 
-        if params.get("filter", {}).get("name") and params.get("kind") == "vm":
-            spec["filter"]["vm_name"] = spec["filter"].pop("name")
+        if params.get("filter"):
+            if params.get("filter", {}).get("name") and params.get("kind") == "vm":
+                spec["filter"]["vm_name"] = spec["filter"].pop("name")
 
-        spec["filter"] = self._parse_filters(params.get("filter", {}))
+            spec["filter"] = self._parse_filters(params.get("filter", {}))
+
+        elif params.get("filter_string"):
+            spec["filter"] = params["filter_string"]
 
         return spec, None
 
@@ -349,7 +364,10 @@ class Entity(object):
 
         # buffer size with ref. to max read size of http.client.HTTPResponse.read() defination
         buffer_size = 65536
-        if not resp:
+
+        # From ansible-core>=2.13, incase of http error, urllib.HTTPError object is returned in resp
+        # as per the docs of ansible we need to use body in that case.
+        if not resp or status_code >= 400:
             # get body containing error
             body = info.get("body")
         else:
@@ -471,7 +489,7 @@ class Entity(object):
 
     @staticmethod
     def _parse_filters(filters):
-        return ",".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
+        return ";".join(map(lambda i: "{0}=={1}".format(i[0], i[1]), filters.items()))
 
     @staticmethod
     def _filter_entities(entities, custom_filters):

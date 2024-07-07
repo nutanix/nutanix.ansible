@@ -5,13 +5,13 @@
           target_group:
               default_internal_policy: DENY_ALL
           inbounds:
-            - 
+            -
                 categories:
                   AppFamily:
                     - Databases
                     - DevOps
           outbounds:
-            - 
+            -
                 categories:
                   AppFamily:
                     - Databases
@@ -32,4 +32,4 @@
         fail_msg: ' fail: unable to update quarantine_rule by adding inbound and outbound list '
         success_msg: >-
           pass: update quarantine_rule by adding inbound and outbound list
-          succesfully 
+          successfully

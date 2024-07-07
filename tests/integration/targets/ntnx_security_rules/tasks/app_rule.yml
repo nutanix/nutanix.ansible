@@ -8,11 +8,14 @@
             apptype_filter_by_category:
               AppFamily:
                 - Backup
-            apptier: Default
+            apptiers:
+              - "{{categories.apptiers[0]}}"
+              - "{{categories.apptiers[1]}}"
+
           default_internal_policy: DENY_ALL
 
       inbounds:
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
@@ -22,7 +25,7 @@
               tcp:
                 - start_port: 22
                   end_port: 80
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
@@ -31,38 +34,38 @@
                 icmp:
                   - code: 1
                     type: 1
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
                 - DevOps
-            protocol: 
+            protocol:
               udp:
                 - start_port: 82
                   end_port: 8080
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
                 - DevOps
-            protocol: 
+            protocol:
               service:
                 name: 6a44
-        - 
+        -
             ip_subnet:
               prefix_length: 24
               ip: 192.168.1.0
             description: test description
-        - 
+        -
           address:
             name: dest
       outbounds:
-        - 
+        -
             categories:
               AppFamily:
                 - Databases
                 - DevOps
-            protocol: 
+            protocol:
               icmp:
                 - code: 1
                   type: 1
@@ -72,13 +75,15 @@
   register: result
   ignore_errors: true
 
+
 - name: Creation Status
   assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name=="test_app_rule"
+      - result.response.status.name=="test_app_rule"
+      - result.response.status.resources.app_rule.target_group.filter.params.AppTier | length == 2
     fail_msg: ' fail: unable to create app security rule with inbound and outbound list'
     success_msg: 'pass: create app security rule with inbound and outbound list successfully'
 
@@ -88,12 +93,12 @@
     app_rule:
       policy_mode: APPLY
       inbounds:
-        - 
+        -
           rule_id: "{{result.response.spec.resources.app_rule.inbound_allow_list.0.rule_id}}"
           state: absent
       outbounds:
           -
-            protocol: 
+            protocol:
               icmp:
                 - code: 1
                   type: 1
@@ -140,7 +145,9 @@
             apptype_filter_by_category:
               AppFamily:
                 - Backup
-            apptier: Default
+            apptiers:
+              - "{{categories.apptiers[0]}}"
+              - "{{categories.apptiers[1]}}"
           default_internal_policy: DENY_ALL
       allow_all_outbounds: true
       allow_all_inbounds: true
@@ -157,6 +164,8 @@
       - result.failed == false
       - result.response.status.state == 'COMPLETE'
       - result.response.spec.name=="test_app_rule"
+      - result.response.status.resources.app_rule.target_group.filter.params.AppTier | length == 2
+
     fail_msg: ' fail: unable to create app security rule with allow all inbound and outbound list'
     success_msg: 'pass: create app security rule with allow all inbound and outbound list successfully'
 - name: delete app security rule

@@ -38,7 +38,7 @@ EXAMPLES = r"""
       nutanix_password: "{{ password }}"
       validate_certs: False
       filter:
-        - name: Ubuntu
+        name: Ubuntu
     register: result
 """
 RETURN = r"""

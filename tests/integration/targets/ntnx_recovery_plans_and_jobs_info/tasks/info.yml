@@ -83,7 +83,7 @@
 - set_fact:
     test_plan_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
-################################################## 
+##################################################
 
 - name: List recovery plans using uuid criteria
   ntnx_recovery_plans_info:
@@ -104,11 +104,11 @@
     fail_msg: "Unable to list plans using uuid"
     success_msg: "recovery plan info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List recovery plans using filter criteria
   ntnx_recovery_plans_info:
-    filter: 
+    filter:
       name: "{{ test_plan_name }}"
   register: result
   ignore_errors: True
@@ -125,7 +125,7 @@
     fail_msg: "Unable to list recovery plan using filter"
     success_msg: "recovery plan info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List recovery plan using length and offset
   ntnx_recovery_plans_info:
@@ -180,7 +180,7 @@
   no_log: true
   register: test_job
 
-################################################## 
+##################################################
 
 - name: List all recovery plan jobs
   ntnx_recovery_plan_jobs_info:
@@ -204,7 +204,7 @@
 - set_fact:
     test_job_name_1: "{{ test_job.error.status.name }}"
 
-################################################## 
+##################################################
 
 - name: List recovery plan jobs using uuid criteria
   ntnx_recovery_plan_jobs_info:
@@ -225,12 +225,12 @@
     fail_msg: "Unable to list jobs using uuid"
     success_msg: "recovery plan jobs info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List recovery plan jobs using filter criteria
   ntnx_recovery_plan_jobs_info:
     nutanix_host: "{{recovery_site_ip}}"
-    filter: 
+    filter:
       name: "{{ test_job_name_1 }}"
   register: result
   ignore_errors: True
@@ -247,7 +247,7 @@
     fail_msg: "Unable to list recovery plan job using filter"
     success_msg: "recovery plan job info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List recovery plan job using length and offset
   ntnx_recovery_plan_jobs_info:

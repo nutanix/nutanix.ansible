@@ -6,7 +6,7 @@
   ntnx_image_placement_policy:
     name: "test_policy_5"
     placement_type: soft
-    image_categories: 
+    image_categories:
       AnalyticsExclusions:
         - AnomalyDetection
     cluster_categories:
@@ -15,7 +15,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -37,9 +37,9 @@
       - result.failed == false
     fail_msg: "Unable to delete image placement policy"
     success_msg: "Image placement policy deleted successfully"
-      
+
 #####################################################################################################
-  
+
 - name: Delete image placement policy with incorrect uuid
   ntnx_image_placement_policy:
     state: absent

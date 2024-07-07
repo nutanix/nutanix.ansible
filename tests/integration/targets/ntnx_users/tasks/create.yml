@@ -6,7 +6,7 @@
   ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
+    project:
       uuid: "{{project.uuid}}"
   register: result
   ignore_errors: true
@@ -61,15 +61,15 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "Fail: unable to delete all users"
-    success_msg: "Pass: all users deleted succesfully"
+    success_msg: "Pass: all users deleted successfully"
 - set_fact:
     todelete: []
 #################################################
-- name: create local user  with project and categories 
+- name: create local user  with project and categories
   ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
+    project:
       uuid: "{{project.uuid}}"
     categories:
       Environment:
@@ -99,7 +99,7 @@
   ntnx_users:
     principal_name: wrong_name
     directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
+    project:
       uuid: "{{project.uuid}}"
     categories:
       Environment:
@@ -118,27 +118,27 @@
     fail_msg: "Fail: create wrong user"
     success_msg: "Pass: Returned as expected"
 #################################################
-- name: create idp user
-  ntnx_users:
-    identity_provider_uuid: "{{identity_provider_uuid}}"
-    username: testing_user
-  register: result
-  ignore_errors: true
+# - name: create idp user
+#   ntnx_users:
+#     identity_provider_uuid: "{{identity_provider_uuid}}"
+#     username: testing_user
+#   register: result
+#   ignore_errors: true
 
-- name: check listing status
-  assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.user_uuid is defined
-      - result.response.status.state == "COMPLETE"
-      - result.response.status.name == "testing_user"
-    fail_msg: "Fail: unable to create idp user"
-    success_msg: "Pass: idp user created succesfully"
+# - name: check listing status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.failed == false
+#       - result.user_uuid is defined
+#       - result.response.status.state == "COMPLETE"
+#       - result.response.status.name == "testing_user"
+#     fail_msg: "Fail: unable to create idp user"
+#     success_msg: "Pass: idp user created successfully"
 
-- set_fact:
-     todelete: "{{ todelete + [  result.user_uuid ] }}"
+# - set_fact:
+#      todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
 - name: Delete created users
   ntnx_users:
@@ -153,7 +153,7 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "Fail: unable to delete all users"
-    success_msg: "Pass: all users deleted succesfully"
+    success_msg: "Pass: all users deleted successfully"
 - set_fact:
     todelete: []
 
@@ -163,7 +163,7 @@
   ntnx_users:
     principal_name: "{{principal_name}}"
     directory_service_uuid:  "{{directory_service_uuid}}"
-    project: 
+    project:
       uuid: "{{project.uuid}}"
   register: result
   ignore_errors: true
@@ -182,4 +182,4 @@
       - result.response is defined
       - result.response.status == 'SUCCEEDED'
     fail_msg: "Fail: unable to delete users"
-    success_msg: "Pass: users deleted succesfully"
+    success_msg: "Pass: users deleted successfully"

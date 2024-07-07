@@ -10,7 +10,7 @@
         Environment:
           - Production
     vcpus: 5
-    cores_per_vcpu: 5 
+    cores_per_vcpu: 5
     memory_gb: 5
     timezone: GMT
   register: result
@@ -26,8 +26,30 @@
     fail_msg: ' Unable to create VM with minimum requiremnts '
     success_msg: ' VM with minimum requiremnts created successfully '
 ####################################################################
+- name: update vm by set owner by uuid
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    owner:
+      uuid: "{{vm_owner.uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.status.state == "COMPLETE"
+      - result.response.metadata.owner_reference.name == "{{ vm_owner.name }}"
+      - result.response.metadata.owner_reference.uuid == "{{ vm_owner.uuid }}"
+      - result.response.metadata.owner_reference.kind == "user"
+    fail_msg: ' Unable to update vm by setting owner '
+    success_msg: ' VM updated successfully by setting owner '
+####################################################################
+
 - debug:
-    msg: Start update tests for memory vcpus cores_per_vcpu 
+    msg: Start update tests for memory vcpus cores_per_vcpu
 
 - name: decrease values for memory, vcpus and corespervcpu with force_power_off
   ntnx_vms:
@@ -140,7 +162,7 @@
     vm_uuid: "{{ result.vm_uuid }}"
     disks:
       - type: "DISK"
-        clone_image: 
+        clone_image:
           name: "{{ ubuntu }}"
         bus: "SCSI"
         size_gb: 20
@@ -224,7 +246,7 @@
         bus: PCI
   register: result
   ignore_errors: true
-  
+
 - name: Update Status
   assert:
     that:
@@ -501,7 +523,7 @@
       - result.vm_uuid
       - result.task_uuid
     fail_msg: ' Unable to update vm by editing a subnet vlan '
-    success_msg: ' VM updated successfully by editing a subnet vlan ' 
+    success_msg: ' VM updated successfully by editing a subnet vlan '
 
 - name: Update VM by deleting a subnet
   ntnx_vms:
@@ -522,7 +544,7 @@
       - result.vm_uuid
       - result.task_uuid
     fail_msg: ' Unable to update vm by deleting a subnet '
-    success_msg: ' VM updated successfully by deleting a subnet ' 
+    success_msg: ' VM updated successfully by deleting a subnet '
 # ####################################################################
 
 - name: Update VM by deleting it
@@ -539,4 +561,4 @@
       - result.vm_uuid
       - result.task_uuid
     fail_msg: 'Fail: Unable to delete created vm '
-    success_msg: 'Success: Vm deleted sucessfully' 
+    success_msg: 'Success: Vm deleted sucessfully'

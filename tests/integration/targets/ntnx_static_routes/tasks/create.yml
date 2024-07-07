@@ -19,8 +19,8 @@
             uuid: "{{ external_nat_subnet.uuid }}"
     wait: True
   register: result
-  
-- set_fact: 
+
+- set_fact:
     d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
     d2: "{{ result.response.status.resources.static_routes_list[1].destination }}"
 
@@ -38,9 +38,9 @@
       - result.response.status.resources.default_route["is_active"] == true
       - result.response.status.resources.default_route["destination"] == "0.0.0.0/0"
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
-      
+
     fail_msg: 'Fail: Unable to update static routes of vpc'
-    success_msg: 'Succes: static routes updated succesfully'
+    success_msg: 'Succes: static routes updated successfully'
 
 ###########################################################################################################
 
@@ -63,13 +63,13 @@
   register: result
 
 - name: check idempotency status
-  assert: 
+  assert:
     that:
       - result.changed == false
       - result.failed == false
       - "'Nothing to update' in result.msg"
     fail_msg: "Static routes"
-    success_msg: "Static routes update skipped succesfully due to no changes in spec"
+    success_msg: "Static routes update skipped successfully due to no changes in spec"
 
 ###########################################################################################################
 
@@ -118,7 +118,7 @@
       - result.changed == false
       - result.failed == true
     fail_msg: "Static routes updated successfully"
-    success_msg: "Static routes update failed successfully" 
+    success_msg: "Static routes update failed successfully"
 
 ###########################################################################################################
 - name: remove all routes
@@ -135,4 +135,4 @@
       - result.changed == true
       - result.response.status.resources.static_routes_list == []
     fail_msg: "Static routes remove failed"
-    success_msg: "Static routes removed successfully" 
+    success_msg: "Static routes removed successfully"

@@ -10,30 +10,40 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
+## Support
+
+Ansible Nutanix Provider leverages the community-supported model. See [Open Source Support](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA07V000000LdWPSA0) for more information about its support policy.
+
 # Version compatibility
 
 ## Ansible
-This collection and examples has been tested against following versions :
-  1. ansible==5.0.1
-  2. ansible-core==2.12.3
+This collection requires ansible-core>=2.15.0
 
 ## Python
-This collection requires Python 2.7 or greater
+This collection requires Python 3.9 or greater
 
 ## Prism Central
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
 
 > For the 1.2.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.5.
 
-> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
+> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4.
 
-> For the 1.4.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4. 
+> For the 1.4.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4.
 
 > For the 1.5.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4.0.2 and pc2022.1.0.2.
 
 > For the 1.7.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4 and pc2022.1.0.2.
 
-> For the 1.8.0-beta.1 release of the ansible plugin it will have N compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2022.6 .
+> For the 1.8.0 release of the ansible plugin it will have N compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2022.6 .
+
+> For the 1.9.0 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2023.1 and pc.2023.1.0.1 .
+
+> For the 1.9.1 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2023.3 and pc.2023.1.0.2 .
+
+> For the 1.9.2 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was sanity tested against Prism Central version pc.2024.1 .
+
+
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
 
@@ -41,10 +51,14 @@ This collection requires Python 2.7 or greater
 
 3. For Users and User Groups modules (ntnx_users and ntnx_user_groups), adding Identity Provider (IdP) & Organizational Unit (OU) based users/groups are supported for PC versions >= pc.2022.1
 
+4. ntnx_security_rules - The ``apptier`` option in target group has been removed. New option called ``apptiers`` has been added to support multi tier policy.
+
 Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
 ## Foundation
 > For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation. This release was tested against Foundation versions v5.2 and v5.1.1
+
+> For the 1.9.1 release of the ansible plugin, it was tested against versions v5.2
 
 Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation
 
@@ -54,20 +68,27 @@ Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main
 Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc
 
 ## Karbon
-> For the 1.6.0 release of the ansible plugin, it will have N-2 compatibility with the Karbon. This release was tested against Karbon versions v2.3.0, v2.4.0 and v2.5.0 
+> For the 1.6.0 release of the ansible plugin, it will have N-2 compatibility with the Karbon. This release was tested against Karbon versions v2.3.0, v2.4.0 and v2.5.0
+
+> For the 1.9.0 release of the ansible plugin, it was tested against Karbon versions v2.6.0, v2.7.0 and v2.8.0
+
+> For the 1.9.1 release of the ansible plugin, it was tested against Karbon version v2.8.0
 
 Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
 
 ## Nutanix Database Service (ERA)
-> For the 1.8.0-beta.1 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against era versions v2.4.1 and v2.4.0
 
-> For the 1.8.0 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against era versions v2.5.0 and v2.5.1
+> For the 1.8.0 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against NDB versions v2.5.0 and v2.5.1
+
+> For the 1.9.0 release of the ansible plugin, it was tested against NDB versions v2.5.0.2
+
+> For the 1.9.1 release of the ansible plugin, it was tested against NDB versions v2.5.1.1
 
 NDB based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
 
 ### Notes:
 1. Currently NDB based modules are supported and tested against postgres based databases.
- 
+
 # Installing the collection
 **Prerequisite**
 
@@ -150,6 +171,7 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_image_placement_policies_info | List existing image placement policies. |
 | ntnx_karbon_clusters | Create, Delete k8s clusters |
 | ntnx_karbon_clusters_info | Get clusters info. |
+| ntnx_karbon_clusters_node_pools | Update node pools of kubernetes cluster |
 | ntnx_karbon_registries | Create, Delete a karbon private registry entry |
 | ntnx_karbon_registries_info | Get karbon private registry registry info. |
 | ntnx_pbrs | Create or delete a PBR. |
@@ -211,6 +233,7 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_ndb_stretched_vlans | Get stretched vlans inf in NDB |
 | ntnx_ndb_time_machine_clusters | Manage clusters in NDB time machines |
 | ntnx_ndb_tags | Create, update and delete tags |
+| ntnx_ndb_tags_info | Get tags info |
 | ntnx_ndb_database_clones | Create, update and delete database clones |
 | ntnx_ndb_database_snapshots | Create, update and delete database snapshots |
 | ntnx_ndb_database_clone_refresh | Perform database clone refresh |
@@ -245,6 +268,56 @@ We glady welcome contributions from the community. From updating the documentati
 
 * [Contributing Guide](CONTRIBUTING.md)
 * [Code of Conduct](CODE_OF_CONDUCT.md)
+
+# Testing
+
+## Integration Testing for Nutanix Ansible Modules
+
+To conduct integration tests for a specific Ansible module such as the `ntnx_vms` module, the following step-by-step procedures can be followed:
+
+### Prerequisites
+- Ensure you are in the installed collection directory where the module is located. For example:
+`/Users/mac.user1/.ansible/collections/ansible_collections/nutanix/ncp`
+
+### Setting up Variables
+1. Navigate to the `tests/integration/targets` directory within the collection.
+
+2. Define the necessary variables within the feature-specific var files, such as `tests/integration/targets/prepare_env/vars/main.yml`, `tests/integration/targets/prepare_foundation_env/vars/main.yml`,`tests/integration/targets/prepare_ndb_env/tasks/prepare_env.yml`, etc.
+
+Note: For Karbon and FC tests, use the PC vars exclusively, as these features rely on pc setup. Not all variables are mandatory; define only the required variables for the particular feature to be tested.
+
+3. Run the test setup playbook for the specific feature you intend to test to create entities in setup:
+    - For PC, NDB, and Foundation tests, execute the relevant commands:
+      ```bash
+      ansible-playbook prepare_env/tasks/prepare_env.yml
+      ansible-playbook prepare_ndb_env/tasks/prepare_env.yml
+      ansible-playbook prepare_foundation_env/tasks/prepare_foundation_env.yml
+      ```
+
+### Running Integration Tests
+1. Conduct integration tests for all modules using:
+    ```bash
+    ansible-test integration
+    ```
+
+2. To perform integration tests for a specific module:
+    ```bash
+    ansible-test integration module_test_name
+    ```
+    Replace `module_test_name` with test directory name under tests/integration/targets.
+
+### Cleanup
+1. After completing the integration tests, perform a cleanup specific to the tested feature:
+    - For PC tests, execute the command:
+      ```bash
+      ansible-playbook prepare_env/tasks/clean_up.yml
+      ```
+    - For Foundation tests, execute the command:
+      ```bash
+      ansible-playbook prepare_foundation_env/tasks/clean_up.yml
+      ```
+
+By following these steps, you can perform comprehensive integration testing for the specified Ansible module and ensure a clean testing environment afterward. Define only the necessary variables for the specific feature you intend to test.
 
 # Examples
 ## Playbook for IaaS provisioning on Nutanix

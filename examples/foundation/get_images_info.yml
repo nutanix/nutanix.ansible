@@ -14,7 +14,7 @@
       ntnx_foundation_aos_packages_info:
         nutanix_host: "10.xx.xx.xx"
       register: nos
-    
+
     - debug:
         msg: "{{ hyp }}"
     - debug:

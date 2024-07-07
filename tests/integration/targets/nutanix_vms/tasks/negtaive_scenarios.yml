@@ -18,7 +18,7 @@
           bus: "SCSI"
     register: result
     ignore_errors: True
-    
+
   - name: Creation Status
     assert:
       that:
@@ -28,6 +28,36 @@
         - result.error == "Project project not found."
       success_msg: ' Success: returned error as expected '
 #############################################################
+  - name: Check if error is produced when disk size is not given for storage container
+    check_mode: yes
+    ntnx_vms:
+      state: present
+      name: VM with storage container
+      timezone: GMT
+      cluster:
+        name: "{{ cluster.name }}"
+      categories:
+        AppType:
+          - Apache_Spark
+      disks:
+        - type: DISK
+          bus: SCSI
+          storage_container:
+            name: "{{ storage_container.name }}"
+      vcpus: 1
+      cores_per_vcpu: 1
+      memory_gb: 1
+    register: result
+    ignore_errors: True
+
+  - name: Creation Status
+    assert:
+      that:
+        - result.msg == "Unsupported operation: Unable to create disk, 'size_gb' is required for using storage container."
+        - result.failed == True
+        - result.failed is defined
+      success_msg: ' Success: returned error as expected '
+##################################################################################
   - name: Unknown Cluster
     ntnx_vms:
       state: present
@@ -51,10 +81,10 @@
         - result.failed == True
         - result.response.state == 'ERROR'
         - result.status_code == 422
-        - result.error == "HTTP Error 422: UNPROCESSABLE ENTITY""
+        - result.error == "HTTP Error 422: UNPROCESSABLE ENTITY"
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail Vm created successfully with unknown cluster '
-################################################################################ 
+################################################################################
   - name: Unknown Cluster name
     ntnx_vms:
       state: present
@@ -97,7 +127,7 @@
             name: "vlan.8000"
     register: result
     ignore_errors: True
-       
+
   - name: Creation Status
     assert:
       that:
@@ -107,7 +137,7 @@
         - result.error == "Subnet vlan.8000 not found."
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with unknown network name '
-###################################################################################        
+###################################################################################
   - name: Unknown Network uuid
     ntnx_vms:
       state: present
@@ -124,7 +154,7 @@
             uuid: "8000"
     register: result
     ignore_errors: True
-       
+
   - name: Creation Status
     assert:
       that:
@@ -134,8 +164,8 @@
         - result.response.state == 'ERROR'
         - result.status_code == 422
       success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail VM created successfully with unknown network name '  
-###################################################################################  
+      fail_msg: ' Fail VM created successfully with unknown network name '
+###################################################################################
   - name: Unknow Image name
     ntnx_vms:
       state: present
@@ -186,7 +216,7 @@
         - result.failed == True
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with invalid argument for size_gb '
-############################################################################################# 
+#############################################################################################
   - name: Image size less than actual
     ntnx_vms:
       state: present
@@ -241,7 +271,7 @@
           bus: "SCSI"
     register: result
     ignore_errors: True
-    
+
   - name: Creation Status
     assert:
       that:
@@ -249,14 +279,14 @@
         - result.failed == True
       success_msg: ' Success: returned error as expected '
       fail_msg: ' Fail VM created successfully with unknown storage container name '
-################################################################################# 
+#################################################################################
   - name: Delete vm with unknown uuid
     ntnx_vms:
       state: absent
       vm_uuid: 5
     register: result
     ignore_errors: True
-      
+
   - name: Creation Status
     assert:
       that:
@@ -270,7 +300,7 @@
       state: absent
     register: result
     ignore_errors: True
-      
+
   - name: Creation Status
     assert:
       that:

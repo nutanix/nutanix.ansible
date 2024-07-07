@@ -1,0 +1,40 @@
+---
+- name: Create Refresh clone
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <ndb-era-ip>
+      nutanix_username: <username>
+      nutanix_password: <password>
+      validate_certs: false
+
+  tasks:
+    - set_fact:
+        clone_db:
+          uuid: <Clone Db UUID>
+        snapshot:
+          uuid: <Snapshot UUID>
+
+    - name: create spec for refresh clone to a pitr timestamp
+      check_mode: yes
+      ntnx_ndb_database_clone_refresh:
+        uuid: "{{clone_db.uuid}}"
+        pitr_timestamp: "2023-02-04 07:29:36"
+        timezone: "UTC"
+      register: output
+
+
+    - debug:
+        msg: "{{output}}"
+
+    - name: refresh db clone
+      ntnx_ndb_database_clone_refresh:
+        uuid: "{{clone_db.uuid}}"
+        snapshot_uuid: "{{snapshot.uuid}}"
+      register: output
+
+    - debug:
+        msg: "{{output}}"

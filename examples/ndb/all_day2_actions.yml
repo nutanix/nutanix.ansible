@@ -35,14 +35,14 @@
       ntnx_ndb_database_snapshots:
         name: "{{snapshot_name}}2"
         time_machine_uuid: "{{time_machine_uuid}}"
-        expiry_days: 4 
+        expiry_days: 4
       register: result
 
     - set_fact:
         snapshot_uuid: "{{result.snapshot_uuid}}"
 
     - name: rename snapshot
-      ntnx_ndb_database_snapshots: 
+      ntnx_ndb_database_snapshots:
         snapshot_uuid: "{{snapshot_uuid}}"
         name: "{{snapshot_name}}2-updated"
       register: result
@@ -54,13 +54,13 @@
       register: result
 
     - name: remove expiry schedule
-      ntnx_ndb_database_snapshots: 
+      ntnx_ndb_database_snapshots:
         snapshot_uuid: "{{snapshot_uuid}}"
         remove_expiry: true
       register: result
 
     - name: Add expiry schedule and rename
-      ntnx_ndb_database_snapshots: 
+      ntnx_ndb_database_snapshots:
         snapshot_uuid: "{{snapshot_uuid}}"
         name: "{{snapshot_name}}2"
         expiry_days: 6
@@ -101,7 +101,7 @@
         db_uuid: "{{db_uuid}}"
         snapshot_uuid: "{{snapshot_uuid}}"
       register: result
-  
+
     ########################################### scaling ###########################################
 
     - name: extend database storage for scaling database
@@ -118,7 +118,7 @@
     - name: add databases in database instance
       ntnx_ndb_linked_databases:
         db_instance_uuid: "{{db_uuid}}"
-        databases: 
+        databases:
           - test1
           - test2
       register: result
@@ -127,5 +127,5 @@
       ntnx_ndb_linked_databases:
         state: "absent"
         db_instance_uuid: "{{db_uuid}}"
-        database_uuid: "{{linked_databases.test1}}" 
+        database_uuid: "{{linked_databases.test1}}"
       register: result

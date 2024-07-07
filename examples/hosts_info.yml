@@ -11,7 +11,7 @@
       nutanix_password: <pass>
       validate_certs: false
 
-  tasks:        
+  tasks:
   - name: test getting all hosts
     ntnx_hosts_info:
     register: hosts
@@ -29,3 +29,11 @@
       sort_attribute: "name"
     register: result
     ignore_errors: True
+
+  - name: List hosts using filter and custom_filter
+    ntnx_hosts_info:
+      filter:
+        name: <name>
+      custom_filter:
+        serial_number: <serial_number>
+    register: result
