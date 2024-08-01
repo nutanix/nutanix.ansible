@@ -411,8 +411,13 @@ class Entity(object):
             return {"status_code": status_code}
 
         if resp_json is None:
+            if len(info.get("msg")) > 0:
+                resp_json_msg = "{0}".format(info.get("msg"))
+            else:
+                resp_json_msg = "Failed to convert API response to json"
+
             self.module.fail_json(
-                msg="{0}".format(info.get("msg")),
+                msg=resp_json_msg,
                 status_code=status_code,
                 error=body,
                 response=resp_json,
