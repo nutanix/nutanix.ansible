@@ -24,13 +24,13 @@ options:
         type: str
       name:
         description:
-            - name of snaphsot.
+            - name of snapshot.
             - required for create
             - update is allowed
         type: str
       clusters:
         description:
-            - list of clusters incase snapshots needs to be replicated to secondary clusters
+            - list of clusters in case snapshots needs to be replicated to secondary clusters
             - if secondary clusters of time machines are mentioned, then this module won't track the replication process
             - clusters changes are not considered during update, for replication use ntnx_ndb_replicate_database_snapshots
         type: list

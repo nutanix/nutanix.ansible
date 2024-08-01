@@ -1,7 +1,7 @@
 - debug:
     msg: Start testing create ova for vm
 
-- name: VM with minimum requiremnts
+- name: VM with minimum requirements
   ntnx_vms:
       state: present
       name: integration_test_ova_vm
@@ -15,8 +15,8 @@
     that:
       - vm.response is defined
       - vm.response.status.state == 'COMPLETE'
-    fail_msg: 'Fail: Unable to create VM with minimum requiremnts '
-    success_msg: 'Success: VM with minimum requiremnts created successfully '
+    fail_msg: 'Fail: Unable to create VM with minimum requirements '
+    success_msg: 'Success: VM with minimum requirements created successfully '
 #########################################
 - name: create_ova_image  with check mode
   ntnx_vms_ova:

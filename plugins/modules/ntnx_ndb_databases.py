@@ -330,7 +330,7 @@ options:
             - allowed for HA instance
       type:
           description:
-            - if its a HA or singe instance
+            - if its a HA or single instance
             - mandatory for creation
           type: str
           choices: ["single", "ha"]
@@ -385,7 +385,7 @@ options:
                         cluster:
                           description:
                             - cluster where they will be hosted
-                            - this will overide default cluster provided for all vms
+                            - this will override default cluster provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -401,7 +401,7 @@ options:
                         network_profile:
                           description:
                             - network profile details
-                            - this will overide default network profile provided for all vms
+                            - this will override default network profile provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -417,7 +417,7 @@ options:
                         compute_profile:
                           description:
                             - compute profile details for the node
-                            - this will overide default compute profile provided for all vms
+                            - this will override default compute profile provided for all vms
                           type: dict
                           suboptions:
                             name:

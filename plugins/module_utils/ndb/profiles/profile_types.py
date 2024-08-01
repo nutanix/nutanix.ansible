@@ -233,7 +233,7 @@ class NetworkProfile(Profile):
                 cluster_name = clusters_uuid_name_map[cluster_uuid]
 
             if not cluster_name:
-                return None, "Pleae provide uuid or name for getting cluster info"
+                return None, "Please provide uuid or name for getting cluster info"
 
             properties_map["CLUSTER_NAME_" + str(i)] = cluster_name
             properties_map["CLUSTER_ID_" + str(i)] = clusters_name_uuid_map[
@@ -485,7 +485,7 @@ def get_profile_type(module):
         if type in module.params:
             return type, None
 
-    return None, "Input doesn't conatains config for allowed profile types of databases"
+    return None, "Input doesn't contains config for allowed profile types of databases"
 
 
 def get_profile_type_obj(module, profile_type=None):  # -> tuple[Profile, str]:

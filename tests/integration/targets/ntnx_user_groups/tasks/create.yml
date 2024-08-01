@@ -143,7 +143,7 @@
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
-    success_msg: "user  group deletd successfully"
+    success_msg: "user  group deleted successfully"
 
 
 # - name: create user group with idp

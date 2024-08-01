@@ -16,5 +16,5 @@
       - result.response is defined
       - result.failed == true
       - result.changed == false
-    fail_msg: "Fail:  create registery with wrong port number finished successfully"
+    fail_msg: "Fail:  create registry with wrong port number finished successfully"
     success_msg: "Pass: Returned as expected "

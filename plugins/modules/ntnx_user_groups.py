@@ -49,7 +49,7 @@ options:
         type: dict
     remove_categories:
         description:
-            - set this flag to remove dettach all categories attached to user_group
+            - set this flag to remove detach all categories attached to user_group
             - mutually_exclusive with C(categories)
         type: bool
         required: false
