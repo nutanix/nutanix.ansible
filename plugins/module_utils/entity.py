@@ -412,7 +412,7 @@ class Entity(object):
 
         if resp_json is None:
             try:
-                if len(info.get("msg")) > 2:
+                if len(info.get("msg")) > 0:
                     resp_json_msg = "{}".format(info.get("msg"))
                 else:
                     resp_json_msg = "Failed to convert API response to json"
