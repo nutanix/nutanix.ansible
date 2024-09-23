@@ -53,3 +53,27 @@
     fail_msg: "fail: Unable to image nodes or create cluster "
     success_msg: "succes: Imaging and cluster created successfully "
   # when: false # make it true or remove to unskip task
+
+- name: Store imaged cluster uuid
+  set_fact:
+    imaged_cluster_uuid: "{{result.imaged_cluster_uuid}}"
+
+- name: check mode for delete operation
+  ntnx_foundation_central:
+    state: absent
+    imaged_cluster_uuid: "{{imaged_cluster_uuid}}"
+    check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==false
+      - result.msg =="Cluster with uuid:{{imaged_cluster_uuid}} will be deleted."
+      - result.imaged_cluster_uuid == "{{imaged_cluster_uuid}}"
+    fail_msg: "fail: Unable to delete cluster "
+    success_msg: "succes: Cluster deleted successfully "
+  # when: false # make it true or remove to unskip task
