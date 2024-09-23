@@ -423,6 +423,7 @@ def get_module_spec():
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
         cni=dict(type="dict", options=cni_spec),
+        disable_monitoring=dict(type="bool", default=False),
         custom_node_configs=dict(
             type="dict", apply_defaults=True, options=custom_node_spec
         ),
