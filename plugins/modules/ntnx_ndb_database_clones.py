@@ -16,6 +16,7 @@ options:
       uuid:
         description:
             - uuid of database clone for update and delete
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       name:
         description:
