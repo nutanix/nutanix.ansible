@@ -69,6 +69,10 @@ options:
                 choices: ["Calico", "Flannel"]
                 default: "Flannel"
                 description: Configuration of the network provider
+    disable_monitoring:
+        type: bool
+        description: Set to true to disable deployment of monitoring stack(prometheus).
+        default: false
     custom_node_configs:
         type: dict
         description: write
