@@ -1,45 +1,45 @@
 ---
-
-- debug:
+- name: Start testing ntnx_karbon_registries
+  ansible.builtin.debug:
     msg: "start ntnx_karbon_registries tests"
 
 - name: Generate random registry_name
-  set_fact:
+  ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
 
-- set_fact:
+- name: Set registry name
+  ansible.builtin.set_fact:
     registry_name: "{{random_name[0]}}"
 
-
-- name: create registry with check_mode
+- name: Create registry with check_mode
   ntnx_karbon_registries:
     name: "{{registry_name}}"
     url: "{{url}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
   check_mode: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == false
       - result.response.name == "{{registry_name}}"
       - result.response.url == "{{url}}"
-    success_msg: ' Success: returned response as expected '
-    fail_msg: ' Fail: create registry with check_mode  '
+    success_msg: " Success: returned response as expected "
+    fail_msg: " Fail: create registry with check_mode  "
     ################################################################
-- name: create registry
+- name: Create registry
   ntnx_karbon_registries:
     name: "{{registry_name}}"
     url: "{{url}}"
     port: 5000
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -49,15 +49,15 @@
     fail_msg: "Fail: Unable to create registery"
     success_msg: "Pass: create registry finished successfully"
     ################################################################
-- name: delete registry
+- name: Delete registry
   ntnx_karbon_registries:
     name: "{{registry_name}}"
     state: absent
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -68,17 +68,17 @@
 
   ################################################################
 
-- name: create registry with username and password
+- name: Create registry with username and password
   ntnx_karbon_registries:
     name: "{{registry_name}}"
     url: "{{url}}"
-    username: test
+    username: Test
     password: test
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -87,15 +87,15 @@
     fail_msg: "Fail: unable to create registry with username and password"
     success_msg: "Pass: create registry with username and password finished successfully"
     ###############################################################
-- name: delete registry
+- name: Delete registry
   ntnx_karbon_registries:
     name: "{{registry_name}}"
     state: absent
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false

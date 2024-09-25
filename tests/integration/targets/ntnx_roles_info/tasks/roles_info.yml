@@ -1,4 +1,5 @@
-- debug:
+- name: Start testing ntnx_roles_info
+  ansible.builtin.debug:
     msg: start testing ntnx_roles_info
 ##################################################
 
@@ -6,10 +7,10 @@
   ntnx_roles_info:
     length: 2
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.metadata.total_matches > 0
@@ -17,9 +18,11 @@
     fail_msg: "Unable to list all roles"
     success_msg: "roles info obtained successfully"
 
-- set_fact:
+- name: Set test role name variable
+  ansible.builtin.set_fact:
     test_role_name: "{{result.response.entities.1.status.name}}"
-- set_fact:
+- name: Set test role uuid variable
+  ansible.builtin.set_fact:
     test_role_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
 ##################################################
@@ -28,10 +31,10 @@
   ntnx_roles_info:
     role_uuid: "{{ test_role_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -48,10 +51,10 @@
     filter:
       name: "{{ test_role_name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -69,10 +72,10 @@
     length: 1
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false

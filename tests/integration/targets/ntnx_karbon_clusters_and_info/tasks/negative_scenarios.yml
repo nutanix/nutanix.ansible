@@ -1,12 +1,14 @@
 ---
-- debug:
-    msg: Start negative test cases for  ntnx_karbon_clusters
+- name: Start negative test cases for ntnx_karbon_clusters
+  ansible.builtin.debug:
+    msg: Start negative test cases for ntnx_karbon_clusters
 
-- set_fact:
+- name: Set Karbon name
+  ansible.builtin.set_fact:
     karbon_name: "test-module22"
 
 #############################
-- name: create cluster with cpu less than minimum
+- name: Create cluster with cpu less than minimum
   ntnx_karbon_clusters:
     cluster:
       name: "{{cluster.name}}"
@@ -16,7 +18,7 @@
     node_subnet:
       uuid: "{{network.dhcp.uuid}}"
     cni:
-      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      node_cidr_mask_size: "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
       pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
       network_provider: Calico
@@ -29,8 +31,8 @@
     storage_class:
       nutanix_cluster_password: "{{nutanix_cluster_password}}"
       nutanix_cluster_username: "{{nutanix_cluster_username}}"
-      default_storage_class: True
-      name: test-storage-class
+      default_storage_class: true
+      name: Test-storage-class
       reclaim_policy: Retain
       storage_container: "{{storage_container.name}}"
       file_system: xfs
@@ -39,7 +41,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response == {}
       - result.changed == false
@@ -49,7 +51,7 @@
     fail_msg: " Fail: cluster creaeted with  cpu  less than minimum"
     success_msg: " Pass:  Retunred as expected"
 #############################
-- name: create cluster with memory_gb  less than minimum
+- name: Create cluster with memory_gb  less than minimum
   ntnx_karbon_clusters:
     cluster:
       name: "{{cluster.name}}"
@@ -59,7 +61,7 @@
     node_subnet:
       uuid: "{{network.dhcp.uuid}}"
     cni:
-      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      node_cidr_mask_size: "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
       pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
       network_provider: Calico
@@ -72,8 +74,8 @@
     storage_class:
       nutanix_cluster_password: "{{nutanix_cluster_password}}"
       nutanix_cluster_username: "{{nutanix_cluster_username}}"
-      default_storage_class: True
-      name: test-storage-class
+      default_storage_class: true
+      name: Test-storage-class
       reclaim_policy: Retain
       storage_container: "{{storage_container.name}}"
       file_system: xfs
@@ -82,7 +84,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response == {}
       - result.changed == false
@@ -92,7 +94,7 @@
     fail_msg: " Fail: cluster creaeted with  memory_gb size  less than minimum"
     success_msg: " Pass:  Retunred as expected"
 #############################
-- name: create cluster with wrong num_instances for master nodes
+- name: Create cluster with wrong num_instances for master nodes
   ntnx_karbon_clusters:
     cluster:
       name: "{{cluster.name}}"
@@ -102,7 +104,7 @@
     node_subnet:
       uuid: "{{network.dhcp.uuid}}"
     cni:
-      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      node_cidr_mask_size: "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
       pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
       network_provider: Calico
@@ -115,8 +117,8 @@
     storage_class:
       nutanix_cluster_password: "{{nutanix_cluster_password}}"
       nutanix_cluster_username: "{{nutanix_cluster_username}}"
-      default_storage_class: True
-      name: test-storage-class
+      default_storage_class: true
+      name: Test-storage-class
       reclaim_policy: Retain
       storage_container: "{{storage_container.name}}"
       file_system: xfs
@@ -125,7 +127,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response == {}
       - result.changed == false
@@ -135,7 +137,7 @@
     fail_msg: " Fail: cluster creaeted with wrong num_instances for master nodes"
     success_msg: " Pass:  Retunred as expected"
 #############################
-- name: create cluster with wrong num_instances for etcd nodes
+- name: Create cluster with wrong num_instances for etcd nodes
   ntnx_karbon_clusters:
     cluster:
       name: "{{cluster.name}}"
@@ -145,7 +147,7 @@
     node_subnet:
       uuid: "{{network.dhcp.uuid}}"
     cni:
-      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      node_cidr_mask_size: "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
       pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
       network_provider: Calico
@@ -158,8 +160,8 @@
     storage_class:
       nutanix_cluster_password: "{{nutanix_cluster_password}}"
       nutanix_cluster_username: "{{nutanix_cluster_username}}"
-      default_storage_class: True
-      name: test-storage-class
+      default_storage_class: true
+      name: Test-storage-class
       reclaim_policy: Retain
       storage_container: "{{storage_container.name}}"
       file_system: xfs
@@ -168,7 +170,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response == {}
       - result.changed == false

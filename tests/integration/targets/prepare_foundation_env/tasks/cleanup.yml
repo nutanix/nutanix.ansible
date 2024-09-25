@@ -1,9 +1,9 @@
 ---
-- name: clean up the environment
+- name: Clean up the environment
   hosts: localhost
   gather_facts: false
   tasks:
-    - name: include var file
+    - name: Include var file
       include_vars: ../vars/main.yml
     # - name: Delete files
     #   file:

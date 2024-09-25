@@ -1,29 +1,29 @@
 ---
 - name: Generate random name
-  set_fact:
+  ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
 
-- set_fact:
+- name: Set ACP names
+  ansible.builtin.set_fact:
     acp1_name: "{{random_name[0]}}1"
     acp2_name: "{{random_name[0]}}2"
     acp3_name: "{{random_name[0]}}3"
     acp4_name: "{{random_name[0]}}4"
     acp5_name: "{{random_name[0]}}5"
 
-
 - name: Create min ACP
   ntnx_acps:
     state: present
-    wait: True
+    wait: true
     name: "{{acp1_name}}"
     role:
       uuid: "{{ acp.role.uuid }}"
   register: result
   check_mode: true
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -38,13 +38,13 @@
     wait: true
     name: "{{acp2_name}}"
     role:
-      uuid: '{{ acp.role.uuid }}'
+      uuid: "{{ acp.role.uuid }}"
   check_mode: false
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -52,7 +52,8 @@
     fail_msg: " Unable to create Min ACP "
     success_msg: " Min ACP created successfully "
 
-- set_fact:
+- name: Add ACP uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.acp_uuid ] }}"
 ##########################################################
 - name: Create ACP with user reference
@@ -64,10 +65,10 @@
     user_uuids:
       - "{{ acp.user_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -77,7 +78,8 @@
     fail_msg: " Unable to Create ACP with user reference "
     success_msg: " ACP with user reference created successfully "
 
-- set_fact:
+- name: Add ACP uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.acp_uuid ] }}"
 ##########################################################
 - name: Create ACP with user ad user group reference
@@ -91,10 +93,10 @@
     user_group_uuids:
       - "{{ acp.user_group_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -105,7 +107,8 @@
     fail_msg: " Unable to Create ACP with user and user group reference "
     success_msg: " ACP with user and user group reference created successfully "
 
-- set_fact:
+- name: Add ACP uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.acp_uuid ] }}"
 ##########################################################
 - name: Create ACP with all specfactions
@@ -134,7 +137,7 @@
             operator: IN
             rhs:
               uuid_list:
-                  - "{{ network.dhcp.uuid }}"
+                - "{{ network.dhcp.uuid }}"
       - scope_filter:
           - lhs: CATEGORY
             operator: IN
@@ -148,10 +151,10 @@
             rhs:
               collection: ALL
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -175,7 +178,8 @@
     fail_msg: " Unable to Create ACP all specfactions "
     success_msg: " ACP with all specfactions created successfully "
 
-- set_fact:
+- name: Add ACP uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.acp_uuid ] }}"
 ##########################################################
 - name: Delete all created acps
@@ -184,10 +188,10 @@
     acp_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed is defined
       - result.changed == true
@@ -195,5 +199,6 @@
     fail_msg: "unable to delete all created acp's"
     success_msg: "All acp's deleted successfully"
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

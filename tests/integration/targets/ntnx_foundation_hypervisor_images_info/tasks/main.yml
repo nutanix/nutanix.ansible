@@ -1,6 +1,8 @@
 ---
-- module_defaults:
-    nutanix.ncp.ntnx_foundation_hypervisor_images_info:
-        nutanix_host: "{{ foundation_host }}"
+- name: Set module defaults
+  module_defaults:
+      nutanix.ncp.ntnx_foundation_hypervisor_images_info:
+          nutanix_host: "{{ foundation_host }}"
   block:
-        - import_tasks: "get_hypervisors.yml"
+      - name: Import "get_hypervisors.yml"
+        ansible.builtin.import_tasks: "get_hypervisors.yml"

@@ -1,4 +1,5 @@
-- debug:
+- name: Start testing static routes update tests
+  ansible.builtin.debug:
     msg: Start testing static routes update tests
 
 - name: Add default static route and external nat static route to the vpc route table
@@ -17,15 +18,16 @@
         next_hop:
           external_subnet_ref:
             uuid: "{{ external_nat_subnet.uuid }}"
-    wait: True
+    wait: true
   register: result
 
-- set_fact:
+- name: Set destination variables
+  ansible.builtin.set_fact:
     d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
     d2: "{{ result.response.status.resources.static_routes_list[1].destination }}"
 
 - name: Update static routes list Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -39,8 +41,8 @@
       - result.response.status.resources.default_route["destination"] == "0.0.0.0/0"
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
 
-    fail_msg: 'Fail: Unable to update static routes of vpc'
-    success_msg: 'Succes: static routes updated successfully'
+    fail_msg: "Fail: Unable to update static routes of vpc"
+    success_msg: "Succes: static routes updated successfully"
 
 ###########################################################################################################
 
@@ -62,8 +64,8 @@
             uuid: "{{ external_nat_subnet.uuid }}"
   register: result
 
-- name: check idempotency status
-  assert:
+- name: Check idempotency status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -84,7 +86,7 @@
   register: result
 
 - name: Update static routes list Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -113,7 +115,7 @@
   ignore_errors: true
 
 - name: Update static routes list Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == true
@@ -121,14 +123,14 @@
     success_msg: "Static routes update failed successfully"
 
 ###########################################################################################################
-- name: remove all routes
+- name: Remove all routes
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     remove_all_routes: true
   register: result
 
 - name: Remove all routes status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'

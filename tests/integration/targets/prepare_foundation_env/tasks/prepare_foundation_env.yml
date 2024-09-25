@@ -1,10 +1,10 @@
 ---
-- name: prepare the environment
+- name: Prepare the environment
   hosts: localhost
   gather_facts: false
   collections:
     - nutanix.ncp
 
   tasks:
-  - name: include var file
-    include_vars: ../vars/main.yml
+    - name: Include var file
+      include_vars: ../vars/main.yml

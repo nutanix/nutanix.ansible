@@ -8,22 +8,22 @@
 #   5. Replicate profiles to multi clusters
 #   6. Delete of profile
 
-- debug:
+- name: Start testing ntnx_ndb_software_profiles
+  ansible.builtin.debug:
     msg: "start ndb software profile tests"
 
 - name: Generate random name
-  set_fact:
+  ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
 
-- set_fact:
+- name: Set profile names
+  ansible.builtin.set_fact:
     profile1_name: "{{random_name[0]}}"
-    profile1_name_updated:  "{{random_name[0]}}-updated"
+    profile1_name_updated: "{{random_name[0]}}-updated"
     profile2_name: "{{random_name[0]}}2"
 
-
-
-- name: create software profile create spec
-  check_mode: yes
+- name: Create software profile create spec
+  check_mode: true
   ntnx_ndb_profiles:
     name: "{{profile1_name}}"
     desc: "{{profile1_name}}-desc"
@@ -43,59 +43,50 @@
       - uuid: "{{cluster.cluster2.uuid}}"
   register: result
 
-
-
-- set_fact:
-    expected_result: {
+- name: Set expected result
+  ansible.builtin.set_fact:
+    expected_result:
+      {
         "changed": false,
         "error": null,
         "failed": false,
         "profile_uuid": null,
-        "response": {
-            "availableClusterIds": [
-                "{{cluster.cluster1.uuid}}",
-                "{{cluster.cluster2.uuid}}"
-            ],
+        "response":
+          {
+            "availableClusterIds":
+              ["{{cluster.cluster1.uuid}}", "{{cluster.cluster2.uuid}}"],
             "description": "{{profile1_name}}-desc",
             "engineType": "postgres_database",
             "name": "{{profile1_name}}",
-            "properties": [
+            "properties":
+              [
+                { "name": "BASE_PROFILE_VERSION_NAME", "value": "v1.0" },
                 {
-                    "name": "BASE_PROFILE_VERSION_NAME",
-                    "value": "v1.0"
+                  "name": "BASE_PROFILE_VERSION_DESCRIPTION",
+                  "value": "v1.0-desc",
                 },
+                { "name": "OS_NOTES", "value": "os_notes" },
+                { "name": "DB_SOFTWARE_NOTES", "value": "db_notes" },
                 {
-                    "name": "BASE_PROFILE_VERSION_DESCRIPTION",
-                    "value": "v1.0-desc"
+                  "name": "SOURCE_DBSERVER_ID",
+                  "value": "{{db_server_vm.uuid}}",
                 },
-                {
-                    "name": "OS_NOTES",
-                    "value": "os_notes"
-                },
-                {
-                    "name": "DB_SOFTWARE_NOTES",
-                    "value": "db_notes"
-                },
-                {
-                    "name": "SOURCE_DBSERVER_ID",
-                    "value": "{{db_server_vm.uuid}}"
-                }
-            ],
+              ],
             "systemProfile": false,
             "topology": "cluster",
-            "type": "Software"
-        }
-    }
+            "type": "Software",
+          },
+      }
 
-- name: check spec for creating software profile
-  assert:
+- name: Check spec for creating software profile
+  ansible.builtin.assert:
     that:
       - result == expected_result
 
     fail_msg: "Fail: Unable to create spec for software profile create"
     success_msg: "Pass: Spec for creating software profile generated successfully"
 
-- name: create software profile with base version and cluster instance topology. Replicated to multiple clusters
+- name: Create software profile with base version and cluster instance topology. Replicated to multiple clusters
   ntnx_ndb_profiles:
     name: "{{profile1_name}}-replicated"
     desc: "{{profile1_name}}-desc-replicated"
@@ -115,13 +106,12 @@
       - uuid: "{{cluster.cluster2.uuid}}"
   register: result
 
-
-
-- set_fact:
+- name: Set clusters uuids
+  ansible.builtin.set_fact:
     clusters: ["{{cluster.cluster1.uuid}}", "{{cluster.cluster2.uuid}}"]
 
-- name: check status of creation
-  assert:
+- name: Check status of creation
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -142,8 +132,7 @@
     fail_msg: "Fail: Unable to create software profile with base version and cluster instance topology with replicating to multiple clusters."
     success_msg: "Pass: Software profile with base version, cluster instance topology and replicated to multiple clusters created successfully"
 
-
-- name: create software profile with base version and single instance topology
+- name: Create software profile with base version and single instance topology
   ntnx_ndb_profiles:
     name: "{{profile2_name}}"
     desc: "{{profile2_name}}-desc"
@@ -162,10 +151,8 @@
       - name: "{{cluster.cluster1.name}}"
   register: result
 
-
-
-- name: check status of creation
-  assert:
+- name: Check status of creation
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -185,21 +172,19 @@
     fail_msg: "Fail: Unable to create software profile with base version and single instance topology"
     success_msg: "Pass: Software profile with base version and single instance topology created successfully"
 
-
-- set_fact:
+- name: Set profile_uuid
+  ansible.builtin.set_fact:
     profile_uuid: "{{result.profile_uuid}}"
 
-- name: update software profile
+- name: Update software profile
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     name: "{{profile1_name}}-updated1"
     desc: "{{profile1_name}}-desc-updated"
   register: result
 
-
-
-- name: check status of creation
-  assert:
+- name: Check status of creation
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -212,18 +197,15 @@
     fail_msg: "Fail: Unable to update software profile"
     success_msg: "Pass: Software profile updated successfully"
 
-
-- name: idempotency checks
+- name: Idempotency checks
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     name: "{{profile1_name}}-updated1"
     desc: "{{profile1_name}}-desc-updated"
   register: result
 
-
-
-- name: check status of creation
-  assert:
+- name: Check status of creation
+  ansible.builtin.assert:
     that:
       - result.changed == False
       - result.failed == False
@@ -236,8 +218,8 @@
     fail_msg: "Fail: Update didnt get skipped due to no state changes"
     success_msg: "Pass: Update skipped successfully due to no state changes"
 
-- name: create software profile version spec
-  check_mode: yes
+- name: Create software profile version spec
+  check_mode: true
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     database_type: "postgres"
@@ -252,54 +234,53 @@
 
   register: result
 
-- set_fact:
-    expected_result: {
+- name: Set expected result
+  ansible.builtin.set_fact:
+    expected_result:
+      {
         "changed": false,
         "error": null,
         "failed": false,
         "profile_type": "software",
         "profile_uuid": "{{profile_uuid}}",
-        "response": {
-            "profile": {
+        "response":
+          {
+            "profile":
+              {
                 "description": "{{profile1_name}}-desc-updated",
                 "engineType": "postgres_database",
-                "name": "{{profile1_name}}-updated1"
-            },
-            "version": {
+                "name": "{{profile1_name}}-updated1",
+              },
+            "version":
+              {
                 "description": "v2.0-desc",
                 "engineType": "postgres_database",
                 "name": "v2.0",
-                "properties": [
+                "properties":
+                  [
+                    { "name": "OS_NOTES", "value": "os_notes for v2" },
+                    { "name": "DB_SOFTWARE_NOTES", "value": "db_notes for v2" },
                     {
-                        "name": "OS_NOTES",
-                        "value": "os_notes for v2"
+                      "name": "SOURCE_DBSERVER_ID",
+                      "value": "{{db_server_vm.uuid}}",
                     },
-                    {
-                        "name": "DB_SOFTWARE_NOTES",
-                        "value": "db_notes for v2"
-                    },
-                    {
-                        "name": "SOURCE_DBSERVER_ID",
-                        "value": "{{db_server_vm.uuid}}"
-                    }
-                ],
+                  ],
                 "systemProfile": false,
                 "topology": null,
-                "type": "Software"
-            }
-        }
-    }
+                "type": "Software",
+              },
+          },
+      }
 
-- name: check spec for creating spec for software profile version
-  assert:
+- name: Check spec for creating spec for software profile version
+  ansible.builtin.assert:
     that:
       - result == expected_result
 
     fail_msg: "Fail: Unable to create spec for software profile version create"
     success_msg: "Pass: Spec for creating software profile version generated successfully"
 
-
-- name: create software profile version
+- name: Create software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     database_type: "postgres"
@@ -314,10 +295,8 @@
 
   register: result
 
-
-
-- name: check status of version create
-  assert:
+- name: Check status of version create
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -334,11 +313,12 @@
     fail_msg: "Fail: Unable to create software profile version"
     success_msg: "Pass: Software profile version created successfully"
 
-- set_fact:
+- name: Set version_uuid
+  ansible.builtin.set_fact:
     version_uuid: "{{result.version_uuid}}"
 
-- name: create spec for update software profile version
-  check_mode: yes
+- name: Create spec for update software profile version
+  check_mode: true
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     database_type: "postgres"
@@ -349,10 +329,8 @@
 
   register: result
 
-
-
-- name: check status of spec
-  assert:
+- name: Check status of spec
+  ansible.builtin.assert:
     that:
       - result.changed == False
       - result.failed == False
@@ -366,8 +344,7 @@
     fail_msg: "Fail: Unable to create spec for updating software profile version"
     success_msg: "Pass: Spec for updating software profile version created successfully"
 
-
-- name: update software profile version
+- name: Update software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     database_type: "postgres"
@@ -378,10 +355,8 @@
 
   register: result
 
-
-
-- name: check status of update
-  assert:
+- name: Check status of update
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -401,22 +376,20 @@
     fail_msg: "Fail: Unable to update software profile version"
     success_msg: "Pass: Software profile version updated successfully"
 
-
-- set_fact:
+- name: Set version_uuid
+  ansible.builtin.set_fact:
     version_uuid: "{{result.version_uuid}}"
 
-- name: publish software profile version
+- name: Publish software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     software:
       version_uuid: "{{version_uuid}}"
-      publish: True
+      publish: true
   register: result
 
-
-
-- name: check status of update
-  assert:
+- name: Check status of update
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -431,7 +404,7 @@
     fail_msg: "Fail: Unable to publish software profile version"
     success_msg: "Pass: Software profile version published successfully"
 
-- name: unpublish software profile version
+- name: Unpublish software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     software:
@@ -439,8 +412,8 @@
       publish: false
   register: result
 
-- name: check status of update
-  assert:
+- name: Check status of update
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -455,19 +428,16 @@
     fail_msg: "Fail: Unable to unpublish software profile version"
     success_msg: "Pass: Software version unpublished successfully"
 
-
-- name: deprecate software profile version
+- name: Deprecate software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     software:
       version_uuid: "{{version_uuid}}"
-      deprecate: True
+      deprecate: true
   register: result
 
-
-
-- name: check status of update
-  assert:
+- name: Check status of update
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -482,9 +452,7 @@
     fail_msg: "Fail: Unable to deprecate software profile version"
     success_msg: "Pass: Software version deprecated successfully"
 
-
-
-- name: delete software profile version
+- name: Delete software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     software:
@@ -492,9 +460,8 @@
       state: "absent"
   register: result
 
-
-- name: check status of update
-  assert:
+- name: Check status of update
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -506,33 +473,32 @@
     fail_msg: "Fail: Unable to delete software profile version"
     success_msg: "Pass: Software version deleted successfully"
 
-
-- name: replicate software profile
+- name: Replicate software profile
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     clusters:
       - name: "{{cluster.cluster2.name}}"
   register: result
 
-- name: wait for 3 minutes for replication to finish from source cluster to cluster2
+- name: Wait for 3 minutes for replication to finish from source cluster to cluster2
   ansible.builtin.pause:
     minutes: 3
 
-
-- set_fact:
+- name: Reset clusters variable
+  ansible.builtin.set_fact:
     clusters: {}
 
 # skip jekyll/Liquid syntax check
 # {% raw %}
-- name: create clusters status map
-  set_fact:
+- name: Create clusters status map
+  ansible.builtin.set_fact:
     clusters: "{{ clusters | default({}) | combine ({ item['nxClusterId'] : item['status'] }) }}"
   loop: "{{result.response.profile.clusterAvailability}}"
-  no_log: True
+  no_log: true
 # {% endraw %}
 
-- name: check status of replication
-  assert:
+- name: Check status of replication
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False
@@ -545,15 +511,14 @@
     fail_msg: "Fail: Unable to replicate software profile"
     success_msg: "Pass: Software profile replicated successfully"
 
-- name: delete software profile
+- name: Delete software profile
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     state: "absent"
   register: result
 
-
-- name: check status of delete
-  assert:
+- name: Check status of delete
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == False

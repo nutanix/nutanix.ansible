@@ -1,7 +1,8 @@
-- debug:
+- name: Start testing ntnx_static_routes_info
+  ansible.builtin.debug:
     msg: Start testing static routes info tests
 
-- name: create new static routes
+- name: Create new static routes
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
@@ -20,28 +21,28 @@
   register: result
 
 - name: Update static routes list Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.changed == true
-    fail_msg: 'Fail: Unable to update static routes of vpc'
-    success_msg: 'Succes: static routes updated successfully'
+    fail_msg: "Fail: Unable to update static routes of vpc"
+    success_msg: "Succes: static routes updated successfully"
 
 ###########################################################################################################
 
-- name: get all static routes
+- name: Get all static routes
   ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
   register: result
 
-
-- set_fact:
+- name: Set variables
+  ansible.builtin.set_fact:
     d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
     d2: "{{ result.response.status.resources.static_routes_list[1].destination }}"
 
-- name: check info module response
-  assert:
+- name: Check info module response
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -54,12 +55,12 @@
       - result.response.status.resources.default_route["destination"] == "0.0.0.0/0"
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
 
-    fail_msg: 'Fail: Unable to get static routes for vpc'
-    success_msg: 'Succes'
+    fail_msg: "Fail: Unable to get static routes for vpc"
+    success_msg: "Succes"
 
 ###########################################################################################################
 
-- name: remove all routes for cleanup
+- name: Remove all routes for cleanup
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     remove_all_routes: true
@@ -67,7 +68,7 @@
   ignore_errors: true
 
 - name: Remove all routes status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'

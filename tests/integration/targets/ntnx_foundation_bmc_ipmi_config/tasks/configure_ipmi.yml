@@ -1,8 +1,9 @@
 ---
-- debug:
+- name: Start testing ntnx_foundation_bmc_ipmi_config
+  ansible.builtin.debug:
     msg: start testing ntnx_foundation_bmc_ipmi_config
 
-- name: configure ipmi
+- name: Configure ipmi
   ntnx_foundation_bmc_ipmi_config:
     ipmi_user: "{{bmc.ipmi_user}}"
     ipmi_password: "{{bmc.ipmi_password}}"
@@ -10,13 +11,13 @@
     ipmi_gateway: "{{bmc.ipmi_gateway}}"
     timeout: 100
     blocks:
-        - nodes:
-            - ipmi_mac: "{{bmc.ipmi_mac}}"
-              ipmi_ip: "{{bmc.ipmi_ip}}"
+      - nodes:
+          - ipmi_mac: "{{bmc.ipmi_mac}}"
+            ipmi_ip: "{{bmc.ipmi_ip}}"
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed==false

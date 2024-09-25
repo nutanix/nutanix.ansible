@@ -3,7 +3,7 @@ username: TEST_PC_USERNAME
 password: TEST_PC_PASSWORD
 validate_certs: TEST_VALIDATE_CERT_FLAG
 
-# for NKE related tests 
+# for NKE related tests
 k8s_version: TEST_K8S_VERSION
 host_os: TEST_HOST_OS
 nutanix_cluster_password: TEST_CLUSTER_PASSWORD

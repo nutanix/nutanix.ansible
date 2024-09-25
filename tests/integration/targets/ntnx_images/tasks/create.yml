@@ -1,5 +1,6 @@
 ---
-- debug:
+- name: Start testing ntnx_images
+  ansible.builtin.debug:
     msg: start ntnx_image create tests
 
 - name: Create image with minimal spec and source uri
@@ -7,12 +8,12 @@
     state: present
     image_type: DISK_IMAGE
     source_uri: "{{ disk_image.url }}"
-    name: integration-test-image-with-uri
+    name: Integration-test-image-with-uri
     wait: true
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -22,7 +23,8 @@
     fail_msg: "Unable to create image using source_uri"
     success_msg: "Image with given source_uri created successfully"
 
-- set_fact:
+- name: Add image to delete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 ##################################################################################
@@ -30,7 +32,7 @@
 - name: Create image with all spec and using local image upload
   ntnx_images:
     state: present
-    name: integration-test-image-with-upload
+    name: Integration-test-image-with-upload
     desc: "uploaded image during integration test"
     source_path: "{{ disk_image.dest }}"
     image_type: "DISK_IMAGE"
@@ -51,7 +53,7 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -65,16 +67,17 @@
     fail_msg: "Unable to create image and upload local image with all specification"
     success_msg: "Image with given local path created successfully"
 
-- set_fact:
+- name: Add image to delete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 ###############################################################################################
 
 - name: Verify check mode for ntnx_image
-  check_mode: yes
+  check_mode: true
   ntnx_images:
     state: present
-    name: integration-test-image
+    name: Integration-test-image
     desc: "uploaded image during integration test"
     source_uri: "{{ disk_image.url }}"
     image_type: "DISK_IMAGE"
@@ -95,7 +98,7 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -119,13 +122,13 @@
     state: present
     source_uri: "www.google.com"
     image_type: "DISK_IMAGE"
-    name: integration-test-image-with-uri
+    name: Integration-test-image-with-uri
     wait: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == True
@@ -135,13 +138,14 @@
     fail_msg: "Image create didn't failed for invalid source uri"
 
 ###################################################################################################
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_images:
     state: absent
     image_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

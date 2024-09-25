@@ -1,214 +1,216 @@
 ---
-  - debug:
-      msg: start testing ntnx_foundation test for bare metal imaging and cluster creation
+- name: Start testing ntnx_foundation test for bare metal imaging and cluster creation
+  ansible.builtin.debug:
+    msg: start testing ntnx_foundation test for bare metal imaging and cluster creation
 
+- name: Get aos_packages_info from foundation
+  ntnx_foundation_aos_packages_info:
+  register: images
 
-  - name: get aos_packages_info from foundation
-    ntnx_foundation_aos_packages_info:
-    register: images
+- name: Create spec for imaging and creating cluster out of bare metal nodes
+  check_mode: true
+  ntnx_foundation:
+    timeout: 4500
+    cvm_gateway: "{{cvm_gateway}}"
+    cvm_netmask: "{{cvm_netmask}}"
+    hypervisor_gateway: "{{hypervisor_gateway}}"
+    hypervisor_netmask: "{{hypervisor_netmask}}"
+    default_ipmi_user: "{{default_ipmi_user}}"
+    current_cvm_vlan_tag: "{{nodes.current_cvm_vlan_tag}}"
+    nos_package: "{{images.aos_packages[0]}}"
+    blocks:
+      - block_id: "{{nodes.block_id}}"
+        nodes:
+          - manual_mode:
+              cvm_ip: "{{nodes.node1.cvm_ip}}"
+              cvm_gb_ram: 50
+              hypervisor_hostname: "{{nodes.node1.hypervisor_hostname}}"
+              ipmi_netmask: "{{nodes.node1.ipmi_netmask}}"
+              ipmi_gateway: "{{nodes.node1.ipmi_gateway}}"
+              ipmi_ip: "{{nodes.node1.ipmi_ip}}"
+              ipmi_password: "{{nodes.node1.ipmi_password}}"
+              hypervisor: "{{nodes.node1.hypervisor}}"
+              hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
+              node_position: "{{nodes.node1.node_position}}"
+    clusters:
+      - redundancy_factor: 1
+        cluster_members:
+          - "{{nodes.node1.cvm_ip}}"
+        name: "test-cluster"
+        timezone: "Asia/Calcutta"
+        cvm_ntp_servers:
+          - "{{nodes.ntp_servers[0]}}"
+          - "{{nodes.ntp_servers[1]}}"
+        cvm_dns_servers:
+          - "{{nodes.dns_servers[0]}}"
+          - "{{nodes.dns_servers[1]}}"
+        hypervisor_ntp_servers:
+          - "{{nodes.ntp_servers[0]}}"
+          - "{{nodes.ntp_servers[1]}}"
+        enable_ns: true
+        backplane_vlan: "{{nodes.backplane_vlan}}"
+        backplane_subnet: "{{nodes.backplane_subnet}}"
+        backplane_netmask: "{{nodes.backplane_netmask}}"
+  register: spec
+  ignore_errors: true
 
-  - name: Create spec for imaging and creating cluster out of bare metal nodes
-    check_mode: yes
-    ntnx_foundation:
-      timeout: 4500
-      cvm_gateway: "{{cvm_gateway}}"
-      cvm_netmask: "{{cvm_netmask}}"
-      hypervisor_gateway: "{{hypervisor_gateway}}"
-      hypervisor_netmask: "{{hypervisor_netmask}}"
-      default_ipmi_user: "{{default_ipmi_user}}"
-      current_cvm_vlan_tag: "{{nodes.current_cvm_vlan_tag}}"
-      nos_package: "{{images.aos_packages[0]}}"
-      blocks:
-        - block_id: "{{nodes.block_id}}"
-          nodes:
-            - manual_mode:
-                cvm_ip: "{{nodes.node1.cvm_ip}}"
-                cvm_gb_ram: 50
-                hypervisor_hostname: "{{nodes.node1.hypervisor_hostname}}"
-                ipmi_netmask: "{{nodes.node1.ipmi_netmask}}"
-                ipmi_gateway: "{{nodes.node1.ipmi_gateway}}"
-                ipmi_ip: "{{nodes.node1.ipmi_ip}}"
-                ipmi_password: "{{nodes.node1.ipmi_password}}"
-                hypervisor: "{{nodes.node1.hypervisor}}"
-                hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
-                node_position: "{{nodes.node1.node_position}}"
-      clusters:
-        - redundancy_factor: 1
-          cluster_members:
-            - "{{nodes.node1.cvm_ip}}"
-          name: "test-cluster"
-          timezone: "Asia/Calcutta"
-          cvm_ntp_servers:
-            - "{{nodes.ntp_servers[0]}}"
-            - "{{nodes.ntp_servers[1]}}"
-          cvm_dns_servers:
-            - "{{nodes.dns_servers[0]}}"
-            - "{{nodes.dns_servers[1]}}"
-          hypervisor_ntp_servers:
-            - "{{nodes.ntp_servers[0]}}"
-            - "{{nodes.ntp_servers[1]}}"
-          enable_ns: true
-          backplane_vlan: "{{nodes.backplane_vlan}}"
-          backplane_subnet: "{{nodes.backplane_subnet}}"
-          backplane_netmask: "{{nodes.backplane_netmask}}"
-    register: spec
-    ignore_errors: True
+- name: Set expected spec
+  ansible.builtin.set_fact:
+    expected_spec:
+      {
+        "blocks":
+          [
+            {
+              "block_id": "{{nodes.block_id}}",
+              "nodes":
+                [
+                  {
+                    "cvm_gb_ram": 50,
+                    "cvm_ip": "{{nodes.node1.cvm_ip}}",
+                    "hypervisor": "{{nodes.node1.hypervisor}}",
+                    "hypervisor_hostname": "{{nodes.node1.hypervisor_hostname}}",
+                    "hypervisor_ip": "{{nodes.node1.hypervisor_ip}}",
+                    "image_now": true,
+                    "ipmi_gateway": "{{nodes.node1.ipmi_gateway}}",
+                    "ipmi_ip": "{{nodes.node1.ipmi_ip}}",
+                    "ipmi_netmask": "{{nodes.node1.ipmi_netmask}}",
+                    "ipmi_password": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+                    "node_position": "{{nodes.node1.node_position}}",
+                  },
+                ],
+            },
+          ],
+        "clusters":
+          [
+            {
+              "backplane_netmask": "{{nodes.backplane_netmask}}",
+              "backplane_subnet": "{{nodes.backplane_subnet}}",
+              "backplane_vlan": "{{nodes.backplane_vlan}}",
+              "cluster_external_ip": null,
+              "cluster_init_now": true,
+              "cluster_members": ["{{nodes.node1.cvm_ip}}"],
+              "cluster_name": "test-cluster",
+              "cvm_dns_servers": "{{nodes.dns_servers[0]}},{{nodes.dns_servers[1]}}",
+              "cvm_ntp_servers": "{{nodes.ntp_servers[0]}},{{nodes.ntp_servers[1]}}",
+              "enable_ns": true,
+              "hypervisor_ntp_servers": "{{nodes.ntp_servers[0]}},{{nodes.ntp_servers[1]}}",
+              "redundancy_factor": 1,
+              "single_node_cluster": true,
+              "timezone": "Asia/Calcutta",
+            },
+          ],
+        "current_cvm_vlan_tag": "{{nodes.current_cvm_vlan_tag}}",
+        "cvm_gateway": "{{cvm_gateway}}",
+        "cvm_netmask": "{{cvm_netmask}}",
+        "hypervisor_gateway": "{{hypervisor_gateway}}",
+        "hypervisor_iso": {},
+        "hypervisor_netmask": "{{hypervisor_netmask}}",
+        "ipmi_user": "{{default_ipmi_user}}",
+        "nos_package": "{{images.aos_packages[0]}}",
+      }
 
-  - set_fact:
-      expected_spec: {
-            "blocks": [
-                {
-                    "block_id": "{{nodes.block_id}}",
-                    "nodes": [
-                        {
-                            "cvm_gb_ram": 50,
-                            "cvm_ip": "{{nodes.node1.cvm_ip}}",
-                            "hypervisor": "{{nodes.node1.hypervisor}}",
-                            "hypervisor_hostname": "{{nodes.node1.hypervisor_hostname}}",
-                            "hypervisor_ip": "{{nodes.node1.hypervisor_ip}}",
-                            "image_now": true,
-                            "ipmi_gateway": "{{nodes.node1.ipmi_gateway}}",
-                            "ipmi_ip": "{{nodes.node1.ipmi_ip}}",
-                            "ipmi_netmask": "{{nodes.node1.ipmi_netmask}}",
-                            "ipmi_password": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
-                            "node_position": "{{nodes.node1.node_position}}"
-                        }
-                    ]
-                }
-            ],
-            "clusters": [
-                {
-                    "backplane_netmask": "{{nodes.backplane_netmask}}",
-                    "backplane_subnet": "{{nodes.backplane_subnet}}",
-                    "backplane_vlan": "{{nodes.backplane_vlan}}",
-                    "cluster_external_ip": null,
-                    "cluster_init_now": true,
-                    "cluster_members": [
-                        "{{nodes.node1.cvm_ip}}"
-                    ],
-                    "cluster_name": "test-cluster",
-                    "cvm_dns_servers": "{{nodes.dns_servers[0]}},{{nodes.dns_servers[1]}}",
-                    "cvm_ntp_servers": "{{nodes.ntp_servers[0]}},{{nodes.ntp_servers[1]}}",
-                    "enable_ns": true,
-                    "hypervisor_ntp_servers": "{{nodes.ntp_servers[0]}},{{nodes.ntp_servers[1]}}",
-                    "redundancy_factor": 1,
-                    "single_node_cluster": true,
-                    "timezone": "Asia/Calcutta"
-                }
-            ],
-            "current_cvm_vlan_tag": "{{nodes.current_cvm_vlan_tag}}",
-            "cvm_gateway": "{{cvm_gateway}}",
-            "cvm_netmask": "{{cvm_netmask}}",
-            "hypervisor_gateway": "{{hypervisor_gateway}}",
-            "hypervisor_iso": {},
-            "hypervisor_netmask": "{{hypervisor_netmask}}",
-            "ipmi_user": "{{default_ipmi_user}}",
-            "nos_package": "{{images.aos_packages[0]}}"
-        }
+- name: Verify spec
+  ansible.builtin.assert:
+    that:
+      - spec.response is defined
+      - spec.failed==false
+      - spec.changed==false
+      - spec.response == expected_spec
+    fail_msg: " Fail : unable to create spec for imaging nodes"
+    success_msg: "Succes: spec generated successfully"
 
-  - name: Verify spec
-    assert:
-      that:
-        - spec.response is defined
-        - spec.failed==false
-        - spec.changed==false
-        - spec.response == expected_spec
-      fail_msg: " Fail : unable to create spec for imaging nodes"
-      success_msg: "Succes: spec generated successfully"
+- name: Image nodes without cluster creation
+  ntnx_foundation:
+    timeout: 4500
+    cvm_gateway: "{{cvm_gateway}}"
+    cvm_netmask: "{{cvm_netmask}}"
+    hypervisor_gateway: "{{hypervisor_gateway}}"
+    hypervisor_netmask: "{{hypervisor_netmask}}"
+    default_ipmi_user: "{{default_ipmi_user}}"
+    current_cvm_vlan_tag: "{{nodes.current_cvm_vlan_tag}}"
+    nos_package: "{{images.aos_packages[0]}}"
+    blocks:
+      - block_id: "{{nodes.block_id}}"
+        nodes:
+          - manual_mode:
+              cvm_ip: "{{nodes.node1.cvm_ip}}"
+              cvm_gb_ram: 50
+              hypervisor_hostname: "{{nodes.node1.hypervisor_hostname}}"
+              ipmi_netmask: "{{nodes.node1.ipmi_netmask}}"
+              ipmi_gateway: "{{nodes.node1.ipmi_gateway}}"
+              ipmi_ip: "{{nodes.node1.ipmi_ip}}"
+              ipmi_password: "{{nodes.node1.ipmi_password}}"
+              hypervisor: "{{nodes.node1.hypervisor}}"
+              hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
+              node_position: "{{nodes.node1.node_position}}"
+              bond_lacp_rate: "{{nodes.node1.bond_lacp_rate}}"
+              bond_mode: "{{nodes.node1.bond_mode}}"
 
-  - name: Image nodes without cluster creation
-    ntnx_foundation:
-      timeout: 4500
-      cvm_gateway: "{{cvm_gateway}}"
-      cvm_netmask: "{{cvm_netmask}}"
-      hypervisor_gateway: "{{hypervisor_gateway}}"
-      hypervisor_netmask: "{{hypervisor_netmask}}"
-      default_ipmi_user: "{{default_ipmi_user}}"
-      current_cvm_vlan_tag: "{{nodes.current_cvm_vlan_tag}}"
-      nos_package: "{{images.aos_packages[0]}}"
-      blocks:
-        - block_id: "{{nodes.block_id}}"
-          nodes:
-            - manual_mode:
-                cvm_ip: "{{nodes.node1.cvm_ip}}"
-                cvm_gb_ram: 50
-                hypervisor_hostname: "{{nodes.node1.hypervisor_hostname}}"
-                ipmi_netmask: "{{nodes.node1.ipmi_netmask}}"
-                ipmi_gateway: "{{nodes.node1.ipmi_gateway}}"
-                ipmi_ip: "{{nodes.node1.ipmi_ip}}"
-                ipmi_password: "{{nodes.node1.ipmi_password}}"
-                hypervisor: "{{nodes.node1.hypervisor}}"
-                hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
-                node_position: "{{nodes.node1.node_position}}"
-                bond_lacp_rate: "{{nodes.node1.bond_lacp_rate}}"
-                bond_mode: "{{nodes.node1.bond_mode}}"
+  register: result
+  no_log: true
+  ignore_errors: true
 
-    register: result
-    no_log: true
-    ignore_errors: True
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==true
+    fail_msg: " Fail : unable to image nodes"
+    success_msg: "Succes: node imaging done successfully"
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.failed==false
-        - result.changed==true
-      fail_msg: " Fail : unable to image nodes"
-      success_msg: "Succes: node imaging done successfully"
+- name: Image nodes and create cluster out of it
+  ntnx_foundation:
+    timeout: 4500
+    cvm_gateway: "{{cvm_gateway}}"
+    cvm_netmask: "{{cvm_netmask}}"
+    hypervisor_gateway: "{{hypervisor_gateway}}"
+    hypervisor_netmask: "{{hypervisor_netmask}}"
+    default_ipmi_user: "{{default_ipmi_user}}"
+    current_cvm_vlan_tag: "{{nodes.current_cvm_vlan_tag}}"
+    nos_package: "{{images.aos_packages[0]}}"
+    blocks:
+      - block_id: "{{nodes.block_id}}"
+        nodes:
+          - manual_mode:
+              cvm_ip: "{{nodes.node1.cvm_ip}}"
+              cvm_gb_ram: 50
+              hypervisor_hostname: "{{nodes.node1.hypervisor_hostname}}"
+              ipmi_netmask: "{{nodes.node1.ipmi_netmask}}"
+              ipmi_gateway: "{{nodes.node1.ipmi_gateway}}"
+              ipmi_ip: "{{nodes.node1.ipmi_ip}}"
+              ipmi_password: "{{nodes.node1.ipmi_password}}"
+              hypervisor: "{{nodes.node1.hypervisor}}"
+              hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
+              node_position: "{{nodes.node1.node_position}}"
+              bond_lacp_rate: "{{nodes.node1.bond_lacp_rate}}"
+              bond_mode: "{{nodes.node1.bond_mode}}"
+    clusters:
+      - redundancy_factor: 1
+        cluster_members:
+          - "{{nodes.node1.cvm_ip}}"
+        name: "test-cluster"
+        timezone: "Asia/Calcutta"
+        cvm_ntp_servers:
+          - "{{nodes.ntp_servers[0]}}"
+          - "{{nodes.ntp_servers[1]}}"
+        cvm_dns_servers:
+          - "{{nodes.dns_servers[0]}}"
+          - "{{nodes.dns_servers[1]}}"
+        hypervisor_ntp_servers:
+          - "{{nodes.ntp_servers[0]}}"
+          - "{{nodes.ntp_servers[1]}}"
+  register: result
+  no_log: true
+  ignore_errors: true
 
-  - name: Image nodes and create cluster out of it
-    ntnx_foundation:
-      timeout: 4500
-      cvm_gateway: "{{cvm_gateway}}"
-      cvm_netmask: "{{cvm_netmask}}"
-      hypervisor_gateway: "{{hypervisor_gateway}}"
-      hypervisor_netmask: "{{hypervisor_netmask}}"
-      default_ipmi_user: "{{default_ipmi_user}}"
-      current_cvm_vlan_tag: "{{nodes.current_cvm_vlan_tag}}"
-      nos_package: "{{images.aos_packages[0]}}"
-      blocks:
-        - block_id: "{{nodes.block_id}}"
-          nodes:
-            - manual_mode:
-                cvm_ip: "{{nodes.node1.cvm_ip}}"
-                cvm_gb_ram: 50
-                hypervisor_hostname: "{{nodes.node1.hypervisor_hostname}}"
-                ipmi_netmask: "{{nodes.node1.ipmi_netmask}}"
-                ipmi_gateway: "{{nodes.node1.ipmi_gateway}}"
-                ipmi_ip: "{{nodes.node1.ipmi_ip}}"
-                ipmi_password: "{{nodes.node1.ipmi_password}}"
-                hypervisor: "{{nodes.node1.hypervisor}}"
-                hypervisor_ip: "{{nodes.node1.hypervisor_ip}}"
-                node_position: "{{nodes.node1.node_position}}"
-                bond_lacp_rate: "{{nodes.node1.bond_lacp_rate}}"
-                bond_mode: "{{nodes.node1.bond_mode}}"
-      clusters:
-        - redundancy_factor: 1
-          cluster_members:
-            - "{{nodes.node1.cvm_ip}}"
-          name: "test-cluster"
-          timezone: "Asia/Calcutta"
-          cvm_ntp_servers:
-            - "{{nodes.ntp_servers[0]}}"
-            - "{{nodes.ntp_servers[1]}}"
-          cvm_dns_servers:
-            - "{{nodes.dns_servers[0]}}"
-            - "{{nodes.dns_servers[1]}}"
-          hypervisor_ntp_servers:
-            - "{{nodes.ntp_servers[0]}}"
-            - "{{nodes.ntp_servers[1]}}"
-    register: result
-    no_log: true
-    ignore_errors: True
-
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.failed==false
-        - result.changed==true
-        - result.response.cluster_urls is defined
-      fail_msg: " Fail : unable to image nodes and create cluster"
-      success_msg: "Succes: cluster and node imaging done successfully"
-
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==true
+      - result.response.cluster_urls is defined
+    fail_msg: " Fail : unable to image nodes and create cluster"
+    success_msg: "Succes: cluster and node imaging done successfully"
 ######################################################

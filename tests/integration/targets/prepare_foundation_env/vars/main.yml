@@ -2,7 +2,7 @@
 foundation_host: "TEST_FOUNDATION_HOST"
 
 # the dir in local machine where test setup will install nos image and pick during image upload tests
-source: 'TEST_SOURCE_PATH'
+source: "TEST_SOURCE_PATH"
 
 # nos image url for images tests
 image_url: "TEST_IMAGE_URL"
@@ -76,11 +76,11 @@ nodes:
     ipmi_netmask: "TEST_IPMI_NETMASK_NODE1"
     ipmi_gateway: TEST_IPMI_GATEWAY_NODE1
   ntp_servers:
-        - "TEST_NTP_SERVER_1"
-        - "TEST_NTP_SERVER_2"
+    - "TEST_NTP_SERVER_1"
+    - "TEST_NTP_SERVER_2"
   dns_servers:
-        - "TEST_DNS_SERVER_1"
-        - "TEST_DNS_SERVER_2"
+    - "TEST_DNS_SERVER_1"
+    - "TEST_DNS_SERVER_2"
   backplane_vlan: "TEST_BACKPLANE_VLAN"
   backplane_subnet: "TEST_BACKPLANE_SUBNET"
   backplane_netmask: "TEST_BACKPLANE_NETMASK"

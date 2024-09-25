@@ -1,19 +1,20 @@
 ---
-- debug:
+- name: Start testing ntnx_ndb_vlans
+  ansible.builtin.debug:
     msg: Start testing ntnx_ndb_vlans
 
-- name: create Dhcp ndb vlan
+- name: Create Dhcp ndb vlan
   ntnx_ndb_vlans:
-    name:  "{{ndb_vlan.name}}"
+    name: "{{ndb_vlan.name}}"
     vlan_type: DHCP
     cluster:
       uuid: "{{cluster.cluster2.uuid}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
   no_log: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -28,30 +29,26 @@
 
 ################################################################
 
-
-- name: update ndb vlan type for static
+- name: Update ndb vlan type for static
   ntnx_ndb_vlans:
     vlan_uuid: "{{result.vlan_uuid}}"
     vlan_type: Static
     gateway: "{{ndb_vlan.gateway}}"
     subnet_mask: "{{ndb_vlan.subnet_mask}}"
     ip_pools:
-      -
-        start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
+      - start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
         end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
-      -
-        start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
+      - start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
         end_ip: "{{ndb_vlan.ip_pools.1.end_ip}}"
     primary_dns: "{{ndb_vlan.primary_dns}}"
     secondary_dns: "{{ndb_vlan.secondary_dns}}"
     dns_domain: "{{ndb_vlan.dns_domain}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
   no_log: true
 
-
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vlan_uuid is defined
@@ -72,20 +69,22 @@
     fail_msg: "fail: unable to update ndb vlan type for static"
     success_msg: "pass: update ndb vlan type for static finished successfully"
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []
 
-- set_fact:
+- name: Add vlan_uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vlan_uuid ] }}"
 ################################################################
 - name: List all NDB vlans
   ntnx_ndb_vlans_info:
   register: vlans
   no_log: true
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - vlans.response is defined
       - vlans.failed == false
@@ -96,15 +95,15 @@
 
 ################################################################
 
-- name: get NDB vlans using it's name
+- name: Get NDB vlans using it's name
   ntnx_ndb_vlans_info:
     name: "{{vlans.response[0].name}}"
   register: result
   no_log: true
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -120,10 +119,10 @@
     uuid: "{{vlans.response[0].id}}"
   register: result
   no_log: true
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -134,15 +133,15 @@
 
 ################################################################
 
-- name: get NDB vlans with incorrect name
+- name: Get NDB vlans with incorrect name
   ntnx_ndb_vlans_info:
     name: "abcd"
   register: result
   no_log: true
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.error is defined
       - result.failed == true
@@ -157,37 +156,36 @@
     vlan_uuid: "{{  todelete[0]}}"
   register: result
   no_log: true
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []
 
 ################################################################
 
-- name: create static ndb vlan
+- name: Create static ndb vlan
   ntnx_ndb_vlans:
-    name:  "{{ndb_vlan.name}}"
+    name: "{{ndb_vlan.name}}"
     vlan_type: Static
     cluster:
       uuid: "{{cluster.cluster2.uuid}}"
     gateway: "{{ndb_vlan.gateway}}"
     subnet_mask: "{{ndb_vlan.subnet_mask}}"
     ip_pools:
-      -
-        start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
+      - start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
         end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
-      -
-        start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
+      - start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
         end_ip: "{{ndb_vlan.ip_pools.1.end_ip}}"
     primary_dns: "{{ndb_vlan.primary_dns}}"
     secondary_dns: "{{ndb_vlan.secondary_dns}}"
     dns_domain: "{{ndb_vlan.dns_domain}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
   no_log: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vlan_uuid is defined
@@ -207,23 +205,24 @@
       - result.response.ipPools[1].startIP == "{{ndb_vlan.ip_pools.1.start_ip}}"
     fail_msg: "fail: unable to create static ndb vlan"
     success_msg: "pass: create static ndb vlan finished successfully"
-- set_fact:
+- name: Add vlan_uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vlan_uuid ] }}"
 
 ################################################################
 
-- name: update ndb vlan by removing ip pool
+- name: Update ndb vlan by removing ip pool
   ntnx_ndb_vlans:
     vlan_uuid: "{{result.vlan_uuid}}"
     remove_ip_pools:
       - "{{result.response.ipPools[0].id}}"
       - "{{result.response.ipPools[1].id}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
   no_log: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vlan_uuid is defined
@@ -243,19 +242,18 @@
 
 ################################################################
 
-- name: update ndb vlan by adding a pool
+- name: Update ndb vlan by adding a pool
   ntnx_ndb_vlans:
     vlan_uuid: "{{result.vlan_uuid}}"
     ip_pools:
-      -
-        start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
+      - start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
         end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
   no_log: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -277,7 +275,7 @@
 
 ################################################################
 
-- name: update ndb vLAN Configuration
+- name: Update ndb vLAN Configuration
   ntnx_ndb_vlans:
     vlan_uuid: "{{result.vlan_uuid}}"
     gateway: "{{ndb_vlan.updated_gateway}}"
@@ -286,11 +284,11 @@
     secondary_dns: "{{ndb_vlan.updated_secondary_dns}}"
     dns_domain: "{{ndb_vlan.updated_dns_domain}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
   no_log: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -307,16 +305,16 @@
 
 ################################################################
 
-- name: update ndb vlan type
+- name: Update ndb vlan type
   ntnx_ndb_vlans:
     vlan_uuid: "{{result.vlan_uuid}}"
     vlan_type: DHCP
   register: result
-  ignore_errors: True
+  ignore_errors: true
   no_log: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -331,7 +329,7 @@
 
 ################################################################
 
-# - name: create ndb_stretched vlan
+# - name: Create ndb_stretched vlan
 #   ntnx_ndb_stretched_vlans:
 #      name: "{{st_vlan.name}}"
 #      desc: "{{st_vlan.desc}}"
@@ -340,10 +338,10 @@
 #        - "{{st_vlan.vlans_subnet1[1]}}"
 #   register: result
 #   ignore_errors: true
-# - debug:
+# - ansible.builtin.debug:
 #    var: result
-# - name: check listing status
-#   assert:
+# - name: Check listing status
+#   ansible.builtin.assert:
 #    that:
 #      - result.response is defined
 #      - result.changed == true
@@ -356,13 +354,12 @@
 #    fail_msg: "fail: Unable to create ndb_stretched vlan"
 #    success_msg: "pass: create ndb_stretched vlan finished successfully"
 
-# - set_fact:
+# - ansible.builtin.set_fact:
 #     todelete: "{{ todelete + [  result.vlan_uuid ] }}"
 
 # ################################################################
 
-
-# - name: update ndb_stretched vlan name, desc and vlans
+# - name: Update ndb_stretched vlan name, desc and vlans
 #   ntnx_ndb_stretched_vlans:
 #      name: newname
 #      desc: newdesc
@@ -372,10 +369,10 @@
 #        - "{{st_vlan.vlans_subnet2[1]}}"
 #   register: result
 #   ignore_errors: true
-# - debug:
+# - ansible.builtin.debug:
 #    var: result
-# - name: check listing status
-#   assert:
+# - name: Check listing status
+#   ansible.builtin.assert:
 #    that:
 #      - result.response is defined
 #      - result.changed == true
@@ -390,17 +387,17 @@
 
 # ################################################################
 
-# - name: update ndb_stretched vlan subnet_mask, gateway
+# - name: Update ndb_stretched vlan subnet_mask, gateway
 #   ntnx_ndb_stretched_vlans:
 #      vlan_uuid: "{{result.vlan_uuid}}"
 #      gateway: "{{st_vlan.gateway}}"
 #      subnet_mask: "{{st_vlan.subnet_mask}}"
 #   register: result
 #   ignore_errors: true
-# - debug:
+# - ansible.builtin.debug:
 #     var: result
-# - name: check listing status
-#   assert:
+# - name: Check listing status
+#   ansible.builtin.assert:
 #    that:
 #      - result.response is defined
 #      - result.changed == true
@@ -419,16 +416,17 @@
     vlan_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
   no_log: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed is defined
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "unable to delete all created vlan's"
     success_msg: "All vlan'sdeleted successfully"
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

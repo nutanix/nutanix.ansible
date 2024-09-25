@@ -1,13 +1,14 @@
 ---
-- debug:
+- name: Start testing ntnx_foundation_hypervisor_images_info
+  ansible.builtin.debug:
     msg: start testing ntnx_foundation_hypervisor_images_info
 
-- name: get hypervisor_images_info from foundation
+- name: Get hypervisor_images_info from foundation
   ntnx_foundation_hypervisor_images_info:
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.hypervisor_images | length > 0
       - result.hypervisor_images is defined
