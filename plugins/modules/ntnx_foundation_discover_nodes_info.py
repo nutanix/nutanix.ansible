@@ -34,18 +34,19 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: Discover nodes
-    ntnx_foundation_discover_nodes_info:
-      nutanix_host: "{{ ip }}"
+- name: Discover nodes
+  ntnx_foundation_discover_nodes_info:
+    nutanix_host: "{{ ip }}"
 
-  - name: Discover all nodes
-    ntnx_foundation_discover_nodes_info:
-      nutanix_host: "{{ ip }}"
-      include_configured: true
-  - name: Discover nodes and include network info
-    ntnx_foundation_discover_nodes_info:
-      nutanix_host: "{{ ip }}"
-      include_network_details: true
+- name: Discover all nodes
+  ntnx_foundation_discover_nodes_info:
+    nutanix_host: "{{ ip }}"
+    include_configured: true
+
+- name: Discover nodes and include network info
+  ntnx_foundation_discover_nodes_info:
+    nutanix_host: "{{ ip }}"
+    include_network_details: true
 """
 
 RETURN = r"""

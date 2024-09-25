@@ -29,15 +29,13 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: Get node network info
-    ntnx_foundation_node_network_info:
-      nutanix_host: "{{ ip }}"
-      nodes:
-       - node_1_ipv6
-       - node_2_ipv6
-       - node_3_ipv6
-
-
+- name: Get node network info
+  ntnx_foundation_node_network_info:
+    nutanix_host: "{{ ip }}"
+    nodes:
+      - node_1_ipv6
+      - node_2_ipv6
+      - node_3_ipv6
 """
 
 RETURN = r"""

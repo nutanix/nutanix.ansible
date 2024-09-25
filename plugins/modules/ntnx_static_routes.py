@@ -104,7 +104,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
       - destination: "0.0.0.0/0"
@@ -130,7 +130,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     vpc_uuid: "{{ vpc.uuid }}"
     remove_all_routes: true
   register: result

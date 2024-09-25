@@ -32,23 +32,23 @@ author:
   - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List clusterss
-    ntnx_clusters_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      kind: cluster
-    register: result
+- name: List clusterss
+  ntnx_clusters_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    kind: cluster
+  register: result
 
-  - name: test getting particular cluster using uuid
-    ntnx_clusters_info:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: False
-        cluster_uuid: cluster_uuid
-    register: result
+- name: test getting particular cluster using uuid
+  ntnx_clusters_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    cluster_uuid: cluster_uuid
+  register: result
 """
 RETURN = r"""
 api_version:

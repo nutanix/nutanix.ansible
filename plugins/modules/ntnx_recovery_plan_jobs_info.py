@@ -45,7 +45,6 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
   register: result
-  ignore_errors: True
 
 - name: List recovery plan job using uuid criteria
   ntnx_recovery_plan_jobs_info:
@@ -55,7 +54,6 @@ EXAMPLES = r"""
     validate_certs: "{{ validate_certs }}"
     job_uuid: "{{ job_uuid }}"
   register: result
-
 """
 RETURN = r"""
 api_version:

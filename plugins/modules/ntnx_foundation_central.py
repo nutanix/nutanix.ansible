@@ -299,67 +299,67 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: image nodes and create cluster
-    ntnx_foundation_central:
-      state: present
-      nutanix_host: "{{ pc }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: false
-      cluster_name: "test-cls"
-      common_network_settings:
-        cvm_dns_servers:
-          - xx.xx.xx.xx
-        hypervisor_dns_servers:
-          - xx.xx.xx.xx
-        cvm_ntp_servers:
-          - xx.x.x.xx
-        hypervisor_ntp_servers:
-          - xx.x.x.xx
-      nodes_list:
+- name: image nodes and create cluster
+  ntnx_foundation_central:
+    state: present
+    nutanix_host: "{{ pc }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    cluster_name: "test-cls"
+    common_network_settings:
+      cvm_dns_servers:
+        - xx.xx.xx.xx
+      hypervisor_dns_servers:
+        - xx.xx.xx.xx
+      cvm_ntp_servers:
+        - xx.x.x.xx
+      hypervisor_ntp_servers:
+        - xx.x.x.xx
+    nodes_list:
       # manual based nodes
-        - manual_mode:
-            cvm_gateway: "10.xx.xx.xx"
-            cvm_netmask: "xx.xx.xx.xx"
-            cvm_ip: "10.x.xx.xx"
-            hypervisor_gateway: "10.x.xx.xxx"
-            hypervisor_netmask: "xx.xx.xx.xx"
-            hypervisor_ip: "10.x.x.xx"
-            hypervisor_hostname: "Host-1"
-            imaged_node_uuid: "<node_uuid>"
-            use_existing_network_settings: false
-            ipmi_gateway: "10.x.xx.xx"
-            ipmi_netmask: "xx.xx.xx.xx"
-            ipmi_ip: "10.x.xx.xx"
-            image_now: true
-            hypervisor_type: "kvm"
-        - manual_mode:
-            cvm_gateway: "10.xx.xx.xx"
-            cvm_netmask: "xx.xx.xx.xx"
-            cvm_ip: "10.x.xx.xx"
-            hypervisor_gateway: "10.x.xx.xxx"
-            hypervisor_netmask: "xx.xx.xx.xx"
-            hypervisor_ip: "10.x.x.xx"
-            hypervisor_hostname: "Host-2"
-            imaged_node_uuid: "<node_uuid>"
-            use_existing_network_settings: false
-            ipmi_gateway: "10.x.xx.xx"
-            ipmi_netmask: "xx.xx.xx.xx"
-            ipmi_ip: "10.x.xx.xx"
-            image_now: true
-            hypervisor_type: "kvm"
-        # discovery nodes based on node serial
-        - discovery_mode:
-            node_serial: "<node-serial>"
-        - discovery_mode:
-            node_serial: "<node-serial>"
-            discovery_override:
-                hypervisor_hostname: "<host-11>"
-                cvm_ip: "<cvm-ip>"
-                ipmi_ip: "<ipmi-ip>"
-      redundancy_factor: 2
-      skip_cluster_creation: true
-      aos_package_url: "<aos_package_url>"
+      - manual_mode:
+          cvm_gateway: "10.xx.xx.xx"
+          cvm_netmask: "xx.xx.xx.xx"
+          cvm_ip: "10.x.xx.xx"
+          hypervisor_gateway: "10.x.xx.xxx"
+          hypervisor_netmask: "xx.xx.xx.xx"
+          hypervisor_ip: "10.x.x.xx"
+          hypervisor_hostname: "Host-1"
+          imaged_node_uuid: "<node_uuid>"
+          use_existing_network_settings: false
+          ipmi_gateway: "10.x.xx.xx"
+          ipmi_netmask: "xx.xx.xx.xx"
+          ipmi_ip: "10.x.xx.xx"
+          image_now: true
+          hypervisor_type: "kvm"
+      - manual_mode:
+          cvm_gateway: "10.xx.xx.xx"
+          cvm_netmask: "xx.xx.xx.xx"
+          cvm_ip: "10.x.xx.xx"
+          hypervisor_gateway: "10.x.xx.xxx"
+          hypervisor_netmask: "xx.xx.xx.xx"
+          hypervisor_ip: "10.x.x.xx"
+          hypervisor_hostname: "Host-2"
+          imaged_node_uuid: "<node_uuid>"
+          use_existing_network_settings: false
+          ipmi_gateway: "10.x.xx.xx"
+          ipmi_netmask: "xx.xx.xx.xx"
+          ipmi_ip: "10.x.xx.xx"
+          image_now: true
+          hypervisor_type: "kvm"
+      # discovery nodes based on node serial
+      - discovery_mode:
+          node_serial: "<node-serial>"
+      - discovery_mode:
+          node_serial: "<node-serial>"
+          discovery_override:
+            hypervisor_hostname: "<host-11>"
+            cvm_ip: "<cvm-ip>"
+            ipmi_ip: "<ipmi-ip>"
+    redundancy_factor: 2
+    skip_cluster_creation: true
+    aos_package_url: "<aos_package_url>"
 """
 
 RETURN = r"""

@@ -30,13 +30,13 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: Create API key
-    ntnx_foundation_central_api_keys_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      alias: "test"
+- name: Create API key
+  ntnx_foundation_central_api_keys_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    alias: "test"
 """
 
 RETURN = r"""

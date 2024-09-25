@@ -91,9 +91,7 @@ EXAMPLES = r"""
       day_of_week: "tuesday"
       week_of_month: 2
       timezone: "UTC"
-
   register: result
-
 """
 RETURN = r"""
 response:

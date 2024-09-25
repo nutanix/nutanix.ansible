@@ -326,7 +326,7 @@ EXAMPLES = r"""
         username: "{{vm_username}}"
         password: "{{vm_password}}"
         desc: "vm-desc-updated"
-        reset_desc_in_ntnx_cluster: True
+        reset_desc_in_ntnx_cluster: true
         cluster:
           name: "{{cluster.cluster1.name}}"
 

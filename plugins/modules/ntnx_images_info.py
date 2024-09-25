@@ -31,15 +31,15 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
-  - name: List images using name filter criteria
-    ntnx_images_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        name: Ubuntu
-    register: result
+- name: List images using name filter criteria
+  ntnx_images_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      name: Ubuntu
+  register: result
 """
 RETURN = r"""
 api_version:

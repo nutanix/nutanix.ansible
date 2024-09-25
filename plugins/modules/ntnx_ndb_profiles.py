@@ -370,7 +370,7 @@ EXAMPLES = r"""
         autovacuum_vacuum_scale_factor: "{{autovacuum_vacuum_scale_factor}}"
         autovacuum_work_mem: "{{autovacuum_work_mem}}"
         autovacuum_max_workers: "{{autovacuum_max_workers}}"
-        autovacuum_vacuum_cost_delay:  "{{autovacuum_vacuum_cost_delay}}"
+        autovacuum_vacuum_cost_delay: "{{autovacuum_vacuum_cost_delay}}"
         wal_buffers: "{{wal_buffers}}"
         synchronous_commit: "{{synchronous_commit}}"
         random_page_cost: "{{random_page_cost}}"
@@ -385,8 +385,7 @@ EXAMPLES = r"""
     network:
       topology: single
       vlans:
-        -
-          cluster:
+        - cluster:
             name: "{{network_profile.single.cluster.name}}"
           vlan_name: "{{network_profile.single.vlan_name}}"
       enable_ip_address_selection: true
@@ -401,12 +400,10 @@ EXAMPLES = r"""
     network:
       topology: cluster
       vlans:
-        -
-          cluster:
+        - cluster:
             name: "{{network_profile.HA.cluster1.name}}"
           vlan_name: "{{network_profile.HA.cluster1.vlan_name}}"
-        -
-          cluster:
+        - cluster:
             name: "{{network_profile.HA.cluster2.name}}"
           vlan_name: "{{network_profile.HA.cluster2.vlan_name}}"
 
@@ -416,9 +413,9 @@ EXAMPLES = r"""
     desc: "testdesc"
     type: compute
     compute:
-          vcpus: 2
-          cores_per_cpu: 4
-          memory: 8
+      vcpus: 2
+      cores_per_cpu: 4
+      memory: 8
   register: result
 
 - name: create software profile with base version and cluster instance topology. Replicated to multiple clusters
@@ -456,7 +453,6 @@ EXAMPLES = r"""
 
   register: result
 
-
 - name: update software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
@@ -473,9 +469,8 @@ EXAMPLES = r"""
     profile_uuid: "{{profile_uuid}}"
     software:
       version_uuid: "{{version_uuid}}"
-      publish: True
+      publish: true
   register: result
-
 """
 
 RETURN = r"""

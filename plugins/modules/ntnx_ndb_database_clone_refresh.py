@@ -45,7 +45,7 @@ author:
 """
 EXAMPLES = r"""
 - name: create spec for refresh clone to a pitr timestamp
-  check_mode: yes
+  check_mode: true
   ntnx_ndb_database_clone_refresh:
     uuid: "{{clone_uuid}}"
     pitr_timestamp: "2023-02-04 07:29:36"
@@ -57,7 +57,6 @@ EXAMPLES = r"""
     uuid: "{{clone_uuid}}"
     snapshot_uuid: "{{snapshot_uuid}}"
   register: result
-
 """
 RETURN = r"""
 response:

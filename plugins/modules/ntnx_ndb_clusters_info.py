@@ -66,7 +66,6 @@ EXAMPLES = r"""
     validate_certs: false
     uuid: "<uuid of cluster>"
   register: result
-
 """
 RETURN = r"""
 response:

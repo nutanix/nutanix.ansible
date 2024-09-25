@@ -938,60 +938,57 @@ EXAMPLES = r"""
 - name: Image nodes
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   tasks:
-  - name: Image nodes
-    ntnx_foundation:
-      timeout : 3660
-      nutanix_host: "10.xx.xx.xx"
-      cvm_gateway: "10.xx.xx.xx"
-      cvm_netmask: "xx.xx.xx.xx"
-      hypervisor_gateway: "10.xx.xx.xx"
-      hypervisor_netmask: "xx.xx.xx.xx"
-      default_ipmi_user: "username"
-      nos_package: "nutanix_aos_installer.tar.gz"
-      blocks:
-        - block_id: "<block_id>"
-          nodes:
-            # manually added node / baremetal
-            - manual_mode :
-                current_cvm_vlan_tag: xx
-                cvm_gb_ram: 50
-                ipmi_password: "password"
-                ipmi_ip: "10.xx.xx.xx"
-                cvm_ip: "10.xx.xx.xx"
-                hypervisor: "kvm"
-                hypervisor_ip: "10.xx.xx.xx"
-                hypervisor_hostname: "superman-1"
-                node_position: "D"
-            # dos based node
-            - discovery_mode:
-                cvm_gb_ram: 50
-                ipmi_password : "password"
-                node_serial : "node_serial"
-                discovery_override:
-                  hypervisor_hostname: "superman-2"
-                  hypervisor_ip: "10.xx.xx.xx"
+    - name: Image nodes
+      ntnx_foundation:
+        timeout: 3660
+        nutanix_host: "10.xx.xx.xx"
+        cvm_gateway: "10.xx.xx.xx"
+        cvm_netmask: "xx.xx.xx.xx"
+        hypervisor_gateway: "10.xx.xx.xx"
+        hypervisor_netmask: "xx.xx.xx.xx"
+        default_ipmi_user: "username"
+        nos_package: "nutanix_aos_installer.tar.gz"
+        blocks:
+          - block_id: "<block_id>"
+            nodes:
+              # manually added node / baremetal
+              - manual_mode:
+                  current_cvm_vlan_tag: xx
+                  cvm_gb_ram: 50
+                  ipmi_password: "password"
+                  ipmi_ip: "10.xx.xx.xx"
                   cvm_ip: "10.xx.xx.xx"
                   hypervisor: "kvm"
-            # aos based node
-            - discovery_mode:
-                cvm_gb_ram: 50
-                ipmi_password : "password"
-                node_serial : "node_serial"
-                discovery_override:
-                  hypervisor_hostname: "superman-3"
-                  cvm_ip : "10.xx.xx.xx"
+                  hypervisor_ip: "10.xx.xx.xx"
+                  hypervisor_hostname: "superman-1"
+                  node_position: "D"
+              # dos based node
+              - discovery_mode:
+                  cvm_gb_ram: 50
+                  ipmi_password: "password"
+                  node_serial: "node_serial"
+                  discovery_override:
+                    hypervisor_hostname: "superman-2"
+                    hypervisor_ip: "10.xx.xx.xx"
+                    cvm_ip: "10.xx.xx.xx"
+                    hypervisor: "kvm"
+              # aos based node
+              - discovery_mode:
+                  cvm_gb_ram: 50
+                  ipmi_password: "password"
+                  node_serial: "node_serial"
+                  discovery_override:
+                    hypervisor_hostname: "superman-3"
+                    cvm_ip: "10.xx.xx.xx"
 
-      clusters:
-        - name : "superman"
-          redundancy_factor: 2
-          cluster_members:
-            - "10.xx.xx.xx"
-            - "10.xx.xx.xx"
-            - "10.xx.xx.xx"
-
+        clusters:
+          - name: "superman"
+            redundancy_factor: 2
+            cluster_members:
+              - "10.xx.xx.xx"
+              - "10.xx.xx.xx"
+              - "10.xx.xx.xx"
 """
 
 RETURN = r"""

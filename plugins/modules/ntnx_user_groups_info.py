@@ -32,36 +32,36 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List user groups using name filter criteria
-    ntnx_user_groups_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        group_name: "{{ name }}"
-    register: result
+- name: List user groups using name filter criteria
+  ntnx_user_groups_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      group_name: "{{ name }}"
+  register: result
 
-  - name: List user groups using length, offset, sort order and sort attribute
-    ntnx_user_groups_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 2
-      offset: 1
-      sort_order: "DESCENDING"
-      sort_attribute: "group_name"
-    register: result
+- name: List user groups using length, offset, sort order and sort attribute
+  ntnx_user_groups_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    length: 2
+    offset: 1
+    sort_order: "DESCENDING"
+    sort_attribute: "group_name"
+  register: result
 
-  - name: test getting particular user group using uuid
-    ntnx_user_groups_info:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: False
-        usergroup_uuid: '{{ uuid  }}'
-    register: result
+- name: test getting particular user group using uuid
+  ntnx_user_groups_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    usergroup_uuid: "{{ uuid  }}"
+  register: result
 """
 RETURN = r"""
 api_version:

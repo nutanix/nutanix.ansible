@@ -41,7 +41,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     filter:
       name: "test-ansible-project-7"
 
@@ -50,7 +50,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
   register: result
 
 - name: List project using project uuid criteria
@@ -58,10 +58,9 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     project_uuid: "<uuid>"
   register: result
-
 """
 RETURN = r"""
 api_version:

@@ -55,7 +55,6 @@ EXAMPLES = r"""
     validate_certs: false
     uuid: "<uuid of vlan>"
   register: result
-
 """
 RETURN = r"""
 response:

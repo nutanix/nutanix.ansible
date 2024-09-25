@@ -103,7 +103,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: "test_policy_1"
     placement_type: soft
     image_categories:
@@ -120,7 +120,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: "test_policy_2"
     desc: "test_policy_2_desc"
     placement_type: hard
@@ -145,7 +145,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: "test_policy_2-uodated"
     desc: "test_policy_2_desc-updated"
     placement_type: hard
@@ -167,8 +167,8 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
-    remove_categories: True
+    validate_certs: false
+    remove_categories: true
   register: result
 
 - name: Delete image placement policy
@@ -177,7 +177,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     policy_uuid: "<policy-uuid>"
   register: result
 """

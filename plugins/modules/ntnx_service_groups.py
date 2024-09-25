@@ -83,7 +83,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: app_srvive_group
     desc: desc
     service_details:
@@ -93,7 +93,7 @@ EXAMPLES = r"""
         - "10-50"
         - "60-90"
         - "99"
-      any_icmp: True
+      any_icmp: true
   register: result
 
 - name: create  service group with icmp
@@ -101,7 +101,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: icmp_srvive_group
     desc: desc
     service_details:
@@ -117,7 +117,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     service_group_uuid: "{{service_group_uuid}}"
     name: updated_name
     desc: updated_desc

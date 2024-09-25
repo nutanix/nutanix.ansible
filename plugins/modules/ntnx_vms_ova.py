@@ -48,7 +48,7 @@ EXAMPLES = r"""
       file_format: VMDK
   register: result
   ignore_errors: true
-  check_mode: yes
+  check_mode: true
 
 - name: create QCOW2 ova_image
   ntnx_vms_ova:

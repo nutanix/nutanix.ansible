@@ -264,6 +264,7 @@ def get_module_spec():
 # Notes:
 # 1. Currently we only poll for source snapshot create. Replication task is not polled.
 
+
 # Create snapshot
 def create_snapshot(module, result):
     time_machine_uuid = module.params.get("time_machine_uuid")

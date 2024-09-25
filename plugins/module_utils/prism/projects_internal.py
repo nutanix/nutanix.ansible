@@ -133,9 +133,9 @@ class ProjectsInternal(Prism):
         if err:
             return None, err
 
-        payload["spec"]["project_detail"]["resources"][
-            "default_subnet_reference"
-        ] = Subnet.build_subnet_reference_spec(uuid)
+        payload["spec"]["project_detail"]["resources"]["default_subnet_reference"] = (
+            Subnet.build_subnet_reference_spec(uuid)
+        )
         return payload, None
 
     def _build_spec_subnets(self, payload, subnet_ref_list):
@@ -393,13 +393,11 @@ class ProjectsInternal(Prism):
                 acp["acp"]["resources"]["user_reference_list"] = role_user_groups_map[
                     acp["acp"]["resources"]["role_reference"]["uuid"]
                 ]["users"]
-                acp["acp"]["resources"][
-                    "user_group_reference_list"
-                ] = role_user_groups_map[
-                    acp["acp"]["resources"]["role_reference"]["uuid"]
-                ][
-                    "user_groups"
-                ]
+                acp["acp"]["resources"]["user_group_reference_list"] = (
+                    role_user_groups_map[
+                        acp["acp"]["resources"]["role_reference"]["uuid"]
+                    ]["user_groups"]
+                )
 
                 # pop the role uuid entry once used for acp update
                 role_user_groups_map.pop(

@@ -237,7 +237,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: "test-ansible-project-1"
     desc: desc-123
     subnets:

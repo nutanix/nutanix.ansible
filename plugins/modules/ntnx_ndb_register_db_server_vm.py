@@ -141,7 +141,6 @@ EXAMPLES = r"""
     username: "{{vm_username}}"
     password: "{{vm_password}}"
   register: result
-
 """
 RETURN = r"""
 response:

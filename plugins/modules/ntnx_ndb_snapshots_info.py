@@ -83,7 +83,6 @@ EXAMPLES = r"""
     uuid: "<uuid of snapshot>"
     get_files: true
   register: result
-
 """
 RETURN = r"""
 response:

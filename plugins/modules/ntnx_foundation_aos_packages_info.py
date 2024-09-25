@@ -24,9 +24,9 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: List packages
-    ntnx_foundation_aos_packages_info:
-      nutanix_host: "{{ ip }}"
+- name: List packages
+  ntnx_foundation_aos_packages_info:
+    nutanix_host: "{{ ip }}"
 """
 
 RETURN = r"""
