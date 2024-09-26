@@ -84,7 +84,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: False
-    name: app_srvive_group
+    name: app_service_group
     desc: desc
     service_details:
       tcp:
@@ -102,7 +102,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: False
-    name: icmp_srvive_group
+    name: icmp_service_group
     desc: desc
     service_details:
       icmp:

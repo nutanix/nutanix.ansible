@@ -226,7 +226,7 @@
 
 **Features**
 
-**Foundation Cetral**:
+**Foundation Central**:
 - Ansible module for Foundation Central
 - Ansible module for API Keys to authenticate with FC
 - Ansible info module for API Keys
@@ -332,6 +332,6 @@
 - solve python 2.7 issues [\#41](https://github.com/nutanix/nutanix.ansible/pull/41)
 - device index calculation fixes, updates for get by name functionality[\#254](https://github.com/nutanix/nutanix.ansible/pull/42)
 - Client SDK with inventory [\#45](https://github.com/nutanix/nutanix.ansible/pull/45)
-- Fix error messages for get_uuid() reponse [\#47](https://github.com/nutanix/nutanix.ansible/pull/47)
+- Fix error messages for get_uuid() response [\#47](https://github.com/nutanix/nutanix.ansible/pull/47)
 
 **Full Changelog**: [here](https://github.com/nutanix/nutanix.ansible/commits/v1.0.0-beta.1)

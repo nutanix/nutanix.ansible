@@ -1045,7 +1045,7 @@ def check_recovery_plan_idempotency(old_spec, update_spec):
         if config not in old_ip_assignments:
             return False
 
-    # comparing availibility zones
+    # comparing availability zones
     if (
         old_spec["spec"]["resources"]["parameters"]["availability_zone_list"]
         != update_spec["spec"]["resources"]["parameters"]["availability_zone_list"]

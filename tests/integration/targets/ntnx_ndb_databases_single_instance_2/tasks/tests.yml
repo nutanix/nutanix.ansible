@@ -53,7 +53,6 @@
 - set_fact:
     _vm_ip: "{{ result.response.ipAddresses[0] }}"
 
-
 - name: create new single instance postgres database on vm created earlier
   ntnx_ndb_databases:
     wait: true
@@ -96,7 +95,7 @@
 # {% raw %}
 - name: create properties map
   set_fact:
-      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+    properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
   no_log: true
 
@@ -128,8 +127,7 @@
     fail_msg: "Unable to create single instance postgres database"
     success_msg: "single instance postgres database created successfully"
 
-
-- name: unregister db along with delete time machine and unregister db servr vm
+- name: unregister db along with delete time machine and unregister db server vm
   ntnx_ndb_databases:
     state: "absent"
     db_uuid: "{{db_uuid}}"
@@ -147,7 +145,6 @@
       - result.response.db_server_vms_delete_status.status == "5"
     fail_msg: "database unregistration failed"
     success_msg: "database unregistered successfully"
-
 
 - name: create spec for registering previously unregistered DB from previously unregistered DB server vm
   check_mode: yes
@@ -193,68 +190,57 @@
 
   register: result
 
+- set_fact:
+    expected_action_arguments:
+      [
+        { "name": "vmIp", "value": "{{_vm_ip}}" },
+        { "name": "listener_port", "value": "5432" },
+        { "name": "db_name", "value": "testAnsible1" },
+        { "name": "db_user", "value": "postgres" },
+        {
+          "name": "db_password",
+          "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+        },
+        {
+          "name": "postgres_software_home",
+          "value": "{{postgres.software_home}}",
+        },
+      ]
 
 - set_fact:
-    expected_action_arguments: [
-                {
-                    "name": "vmIp",
-                    "value": "{{_vm_ip}}"
-                },
-                {
-                    "name": "listener_port",
-                    "value": "5432"
-                },
-                {
-                    "name": "db_name",
-                    "value": "testAnsible1"
-                },
-                {
-                    "name": "db_user",
-                    "value": "postgres"
-                },
-                {
-                    "name": "db_password",
-                    "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
-                },
-                {
-                    "name": "postgres_software_home",
-                    "value": "{{postgres.software_home}}"
-                }
-            ]
+    expected_time_machine_info:
+      {
+        "autoTuneLogDrive": true,
+        "description": "TM-desc",
+        "name": "TM1",
+        "schedule": {},
+        "slaId": "{{sla.uuid}}",
+      }
 
 - set_fact:
-    expected_time_machine_info: {
-                "autoTuneLogDrive": true,
-                "description": "TM-desc",
-                "name": "TM1",
-                "schedule": {},
-                "slaId": "{{sla.uuid}}"
-            }
-
-- set_fact:
-    mainetance_tasks: {
-                "maintenanceWindowId": "{{maintenance.window_uuid}}",
-                "tasks": [
-                    {
-                        "payload": {
-                            "prePostCommand": {
-                                "postCommand": "ls -a",
-                                "preCommand": "ls"
-                            }
-                        },
-                        "taskType": "OS_PATCHING"
-                    },
-                    {
-                        "payload": {
-                            "prePostCommand": {
-                                "postCommand": "ls -F",
-                                "preCommand": "ls -l"
-                            }
-                        },
-                        "taskType": "DB_PATCHING"
-                    }
-                ]
-            }
+    maintenance_tasks:
+      {
+        "maintenanceWindowId": "{{maintenance.window_uuid}}",
+        "tasks":
+          [
+            {
+              "payload":
+                {
+                  "prePostCommand":
+                    { "postCommand": "ls -a", "preCommand": "ls" },
+                },
+              "taskType": "OS_PATCHING",
+            },
+            {
+              "payload":
+                {
+                  "prePostCommand":
+                    { "postCommand": "ls -F", "preCommand": "ls -l" },
+                },
+              "taskType": "DB_PATCHING",
+            },
+          ],
+      }
 
 - name: Check mode status
   assert:
@@ -272,12 +258,10 @@
       - result.response.databaseType == "postgres_database"
       - result.response.timeMachineInfo == expected_time_machine_info
       - result.response.nxClusterId == cluster.cluster1.uuid
-      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.maintenanceTasks == maintenance_tasks
       - result.response.workingDirectory == "/tmp"
     fail_msg: "Unable to create register database spec"
     success_msg: "single instance postgres database register spec created successfully"
-
-
 
 - name: register previously unregistered DB from previously unregistered DB server vm
   ntnx_ndb_register_database:

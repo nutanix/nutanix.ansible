@@ -16,13 +16,12 @@
 
 - set_fact:
     db1_name: "{{random_name[0]}}"
-    clone_db1:  "{{random_name[0]}}-clone"
+    clone_db1: "{{random_name[0]}}-clone"
     vm1_name: "{{random_name[0]}}-vm"
     tm1: "{{random_name[0]}}-time-machine"
     snapshot_name: "{{random_name[0]}}-snapshot"
 
 ############################################ setup db and its snapshot for clone tests ###########################################
-
 
 - name: create single instance postgres database on new db server vm
   ntnx_ndb_databases:
@@ -92,7 +91,7 @@
 
 - name: create manual snapshot of database
   ntnx_ndb_database_snapshots:
-    time_machine_uuid:  "{{time_machine_uuid}}"
+    time_machine_uuid: "{{time_machine_uuid}}"
     name: "{{snapshot_name}}"
   register: result
 
@@ -111,7 +110,6 @@
     snapshot_uuid: "{{result.snapshot_uuid}}"
 
 ############################################ create clone on new db server vm tests ###########################################
-
 
 - name: create spec for clone of database created above on new db server vm
   check_mode: yes
@@ -160,76 +158,73 @@
       ansible-clones: ansible-test-db-clones
   register: result
 
-
-
 - set_fact:
-    expected_response: {
-            "actionArguments": [
-                {
-                    "name": "db_password",
-                    "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
-                },
-                {
-                    "name": "pre_clone_cmd",
-                    "value": "ls"
-                },
-                {
-                    "name": "post_clone_cmd",
-                    "value": "ls -a"
-                },
-                {
-                    "name": "dbserver_description",
-                    "value": "vm for db server"
-                }
-            ],
-            "clustered": false,
-            "computeProfileId": "{{compute_profile.uuid}}",
-            "createDbserver": true,
-            "databaseParameterProfileId": "{{db_params_profile.uuid}}",
-            "description": "ansible-created-clone",
-            "latestSnapshot": false,
-            "lcmConfig": {
-                "databaseLCMConfig": {
-                    "expiryDetails": {
-                        "deleteDatabase": true,
-                        "expireInDays": 2,
-                        "expiryDateTimezone": "Asia/Calcutta",
-                        "remindBeforeInDays": 1
-                    },
-                    "refreshDetails": {
-                        "refreshDateTimezone": "Asia/Calcutta",
-                        "refreshInDays": 2,
-                        "refreshTime": "12:00:00"
-                    }
-                }
+    expected_response:
+      {
+        "actionArguments":
+          [
+            {
+              "name": "db_password",
+              "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
             },
-            "name": "{{clone_db1}}",
-            "networkProfileId": "{{network_profile.uuid}}",
-            "nodeCount": 1,
-            "nodes": [
-                {
-                    "computeProfileId": "{{compute_profile.uuid}}",
-                    "networkProfileId": "{{network_profile.uuid}}",
-                    "nxClusterId": "{{cluster.cluster1.uuid}}",
-                    "properties": [],
-                    "vmName": "{{vm1_name}}"
-                }
-            ],
-            "nxClusterId": "{{cluster.cluster1.uuid}}",
-            "snapshotId": null,
-            "sshPublicKey": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
-            "tags": [
-                {
-                    "tagId": "{{tags.clones.uuid}}",
-                    "tagName": "ansible-clones",
-                    "value": "ansible-test-db-clones"
-                }
-            ],
-            "timeMachineId": "{{time_machine_uuid}}",
-            "timeZone": "UTC",
-            "userPitrTimestamp": "2023-02-04 07:29:36",
-            "vmPassword": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
-        }
+            { "name": "pre_clone_cmd", "value": "ls" },
+            { "name": "post_clone_cmd", "value": "ls -a" },
+            { "name": "dbserver_description", "value": "vm for db server" },
+          ],
+        "clustered": false,
+        "computeProfileId": "{{compute_profile.uuid}}",
+        "createDbserver": true,
+        "databaseParameterProfileId": "{{db_params_profile.uuid}}",
+        "description": "ansible-created-clone",
+        "latestSnapshot": false,
+        "lcmConfig":
+          {
+            "databaseLCMConfig":
+              {
+                "expiryDetails":
+                  {
+                    "deleteDatabase": true,
+                    "expireInDays": 2,
+                    "expiryDateTimezone": "Asia/Calcutta",
+                    "remindBeforeInDays": 1,
+                  },
+                "refreshDetails":
+                  {
+                    "refreshDateTimezone": "Asia/Calcutta",
+                    "refreshInDays": 2,
+                    "refreshTime": "12:00:00",
+                  },
+              },
+          },
+        "name": "{{clone_db1}}",
+        "networkProfileId": "{{network_profile.uuid}}",
+        "nodeCount": 1,
+        "nodes":
+          [
+            {
+              "computeProfileId": "{{compute_profile.uuid}}",
+              "networkProfileId": "{{network_profile.uuid}}",
+              "nxClusterId": "{{cluster.cluster1.uuid}}",
+              "properties": [],
+              "vmName": "{{vm1_name}}",
+            },
+          ],
+        "nxClusterId": "{{cluster.cluster1.uuid}}",
+        "snapshotId": null,
+        "sshPublicKey": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+        "tags":
+          [
+            {
+              "tagId": "{{tags.clones.uuid}}",
+              "tagName": "ansible-clones",
+              "value": "ansible-test-db-clones",
+            },
+          ],
+        "timeMachineId": "{{time_machine_uuid}}",
+        "timeZone": "UTC",
+        "userPitrTimestamp": "2023-02-04 07:29:36",
+        "vmPassword": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+      }
 
 - name: Check mode status
   assert:
@@ -328,7 +323,6 @@
 
 ############################################ clone update and removal/refresh schedules related tests ###########################################
 
-
 - name: update name, desc, tags and schedules
   ntnx_ndb_database_clones:
     uuid: "{{clone_uuid}}"
@@ -370,7 +364,7 @@
       - result.response.tags[0].value == "ansible-test-db-clones-updated"
 
     fail_msg: "Unable to update clone"
-    success_msg: "Database clone updated succefully"
+    success_msg: "Database clone updated successfully"
 
 - name: check idempotency
   ntnx_ndb_database_clones:
@@ -393,8 +387,6 @@
       ansible-clones: ansible-test-db-clones-updated
   register: result
 
-
-
 - name: check idempotency status
   assert:
     that:
@@ -403,7 +395,6 @@
       - "'Nothing to change' in result.msg"
     fail_msg: "database clone got updated"
     success_msg: "database clone update got skipped due to no state changes"
-
 
 - name: remove schedules
   ntnx_ndb_database_clones:
@@ -417,8 +408,6 @@
 
   register: result
 
-
-
 - name: Check schedule remove status
   assert:
     that:
@@ -429,10 +418,9 @@
       - result.response.lcmConfig.expiryDetails == None
       - result.response.lcmConfig.refreshDetails == None
     fail_msg: "schedules update failed"
-    success_msg: "schedules removed succefully"
+    success_msg: "schedules removed successfully"
 
 ########################################### refresh clone ###########################################
-
 
 - name: create spec for refresh clone to a pitr timestamp
   check_mode: yes
@@ -441,7 +429,6 @@
     pitr_timestamp: "2023-02-04 07:29:36"
     timezone: "UTC"
   register: result
-
 
 - name: Check refresh db with pitr spec
   assert:
@@ -453,14 +440,11 @@
     fail_msg: "creation refresh db clone spec failed"
     success_msg: "refresh db clone spec created successfully"
 
-
 - name: refresh db clone
   ntnx_ndb_database_clone_refresh:
     uuid: "{{clone_uuid}}"
     snapshot_uuid: "{{snapshot_uuid}}"
   register: result
-
-
 
 - name: Check database refresh status
   assert:
@@ -470,10 +454,9 @@
       - result.uuid is defined
       - result.response.status == "READY"
     fail_msg: "database refresh failed"
-    success_msg: "database refresh completed succefully"
+    success_msg: "database refresh completed successfully"
 
 ########################################### delete clone tests###########################################
-
 
 - name: create soft remove spec
   check_mode: yes
@@ -482,8 +465,6 @@
     uuid: "{{clone_uuid}}"
     soft_remove: true
   register: result
-
-
 
 - name: verify soft remove  spec
   assert:
@@ -496,16 +477,12 @@
     fail_msg: "creation of spec for soft remove failed"
     success_msg: "spec for soft remove created successfully"
 
-
-
 - name: create unregistration spec
   check_mode: yes
   ntnx_ndb_database_clones:
     state: "absent"
     uuid: "{{clone_uuid}}"
   register: result
-
-
 
 - name: verify unregistration spec
   assert:
@@ -525,8 +502,6 @@
     delete_from_vm: true
   register: result
 
-
-
 - name: verify status of db clone delete
   assert:
     that:
@@ -538,7 +513,6 @@
 
 ########################################### authorize and deauthorize db server vms###########################################
 
-
 - name: authorize db server vms
   ntnx_ndb_authorize_db_server_vms:
     time_machine:
@@ -546,8 +520,6 @@
     db_server_vms:
       - name: "{{vm1_name}}"
   register: result
-
-
 
 - name: verify status of authorization of db server vms
   assert:
@@ -567,8 +539,6 @@
       - name: "{{vm1_name}}"
   register: result
 
-
-
 - name: verify status of deauthorization of db server vms
   assert:
     that:
@@ -578,7 +548,6 @@
     fail_msg: "database deauthorization with time machine failed"
     success_msg: "database deauthorization with time machine went successfully"
 
-
 - name: authorize db server vms for hosting clone
   ntnx_ndb_authorize_db_server_vms:
     time_machine:
@@ -586,7 +555,6 @@
     db_server_vms:
       - name: "{{vm1_name}}"
   register: result
-
 
 - name: verify status of authorization of db server vms
   assert:
@@ -598,7 +566,6 @@
     success_msg: "database authorization with time machine successfully"
 
 ############################################ clone on authorized db server vm ###########################################
-
 
 - set_fact:
     timestamp: "2123-11-08 12:36:15"
@@ -636,8 +603,6 @@
       ansible-clones: ansible-test-db-clones
   register: result
 
-
-
 - name: Clone create status on authorized db server vm
   assert:
     that:
@@ -652,7 +617,7 @@
       - result.response.databaseNodes[0].dbserverId == db_server_uuid
       - result.response.parentTimeMachineId ==  time_machine_uuid
     fail_msg: "Unable to create clone"
-    success_msg: "Database clone created succefully"
+    success_msg: "Database clone created successfully"
 
 - set_fact:
     delete_clone_uuid: "{{result.uuid}}"
@@ -682,8 +647,6 @@
     db_server_vms:
       - name: "{{vm1_name}}"
   register: result
-
-
 
 - name: verify status of authorization of db server vms
   assert:
@@ -728,8 +691,6 @@
       ansible-clones: ansible-test-db-clones
   register: result
 
-
-
 - name: Clone create status on authorized db server vm
   assert:
     that:
@@ -745,8 +706,6 @@
       - result.response.parentTimeMachineId ==  time_machine_uuid
     fail_msg: "Unable to create clone from latest snapshot"
     success_msg: "Database clone created from latest snapshot successfully"
-
-
 
 - set_fact:
     delete_clone_uuid: "{{result.uuid}}"
@@ -800,7 +759,6 @@
     success_msg: "get  era clones using it's id  successfully"
 ################################################################
 
-
 - name: get era clones with incorrect name
   ntnx_ndb_clones_info:
     name: "abcd"
@@ -825,7 +783,6 @@
     delete_from_vm: true
   register: result
 
-
 - name: verify status of db clone delete
   assert:
     that:
@@ -834,7 +791,6 @@
       - result.response.status == "5"
     fail_msg: "database delete failed"
     success_msg: "database delete successfully"
-
 
 - name: delete db server vm
   ntnx_ndb_db_server_vms:
@@ -851,7 +807,6 @@
       - result.response.status == "5"
     fail_msg: "db server vm deleted failed"
     success_msg: "db server vm deleted successfully"
-
 
 - name: delete database created earlier
   ntnx_ndb_databases:

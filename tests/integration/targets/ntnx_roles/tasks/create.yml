@@ -44,7 +44,7 @@
       - ("{{ p1 }}" == "{{ test_permission_1_uuid }}" and "{{ p2 }}" == "{{ test_permission_2_uuid }}") or ("{{ p2 }}" == "{{ test_permission_1_uuid }}" and "{{ p1 }}" == "{{ test_permission_2_uuid }}")
 
     fail_msg: "Unable to create roles with certain permissions"
-    success_msg: "Roles with given permissions created susccessfully"
+    success_msg: "Roles with given permissions created successfully"
 
 - set_fact:
     todelete: '{{ result["response"]["metadata"]["uuid"] }}'
@@ -99,14 +99,12 @@
 
 ###################################################################################################
 
-
 - name: cleanup created entities
   ntnx_roles:
     state: absent
     role_uuid: "{{ todelete }}"
   register: result
   ignore_errors: True
-
 
 - set_fact:
     todelete: []

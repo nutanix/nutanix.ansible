@@ -100,7 +100,7 @@ New Modules
 - ntnx_ndb_db_servers_info - info module for ndb db server vms info
 - ntnx_ndb_linked_databases - module to manage linked databases of a database instance
 - ntnx_ndb_maintenance_tasks - module to add and remove maintenance related tasks
-- ntnx_ndb_maintenance_window - module to create, update and delete mainetance window
+- ntnx_ndb_maintenance_window - module to create, update and delete maintenance window
 - ntnx_ndb_maintenance_windows_info - module for fetching maintenance windows info
 - ntnx_ndb_profiles - module for create, update and delete of profiles
 - ntnx_ndb_profiles_info - info module for ndb profiles

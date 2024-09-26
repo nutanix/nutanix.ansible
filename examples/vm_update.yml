@@ -61,7 +61,7 @@
   - name: Update VM by deleting and editing disks and subnets
     ntnx_vms:
       vm_uuid: "{{ vm_uuid }}"
-      name: update diks
+      name: update disks
       desc: update disks
       disks:
         - type: "DISK"

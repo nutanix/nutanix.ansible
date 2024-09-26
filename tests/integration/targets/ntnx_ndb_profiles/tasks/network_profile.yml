@@ -20,8 +20,7 @@
     network:
       topology: single
       vlans:
-        -
-          cluster:
+        - cluster:
             name: "{{network_profile.single.cluster.name}}"
           vlan_name: "{{network_profile.single.vlan_name}}"
       enable_ip_address_selection: true
@@ -128,7 +127,7 @@
 #       - result.response.versions[0].propertiesMap.CLUSTER_NAME_0 == "{{network_profile.HA.cluster1.name}}"
 #       - result.response.versions[0].propertiesMap.CLUSTER_NAME_1 == "{{network_profile.HA.cluster2.name}}"
 #     fail_msg: "Fail: unable to verify create of multiple cluster network profile "
-#     success_msg: "Pass:  verify create of multiple cluster network profile finished sucessfully"
+#     success_msg: "Pass:  verify create of multiple cluster network profile finished successfully"
 
 # - set_fact:
 #     todelete: "{{ todelete + [  result.profile_uuid ] }}"

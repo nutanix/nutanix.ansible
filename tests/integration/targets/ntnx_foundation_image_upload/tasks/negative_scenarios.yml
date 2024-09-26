@@ -3,7 +3,7 @@
     state: present
     source: "{{ source }}"
     filename: "integration-test-ntnx-package.tar.gz"
-    installer_type: wrong installler type
+    installer_type: wrong installer type
     timeout: 3600
   register: result
   ignore_errors: true
@@ -13,6 +13,6 @@
     that:
       - result.failed==true
       - result.changed==false
-      - "result.msg == 'value of installer_type must be one of: kvm, esx, hyperv, xen, nos, got: wrong installler type'"
+      - "result.msg == 'value of installer_type must be one of: kvm, esx, hyperv, xen, nos, got: wrong installer type'"
     fail_msg: " Fail : image uploaded with wrong installer type"
-    success_msg: "Succes: returned error as expected "
+    success_msg: "Success: returned error as expected "

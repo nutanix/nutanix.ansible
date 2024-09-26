@@ -23,7 +23,7 @@
     autovacuum_vacuum_scale_factor: 0.3
     autovacuum_work_mem: 1
     autovacuum_max_workers: 2
-    autovacuum_vacuum_cost_delay:  22
+    autovacuum_vacuum_cost_delay: 22
     wal_buffers: 1
     synchronous_commit: local
     random_page_cost: 3
@@ -61,13 +61,12 @@
         autovacuum_vacuum_scale_factor: "{{autovacuum_vacuum_scale_factor}}"
         autovacuum_work_mem: "{{autovacuum_work_mem}}"
         autovacuum_max_workers: "{{autovacuum_max_workers}}"
-        autovacuum_vacuum_cost_delay:  "{{autovacuum_vacuum_cost_delay}}"
+        autovacuum_vacuum_cost_delay: "{{autovacuum_vacuum_cost_delay}}"
         wal_buffers: "{{wal_buffers}}"
         synchronous_commit: "{{synchronous_commit}}"
         random_page_cost: "{{random_page_cost}}"
   register: result
   ignore_errors: true
-
 
 - name: check listing status
   assert:
@@ -151,7 +150,6 @@
   register: result
   ignore_errors: true
 
-
 - name: check listing status
   assert:
     that:
@@ -162,7 +160,7 @@
     fail_msg: "Fail: verify unpublish flow in database_parameter profile "
     success_msg: "Pass: verify unpublish flow in database_parameter profile finished successfully "
 ################################################################
-- name: verify creatition of db params profile with defaults
+- name: verify creation of db params profile with defaults
   ntnx_ndb_profiles:
     name: "{{profile3_name}}"
     desc: "testdesc"
@@ -181,8 +179,8 @@
       - result.response.description == "testdesc"
       - result.response.type == "Database_Parameter"
       - result.response.versions is defined
-    fail_msg: "Fail: Unable to verify creatition of db params profile with defaults "
-    success_msg: "Pass: verify creatition of db params profile with defaults finished successfully "
+    fail_msg: "Fail: Unable to verify creation of db params profile with defaults "
+    success_msg: "Pass: verify creation of db params profile with defaults finished successfully "
 
 - set_fact:
     todelete: "{{ todelete + [  result.profile_uuid ] }}"

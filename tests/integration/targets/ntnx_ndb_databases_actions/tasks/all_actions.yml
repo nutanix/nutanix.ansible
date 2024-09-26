@@ -24,7 +24,6 @@
 
 ############################################ setup db ###########################################
 
-
 - name: create single instance postgres database on new db server vm
   ntnx_ndb_databases:
     wait: true
@@ -91,7 +90,6 @@
 - set_fact:
     db_server_uuid: "{{result.response.databaseNodes[0].dbserverId}}"
 
-
 ############################################ snapshots test ###########################################
 
 - name: create snapshot create spec
@@ -107,27 +105,23 @@
   register: result
 
 - set_fact:
-    expected_response: {
+    expected_response:
+      {
         "changed": false,
         "error": null,
         "failed": false,
-        "response": {
-            "lcmConfig": {
-                "snapshotLCMConfig": {
-                    "expiryDetails": {
-                        "expireInDays": 4,
-                    }
-                }
-            },
+        "response":
+          {
+            "lcmConfig":
+              {
+                "snapshotLCMConfig": { "expiryDetails": { "expireInDays": 4 } },
+              },
             "name": "{{snapshot_name}}",
-            "replicateToClusterIds": [
-                "{{cluster.cluster1.uuid}}",
-                "test_uuid2",
-                "test_uuid3"
-            ]
-        },
-        "snapshot_uuid": null
-    }
+            "replicateToClusterIds":
+              ["{{cluster.cluster1.uuid}}", "test_uuid2", "test_uuid3"],
+          },
+        "snapshot_uuid": null,
+      }
 
 - name: Check mode status
   assert:
@@ -139,13 +133,11 @@
     fail_msg: "Unable to create snapshot create spec"
     success_msg: "Snapshot create spec generated successfully using check mode"
 
-
 - name: create snapshot with minimal spec
   ntnx_ndb_database_snapshots:
     name: "{{snapshot_name}}1"
     time_machine_uuid: "{{time_machine_uuid}}"
   register: result
-
 
 - name: snapshot create status
   assert:
@@ -165,7 +157,6 @@
     expiry_days: 4
   register: result
 
-
 - set_fact:
     snapshot_uuid: "{{result.snapshot_uuid}}"
 
@@ -180,8 +171,6 @@
       - result.response.lcmConfig.expiryDetails.expireInDays == 4
     fail_msg: "Unable to create snapshot with expiry config"
     success_msg: "Snapshot with expiry config created successfully"
-
-
 
 - name: rename snapshot
   ntnx_ndb_database_snapshots:
@@ -200,8 +189,6 @@
     fail_msg: "Unable to rename snapshot"
     success_msg: "Snapshot renamed successfully"
 
-
-
 - name: update expiry
   ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
@@ -219,8 +206,6 @@
     fail_msg: "Unable to update snapshot expiry"
     success_msg: "snapshot expiry updated successfully"
 
-
-
 - name: remove expiry schedule
   ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
@@ -237,7 +222,6 @@
 
     fail_msg: "Unable to remove snapshot expiry schedule"
     success_msg: "snapshot expiry schedule removed successfully"
-
 
 - name: Add expiry schedule and rename
   ntnx_ndb_database_snapshots:
@@ -259,7 +243,6 @@
     fail_msg: "Unable to add expiry schedule and rename it"
     success_msg: "Snapshot updated successfully"
 
-
 - name: Idempotency check
   ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{snapshot_uuid}}"
@@ -275,7 +258,6 @@
     fail_msg: "snapshot got updated"
     success_msg: "snapshot update got skipped due to no state changes"
 
-
 ############################################ log catchup ######################################
 
 - name: create spec for log catchup
@@ -285,34 +267,28 @@
   register: result
 
 - set_fact:
-    expected_response: {
+    expected_response:
+      {
         "changed": false,
         "error": null,
         "failed": false,
-        "response": {
-            "actionArguments": [
-                {
-                    "name": "preRestoreLogCatchup",
-                    "value": false
-                },
-                {
-                    "name": "switch_log",
-                    "value": true
-                }
-            ],
-            "forRestore": false
-        }
-    }
-
-
+        "response":
+          {
+            "actionArguments":
+              [
+                { "name": "preRestoreLogCatchup", "value": false },
+                { "name": "switch_log", "value": true },
+              ],
+            "forRestore": false,
+          },
+      }
 
 - name: Check mode status
   assert:
     that:
       - result == expected_response
-    fail_msg: "Unable to create log catcup spec"
+    fail_msg: "Unable to create log catchup spec"
     success_msg: "log catchup spec created successfully"
-
 
 - name: create spec for log catchup for restore
   check_mode: yes
@@ -322,33 +298,28 @@
   register: result
 
 - set_fact:
-    expected_response: {
+    expected_response:
+      {
         "changed": false,
         "error": null,
         "failed": false,
-        "response": {
-            "actionArguments": [
-                {
-                    "name": "preRestoreLogCatchup",
-                    "value": True
-                },
-                {
-                    "name": "switch_log",
-                    "value": true
-                }
-            ],
-            "forRestore": true
-        }
-    }
-
+        "response":
+          {
+            "actionArguments":
+              [
+                { "name": "preRestoreLogCatchup", "value": True },
+                { "name": "switch_log", "value": true },
+              ],
+            "forRestore": true,
+          },
+      }
 
 - name: Check mode status
   assert:
     that:
       - result == expected_response
-    fail_msg: "Unable to create log catcup spec"
+    fail_msg: "Unable to create log catchup spec"
     success_msg: "log catchup spec created successfully"
-
 
 - name: perform log catchup
   ntnx_ndb_database_log_catchup:
@@ -377,32 +348,28 @@
   register: result
 
 - set_fact:
-    expected_result: {
+    expected_result:
+      {
         "changed": false,
         "db_uuid": null,
         "error": null,
         "failed": false,
-        "response": {
-            "actionArguments": [
-                {
-                    "name": "sameLocation",
-                    "value": true
-                }
-            ],
+        "response":
+          {
+            "actionArguments": [{ "name": "sameLocation", "value": true }],
             "latestSnapshot": null,
             "snapshotId": null,
             "timeZone": "UTC",
-            "userPitrTimestamp": "2023-01-02 11:02:22"
-        }
-    }
+            "userPitrTimestamp": "2023-01-02 11:02:22",
+          },
+      }
 
 - name: Check mode status
   assert:
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using pitr timestamp spec"
-    success_msg: "Spec for databas restore using pitr timetsmap created successfully"
-
+    success_msg: "Spec for database restore using pitr timestamp created successfully"
 
 - name: create restore database spec with latest snapshot
   check_mode: yes
@@ -411,34 +378,28 @@
   register: result
 
 - set_fact:
-    expected_result: {
+    expected_result:
+      {
         "changed": false,
         "db_uuid": null,
         "error": null,
         "failed": false,
-        "response": {
-            "actionArguments": [
-                {
-                    "name": "sameLocation",
-                    "value": true
-                }
-            ],
+        "response":
+          {
+            "actionArguments": [{ "name": "sameLocation", "value": true }],
             "latestSnapshot": true,
             "snapshotId": null,
             "timeZone": null,
-            "userPitrTimestamp": null
-        }
-    }
-
+            "userPitrTimestamp": null,
+          },
+      }
 
 - name: Check mode status
   assert:
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using latest snapshot spec"
-    success_msg: "Spec for databas restore using latest snapshot created successfully"
-
-
+    success_msg: "Spec for database restore using latest snapshot created successfully"
 
 - name: create restore database spec using snapshot uuid
   check_mode: yes
@@ -448,32 +409,28 @@
   register: result
 
 - set_fact:
-    expected_result: {
+    expected_result:
+      {
         "changed": false,
         "db_uuid": null,
         "error": null,
         "failed": false,
-        "response": {
-            "actionArguments": [
-                {
-                    "name": "sameLocation",
-                    "value": true
-                }
-            ],
+        "response":
+          {
+            "actionArguments": [{ "name": "sameLocation", "value": true }],
             "latestSnapshot": null,
             "snapshotId": "{{snapshot_uuid}}",
             "timeZone": null,
-            "userPitrTimestamp": null
-        }
-    }
+            "userPitrTimestamp": null,
+          },
+      }
 
 - name: Check mode status
   assert:
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using snapshot uuid spec"
-    success_msg: "Spec for databas restore using snapshot uuid created successfully"
-
+    success_msg: "Spec for database restore using snapshot uuid created successfully"
 
 - name: perform restore using latest snapshot
   ntnx_ndb_database_restore:
@@ -489,7 +446,6 @@
       - result.response.status == "5"
     fail_msg: "Unable to restore database using latest snapshot"
     success_msg: "database restored successfully using latest snapshot"
-
 
 - name: perform restore using snapshot uuid
   ntnx_ndb_database_restore:
@@ -519,33 +475,24 @@
   register: result
 
 - set_fact:
-    expected_result: {
+    expected_result:
+      {
         "changed": false,
         "db_uuid": null,
         "error": null,
         "failed": false,
-        "response": {
-            "actionArguments": [
-                {
-                    "name": "working_dir",
-                    "value": "/tmp"
-                },
-                {
-                    "name": "data_storage_size",
-                    "value": 10
-                },
-                {
-                    "name": "pre_script_cmd",
-                    "value": "ls"
-                },
-                {
-                    "name": "post_script_cmd",
-                    "value": "ls -a"
-                }
-            ],
-            "applicationType": "postgres_database"
-        }
-    }
+        "response":
+          {
+            "actionArguments":
+              [
+                { "name": "working_dir", "value": "/tmp" },
+                { "name": "data_storage_size", "value": 10 },
+                { "name": "pre_script_cmd", "value": "ls" },
+                { "name": "post_script_cmd", "value": "ls -a" },
+              ],
+            "applicationType": "postgres_database",
+          },
+      }
 
 - name: Check mode status
   assert:
@@ -553,7 +500,6 @@
       - result == expected_result
     fail_msg: "Unable to create database scaling spec"
     success_msg: "Spec for database scaling with pre post commands created successfully"
-
 
 - name: extend database storage for scaling database
   ntnx_ndb_database_scale:
@@ -575,7 +521,6 @@
 
 ############################################ add / remove linked databases ###########################################
 
-
 - name: create databases in database instance
   check_mode: yes
   ntnx_ndb_linked_databases:
@@ -587,25 +532,22 @@
   register: result
 
 - set_fact:
-    expected_result: {
+    expected_result:
+      {
         "changed": false,
         "db_instance_uuid": "{{db_uuid}}",
         "error": null,
         "failed": false,
-        "response": {
-            "databases": [
-                {
-                    "databaseName": "test1"
-                },
-                {
-                    "databaseName": "test2"
-                },
-                {
-                    "databaseName": "test3"
-                }
-            ]
-        }
-    }
+        "response":
+          {
+            "databases":
+              [
+                { "databaseName": "test1" },
+                { "databaseName": "test2" },
+                { "databaseName": "test3" },
+              ],
+          },
+      }
 
 - name: Check mode status
   assert:
@@ -613,7 +555,6 @@
       - result == expected_result
     fail_msg: "Unable to create spec for adding databases in database instance"
     success_msg: "Spec for adding databases in database instance created successfully"
-
 
 - name: add databases in database instance
   ntnx_ndb_linked_databases:
@@ -627,7 +568,7 @@
 
 - name: create linked databases to its uuid map
   set_fact:
-      linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
+    linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
   loop: "{{result.response}}"
   no_log: true
 
@@ -643,7 +584,6 @@
     fail_msg: "Unable to add database to database instance"
     success_msg: "databases added to database instance successfully"
 
-
 - name: remove databases in database instance
   ntnx_ndb_linked_databases:
     state: "absent"
@@ -655,7 +595,7 @@
 
 - name: create linked database map
   set_fact:
-      linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
+    linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
   loop: "{{result.response}}"
   no_log: true
 
@@ -670,9 +610,7 @@
     fail_msg: "Unable to remove database from database instance"
     success_msg: "linked database from database instance removed successfully"
 
-
 ############################################ cleanup ###########################################
-
 
 - name: delete database created earlier
   ntnx_ndb_databases:

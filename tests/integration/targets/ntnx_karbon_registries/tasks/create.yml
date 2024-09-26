@@ -1,5 +1,4 @@
 ---
-
 - debug:
     msg: "start ntnx_karbon_registries tests"
 
@@ -9,7 +8,6 @@
 
 - set_fact:
     registry_name: "{{random_name[0]}}"
-
 
 - name: create registry with check_mode
   ntnx_karbon_registries:
@@ -27,8 +25,8 @@
       - result.changed == false
       - result.response.name == "{{registry_name}}"
       - result.response.url == "{{url}}"
-    success_msg: ' Success: returned response as expected '
-    fail_msg: ' Fail: create registry with check_mode  '
+    success_msg: " Success: returned response as expected "
+    fail_msg: " Fail: create registry with check_mode  "
     ################################################################
 - name: create registry
   ntnx_karbon_registries:
@@ -46,7 +44,7 @@
       - result.changed == true
       - result.response.name == "{{registry_name}}"
       - result.response.uuid is defined
-    fail_msg: "Fail: Unable to create registery"
+    fail_msg: "Fail: Unable to create registry"
     success_msg: "Pass: create registry finished successfully"
     ################################################################
 - name: delete registry

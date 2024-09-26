@@ -83,7 +83,7 @@
         - discovery_mode:
             node_serial: "<node-serial-1>"
         - discovery_mode:
-            node_serial: "<node-serail-2>"
+            node_serial: "<node-serial-2>"
         - discovery_mode:
             node_serial: "<node-serial-3>"
             discovery_override:

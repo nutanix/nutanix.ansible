@@ -280,7 +280,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: regsiter database from registered vm
+- name: register database from registered vm
   ntnx_ndb_register_database:
     wait: true
 

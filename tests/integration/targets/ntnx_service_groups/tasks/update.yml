@@ -1,8 +1,7 @@
 ---
-
 - name: create tcp service group
   ntnx_service_groups:
-    name: tcp_srvive_group
+    name: tcp_service_group
     desc: desc
     service_details:
       tcp:
@@ -42,9 +41,9 @@
   register: result
   ignore_errors: true
 
-- name:  getting particular service_group using uuid
+- name: getting particular service_group using uuid
   ntnx_service_groups_info:
-    service_group_uuid: '{{ result.service_group_uuid }}'
+    service_group_uuid: "{{ result.service_group_uuid }}"
   register: result
   ignore_errors: true
 

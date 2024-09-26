@@ -929,7 +929,7 @@ def check_profile_idempotency(old_spec, new_spec):
         if len(new_clusters) != len(old_clusters):
             return False
 
-        # update if availibility of cluster is required
+        # update if availability of cluster is required
         for cluster in new_clusters:
             if cluster not in old_clusters:
                 return False

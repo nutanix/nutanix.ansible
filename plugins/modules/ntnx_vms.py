@@ -17,14 +17,14 @@ options:
   state:
     description:
       - Specify state
-      - If C(state) is set to C(present) then the opperation will be  create the item
+      - If C(state) is set to C(present) then the operation will be  create the item
       - >-
         If C(state) is set to C(absent) and if the item exists, then
         item is removed.
-      - If C(state) is set to C(power_on) then the opperation will be  power on the VM
-      - If C(state) is set to C(power_off) then the opperation will be  power off the VM
-      - If C(state) is set to C(soft_shutdown) then the opperation will be  soft shutdown  the VM
-      - If C(state) is set to C(hard_poweroff) then the opperation will be  hard poweroff  the VM
+      - If C(state) is set to C(power_on) then the operation will be  power on the VM
+      - If C(state) is set to C(power_off) then the operation will be  power off the VM
+      - If C(state) is set to C(soft_shutdown) then the operation will be  soft shutdown  the VM
+      - If C(state) is set to C(hard_poweroff) then the operation will be  hard poweroff  the VM
     choices:
       - present
       - absent
@@ -199,7 +199,7 @@ EXAMPLES = r"""
           empty_cdrom: True
       cores_per_vcpu: 1
 
-  - name: VM with diffrent disk types and diffrent sizes with UEFI boot type
+  - name: VM with different disk types and different sizes with UEFI boot type
     ntnx_vms:
       state: present
       name: VM with UEFI boot type
@@ -441,17 +441,17 @@ EXAMPLES = r"""
         state: soft_shutdown
         vm_uuid: "{{ vm.vm_uuid }}"
 
-  - name: Create VM with minimum requiremnts with hard_poweroff opperation
+  - name: Create VM with minimum requirements with hard_poweroff operation
     ntnx_vms:
         state: hard_poweroff
-        name: integration_test_opperations_vm
+        name: integration_test_operations_vm
         cluster:
           name: "{{ cluster.name }}"
 
-  - name: Create VM with minimum requiremnts with poweroff opperation
+  - name: Create VM with minimum requirements with poweroff operation
     ntnx_vms:
         state: power_off
-        name: integration_test_opperations_vm
+        name: integration_test_operations_vm
         cluster:
           name: "{{ cluster.name }}"
 """
@@ -928,9 +928,9 @@ def update_vm(module, result):
             wait_for_task_completion(module, result, False)
             response_state = result["response"].get("status")
             if response_state == "FAILED":
-                result[
-                    "warning"
-                ] = "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
+                result["warning"] = (
+                    "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
+                )
 
             resp = vm.read(vm_uuid)
             result["response"] = resp

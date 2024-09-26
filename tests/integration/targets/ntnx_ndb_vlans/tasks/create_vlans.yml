@@ -413,7 +413,7 @@
 
 ################################################################
 
-- name: Delete all created vlan's
+- name: Delete all created vlans
   ntnx_ndb_vlans:
     state: absent
     vlan_uuid: "{{ item }}"
@@ -429,6 +429,6 @@
       - result.changed == true
       - result.msg == "All items completed"
     fail_msg: "unable to delete all created vlan's"
-    success_msg: "All vlan'sdeleted successfully"
+    success_msg: "All vlans deleted successfully"
 - set_fact:
     todelete: []

@@ -8,7 +8,7 @@
 
 - name: create api key with random alias
   ntnx_foundation_central_api_keys:
-    alias:  "{{random_alias.0}}"
+    alias: "{{random_alias.0}}"
   register: key
   ignore_errors: true
 
@@ -21,7 +21,7 @@
       - key.response.key_uuid is defined
       - key.response.api_key is defined
     fail_msg: "fail: Unable to create api key "
-    success_msg: "succes: api key created successfully "
+    success_msg: "success: api key created successfully "
 
 - name: get api key with key_uuid
   ntnx_foundation_central_api_keys_info:
@@ -35,7 +35,7 @@
       - result.response is defined
       - result.response.alias=="{{random_alias.0}}"
     fail_msg: "fail: Unable to get api key with key_uuid"
-    success_msg: "succes: get api key with key_uuid "
+    success_msg: "success: get api key with key_uuid "
 
 - name: get api key with alias
   ntnx_foundation_central_api_keys_info:
@@ -49,13 +49,13 @@
       - result.response is defined
       - result.response.0.key_uuid== key.response.key_uuid
     fail_msg: "fail: Unable to get api key with alias name"
-    success_msg: "succes: get api key with alias name "
+    success_msg: "success: get api key with alias name "
 
 - name: get api key with custom filter
   ntnx_foundation_central_api_keys_info:
-      custom_filter:
-        created_timestamp:  "{{key.response.created_timestamp}}"
-        alias: "{{key.response.alias}}"
+    custom_filter:
+      created_timestamp: "{{key.response.created_timestamp}}"
+      alias: "{{key.response.alias}}"
   register: result
   ignore_errors: true
 
@@ -68,4 +68,4 @@
       - result.response.api_keys.0 is defined
       - result.response.api_keys.0.api_key == key.response.api_key
     fail_msg: "fail: unable to get api key with custom filter "
-    success_msg: "succes: get api key with custom filter successfully "
+    success_msg: "success: get api key with custom filter successfully "

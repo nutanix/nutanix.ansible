@@ -22,8 +22,8 @@
       - first_rule.failed == false
       - first_rule.response.status.state == 'COMPLETE'
       - first_rule.response.spec.name=="isolation_test_rule"
-    fail_msg: ' fail: Unable to create  isolation_rule for testing   '
-    success_msg: 'pass:  isolation_rule for testing  created successfully  '
+    fail_msg: " fail: Unable to create  isolation_rule for testing   "
+    success_msg: "pass:  isolation_rule for testing  created successfully  "
 ###################################
 - name: getting all security rules
   ntnx_security_rules_info:
@@ -38,12 +38,12 @@
       - result.failed == false
       - result.response.metadata.kind == "network_security_rule"
       - result.response.metadata.total_matches > 0
-    fail_msg: ' fail: unable to get security rules '
-    success_msg: 'pass: get all security rules successfully '
+    fail_msg: " fail: unable to get security rules "
+    success_msg: "pass: get all security rules successfully "
 ###################################
-- name: getting particlar security rule using security_rule_uuid
+- name: getting particular security rule using security_rule_uuid
   ntnx_security_rules_info:
-    security_rule_uuid: '{{ first_rule.response.metadata.uuid }}'
+    security_rule_uuid: "{{ first_rule.response.metadata.uuid }}"
   register: result
   ignore_errors: true
 
@@ -55,8 +55,8 @@
       - result.failed == false
       - result.response.status.state == 'COMPLETE'
       - first_rule.response.metadata.uuid == result.response.metadata.uuid
-    fail_msg: ' fail : unable to get particlar security rule using security_rule_uuid'
-    success_msg: 'pass: getting  security rule using security_rule_uuid succesfuly'
+    fail_msg: " fail : unable to get particular security rule using security_rule_uuid"
+    success_msg: "pass: getting  security rule using security_rule_uuid successfully"
 ###################################
 - name: getting all security rules sorted
   ntnx_security_rules_info:
@@ -74,13 +74,13 @@
       - result.response.metadata.kind == "network_security_rule"
       - result.response.metadata.sort_order == "ASCENDING"
       - result.response.metadata.sort_attribute == "Name"
-    fail_msg: ' fail: unable to get all security rules sorted'
-    success_msg: 'pass: getting all security rules sorted successfully '
+    fail_msg: " fail: unable to get all security rules sorted"
+    success_msg: "pass: getting all security rules sorted successfully "
 ###################################
 - name: delete security rule
   ntnx_security_rules:
     state: absent
-    security_rule_uuid: '{{ first_rule.response.metadata.uuid }}'
+    security_rule_uuid: "{{ first_rule.response.metadata.uuid }}"
   register: result
   ignore_errors: true
 
@@ -90,6 +90,6 @@
       - result.response is defined
       - result.failed == false
       - result.response.status == 'SUCCEEDED'
-    fail_msg: ' fail: unable to delete secutiry rule '
-    success_msg: 'pass: security rule deleted successfully '
+    fail_msg: " fail: unable to delete security rule "
+    success_msg: "pass: security rule deleted successfully "
 ###################################

@@ -1,7 +1,7 @@
 - set_fact:
     todelete: []
 
-- name: Creat anohter VM with same name
+- name: Create another VM with same name
   ntnx_vms:
     name: "{{ vm.name }}"
     cluster:
@@ -15,8 +15,8 @@
     that:
       - output.response is defined
       - output.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to create VM with minimum requiremnts '
-    success_msg: ' VM with minimum requiremnts created successfully '
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
 
 - set_fact:
     todelete: '{{ todelete + [  output["response"]["metadata"]["uuid"] ] }}'
@@ -45,7 +45,6 @@
       power_state: "on"
   register: result
   ignore_errors: True
-
 
 - name: Listing Status
   assert:
@@ -87,8 +86,8 @@
 - name: Delete all Created VMs
   ntnx_vms:
     state: absent
-    vm_uuid: '{{ item }}'
+    vm_uuid: "{{ item }}"
   register: result
-  loop: '{{ todelete }}'
+  loop: "{{ todelete }}"
 - set_fact:
     todelete: []

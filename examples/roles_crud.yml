@@ -14,7 +14,7 @@
       ntnx_permissions_info:
       register: permissions
 
-    - name: Create a role with 2 permissions. Here we will be using name or uuid for referenceing permissions
+    - name: Create a role with 2 permissions. Here we will be using name or uuid for referencing permissions
       ntnx_roles:
         state: present
         name: test-ansible-role-1

@@ -12,7 +12,6 @@
 - set_fact:
     project1_name: "{{random_name}}{{suffix_name}}1"
 
-
 - name: Create Project
   ntnx_projects:
     name: "{{project1_name}}"
@@ -154,7 +153,7 @@
     that:
       - result.changed == false
       - "'Nothing to update' in result.msg"
-    fail_msg: "Project update didnt got skipped for update spec same as existing project"
+    fail_msg: "Project update did not got skipped for update spec same as existing project"
     success_msg: "Project got skipped successfully for no change in spec"
 
 #################################################################

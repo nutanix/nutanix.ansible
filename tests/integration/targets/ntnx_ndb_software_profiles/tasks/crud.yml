@@ -17,10 +17,8 @@
 
 - set_fact:
     profile1_name: "{{random_name[0]}}"
-    profile1_name_updated:  "{{random_name[0]}}-updated"
+    profile1_name_updated: "{{random_name[0]}}-updated"
     profile2_name: "{{random_name[0]}}2"
-
-
 
 - name: create software profile create spec
   check_mode: yes
@@ -43,49 +41,39 @@
       - uuid: "{{cluster.cluster2.uuid}}"
   register: result
 
-
-
 - set_fact:
-    expected_result: {
+    expected_result:
+      {
         "changed": false,
         "error": null,
         "failed": false,
         "profile_uuid": null,
-        "response": {
-            "availableClusterIds": [
-                "{{cluster.cluster1.uuid}}",
-                "{{cluster.cluster2.uuid}}"
-            ],
+        "response":
+          {
+            "availableClusterIds":
+              ["{{cluster.cluster1.uuid}}", "{{cluster.cluster2.uuid}}"],
             "description": "{{profile1_name}}-desc",
             "engineType": "postgres_database",
             "name": "{{profile1_name}}",
-            "properties": [
+            "properties":
+              [
+                { "name": "BASE_PROFILE_VERSION_NAME", "value": "v1.0" },
                 {
-                    "name": "BASE_PROFILE_VERSION_NAME",
-                    "value": "v1.0"
+                  "name": "BASE_PROFILE_VERSION_DESCRIPTION",
+                  "value": "v1.0-desc",
                 },
+                { "name": "OS_NOTES", "value": "os_notes" },
+                { "name": "DB_SOFTWARE_NOTES", "value": "db_notes" },
                 {
-                    "name": "BASE_PROFILE_VERSION_DESCRIPTION",
-                    "value": "v1.0-desc"
+                  "name": "SOURCE_DBSERVER_ID",
+                  "value": "{{db_server_vm.uuid}}",
                 },
-                {
-                    "name": "OS_NOTES",
-                    "value": "os_notes"
-                },
-                {
-                    "name": "DB_SOFTWARE_NOTES",
-                    "value": "db_notes"
-                },
-                {
-                    "name": "SOURCE_DBSERVER_ID",
-                    "value": "{{db_server_vm.uuid}}"
-                }
-            ],
+              ],
             "systemProfile": false,
             "topology": "cluster",
-            "type": "Software"
-        }
-    }
+            "type": "Software",
+          },
+      }
 
 - name: check spec for creating software profile
   assert:
@@ -115,8 +103,6 @@
       - uuid: "{{cluster.cluster2.uuid}}"
   register: result
 
-
-
 - set_fact:
     clusters: ["{{cluster.cluster1.uuid}}", "{{cluster.cluster2.uuid}}"]
 
@@ -142,7 +128,6 @@
     fail_msg: "Fail: Unable to create software profile with base version and cluster instance topology with replicating to multiple clusters."
     success_msg: "Pass: Software profile with base version, cluster instance topology and replicated to multiple clusters created successfully"
 
-
 - name: create software profile with base version and single instance topology
   ntnx_ndb_profiles:
     name: "{{profile2_name}}"
@@ -161,8 +146,6 @@
     clusters:
       - name: "{{cluster.cluster1.name}}"
   register: result
-
-
 
 - name: check status of creation
   assert:
@@ -185,7 +168,6 @@
     fail_msg: "Fail: Unable to create software profile with base version and single instance topology"
     success_msg: "Pass: Software profile with base version and single instance topology created successfully"
 
-
 - set_fact:
     profile_uuid: "{{result.profile_uuid}}"
 
@@ -195,8 +177,6 @@
     name: "{{profile1_name}}-updated1"
     desc: "{{profile1_name}}-desc-updated"
   register: result
-
-
 
 - name: check status of creation
   assert:
@@ -212,15 +192,12 @@
     fail_msg: "Fail: Unable to update software profile"
     success_msg: "Pass: Software profile updated successfully"
 
-
 - name: idempotency checks
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
     name: "{{profile1_name}}-updated1"
     desc: "{{profile1_name}}-desc-updated"
   register: result
-
-
 
 - name: check status of creation
   assert:
@@ -233,7 +210,7 @@
       - result.response.profile.name == "{{profile1_name}}-updated1"
       - result.response.profile.description == "{{profile1_name}}-desc-updated"
 
-    fail_msg: "Fail: Update didnt get skipped due to no state changes"
+    fail_msg: "Fail: Update did not get skipped due to no state changes"
     success_msg: "Pass: Update skipped successfully due to no state changes"
 
 - name: create software profile version spec
@@ -253,42 +230,41 @@
   register: result
 
 - set_fact:
-    expected_result: {
+    expected_result:
+      {
         "changed": false,
         "error": null,
         "failed": false,
         "profile_type": "software",
         "profile_uuid": "{{profile_uuid}}",
-        "response": {
-            "profile": {
+        "response":
+          {
+            "profile":
+              {
                 "description": "{{profile1_name}}-desc-updated",
                 "engineType": "postgres_database",
-                "name": "{{profile1_name}}-updated1"
-            },
-            "version": {
+                "name": "{{profile1_name}}-updated1",
+              },
+            "version":
+              {
                 "description": "v2.0-desc",
                 "engineType": "postgres_database",
                 "name": "v2.0",
-                "properties": [
+                "properties":
+                  [
+                    { "name": "OS_NOTES", "value": "os_notes for v2" },
+                    { "name": "DB_SOFTWARE_NOTES", "value": "db_notes for v2" },
                     {
-                        "name": "OS_NOTES",
-                        "value": "os_notes for v2"
+                      "name": "SOURCE_DBSERVER_ID",
+                      "value": "{{db_server_vm.uuid}}",
                     },
-                    {
-                        "name": "DB_SOFTWARE_NOTES",
-                        "value": "db_notes for v2"
-                    },
-                    {
-                        "name": "SOURCE_DBSERVER_ID",
-                        "value": "{{db_server_vm.uuid}}"
-                    }
-                ],
+                  ],
                 "systemProfile": false,
                 "topology": null,
-                "type": "Software"
-            }
-        }
-    }
+                "type": "Software",
+              },
+          },
+      }
 
 - name: check spec for creating spec for software profile version
   assert:
@@ -297,7 +273,6 @@
 
     fail_msg: "Fail: Unable to create spec for software profile version create"
     success_msg: "Pass: Spec for creating software profile version generated successfully"
-
 
 - name: create software profile version
   ntnx_ndb_profiles:
@@ -313,8 +288,6 @@
         uuid: "{{db_server_vm.uuid}}"
 
   register: result
-
-
 
 - name: check status of version create
   assert:
@@ -349,8 +322,6 @@
 
   register: result
 
-
-
 - name: check status of spec
   assert:
     that:
@@ -366,7 +337,6 @@
     fail_msg: "Fail: Unable to create spec for updating software profile version"
     success_msg: "Pass: Spec for updating software profile version created successfully"
 
-
 - name: update software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
@@ -377,8 +347,6 @@
       desc: "v2.0-desc-updated"
 
   register: result
-
-
 
 - name: check status of update
   assert:
@@ -401,7 +369,6 @@
     fail_msg: "Fail: Unable to update software profile version"
     success_msg: "Pass: Software profile version updated successfully"
 
-
 - set_fact:
     version_uuid: "{{result.version_uuid}}"
 
@@ -412,8 +379,6 @@
       version_uuid: "{{version_uuid}}"
       publish: True
   register: result
-
-
 
 - name: check status of update
   assert:
@@ -455,7 +420,6 @@
     fail_msg: "Fail: Unable to unpublish software profile version"
     success_msg: "Pass: Software version unpublished successfully"
 
-
 - name: deprecate software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
@@ -463,8 +427,6 @@
       version_uuid: "{{version_uuid}}"
       deprecate: True
   register: result
-
-
 
 - name: check status of update
   assert:
@@ -482,8 +444,6 @@
     fail_msg: "Fail: Unable to deprecate software profile version"
     success_msg: "Pass: Software version deprecated successfully"
 
-
-
 - name: delete software profile version
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
@@ -491,7 +451,6 @@
       version_uuid: "{{version_uuid}}"
       state: "absent"
   register: result
-
 
 - name: check status of update
   assert:
@@ -506,7 +465,6 @@
     fail_msg: "Fail: Unable to delete software profile version"
     success_msg: "Pass: Software version deleted successfully"
 
-
 - name: replicate software profile
   ntnx_ndb_profiles:
     profile_uuid: "{{profile_uuid}}"
@@ -517,7 +475,6 @@
 - name: wait for 3 minutes for replication to finish from source cluster to cluster2
   ansible.builtin.pause:
     minutes: 3
-
 
 - set_fact:
     clusters: {}
@@ -550,7 +507,6 @@
     profile_uuid: "{{profile_uuid}}"
     state: "absent"
   register: result
-
 
 - name: check status of delete
   assert:

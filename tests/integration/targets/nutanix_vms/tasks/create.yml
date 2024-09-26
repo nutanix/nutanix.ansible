@@ -1,601 +1,601 @@
-  - name: Create Cloud-init Script file
-    copy:
-      dest: "cloud_init.yml"
-      content: |
-         #cloud-config
-         chpasswd:
-           list: |
-             root: "{{ password }}"
-             expire: False
-         fqdn: myNutanixVM
+- name: Create Cloud-init Script file
+  copy:
+    dest: "cloud_init.yml"
+    content: |
+      #cloud-config
+      chpasswd:
+        list: |
+          root: "{{ password }}"
+          expire: False
+      fqdn: myNutanixVM
 ##########################################################################
-  - name: VM with none values
-    ntnx_vms:
-      state: present
-      name: none
-      timezone: GMT
-      project:
-        uuid: "{{ project.uuid }}"
-      cluster:
-        name: "{{ cluster.name }}"
-      categories:
-        AppType:
-          - Apache_Spark
-      disks:
-        - type: DISK
-          size_gb: 5
-          bus: SCSI
-      vcpus:
-      cores_per_vcpu:
-      memory_gb:
-    register: result
-    ignore_errors: true
+- name: VM with none values
+  ntnx_vms:
+    state: present
+    name: none
+    timezone: GMT
+    project:
+      uuid: "{{ project.uuid }}"
+    cluster:
+      name: "{{ cluster.name }}"
+    categories:
+      AppType:
+        - Apache_Spark
+    disks:
+      - type: DISK
+        size_gb: 5
+        bus: SCSI
+    vcpus:
+    cores_per_vcpu:
+    memory_gb:
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: 'Unable to Create VM with none values  '
-      success_msg: 'VM with none values created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: "Unable to Create VM with none values  "
+    success_msg: "VM with none values created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 # ##################################################################################
-  - name: VM with owner name
-    ntnx_vms:
-      state: present
-      name: none
-      timezone: GMT
-      project:
-        uuid: "{{ project.uuid }}"
-      cluster:
-        name: "{{ cluster.name }}"
-      categories:
-        AppType:
-          - Apache_Spark
-      owner:
-        name: "{{ vm_owner.name }}"
-      disks:
-        - type: DISK
-          size_gb: 5
-          bus: SCSI
-    register: result
-    ignore_errors: true
+- name: VM with owner name
+  ntnx_vms:
+    state: present
+    name: none
+    timezone: GMT
+    project:
+      uuid: "{{ project.uuid }}"
+    cluster:
+      name: "{{ cluster.name }}"
+    categories:
+      AppType:
+        - Apache_Spark
+    owner:
+      name: "{{ vm_owner.name }}"
+    disks:
+      - type: DISK
+        size_gb: 5
+        bus: SCSI
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-        - result.response.metadata.owner_reference.name == "{{ vm_owner.name }}"
-        - result.response.metadata.owner_reference.uuid == "{{ vm_owner.uuid }}"
-        - result.response.metadata.owner_reference.kind == "user"
-      fail_msg: 'Unable to Create VM with owner'
-      success_msg: 'VM with owner created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.metadata.owner_reference.name == "{{ vm_owner.name }}"
+      - result.response.metadata.owner_reference.uuid == "{{ vm_owner.uuid }}"
+      - result.response.metadata.owner_reference.kind == "user"
+    fail_msg: "Unable to Create VM with owner"
+    success_msg: "VM with owner created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 ##################################################################################
-  - name: VM with ubuntu image and different specifications
-    ntnx_vms:
-      state: present
-      project:
-        name: "{{ project.name }}"
-      name: "VM with Ubuntu image"
-      desc: "VM with cluster, network, category, disk with Ubuntu image, guest customization "
-      categories:
-        AppType:
-          - Default
-        Environment:
-          - Dev
-      cluster:
-        name: "{{ cluster.name }}"
-      networks:
-        - is_connected: True
-          subnet:
-            name: "{{ network.dhcp.name }}"
-      disks:
-        - type: "DISK"
-          size_gb: 30
-          bus: "SATA"
-          clone_image:
-            name: "{{ ubuntu }}"
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-      guest_customization:
-        type: "cloud_init"
-        script_path: "./cloud_init.yml"
-        is_overridable: True
-    register: result
+- name: VM with ubuntu image and different specifications
+  ntnx_vms:
+    state: present
+    project:
+      name: "{{ project.name }}"
+    name: "VM with Ubuntu image"
+    desc: "VM with cluster, network, category, disk with Ubuntu image, guest customization "
+    categories:
+      AppType:
+        - Default
+      Environment:
+        - Dev
+    cluster:
+      name: "{{ cluster.name }}"
+    networks:
+      - is_connected: True
+        subnet:
+          name: "{{ network.dhcp.name }}"
+    disks:
+      - type: "DISK"
+        size_gb: 30
+        bus: "SATA"
+        clone_image:
+          name: "{{ ubuntu }}"
+    vcpus: 1
+    cores_per_vcpu: 1
+    memory_gb: 1
+    guest_customization:
+      type: "cloud_init"
+      script_path: "./cloud_init.yml"
+      is_overridable: True
+  register: result
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-        - result.response.metadata.categories_mapping["AppType"] == ["Default"]
-        - result.response.metadata.categories_mapping["Environment"] == ["Dev"]
-      fail_msg: 'Unable to Create VM with Ubuntu image and different specifications  '
-      success_msg: 'VM with Ubuntu image and different specifications created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+      - result.response.metadata.categories_mapping["AppType"] == ["Default"]
+      - result.response.metadata.categories_mapping["Environment"] == ["Dev"]
+    fail_msg: "Unable to Create VM with Ubuntu image and different specifications  "
+    success_msg: "VM with Ubuntu image and different specifications created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 #########################################################################################
-  - name: VM with CentOS-7-cloud-init image with disk image size
-    ntnx_vms:
-      state: present
-      name: VM with CentOS-7-cloud-init image
-      memory_gb: 1
-      timezone: "UTC"
-      cluster:
-        uuid: "{{ cluster.uuid }}"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          clone_image:
-            name:  "{{ centos }}"
-          bus: "SCSI"
-      guest_customization:
-        type: "cloud_init"
-        script_path: "./cloud_init.yml"
-        is_overridable: True
-    register: result
-    ignore_errors: True
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: 'Unable to create VM with CentOS-7-cloud-init image'
-      success_msg: 'VM with CentOS-7-cloud-init image created successfully '
+- name: VM with CentOS-7-cloud-init image with disk image size
+  ntnx_vms:
+    state: present
+    name: VM with CentOS-7-cloud-init image
+    memory_gb: 1
+    timezone: "UTC"
+    cluster:
+      uuid: "{{ cluster.uuid }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        clone_image:
+          name: "{{ centos }}"
+        bus: "SCSI"
+    guest_customization:
+      type: "cloud_init"
+      script_path: "./cloud_init.yml"
+      is_overridable: True
+  register: result
+  ignore_errors: True
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: "Unable to create VM with CentOS-7-cloud-init image"
+    success_msg: "VM with CentOS-7-cloud-init image created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 #################################################################################
-  - name: VM with CentOS-7-cloud-init image without disk image size
-    ntnx_vms:
-      state: present
-      memory_gb: 1
-      name: VM with CentOS-7-cloud-init image without image size
-      timezone: "UTC"
-      cluster:
-        uuid: "{{ cluster.uuid }}"
-      disks:
-        - type: "DISK"
-          clone_image:
-            name:  "{{ centos }}"
-          bus: "SCSI"
-      guest_customization:
-        type: "cloud_init"
-        script_path: "./cloud_init.yml"
-        is_overridable: True
-    register: result
-    ignore_errors: True
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: 'Unable to create VM with CentOS-7-cloud-init image'
-      success_msg: 'VM with CentOS-7-cloud-init image created successfully '
+- name: VM with CentOS-7-cloud-init image without disk image size
+  ntnx_vms:
+    state: present
+    memory_gb: 1
+    name: VM with CentOS-7-cloud-init image without image size
+    timezone: "UTC"
+    cluster:
+      uuid: "{{ cluster.uuid }}"
+    disks:
+      - type: "DISK"
+        clone_image:
+          name: "{{ centos }}"
+        bus: "SCSI"
+    guest_customization:
+      type: "cloud_init"
+      script_path: "./cloud_init.yml"
+      is_overridable: True
+  register: result
+  ignore_errors: True
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: "Unable to create VM with CentOS-7-cloud-init image"
+    success_msg: "VM with CentOS-7-cloud-init image created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 
-  - name: Delete all Created VMs
-    ntnx_vms:
-      state: absent
-      vm_uuid: '{{ item }}'
-    register: result
-    loop: '{{ todelete }}'
-  - set_fact:
-      todelete: []
+- name: Delete all Created VMs
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+- set_fact:
+    todelete: []
 #################################################################################
-  - name: VM with Cluster, Network, Universal time zone, one Disk
-    ntnx_vms:
-      state: present
-      name: "VM with Cluster Network and Disk"
-      memory_gb: 1
-      timezone: "Universal"
-      cluster:
-        name: "{{ cluster.name }}"
-      networks:
-        - is_connected: False
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          bus: "PCI"
-    register: result
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: 'Unable to create VM with Cluster , Network, Universal time zone, one Disk'
-      success_msg: 'VM with Cluster , Network, Universal time zone, one Disk created successfully '
+- name: VM with Cluster, Network, Universal time zone, one Disk
+  ntnx_vms:
+    state: present
+    name: "VM with Cluster Network and Disk"
+    memory_gb: 1
+    timezone: "Universal"
+    cluster:
+      name: "{{ cluster.name }}"
+    networks:
+      - is_connected: False
+        subnet:
+          uuid: "{{ network.dhcp.uuid }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        bus: "PCI"
+  register: result
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: "Unable to create VM with Cluster , Network, Universal time zone, one Disk"
+    success_msg: "VM with Cluster , Network, Universal time zone, one Disk created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 ########################################################################################
-  - name: VM with Cluster, different Disks, Memory size
-    ntnx_vms:
-      state: present
-      name: "VM with different disks"
-      timezone: "UTC"
-      cluster:
-        uuid: "{{ cluster.uuid }}"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          bus: "SATA"
-        - type: "DISK"
-          size_gb: 30
-          bus: "SCSI"
-      memory_gb: 2
-    register: result
-    ignore_errors: True
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: 'Unable to create VM with Cluster, different Disks, Memory size'
-      success_msg: 'VM with Cluster, different Disks, Memory size created successfully '
+- name: VM with Cluster, different Disks, Memory size
+  ntnx_vms:
+    state: present
+    name: "VM with different disks"
+    timezone: "UTC"
+    cluster:
+      uuid: "{{ cluster.uuid }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        bus: "SATA"
+      - type: "DISK"
+        size_gb: 30
+        bus: "SCSI"
+    memory_gb: 2
+  register: result
+  ignore_errors: True
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: "Unable to create VM with Cluster, different Disks, Memory size"
+    success_msg: "VM with Cluster, different Disks, Memory size created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 #####################################################################################
-  - name: VM with Cluster, different CDROMs
-    ntnx_vms:
-      state: present
-      memory_gb: 1
-      wait: true
-      name: "VM with multiple CDROMs"
-      cluster:
-        name: "{{ cluster.name }}"
-      disks:
-        - type: "CDROM"
-          bus: "SATA"
-          empty_cdrom: True
-        - type: "CDROM"
-          bus: "IDE"
-          empty_cdrom: True
-      cores_per_vcpu: 1
-    register: result
-    ignore_errors: True
+- name: VM with Cluster, different CDROMs
+  ntnx_vms:
+    state: present
+    memory_gb: 1
+    wait: true
+    name: "VM with multiple CDROMs"
+    cluster:
+      name: "{{ cluster.name }}"
+    disks:
+      - type: "CDROM"
+        bus: "SATA"
+        empty_cdrom: True
+      - type: "CDROM"
+        bus: "IDE"
+        empty_cdrom: True
+    cores_per_vcpu: 1
+  register: result
+  ignore_errors: True
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: 'Unable to Create VM with Cluster, different CDROMs '
-      success_msg: 'VM with Cluster, different CDROMs created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: "Unable to Create VM with Cluster, different CDROMs "
+    success_msg: "VM with Cluster, different CDROMs created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
-  - name: Delete all Created VMs
-    ntnx_vms:
-      state: absent
-      vm_uuid: '{{ item }}'
-    register: result
-    loop: '{{ todelete }}'
-  - set_fact:
-      todelete: []
+- name: Delete all Created VMs
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+- set_fact:
+    todelete: []
 ####################################################################################
-  - name: VM with all specification
-    ntnx_vms:
-      state: present
-      wait: True
-      name: "All specification"
-      timezone: "GMT"
-      cluster:
-        uuid: "{{ cluster.uuid }}"
-      disks:
-        - type: "DISK"
-          size_gb: 2
-          bus: "SCSI"
-        - type: "DISK"
-          size_gb: 10
-          bus: "PCI"
-        - type: "DISK"
-          size_gb: 2
-          bus: "SATA"
-        - type: "DISK"
-          size_gb: 10
-          bus: "SCSI"
-        - type: "CDROM"
-          bus: "IDE"
-          empty_cdrom: True
-      boot_config:
-        boot_type: "UEFI"
-        boot_order:
-            - "DISK"
-            - "CDROM"
-            - "NETWORK"
-      vcpus: 1
-      cores_per_vcpu: 2
-      memory_gb: 1
-    register: result
-    ignore_errors: True
+- name: VM with all specification
+  ntnx_vms:
+    state: present
+    wait: True
+    name: "All specification"
+    timezone: "GMT"
+    cluster:
+      uuid: "{{ cluster.uuid }}"
+    disks:
+      - type: "DISK"
+        size_gb: 2
+        bus: "SCSI"
+      - type: "DISK"
+        size_gb: 10
+        bus: "PCI"
+      - type: "DISK"
+        size_gb: 2
+        bus: "SATA"
+      - type: "DISK"
+        size_gb: 10
+        bus: "SCSI"
+      - type: "CDROM"
+        bus: "IDE"
+        empty_cdrom: True
+    boot_config:
+      boot_type: "UEFI"
+      boot_order:
+        - "DISK"
+        - "CDROM"
+        - "NETWORK"
+    vcpus: 1
+    cores_per_vcpu: 2
+    memory_gb: 1
+  register: result
+  ignore_errors: True
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: ' Unable to create VM with all specification '
-      success_msg: ' VM with all specification created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VM with all specification "
+    success_msg: " VM with all specification created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 ##################################################################################################
-  - name: VM with managed subnet
-    ntnx_vms:
-      state: present
-      name: VM with managed subnet
-      memory_gb: 1
-      cluster:
-        name: "{{ cluster.name }}"
-      networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
-    register: result
-    ignore_errors: true
+- name: VM with managed subnet
+  ntnx_vms:
+    state: present
+    name: VM with managed subnet
+    memory_gb: 1
+    cluster:
+      name: "{{ cluster.name }}"
+    networks:
+      - is_connected: true
+        subnet:
+          uuid: "{{ network.dhcp.uuid }}"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: ' Unable to create VM with managed subnet '
-      success_msg: ' VM with with managed subnet created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VM with managed subnet "
+    success_msg: " VM with with managed subnet created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 ###################################################################################################
-  - name: VM with minimum requiremnts
-    ntnx_vms:
-      state: present
-      name: MinReqVM
-      cluster:
-        name: "{{ cluster.name }}"
-    register: result
-    ignore_errors: true
+- name: VM with minimum requirements
+  ntnx_vms:
+    state: present
+    name: MinReqVM
+    cluster:
+      name: "{{ cluster.name }}"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: ' Unable to create VM with minimum requiremnts '
-      success_msg: ' VM with minimum requiremnts created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 
-  - name: Delete all Created VMs
-    ntnx_vms:
-      state: absent
-      vm_uuid: '{{ item }}'
-    register: result
-    loop: '{{ todelete }}'
-  - set_fact:
-      todelete: []
+- name: Delete all Created VMs
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+- set_fact:
+    todelete: []
 ##################################################################################################
-  - name: VM with unmanaged vlan
-    ntnx_vms:
-      desc: "VM with unmanaged vlan"
-      state: present
-      name: VM with unmanaged vlan
-      timezone: UTC
-      cluster:
-        uuid: "{{ cluster.uuid }}"
-      networks:
-        - is_connected: false
-          subnet:
-            uuid: "{{ static.uuid }}"
-          private_ip: "{{ network.static.ip }}"
-      boot_config:
-        boot_type: LEGACY
-        boot_order:
-          - DISK
-          - CDROM
-          - NETWORK
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-    register: result
-    ignore_errors: true
+- name: VM with unmanaged vlan
+  ntnx_vms:
+    desc: "VM with unmanaged vlan"
+    state: present
+    name: VM with unmanaged vlan
+    timezone: UTC
+    cluster:
+      uuid: "{{ cluster.uuid }}"
+    networks:
+      - is_connected: false
+        subnet:
+          uuid: "{{ static.uuid }}"
+        private_ip: "{{ network.static.ip }}"
+    boot_config:
+      boot_type: LEGACY
+      boot_order:
+        - DISK
+        - CDROM
+        - NETWORK
+    vcpus: 1
+    cores_per_vcpu: 1
+    memory_gb: 1
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: ' Unable to create VM with unmanaged vlan '
-      success_msg: ' VM with unmanaged vlan created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VM with unmanaged vlan "
+    success_msg: " VM with unmanaged vlan created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 
-  - name: Delete all Created VM
-    ntnx_vms:
-      state: absent
-      vm_uuid: '{{ item }}'
-    register: result
-    loop: '{{ todelete }}'
-  - set_fact:
-      todelete: []
+- name: Delete all Created VM
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+- set_fact:
+    todelete: []
 ######################################################################################
-  - name: VM with managed and unmanaged network
-    ntnx_vms:
-      state: present
-      name: VM_NIC
-      timezone: UTC
-      cluster:
-        name: "{{ cluster.name }}"
-      networks:
-        - is_connected: true
-          subnet:
-            name: "{{ network.dhcp.name }}"
-            cluster:
-              name: "{{ cluster.name }}"
-        - is_connected: true
-          subnet:
-            uuid: "{{ static.uuid }}"
-            cluster:
-              uuid: "{{ cluster.uuid }}"
-      disks:
-        - type: DISK
-          size_gb: 1
-          bus: SCSI
-        - type: DISK
-          size_gb: 3
-          bus: PCI
-        - type: CDROM
-          bus: SATA
-          empty_cdrom: True
-        - type: CDROM
-          bus: IDE
-          empty_cdrom: True
-      boot_config:
-        boot_type: UEFI
-        boot_order:
-          - DISK
-          - CDROM
-          - NETWORK
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-    register: result
-    ignore_errors: true
+- name: VM with managed and unmanaged network
+  ntnx_vms:
+    state: present
+    name: VM_NIC
+    timezone: UTC
+    cluster:
+      name: "{{ cluster.name }}"
+    networks:
+      - is_connected: true
+        subnet:
+          name: "{{ network.dhcp.name }}"
+          cluster:
+            name: "{{ cluster.name }}"
+      - is_connected: true
+        subnet:
+          uuid: "{{ static.uuid }}"
+          cluster:
+            uuid: "{{ cluster.uuid }}"
+    disks:
+      - type: DISK
+        size_gb: 1
+        bus: SCSI
+      - type: DISK
+        size_gb: 3
+        bus: PCI
+      - type: CDROM
+        bus: SATA
+        empty_cdrom: True
+      - type: CDROM
+        bus: IDE
+        empty_cdrom: True
+    boot_config:
+      boot_type: UEFI
+      boot_order:
+        - DISK
+        - CDROM
+        - NETWORK
+    vcpus: 1
+    cores_per_vcpu: 1
+    memory_gb: 1
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: ' Unable to create VM with managed and unmanaged network '
-      success_msg: ' VM with managed and unmanaged network created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VM with managed and unmanaged network "
+    success_msg: " VM with managed and unmanaged network created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 #########################################################################################
-  - name: VM with diffrent disk types and diffrent sizes with UEFI boot type
-    ntnx_vms:
-      state: present
-      name: VM with UEFI boot type
-      timezone: GMT
-      cluster:
-        name: "{{ cluster.name }}"
-      categories:
-        AppType:
-          - Apache_Spark
-      disks:
-        - type: "DISK"
-          clone_image:
-            name: "{{ ubuntu }}"
-          bus: "SCSI"
-          size_gb: 20
-        - type: DISK
-          size_gb: 1
-          bus: SCSI
-          storage_container:
-            name: "{{ storage_container.name }}"
-        - type: DISK
-          size_gb: 2
-          bus: PCI
-          storage_container:
-            name: "{{ storage_container.name }}"
-        - type: DISK
-          size_gb: 3
-          bus: SATA
-      boot_config:
-        boot_type: UEFI
-        boot_order:
-          - DISK
-          - CDROM
-          - NETWORK
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-    register: result
+- name: VM with different disk types and different sizes with UEFI boot type
+  ntnx_vms:
+    state: present
+    name: VM with UEFI boot type
+    timezone: GMT
+    cluster:
+      name: "{{ cluster.name }}"
+    categories:
+      AppType:
+        - Apache_Spark
+    disks:
+      - type: "DISK"
+        clone_image:
+          name: "{{ ubuntu }}"
+        bus: "SCSI"
+        size_gb: 20
+      - type: DISK
+        size_gb: 1
+        bus: SCSI
+        storage_container:
+          name: "{{ storage_container.name }}"
+      - type: DISK
+        size_gb: 2
+        bus: PCI
+        storage_container:
+          name: "{{ storage_container.name }}"
+      - type: DISK
+        size_gb: 3
+        bus: SATA
+    boot_config:
+      boot_type: UEFI
+      boot_order:
+        - DISK
+        - CDROM
+        - NETWORK
+    vcpus: 1
+    cores_per_vcpu: 1
+    memory_gb: 1
+  register: result
 ################################################################################
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: ' Unable to create VM with diffrent disk types and diffrent sizes with UEFI boot type '
-      success_msg: ' VM with diffrent disk types and diffrent sizes with UEFI boot type created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VM with different disk types and different sizes with UEFI boot type "
+    success_msg: " VM with different disk types and different sizes with UEFI boot type created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 
-  - name: Delete all Created VM
-    ntnx_vms:
-      state: absent
-      vm_uuid: '{{ item }}'
-    register: result
-    loop: '{{ todelete }}'
+- name: Delete all Created VM
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
 
-  - set_fact:
-      todelete: []
+- set_fact:
+    todelete: []
 ####################################################################################
-  - name: VM with storage container
-    ntnx_vms:
-      state: present
-      name: VM with UEFI boot type
-      timezone: GMT
-      cluster:
-        name: "{{ cluster.name }}"
-      categories:
-        AppType:
-          - Apache_Spark
-      disks:
-        - type: DISK
-          size_gb: 1
-          bus: SCSI
-          storage_container:
-            uuid: "{{ storage_container.uuid }}"
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-    register: result
+- name: VM with storage container
+  ntnx_vms:
+    state: present
+    name: VM with UEFI boot type
+    timezone: GMT
+    cluster:
+      name: "{{ cluster.name }}"
+    categories:
+      AppType:
+        - Apache_Spark
+    disks:
+      - type: DISK
+        size_gb: 1
+        bus: SCSI
+        storage_container:
+          uuid: "{{ storage_container.uuid }}"
+    vcpus: 1
+    cores_per_vcpu: 1
+    memory_gb: 1
+  register: result
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.response.status.state == 'COMPLETE'
-      fail_msg: ' Unable to create VM withstorage container '
-      success_msg: ' VM with storage container created successfully '
+- name: Creation Status
+  assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VM with storage container "
+    success_msg: " VM with storage container created successfully "
 
-  - set_fact:
-      todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
-    when: result.response.status.state == 'COMPLETE'
+- set_fact:
+    todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
+  when: result.response.status.state == 'COMPLETE'
 ####################################################################################
-  - name: Delete all Created VMs
-    ntnx_vms:
-      state: absent
-      vm_uuid: '{{ item }}'
-    register: result
-    loop: '{{ todelete }}'
+- name: Delete all Created VMs
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"

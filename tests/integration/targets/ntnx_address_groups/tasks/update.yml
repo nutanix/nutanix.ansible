@@ -2,7 +2,6 @@
 - debug:
     msg: start ntnx_address_groups update tests
 
-
 - name: Generate random project_name
   set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
@@ -13,7 +12,6 @@
 - set_fact:
     ag1: "{{random_name}}{{suffix_name}}1"
     ag2: "{{random_name}}{{suffix_name}}2"
-
 
 ##############################################################################################
 
@@ -34,9 +32,8 @@
     that:
       - test_ag.response is defined
       - test_ag.changed == True
-    fail_msg: "Unable to create adress group"
-    success_msg: "Address group created susccessfully"
-
+    fail_msg: "Unable to create address group"
+    success_msg: "Address group created successfully"
 
 ###################################################################################################
 
@@ -64,7 +61,7 @@
       - result.response.ip_address_block_list | length == 1
 
     fail_msg: "Unable to update address group"
-    success_msg: "Address group updated susccessfully"
+    success_msg: "Address group updated successfully"
 
 ###################################################################################################
 

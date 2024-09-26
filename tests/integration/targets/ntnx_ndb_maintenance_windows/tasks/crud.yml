@@ -1,7 +1,6 @@
 ---
-
 - debug:
-    msg: "start ndb database maintenance winndow tests"
+    msg: "start ndb database maintenance window tests"
 
 - name: Generate random name
   set_fact:
@@ -16,7 +15,7 @@
   check_mode: yes
   ntnx_ndb_maintenance_window:
     name: "{{window1_name}}"
-    desc: "anisble-created-window"
+    desc: "ansible-created-window"
     schedule:
       recurrence: "weekly"
       duration: 2
@@ -26,24 +25,27 @@
   register: result
 
 - set_fact:
-    expected_result: {
+    expected_result:
+      {
         "changed": false,
         "error": null,
         "failed": false,
-        "response": {
-            "description": "anisble-created-window",
+        "response":
+          {
+            "description": "ansible-created-window",
             "name": "{{window1_name}}",
-            "schedule": {
+            "schedule":
+              {
                 "dayOfWeek": "TUESDAY",
                 "duration": 2,
                 "recurrence": "WEEKLY",
                 "startTime": "11:00:00",
-                "weekOfMonth": null
-            },
-            "timezone": "Asia/Calcutta"
-        },
-        "uuid": null
-    }
+                "weekOfMonth": null,
+              },
+            "timezone": "Asia/Calcutta",
+          },
+        "uuid": null,
+      }
 
 - name: Check mode status
   assert:
@@ -52,11 +54,10 @@
     fail_msg: "Unable to create spec for creating window"
     success_msg: "spec for maintenance window generated successfully"
 
-
 - name: create window with weekly schedule
   ntnx_ndb_maintenance_window:
     name: "{{window1_name}}"
-    desc: "anisble-created-window"
+    desc: "ansible-created-window"
     schedule:
       recurrence: "weekly"
       duration: 2
@@ -77,7 +78,7 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == window1_name
-      - result.response.description == "anisble-created-window"
+      - result.response.description == "ansible-created-window"
       - result.response.schedule.dayOfWeek == "TUESDAY"
       - result.response.schedule.recurrence == "WEEKLY"
       - result.response.schedule.startTime == "11:00:00"
@@ -88,11 +89,10 @@
     fail_msg: "Unable to create maintenance window with weekly schedule"
     success_msg: "maintenance window with weekly schedule created successfully"
 
-
 - name: create window with monthly schedule
   ntnx_ndb_maintenance_window:
     name: "{{window2_name}}"
-    desc: "anisble-created-window"
+    desc: "ansible-created-window"
     schedule:
       recurrence: "monthly"
       duration: 2
@@ -115,14 +115,13 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == window2_name
-      - result.response.description == "anisble-created-window"
+      - result.response.description == "ansible-created-window"
       - result.response.schedule.dayOfWeek == "TUESDAY"
       - result.response.schedule.recurrence == "MONTHLY"
       - result.response.schedule.startTime == "11:00:00"
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == 2
       - result.response.schedule.duration == 2
-
 
     fail_msg: "Unable to create maintenance window with monthly schedule"
     success_msg: "maintenance window with monthly schedule created successfully"
@@ -163,12 +162,11 @@
 
 ############################################## update tests ####################################
 
-
 - name: update window schedule
   ntnx_ndb_maintenance_window:
     uuid: "{{window2_uuid}}"
     name: "{{window2_name}}-updated"
-    desc: "anisble-created-window-updated"
+    desc: "ansible-created-window-updated"
     schedule:
       recurrence: "monthly"
       duration: 3
@@ -187,14 +185,13 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{window2_name}}-updated"
-      - result.response.description == "anisble-created-window-updated"
+      - result.response.description == "ansible-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
       - result.response.schedule.recurrence == "MONTHLY"
       - result.response.schedule.startTime == "12:00:00"
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == 3
       - result.response.schedule.duration == 3
-
 
     fail_msg: "Unable to update maintenance window"
     success_msg: "maintenance window updated successfully"
@@ -220,14 +217,13 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{window2_name}}-updated"
-      - result.response.description == "anisble-created-window-updated"
+      - result.response.description == "ansible-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
       - result.response.schedule.recurrence == "WEEKLY"
       - result.response.schedule.startTime == "12:00:00"
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == None
       - result.response.schedule.duration == 3
-
 
     fail_msg: "Unable to update maintenance window"
     success_msg: "maintenance window updated successfully"
@@ -236,7 +232,7 @@
   ntnx_ndb_maintenance_window:
     uuid: "{{window2_uuid}}"
     name: "{{window2_name}}-updated"
-    desc: "anisble-created-window-updated"
+    desc: "ansible-created-window-updated"
     schedule:
       recurrence: "weekly"
       duration: 3
@@ -263,7 +259,6 @@
 
   register: result
 
-
 - name: update status
   assert:
     that:
@@ -279,7 +274,6 @@
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == None
       - result.response.schedule.duration == 3
-
 
     fail_msg: "Unable to update maintenance window"
     success_msg: "maintenance window updated successfully"
@@ -312,7 +306,6 @@
     fail_msg: "Unable to update maintenance window"
     success_msg: "maintenance window updated successfully"
 
-
 ############################################## delete tests ####################################
 
 - name: delete window 1
@@ -335,7 +328,6 @@
     uuid: "{{window2_uuid}}"
     state: "absent"
   register: result
-
 
 - name: check delete status
   assert:

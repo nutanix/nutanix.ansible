@@ -1,5 +1,5 @@
 # Nutanix Database Service
-Nutanix ansibe collection nutanix.ncp from v1.8.0 will contain modules for supporting Nutanix Database Service (NDB) features.
+Nutanix ansible collection nutanix.ncp from v1.8.0 will contain modules for supporting Nutanix Database Service (NDB) features.
 
 These modules are based on workflow :
 

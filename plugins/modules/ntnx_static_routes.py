@@ -32,7 +32,7 @@ options:
         default: false
     static_routes:
         description:
-            - list of static routes to be overriden in vpc.
+            - list of static routes to be overridden in vpc.
             - mutually exclusive with C(remove_all_routes)
             - required incase remove_all_categories is not given
             - default static route can be mentioned in this with destination - 0.0.0.0/0

@@ -29,7 +29,7 @@ class DatabaseEngine:
 
     def build_spec_db_server_vm_register_action_arguments(self, payload, config):
         """
-        Implement this method to add database engine specific properties for registeration database server vm
+        Implement this method to add database engine specific properties for registration database server vm
         """
         return payload, None
 

@@ -54,7 +54,7 @@
 
 ################################################################
 
-- name: Creat project with all specs
+- name: Create project with all specs
   ntnx_projects:
     name: "{{project2_name}}"
     desc: desc-123
@@ -96,7 +96,8 @@
   ignore_errors: "{{ignore_errors}}"
 
 - set_fact:
-    expected_subnets: ["{{ network.dhcp.uuid }}", "{{ static.uuid }}", "{{ overlay.uuid }}"]
+    expected_subnets:
+      ["{{ network.dhcp.uuid }}", "{{ static.uuid }}", "{{ overlay.uuid }}"]
     response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
 
 - name: Creation Status
@@ -124,13 +125,11 @@
     fail_msg: "Unable to create project with all specifications"
     success_msg: "Project with all specifications created successfully"
 
-
 - set_fact:
     todelete: "{{ todelete + [  result.project_uuid ] }}"
 
 - set_fact:
     user_group_to_delete: "{{result.response.status.project_status.resources.external_user_group_reference_list[0].uuid}}"
-
 
 - name: Update Project role mappings and subnets and quotas
   ntnx_projects:
@@ -171,38 +170,42 @@
 - set_fact:
     response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
 - set_fact:
-    acp_users: ["{{response_acp.user_reference_list[0].uuid}}", "{{response_acp.user_reference_list[1].uuid}}"]
+    acp_users:
+      [
+        "{{response_acp.user_reference_list[0].uuid}}",
+        "{{response_acp.user_reference_list[1].uuid}}",
+      ]
 - set_fact:
-    sorted_acp_users: '{{ acp_users | sort() }}'
+    sorted_acp_users: "{{ acp_users | sort() }}"
 - set_fact:
     expected_users: ["{{users[0]}}", "{{users[1]}}"]
 - set_fact:
-    expected_users_sorted: '{{ expected_users | sort() }}'
+    expected_users_sorted: "{{ expected_users | sort() }}"
 - set_fact:
-    project_user_reference_list: ["{{result.response.status.project_status.resources.user_reference_list[0].uuid}}", "{{result.response.status.project_status.resources.user_reference_list[1].uuid}}"]
+    project_user_reference_list:
+      [
+        "{{result.response.status.project_status.resources.user_reference_list[0].uuid}}",
+        "{{result.response.status.project_status.resources.user_reference_list[1].uuid}}",
+      ]
 - set_fact:
-    project_user_references_sorted: '{{ project_user_reference_list|sort() }}'
+    project_user_references_sorted: "{{ project_user_reference_list|sort() }}"
 - set_fact:
-    expected_quotas: [
-                      {
-                          "limit": 5,
-                          "resource_type": "VCPUS",
-                          "units": "COUNT",
-                          "value": 0
-                      },
-                      {
-                          "limit": 2147483648,
-                          "resource_type": "STORAGE",
-                          "units": "BYTES",
-                          "value": 0
-                      },
-                      {
-                          "limit": 2147483648,
-                          "resource_type": "MEMORY",
-                          "units": "BYTES",
-                          "value": 0
-                      }
-                  ]
+    expected_quotas:
+      [
+        { "limit": 5, "resource_type": "VCPUS", "units": "COUNT", "value": 0 },
+        {
+          "limit": 2147483648,
+          "resource_type": "STORAGE",
+          "units": "BYTES",
+          "value": 0,
+        },
+        {
+          "limit": 2147483648,
+          "resource_type": "MEMORY",
+          "units": "BYTES",
+          "value": 0,
+        },
+      ]
 - set_fact:
     quotas: "{{result.response.status.project_status.resources.resource_domain.resources}}"
 
@@ -276,9 +279,8 @@
     that:
       - result.changed == false
       - "'Nothing to update' in result.msg"
-    fail_msg: "Project update didnt got skipped for update spec same as existing project"
+    fail_msg: "Project update did not got skipped for update spec same as existing project"
     success_msg: "Project got skipped successfully for no change in spec"
-
 
 - name: Create project with existing name
   ntnx_projects:
@@ -296,13 +298,12 @@
   register: result
   ignore_errors: true
 
-
 - name: Creation Status
   assert:
     that:
       - result.changed == false
       - "'Project with given name already exists' in result.msg"
-    fail_msg: "Project creation didnt failed for existing name"
+    fail_msg: "Project creation did not failed for existing name"
     success_msg: "Project creation failed as expected"
 
 #################################################################
@@ -332,4 +333,4 @@
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
-    success_msg: "user group deletd successfully"
+    success_msg: "user group deleted successfully"
