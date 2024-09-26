@@ -192,7 +192,7 @@ options:
                 default: "5432"
             db_name:
                 description:
-                    - intial database that would be added
+                    - initial database that would be added
                 type: str
                 required: true
             db_password:
@@ -314,7 +314,7 @@ EXAMPLES = r"""
 
   register: result
 
-- name: register database from unregistred vm
+- name: register database from unregistered vm
   ntnx_ndb_register_database:
     wait: true
     name: "{{db1_name}}"

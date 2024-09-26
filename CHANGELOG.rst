@@ -173,7 +173,7 @@ Bugfixes
 New Modules
 -----------
 
-- ntnx_acps - acp module which suports acp Create, update and delete operations
+- ntnx_acps - acp module which supports acp Create, update and delete operations
 - ntnx_acps_info - acp info module
 - ntnx_address_groups - module which supports address groups CRUD operations
 - ntnx_address_groups_info - address groups info module
@@ -186,7 +186,7 @@ New Modules
 - ntnx_projects_info - projects info module
 - ntnx_roles - module which supports role CRUD operations
 - ntnx_roles_info - role info module
-- ntnx_service_groups - service_groups module which suports service_groups CRUD operations
+- ntnx_service_groups - service_groups module which supports service_groups CRUD operations
 - ntnx_service_groups_info - service_group info module
 - ntnx_user_groups - user_groups module which supports pc user_groups management create delete operations
 - ntnx_user_groups_info - User Groups info module
@@ -203,7 +203,7 @@ New Modules
 - ntnx_image_placement_policy - image placement policy module which supports Create, update and delete operations
 - ntnx_images - images module which supports pc images management CRUD operations
 - ntnx_images_info - images info module
-- ntnx_security_rules - security_rule module which suports security_rule CRUD operations
+- ntnx_security_rules - security_rule module which supports security_rule CRUD operations
 - ntnx_security_rules_info - security_rule info module
 - ntnx_static_routes - vpc static routes
 - ntnx_static_routes_info - vpc static routes info module
@@ -243,8 +243,8 @@ New Modules
 - ntnx_foundation_central - Nutanix module to imaged Nodes and optionally create cluster
 - ntnx_foundation_central_api_keys - Nutanix module which creates api key for foundation central
 - ntnx_foundation_central_api_keys_info - Nutanix module which returns the api key
-- ntnx_foundation_central_imaged_clusters_info - Nutanix module which returns the imaged clusters within the Foudation Central
-- ntnx_foundation_central_imaged_nodes_info - Nutanix module which returns the imaged nodes within the Foudation Central
+- ntnx_foundation_central_imaged_clusters_info - Nutanix module which returns the imaged clusters within the Foundation Central
+- ntnx_foundation_central_imaged_nodes_info - Nutanix module which returns the imaged nodes within the Foundation Central
 - ntnx_foundation_discover_nodes_info - Nutanix module which returns nodes discovered by Foundation
 - ntnx_foundation_hypervisor_images_info - Nutanix module which returns the hypervisor images uploaded to Foundation
 - ntnx_foundation_image_upload - Nutanix module which uploads hypervisor or AOS image to foundation vm.

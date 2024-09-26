@@ -110,7 +110,7 @@ class ProtectionRule(Prism):
                 ):
                     return (
                         None,
-                        "rpo, rpo_unit, snapshot_type and atleast one policy are required fields for aysynchronous snapshot schedule",
+                        "rpo, rpo_unit, snapshot_type and atleast one policy are required fields for asynchronous snapshot schedule",
                     )
 
                 spec["recovery_point_objective_secs"], err = convert_to_secs(

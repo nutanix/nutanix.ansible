@@ -101,12 +101,12 @@ releases:
         name: ntnx_foundation_central_api_keys_info
         namespace: ""
       - description:
-          Nutanix module which returns the imaged clusters within the Foudation
+          Nutanix module which returns the imaged clusters within the Foundation
           Central
         name: ntnx_foundation_central_imaged_clusters_info
         namespace: ""
       - description:
-          Nutanix module which returns the imaged nodes within the Foudation
+          Nutanix module which returns the imaged nodes within the Foundation
           Central
         name: ntnx_foundation_central_imaged_nodes_info
         namespace: ""
@@ -154,7 +154,7 @@ releases:
       - description: images info module
         name: ntnx_images_info
         namespace: ""
-      - description: security_rule module which suports security_rule CRUD operations
+      - description: security_rule module which supports security_rule CRUD operations
         name: ntnx_security_rules
         namespace: ""
       - description: security_rule info module
@@ -172,7 +172,7 @@ releases:
       bugfixes:
         - Fix examples of info modules [\#226](https://github.com/nutanix/nutanix.ansible/issues/226)
     modules:
-      - description: acp module which suports acp Create, update and delete operations
+      - description: acp module which supports acp Create, update and delete operations
         name: ntnx_acps
         namespace: ""
       - description: acp info module
@@ -211,7 +211,7 @@ releases:
       - description: role info module
         name: ntnx_roles_info
         namespace: ""
-      - description: service_groups module which suports service_groups CRUD operations
+      - description: service_groups module which supports service_groups CRUD operations
         name: ntnx_service_groups
         namespace: ""
       - description: service_group info module

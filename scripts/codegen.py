@@ -14,7 +14,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_MNAME
-short_description: MNAME module which suports INAME CRUD operations
+short_description: MNAME module which supports INAME CRUD operations
 version_added: 1.0.0
 description: 'Create, Update, Delete MNAME'
 options:
@@ -192,7 +192,7 @@ class CNAME(Prism):
         super(CNAME, self).__init__(module, resource_type=resource_type)
         self.build_spec_methods = {
             # Step 2. This is a Map of
-            # ansible attirbute and corresponding API spec generation method
+            # ansible attribute and corresponding API spec generation method
             # Example: method name should start with _build_spec_<method_name>
             # name: _build_spec_name
         }

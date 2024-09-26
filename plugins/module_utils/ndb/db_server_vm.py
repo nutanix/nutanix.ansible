@@ -451,7 +451,7 @@ class DBServerVM(NutanixDatabase):
             if not vm_info.get("ipAddresses", []):
                 return None, "No IP address found for given db server vm"
 
-            # picking first IP of db server vm for registraion
+            # picking first IP of db server vm for registration
             payload["vmIp"] = vm_info["ipAddresses"][0]
 
         elif params.get("ip"):
@@ -572,7 +572,7 @@ class DBServerVM(NutanixDatabase):
         return payload, None
 
     def build_spec_network_profile(self, payload, profile):
-        # set network prfile
+        # set network profile
         network_profile = NetworkProfile(self.module)
         uuid, err = network_profile.get_profile_uuid(profile)
         if err:

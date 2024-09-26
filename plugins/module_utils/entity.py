@@ -344,7 +344,7 @@ class Entity(object):
     def _fetch_url(
         self, url, method, data=None, raise_error=True, no_response=False, timeout=30
     ):
-        # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
+        # only jsonify if content-type supports, added to avoid incase of form-url-encoded type data
         if self.headers["Content-Type"] == "application/json" and data is not None:
             data = self.module.jsonify(data)
 
@@ -362,7 +362,7 @@ class Entity(object):
 
         body = None
 
-        # buffer size with ref. to max read size of http.client.HTTPResponse.read() defination
+        # buffer size with ref. to max read size of http.client.HTTPResponse.read() definition
         buffer_size = 65536
 
         # From ansible-core>=2.13, incase of http error, urllib.HTTPError object is returned in resp
@@ -500,7 +500,7 @@ class Entity(object):
         return filtered_entities
 
 
-# Read files in chunks and yeild it
+# Read files in chunks and yield it
 class CreateChunks(object):
     def __init__(self, filename, chunk_size=1 << 13):
         self.filename = filename
