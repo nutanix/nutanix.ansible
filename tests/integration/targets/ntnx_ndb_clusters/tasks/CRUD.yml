@@ -136,7 +136,7 @@
       - result.response.username is defined
       - result.response.password is defined
       - result.cluster_uuid is defined
-    fail_msg: "fail: update cluster credeential while check_mode"
+    fail_msg: "fail: update cluster credential while check_mode"
     success_msg: "pass: Returned as expected"
 ################################################################
 

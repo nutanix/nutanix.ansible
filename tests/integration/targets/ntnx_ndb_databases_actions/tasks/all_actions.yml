@@ -369,7 +369,7 @@
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using pitr timestamp spec"
-    success_msg: "Spec for database restore using pitr timetsmap created successfully"
+    success_msg: "Spec for database restore using pitr timestamp created successfully"
 
 - name: create restore database spec with latest snapshot
   check_mode: yes
