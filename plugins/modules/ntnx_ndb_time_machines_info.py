@@ -91,7 +91,7 @@ EXAMPLES = r"""
     nutanix_username: "<ndb_era_username>"
     nutanix_password: "<ndb_era_password>"
     validate_certs: false
-    uuid: "<uuid of time MACHINE>"
+    uuid: "<uuid of time machine>"
   register: result
 """
 RETURN = r"""

@@ -42,7 +42,7 @@ options:
                 type: int
             start_time:
                 description:
-                    - start time of maintenance in formate 'hh:mm:ss'
+                    - start time of maintenance in format 'hh:mm:ss'
                 type: str
             timezone:
                 description:

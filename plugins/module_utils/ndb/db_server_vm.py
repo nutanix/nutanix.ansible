@@ -631,7 +631,7 @@ class DBServerVM(NutanixDatabase):
         cluster = Cluster(self.module)
         clusters = cluster.get_all_clusters_name_uuid_map()
 
-        # spec with default vlaues
+        # spec with default values
         spec = {
             "properties": [],
             "vmName": "",

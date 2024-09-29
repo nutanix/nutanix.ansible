@@ -365,7 +365,7 @@ class ProjectsInternal(Prism):
         _acp = ACP(self.module)
 
         # First check existing acps of project w.r.t to role mapping, if UPDATE/DELETE of acp is required
-        # Incase its a UPDATE acp for role we pop the entry from role_user_groups_map,
+        # In case its a UPDATE acp for role we pop the entry from role_user_groups_map,
         # so that we are left with roles for which new acps are to be created.
         for acp in payload["spec"]["access_control_policy_list"]:
 

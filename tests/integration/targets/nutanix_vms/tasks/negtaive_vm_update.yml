@@ -240,7 +240,7 @@
     fail_msg: " Fail: decreasing the size of the IDE disk"
     success_msg: " Success: returned error as expected "
 ################
-- name: Update VM by change ths bus type of ide disk
+- name: Update VM by change the bus type of ide disk
   ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
@@ -258,7 +258,7 @@
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail: Update VM by change ths bus type of ide disk successfully "
 ############
-- name: Update VM by adding  IDE disk while vm is on
+- name: Update VM by adding IDE disk while vm is on
   ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:

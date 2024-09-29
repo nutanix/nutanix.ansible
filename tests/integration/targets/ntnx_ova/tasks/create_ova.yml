@@ -15,8 +15,8 @@
     that:
       - vm.response is defined
       - vm.response.status.state == 'COMPLETE'
-    fail_msg: "Fail: Unable to create VM with minimum requirements "
-    success_msg: "Success: VM with minimum requirements created successfully "
+    fail_msg: 'Fail: Unable to create VM with minimum requirements '
+    success_msg: 'Success: VM with minimum requirements created successfully '
 #########################################
 - name: create_ova_image  with check mode
   ntnx_vms_ova:

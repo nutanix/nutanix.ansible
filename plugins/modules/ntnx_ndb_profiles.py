@@ -311,7 +311,7 @@ options:
                             autovacuum_max_workers:
                                 description:
                                     - autovacuum max workers
-                                    - deadefaultfult is 3
+                                    - default is 3
                                 type: int
                             autovacuum_vacuum_cost_delay:
                                 description:
@@ -1081,7 +1081,7 @@ def create_profile(module, result):
     result["response"] = resp
     uuid = resp.get("id")
 
-    # incase there is process of replication triggered, operation info is received
+    # in case there is process of replication triggered, operation info is received
     if profile_type == "software" and not uuid:
         uuid = resp.get("entityId")
 

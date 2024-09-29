@@ -331,7 +331,7 @@ options:
             - allowed for HA instance
       type:
           description:
-            - if its a HA or singe instance
+            - if its a HA or single instance
             - mandatory for creation
           type: str
           choices: ["single", "ha"]

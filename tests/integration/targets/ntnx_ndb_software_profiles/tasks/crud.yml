@@ -210,7 +210,7 @@
       - result.response.profile.name == "{{profile1_name}}-updated1"
       - result.response.profile.description == "{{profile1_name}}-desc-updated"
 
-    fail_msg: "Fail: Update did not get skipped due to no state changes"
+    fail_msg: "Fail: Update didn't get skipped due to no state changes"
     success_msg: "Pass: Update skipped successfully due to no state changes"
 
 - name: create software profile version spec

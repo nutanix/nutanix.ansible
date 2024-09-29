@@ -149,13 +149,13 @@ options:
                             ipmi_password:
                                 description:
                                     - ipmi password, override default_ipmi_password
-                                    - mandatory incase of ipmi based imaging and bare metal nodes
+                                    - mandatory in case of ipmi based imaging and bare metal nodes
                                 type: str
                                 required: false
                             ipmi_user:
                                 description:
                                     - ipmi user, override default_ipmi_user
-                                    - mandatory incase of ipmi based imaging and bare metal nodes
+                                    - mandatory in case of ipmi based imaging and bare metal nodes
                                 type: str
                                 required: false
                             ipmi_netmask:
@@ -180,7 +180,7 @@ options:
                                 required: false
                             ipv6_address:
                                 description:
-                                    - ipv6 address, required incase of using cvm for imaging
+                                    - ipv6 address, required in case of using cvm for imaging
                                 type: str
                                 required: false
                             device_hint:
@@ -197,7 +197,7 @@ options:
                                 required: false
                             current_network_interface:
                                 description:
-                                    - current network interface, required incase of using cvm for imaging
+                                    - current network interface, required in case of using cvm for imaging
                                 type: str
                                 required: false
                             rdma_passthrough:
@@ -427,12 +427,12 @@ options:
                                         required: false
                                     ipv6_address:
                                         description:
-                                            - ipv6 address, required incase of using cvm for imaging
+                                            - ipv6 address, required in case of using cvm for imaging
                                         type: str
                                         required: false
                                     current_network_interface:
                                         description:
-                                            - current network interface, required incase of using cvm for imaging
+                                            - current network interface, required in case of using cvm for imaging
                                         type: str
                                         required: false
                                     cluster_id:
@@ -443,13 +443,13 @@ options:
                             ipmi_password:
                                 description:
                                     - ipmi password, override default_ipmi_password
-                                    - mandatory incase of ipmi based imaging and bare metal nodes
+                                    - mandatory in case of ipmi based imaging and bare metal nodes
                                 type: str
                                 required: false
                             ipmi_user:
                                 description:
                                     - ipmi user, override default_ipmi_user
-                                    - mandatory incase of ipmi based imaging and bare metal nodes
+                                    - mandatory in case of ipmi based imaging and bare metal nodes
                                 type: str
                                 required: false
                             device_hint:
@@ -792,12 +792,12 @@ options:
         required: false
     default_ipmi_user:
         description:
-            - default ipmi username, required either at node level or here incase of ipmi based imaging
+            - default ipmi username, required either at node level or here in case of ipmi based imaging
         type: str
         required: false
     default_ipmi_password:
         description:
-        - default ipmi password, required either at node level or here incase of ipmi based imaging
+        - default ipmi password, required either at node level or here in case of ipmi based imaging
         type: str
         required: false
     skip_hypervisor:

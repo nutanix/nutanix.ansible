@@ -34,7 +34,7 @@ options:
         description:
             - list of static routes to be overridden in vpc.
             - mutually exclusive with C(remove_all_routes)
-            - required incase remove_all_categories is not given
+            - required in case remove_all_categories is not given
             - default static route can be mentioned in this with destination - 0.0.0.0/0
             - Only one default static route is allowed
         required: false

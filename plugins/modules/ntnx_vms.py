@@ -17,14 +17,14 @@ options:
   state:
     description:
       - Specify state
-      - If C(state) is set to C(present) then the operation will be  create the item
+      - If C(state) is set to C(present) then the operation will be create the item
       - >-
         If C(state) is set to C(absent) and if the item exists, then
         item is removed.
-      - If C(state) is set to C(power_on) then the operation will be  power on the VM
-      - If C(state) is set to C(power_off) then the operation will be  power off the VM
-      - If C(state) is set to C(soft_shutdown) then the operation will be  soft shutdown  the VM
-      - If C(state) is set to C(hard_poweroff) then the operation will be  hard poweroff  the VM
+      - If C(state) is set to C(power_on) then the operation will power on the VM
+      - If C(state) is set to C(power_off) then the operation will power off the VM
+      - If C(state) is set to C(soft_shutdown) then the operation will shutdown the VM
+      - If C(state) is set to C(hard_poweroff) then the operation will hard poweroff the VM
     choices:
       - present
       - absent

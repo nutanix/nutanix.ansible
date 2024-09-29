@@ -49,7 +49,7 @@
       - result.response.networksInfo[0].networkInfo[3].value == "{{cluster.cluster3.vlan_access.prism_vlan.subnet_mask}}"
       - result.response.networksInfo[0].type==  "{{cluster.cluster3.vlan_access.prism_vlan.vlan_type}}"
     fail_msg: "fail: Wring with check mode for registering cluster"
-    success_msg: "pass: returned as expected"
+    success_msg: "pass: Returned as expected"
 
 - name: Register cluster with prism_vlan
   ntnx_ndb_clusters:
@@ -136,8 +136,8 @@
       - result.response.username is defined
       - result.response.password is defined
       - result.cluster_uuid is defined
-    fail_msg: "fail: update cluster credential while check_mode"
-    success_msg: "pass: returned as expected"
+    fail_msg: "fail: update cluster credeential while check_mode"
+    success_msg: "pass: Returned as expected"
 ################################################################
 
 - name: Negative Scenarios update storage container

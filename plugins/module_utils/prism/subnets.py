@@ -159,7 +159,7 @@ def get_subnet_uuid(config, module):
         name = config.get("name") or config.get("subnet_name")
         uuid = ""
 
-        # incase subnet of particular cluster is needed
+        # in case subnet of particular cluster is needed
         if config.get("cluster_uuid"):
             filter_spec = {"filter": "{0}=={1}".format("name", name)}
             resp = subnet.list(data=filter_spec)
