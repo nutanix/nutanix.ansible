@@ -100,7 +100,7 @@ options:
         suboptions:
           name:
             description:
-              - Storage containter Name
+              - Storage container Name
               - Mutually exclusive with C(uuid)
             type: str
           uuid:

@@ -84,7 +84,7 @@ options:
         description:
             - When set will remove all categories attached to the policy.
             - Mutually exclusive ith C(categories)
-            - It doesnot remove C(image_categories) or C(cluster_categories)
+            - It does not remove C(image_categories) or C(cluster_categories)
         required: false
         type: bool
         default: false
@@ -146,7 +146,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: False
-    name: "test_policy_2-uodated"
+    name: "test_policy_2-updated"
     desc: "test_policy_2_desc-updated"
     placement_type: hard
     categories:

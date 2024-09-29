@@ -132,7 +132,7 @@ class TestEntity(ModuleTestCase):
         self.assertEqual(result["request"], req)
         self.assertEqual(entity.headers.get("Authorization"), None)
 
-    def test_raed_action(self):
+    def test_read_action(self):
         uuid = "test_uuid"
         req = {
             "method": "GET",

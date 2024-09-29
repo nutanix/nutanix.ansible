@@ -207,7 +207,7 @@ options:
                                 required: false
                             bond_mode:
                                 description:
-                                    - bonde mode, "dynamic" if using LACP, "static" for LAG
+                                    - bond mode, "dynamic" if using LACP, "static" for LAG
                                 type: str
                                 choices:
                                     - dynamic
@@ -247,7 +247,7 @@ options:
                                     - UCSM node serial
                                 type: bool
                                 required: false
-                            exlude_boot_serial:
+                            exclude_boot_serial:
                                 description:
                                     - serial of boot device to be excluded, used by NX G6 platforms
                                 type: bool
@@ -327,7 +327,7 @@ options:
                                         required: false
                     discovery_mode:
                         description:
-                            - discover and use existing network informatio pulled from internal info apis
+                            - discover and use existing network information pulled from internal info apis
                             - mutually exclusive with manual_mode
                             - can override certain fields, which are pulled during discovery
                         type: dict
@@ -471,7 +471,7 @@ options:
                                 required: false
                             bond_mode:
                                 description:
-                                    - bonde mode, "dynamic" if using LACP, "static" for LAG
+                                    - bond mode, "dynamic" if using LACP, "static" for LAG
                                 type: str
                                 choices:
                                     - dynamic
@@ -501,7 +501,7 @@ options:
                                     - UCSM Managed mode
                                 type: str
                                 required: false
-                            exlude_boot_serial:
+                            exclude_boot_serial:
                                 description:
                                     - serial of boot device to be excluded, used by NX G6 platforms
                                 type: bool
@@ -792,12 +792,12 @@ options:
         required: false
     default_ipmi_user:
         description:
-            - default ipmi username, required either at node leve or here incase of ipmi based imaging
+            - default ipmi username, required either at node level or here incase of ipmi based imaging
         type: str
         required: false
     default_ipmi_password:
         description:
-        - default ipmi password, required either at node leve or here incase of ipmi based imaging
+        - default ipmi password, required either at node level or here incase of ipmi based imaging
         type: str
         required: false
     skip_hypervisor:
@@ -1054,7 +1054,7 @@ def get_module_spec():
         ucsm_node_serial=dict(type="str", required=False),
         image_successful=dict(type="bool", required=False),
         ucsm_managed_mode=dict(type="str", required=False),
-        exlude_boot_serial=dict(type="bool", required=False),
+        exclude_boot_serial=dict(type="bool", required=False),
         mitigate_low_boot_space=dict(type="bool", required=False),
         vswitches=dict(type="list", elements="dict", options=vswitches, required=False),
         ucsm_params=dict(type="dict", options=ucsm_params, required=False),
@@ -1094,7 +1094,7 @@ def get_module_spec():
         rdma_passthrough=dict(type="bool", required=False),
         ucsm_node_serial=dict(type="str", required=False),
         ucsm_managed_mode=dict(type="str", required=False),
-        exlude_boot_serial=dict(type="bool", required=False),
+        exclude_boot_serial=dict(type="bool", required=False),
         mitigate_low_boot_space=dict(type="bool", required=False),
         bond_uplinks=dict(type="list", elements="str", required=False),
         vswitches=dict(type="list", elements="dict", options=vswitches, required=False),

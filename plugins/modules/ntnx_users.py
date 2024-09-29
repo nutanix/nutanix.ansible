@@ -62,7 +62,7 @@ options:
         description: The UserPrincipalName of the user from the directory service.
     project:
         type: dict
-        description: project that belogs to
+        description: project that belongs to
         suboptions:
             name:
                 type: str

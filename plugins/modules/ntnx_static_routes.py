@@ -44,7 +44,7 @@ options:
             destination:
                 description:
                     - destination prefix eg. 10.2.3.0/24
-                    - for defaut static route give 0.0.0.0/0
+                    - for default static route give 0.0.0.0/0
                 required: true
                 type: str
             next_hop:

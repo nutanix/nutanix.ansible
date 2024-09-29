@@ -45,7 +45,7 @@ options:
                 type: str
     postgres:
         description:
-            - potgres related configuration
+            - postgres related configuration
         type: dict
         suboptions:
             listener_port:

@@ -274,7 +274,7 @@ Bugfixes
 - Bug/cluster UUID issue68 [\#72](https://github.com/nutanix/nutanix.ansible/pull/72)
 - Client SDK with inventory [\#45](https://github.com/nutanix/nutanix.ansible/pull/45)
 - Creating a VM based on a disk_image without specifying the size_gb
-- Fix error messages for get_uuid() reponse [\#47](https://github.com/nutanix/nutanix.ansible/pull/47)
+- Fix error messages for get_uuid() response [\#47](https://github.com/nutanix/nutanix.ansible/pull/47)
 - Fix/integ [\#96](https://github.com/nutanix/nutanix.ansible/pull/96)
 - Sanity and python fix [\#46](https://github.com/nutanix/nutanix.ansible/pull/46)
 - Task/fix failing sanity [\#117](https://github.com/nutanix/nutanix.ansible/pull/117)

@@ -279,7 +279,7 @@ options:
                                 type: int
                             autovacuum:
                                 description:
-                                    - on/off autovaccum
+                                    - on/off autovacuum
                                     - default is on
                                 type: str
                                 choices: ["on", "off"]
@@ -305,7 +305,7 @@ options:
                                 type: float
                             autovacuum_work_mem:
                                 description:
-                                    - autovacum work memory in KB
+                                    - autovacuum work memory in KB
                                     - default is -1
                                 type: int
                             autovacuum_max_workers:
