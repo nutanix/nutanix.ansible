@@ -221,7 +221,7 @@ class Entity(object):
 
         return resp
 
-    # "params" can be used to override module.params to create spec by other modules backened
+    # "params" can be used to override module.params to create spec by other modules backends
     def get_spec(self, old_spec=None, params=None, **kwargs):
         spec = copy.deepcopy(old_spec) or self._get_default_spec()
 
@@ -344,7 +344,7 @@ class Entity(object):
     def _fetch_url(
         self, url, method, data=None, raise_error=True, no_response=False, timeout=30
     ):
-        # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
+        # only jsonify if content-type supports, added to avoid in case of form-url-encodeded type data
         if self.headers["Content-Type"] == "application/json" and data is not None:
             data = self.module.jsonify(data)
 
@@ -362,10 +362,10 @@ class Entity(object):
 
         body = None
 
-        # buffer size with ref. to max read size of http.client.HTTPResponse.read() defination
+        # buffer size with ref. to max read size of http.client.HTTPResponse.read() definition
         buffer_size = 65536
 
-        # From ansible-core>=2.13, incase of http error, urllib.HTTPError object is returned in resp
+        # From ansible-core>=2.13, in case of http error, urllib.HTTPError object is returned in resp
         # as per the docs of ansible we need to use body in that case.
         if not resp or status_code >= 400:
             # get body containing error
@@ -500,7 +500,7 @@ class Entity(object):
         return filtered_entities
 
 
-# Read files in chunks and yeild it
+# Read files in chunks and yield it
 class CreateChunks(object):
     def __init__(self, filename, chunk_size=1 << 13):
         self.filename = filename

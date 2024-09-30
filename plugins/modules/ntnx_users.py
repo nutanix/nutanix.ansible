@@ -46,7 +46,7 @@ options:
         type: dict
     remove_categories:
         description:
-            - set this flag to remove dettach all categories attached to user
+            - set this flag to remove detach all categories attached to user
             - mutually_exclusive with C(categories)
         type: bool
         required: false
@@ -62,7 +62,7 @@ options:
         description: The UserPrincipalName of the user from the directory service.
     project:
         type: dict
-        description: project that belogs to
+        description: project that belongs to
         suboptions:
             name:
                 type: str

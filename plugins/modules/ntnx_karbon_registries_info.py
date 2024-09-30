@@ -94,7 +94,7 @@ def get_registries(module, result):
 
     # If there is no registries,
     # response will be empty list causing error in entity class
-    # so do status code checks here incase of other failures.
+    # so do status code checks here in case of other failures.
     # During failures response is of type dict else its list
     resp = registry.read(raise_error=False)
     if isinstance(resp, dict) and resp.get("code") >= 300:

@@ -1,7 +1,7 @@
 ---
 
 - debug:
-    msg: "start ndb database maintenance winndow tests"
+    msg: "start ndb database maintenance window tests"
 
 - name: Generate random name
   set_fact:
