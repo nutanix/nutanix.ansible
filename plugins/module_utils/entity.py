@@ -344,7 +344,7 @@ class Entity(object):
     def _fetch_url(
         self, url, method, data=None, raise_error=True, no_response=False, timeout=30
     ):
-        # only jsonify if content-type supports, added to avoid in case of form-url-encodeded type data
+        # only jsonify if content-type supports, added to avoid in case of form-url-encoded type data
         if self.headers["Content-Type"] == "application/json" and data is not None:
             data = self.module.jsonify(data)
 
