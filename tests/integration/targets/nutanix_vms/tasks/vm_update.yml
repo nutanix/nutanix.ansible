@@ -7,8 +7,8 @@
     cluster:
       name: "{{ cluster.name }}"
     categories:
-        Environment:
-          - Production
+      Environment:
+        - Production
     vcpus: 5
     cores_per_vcpu: 5
     memory_gb: 5
@@ -23,8 +23,8 @@
       - result.response.status.state == 'COMPLETE'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: ' Unable to create VM with minimum requirements '
-    success_msg: ' VM with minimum requirements created successfully '
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
 ####################################################################
 - name: update vm by set owner by uuid
   ntnx_vms:
@@ -44,8 +44,8 @@
       - result.response.metadata.owner_reference.name == "{{ vm_owner.name }}"
       - result.response.metadata.owner_reference.uuid == "{{ vm_owner.uuid }}"
       - result.response.metadata.owner_reference.kind == "user"
-    fail_msg: ' Unable to update vm by setting owner '
-    success_msg: ' VM updated successfully by setting owner '
+    fail_msg: " Unable to update vm by setting owner "
+    success_msg: " VM updated successfully by setting owner "
 ####################################################################
 
 - debug:
@@ -69,8 +69,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by decrease the values for memory, vcpus and corespervcpu with force_power_off '
-    success_msg: ' VM updated successfully by decrease the values for memory, vcpus and corespervcpu with force_power_off '
+    fail_msg: " Unable to update vm by decrease the values for memory, vcpus and corespervcpu with force_power_off "
+    success_msg: " VM updated successfully by decrease the values for memory, vcpus and corespervcpu with force_power_off "
 
 - name: increase values for memory, vcpus and corespervcpu
   ntnx_vms:
@@ -87,8 +87,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increase values for memory, vcpus '
-    success_msg: ' VM updated successfully by increase values for memory, vcpus  '
+    fail_msg: " Unable to update vm by increase values for memory, vcpus "
+    success_msg: " VM updated successfully by increase values for memory, vcpus  "
 
 - name: increase values for corespervcpu with force_power_off
   ntnx_vms:
@@ -105,8 +105,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increase values for  corespervcpu with force_power_off'
-    success_msg: ' VM updated successfully by increase values for  corespervcpu with force_power_off '
+    fail_msg: " Unable to update vm by increase values for  corespervcpu with force_power_off"
+    success_msg: " VM updated successfully by increase values for  corespervcpu with force_power_off "
 
 ####################################################################
 - debug:
@@ -116,10 +116,10 @@
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     categories:
-        Environment:
-          - Dev
-        AppType:
-          - Default
+      Environment:
+        - Dev
+      AppType:
+        - Default
   register: result
   ignore_errors: true
 
@@ -132,8 +132,8 @@
       - result.response.status.state == "COMPLETE"
       - result.response.metadata.categories_mapping["Environment"] == ["Dev"]
       - result.response.metadata.categories_mapping["AppType"] == ["Default"]
-    fail_msg: ' Unable to update categories attached to vm'
-    success_msg: ' VM categories updated successfully '
+    fail_msg: " Unable to update categories attached to vm"
+    success_msg: " VM categories updated successfully "
 
 - name: remove all categories attached to vm
   ntnx_vms:
@@ -150,8 +150,8 @@
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
       - result.response.metadata.categories_mapping == {}
-    fail_msg: ' Unable to remove all categories attached to vm'
-    success_msg: ' All VM categories removed successfully '
+    fail_msg: " Unable to remove all categories attached to vm"
+    success_msg: " All VM categories removed successfully "
 
 ###################################################################
 - debug:
@@ -184,8 +184,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding SCSI  disks '
-    success_msg: ' VM updated successfully by adding SCSI    disks '
+    fail_msg: " Unable to update vm by adding SCSI  disks "
+    success_msg: " VM updated successfully by adding SCSI    disks "
 
 - name: Update VM by increasing the size of the SCSI disks
   ntnx_vms:
@@ -210,8 +210,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increasing the size of the SCSI  disks  '
-    success_msg: ' VM updated successfully by increasing the size of the SCSI  disks '
+    fail_msg: " Unable to update vm by increasing the size of the SCSI  disks  "
+    success_msg: " VM updated successfully by increasing the size of the SCSI  disks "
 
 - name: Update VM by removing SCSI disks
   ntnx_vms:
@@ -233,8 +233,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by removing SCSI disks '
-    success_msg: ' VM updated successfully by removing SCSI disks '
+    fail_msg: " Unable to update vm by removing SCSI disks "
+    success_msg: " VM updated successfully by removing SCSI disks "
 #######
 ##### CRUD operation for PCI disks
 - name: Update VM by adding  PCI disks
@@ -254,8 +254,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding PCI  disks '
-    success_msg: ' VM updated successfully by adding PCI  disks '
+    fail_msg: " Unable to update vm by adding PCI  disks "
+    success_msg: " VM updated successfully by adding PCI  disks "
 
 - name: Update VM by increasing the size of the PCI disks
   ntnx_vms:
@@ -274,8 +274,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increasing the size of the PCI  disks  '
-    success_msg: ' VM updated successfully by increasing the size of the PCI  disks '
+    fail_msg: " Unable to update vm by increasing the size of the PCI  disks  "
+    success_msg: " VM updated successfully by increasing the size of the PCI  disks "
 
 - name: Update VM by removing PCI disks with force_power_off
   ntnx_vms:
@@ -294,8 +294,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by removing PCI disks with force_power_off '
-    success_msg: ' VM updated successfully by removing PCI disks with force_power_off '
+    fail_msg: " Unable to update vm by removing PCI disks with force_power_off "
+    success_msg: " VM updated successfully by removing PCI disks with force_power_off "
 ##### CRUD operation for IDE disks
 - name: Update VM by adding  IDE disks with force_power_off
   ntnx_vms:
@@ -318,8 +318,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding IDE  disks with force_power_off '
-    success_msg: ' VM updated successfully by adding IDE disks with force_power_off '
+    fail_msg: " Unable to update vm by adding IDE  disks with force_power_off "
+    success_msg: " VM updated successfully by adding IDE disks with force_power_off "
 
 - name: Update VM by increasing the size of the IDE disks with force_power_off
   ntnx_vms:
@@ -339,8 +339,54 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increasing the size of the IDE  disks with force_power_off '
-    success_msg: ' VM updated successfully by increasing the size of the IDE  disks with force_power_off '
+    fail_msg: " Unable to update vm by increasing the size of the IDE  disks with force_power_off "
+    success_msg: " VM updated successfully by increasing the size of the IDE  disks with force_power_off "
+
+- name: Get UUID of CDROM
+  ansible.builtin.set_fact:
+    cdrom_uuid: "{{ result.response.spec.resources.disk_list | json_query(query) }}"
+  vars:
+    query: "[?device_properties.device_type == 'CDROM'].uuid"
+  ignore_errors: true
+
+- name: Get number of disks attached to VM
+  ansible.builtin.set_fact:
+    disk_count: "{{ result.response.spec.resources.disk_list | length }}"
+  ignore_errors: true
+
+- name: Update VM by cloning image into CD ROM
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "CDROM"
+        uuid: "{{ cdrom_uuid[0] }}"
+        clone_image:
+          name: "{{ centos }}"
+  register: result
+  ignore_errors: true
+
+- name: Get index of CDROM
+  ansible.builtin.set_fact:
+    item_index: "{{ index }}"
+  loop: "{{ result.response.spec.resources.disk_list }}"
+  loop_control:
+    index_var: index
+  when: item.uuid == cdrom_uuid[0]
+  no_log: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.spec.resources.disk_list[item_index].device_properties.device_type == "CDROM"
+      - result.response.spec.resources.disk_list[item_index].data_source_reference.kind == "image"
+      - result.response.spec.resources.disk_list[item_index].data_source_reference.uuid is defined
+      - result.response.spec.resources.disk_list | length == {{ disk_count }}
+      - result.response.status.state == "COMPLETE"
+    fail_msg: " Unable to update vm by cloning image into CD ROM "
+    success_msg: " VM updated successfully by cloning image into CD ROM"
 
 - name: Update VM by removing IDE disks with force_power_off
   ntnx_vms:
@@ -361,8 +407,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by removing IDE disks with force_power_off'
-    success_msg: ' VM updated successfully by removing IDE disks with force_power_off'
+    fail_msg: " Unable to update vm by removing IDE disks with force_power_off"
+    success_msg: " VM updated successfully by removing IDE disks with force_power_off"
 #######
 ##### CRUD operation for SATA disks
 - name: Update VM by adding  SATA disks with force_power_off
@@ -383,8 +429,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding SATA  disks with force_power_off'
-    success_msg: ' VM updated successfully by adding SATA    disks with force_power_off'
+    fail_msg: " Unable to update vm by adding SATA  disks with force_power_off"
+    success_msg: " VM updated successfully by adding SATA    disks with force_power_off"
 
 - name: Update VM by increasing the size of the SATA disks with force_power_off
   ntnx_vms:
@@ -404,8 +450,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increasing the size of the SATA  disks with force_power_off '
-    success_msg: ' VM updated successfully by increasing the size of the SATA  disks with force_power_off'
+    fail_msg: " Unable to update vm by increasing the size of the SATA  disks with force_power_off "
+    success_msg: " VM updated successfully by increasing the size of the SATA  disks with force_power_off"
 
 - name: Update VM by removing SATA disks with force_power_off
   ntnx_vms:
@@ -424,8 +470,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by removing SATA disks with force_power_off'
-    success_msg: ' VM updated successfully by removing SATA disks with force_power_off '
+    fail_msg: " Unable to update vm by removing SATA disks with force_power_off"
+    success_msg: " VM updated successfully by removing SATA disks with force_power_off "
 
 # ####################################################################
 - debug:
@@ -452,8 +498,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding subnets '
-    success_msg: ' VM updated successfully by adding subnets'
+    fail_msg: " Unable to update vm by adding subnets "
+    success_msg: " VM updated successfully by adding subnets"
 
 - name: Update VM by editing a subnet is_connected
   ntnx_vms:
@@ -474,8 +520,8 @@
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by editing a subnet '
-    success_msg: ' VM updated successfully by editing a subnet '
+    fail_msg: " Unable to update vm by editing a subnet "
+    success_msg: " VM updated successfully by editing a subnet "
 
 - name: Update VM by change the private ip for subnet
   ntnx_vms:
@@ -496,8 +542,8 @@
       - result.response.status.state == 'COMPLETE'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: ' Unable to update vm by editing private_ip for subnet '
-    success_msg: ' VM updated successfully by editing private_ip for subnet'
+    fail_msg: " Unable to update vm by editing private_ip for subnet "
+    success_msg: " VM updated successfully by editing private_ip for subnet"
 
 - name: Update VM by change vlan subnet
   ntnx_vms:
@@ -522,8 +568,8 @@
       - result.response.status.state == 'COMPLETE'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: ' Unable to update vm by editing a subnet vlan '
-    success_msg: ' VM updated successfully by editing a subnet vlan '
+    fail_msg: " Unable to update vm by editing a subnet vlan "
+    success_msg: " VM updated successfully by editing a subnet vlan "
 
 - name: Update VM by deleting a subnet
   ntnx_vms:
@@ -543,8 +589,9 @@
       - result.response.status.state == 'COMPLETE'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: ' Unable to update vm by deleting a subnet '
-    success_msg: ' VM updated successfully by deleting a subnet '
+    fail_msg: " Unable to update vm by deleting a subnet "
+    success_msg: " VM updated successfully by deleting a subnet "
+
 # ####################################################################
 
 - name: Update VM by deleting it
@@ -560,5 +607,5 @@
       - result.response.status == 'SUCCEEDED'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: 'Fail: Unable to delete created vm '
-    success_msg: 'Success: Vm deleted sucessfully'
+    fail_msg: "Fail: Unable to delete created vm "
+    success_msg: "Success: Vm deleted sucessfully"
