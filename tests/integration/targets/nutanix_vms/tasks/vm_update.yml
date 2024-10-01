@@ -343,7 +343,7 @@
     success_msg: " VM updated successfully by increasing the size of the IDE  disks with force_power_off "
 
 - name: Get uuid of CDROM
-  set_fact:
+  ansible.builtin.set_fact:
     cdrom_uuid: "{{ result.response.spec.resources.disk_list | json_query(query) }}"
   vars:
     query: "[?device_properties.device_type == 'CDROM'].uuid"
