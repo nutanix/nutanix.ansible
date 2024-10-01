@@ -1,6 +1,6 @@
 ########################### UPDATE_VM_CDROM ################################
 ---
-- name: VM update empty CD ROM playbook
+- name: Create a VM with empty CD ROM and Update that disk with image
   hosts: localhost
   gather_facts: false
   module_defaults:
@@ -12,21 +12,12 @@
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
-        cluster_name: ""
-        script_path: ""
-        subnet_name: ""
-        image_name: ""
         vm_uuid: ""
-        storage_container_uuid: ""
-        network_dhcp_uuid: ""
-        network_static_ip: ""
         disk_uuid: ""
-        remove_disk_uuid: ""
-        subnet_uuid: ""
 
     - name: Create VM with empty CD ROM
       nutanix.ncp.ntnx_vms:
-        name: "{{ vm_name }}"
+        name: "VM with empty CD ROM"
         cluster:
           name: "{{ cluster.name }}"
         categories:
@@ -41,9 +32,10 @@
     - name: Update VM by cloning image into CD ROM
       nutanix.ncp.ntnx_vms:
         vm_uuid: "{{ result.vm_uuid }}"
+        name: "VM with CD ROM updated"
         disks:
           - type: "CDROM"
             uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
             clone_image:
-              name: "{{ centos }}"
+              name: "{{ iso_image_name }}"
       register: result

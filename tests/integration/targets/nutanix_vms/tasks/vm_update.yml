@@ -342,7 +342,7 @@
     fail_msg: " Unable to update vm by increasing the size of the IDE  disks with force_power_off "
     success_msg: " VM updated successfully by increasing the size of the IDE  disks with force_power_off "
 
-- name: Get uuid of CDROM
+- name: Get UUID of CDROM
   ansible.builtin.set_fact:
     cdrom_uuid: "{{ result.response.spec.resources.disk_list | json_query(query) }}"
   vars:
@@ -359,6 +359,27 @@
           name: "{{ centos }}"
   register: result
   ignore_errors: true
+
+- name: Get index of CDROM
+  ansible.builtin.set_fact:
+    item_index: "{{ index }}"
+  loop: "{{ result.response.spec.resources.disk_list }}"
+  loop_control:
+    index_var: index
+  when: item.uuid == "{{ cdrom_uuid[0] }}"
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.spec.resources.disk_list[item_index].device_properties.device_type == "CDROM"
+      - result.response.spec.resources.disk_list[item_index].data_source_reference.kind == "image"
+      - result.response.spec.resources.disk_list[item_index].data_source_reference.uuid is defined
+      - result.response.status.state == "COMPLETE"
+    fail_msg: " Unable to update vm by cloning image into CD ROM "
+    success_msg: " VM updated successfully by cloning image into CD ROM"
 
 - name: Update VM by removing IDE disks with force_power_off
   ntnx_vms:
