@@ -1,0 +1,49 @@
+########################### UPDATE_VM_CDROM ################################
+---
+- name: VM update empty CD ROM playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_name: ""
+        script_path: ""
+        subnet_name: ""
+        image_name: ""
+        vm_uuid: ""
+        storage_container_uuid: ""
+        network_dhcp_uuid: ""
+        network_static_ip: ""
+        disk_uuid: ""
+        remove_disk_uuid: ""
+        subnet_uuid: ""
+
+    - name: Create VM with empty CD ROM
+      nutanix.ncp.ntnx_vms:
+        name: "{{ vm_name }}"
+        cluster:
+          name: "{{ cluster.name }}"
+        categories:
+          Environment:
+            - Production
+        disks:
+          - type: "CDROM"
+            bus: "IDE"
+            empty_cdrom: true
+      register: result
+
+    - name: Update VM by cloning image into CD ROM
+      nutanix.ncp.ntnx_vms:
+        vm_uuid: "{{ result.vm_uuid }}"
+        disks:
+          - type: "CDROM"
+            uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+            clone_image:
+              name: "{{ centos }}"
+      register: result

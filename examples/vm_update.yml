@@ -58,16 +58,6 @@
             private_ip: "{{ network_static_ip }}"
       register: result
 
-    - name: Update VM by cloning image into CD ROM
-      ntnx_vms:
-        vm_uuid: "{{ vm_uuid }}"
-        disks:
-          - type: "CDROM"
-            uuid: "{{ disk_uuid }}"
-            clone_image:
-              name: "{{ centos }}"
-      register: result
-
     - name: Update VM by deleting and editing disks and subnets
       ntnx_vms:
         vm_uuid: "{{ vm_uuid }}"
