@@ -349,6 +349,11 @@
     query: "[?device_properties.device_type == 'CDROM'].uuid"
   ignore_errors: true
 
+- name: Get number of disks attached to VM
+  ansible.builtin.set_fact:
+    disk_count: "{{ result.response.spec.resources.disk_list | length }}"
+  ignore_errors: true
+
 - name: Update VM by cloning image into CD ROM
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
@@ -366,7 +371,8 @@
   loop: "{{ result.response.spec.resources.disk_list }}"
   loop_control:
     index_var: index
-  when: item.uuid == "{{ cdrom_uuid[0] }}"
+  when: item.uuid == cdrom_uuid[0]
+  no_log: true
 
 - name: Update Status
   ansible.builtin.assert:
@@ -377,6 +383,7 @@
       - result.response.spec.resources.disk_list[item_index].device_properties.device_type == "CDROM"
       - result.response.spec.resources.disk_list[item_index].data_source_reference.kind == "image"
       - result.response.spec.resources.disk_list[item_index].data_source_reference.uuid is defined
+      - result.response.spec.resources.disk_list | length == {{ disk_count }}
       - result.response.status.state == "COMPLETE"
     fail_msg: " Unable to update vm by cloning image into CD ROM "
     success_msg: " VM updated successfully by cloning image into CD ROM"
