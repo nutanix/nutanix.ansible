@@ -48,7 +48,9 @@
       - result.failed==false
       - result.response.imaged_clusters is defined
     fail_msg: "fail: unable to get imaged cluster using custom filter "
-    success_msg: "succes: get imaged cluster using custom filter sucessfully"
+    success_msg: "success: get imaged cluster using custom filter successfully"
+
+
 # still offset and length
 # - ansible.builtin.debug:
 #     var: clusters.response

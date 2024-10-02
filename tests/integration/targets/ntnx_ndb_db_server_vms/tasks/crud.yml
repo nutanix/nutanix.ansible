@@ -635,7 +635,7 @@
 
 - name: Set variables
   ansible.builtin.set_fact:
-    tasks: []
+    tasks_list: []
     entity_tasks_associations: "{{result.response.entityTaskAssoc}}"
 
 - name: Entity_tasks_associations can be null so converting it to list
@@ -645,7 +645,7 @@
 
 - name: Creating list of tasks associated to db server vm
   ansible.builtin.set_fact:
-    tasks: "{{ (tasks | default([])) | union([item]) }}"
+    tasks_list: "{{ (tasks_list | default([])) | union([item]) }}"
   loop: "{{entity_tasks_associations}}"
   when: item['entity']['id'] == db_server_uuid
   no_log: true
@@ -655,7 +655,7 @@
     that:
       - result.changed == true
       - result.failed == false
-      - tasks | length == 0
+      - tasks_list | length == 0
 
     fail_msg: "Unable to remove maintenance tasks for given db server vm"
     success_msg: "maintenance tasks for given db server vm removed successfully"
@@ -677,7 +677,7 @@
 
 - name: Reset tasks variable
   ansible.builtin.set_fact:
-    tasks: []
+    tasks_list: []
 
 - name: Set entity_tasks_associations
   ansible.builtin.set_fact:
@@ -690,7 +690,7 @@
 
 - name: Creating list of tasks associated with db server vm
   ansible.builtin.set_fact:
-    tasks: "{{ tasks | default([]) | union ([item]) }}"
+    tasks_list: "{{ tasks_list | default([]) | union ([item]) }}"
   loop: "{{entity_tasks_associations}}"
   when: item['entity']['id'] == db_server_uuid
   no_log: true
@@ -700,7 +700,7 @@
     that:
       - result.changed == true
       - result.failed == false
-      - tasks | length == 2
+      - tasks_list | length == 2
 
     fail_msg: "Unable to add maintenance tasks for given db server vm"
     success_msg: "maintenance tasks for given db server vm added successfully"
@@ -748,7 +748,7 @@
     success_msg: "DB server VM unregister spec generated successfully"
 
 - name: Generate check mode spec for delete vm with vgs and snapshots
-  check_mode: yes
+  check_mode: true
   ntnx_ndb_db_server_vms:
     state: "absent"
     uuid: "{{db_server_uuid}}"
@@ -794,7 +794,7 @@
 ################################### DB server VM Registration tests #############################
 
 - name: Generate spec for registration of the previous unregistered vm using check mode
-  check_mode: yes
+  check_mode: true
   ntnx_ndb_register_db_server_vm:
     ip: "{{vm_ip}}"
     desc: "register-vm-desc"
