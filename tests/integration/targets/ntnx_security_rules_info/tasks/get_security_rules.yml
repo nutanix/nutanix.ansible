@@ -42,7 +42,7 @@
     fail_msg: " fail: unable to get security rules "
     success_msg: "pass: get all security rules successfully "
 ###################################
-- name: Getting particlar security rule using security_rule_uuid
+- name: Getting particular security rule using security_rule_uuid
   ntnx_security_rules_info:
     security_rule_uuid: "{{ first_rule.response.metadata.uuid }}"
   register: result
@@ -56,8 +56,8 @@
       - result.failed == false
       - result.response.status.state == 'COMPLETE'
       - first_rule.response.metadata.uuid == result.response.metadata.uuid
-    fail_msg: " fail : unable to get particlar security rule using security_rule_uuid"
-    success_msg: "pass: getting  security rule using security_rule_uuid succesfuly"
+    fail_msg: ' fail : unable to get particular security rule using security_rule_uuid'
+    success_msg: 'pass: getting  security rule using security_rule_uuid succesfuly'
 ###################################
 - name: Getting all security rules sorted
   ntnx_security_rules_info:

@@ -380,7 +380,7 @@
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 ###################################################################################################
-- name: VM with minimum requiremnts
+- name: VM with minimum requirements
   ntnx_vms:
     state: present
     name: MinReqVM
@@ -388,14 +388,13 @@
       name: "{{ cluster.name }}"
   register: result
   ignore_errors: true
-
 - name: Creation Status
-  ansible.builtin.assert:
+  assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with minimum requiremnts "
-    success_msg: " VM with minimum requiremnts created successfully "
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
 
 - name: Add vm_uuid to todelete list
   ansible.builtin.set_fact:
@@ -516,7 +515,7 @@
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 #########################################################################################
-- name: VM with diffrent disk types and diffrent sizes with UEFI boot type
+- name: VM with different disk types and different sizes with UEFI boot type
   ntnx_vms:
     state: present
     name: VM with UEFI boot type
@@ -557,12 +556,12 @@
   register: result
 ################################################################################
 - name: Creation Status
-  ansible.builtin.assert:
+  assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with diffrent disk types and diffrent sizes with UEFI boot type "
-    success_msg: " VM with diffrent disk types and diffrent sizes with UEFI boot type created successfully "
+    fail_msg: " Unable to create VM with different disk types and different sizes with UEFI boot type "
+    success_msg: " VM with different disk types and different sizes with UEFI boot type created successfully "
 
 - name: Add vm_uuid to todelete list
   ansible.builtin.set_fact:

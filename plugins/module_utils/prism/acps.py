@@ -135,7 +135,7 @@ class ACP(Prism):
             if permission.get("name"):
                 role_permissions_names.append(permission["name"])
 
-        # Get predefined premissions to entity access expressions from constants
+        # Get predefined permissions to entity access expressions from constants
         expressions_dict = CONSTANTS.EntityFilterExpressionList.PERMISSION_TO_ACCESS_MAP
         permission_names = expressions_dict.keys()
 

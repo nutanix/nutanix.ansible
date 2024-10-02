@@ -518,8 +518,8 @@
       - recovery_plan.response.status.resources.stage_list[1]["stage_work"] == exepected_stage_work_1
       - recovery_plan.response.status.resources.stage_list[0]["delay_time_secs"] == 2
 
-    fail_msg: "Unable to updae recovery plans"
-    success_msg: "Recovery plan updated successfully"
+    fail_msg: 'Unable to update recovery plans'
+    success_msg: 'Recovery plan updated successfully'
 
 - name: Idempotency Check
   ntnx_recovery_plans:

@@ -16,7 +16,7 @@
       - result.blocks.0.nodes.0.configured==false
       - result.blocks.0.nodes.0.ipv6_address is defined
     fail_msg: " Fail : unable to Discover nodes "
-    success_msg: "Succes: Discover nodes finished successfully "
+    success_msg: "Success: Discover nodes finished successfully "
 
 - name: Discover all nodes
   ntnx_foundation_discover_nodes_info:
@@ -31,7 +31,8 @@
       - result.changed==false
       - result.blocks.0.nodes.0.ipv6_address is defined
     fail_msg: " Fail : unable to discover all nodes "
-    success_msg: "Succes: Discover all nodes finished successfully "
+    success_msg: "Success: Discover all nodes finished successfully "
+
 # - name: Discover nodes and include network info # api fail
 #   ntnx_foundation_discover_nodes_info:
 #     include_network_details: true
@@ -44,4 +45,4 @@
 #       - result.failed==false
 #       - result.changed==false
 #     fail_msg: " Fail : unable to discover nodes and include network info "
-#     success_msg: "Succes: Discover nodes and include network info finished successfully "
+#     success_msg: "Success: Discover nodes and include network info finished successfully "

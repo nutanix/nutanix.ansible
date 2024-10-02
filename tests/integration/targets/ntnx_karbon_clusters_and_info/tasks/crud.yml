@@ -350,7 +350,7 @@
       memory_gb: 8 # for etcd min 8
       disk_gb: 120
     add_labels:
-      propert.-+]y5: "string"
+      property.-+]y5: "string"
       propert5: "string"
       property4: "string+-.3-@"
   register: result
@@ -378,7 +378,7 @@
       property1: "test-property1"
       property2: "test-property2"
       property3: "test-property3"
-      propert.-+]y5: "string"
+      property.-+]y5: "string"
   register: result
   ignore_errors: true
 

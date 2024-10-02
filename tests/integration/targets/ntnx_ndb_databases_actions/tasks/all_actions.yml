@@ -379,7 +379,7 @@
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using pitr timestamp spec"
-    success_msg: "Spec for databas restore using pitr timetsmap created successfully"
+    success_msg: "Spec for database restore using pitr timetsmap created successfully"
 
 - name: Create restore database spec with latest snapshot
   check_mode: true
@@ -410,7 +410,7 @@
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using latest snapshot spec"
-    success_msg: "Spec for databas restore using latest snapshot created successfully"
+    success_msg: "Spec for database restore using latest snapshot created successfully"
 
 - name: Create restore database spec using snapshot uuid
   check_mode: true
@@ -442,7 +442,7 @@
     that:
       - result == expected_result
     fail_msg: "Unable to create restore using snapshot uuid spec"
-    success_msg: "Spec for databas restore using snapshot uuid created successfully"
+    success_msg: "Spec for database restore using snapshot uuid created successfully"
 
 - name: Perform restore using latest snapshot
   ntnx_ndb_database_restore:

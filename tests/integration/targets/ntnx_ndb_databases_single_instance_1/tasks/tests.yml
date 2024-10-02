@@ -560,7 +560,8 @@
     fail_msg: "Unable to create register database spec"
     success_msg: "single instance postgres database register spec created successfully"
 
-- name: Regsiter previously unregistered database from previously created VM
+
+- name: Register previously unregistered database from previously created VM
   ntnx_ndb_register_database:
     wait: true
 

@@ -59,7 +59,7 @@ options:
                 type: bool
             value:
                 description:
-                    - vlaue as per C(value_type)
+                    - value as per C(value_type)
                 type: str
             value_type:
                 description:

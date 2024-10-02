@@ -1,5 +1,5 @@
 ---
-- name: VM with minimum requiremnts
+- name: VM with minimum requirements
   ntnx_vms:
     state: present
     name: MinReqVM
@@ -13,8 +13,8 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with minimum requiremnts "
-    success_msg: " VM with minimum requiremnts created successfully "
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
 
 - name: Delete VM
   ntnx_vms:

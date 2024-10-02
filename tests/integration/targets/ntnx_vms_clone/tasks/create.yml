@@ -14,7 +14,7 @@
           expire: false
       fqdn: myNutanixVM
 
-- name: VM with minimum requiremnts to clone
+- name: VM with minimum requirements to clone
   ntnx_vms:
     state: present
     name: integration_test_clone_vm
@@ -34,8 +34,8 @@
     that:
       - vm.response is defined
       - vm.response.status.state == 'COMPLETE'
-    fail_msg: "Fail: Unable to create VM with minimum requiremnts to clone "
-    success_msg: "Succes: VM with minimum requiremnts created successfully "
+    fail_msg: 'Fail: Unable to create VM with minimum requirements to clone '
+    success_msg: 'Succes: VM with minimum requirements created successfully '
 ##############################
 
 - name: Clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off

@@ -655,7 +655,7 @@ def check_rule_idempotency(rule_spec, update_spec):
     ].get("category_filter"):
         return False
 
-    # check if availibility zones have updated
+    # check if availability zones have updated
     if len(rule_spec["spec"]["resources"]["ordered_availability_zone_list"]) != len(
         update_spec["spec"]["resources"]["ordered_availability_zone_list"]
     ):
@@ -680,6 +680,10 @@ def check_rule_idempotency(rule_spec, update_spec):
         ):
             return False
 
+    #check if start_time has been updated
+    if rule_spec["spec"]["resources"].get("start_time") != update_spec["spec"]["resources"].get("start_time"):
+        return False
+  
     return True
 
 

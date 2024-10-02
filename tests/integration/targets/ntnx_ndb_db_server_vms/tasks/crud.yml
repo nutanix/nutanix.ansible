@@ -660,7 +660,7 @@
     fail_msg: "Unable to remove maintenance tasks for given db server vm"
     success_msg: "maintenance tasks for given db server vm removed successfully"
 
-- name: Add maitenance window task for vm
+- name: Add maintenance window task for vm
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{vm1_name_updated}}"
@@ -747,8 +747,8 @@
     fail_msg: "Unable to generate check mode spec for unregister"
     success_msg: "DB server VM unregister spec generated successfully"
 
-- name: Genereate check mode spec for delete vm with vgs and snapshots
-  check_mode: true
+- name: Generate check mode spec for delete vm with vgs and snapshots
+  check_mode: yes
   ntnx_ndb_db_server_vms:
     state: "absent"
     uuid: "{{db_server_uuid}}"
@@ -793,8 +793,8 @@
 
 ################################### DB server VM Registration tests #############################
 
-- name: Generate spec for registeration of the previous unregistered vm using check mode
-  check_mode: true
+- name: Generate spec for registration of the previous unregistered vm using check mode
+  check_mode: yes
   ntnx_ndb_register_db_server_vm:
     ip: "{{vm_ip}}"
     desc: "register-vm-desc"

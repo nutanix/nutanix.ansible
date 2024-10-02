@@ -101,7 +101,7 @@ EXAMPLES = r"""
     tasks: []
   register: result
 
-- name: Add maitenance window task for vm
+- name: Add maintenance window task for vm
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{vm1_name_updated}}"
