@@ -680,6 +680,10 @@ def check_rule_idempotency(rule_spec, update_spec):
         ):
             return False
 
+    #check if start_time has been updated
+    if rule_spec["spec"]["resources"].get("start_time") != update_spec["spec"]["resources"].get("start_time"):
+        return False
+  
     return True
 
 
