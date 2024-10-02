@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_acps
-short_description: acp module which suports acp Create, update and delete operations
+short_description: acp module which supports acp Create, update and delete operations
 version_added: 1.4.0
 description: 'Create, Update, Delete acp'
 options:

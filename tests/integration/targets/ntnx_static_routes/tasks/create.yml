@@ -93,11 +93,11 @@
       - result.response.status.resources.static_routes_list[0]["destination"] == "10.2.4.0/24"
       - result.response.status.resources.static_routes_list[0]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
     fail_msg: "Static routes overriding failed"
-    success_msg: "Static routes overriden successfully"
+    success_msg: "Static routes overridden successfully"
 
 ###########################################################################################################
 
-- name: Netgative scenario of cretaing multiple default routes
+- name: Netgative scenario of creating multiple default routes
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
