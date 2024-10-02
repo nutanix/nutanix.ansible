@@ -93,7 +93,7 @@ class Mock_Module:
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
-    """Nutanix VM dynamic invetory module for ansible"""
+    """Nutanix VM dynamic inventory module for ansible"""
 
     NAME = "nutanix.ncp.ntnx_prism_vm_inventory"
 

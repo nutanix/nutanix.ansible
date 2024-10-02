@@ -139,7 +139,7 @@ kube_config:
     returned: if fetch_kubeconfig is true
     type: str
 certificate:
-    description: ssh certifcate
+    description: ssh certificate
     returned: if fetch_ssh_credentials is true
     type: str
 expiry_time:

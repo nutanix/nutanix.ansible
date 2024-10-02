@@ -84,7 +84,7 @@ options:
         description:
             - When set will remove all categories attached to the policy.
             - Mutually exclusive ith C(categories)
-            - It doesnot remove C(image_categories) or C(cluster_categories)
+            - It does not remove C(image_categories) or C(cluster_categories)
         required: false
         type: bool
         default: false

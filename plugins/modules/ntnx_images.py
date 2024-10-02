@@ -67,7 +67,7 @@ options:
         type: dict
     remove_categories:
         description:
-            - set this flag to remove dettach all categories attached to image
+            - set this flag to remove detach all categories attached to image
             - mutually_exclusive with C(categories)
         type: bool
         required: false

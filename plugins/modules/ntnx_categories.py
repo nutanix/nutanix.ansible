@@ -16,7 +16,7 @@ description: "Create, Update, Delete categories"
 options:
     remove_values:
         description:
-            - it indicates to remove all values of the specfied category
+            - it indicates to remove all values of the specified category
             - This attribute can be only used with C(state) is absent
             - This attribute is mutually exclusive with C(values) when state is absent
         type: bool
