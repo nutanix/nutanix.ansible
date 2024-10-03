@@ -152,7 +152,7 @@
       - result.response.service_group.service_list[1].udp_port_range_list[2].start_port == 99
       - result.response.service_group.service_list[1].udp_port_range_list[2].end_port == 99
       - result.response.service_group.service_list[2].protocol == "ICMP"
-      - result.response.service_group.service_list[2].icmp_type_code_list == []
+      - result.response.service_group.service_list[2].icmp_type_code_list == [{}]
     fail_msg: "Fail: Unable to create tcp service group  "
     success_msg: "Pass: tcp service group  created successfully"
 
