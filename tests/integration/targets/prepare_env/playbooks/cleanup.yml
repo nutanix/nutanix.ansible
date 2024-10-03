@@ -2,14 +2,13 @@
 - name: Clean up the environment
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   tasks:
     - name: Include var file
-      include_vars: ../vars/main.yml
+      ansible.builtin.include_vars: ../vars/main.yml
     - name: Delete VM
       ignore_errors: true
-      ntnx_vms:
+      register: result
+      nutanix.ncp.ntnx_vms:
         vm_uuid: "{{vm.uuid }}"
         state: absent
         nutanix_host: "{{ ip }}"
@@ -26,7 +25,8 @@
     #   #     validate_certs: false
     - name: Delete overlay
       ignore_errors: true
-      ntnx_subnets:
+      register: result
+      nutanix.ncp.ntnx_subnets:
         state: absent
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
@@ -37,7 +37,8 @@
         - "{{overlay.uuid}}"
     - name: Delete vpc
       ignore_errors: true
-      ntnx_vpcs:
+      register: result
+      nutanix.ncp.ntnx_vpcs:
         state: absent
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
@@ -46,7 +47,8 @@
         vpc_uuid: "{{ vpc.uuid }}"
     - name: Delete subnets
       ignore_errors: true
-      ntnx_subnets:
+      register: result
+      nutanix.ncp.ntnx_subnets:
         state: absent
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
@@ -59,6 +61,7 @@
 
     - name: Delete downloaded disk file
       ignore_errors: true
-      file:
+      register: result
+      ansible.builtin.file:
         path: "{{ disk_image.dest }}"
         state: absent

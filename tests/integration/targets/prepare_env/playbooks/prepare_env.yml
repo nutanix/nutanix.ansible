@@ -2,12 +2,9 @@
 - name: Prepare the environment
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
-
   tasks:
     - name: Include var file
-      include_vars: ../vars/main.yml
+      ansible.builtin.include_vars: ../vars/main.yml
     - name: Set facts
       ansible.builtin.set_fact:
         ip: "{{lookup('env', 'NUTANIX_HOST')  }}"
@@ -16,7 +13,7 @@
         recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')}}"
         validate_certs: false
     - name: Insert credentials  block to vars
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: ../vars/main.yml
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 0"
         block: |
@@ -26,7 +23,7 @@
           recovery_site_ip: "{{lookup('env', 'NUTANIX_DR_SITE')  }}"
           validate_certs: false
     - name: Create external subnet with NAT
-      ntnx_subnets:
+      nutanix.ncp.ntnx_subnets:
         state: present
         nutanix_host: "{{ ip }}"
         validate_certs: false
@@ -47,7 +44,7 @@
                 end_ip: "{{ external_nat_subnets.dhcp.end_address }}"
       register: result
     - name: Insert external subnet configuration block to vars
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: ../vars/main.yml
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 1"
         block: |
@@ -56,7 +53,7 @@
             uuid: "{{result.subnet_uuid}}"
 
     - name: Create min VPC with external_subnet uuid
-      ntnx_vpcs:
+      nutanix.ncp.ntnx_vpcs:
         validate_certs: false
         state: present
         wait: true
@@ -69,7 +66,7 @@
       register: result
 
     - name: Insert  VPC configuration block to vars
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: ../vars/main.yml
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 2"
         block: |
@@ -78,7 +75,7 @@
             uuid: "{{result.vpc_uuid}}"
 
     - name: Create vlan subnet with IPAM
-      ntnx_subnets:
+      nutanix.ncp.ntnx_subnets:
         state: present
         nutanix_host: "{{ ip }}"
         wait: true
@@ -102,7 +99,7 @@
       register: result
 
     - name: Insert vlan subnet configuration block to var file
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: ../vars/main.yml
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 3"
         block: |
@@ -114,9 +111,9 @@
             gateway_ip: 10.30.30.254
 
     - name: Include var file
-      include_vars: ../vars/main.yml
+      ansible.builtin.include_vars: ../vars/main.yml
     - name: Create overlay Subnet with minimum requirements
-      ntnx_subnets:
+      nutanix.ncp.ntnx_subnets:
         state: present
         nutanix_host: "{{ ip }}"
         validate_certs: false
@@ -133,7 +130,7 @@
       register: result
 
     - name: Insert overlay subnet configuration block to var file
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: ../vars/main.yml
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 4"
         block: |
@@ -142,7 +139,7 @@
             uuid: "{{result.subnet_uuid}}"
 
     - name: Create VM with overlay subnet
-      ntnx_vms:
+      nutanix.ncp.ntnx_vms:
         state: present
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
@@ -159,7 +156,7 @@
       register: result
 
     - name: Insert vm configuration block to var file
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: ../vars/main.yml
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 5"
         block: |
@@ -168,7 +165,7 @@
             uuid: "{{result.vm_uuid}}"
 
     #   # - name: Create VM with static subnet for dr tests
-    #   #   ntnx_vms:
+    #   #   nutanix.ncp.ntnx_vms:
     #   #     state: present
     #   #     nutanix_host: "{{ ip }}"
     #   #     nutanix_username: "{{ username }}"
@@ -191,7 +188,7 @@
     #   #   register: result
 
     #   # - name: Insert vm configuration block to var file
-    #   #   blockinfile:
+    #   #   ansible.builtin.blockinfile:
     #   #     path: ../vars/main.yml
     #   #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
     #   #     block: |
@@ -200,12 +197,13 @@
     #   #           uuid: "{{result.vm_uuid}}"
 
     - name: Downloading disk image for image related tests
-      get_url:
+      ansible.builtin.get_url:
+        mode: "0644"
         url: "{{ disk_image.url }}"
         dest: "{{ disk_image.dest }}"
 
   # - name: Create address group for network security policy related tests
-  #   ntnx_address_groups:
+  #   nutanix.ncp.ntnx_address_groups:
   #     state: present
   #     name: Dest
   #     desc: dest

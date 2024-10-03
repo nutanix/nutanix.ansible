@@ -2,9 +2,6 @@
 - name: Prepare the environment
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
-
   tasks:
     - name: Include var file
-      include_vars: ../vars/main.yml
+      ansible.builtin.include_vars: ../vars/main.yml

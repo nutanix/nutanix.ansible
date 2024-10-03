@@ -4,7 +4,7 @@
   gather_facts: false
   tasks:
     - name: Include var file
-      include_vars: ../vars/main.yml
+      ansible.builtin.include_vars: ../vars/main.yml
     # - name: Delete files
     #   file:
     #     path: "{{ source }}"
