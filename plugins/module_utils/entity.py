@@ -18,6 +18,9 @@ try:
     from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 except ImportError:
     from urlparse import urlparse  # python2
+from ansible.utils.display import Display
+
+display = Display()
 
 
 class Entity(object):
@@ -174,6 +177,11 @@ class Entity(object):
             no_response=no_response,
             timeout=timeout,
         )
+        if resp and resp.get("state") == "ERROR" and resp.get("code") == 401:
+            display.error(
+                "Failed fetching URL: {0}, error={1}".format(url, resp["message_list"])
+            )
+            exit(1)
         if resp:
             custom_filters = self.module.params.get("custom_filter")
 
