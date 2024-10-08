@@ -885,7 +885,7 @@ EXAMPLES = r"""
 - name: create app security rule
   ntnx_security_rules:
     name: test_app_rule
-    description: App Security Rule
+    desc: App Security Rule
     allow_ipv6_traffic: true
     policy_hitlog: true
     app_rule:
