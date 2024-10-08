@@ -76,7 +76,7 @@ author:
 EXAMPLES = r"""
 - name: create Floating IP with External Subnet Name
   ntnx_floating_ips:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -86,7 +86,7 @@ EXAMPLES = r"""
 
 - name: create Floating IP with vpc Name with external subnet uuid
   ntnx_floating_ips:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -94,12 +94,12 @@ EXAMPLES = r"""
     external_subnet:
       uuid: "{{external_subnet.subnet_uuiid}}"
     vpc:
-       name: "{{vpc.vpc_name}}"
+      name: "{{vpc.vpc_name}}"
     private_ip: "{{private_ip}}"
 
 - name: create Floating IP with External Subnet with vm
   ntnx_floating_ips:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"

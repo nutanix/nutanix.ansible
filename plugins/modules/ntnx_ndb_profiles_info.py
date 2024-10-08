@@ -124,7 +124,6 @@ EXAMPLES = r"""
     uuid: "<uuid of profile>"
     latest_version: true
   register: result
-
 """
 RETURN = r"""
 response:

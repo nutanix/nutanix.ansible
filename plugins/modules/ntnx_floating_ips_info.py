@@ -32,29 +32,28 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List Floating ip using ip starts with 10 filter criteria
-    ntnx_floating_ips_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        floating_ip: "10."
-      kind: floating_ip
-    register: result
+- name: List Floating ip using ip starts with 10 filter criteria
+  ntnx_floating_ips_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      floating_ip: "10."
+    kind: floating_ip
+  register: result
 
-  - name: List Floating ip using length, offset, sort order and floating_ip sort attribute
-    ntnx_floating_ips_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 3
-      offset: 0
-      sort_order: "DESCENDING"
-      sort_attribute: "floating_ip"
-    register: result
-
+- name: List Floating ip using length, offset, sort order and floating_ip sort attribute
+  ntnx_floating_ips_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    length: 3
+    offset: 0
+    sort_order: "DESCENDING"
+    sort_attribute: "floating_ip"
+  register: result
 """
 RETURN = r"""
 api_version:

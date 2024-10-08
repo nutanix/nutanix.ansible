@@ -62,24 +62,24 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: Get node details using uuid
-    ntnx_foundation_central_imaged_nodes_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      imaged_node_uuid: "{{node_uuid}}"
+- name: Get node details using uuid
+  ntnx_foundation_central_imaged_nodes_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    imaged_node_uuid: "{{node_uuid}}"
 
-  - name: Get imaged node list based on filters
-    ntnx_foundation_central_imaged_nodes_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: false
-      filters:
-        node_state: STATE_AVAILABLE
-      length: 5
-      offset: 1
+- name: Get imaged node list based on filters
+  ntnx_foundation_central_imaged_nodes_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filters:
+      node_state: STATE_AVAILABLE
+    length: 5
+    offset: 1
 """
 
 RETURN = r"""

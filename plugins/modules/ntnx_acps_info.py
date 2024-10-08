@@ -39,28 +39,28 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List acp using name filter criteria
-    ntnx_acps_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        name: "{{ acp.name }}"
-      kind: access_control_policy
-    register: result
+- name: List acp using name filter criteria
+  ntnx_acps_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      name: "{{ acp.name }}"
+    kind: access_control_policy
+  register: result
 
-  - name: List acp using length, offset, sort order and name sort attribute
-    ntnx_acps_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 1
-      offset: 1
-      sort_order: "ASCENDING"
-      sort_attribute: "name"
-    register: result
+- name: List acp using length, offset, sort order and name sort attribute
+  ntnx_acps_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    length: 1
+    offset: 1
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+  register: result
 """
 RETURN = r"""
 api_version:

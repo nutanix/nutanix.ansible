@@ -43,7 +43,6 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
   register: result
-  ignore_errors: True
 
 - name: List recovery plans using uuid criteria
   ntnx_recovery_plans_info:

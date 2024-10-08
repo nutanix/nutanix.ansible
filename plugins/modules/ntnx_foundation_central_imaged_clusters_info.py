@@ -58,24 +58,24 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: Get cluster details using uuid
-    ntnx_foundation_central_imaged_nodes_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      imaged_cluster_uuid: "{{node_uuid}}"
+- name: Get cluster details using uuid
+  ntnx_foundation_central_imaged_nodes_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    imaged_cluster_uuid: "{{node_uuid}}"
 
-  - name: Get imaged clusters list based on filters
-    ntnx_foundation_central_imaged_nodes_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: false
-      filters:
-        archived: false
-      length: 5
-      offset: 1
+- name: Get imaged clusters list based on filters
+  ntnx_foundation_central_imaged_nodes_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filters:
+      archived: false
+    length: 5
+    offset: 1
 """
 
 RETURN = r"""

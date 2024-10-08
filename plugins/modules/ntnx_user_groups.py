@@ -92,7 +92,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     distinguished_name: "<distinguished-name>"
     project:
       uuid: "{{project_uuid}}"
@@ -107,7 +107,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     idp:
       idp_uuid: "{{idp_uuid}}"
       group_name: "{{group_name}}"

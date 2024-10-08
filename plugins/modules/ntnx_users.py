@@ -85,9 +85,9 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     principal_name: "{{principal_name}}"
-    directory_service_uuid:  "{{directory_service_uuid}}"
+    directory_service_uuid: "{{directory_service_uuid}}"
     project:
       uuid: "{{project_uuid}}"
     categories:
@@ -102,7 +102,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     identity_provider_uuid: "{{identity_provider_uuid}}"
     username: "{{username}}"
   register: result

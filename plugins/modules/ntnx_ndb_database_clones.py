@@ -312,7 +312,7 @@ EXAMPLES = r"""
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
-      delete_database: True
+      delete_database: true
 
     refresh_schedule:
       days: 2
@@ -356,7 +356,7 @@ EXAMPLES = r"""
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
-      delete_database: True
+      delete_database: true
 
     refresh_schedule:
       days: 2
@@ -366,7 +366,6 @@ EXAMPLES = r"""
     tags:
       ansible-clones: ansible-test-db-clones
   register: result
-
 """
 
 RETURN = r"""

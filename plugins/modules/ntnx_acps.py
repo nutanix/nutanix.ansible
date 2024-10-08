@@ -119,7 +119,7 @@ author:
 EXAMPLES = r"""
 - name: Create min ACP
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -131,7 +131,7 @@ EXAMPLES = r"""
 
 - name: Create ACP with user reference
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -144,7 +144,7 @@ EXAMPLES = r"""
 
 - name: Create ACP with user ad user group reference
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -159,7 +159,7 @@ EXAMPLES = r"""
 
 - name: Create ACP with all specfactions
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"

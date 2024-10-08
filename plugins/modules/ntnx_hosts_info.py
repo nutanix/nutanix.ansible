@@ -32,23 +32,23 @@ author:
   - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List hosts
-    ntnx_hosts_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      kind: host
-    register: result
+- name: List hosts
+  ntnx_hosts_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    kind: host
+  register: result
 
-  - name: test getting particular host using uuid
-    ntnx_hosts_info:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: False
-        host_uuid: <host-uuid>
-    register: result
+- name: test getting particular host using uuid
+  ntnx_hosts_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    host_uuid: <host-uuid>
+  register: result
 """
 RETURN = r"""
 api_version:

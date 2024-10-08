@@ -166,7 +166,6 @@ EXAMPLES = r"""
     state: "present"
     action: CLEANUP
   register: result
-
 """
 
 RETURN = r"""

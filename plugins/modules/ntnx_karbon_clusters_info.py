@@ -32,42 +32,42 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List clusters
-    ntnx_karbon_clusters_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-    register: result
+- name: List clusters
+  ntnx_karbon_clusters_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
 
-  - name: Get clusters using name
-    ntnx_clusters_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      cluster_name: "cluster-name"
-    register: result
+- name: Get clusters using name
+  ntnx_clusters_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    cluster_name: "cluster-name"
+  register: result
 
-  - name:  Get clusters with ssh credential
-    ntnx_karbon_clusters_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      cluster_name: "cluster-name"
-      fetch_ssh_credentials: true
-    register: result
+- name: Get clusters with ssh credential
+  ntnx_karbon_clusters_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    cluster_name: "cluster-name"
+    fetch_ssh_credentials: true
+  register: result
 
-  - name:  Get clusters with kubeconfig
-    ntnx_karbon_clusters_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      cluster_name: "cluster-name"
-      fetch_kubeconfig: true
-    register: result
+- name: Get clusters with kubeconfig
+  ntnx_karbon_clusters_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    cluster_name: "cluster-name"
+    fetch_kubeconfig: true
+  register: result
 """
 RETURN = r"""
 cni_config:

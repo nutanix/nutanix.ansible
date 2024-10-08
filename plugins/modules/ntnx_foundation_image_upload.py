@@ -53,7 +53,7 @@ EXAMPLES = r"""
 - name: Delete Image with esx installer_type
   ntnx_foundation_image_upload:
     nutanix_host: "{{ ip }}"
-    state : "absent"
+    state: "absent"
     filename: "temptar_dont_use.iso"
     installer_type: "esx"
 """

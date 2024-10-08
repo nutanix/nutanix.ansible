@@ -70,7 +70,6 @@ author:
 """
 
 EXAMPLES = r"""
-
 - name: create data access instance with cluster name and sla name
   ntnx_ndb_time_machine_clusters:
     nutanix_host: <pc_ip>
@@ -86,31 +85,29 @@ EXAMPLES = r"""
 
 - name: update data access instance with new sla name
   ntnx_ndb_time_machine_clusters:
-      nutanix_host: <pc_ip>
-      nutanix_username: <user>
-      nutanix_password: <pass>
-      validate_certs: false
-      time_machine_uuid: "<time_machine-uuid>"
-      cluster:
-        name: "<cluster-uuid>"
-      sla:
-        name: "<sla-uuid>"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    time_machine_uuid: "<time_machine-uuid>"
+    cluster:
+      name: "<cluster-uuid>"
+    sla:
+      name: "<sla-uuid>"
   register: result
 
 - name: delete time machine
   ntnx_ndb_time_machine_clusters:
-      nutanix_host: <pc_ip>
-      nutanix_username: <user>
-      nutanix_password: <pass>
-      validate_certs: false
-      state: absent
-      time_machine_uuid: "<time_machine-uuid>"
-      cluster:
-        uuid: "<cluster-uuid>"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    state: absent
+    time_machine_uuid: "<time_machine-uuid>"
+    cluster:
+      uuid: "<cluster-uuid>"
   register: result
-
 """
-
 RETURN = r"""
 response:
   description: An intentful representation of a TM status

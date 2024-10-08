@@ -56,7 +56,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "present"
     name: "{{first_category.name}}"
     desc: "{{first_category.desc}}"
@@ -66,7 +66,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "present"
     name: "{{first_category.name}}"
     desc: "{{first_category.update_desc}}"
@@ -79,7 +79,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "absent"
     name: "{{first_category.name}}"
     desc: "{{first_category.update_desc}}"
@@ -91,7 +91,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "absent"
     name: "{{first_category.name}}"
     remove_values: true
@@ -101,7 +101,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "absent"
     name: "{{first_category.name}}"
   register: result
@@ -110,7 +110,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "present"
     name: "{{second_category.name}}"
     desc: test description

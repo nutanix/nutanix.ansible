@@ -238,7 +238,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    wait: True
+    wait: true
     name: test-ansible
     desc: test-ansible-desc
     protected_categories:
@@ -269,7 +269,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    wait: True
+    wait: true
     name: test-ansible
     desc: test-ansible-desc
     protected_categories:
@@ -280,7 +280,7 @@ EXAMPLES = r"""
       availability_zone_url: "{{primary_az_url}}"
     schedules:
       - source:
-            availability_zone_url: "{{primary_az_url}}"
+          availability_zone_url: "{{primary_az_url}}"
         destination:
           availability_zone_url: "{{recovery_az_url}}"
         protection_type: ASYNC
@@ -315,7 +315,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    wait: True
+    wait: true
     rule_uuid: "{{rule_uuid}}"
     name: test-ansible-updated
     desc: test-ansible-desc-updated
@@ -326,7 +326,7 @@ EXAMPLES = r"""
       availability_zone_url: "{{primary_az_url}}"
     schedules:
       - source:
-            availability_zone_url: "{{primary_az_url}}"
+          availability_zone_url: "{{primary_az_url}}"
         destination:
           availability_zone_url: "{{recovery_az_url}}"
         protection_type: ASYNC
@@ -361,10 +361,9 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    wait: True
+    wait: true
     rule_uuid: "{{ rule_uuid }}"
   register: result
-
 """
 
 RETURN = r"""

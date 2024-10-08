@@ -39,28 +39,28 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List security_rule using name filter criteria
-    ntnx_security_rules_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-         name: "{{ security_rule.name }}"
-      kind: security_rule
-    register: result
+- name: List security_rule using name filter criteria
+  ntnx_security_rules_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      name: "{{ security_rule.name }}"
+    kind: security_rule
+  register: result
 
-  - name: List security_rule using length, offset, sort order and name sort attribute
-    ntnx_security_rules_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 1
-      offset: 1
-      sort_order: "ASCENDING"
-      sort_attribute: "name"
-    register: result
+- name: List security_rule using length, offset, sort order and name sort attribute
+  ntnx_security_rules_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    length: 1
+    offset: 1
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+  register: result
 """
 RETURN = r"""
 api_version:

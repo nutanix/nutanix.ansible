@@ -59,7 +59,7 @@ EXAMPLES = r"""
   ntnx_ndb_tags:
     name: "{{tag_name}}-clone"
     desc: tag-created-by-ansible
-    tag_value_required: False
+    tag_value_required: false
     entity_type: CLONE
   register: result
 
@@ -67,7 +67,7 @@ EXAMPLES = r"""
   ntnx_ndb_tags:
     name: "{{tag_name}}-tm"
     desc: tag-created-by-ansible
-    tag_value_required: True
+    tag_value_required: true
     entity_type: TIME_MACHINE
   register: result
 

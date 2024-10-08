@@ -24,9 +24,9 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: List hypervisor images
-    ntnx_foundation_hypervisor_images_info:
-      nutanix_host: "{{ ip }}"
+- name: List hypervisor images
+  ntnx_foundation_hypervisor_images_info:
+    nutanix_host: "{{ ip }}"
 """
 
 RETURN = r"""

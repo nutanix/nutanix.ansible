@@ -108,7 +108,7 @@ EXAMPLES = r"""
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
-    name:  test-vlan-name
+    name: test-vlan-name
     vlan_type: DHCP
     cluster:
       uuid: "<cluster-uuid>"
@@ -120,7 +120,7 @@ EXAMPLES = r"""
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
-    name:  test-vlan-name
+    name: test-vlan-name
     vlan_type: Static
     cluster:
       uuid: "<cluster-uuid>"
@@ -157,7 +157,6 @@ EXAMPLES = r"""
     state: absent
     vlan_uuid: "<vlan-uuid>"
   register: result
-
 """
 
 RETURN = r"""

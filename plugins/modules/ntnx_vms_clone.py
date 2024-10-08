@@ -32,42 +32,42 @@ author:
 EXAMPLES = r"""
 - name: clone vm  with check mode
   ntnx_vms_clone:
-      src_vm_uuid: "{{ vm.vm_uuid }}"
-      networks:
-        - is_connected: false
-          subnet:
-            name: "{{ network.dhcp.name }}"
-  check_mode: yes
+    src_vm_uuid: "{{ vm.vm_uuid }}"
+    networks:
+      - is_connected: false
+        subnet:
+          name: "{{ network.dhcp.name }}"
+  check_mode: true
 
 - name: clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
   ntnx_vms_clone:
-      src_vm_uuid: "{{ vm.vm_uuid }}"
-      vcpus: 2
-      cores_per_vcpu: 2
-      memory_gb: 2
-      name: cloned vm
-      desc: cloned vm
-      timezone: GMT
-      force_power_off: true
+    src_vm_uuid: "{{ vm.vm_uuid }}"
+    vcpus: 2
+    cores_per_vcpu: 2
+    memory_gb: 2
+    name: cloned vm
+    desc: cloned vm
+    timezone: GMT
+    force_power_off: true
 
 - name: clone vm and add network
   ntnx_vms_clone:
-      src_vm_uuid: "{{ vm.vm_uuid }}"
-      networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
-        - is_connected: true
-          subnet:
-            uuid: "{{ static.uuid }}"
+    src_vm_uuid: "{{ vm.vm_uuid }}"
+    networks:
+      - is_connected: true
+        subnet:
+          uuid: "{{ network.dhcp.uuid }}"
+      - is_connected: true
+        subnet:
+          uuid: "{{ static.uuid }}"
 
 - name: clone vm  with script
   ntnx_vms_clone:
-      src_vm_uuid: "{{ vm.vm_uuid }}"
-      guest_customization:
-        type: "cloud_init"
-        script_path: "./cloud_init.yml"
-        is_overridable: True
+    src_vm_uuid: "{{ vm.vm_uuid }}"
+    guest_customization:
+      type: "cloud_init"
+      script_path: "./cloud_init.yml"
+      is_overridable: true
 """
 
 RETURN = r"""

@@ -55,7 +55,6 @@ EXAMPLES = r"""
     validate_certs: false
     uuid: "<uuid of clone>"
   register: result
-
 """
 RETURN = r"""
 response:

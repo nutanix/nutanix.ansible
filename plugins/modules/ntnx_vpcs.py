@@ -62,53 +62,51 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create min VPC
+  ntnx_vpcs:
+    validate_certs: false
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: MinVPC
+    external_subnets:
+      - subnet_name: "{{ external_subnet.name }}"
 
-  - name: Create min VPC
-    ntnx_vpcs:
-      validate_certs: False
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: MinVPC
-      external_subnets:
-        - subnet_name: "{{ external_subnet.name }}"
+- name: Create VPC with dns_servers
+  ntnx_vpcs:
+    validate_certs: false
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: vpc_with_dns_servers
+    dns_servers: "{{ dns_servers }}"
 
-  - name: Create VPC with dns_servers
-    ntnx_vpcs:
-      validate_certs: False
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: vpc_with_dns_servers
-      dns_servers: "{{ dns_servers }}"
+- name: Create VPC with all specfactions
+  ntnx_vpcs:
+    validate_certs: false
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: vpc_with_add_specfactions
+    external_subnets:
+      - subnet_name: "{{ external_subnet.name }}"
+    dns_servers: "{{ dns_servers }}"
+    routable_ips:
+      - network_ip: "{{ routable_ips.network_ip }}"
+        network_prefix: "{{ routable_ips.network_prefix }}"
 
-  - name: Create VPC with all specfactions
-    ntnx_vpcs:
-      validate_certs: False
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: vpc_with_add_specfactions
-      external_subnets:
-        - subnet_name: "{{ external_subnet.name }}"
-      dns_servers: "{{ dns_servers }}"
-      routable_ips:
-        - network_ip: "{{ routable_ips.network_ip }}"
-          network_prefix:  "{{ routable_ips.network_prefix }}"
-
-  - name: Delete VPC
-    ntnx_vpcs:
-      state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      vpc_uuid: "{{ vpc_uuid }}"
+- name: Delete VPC
+  ntnx_vpcs:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    vpc_uuid: "{{ vpc_uuid }}"
 """
-
 RETURN = r"""
 api_version:
   description: API Version of the Nutanix v3 API framework.

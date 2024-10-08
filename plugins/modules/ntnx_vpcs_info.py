@@ -33,28 +33,28 @@ author:
  - Dina AbuHijleh (@dina-abuhijleh)
 """
 EXAMPLES = r"""
-  - name: List VPC using name filter criteria
-    ntnx_vpcs_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        name: "{{ vpc.name }}"
-      kind: vpc
-    register: result
+- name: List VPC using name filter criteria
+  ntnx_vpcs_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      name: "{{ vpc.name }}"
+    kind: vpc
+  register: result
 
-  - name: List VPC using length, offset, sort order and name sort attribute
-    ntnx_vpcs_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 1
-      offset: 1
-      sort_order: "ASCENDING"
-      sort_attribute: "name"
-    register: result
+- name: List VPC using length, offset, sort order and name sort attribute
+  ntnx_vpcs_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    length: 1
+    offset: 1
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+  register: result
 """
 RETURN = r"""
 api_version:
