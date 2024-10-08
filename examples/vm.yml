@@ -2,8 +2,6 @@
 - name: VM playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,7 +10,7 @@
       validate_certs: false
   tasks:
     - name: Setting Variables
-      set_fact:
+      ansible.builtin.set_fact:
         cluster_name: ""
         script_path: ""
         subnet_name: ""
@@ -21,7 +19,8 @@
         fqdn: ""
 
     - name: Create Cloud-init Script file
-      copy:
+      ansible.builtin.copy:
+        mode: "0644"
         dest: "cloud_init.yml"
         content: |
           #cloud-config
@@ -31,8 +30,8 @@
               expire: False
           fqdn: "{{ fqdn }}"
 
-    - name: create Vm
-      ntnx_vms:
+    - name: Create Vm
+      nutanix.ncp.ntnx_vms:
         state: present
         name: "ansible_automation_demo"
         desc: "ansible_vm_description"
@@ -42,10 +41,10 @@
         cluster:
           name: "{{cluster_name}}"
         networks:
-          - is_connected: True
+          - is_connected: true
             subnet:
               name: "{{ subnet_name }}"
-              # mention cluster only when there are multiple subnets with same name across clusters
+              # mention cluster only when there are multiple subnets with same name accross clusters
               # and subnet name is set above
               cluster:
                 name: "{{cluster_name}}"
@@ -61,14 +60,14 @@
         guest_customization:
           type: "cloud_init"
           script_path: "./cloud_init.yml"
-          is_overridable: True
+          is_overridable: true
       register: output
 
-    - name: output of vm created
-      debug:
+    - name: Output of vm created
+      ansible.builtin.debug:
         msg: "{{ output }}"
 
-    - name: delete VM
-      ntnx_vms:
+    - name: Delete VM
+      nutanix.ncp.ntnx_vms:
         state: absent
         vm_uuid: "{{output.vm_uuid}}"

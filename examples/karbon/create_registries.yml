@@ -1,9 +1,7 @@
 ---
-- name: create registries
+- name: Create registeries
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,30 +10,31 @@
       validate_certs: false
 
   tasks:
-  - set_fact:
-      registry_name: <registry_name>
-      url: <url>
-      port_number: <port_number>
-      username: <username>
-      password: <pass>
+    - name: Set vars
+      ansible.builtin.set_fact:
+        registry_name: <registry_name>
+        url: <url>
+        port_number: <port_number>
+        username: <username>
+        password: <pass>
 
-  - name: create registry
-    ntnx_karbon_registries:
-      name: "{{registry_name}}"
-      url: "{{url}}"
-      port: "{{port_number}}"
-    register: result
+    - name: Create registry
+      nutanix.ncp.ntnx_karbon_registries:
+        name: "{{ registry_name }}"
+        url: "{{ url }}"
+        port: "{{ port_number }}"
+      register: result
 
-  - name: delete registry
-    ntnx_karbon_registries:
-      name: "{{registry_name}}"
-      state: absent
-    register: result
+    - name: Delete registry
+      nutanix.ncp.ntnx_karbon_registries:
+        name: "{{ registry_name }}"
+        state: absent
+      register: result
 
-  - name: create registry with username and password
-    ntnx_karbon_registries:
-      name: "{{registry_name}}"
-      url: "{{url}}"
-      username: "{{username}}"
-      password: "{{password}}"
-    register: result
+    - name: Create registry with username and password
+      nutanix.ncp.ntnx_karbon_registries:
+        name: "{{ registry_name }}"
+        url: "{{ url }}"
+        username: "{{ username }}"
+        password: "{{ password }}"
+      register: result
