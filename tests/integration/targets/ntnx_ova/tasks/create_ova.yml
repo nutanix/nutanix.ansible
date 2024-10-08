@@ -19,7 +19,7 @@
     fail_msg: 'Fail: Unable to create VM with minimum requirements '
     success_msg: 'Success: VM with minimum requirements created successfully '
 #########################################
-- name: Create_ova_image  with check mode
+- name: Create ova image  with check mode
   ntnx_vms_ova:
     src_vm_uuid: "{{ vm.vm_uuid }}"
     name: integration_test_VMDK_ova
