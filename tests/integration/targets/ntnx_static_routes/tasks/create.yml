@@ -39,7 +39,7 @@
     fail_msg: "Fail: Unable to update static routes of vpc"
     success_msg: "Succes: static routes updated successfully"
 
-- name: Wait 1 minute for static routes to be created
+- name: Wait 1 minute for static routes to be become active
   pause:
     seconds: 60
 
@@ -124,7 +124,7 @@
     fail_msg: "Static routes overriding failed"
     success_msg: "Static routes overridden successfully"
 
-- name: Wait 1 minute for static routes to be created
+- name: Wait 1 minute for static routes to be become active
   pause:
     seconds: 60
 
