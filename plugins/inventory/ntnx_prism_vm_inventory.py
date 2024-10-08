@@ -56,6 +56,12 @@ DOCUMENTATION = r"""
                 - Default length(number of records to retrieve) has been set to 500
             default: {"offset": 0, "length": 500}
             type: dict
+        timeout:
+            description:
+                - timeout for polling of operation, after which module will error out
+            type: int
+            required: false
+            default: 60
         validate_certs:
             description:
                 - Set value to C(False) to skip validation for self signed certificates
@@ -77,7 +83,7 @@ from ..module_utils.prism import vms  # noqa: E402
 
 
 class Mock_Module:
-    def __init__(self, host, port, username, password, validate_certs=False):
+    def __init__(self, host, port, username, password, validate_certs=False, timeout=30):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
             "nutanix_host": host,
@@ -85,6 +91,7 @@ class Mock_Module:
             "nutanix_username": username,
             "nutanix_password": password,
             "validate_certs": validate_certs,
+            "timeout": timeout,
             "load_params_without_defaults": False,
         }
 
@@ -120,6 +127,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.nutanix_port = self.get_option("nutanix_port")
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
+        self.timeout = self.get_option("timeout")
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
 
@@ -129,6 +137,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_username,
             self.nutanix_password,
             self.validate_certs,
+            self.timeout
         )
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)

@@ -50,6 +50,9 @@ class Entity(object):
         url = self.base_url + "/{0}".format(endpoint) if endpoint else self.base_url
         if query:
             url = self._build_url_with_query(url, query)
+
+        timeout = self.module.params.get("timeout", timeout)
+
         return self._fetch_url(
             url,
             method=method,
@@ -73,6 +76,9 @@ class Entity(object):
             url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
+
+        timeout = self.module.params.get("timeout", timeout)
+
         return self._fetch_url(
             url,
             method="GET",
@@ -97,6 +103,9 @@ class Entity(object):
             url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
+
+        timeout = self.module.params.get("timeout", timeout)
+
         return self._fetch_url(
             url,
             method=method,
@@ -144,6 +153,9 @@ class Entity(object):
             url = url + "/{0}".format(endpoint)
         if query:
             url = self._build_url_with_query(url, query)
+
+        timeout = self.module.params.get("timeout", timeout)
+
         return self._fetch_url(
             url,
             method="DELETE",
@@ -165,6 +177,8 @@ class Entity(object):
         url = self.base_url if use_base_url else self.base_url + "/list"
         if endpoint:
             url = url + "/{0}".format(endpoint)
+
+        timeout = self.module.params.get("timeout", timeout)
 
         resp = self._fetch_url(
             url,
