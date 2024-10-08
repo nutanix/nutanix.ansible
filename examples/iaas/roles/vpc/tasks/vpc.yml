@@ -1,14 +1,20 @@
 ---
-- name: Create {{ item.name }} VPC with external connectivity to "{{ item.subnet_name }}"
-  ntnx_vpcs:
-        state: present
-        name: "{{ item.name }}"
-        external_subnets:
-          - subnet_name: "{{ item.subnet_name }}"
+- name: Start vpc task
+  ansible.builtin.debug:
+    msg: Create {{ item.name }} VPC with external connectivity to "{{ item.subnet_name }}"
+
+- name: Create VPC with external connectivity
+  nutanix.ncp.ntnx_vpcs:
+    state: present
+    name: "{{ item.name }}"
+    external_subnets:
+      - subnet_name: "{{ item.subnet_name }}"
   register: vpc
-- debug:
+- name: Print vpc response
+  ansible.builtin.debug:
     msg:
-        - "name: {{ vpc.response.status.name }}"
-        - "uuid: {{ vpc.vpc_uuid }}"
-- set_fact:
-    vpc_uuids: "{{ vpc_uuids + [ vpc.vpc_uuid ] }}"
+      - "name: {{ vpc.response.status.name }}"
+      - "uuid: {{ vpc.vpc_uuid }}"
+- name: Define vpc_uuids variable
+  ansible.builtin.set_fact:
+    vpc_uuids: "{{ vpc_uuids + [vpc.vpc_uuid] }}"

@@ -22,6 +22,7 @@ options:
     uuid:
         description:
             - uuid of tag for update and delete
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
     desc:
         description:

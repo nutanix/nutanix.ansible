@@ -1,8 +1,6 @@
 - name: Subnet playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -11,7 +9,7 @@
       validate_certs: false
   tasks:
     - name: Setting Variables
-      set_fact:
+      ansible.builtin.set_fact:
         cluster_name: ""
         cluster_uuid: ""
         virtual_switch_name: ""
@@ -30,71 +28,71 @@
         vpc_name: ""
         vpc_uuid: ""
 
-    - name: 'VLAN subnet with IPAM, IP pools and DHCP'
-      ntnx_subnets:
+    - name: "VLAN subnet with IPAM, IP pools and DHCP"
+      nutanix.ncp.ntnx_subnets:
         state: present
         name: VLAN subnet with IPAM IP pools and DHCP
         vlan_subnet:
           vlan_id: 29
           virtual_switch:
-            name: '{{ virtual_switch_name }}'
+            name: "{{ virtual_switch_name }}"
           cluster:
-            name: '{{ cluster_name }}'
+            name: "{{ cluster_name }}"
           ipam:
-            network_ip: '{{ network_ip }}'
-            network_prefix: '{{ network_prefix }}'
-            gateway_ip: '{{ gateway_ip_address }}'
+            network_ip: "{{ network_ip }}"
+            network_prefix: "{{ network_prefix }}"
+            gateway_ip: "{{ gateway_ip_address }}"
             ip_pools:
-              - start_ip: '{{ start_address }}'
-                end_ip: '{{ end_address }}'
+              - start_ip: "{{ start_address }}"
+                end_ip: "{{ end_address }}"
             dhcp:
-              dns_servers: '{{ dns_servers }}'
-              domain_search: '{{ domain_search }}'
-              domain_name: '{{ domain_name }}'
-              tftp_server_name: '{{ tftp_server_name }}'
-              boot_file: '{{ boot_file }}'
-              dhcp_server_ip: '{{ dhcp_server_address }}'
+              dns_servers: "{{ dns_servers }}"
+              domain_search: "{{ domain_search }}"
+              domain_name: "{{ domain_name }}"
+              tftp_server_name: "{{ tftp_server_name }}"
+              boot_file: "{{ boot_file }}"
+              dhcp_server_ip: "{{ dhcp_server_address }}"
       register: result
       ignore_errors: true
 
     - name: External subnet with NAT
-      ntnx_subnets:
+      nutanix.ncp.ntnx_subnets:
         state: present
-        name: ' External subnet with NAT '
+        name: " External subnet with NAT "
         external_subnet:
           vlan_id: 30
           enable_nat: true
           cluster:
-            name: '{{ cluster_name }}'
+            name: "{{ cluster_name }}"
           ipam:
-            network_ip: '{{ network_ip }}'
-            network_prefix: '{{ network_prefix }}'
-            gateway_ip: '{{ gateway_ip_address }}'
+            network_ip: "{{ network_ip }}"
+            network_prefix: "{{ network_prefix }}"
+            gateway_ip: "{{ gateway_ip_address }}"
             ip_pools:
-              - start_ip: '{{ start_address }}'
-                end_ip: '{{ end_address }}'
+              - start_ip: "{{ start_address }}"
+                end_ip: "{{ end_address }}"
       register: result
       ignore_errors: true
 
     - name: Overlay Subnet with IP_pools and DHCP
-      ntnx_subnets:
+      nutanix.ncp.ntnx_subnets:
         state: present
         name: Overlay Subnet with IP_pools and DHCP
         overlay_subnet:
           vpc:
-            name: '{{ vpc_name }}'
+            name: "{{ vpc_name }}"
           ipam:
-            network_ip: '{{ network_ip }}'
-            network_prefix: '{{ network_prefix }}'
-            gateway_ip: '{{ gateway_ip_address }}'
+            network_ip: "{{ network_ip }}"
+            network_prefix: "{{ network_prefix }}"
+            gateway_ip: "{{ gateway_ip_address }}"
             ip_pools:
-              - start_ip: '{{ start_address }}'
-                end_ip: '{{ end_address }}'
+              - start_ip: "{{ start_address }}"
+                end_ip: "{{ end_address }}"
             dhcp:
-              dns_servers: '{{ dns_servers }}'
-              domain_search: '{{ domain_search }}'
-              domain_name: '{{ domain_name }}'
-              tftp_server_name: '{{ tftp_server_name }}'
-              boot_file_name: '{{ boot_file }}'
+              dns_servers: "{{ dns_servers }}"
+              domain_search: "{{ domain_search }}"
+              domain_name: "{{ domain_name }}"
+              tftp_server_name: "{{ tftp_server_name }}"
+              boot_file_name: "{{ boot_file }}"
       register: result
       ignore_errors: true

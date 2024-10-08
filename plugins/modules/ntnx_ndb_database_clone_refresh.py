@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 module: ntnx_ndb_database_clone_refresh
 short_description: module for database clone refresh.
 version_added: 1.8.0
-description: moudle for refreshing database clone to certain point in time or snapshot.
+description: module for refreshing database clone to certain point in time or snapshot.
 options:
       uuid:
         description:

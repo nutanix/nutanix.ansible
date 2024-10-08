@@ -76,11 +76,11 @@ options:
       Type of action performed by the Recovery Plan Job. VALIDATE - Performs the
       validation of the Recovery Plan. The validation includes checks for the
       presence of entities, networks, categories etc. referenced in the Recovery
-      Plan. MIGRATE - VM would be powered off on the sourece before migrating it
+      Plan. MIGRATE - VM would be powered off on the source before migrating it
       to the recovery Availability Zone. FAILOVER - Restore the entity from the
       recovery points on the recovery Availability Zone. TEST_FAILOVER - Same as
       FAILOVER but on a test network. LIVE_MIGRATE - Migrate without powering
-      off the VM. CLEANUP - for cleaning entities created usnig test failover
+      off the VM. CLEANUP - for cleaning entities created using test failover
     type: str
     required: true
     choices:
@@ -463,7 +463,7 @@ def get_module_spec():
 def get_recovery_plan_job_uuid(module, task_uuid):
     """
     This function extracts recovery plan job uuid from task status.
-    It polls for 10 mins untill the recovery plan job uuid comes up in task response.
+    It polls for 10 mins until the recovery plan job uuid comes up in task response.
     """
     task = Task(module)
     timeout = time.time() + 600

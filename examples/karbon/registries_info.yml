@@ -1,9 +1,7 @@
 ---
-- name: get registeries info
+- name: Get registeries info
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,11 +10,11 @@
       validate_certs: false
 
   tasks:
-  - name: test getting all registries
-    ntnx_karbon_registries_info:
-    register: registries
+    - name: Test getting all registries
+      nutanix.ncp.ntnx_karbon_registries_info:
+      register: registries
 
-  - name: test getting particular register using name
-    ntnx_karbon_registries_info:
+    - name: Test getting particular register using name
+      nutanix.ncp.ntnx_karbon_registries_info:
         registry_name: "{{ registries.response[1].name }}"
-    register: result
+      register: result

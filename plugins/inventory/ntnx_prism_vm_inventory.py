@@ -93,7 +93,7 @@ class Mock_Module:
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
-    """Nutanix VM dynamic invetory module for ansible"""
+    """Nutanix VM dynamic inventory module for ansible"""
 
     NAME = "nutanix.ncp.ntnx_prism_vm_inventory"
 
@@ -184,6 +184,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 self.inventory.set_variable(
                     vm_name, "ntnx_categories", entity["metadata"]["categories"]
                 )
+            self.inventory.set_variable(
+                vm_name,
+                "project_reference",
+                entity.get("metadata", {}).get("project_reference", {}),
+            )
 
             # Add variables created by the user's Jinja2 expressions to the host
             self._set_composite_vars(

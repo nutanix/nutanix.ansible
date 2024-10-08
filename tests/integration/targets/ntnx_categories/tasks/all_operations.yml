@@ -131,7 +131,7 @@
     fail_msg: "Fail: unable to update existing category by deleting all values "
     success_msg: "Passed: update existing category by deleting all values finished successfully"
 #################
-- name: Delte the category
+- name: Delete the category
   ntnx_categories:
     state: "absent"
     name: "{{first_category.name}}"

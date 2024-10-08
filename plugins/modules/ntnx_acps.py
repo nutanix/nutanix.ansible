@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_acps
-short_description: acp module which suports acp Create, update and delete operations
+short_description: acp module which supports acp Create, update and delete operations
 version_added: 1.4.0
 description: 'Create, Update, Delete acp'
 options:
@@ -19,7 +19,9 @@ options:
     required: False
     type: str
   acp_uuid:
-    description: acp UUID
+    description:
+        - acp UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   desc:
     description: The description of the association of a role to a user in a given context

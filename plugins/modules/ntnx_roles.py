@@ -30,6 +30,7 @@ options:
         description:
             - uuid of the role
             - only required while updating or deleting
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         required: false
         type: str
     desc:

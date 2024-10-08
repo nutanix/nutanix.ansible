@@ -3,8 +3,6 @@
 - name: VM operations playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,31 +10,31 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
-  - name: Setting Variables
-    set_fact:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
         script_path: ""
         subnet_name: ""
         vm_uuid: ""
 
-  - name: hard power off the vm
-    ntnx_vms:
+    - name: Hard power off the vm
+      nutanix.ncp.ntnx_vms:
         state: hard_poweroff
         vm_uuid: "{{ vm_uuid }}"
-    register: result
-    ignore_errors: true
+      register: result
+      ignore_errors: true
 
-  - name: create_ova_image  while vm is on
-    ntnx_vms_ova:
+    - name: Create_ova_image while vm is on
+      nutanix.ncp.ntnx_vms_ova:
         state: present
         src_vm_uuid: "{{ vm_uuid }}"
         name: integration_test_VMDK_ova
         file_format: VMDK
         wait: true
-    register: result
-    ignore_errors: true
+      register: result
+      ignore_errors: true
 
-  - name: clone vm while it's off also add network and script
-    ntnx_vms_clone:
+    - name: Clone vm while it's off also add network and script
+      nutanix.ncp.ntnx_vms_clone:
         state: present
         src_vm_uuid: "{{ vm_uuid }}"
         networks:
@@ -46,6 +44,6 @@
         guest_customization:
           type: "cloud_init"
           script_path: "{{ script_path }}"
-          is_overridable: True
-    register: result
-    ignore_errors: true
+          is_overridable: true
+      register: result
+      ignore_errors: true

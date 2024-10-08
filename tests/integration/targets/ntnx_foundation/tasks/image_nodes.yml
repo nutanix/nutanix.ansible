@@ -62,7 +62,7 @@
           - first_cluster.response.cluster_urls is defined
           - first_cluster.response.cluster_urls.0.name=="test-cluster"
         fail_msg: " Fail : unable to create cluster with three node"
-        success_msg: "Succes: cluster with three node created successfully "
+        success_msg: "Success: cluster with three node created successfully "
       # when: false # make it true or remove to unskip task
 
 ######################################################

@@ -2,8 +2,6 @@
 - name: FIP_Info playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,27 +10,25 @@
       validate_certs: false
 
   tasks:
-
     - name: List floating_ips using ascending ip sorting and floating_ip filter
-      ntnx_floating_ips_info:
+      nutanix.ncp.ntnx_floating_ips_info:
         filter:
           floating_ip: "10.0.1.2"
         kind: floating_ip
         sort_order: "ASCENDING"
         sort_attribute: "floating_ip"
       register: result
-      ignore_errors: True
+      ignore_errors: true
 
     - name: List floating_ips using length and offset
-      ntnx_floating_ips_info:
+      nutanix.ncp.ntnx_floating_ips_info:
         length: 3
         offset: 0
       register: result
-      ignore_errors: True
-
+      ignore_errors: true
 
     - name: List floating_ips using filter and custom_filter
-      ntnx_floating_ips_info:
+      nutanix.ncp.ntnx_floating_ips_info:
         filter:
           name: <name>
         custom_filter:

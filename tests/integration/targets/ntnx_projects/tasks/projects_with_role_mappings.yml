@@ -276,7 +276,7 @@
     that:
       - result.changed == false
       - "'Nothing to update' in result.msg"
-    fail_msg: "Project update didnt got skipped for update spec same as existing project"
+    fail_msg: "Project update didn't got skipped for update spec same as existing project"
     success_msg: "Project got skipped successfully for no change in spec"
 
 
@@ -302,7 +302,7 @@
     that:
       - result.changed == false
       - "'Project with given name already exists' in result.msg"
-    fail_msg: "Project creation didnt failed for existing name"
+    fail_msg: "Project creation didn't failed for existing name"
     success_msg: "Project creation failed as expected"
 
 #################################################################
@@ -332,4 +332,4 @@
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
-    success_msg: "user group deletd successfully"
+    success_msg: "user group deleted successfully"

@@ -2,8 +2,6 @@
 - name: Policy based routing - NACLs
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -11,5 +9,6 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
-    - include_role:
+    - name: Include pbr role
+      ansible.builtin.include_role:
         name: pbr_delete

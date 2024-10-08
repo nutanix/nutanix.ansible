@@ -20,7 +20,7 @@ class Image(Prism):
                 "Accept": "application/json",
             }
 
-            # add checksum headers if given incase of local upload
+            # add checksum headers if given in case of local upload
             checksum = module.params.get("checksum")
             if checksum and module.params.get("source_path"):
                 additional_headers["X-Nutanix-Checksum-Type"] = checksum[

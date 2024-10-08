@@ -2,7 +2,6 @@
 - debug:
     msg: Start testing ntnx_ndb_clusters
 
-
 - name: Register cluster with prism_vlan in check mode
   ntnx_ndb_clusters:
       name: "{{cluster.cluster3.name}}"
@@ -50,8 +49,8 @@
       - result.response.networksInfo[0].networkInfo[2].value == "{{cluster.cluster3.vlan_access.prism_vlan.gateway}}"
       - result.response.networksInfo[0].networkInfo[3].value == "{{cluster.cluster3.vlan_access.prism_vlan.subnet_mask}}"
       - result.response.networksInfo[0].type==  "{{cluster.cluster3.vlan_access.prism_vlan.vlan_type}}"
-    fail_msg: "fail: Wring with check mode for registring cluster"
-    success_msg: "pass: retunred as expected"
+    fail_msg: "fail: Wring with check mode for registering cluster"
+    success_msg: "pass: Returned as expected"
 
 - name: Register cluster with prism_vlan
   ntnx_ndb_clusters:
@@ -139,10 +138,10 @@
       - result.response.password is defined
       - result.cluster_uuid is defined
     fail_msg: "fail: update cluster credeential while check_mode"
-    success_msg: "pass: retunred as expected"
+    success_msg: "pass: Returned as expected"
 ################################################################
 
-- name: Negative Secnarios update storage container
+- name: Negative Scenarios update storage container
   ntnx_ndb_clusters:
       uuid:  "{{result.cluster_uuid}}"
       storage_container: "{{cluster.cluster3.storage_container}}"
@@ -161,7 +160,7 @@
 
 ################################################################
 
-- name: Negative Secnarios update vlan access
+- name: Negative Scenarios update vlan access
   ntnx_ndb_clusters:
       uuid:  "{{result.cluster_uuid}}"
       vlan_access:
@@ -186,7 +185,7 @@
 
 ################################################################
 
-- name: Negative Secnarios update agent network
+- name: Negative Scenarios update agent network
   ntnx_ndb_clusters:
       uuid:  "{{result.cluster_uuid}}"
       agent_network:
@@ -213,7 +212,7 @@
 
 ################################################################
 
-- name: Negative Secnarios update agent network
+- name: Negative Scenarios update agent network
   ntnx_ndb_clusters:
       uuid:  "{{result.cluster_uuid}}"
       name_prefix: "{{cluster.cluster3.name_prefix}}"

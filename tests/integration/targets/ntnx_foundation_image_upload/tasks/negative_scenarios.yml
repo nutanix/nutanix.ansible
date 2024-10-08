@@ -15,4 +15,4 @@
       - result.changed==false
       - "result.msg == 'value of installer_type must be one of: kvm, esx, hyperv, xen, nos, got: wrong installler type'"
     fail_msg: " Fail : image uploaded with wrong installer type"
-    success_msg: "Succes: returned error as expected "
+    success_msg: "Success: returned error as expected "

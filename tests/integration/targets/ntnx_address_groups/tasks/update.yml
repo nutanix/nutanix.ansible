@@ -34,7 +34,7 @@
     that:
       - test_ag.response is defined
       - test_ag.changed == True
-    fail_msg: "Unable to create adress group"
+    fail_msg: "Unable to create address group"
     success_msg: "Address group created susccessfully"
 
 
