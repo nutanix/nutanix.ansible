@@ -74,6 +74,11 @@ import tempfile  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
 from ..module_utils.prism import vms  # noqa: E402
+import sys
+import traceback
+from ansible.module_utils.six import (
+    PY2,
+)
 
 
 class Mock_Module:
@@ -90,6 +95,28 @@ class Mock_Module:
 
     def jsonify(self, data):
         return json.dumps(data)
+
+    def fail_json(self, msg, **kwargs):
+        """Invoke fail_json using the AnsibleModule's fail_json method."""
+        kwargs["failed"] = True
+        kwargs["msg"] = msg
+        # Add traceback if debug or high verbosity and it is missing
+        # NOTE: Badly named as exception, it really always has been a traceback
+        if (
+            "exception" not in kwargs
+            and sys.exc_info()[2]
+            and (self._debug or self._verbosity >= 3)
+        ):
+            if PY2:
+                # On Python 2 this is the last (stack frame) exception and as such may be unrelated to the failure
+                kwargs["exception"] = (
+                    "WARNING: The below traceback may *not* be related to the actual failure.\n"
+                    + "".join(traceback.format_tb(sys.exc_info()[2]))
+                )
+            else:
+                kwargs["exception"] = "".join(traceback.format_tb(sys.exc_info()[2]))
+        print("\n%s" % self.jsonify(kwargs))
+        sys.exit(1)
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
