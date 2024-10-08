@@ -178,7 +178,7 @@ class Entity(object):
             if raise_error:
                 self.module.fail_json(
                     msg="Failed fetching URL: {0}".format(url),
-                    error=resp["message_list"],
+                    error=resp.get("message_list"),
                     response=resp,
                 )
             else:
