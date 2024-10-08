@@ -182,7 +182,7 @@ options:
                 default: true
     postgres:
         description:
-            - potgres related configuration
+            - postgres related configuration
         type: dict
         suboptions:
             listener_port:

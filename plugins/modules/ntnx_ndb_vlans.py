@@ -187,12 +187,12 @@ type:
   type: str
   sample: "Static"
 managed:
-  description: mannaged or unmannged vlan
+  description: managed or unmanaged vlan
   returned: always
   type: bool
 
 propertiesMap:
-  description: confiuration of static vlan
+  description: configuration of static vlan
   type: dict
   returned: always
   sample:
@@ -232,7 +232,7 @@ ipPools:
                 ]
 
 properties:
-  description: list of confiuration of static vlan
+  description: list of configuration of static vlan
   type: list
   returned: always
   sample:

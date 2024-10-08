@@ -25,8 +25,8 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.changed == true
-    fail_msg: 'Fail: Unable to update static routes of vpc'
-    success_msg: 'Succes: static routes updated successfully'
+    fail_msg: "Fail: Unable to update static routes of vpc"
+    success_msg: "Success: static routes updated successfully"
 
 ###########################################################################################################
 
@@ -34,7 +34,6 @@
   ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
   register: result
-
 
 - set_fact:
     d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
@@ -54,8 +53,8 @@
       - result.response.status.resources.default_route["destination"] == "0.0.0.0/0"
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
 
-    fail_msg: 'Fail: Unable to get static routes for vpc'
-    success_msg: 'Succes'
+    fail_msg: "Fail: Unable to get static routes for vpc"
+    success_msg: "Success"
 
 ###########################################################################################################
 

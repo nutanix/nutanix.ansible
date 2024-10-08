@@ -608,4 +608,4 @@
       - result.vm_uuid
       - result.task_uuid
     fail_msg: "Fail: Unable to delete created vm "
-    success_msg: "Success: Vm deleted sucessfully"
+    success_msg: "Success: Vm deleted successfully"

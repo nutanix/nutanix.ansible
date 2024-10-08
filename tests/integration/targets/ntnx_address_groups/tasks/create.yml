@@ -13,7 +13,6 @@
     ag1: "{{random_name}}{{suffix_name}}1"
     ag2: "{{random_name}}{{suffix_name}}2"
 
-
 - name: Create address group
   ntnx_address_groups:
     state: present
@@ -40,7 +39,7 @@
       - result.response.ip_address_block_list[1].prefix_length == 32
 
     fail_msg: "Unable to create address group"
-    success_msg: "Address group created susccessfully"
+    success_msg: "Address group created successfully"
 
 - set_fact:
     todelete: '{{ result["address_group_uuid"] }}'
@@ -96,7 +95,6 @@
     success_msg: "Spec generated successfully with check mode"
 
 ###################################################################################################
-
 
 - name: cleanup created entities
   ntnx_address_groups:

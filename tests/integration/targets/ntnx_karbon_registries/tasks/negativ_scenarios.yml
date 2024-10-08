@@ -4,7 +4,7 @@
 
 - name: create registry with wrong port number
   ntnx_karbon_registries:
-    name: test_regitry
+    name: test_registry
     url: "{{url}}"
     port: 501
   register: result

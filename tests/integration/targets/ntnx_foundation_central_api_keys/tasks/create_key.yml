@@ -3,7 +3,7 @@
 
 - name: create api key with check_mode
   ntnx_foundation_central_api_keys:
-    alias:  test
+    alias: test
   check_mode: true
   register: result
   ignore_errors: true
@@ -22,10 +22,9 @@
   set_fact:
     random_alias: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
 
-
 - name: create api key with random alias
   ntnx_foundation_central_api_keys:
-    alias:  "{{random_alias.0}}"
+    alias: "{{random_alias.0}}"
   register: result
   ignore_errors: true
 
@@ -40,7 +39,7 @@
     success_msg: "success: api key created successfully "
 
 - ntnx_foundation_central_api_keys:
-    alias:  "{{random_alias.0}}"
+    alias: "{{random_alias.0}}"
   register: result
   ignore_errors: true
 

@@ -33,7 +33,7 @@
 
 #############################################################################################
 
-- name: test idempotency by definig same spec as before
+- name: test idempotency by defining same spec as before
   ntnx_image_placement_policy:
     state: present
     policy_uuid: "{{ setup_policy.response.metadata.uuid }}"

@@ -2,7 +2,6 @@
 # Summary:
 # This playbook will test basic database flows
 
-
 - debug:
     msg: "start ndb databases crud tests"
 
@@ -16,7 +15,6 @@
     vm1_name: "{{random_name[0]}}-vm"
 
 ################################### Single instance postgres database tests #############################
-
 
 - name: create spec for single instance postgres database on new db server vm
   check_mode: yes
@@ -83,110 +81,71 @@
   register: result
 
 - set_fact:
-    expected_action_arguments: [
-                {
-                    "name": "dbserver_description",
-                    "value": "vm for db server"
-                },
-                {
-                    "name": "listener_port",
-                    "value": "9999"
-                },
-                {
-                    "name": "auto_tune_staging_drive",
-                    "value": false
-                },
-                {
-                    "name": "allocate_pg_hugepage",
-                    "value": True
-                },
-                {
-                    "name": "cluster_database",
-                    "value": false
-                },
-                {
-                    "name": "auth_method",
-                    "value": "md5"
-                },
-                {
-                    "name": "db_password",
-                    "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
-                },
-                {
-                    "name": "pre_create_script",
-                    "value": "ls"
-                },
-                {
-                    "name": "post_create_script",
-                    "value": "ls -a"
-                },
-                {
-                    "name": "database_names",
-                    "value": "testAnsible"
-                },
-                {
-                    "name": "database_size",
-                    "value": "200"
-                }
-            ]
+    expected_action_arguments:
+      [
+        { "name": "dbserver_description", "value": "vm for db server" },
+        { "name": "listener_port", "value": "9999" },
+        { "name": "auto_tune_staging_drive", "value": false },
+        { "name": "allocate_pg_hugepage", "value": True },
+        { "name": "cluster_database", "value": false },
+        { "name": "auth_method", "value": "md5" },
+        {
+          "name": "db_password",
+          "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+        },
+        { "name": "pre_create_script", "value": "ls" },
+        { "name": "post_create_script", "value": "ls -a" },
+        { "name": "database_names", "value": "testAnsible" },
+        { "name": "database_size", "value": "200" },
+      ]
 
 - set_fact:
-    expected_time_machine_info: {
-                "autoTuneLogDrive": true,
-                "description": "TM-desc",
-                "name": "TM1",
-                "schedule": {
-                    "continuousSchedule": {
-                        "enabled": true,
-                        "logBackupInterval": 30,
-                        "snapshotsPerDay": 2
-                    },
-                    "monthlySchedule": {
-                        "dayOfMonth": 4,
-                        "enabled": true
-                    },
-                    "quartelySchedule": {
-                        "dayOfMonth": 4,
-                        "enabled": true,
-                        "startMonth": "JANUARY"
-                    },
-                    "snapshotTimeOfDay": {
-                        "hours": 11,
-                        "minutes": 10,
-                        "seconds": 2
-                    },
-                    "weeklySchedule": {
-                        "dayOfWeek": "WEDNESDAY",
-                        "enabled": true
-                    }
-                },
-                "slaId": "{{sla.uuid}}"
-            }
+    expected_time_machine_info:
+      {
+        "autoTuneLogDrive": true,
+        "description": "TM-desc",
+        "name": "TM1",
+        "schedule":
+          {
+            "continuousSchedule":
+              {
+                "enabled": true,
+                "logBackupInterval": 30,
+                "snapshotsPerDay": 2,
+              },
+            "monthlySchedule": { "dayOfMonth": 4, "enabled": true },
+            "quartelySchedule":
+              { "dayOfMonth": 4, "enabled": true, "startMonth": "JANUARY" },
+            "snapshotTimeOfDay": { "hours": 11, "minutes": 10, "seconds": 2 },
+            "weeklySchedule": { "dayOfWeek": "WEDNESDAY", "enabled": true },
+          },
+        "slaId": "{{sla.uuid}}",
+      }
 
 - set_fact:
-    mainetance_tasks: {
-                "maintenanceWindowId": "{{maintenance.window_uuid}}",
-                "tasks": [
-                    {
-                        "payload": {
-                            "prePostCommand": {
-                                "postCommand": "ls -a",
-                                "preCommand": "ls"
-                            }
-                        },
-                        "taskType": "OS_PATCHING"
-                    },
-                    {
-                        "payload": {
-                            "prePostCommand": {
-                                "postCommand": "ls -F",
-                                "preCommand": "ls -l"
-                            }
-                        },
-                        "taskType": "DB_PATCHING"
-                    }
-                ]
-            }
+    maintenance_tasks:
+      {
+        "maintenanceWindowId": "{{maintenance.window_uuid}}",
+        "tasks":
+          [
+            {
+              "payload":
+                {
+                  "prePostCommand":
+                    { "postCommand": "ls -a", "preCommand": "ls" },
+                },
+              "taskType": "OS_PATCHING",
+            },
+            {
+              "payload":
+                {
+                  "prePostCommand":
+                    { "postCommand": "ls -F", "preCommand": "ls -l" },
+                },
+              "taskType": "DB_PATCHING",
+            },
+          ],
+      }
 
 - name: Check mode status
   assert:
@@ -205,12 +164,10 @@
       - result.response.nodes | length == 1
       - result.response.nodeCount == 1
       - result.response.nodes[0].nxClusterId == "{{cluster.cluster1.uuid}}"
-      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.maintenanceTasks == maintenance_tasks
       - result.response.createDbserver == True
     fail_msg: "Unable to create single instance postgres database provision spec"
     success_msg: "single instance postgres database provision spec created successfully"
-
-
 
 - name: create single instance postgres database on new db server vm
   ntnx_ndb_databases:
@@ -283,7 +240,7 @@
 #
 - name: create properties map
   set_fact:
-      properties: "{{ properties | combine ({ item['name'] : item['value'] }) }}"
+    properties: "{{ properties | combine ({ item['name'] : item['value'] }) }}"
   loop: "{{result.response.properties}}"
   no_log: true
 #
@@ -332,7 +289,6 @@
 
 ################################### update tests #############################
 
-
 - name: update database with check mode
   check_mode: yes
   ntnx_ndb_databases:
@@ -380,10 +336,8 @@
       - result.response.tags[0].tagName == "{{tags.databases.name}}"
       - result.response.tags[0].value == "single-instance-dbs-updated"
 
-
     fail_msg: "Unable to update single instance postgres database"
     success_msg: "single instance postgres database updated successfully"
-
 
 - name: idempotency checks
   ntnx_ndb_databases:
@@ -427,8 +381,6 @@
     fail_msg: "creation of spec for delete db from vm failed"
     success_msg: "spec for delete db from vm created successfully"
 
-
-
 - name: create spec for soft remove
   check_mode: yes
   ntnx_ndb_databases:
@@ -450,7 +402,6 @@
       - result.response.deleteTimeMachine == True
     fail_msg: "creation of spec for soft remove with time machine delete failed"
     success_msg: "spec for soft remove with time machine delete created successfully"
-
 
 #####################################INFO Module tests#######################################################
 
@@ -525,7 +476,6 @@
     fail_msg: "Unable to Get era databases using its id"
     success_msg: "Get era databases using its id finished successfully"
 
-
 ################################################################
 
 - name: get era database with incorrect name
@@ -546,7 +496,6 @@
 
 ############################################################################################
 
-
 - name: unregister db along with delete time machine
   ntnx_ndb_databases:
     db_uuid: "{{db_uuid}}"
@@ -563,7 +512,6 @@
       - result.response.status == "5"
     fail_msg: "database delete failed"
     success_msg: "database deleted successfully"
-
 
 - name: delete db server vm
   ntnx_ndb_db_server_vms:

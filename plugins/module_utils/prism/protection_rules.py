@@ -91,13 +91,13 @@ class ProtectionRule(Prism):
             az_connection_spec = {}
             spec = {}
             if schedule.get("source"):
-                az_connection_spec[
-                    "source_availability_zone_index"
-                ] = ordered_az_list.index(schedule["source"])
+                az_connection_spec["source_availability_zone_index"] = (
+                    ordered_az_list.index(schedule["source"])
+                )
             if schedule.get("destination"):
-                az_connection_spec[
-                    "destination_availability_zone_index"
-                ] = ordered_az_list.index(schedule["destination"])
+                az_connection_spec["destination_availability_zone_index"] = (
+                    ordered_az_list.index(schedule["destination"])
+                )
 
             if schedule["protection_type"] == "ASYNC":
                 if (
@@ -110,7 +110,7 @@ class ProtectionRule(Prism):
                 ):
                     return (
                         None,
-                        "rpo, rpo_unit, snapshot_type and at least one policy are required fields for aysynchronous snapshot schedule",
+                        "rpo, rpo_unit, snapshot_type and at least one policy are required fields for asynchronous snapshot schedule",
                     )
 
                 spec["recovery_point_objective_secs"], err = convert_to_secs(

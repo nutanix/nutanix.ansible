@@ -39,8 +39,8 @@
       - result.response.status.resources.default_route["destination"] == "0.0.0.0/0"
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
 
-    fail_msg: 'Fail: Unable to update static routes of vpc'
-    success_msg: 'Succes: static routes updated successfully'
+    fail_msg: "Fail: Unable to update static routes of vpc"
+    success_msg: "Success: static routes updated successfully"
 
 ###########################################################################################################
 
@@ -97,7 +97,7 @@
 
 ###########################################################################################################
 
-- name: Netgative scenario of creating multiple default routes
+- name: Negative scenario of creating multiple default routes
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:

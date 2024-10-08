@@ -567,7 +567,7 @@ spec:
                                             {
                                                 "ip_config_list": [
                                                     {
-                                                        "ip_address": "cutom_ip_1"
+                                                        "ip_address": "custom_ip_1"
                                                     }
                                                 ],
                                                 "vm_reference": {

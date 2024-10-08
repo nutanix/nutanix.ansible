@@ -9,10 +9,10 @@ import uuid
 from .prism import Prism
 
 
-class IdempotenceIdenitifiers(Prism):
+class IdempotenceIdentifiers(Prism):
     def __init__(self, module):
         resource_type = "/idempotence_identifiers"
-        super(IdempotenceIdenitifiers, self).__init__(
+        super(IdempotenceIdentifiers, self).__init__(
             module, resource_type=resource_type
         )
 

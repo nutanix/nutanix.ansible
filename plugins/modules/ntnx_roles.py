@@ -80,7 +80,7 @@ EXAMPLES = r"""
     name: test-ansible-role-1
     desc: test-ansible-role-1-desc
     permissions:
-      - name: "<permision-1-name>"
+      - name: "<permission-1-name>"
       - uuid: "<permission-2-uuid>"
       - uuid: "<permission-3-uuid>"
     wait: true

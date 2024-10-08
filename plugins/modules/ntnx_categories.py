@@ -202,7 +202,7 @@ def create_categories(module, result):
             if value not in category_key_values:
                 category_values_specs.append(_category_value.get_value_spec(value))
 
-    # indempotency check
+    # idempotency check
     if not category_values_specs and (
         category_key_exists and (category_key == category_key_spec)
     ):

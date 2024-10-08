@@ -252,7 +252,7 @@ class SoftwareProfile(Profile):
         self.build_spec_methods.update(
             {
                 "software": self._build_spec_profile,
-                "clusters": self._build_spec_clusters_availibilty,
+                "clusters": self._build_spec_clusters_availability,
             }
         )
         payload, err = super().get_create_profile_spec(
@@ -269,7 +269,7 @@ class SoftwareProfile(Profile):
     def get_update_profile_spec(self, old_spec=None, params=None, **kwargs):
 
         self.build_spec_methods.update(
-            {"clusters": self._build_spec_clusters_availibilty}
+            {"clusters": self._build_spec_clusters_availability}
         )
         payload, err = super().get_update_profile_spec(old_spec, params, **kwargs)
         if err:
@@ -374,7 +374,7 @@ class SoftwareProfile(Profile):
         payload["properties"] = properties
         return payload, None
 
-    def _build_spec_clusters_availibilty(self, payload, clusters):
+    def _build_spec_clusters_availability(self, payload, clusters):
         _clusters = Cluster(self.module)
         spec = []
         clusters_name_uuid_map = _clusters.get_all_clusters_name_uuid_map()

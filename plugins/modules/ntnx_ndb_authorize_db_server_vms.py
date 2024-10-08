@@ -74,7 +74,7 @@ EXAMPLES = r"""
 """
 RETURN = r"""
 response:
-  description: An intentful representation of a authorizisation status
+  description: An intentful representation of a authorization status
   returned: always
   type: dict
   sample: {

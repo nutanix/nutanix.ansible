@@ -404,7 +404,7 @@ class ImageNodes(Foundation):
             "ucsm_node_serial": None,
             "ucsm_managed_mode": None,
             "ucsm_params": None,
-            "exlude_boot_serial": False,
+            "exclude_boot_serial": False,
             "mitigate_low_boot_space": False,
             "bond_uplinks": [],
             "vswitches": [],

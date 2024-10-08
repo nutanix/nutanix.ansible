@@ -8,7 +8,7 @@
 
 - name: create api key with random alias
   ntnx_foundation_central_api_keys:
-    alias:  "{{random_alias.0}}"
+    alias: "{{random_alias.0}}"
   register: key
   ignore_errors: true
 
@@ -53,9 +53,9 @@
 
 - name: get api key with custom filter
   ntnx_foundation_central_api_keys_info:
-      custom_filter:
-        created_timestamp:  "{{key.response.created_timestamp}}"
-        alias: "{{key.response.alias}}"
+    custom_filter:
+      created_timestamp: "{{key.response.created_timestamp}}"
+      alias: "{{key.response.alias}}"
   register: result
   ignore_errors: true
 

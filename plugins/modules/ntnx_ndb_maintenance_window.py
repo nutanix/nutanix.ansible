@@ -9,9 +9,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_maintenance_window
-short_description: module to create, update and delete mainetance window
+short_description: module to create, update and delete maintenance window
 version_added: 1.8.0
-description: module to create, update and delete mainetance window
+description: module to create, update and delete maintenance window
 options:
     name:
         description:
@@ -71,7 +71,7 @@ EXAMPLES = r"""
 - name: create window with weekly schedule
   ntnx_ndb_maintenance_window:
     name: "{{window1_name}}"
-    desc: "anisble-created-window"
+    desc: "ansible-created-window"
     schedule:
       recurrence: "weekly"
       duration: 2
@@ -83,7 +83,7 @@ EXAMPLES = r"""
 - name: create window with monthly schedule
   ntnx_ndb_maintenance_window:
     name: "{{window2_name}}"
-    desc: "anisble-created-window"
+    desc: "ansible-created-window"
     schedule:
       recurrence: "monthly"
       duration: 2
