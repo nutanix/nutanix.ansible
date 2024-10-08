@@ -3,8 +3,6 @@
 - name: VM update playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -13,7 +11,7 @@
       validate_certs: false
   tasks:
     - name: Setting Variables
-      set_fact:
+      ansible.builtin.set_fact:
         cluster_name: ""
         script_path: ""
         subnet_name: ""
@@ -27,7 +25,7 @@
         subnet_uuid: ""
 
     - name: Update VM
-      ntnx_vms:
+      nutanix.ncp.ntnx_vms:
         vm_uuid: "{{ vm_uuid }}"
         name: updated
         desc: updated
@@ -59,9 +57,9 @@
       register: result
 
     - name: Update VM by deleting and editing disks and subnets
-      ntnx_vms:
+      nutanix.ncp.ntnx_vms:
         vm_uuid: "{{ vm_uuid }}"
-        name: update disks
+        name: update diks
         desc: update disks
         disks:
           - type: "DISK"
@@ -75,7 +73,7 @@
       register: result
 
     - name: Update VM by deleting it
-      ntnx_vms:
+      nutanix.ncp.ntnx_vms:
         state: absent
         vm_uuid: "{{ vm_uuid }}"
       register: result

@@ -1,9 +1,10 @@
 ---
 - name: Delete PBR "{{ item.pbr_uuid }}"
-  ntnx_pbrs:
+  nutanix.ncp.nutanix.ncp.ntnx_pbrs:
     state: absent
     pbr_uuid: "{{ item.pbr_uuid }}"
   register: pbr
-- debug:
+- name: Print pbr uuid
+  ansible.builtin.debug:
     msg:
-        - "uuid: {{ pbr.pbr_uuid }}"
+      - "uuid: {{ pbr.pbr_uuid }}"
