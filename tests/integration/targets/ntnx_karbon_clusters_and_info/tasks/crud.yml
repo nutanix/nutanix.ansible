@@ -3,10 +3,10 @@
     msg: Start testing ntnx_karbon_clusters and ntnx_karbon_clusters_info
 
 - set_fact:
-    karbon_name:  "test-module21"
+    karbon_name: "test-module21"
 
 #############################
-- name:  Verify check mode for PROD karbon cluster
+- name: Verify check mode for PROD karbon cluster
   ntnx_karbon_clusters:
     cluster:
       uuid: "{{cluster.uuid}}"
@@ -17,7 +17,7 @@
       name: "{{network.dhcp.name}}"
     cluster_type: PROD
     cni:
-      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      node_cidr_mask_size: "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
       pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
       network_provider: Flannel
@@ -65,7 +65,7 @@
     fail_msg: "Check mode for PROD cluster failed"
 #############################
 
-- name:  Verify check mode for ntnx_karbon_clusters
+- name: Verify check mode for ntnx_karbon_clusters
   ntnx_karbon_clusters:
     cluster:
       uuid: "{{cluster.uuid}}"
@@ -76,10 +76,11 @@
       name: "{{network.dhcp.name}}"
     cluster_type: DEV
     cni:
-      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      node_cidr_mask_size: "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
       pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
       network_provider: Flannel
+    disable_monitoring: true
     storage_class:
       nutanix_cluster_password: "{{nutanix_cluster_password}}"
       nutanix_cluster_username: "{{nutanix_cluster_username}}"
@@ -117,10 +118,11 @@
       name: "{{network.dhcp.name}}"
     cluster_type: DEV
     cni:
-      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      node_cidr_mask_size: "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
       pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
       network_provider: Flannel
+    disable_monitoring: true
     storage_class:
       nutanix_cluster_password: "{{nutanix_cluster_password}}"
       nutanix_cluster_username: "{{nutanix_cluster_username}}"
@@ -174,7 +176,7 @@
     node_subnet:
       uuid: "{{network.dhcp.uuid}}"
     cni:
-      node_cidr_mask_size:  "{{cni.node_cidr_mask_size}}"
+      node_cidr_mask_size: "{{cni.node_cidr_mask_size}}"
       service_ipv4_cidr: "{{cni.service_ipv4_cidr}}"
       pod_ipv4_cidr: "{{cni.pod_ipv4_cidr}}"
       network_provider: Calico
@@ -281,9 +283,9 @@
     suffix_name: "ansible"
 
 - set_fact:
-    node1_name:  "{{random_name}}{{suffix_name}}1"
-    node2_name:  "{{random_name}}{{suffix_name}}2"
-    node3_name:  "{{random_name}}{{suffix_name}}3"
+    node1_name: "{{random_name}}{{suffix_name}}1"
+    node2_name: "{{random_name}}{{suffix_name}}2"
+    node3_name: "{{random_name}}{{suffix_name}}3"
 
 - debug:
     msg: Start testing ntnx_karbon_clusters_node_pools
@@ -292,8 +294,8 @@
   ntnx_karbon_clusters_node_pools:
     node_subnet:
       uuid: "{{network.dhcp.uuid}}"
-    node_pool_name:  "{{node1_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node1_name}}"
+    cluster_name: "{{karbon_name}}"
     pool_config:
       num_instances: 2
       cpu: 4
@@ -316,8 +318,8 @@
 #################################
 - name: try to update node pool config with same values
   ntnx_karbon_clusters_node_pools:
-    node_pool_name:  "{{node1_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node1_name}}"
+    cluster_name: "{{karbon_name}}"
     pool_config:
       num_instances: 2
       cpu: 4
@@ -337,8 +339,8 @@
 #################################
 - name: try to update node pool config with wrong labels
   ntnx_karbon_clusters_node_pools:
-    node_pool_name:  "{{node1_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node1_name}}"
+    cluster_name: "{{karbon_name}}"
     pool_config:
       num_instances: 2
       cpu: 4
@@ -362,13 +364,13 @@
 - name: update pool by increasing cpu,memory_gb,num_instances and try to add wrong labels
   ntnx_karbon_clusters_node_pools:
     wait: True
-    node_pool_name:  "{{node1_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node1_name}}"
+    cluster_name: "{{karbon_name}}"
     pool_config:
-        cpu: 6
-        memory_gb: 10 # for etcd min 8
-        disk_gb: 150
-        num_instances: 4
+      cpu: 6
+      memory_gb: 10 # for etcd min 8
+      disk_gb: 150
+      num_instances: 4
     add_labels:
       property1: "test-property1"
       property2: "test-property2"
@@ -393,8 +395,8 @@
 - name: update pool by add  labels
   ntnx_karbon_clusters_node_pools:
     wait: True
-    node_pool_name:  "{{node1_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node1_name}}"
+    cluster_name: "{{karbon_name}}"
     add_labels:
       property1: "test-property1"
       property2: "test-property2"
@@ -417,13 +419,13 @@
 - name: update pool by decreasing cpu,memory_gb,num_instances and add remove labels
   ntnx_karbon_clusters_node_pools:
     wait: True
-    node_pool_name:  "{{node1_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node1_name}}"
+    cluster_name: "{{karbon_name}}"
     pool_config:
-        cpu: 5
-        memory_gb: 9 # for etcd min 8
-        disk_gb: 140
-        num_instances: 3
+      cpu: 5
+      memory_gb: 9 # for etcd min 8
+      disk_gb: 140
+      num_instances: 3
     remove_labels:
       - property2
       - property3
@@ -445,8 +447,8 @@
 - name: delete pool
   ntnx_karbon_clusters_node_pools:
     state: absent
-    node_pool_name:  "{{node1_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node1_name}}"
+    cluster_name: "{{karbon_name}}"
   register: result
   ignore_errors: true
 
@@ -465,8 +467,8 @@
   ntnx_karbon_clusters_node_pools:
     node_subnet:
       name: "{{network.dhcp.name}}"
-    node_pool_name:  "{{node2_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node2_name}}"
+    cluster_name: "{{karbon_name}}"
   register: result
   ignore_errors: true
 
@@ -485,8 +487,8 @@
 - name: delete pool
   ntnx_karbon_clusters_node_pools:
     state: absent
-    node_pool_name:  "{{node2_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node2_name}}"
+    cluster_name: "{{karbon_name}}"
   register: result
   ignore_errors: true
 
