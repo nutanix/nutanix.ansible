@@ -1,13 +1,14 @@
 ---
-- debug:
+- name: Start testing ntnx_ndb_time_machines_info
+  ansible.builtin.debug:
     msg: Start testing ntnx_ndb_time_machines_info
 
 - name: List all NDB tms
   ntnx_ndb_time_machines_info:
   register: tms
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - tms.response is defined
       - tms.failed == false
@@ -23,8 +24,8 @@
       value: "{{tms.response[0].name}}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -34,14 +35,13 @@
     fail_msg: "Unable to list all NDB tms using filter"
     success_msg: "NDB tms listed successfully using filter"
 ################################################################
-- name: get NDB tms using it's name
+- name: Get NDB tms using it's name
   ntnx_ndb_time_machines_info:
     name: "{{tms.response[0].name}}"
   register: result
 
-
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -55,8 +55,8 @@
     uuid: "{{tms.response[0].id}}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -74,8 +74,8 @@
       load_database: true
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -87,15 +87,15 @@
 
 ################################################################
 
-- name: get NDB timemachine with incorrect name
+- name: Get NDB timemachine with incorrect name
   ntnx_ndb_time_machines_info:
     name: "abcd"
   register: result
   no_log: true
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.error is defined
       - result.failed == true

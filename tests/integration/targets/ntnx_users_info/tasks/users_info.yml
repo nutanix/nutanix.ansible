@@ -1,23 +1,26 @@
-- debug:
+- name: Start testing ntnx_users_info
+  ansible.builtin.debug:
     msg: start testing ntnx_users_info
 ##################################################
 
 - name: List all users
   ntnx_users_info:
   register: users
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - users.response is defined
       - users.response.metadata.total_matches > 0
     fail_msg: "Unable to list all users"
     success_msg: "User info obtained successfully"
 
-- set_fact:
+- name: Set user name
+  ansible.builtin.set_fact:
     test_user_name: "{{users.response.entities.2.status.name}}"
-- set_fact:
+- name: Set user uuid
+  ansible.builtin.set_fact:
     test_user_uuid: "{{users.response.entities.2.metadata.uuid}}"
 
 ##################################################
@@ -26,10 +29,10 @@
   ntnx_users_info:
     user_uuid: "{{ test_user_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -46,10 +49,10 @@
     filter:
       username: "{{ test_user_name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -67,10 +70,10 @@
     length: 2
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -88,10 +91,10 @@
 #     sort_attribute: "name"
 #     kind: user
 #   register: result
-#   ignore_errors: True
+#   ignore_errors: true
 
 # - name: Listing Status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
 #       - result.changed == false

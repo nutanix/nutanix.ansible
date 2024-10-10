@@ -1,9 +1,11 @@
 ---
-- debug:
+- name: Start testing ntnx_foundation_image_upload
+  ansible.builtin.debug:
     msg: start testing ntnx_foundation_image_upload
 
 - name: Download image for test
-  get_url:
+  ansible.builtin.get_url:
+    mode: "0644"
     url: "{{ image_url }}"
     dest: "{{ source }}"
 
@@ -18,7 +20,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed==false
@@ -35,7 +37,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response.status_code == 200
       - result.failed==false

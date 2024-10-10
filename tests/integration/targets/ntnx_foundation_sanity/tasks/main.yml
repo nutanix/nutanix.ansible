@@ -1,6 +1,8 @@
 ---
-- module_defaults:
-    group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ foundation_host }}"
+- name: Set module defaults
+  module_defaults:
+      group/nutanix.ncp.ntnx:
+          nutanix_host: "{{ foundation_host }}"
   block:
-        - import_tasks: "image_nodes.yml"
+      - name: Import "image_nodes.yml"
+        ansible.builtin.import_tasks: "image_nodes.yml"

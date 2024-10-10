@@ -9,7 +9,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.failed==true
       - result.changed==false

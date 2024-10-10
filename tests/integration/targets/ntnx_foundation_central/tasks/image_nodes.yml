@@ -1,7 +1,8 @@
-- debug:
+- name: Start testing ntnx_foundation_central module
+  ansible.builtin.debug:
     msg: start testing ntnx_foundation_central module
 
-- name: api
+- name: Api
   ntnx_foundation_central:
     cluster_name: "{{cluster_name}}"
     skip_cluster_creation: false
@@ -45,7 +46,7 @@
   # when: false # make it true or remove to unskip task
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed==false

@@ -1,11 +1,15 @@
 ---
-- module_defaults:
-    group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ndb_ip}}"
-        nutanix_username: "{{ndb_username}}"
-        nutanix_password: "{{ndb_password}}"
-        validate_certs: false
+- name: Set module defaults
+  module_defaults:
+      group/nutanix.ncp.ntnx:
+          nutanix_host: "{{ndb_ip}}"
+          nutanix_username: "{{ndb_username}}"
+          nutanix_password: "{{ndb_password}}"
+          validate_certs: false
   block:
-        - import_tasks: "compute.yml"
-        - import_tasks: "db_params.yml"
-        - import_tasks: "network_profile.yml"
+      - name: Import "compute.yml"
+        ansible.builtin.import_tasks: "compute.yml"
+      - name: Import "db_params.yml"
+        ansible.builtin.import_tasks: "db_params.yml"
+      - name: Import "network_profile.yml"
+        ansible.builtin.import_tasks: "network_profile.yml"

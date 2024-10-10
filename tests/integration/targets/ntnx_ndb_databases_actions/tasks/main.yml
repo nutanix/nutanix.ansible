@@ -1,10 +1,12 @@
 ---
-- module_defaults:
-    group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ ndb_ip }}"
-        nutanix_username: "{{ ndb_username }}"
-        nutanix_password: "{{ ndb_password }}"
-        validate_certs: false
+- name: Set module defaults
+  module_defaults:
+      group/nutanix.ncp.ntnx:
+          nutanix_host: "{{ ndb_ip }}"
+          nutanix_username: "{{ ndb_username }}"
+          nutanix_password: "{{ ndb_password }}"
+          validate_certs: false
 
   block:
-        - import_tasks: "all_actions.yml"
+      - name: Import "all_actions.yml"
+        ansible.builtin.import_tasks: "all_actions.yml"

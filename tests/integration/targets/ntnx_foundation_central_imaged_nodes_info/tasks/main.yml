@@ -1,9 +1,11 @@
 ---
-- module_defaults:
-    nutanix.ncp.ntnx_foundation_central_imaged_nodes_info:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
+- name: Set module defaults
+  module_defaults:
+      nutanix.ncp.ntnx_foundation_central_imaged_nodes_info:
+          nutanix_host: "{{ ip }}"
+          nutanix_username: "{{ username }}"
+          nutanix_password: "{{ password }}"
+          validate_certs: "{{ validate_certs }}"
   block:
-        - import_tasks: "get_node_info.yml"
+      - name: Import "get_node_info.yml"
+        ansible.builtin.import_tasks: "get_node_info.yml"

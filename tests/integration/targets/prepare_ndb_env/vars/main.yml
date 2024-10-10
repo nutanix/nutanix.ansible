@@ -135,7 +135,7 @@ db_server_vm:
   uuid: "TEST_DB_SERVER_VM_UUID"
 
 # existing tags for various entities
-tags:
+entity_tags:
   db_server_vm:
     name: "TEST_DB_SERVER_VM_TAGS_NAME"
     uuid: "TEST_DB_SERVER_VM_TAGS_UUID"

@@ -1,9 +1,10 @@
 ---
 - name: Generate random name
-  set_fact:
+  ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
 
-- set_fact:
+- name: Set ACP name
+  ansible.builtin.set_fact:
     acp1_name: "{{random_name[0]}}1"
 
 - name: Create ACP with all specfactions
@@ -18,23 +19,21 @@
       - "{{ acp.user_group_uuid }}"
     filters:
       - scope_filter:
-          -
-            lhs: PROJECT
+          - lhs: PROJECT
             operator: IN
             rhs:
               uuid_list:
                 - "{{ project.uuid }}"
         entity_filter:
-          -
-            lhs: ALL
+          - lhs: ALL
             operator: IN
             rhs:
               collection: ALL
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -50,7 +49,6 @@
     fail_msg: " Unable to Create ACP all specfactions "
     success_msg: " ACP with all specfactions created successfully "
 
-
 - name: Delete acp
   ntnx_acps:
     state: absent
@@ -59,7 +57,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == 'SUCCEEDED'

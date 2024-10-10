@@ -1,6 +1,8 @@
 ---
-- module_defaults:
-    group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ foundation_host }}"
+- name: Set module defaults
+  module_defaults:
+      group/nutanix.ncp.ntnx:
+          nutanix_host: "{{ foundation_host }}"
   block:
-        - import_tasks: "get_info.yml"
+      - name: Import "get_info.yml"
+        ansible.builtin.import_tasks: "get_info.yml"

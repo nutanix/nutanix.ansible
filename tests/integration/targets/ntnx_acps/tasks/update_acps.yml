@@ -1,6 +1,6 @@
 ---
-
-- set_fact:
+- name: Set ACP names
+  ansible.builtin.set_fact:
     acp_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
     acp_name_updated: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
 
@@ -10,11 +10,11 @@
     wait: true
     name: "{{acp_name}}"
     role:
-      uuid: '{{ acp.role.uuid }}'
+      uuid: "{{ acp.role.uuid }}"
   register: setup_acp
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - setup_acp.response is defined
       - setup_acp.response.status.state == 'COMPLETE'
@@ -23,22 +23,23 @@
     fail_msg: "Unable to create ACP for update tests"
     success_msg: "ACP created successfully for update tests"
 
-- set_fact:
+- name: Add ACP uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  setup_acp["response"]["metadata"]["uuid"] ] }}'
 
 ############################################# UPDATE TESTS ########################################
 
-- name: check idempotency
+- name: Check idempotency
   ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
     name: "{{acp_name}}"
     role:
-      uuid: '{{ acp.role.uuid }}'
+      uuid: "{{ acp.role.uuid }}"
   register: result
 
-- name: check idempotency status
-  assert:
+- name: Check idempotency status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -56,22 +57,20 @@
     desc: "description after update"
     filters:
       - scope_filter:
-          -
-            lhs: PROJECT
+          - lhs: PROJECT
             operator: IN
             rhs:
               uuid_list:
                 - "{{ project.uuid }}"
         entity_filter:
-          -
-            lhs: ALL
+          - lhs: ALL
             operator: IN
             rhs:
               collection: ALL
   register: result
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -86,7 +85,6 @@
     fail_msg: "Fail: Unable to update ACP"
     success_msg: "Pass: ACP with given update spec updated successfully"
 
-
 ########################################################################################
 
 - name: Update name, desc and filters
@@ -97,22 +95,20 @@
     desc: "description after update"
     filters:
       - scope_filter:
-          -
-            lhs: PROJECT
+          - lhs: PROJECT
             operator: IN
             rhs:
               uuid_list:
                 - "{{ project.uuid }}"
         entity_filter:
-          -
-            lhs: ALL
+          - lhs: ALL
             operator: IN
             rhs:
               collection: ALL
   register: result
 
-- name: check idempotency status
-  assert:
+- name: Check idempotency status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -120,20 +116,18 @@
     fail_msg: "Fail: ACP got updated"
     success_msg: "Pass: ACP update skipped successfully due to no changes in spec"
 
-
 ########################################### Cleanup ###################################################
 
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_acps:
     state: absent
     acp_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed is defined
       - result.changed == true
@@ -141,5 +135,6 @@
     fail_msg: "unable to delete all created acp's"
     success_msg: "All acp's deleted successfully"
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

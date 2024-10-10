@@ -1,37 +1,40 @@
 ---
-
-- debug:
+- name: Start testing ntnx_ndb_tags
+  ansible.builtin.debug:
     msg: "start ntnx_ndb_tags"
 
 - name: Generate random name
-  set_fact:
+  ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
 
-- set_fact:
+- name: Set tag names
+  ansible.builtin.set_fact:
     tag_name: "{{random_name[0]}}"
     tag_name_updated: "{{random_name[0]}}-updated"
 
 ############################# Create tests ########################
 
-- name: check mode for creation
-  check_mode: yes
+- name: Check mode for creation
+  check_mode: true
   ntnx_ndb_tags:
     name: "{{tag_name}}-timemachine"
     desc: tag-created-by-ansible
-    tag_value_required: True
+    tag_value_required: true
     entity_type: TIME_MACHINE
   register: result
 
-- set_fact:
-    expected_response: {
-            "description": "tag-created-by-ansible",
-            "entityType": "TIME_MACHINE",
-            "name": "{{tag_name}}-timemachine",
-            "required": true
-    }
+- name: Set expected_response
+  ansible.builtin.set_fact:
+    expected_response:
+      {
+        "description": "tag-created-by-ansible",
+        "entityType": "TIME_MACHINE",
+        "name": "{{tag_name}}-timemachine",
+        "required": true,
+      }
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -40,17 +43,16 @@
     fail_msg: "Unable to create spec for tag"
     success_msg: "Spec generated successfully for tag creation"
 
-
-- name: create tags for clone
+- name: Create tags for clone
   ntnx_ndb_tags:
     name: "{{tag_name}}-clone"
     desc: tag-created-by-ansible
-    tag_value_required: True
+    tag_value_required: true
     entity_type: CLONE
   register: result
 
 - name: Check create status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -63,19 +65,20 @@
     fail_msg: "Tag for clone create failed"
     success_msg: "Tag for clone created successfully"
 
-- set_fact:
+- name: Set clone tag uuid
+  ansible.builtin.set_fact:
     clone_tag_uuid: "{{result.uuid}}"
 
-- name: create tags for database server
+- name: Create tags for database server
   ntnx_ndb_tags:
     name: "{{tag_name}}-database-server"
     desc: tag-created-by-ansible
-    tag_value_required: True
+    tag_value_required: true
     entity_type: DATABASE_SERVER
   register: result
 
 - name: Check create status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -88,19 +91,20 @@
     fail_msg: "Tag for database server create failed"
     success_msg: "Tag for clone created successfully"
 
-- set_fact:
+- name: Set database server tag uuid
+  ansible.builtin.set_fact:
     db_server_tag_uuid: "{{result.uuid}}"
 
-- name: create tags for time machine
+- name: Create tags for time machine
   ntnx_ndb_tags:
     name: "{{tag_name}}-time-machine"
     desc: tag-created-by-ansible
-    tag_value_required: True
+    tag_value_required: true
     entity_type: TIME_MACHINE
   register: result
 
 - name: Check create status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -113,22 +117,24 @@
     fail_msg: "Tag for time machine create failed"
     success_msg: "Tag for time machine created successfully"
 
-- set_fact:
+- name: Set time machine tag uuid
+  ansible.builtin.set_fact:
     time_machine_tag_uuid: "{{result.uuid}}"
 
-- name: create tags for databases
+- name: Create tags for databases
   ntnx_ndb_tags:
     name: "{{tag_name}}-database"
     desc: tag-created-by-ansible
-    tag_value_required: False
+    tag_value_required: false
     entity_type: DATABASE
   register: result
 
-- set_fact:
+- name: Set database tag uuid
+  ansible.builtin.set_fact:
     database_tag_uuid: "{{result.uuid}}"
 
-- name: check create status
-  assert:
+- name: Check create status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -140,19 +146,20 @@
     fail_msg: "Tag create for databases failed"
     success_msg: "Tag created successfully"
 
-- name: create another tag for databases
+- name: Create another tag for databases
   ntnx_ndb_tags:
     name: "{{tag_name}}-database2"
     desc: tag-created-by-ansible
-    tag_value_required: False
+    tag_value_required: false
     entity_type: DATABASE
   register: result
 
-- set_fact:
+- name: Set database tag uuid
+  ansible.builtin.set_fact:
     database_tag2_uuid: "{{result.uuid}}"
 
-- name: check create status
-  assert:
+- name: Check create status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -164,15 +171,14 @@
     fail_msg: "Tag create for databases failed"
     success_msg: "Tag created successfully"
 
-
 ################################# Info Module tests ##########################
 
-- name: get all tags
+- name: Get all tags
   ntnx_ndb_tags_info:
   register: result
 
 - name: Check info status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -181,13 +187,13 @@
     fail_msg: "Fetching all tags failed"
     success_msg: "All tags obtained successfully"
 
-- name: get tag based on uuid
+- name: Get tag based on uuid
   ntnx_ndb_tags_info:
     uuid: "{{database_tag_uuid}}"
   register: result
 
 - name: Check info status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -197,14 +203,14 @@
     fail_msg: "get tag based on uuid failed"
     success_msg: "tag based on uuid obtained successfully"
 
-- name: get all tags based on DATABASE entity type
+- name: Get all tags based on DATABASE entity type
   ntnx_ndb_tags_info:
     filters:
       entity_type: "DATABASE"
   register: result
 
 - name: Check info status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -214,14 +220,14 @@
     fail_msg: "get all tags based on DATABASE entity type failed"
     success_msg: "all tags based on DATABASE entity type obtained successfully"
 
-- name: get all tags based on CLONE entity type
+- name: Get all tags based on CLONE entity type
   ntnx_ndb_tags_info:
     filters:
       entity_type: "CLONE"
   register: result
 
 - name: Check info status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -231,14 +237,14 @@
     fail_msg: "get all tags based on CLONE entity type failed"
     success_msg: "all tags based on CLONE entity type obtained successfully"
 
-- name: get all tags based on TIME_MACHINE entity type
+- name: Get all tags based on TIME_MACHINE entity type
   ntnx_ndb_tags_info:
     filters:
       entity_type: "TIME_MACHINE"
   register: result
 
 - name: Check info status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -248,15 +254,14 @@
     fail_msg: "get all tags based on TIME_MACHINE entity type failed"
     success_msg: "all tags based on TIME_MACHINE entity type obtained successfully"
 
-
-- name: get all tags based on DATABASE_SERVER entity type
+- name: Get all tags based on DATABASE_SERVER entity type
   ntnx_ndb_tags_info:
     filters:
       entity_type: "DATABASE_SERVER"
   register: result
 
 - name: Check info status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -266,17 +271,15 @@
     fail_msg: "get all tags based on DATABASE_SERVER entity type failed"
     success_msg: "all tags based on DATABASE_SERVER entity type obtained successfully"
 
-
-- name: get tag based on DATABASE entity type and name
+- name: Get tag based on DATABASE entity type and name
   ntnx_ndb_tags_info:
     filters:
       entity_type: "DATABASE"
     name: "{{tag_name}}-database2"
   register: result
 
-
 - name: Check info status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -287,10 +290,11 @@
     success_msg: "tags based on DATABASE entity type and name obtained successfully"
 ################################## Update tests ########################
 
-- set_fact:
+- name: Set database tag uuid
+  ansible.builtin.set_fact:
     tag_uuid: "{{database_tag_uuid}}"
 
-- name: update tag
+- name: Update tag
   ntnx_ndb_tags:
     uuid: "{{tag_uuid}}"
     name: "{{tag_name_updated}}"
@@ -300,7 +304,7 @@
   register: result
 
 - name: Check update status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -312,9 +316,7 @@
     fail_msg: "tag update failed"
     success_msg: "tag updated successfully"
 
-
-
-- name: idempotency checks
+- name: Idempotency checks
   ntnx_ndb_tags:
     uuid: "{{tag_uuid}}"
     name: "{{tag_name_updated}}"
@@ -323,10 +325,8 @@
     status: "DEPRECATED"
   register: result
 
-
-
-- name: check idempotency status
-  assert:
+- name: Check idempotency status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -334,18 +334,15 @@
     fail_msg: "tag got updated"
     success_msg: "tag update skipped due to no state changes"
 
-
-- name: enable tag
+- name: Enable tag
   ntnx_ndb_tags:
     uuid: "{{tag_uuid}}"
     tag_value_required: true
     status: "ENABLED"
   register: result
 
-
-
-- name: check status changes
-  assert:
+- name: Check status changes
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -356,16 +353,14 @@
 
 ############################################################### delete tests ########################################
 
-
-- name: delete the database based tag
+- name: Delete the database based tag
   ntnx_ndb_tags:
     state: "absent"
     uuid: "{{database_tag_uuid}}"
   register: result
 
-
 - name: Check delete status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -373,14 +368,14 @@
     fail_msg: "Unable to delete tag"
     success_msg: "tag deleted successfully"
 
-- name: delete the database based tag
+- name: Delete the database based tag
   ntnx_ndb_tags:
     state: "absent"
     uuid: "{{database_tag2_uuid}}"
   register: result
 
 - name: Check delete status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -388,15 +383,14 @@
     fail_msg: "Unable to delete tag"
     success_msg: "tag deleted successfully"
 
-
-- name: delete the clone tag
+- name: Delete the clone tag
   ntnx_ndb_tags:
     state: "absent"
     uuid: "{{clone_tag_uuid}}"
   register: result
 
 - name: Check delete status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -404,15 +398,14 @@
     fail_msg: "Unable to delete tag"
     success_msg: "tag deleted successfully"
 
-
-- name: delete the time machine based tag
+- name: Delete the time machine based tag
   ntnx_ndb_tags:
     state: "absent"
     uuid: "{{time_machine_tag_uuid}}"
   register: result
 
 - name: Check delete status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -420,15 +413,14 @@
     fail_msg: "Unable to delete tag"
     success_msg: "tag deleted successfully"
 
-
-- name: delete the database server based tag
+- name: Delete the database server based tag
   ntnx_ndb_tags:
     state: "absent"
     uuid: "{{db_server_tag_uuid}}"
   register: result
 
 - name: Check delete status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true

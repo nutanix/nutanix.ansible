@@ -1,15 +1,18 @@
 ---
-- debug:
+- name: Start testing ntnx_ndb_slas and ntnx_ndb_slas_info
+  ansible.builtin.debug:
     msg: Start testing ntnx_ndb_slas and ntnx_ndb_slas_info
 
 - name: Generate random profile_name
-  set_fact:
+  ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
-- set_fact:
+- name: Set suffix name
+  ansible.builtin.set_fact:
     suffix_name: "ansible-role-mapping"
 
-- set_fact:
+- name: Set variables
+  ansible.builtin.set_fact:
     todelete: []
     profile1_name: "{{random_name}}{{suffix_name}}1"
     profile2_name: "{{random_name}}{{suffix_name}}2"
@@ -36,8 +39,8 @@
   ignore_errors: true
   check_mode: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -67,8 +70,8 @@
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -83,10 +86,12 @@
       - result.sla_uuid is defined
     fail_msg: "Fail: Unable to create sla "
     success_msg: "Pass: sla is created successfully "
-- set_fact:
+- name: Add sla_uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.sla_uuid ] }}"
 ################################################################
-- set_fact:
+- name: Set variables
+  ansible.builtin.set_fact:
     frequency:
       logs_retention: 10
       snapshots_retention:
@@ -95,7 +100,7 @@
         monthly: 13
         quarterly: 14
 
-- name: verify slas update flow
+- name: Verify slas update flow
   ntnx_ndb_slas:
     sla_uuid: "{{result.sla_uuid}}"
     name: "{{profile2_name}}"
@@ -110,8 +115,8 @@
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -127,7 +132,7 @@
     fail_msg: "Fail: Unable to update sla "
     success_msg: "Pass: verify slas update flow finished successfully"
 ################################################################ update flow #########################################
-- name: verify slas update flow with check mode
+- name: Verify slas update flow with check mode
   ntnx_ndb_slas:
     sla_uuid: "{{result.sla_uuid}}"
     name: "{{profile2_name}}"
@@ -143,8 +148,8 @@
   ignore_errors: true
   check_mode: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -160,7 +165,7 @@
     fail_msg: "Fail: verify slas update flow with check mode  "
     success_msg: "Pass: verify slas update flow with check mode finished successfully"
 ################################################################
-- name: verify idempotency
+- name: Verify idempotency
   ntnx_ndb_slas:
     sla_uuid: "{{result.sla_uuid}}"
     name: "{{profile2_name}}"
@@ -175,8 +180,8 @@
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.msg == "Nothing to change."
       - result.failed == false
@@ -186,15 +191,16 @@
 
 ######################################################################## Info module tests #################################################
 
-- debug:
+- name: Start testing ntnx_ndb_slas_info
+  ansible.builtin.debug:
     msg: Start testing ntnx_ndb_slas_info
 
 - name: List all era slas
   ntnx_ndb_slas_info:
   register: slas
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - slas.response is defined
       - slas.failed == false
@@ -203,13 +209,13 @@
     fail_msg: "Unable to list all era slas"
     success_msg: "era slas listed successfully"
 ################################################################
-- name: get era slas using it's name
+- name: Get era slas using it's name
   ntnx_ndb_slas_info:
     name: "{{slas.response[0].name}}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -223,8 +229,8 @@
     uuid: "{{slas.response[0].id}}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -234,16 +240,15 @@
     success_msg: "get  era slas using it's id  successfully"
 ################################################################
 
-
-- name: get era slas with incorrect name
+- name: Get era slas with incorrect name
   ntnx_ndb_slas_info:
     name: "abcd"
   register: result
   no_log: true
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.error is defined
       - result.failed == true
@@ -252,16 +257,16 @@
     success_msg: "module errored out correctly when incorrect name is given"
 
 ######################################################################## Delete flow #################################################
-- name: verify slas delete flow
+- name: Verify slas delete flow
   ntnx_ndb_slas:
     state: absent
     sla_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed is defined
       - result.changed == true
@@ -269,5 +274,6 @@
     fail_msg: "unable to delete all created slas"
     success_msg: "All  slas deleted successfully"
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []
