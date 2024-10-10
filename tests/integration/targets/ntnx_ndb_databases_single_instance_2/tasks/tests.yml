@@ -121,7 +121,7 @@
       - result.response.databaseNodes[0].status == "READY"
       - result.response.databaseNodes[0].dbserverId ==  db_server_uuid
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].tagName == "{{entity_tags.databases.name}}"
       - result.response.tags[0].value == "single-instance-dbs"
       - result.response.timeMachine is defined
       - result.response.timeMachine.name == "TM1"
@@ -347,7 +347,7 @@
       - result.response.databaseNodes[0].status == "READY"
       - result.response.type == "postgres_database"
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].tagName == "{{entity_tags.databases.name}}"
       - result.response.tags[0].value == "single-instance-dbs"
       - result.response.timeMachine is defined
       - result.response.timeMachine.name == "TM1"

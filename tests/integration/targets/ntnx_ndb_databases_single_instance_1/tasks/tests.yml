@@ -266,7 +266,7 @@
       - properties["auth"] == "md5"
       - result.response.databaseNodes[0].status == "READY"
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].tagName == "{{entity_tags.databases.name}}"
       - result.response.tags[0].value == "single-instance-dbs"
 
     fail_msg: "Unable to create single instance postgres database"
@@ -339,7 +339,7 @@
       - result.response.name == db1_name_updated
       - result.response.description == "ansible-created-db-desc-updated"
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].tagName == "{{entity_tags.databases.name}}"
       - result.response.tags[0].value == "single-instance-dbs-updated"
 
     fail_msg: "Unable to update single instance postgres database"
@@ -560,7 +560,6 @@
     fail_msg: "Unable to create register database spec"
     success_msg: "single instance postgres database register spec created successfully"
 
-
 - name: Register previously unregistered database from previously created VM
   ntnx_ndb_register_database:
     wait: true
@@ -631,7 +630,7 @@
       - result.response.databaseNodes[0].dbserverId == db_server_uuid
       - result.response.type == "postgres_database"
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].tagName == "{{entity_tags.databases.name}}"
       - result.response.tags[0].value == "single-instance-dbs"
 
     fail_msg: "Unable to register single instance postgres database"

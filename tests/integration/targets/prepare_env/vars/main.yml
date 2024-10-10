@@ -102,7 +102,7 @@ project:
   uuid: TEST_PROJECT_UUID
 
 # list of roles for advanced projects tests
-roles:
+test_roles:
   - "TEST_ROLES_NAME_1"
   - "TEST_ROLES_NAME_2"
   - "TEST_ROLES_NAME_3"

@@ -222,7 +222,7 @@
         "tags":
           [
             {
-              "tagId": "{{tags.clones.uuid}}",
+              "tagId": "{{entity_tags.clones.uuid}}",
               "tagName": "ansible-clones",
               "value": "ansible-test-db-clones",
             },
@@ -315,7 +315,7 @@
       - result.response.lcmConfig.refreshDetails.refreshTime == "12:00:00"
       - properties["db_parameter_profile_id"] == db_params_profile.uuid
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.clones.name}}"
+      - result.response.tags[0].tagName == "{{entity_tags.clones.name}}"
       - result.response.tags[0].value == "ansible-test-db-clones"
       - result.response.sourceSnapshotId == snapshot_uuid
       - result.response.parentTimeMachineId ==  time_machine_uuid
@@ -369,7 +369,7 @@
       - result.response.lcmConfig.refreshDetails.refreshInDays == 4
       - result.response.lcmConfig.refreshDetails.refreshTime == "14:00:00"
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.clones.name}}"
+      - result.response.tags[0].tagName == "{{entity_tags.clones.name}}"
       - result.response.tags[0].value == "ansible-test-db-clones-updated"
 
     fail_msg: "Unable to update clone"

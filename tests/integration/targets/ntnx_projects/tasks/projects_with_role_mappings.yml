@@ -23,7 +23,7 @@
     collaboration: true
     role_mappings:
       - role:
-          name: "{{roles[0]}}"
+          name: "{{test_roles[0]}}"
         user:
           uuid: "{{users[0]}}"
   register: result
@@ -44,7 +44,7 @@
       - result.response.status.access_control_policy_list_status | length == 1
       - response_acp.filter_list.context_list[0].entity_filter_expression_list[0].left_hand_side.entity_type == "ALL"
       - response_acp.filter_list.context_list | length == 3
-      - response_acp.role_reference.name == "{{roles[0]}}"
+      - response_acp.role_reference.name == "{{test_roles[0]}}"
       - response_acp.user_reference_list[0].uuid ==  "{{users[0]}}"
     fail_msg: "Unable to create project with minimal spec of role mappings"
     success_msg: "Project with minimal spec of role mappings created successfully"
@@ -79,20 +79,20 @@
       - user:
           uuid: "{{users[0]}}"
         role:
-          name: "{{roles[0]}}"
+          name: "{{test_roles[0]}}"
       - user:
           uuid: "{{users[1]}}"
         role:
-          name: "{{roles[1]}}"
+          name: "{{test_roles[1]}}"
       - user:
           principal_name: "{{new_user}}"
           directory_service_uuid: "{{directory_service_uuid}}"
         role:
-          name: "{{roles[2]}}"
+          name: "{{test_roles[2]}}"
       - user_group:
           distinguished_name: "{{new_user_group}}"
         role:
-          name: "{{roles[3]}}"
+          name: "{{test_roles[3]}}"
   register: result
   ignore_errors: true
 

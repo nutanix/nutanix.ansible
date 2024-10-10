@@ -363,7 +363,7 @@
       - result.response.databaseNodes[2].status == "READY"
       - result.response.type == "postgres_database"
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].tagName == "{{entity_tags.databases.name}}"
       - result.response.tags[0].value == "ha-instance-dbs"
 
     fail_msg: "Unable to provision postgres HA database instance"
@@ -492,7 +492,7 @@
       - result.response.databaseNodes[2].status == "READY"
       - result.response.type == "postgres_database"
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].tagName == "{{entity_tags.databases.name}}"
       - result.response.tags[0].value == "ha-instance-dbs"
 
     fail_msg: "Unable to provision postgres HA database instance"

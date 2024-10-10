@@ -327,8 +327,8 @@
       - result.response.description == "ansible-created-vm1-updated-desc"
       - result.response.ipAddresses | length > 0
       - result.response.vmClusterName == vm1_name_updated
-      - result.response.tags[0].tagName == tags.db_server_vm.name
-      - result.response.tags[0].tagId == tags.db_server_vm.uuid
+      - result.response.tags[0].tagName == entity_tags.db_server_vm.name
+      - result.response.tags[0].tagId == entity_tags.db_server_vm.uuid
       - result.response.tags[0].value == "ansible-updated"
 
     fail_msg: "Unable to update db server vm"

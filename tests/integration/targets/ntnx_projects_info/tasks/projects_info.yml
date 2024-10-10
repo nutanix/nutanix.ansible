@@ -27,7 +27,7 @@
     collaboration: true
     role_mappings:
       - role:
-          name: "{{roles[0]}}"
+          name: "{{test_roles[0]}}"
         user:
           uuid: "{{users[0]}}"
   register: project_2
