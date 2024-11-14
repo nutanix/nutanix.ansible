@@ -45,6 +45,7 @@ class Subnet(Prism):
         payload["spec"]["resources"]["subnet_type"] = "VLAN"
         payload["spec"]["resources"]["vlan_id"] = config["vlan_id"]
         payload["spec"]["resources"]["is_external"] = False
+        payload["spec"]["resources"]["advanced_networking"] = False
 
         cluster_uuid, error = get_cluster_uuid(config["cluster"], self.module)
         if error:
