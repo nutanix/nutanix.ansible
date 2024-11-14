@@ -264,7 +264,7 @@ class VM(Prism):
         return payload, None
 
     def _build_spec_mem(self, payload, mem_gb):
-        mem_mib = mem_gb * 1024
+        mem_mib = int(mem_gb * 1024)
         current_mem_mib = payload["spec"]["resources"].get("memory_size_mib", 0)
         self._check_and_set_require_vm_restart(current_mem_mib, mem_mib)
         payload["spec"]["resources"]["memory_size_mib"] = mem_mib
@@ -452,7 +452,8 @@ class VM(Prism):
         if vdisk.get("empty_cdrom", None):
             disk.pop("data_source_reference", None)
             disk.pop("storage_config", None)
-
+            disk.pop("disk_size_bytes", None)
+            disk.pop("disk_size_mib", None)
         else:
             if vdisk.get("size_gb"):
                 disk_size_bytes = int(vdisk["size_gb"]) * 1024 * 1024 * 1024
