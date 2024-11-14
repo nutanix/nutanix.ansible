@@ -58,7 +58,7 @@ class DefaultVMSpec:
         ),
         vcpus=dict(type="int"),
         cores_per_vcpu=dict(type="int"),
-        memory_gb=dict(type="int"),
+        memory_gb=dict(type="float"),
         networks=dict(type="list", elements="dict", options=network_spec),
         boot_config=dict(type="dict", options=boot_config_spec),
         guest_customization=dict(type="dict", options=gc_spec),
