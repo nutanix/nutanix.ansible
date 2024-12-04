@@ -334,6 +334,16 @@ class VM(Prism):
 
                 nic["subnet_reference"]["uuid"] = uuid
 
+            if network.get("vlan_mode"):
+                nic["vlan_mode"] = network["vlan_mode"]
+
+            if network.get("trunked_vlan_list"):
+                nic["trunked_vlan_list"] = network["trunked_vlan_list"]
+
+            if network.get("vlan_list"):
+                nic["trunked_vlan_list"] = network["vlan_list"]
+                nic["vlan_mode"] = "TRUNKED"
+
             nics.append(nic)
         if payload["spec"]["resources"].get("nic_list"):
             payload["spec"]["resources"]["nic_list"] += nics
