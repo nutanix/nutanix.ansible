@@ -9,10 +9,10 @@ isort==5.9.3
 coverage==6.5.0
 shyaml==0.6.2
 markupsafe==2
-ntnx-clustermgmt-py-client
-ntnx-networking-py-client
-ntnx-iam-py-client
-ntnx-vmm-py-client
-ntnx-volumes-py-client
-ntnx-dataprotection-py-client
-ntnx-prism-py-client
+ntnx-clustermgmt-py-client==4.0.1
+ntnx-networking-py-client==4.0.1
+ntnx-iam-py-client==4.0.1
+ntnx-vmm-py-client==4.0.1
+ntnx-volumes-py-client==4.0.1
+ntnx-dataprotection-py-client==4.0.1
+ntnx-prism-py-client==4.0.1
