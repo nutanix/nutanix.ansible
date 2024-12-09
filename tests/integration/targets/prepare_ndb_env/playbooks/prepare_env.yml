@@ -8,14 +8,14 @@
       ansible.builtin.include_vars: ../vars/main.yml
     - name: Set environment variables
       ansible.builtin.set_fact:
-        ndb_ip: "{{lookup('env', 'NDB_HOST')  }}"
-        ndb_username: "{{lookup('env', 'NDB_USERNAME')  }}"
-        ndb_password: "{{lookup('env', 'NDB_PASSWORD')  }}"
+        ndb_ip: "{{ lookup('env', 'NDB_HOST') }}"
+        ndb_username: "{{ lookup('env', 'NDB_USERNAME') }}"
+        ndb_password: "{{ lookup('env', 'NDB_PASSWORD') }}"
     - name: Insert credentials  block to vars
       ansible.builtin.blockinfile:
         path: ../vars/main.yml
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 0"
         block: |
-          ndb_ip:  "{{lookup('env', 'NDB_HOST')  }}"
-          ndb_username: "{{lookup('env', 'NDB_USERNAME')  }}"
-          ndb_password: "{{lookup('env', 'NDB_PASSWORD')  }}"
+          ndb_ip:  "{{ lookup('env', 'NDB_HOST') }}"
+          ndb_username: "{{ lookup('env', 'NDB_USERNAME') }}"
+          ndb_password: "{{ lookup('env', 'NDB_PASSWORD') }}"

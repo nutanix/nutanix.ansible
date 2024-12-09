@@ -4,7 +4,7 @@
 
 - name: Generate random project_name
   ansible.builtin.set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
 
 - name: Define suffix name variable
   ansible.builtin.set_fact:
@@ -12,12 +12,11 @@
 
 - name: Define project name variable
   ansible.builtin.set_fact:
-    project1_name: "{{random_name}}{{suffix_name}}1"
-
+    project1_name: "{{ random_name }}{{ suffix_name }}1"
 
 - name: Create Project
   ntnx_projects:
-    name: "{{project1_name}}"
+    name: "{{ project1_name }}"
     desc: desc-123
     subnets:
       - name: "{{ network.dhcp.name }}"
@@ -41,7 +40,7 @@
 
 - name: Add project uuid to delete list
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [  result.project_uuid ] }}"
+    todelete: "{{ todelete + [result.project_uuid] }}"
 #################################################################
 
 - name: Check check mode for update
@@ -102,9 +101,9 @@
       - resource_type: STORAGE
         limit: 2046
     accounts:
-      - uuid: "{{accounts[0].uuid}}"
+      - uuid: "{{ accounts[0].uuid }}"
     vpcs:
-      - uuid: "{{vpc.uuid}}"
+      - uuid: "{{ vpc.uuid }}"
   register: result
   ignore_errors: true
 
@@ -146,9 +145,9 @@
       - resource_type: STORAGE
         limit: 2046
     accounts:
-      - name: "{{accounts[0].name}}"
+      - name: "{{ accounts[0].name }}"
     vpcs:
-      - uuid: "{{vpc.uuid}}"
+      - uuid: "{{ vpc.uuid }}"
   register: result
   ignore_errors: true
 

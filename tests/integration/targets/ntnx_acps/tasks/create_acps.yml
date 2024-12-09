@@ -1,20 +1,20 @@
 ---
 - name: Generate random name
   ansible.builtin.set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
 - name: Set acp name
   ansible.builtin.set_fact:
-    acp1_name: "{{random_name[0]}}1"
-    acp2_name: "{{random_name[0]}}2"
-    acp3_name: "{{random_name[0]}}3"
-    acp4_name: "{{random_name[0]}}4"
-    acp5_name: "{{random_name[0]}}5"
+    acp1_name: "{{ random_name[0] }}1"
+    acp2_name: "{{ random_name[0] }}2"
+    acp3_name: "{{ random_name[0] }}3"
+    acp4_name: "{{ random_name[0] }}4"
+    acp5_name: "{{ random_name[0] }}5"
 - name: Create min ACP
   ntnx_acps:
     state: present
     wait: true
-    name: "{{acp1_name}}"
+    name: "{{ acp1_name }}"
     role:
       uuid: "{{ acp.role.uuid }}"
   register: result
@@ -27,7 +27,7 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.spec.name == "{{acp1_name}}"
+      - result.response.spec.name == "{{ acp1_name }}"
     fail_msg: " Unable to create Min ACP with check mode "
     success_msg: " Min ACP with check mode passed"
 # ##########################################################
@@ -35,7 +35,7 @@
   ntnx_acps:
     state: present
     wait: true
-    name: "{{acp2_name}}"
+    name: "{{ acp2_name }}"
     role:
       uuid: "{{ acp.role.uuid }}"
   check_mode: false
@@ -47,18 +47,18 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == "{{acp2_name}}"
+      - result.response.spec.name == "{{ acp2_name }}"
     fail_msg: " Unable to create Min ACP "
     success_msg: " Min ACP created successfully "
 
 - name: Set acp uuid to delete later
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+    todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Create ACP with user reference
   ntnx_acps:
     state: present
-    name: "{{acp5_name}}"
+    name: "{{ acp5_name }}"
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -71,7 +71,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == "{{acp5_name}}"
+      - result.response.spec.name == "{{ acp5_name }}"
       - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
       - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
     fail_msg: " Unable to Create ACP with user reference "
@@ -79,12 +79,12 @@
 
 - name: Set acp uuid to delete later
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+    todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Create ACP with user ad user group reference
   ntnx_acps:
     state: present
-    name: "{{acp3_name}}"
+    name: "{{ acp3_name }}"
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -99,7 +99,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.spec.name == "{{acp3_name}}"
+      - result.response.spec.name == "{{ acp3_name }}"
       - result.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
       - result.response.status.resources.user_reference_list.0.uuid == "{{ acp.user_uuid }}"
       - result.response.status.resources.user_group_reference_list.0.uuid == "{{ acp.user_group_uuid }}"
@@ -108,12 +108,12 @@
 
 - name: Set acp uuid to delete later
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+    todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Create ACP with all specfactions
   ntnx_acps:
     state: present
-    name: "{{acp4_name}}"
+    name: "{{ acp4_name }}"
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -179,7 +179,7 @@
 
 - name: Set acp uuid to delete later
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [  result.acp_uuid ] }}"
+    todelete: "{{ todelete + [result.acp_uuid] }}"
 ##########################################################
 - name: Delete all created acps
   ntnx_acps:
