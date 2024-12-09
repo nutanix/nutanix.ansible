@@ -1083,7 +1083,7 @@ options:
                                 choices: ["PASSTHROUGH_GRAPHICS", "PASSTHROUGH_COMPUTE", "VIRTUAL"]
                             device_id:
                                 description: Device ID of the GPU
-                                type: str
+                                type: int
                             vendor:
                                 description: Vendor of the GPU
                                 type: str

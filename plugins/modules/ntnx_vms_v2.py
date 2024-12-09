@@ -857,7 +857,7 @@ options:
             device_id:
                 description:
                     - The ID of the GPU device.
-                type: str
+                type: int
             vendor:
                 description:
                     - The vendor of the GPU.

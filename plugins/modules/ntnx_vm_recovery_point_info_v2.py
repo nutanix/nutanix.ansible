@@ -19,10 +19,12 @@ options:
         description:
             - Top level Recovery point external ID
         type: str
+        required: true
     vm_recovery_point_ext_id:
         description:
             - VM recovery point external ID
         type: str
+        required: true
 extends_documentation_fragment:
         - nutanix.ncp.ntnx_credentials
         - nutanix.ncp.ntnx_info_v2
@@ -106,8 +108,8 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
 
     module_args = dict(
-        recovery_point_ext_id=dict(type="str"),
-        vm_recovery_point_ext_id=dict(type="str"),
+        recovery_point_ext_id=dict(type="str", required=True),
+        vm_recovery_point_ext_id=dict(type="str", required=True),
     )
 
     return module_args

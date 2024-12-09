@@ -68,14 +68,15 @@ options:
                             backup_type:
                                 description:
                                     - The backup type defines the criteria for selecting files for application-consistent recovery points on Windows VMs/agents.
-                                    - FULL_BACKUP: Backs up all files, updating their backup history.
-                                    - COPY_BACKUP: Backs up all files without updating their backup history.
+                                    - FULL_BACKUP, Backs up all files, updating their backup history.
+                                    - COPY_BACKUP, Backs up all files without updating their backup history.
                                 type: str
                                 choices: ["FULL_BACKUP", "COPY_BACKUP"]
                                 required: true
                             should_include_writers:
                                 description:
-                                    - Indicates whether the given set of VSS writers' UUIDs should be included or excluded from the application consistent recovery point.
+                                    - Indicates whether the given set of VSS writers' UUIDs should be included or excluded from the \
+                                        application consistent recovery point.
                                     - By default, the value is set to false, indicating that all listed VSS writers' UUIDs will be excluded.
                                 type: bool
                                 default: false
@@ -88,7 +89,8 @@ options:
                             should_store_vss_metadata:
                                 description:
                                     - Specifies whether to store VSS metadata for application-specific backup/restore.
-                                    - VSS metadata, including writer and requester details, is compressed into a .cab file during backup and must be saved for restoration.
+                                    - VSS metadata, including writer and requester details, is compressed into a .cab file \
+                                        during backup and must be saved for restoration.
                                 type: bool
                                 default: false
 
@@ -387,9 +389,9 @@ def update_expiry_date_recovery_point(module, result):
     new_expiration_time = module.params.get("expiration_time")
 
     if new_expiration_time is None:
-        result["error"] = (
-            "Expiration time is required for updating recovery point and other fields can't be updated."
-        )
+        result[
+            "error"
+        ] = "Expiration time is required for updating recovery point and other fields can't be updated."
         module.fail_json(msg="Expiration time is required", **result)
 
     if int(old_expiration_time.timestamp()) == int(
@@ -411,9 +413,9 @@ def update_expiry_date_recovery_point(module, result):
     elif not check_recovery_point_idempotency_without_expiration(
         old_spec.to_dict(), update_spec.to_dict()
     ):
-        result["warning"] = (
-            "Only Expiration time Updation is allowed. Can't update other fields."
-        )
+        result[
+            "warning"
+        ] = "Only Expiration time Updation is allowed. Can't update other fields."
 
     expirationTimeSpec = data_protection_sdk.ExpirationTimeSpec()
     expirationTimeSpec.expiration_time = new_expiration_time

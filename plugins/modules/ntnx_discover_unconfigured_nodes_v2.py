@@ -111,43 +111,43 @@ response:
         - This field typically holds the task details.
     type: dict
     returned: always
-sample:
-  {
-    "node_list":
-      [
-        {
-          "arch": null,
-          "attributes": null,
-          "cluster_id": null,
-          "cpu_type": null,
-          "current_cvm_vlan_tag": "null",
-          "current_network_interface": null,
-          "cvm_ip":
+    sample:
+      {
+        "node_list":
+          [
             {
-              "ipv4": { "prefix_length": 32, "value": "10.37.186.154" },
-              "ipv6": null,
+              "arch": null,
+              "attributes": null,
+              "cluster_id": null,
+              "cpu_type": null,
+              "current_cvm_vlan_tag": "null",
+              "current_network_interface": null,
+              "cvm_ip":
+                {
+                  "ipv4": { "prefix_length": 32, "value": "10.37.186.154" },
+                  "ipv6": null,
+                },
+              "foundation_version": null,
+              "host_name": "ntnx-nahv-671ddc077298f65ebce337ed-1\n",
+              "host_type": "HYPER_CONVERGED",
+              "hypervisor_ip": null,
+              "hypervisor_type": "AHV",
+              "hypervisor_version": "10.0-727",
+              "interface_ipv6": null,
+              "ipmi_ip": null,
+              "is_one_node_cluster_supported": true,
+              "is_secure_booted": null,
+              "is_two_node_cluster_supported": true,
+              "node_position": "A",
+              "node_serial_number": "10-37-186-154",
+              "node_uuid": null,
+              "nos_version": "6.9",
+              "rackable_unit_max_nodes": null,
+              "rackable_unit_model": "NestedAHV",
+              "rackable_unit_serial": "10-37-186-154",
             },
-          "foundation_version": null,
-          "host_name": "ntnx-nahv-671ddc077298f65ebce337ed-1\n",
-          "host_type": "HYPER_CONVERGED",
-          "hypervisor_ip": null,
-          "hypervisor_type": "AHV",
-          "hypervisor_version": "10.0-727",
-          "interface_ipv6": null,
-          "ipmi_ip": null,
-          "is_one_node_cluster_supported": true,
-          "is_secure_booted": null,
-          "is_two_node_cluster_supported": true,
-          "node_position": "A",
-          "node_serial_number": "10-37-186-154",
-          "node_uuid": null,
-          "nos_version": "6.9",
-          "rackable_unit_max_nodes": null,
-          "rackable_unit_model": "NestedAHV",
-          "rackable_unit_serial": "10-37-186-154",
-        },
-      ],
-  }
+          ],
+      }
 
 task_ext_id:
     description: Task external ID.

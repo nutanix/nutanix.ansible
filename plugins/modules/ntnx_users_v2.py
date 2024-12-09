@@ -251,10 +251,7 @@ from copy import deepcopy  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.v4.iam.api_client import (  # noqa: E402
-    get_etag,
-    get_user_api_instance,
-)
+from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_user  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -285,6 +282,7 @@ def get_module_spec():
     )
 
     module_args = dict(
+        state=dict(type="str", choices=["present"], default="present"),
         ext_id=dict(type="str"),
         username=dict(type="str"),
         user_type=dict(type="str", choices=["LOCAL", "SAML", "LDAP", "EXTERNAL"]),

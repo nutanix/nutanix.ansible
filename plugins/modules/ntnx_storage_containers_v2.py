@@ -174,7 +174,11 @@ options:
       - The external ID of the affinity host.
     required: false
     type: str
-
+  ignore_small_files:
+    description:
+      - Whether to ignore small files during delete operation.
+    required: false
+    type: bool
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2

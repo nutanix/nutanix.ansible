@@ -114,7 +114,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import get_gpu_api_instance  # noqa: E402
+from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 from ..module_utils.v4.vmm.helpers import get_gpu  # noqa: E402
 
 
@@ -165,7 +165,7 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
-    gpus = get_gpu_api_instance(module)
+    gpus = get_vm_api_instance(module)
     if module.params.get("ext_id"):
         get_gpu_by_ext_id(module, gpus, result)
     else:

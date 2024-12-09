@@ -23,7 +23,7 @@ options:
     pc_ext_id:
         description:
             - External ID of the target Prism Central(PC)
-            - Note: Use remote cluster uuid from availability zone info
+            - Notes Use remote cluster uuid from availability zone info
         type: str
     cluster_ext_id:
         description:

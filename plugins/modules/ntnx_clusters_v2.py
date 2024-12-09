@@ -688,6 +688,7 @@ options:
             description:
               - The name of the HTTP proxy.
             type: str
+            required: true
           proxy_types:
             description:
               - The types of the HTTP proxy.
@@ -707,6 +708,7 @@ options:
             description:
               - The target type of the HTTP proxy white list.
             type: str
+            required: true
             choices:
               - IPV6_ADDRESS
               - HOST_NAME
@@ -717,6 +719,7 @@ options:
             description:
               - The target of the HTTP proxy white list.
             type: str
+            required: true
   categories:
     description:
       - The categories of the cluster.

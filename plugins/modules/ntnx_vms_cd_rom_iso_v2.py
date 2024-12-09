@@ -123,6 +123,23 @@ options:
                           - The external ID of the VM.
                         type: str
                         required: true
+  disk_address:
+    description:
+      - The address of the CD ROM.
+    type: dict
+    suboptions:
+      bus_type:
+        description:
+          - The bus type of the CD ROM.
+        type: str
+        choices:
+          - "IDE"
+          - "SATA"
+        required: false
+      index:
+        description:
+          - The index of the CD ROM.
+        type: int
   wait:
     description:
       - Whether to wait for the task to complete.

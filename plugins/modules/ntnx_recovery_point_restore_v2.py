@@ -38,7 +38,8 @@ options:
     volume_group_recovery_point_restore_overrides:
         description:
             - List of specifications to restore a specific volume group recovery point(s) that are a part of the top-level recovery point.
-            - A specific volume group recovery point can be selected for restore by specifying its external identifier along with override specification (if any).
+            - A specific volume group recovery point can be selected for restore by specifying its external identifier along with override specification\
+                  (if any).
         type: list
         elements: dict
         suboptions:
