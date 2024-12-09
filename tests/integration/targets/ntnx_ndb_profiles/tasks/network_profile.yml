@@ -191,5 +191,6 @@
     fail_msg: "unable to delete all created network profiles"
     success_msg: "All network profiles deleted successfully"
 
-- set_fact:
+- name: Reset todelete
+  ansible.builtin.set_fact:
     todelete: []
