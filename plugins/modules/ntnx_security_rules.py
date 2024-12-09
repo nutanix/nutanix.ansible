@@ -885,29 +885,29 @@ EXAMPLES = r"""
       policy_mode: MONITOR
       target_group:
         categories:
-            apptype: Apache_Spark
+          apptype: Apache_Spark
         default_internal_policy: DENY_ALL
       inbounds:
         - categories:
-              AppFamily:
-                - Databases
-                - DevOps
+            AppFamily:
+              - Databases
+              - DevOps
           protocol:
             icmp:
               - code: 1
                 type: 1
         - categories:
-              AppFamily:
-                - Databases
-                - DevOps
+            AppFamily:
+              - Databases
+              - DevOps
           protocol:
             tcp:
               - start_port: 22
                 end_port: 80
         - categories:
-              AppFamily:
-                - Databases
-                - DevOps
+            AppFamily:
+              - Databases
+              - DevOps
           protocol:
             udp:
               - start_port: 82
@@ -918,8 +918,8 @@ EXAMPLES = r"""
             prefix_length: 24
       outbounds:
         - categories:
-              AppFamily:
-                - Databases
+            AppFamily:
+              - Databases
   register: result
 - name: update app security rule with outbound list
   ntnx_security_rules:
@@ -931,9 +931,9 @@ EXAMPLES = r"""
             - code: 1
               type: 1
           categories:
-              AppFamily:
-                - Databases
-                - DevOps
+            AppFamily:
+              - Databases
+              - DevOps
   register: result
 - name: update quarantine_rule by adding inbound and outbound list
   ntnx_security_rules:
@@ -941,14 +941,14 @@ EXAMPLES = r"""
     quarantine_rule:
       inbound:
         - categories:
-              AppFamily:
-                - Databases
-                - DevOps
+            AppFamily:
+              - Databases
+              - DevOps
       outbound:
         - categories:
-              AppFamily:
-                - Databases
-                - DevOps
+            AppFamily:
+              - Databases
+              - DevOps
       policy_mode: MONITOR
     allow_ipv6_traffic: true
     policy_hitlog:: true
@@ -1099,9 +1099,10 @@ task_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.security_rules import SecurityRule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.prism.security_rules import SecurityRule  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.utils import check_for_idempotency  # noqa: E402
 
 
 def get_module_spec():
@@ -1259,7 +1260,7 @@ def update_security_rule(module, result):
         result["response"] = spec
         return
 
-    if utils.check_for_idempotency(spec, resp, state=state):
+    if check_for_idempotency(spec, resp, state=state):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change")
 

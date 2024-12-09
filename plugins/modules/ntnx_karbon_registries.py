@@ -44,26 +44,26 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: create registry
-    ntnx_karbon_registries:
-      name: "{{registry_name}}"
-      url: "{{url}}"
-      port: "{{port_number}}"
-    register: result
+- name: create registry
+  ntnx_karbon_registries:
+    name: '{{registry_name}}'
+    url: '{{url}}'
+    port: '{{port_number}}'
+  register: result
 
-  - name: delete registry
-    ntnx_karbon_registries:
-      name: "{{registry_name}}"
-      state: absent
-    register: result
+- name: delete registry
+  ntnx_karbon_registries:
+    name: '{{registry_name}}'
+    state: absent
+  register: result
 
-  - name: create registry with username and password
-    ntnx_karbon_registries:
-      name: "{{registry_name}}"
-      url: "{{url}}"
-      username: "{{username}}"
-      password: "{{password}}"
-    register: result
+- name: create registry with username and password
+  ntnx_karbon_registries:
+    name: '{{registry_name}}'
+    url: '{{url}}'
+    username: '{{username}}'
+    password: '{{password}}'
+  register: result
 """
 
 RETURN = r"""
@@ -86,7 +86,7 @@ endpoint:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.karbon.registries import Registry  # noqa: E402
+from ..module_utils.v3.karbon.registries import Registry  # noqa: E402
 
 
 def get_module_spec():

@@ -1,10 +1,12 @@
 ---
-- module_defaults:
+- name: Ntnx_ndb_availability_databases integration tests
+  module_defaults:
     group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ ndb_ip }}"
-        nutanix_username: "{{ ndb_username }}"
-        nutanix_password: "{{ ndb_password }}"
-        validate_certs: false
+      nutanix_host: "{{ ndb_ip }}"
+      nutanix_username: "{{ ndb_username }}"
+      nutanix_password: "{{ ndb_password }}"
+      validate_certs: false
 
   block:
-        - import_tasks: "tests.yml"
+    - name: Import tasks
+      ansible.builtin.import_tasks: tests.yml

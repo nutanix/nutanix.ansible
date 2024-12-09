@@ -1,0 +1,241 @@
+---
+- name: Start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests
+
+- name: Generate random category  key & value
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: ansible-ag
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    todelete: []
+    user_name: "{{ random_name }}{{ suffix_name }}user"
+    full_name: "{{ random_name }}{{ suffix_name }}saml"
+
+- name: Verify spec generation for identity providers with check_mode
+  ntnx_saml_identity_providers_v2:
+    name: "{{ full_name }}1"
+    username_attribute: "{{ user_name }}1"
+    email_attribute: email
+    groups_attribute: groups
+    groups_delim: ","
+    idp_metadata_url: https://samltest.id/saml/idp
+    idp_metadata_xml: idp_xml_value
+    entity_issuer: entity_issuer_test
+    is_signed_authn_req_enabled: true
+    custom_attributes:
+      - custom1
+      - custom2
+    state: present
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.name == "{{ full_name }}1"
+      - result.response.username_attribute == "{{ user_name }}1"
+      - result.response.email_attribute == "email"
+      - result.response.groups_attribute == "groups"
+      - result.response.groups_delim == ","
+      - result.response.idp_metadata_url == "https://samltest.id/saml/idp"
+      - result.response.idp_metadata_xml == "idp_xml_value"
+      - result.response.entity_issuer == "entity_issuer_test"
+      - result.response.is_signed_authn_req_enabled == true
+      - result.response.custom_attributes[0] == "custom1"
+      - result.response.custom_attributes[1] == "custom2"
+    fail_msg: " Unable to Verify spec generation for identity providers with check_mode "
+    success_msg: " Verify spec generation for identity providers with check_mode finished successfully "
+
+- name: Create saml
+  ntnx_saml_identity_providers_v2:
+    name: "{{ full_name }}1"
+    username_attribute: "{{ user_name }}1"
+    email_attribute: email
+    groups_attribute: groups
+    groups_delim: ","
+    idp_metadata_xml: "{{ xml_content }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.name == "{{ full_name }}1"
+      - result.response.username_attribute == "{{ user_name }}1"
+      - result.response.email_attribute == "email"
+      - result.response.groups_attribute == "groups"
+      - result.response.groups_delim == ","
+    fail_msg: " Unable to create saml "
+    success_msg: " saml created successfully "
+
+- name: Adding saml external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+- name: Get saml using filter name
+  ntnx_saml_identity_providers_info_v2:
+    filter: name eq '{{ full_name }}1'
+  register: result
+  ignore_errors: true
+
+- name: Status of saml
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response[0].name == "{{ full_name }}1"
+      - result.response[0].username_attribute == "{{ user_name }}1"
+      - result.response[0].email_attribute == "email"
+      - result.response[0].groups_attribute == "groups"
+      - result.response[0].groups_delim == ","
+      - result.response[0].ext_id == "{{ todelete[-1] }}"
+      - result.response | length == 1
+    fail_msg: " Unable to fetch saml using filter name "
+    success_msg: " saml fetched using filter name successfully "
+
+- name: Verify spec generation for update identity providers with check_mode
+  ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ todelete[-1] }}"
+    name: "{{ full_name }}2"
+    username_attribute: "{{ user_name }}2"
+    email_attribute: new_email
+    groups_attribute: group_list
+    groups_delim: ;
+    is_signed_authn_req_enabled: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.name == "{{ full_name }}2"
+      - result.response.username_attribute == "{{ user_name }}2"
+      - result.response.email_attribute == "new_email"
+      - result.response.groups_attribute == "group_list"
+      - result.response.groups_delim == ";"
+      - result.response.ext_id == "{{ todelete[-1] }}"
+      - result.response.is_signed_authn_req_enabled == true
+    fail_msg: " Unable to Verify spec generation for update identity providers with check_mode  "
+    success_msg: " Verify spec generation for update identity providers with check_mode  finished successfully"
+
+- name: Update saml
+  ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ todelete[-1] }}"
+    name: "{{ full_name }}2"
+    username_attribute: "{{ user_name }}2"
+    email_attribute: new_email
+    groups_attribute: group_list
+    groups_delim: ;
+    is_signed_authn_req_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.name == "{{ full_name }}2"
+      - result.response.username_attribute == "{{ user_name }}2"
+      - result.response.email_attribute == "new_email"
+      - result.response.groups_attribute == "group_list"
+      - result.response.groups_delim == ";"
+      - result.response.ext_id == "{{ todelete[-1] }}"
+      - result.response.is_signed_authn_req_enabled == true
+    fail_msg: " Unable to update saml "
+    success_msg: " saml updated successfully "
+
+- name: Check idempotency
+  ntnx_saml_identity_providers_v2:
+    state: present
+    ext_id: "{{ todelete[-1] }}"
+    name: "{{ full_name }}2"
+    username_attribute: "{{ user_name }}2"
+    is_signed_authn_req_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.msg == "Nothing to change."
+      - result.changed == False
+      - result.failed == False
+    fail_msg: " Unable to check idempotency "
+    success_msg: " Idempotency check successfully "
+
+- name: Get saml using ext_id
+  ntnx_saml_identity_providers_info_v2:
+    ext_id: "{{ todelete[-1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of saml
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.name == "{{ full_name }}2"
+      - result.response.username_attribute == "{{ user_name }}2"
+      - result.response.email_attribute == "new_email"
+      - result.response.groups_attribute == "group_list"
+      - result.response.groups_delim == ";"
+      - result.response.ext_id == "{{ todelete[-1] }}"
+      - result.response.is_signed_authn_req_enabled == true
+    fail_msg: " Unable to fetch saml using ext_id "
+    success_msg: " saml fetched using ext_id successfully "
+
+- name: List all identity providers
+  ntnx_saml_identity_providers_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 0
+    fail_msg: " Unable to list all identity providers "
+    success_msg: " list all identity providers successfully "
+
+- name: Delete the created SAML identity providers
+  ntnx_saml_identity_providers_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.msg == "All items completed"
+      - result.skipped == False
+    fail_msg: " Unable to delete saml "
+    success_msg: " saml deleted successfully "

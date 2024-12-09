@@ -4,10 +4,10 @@
       priority: "10"
   check_mode: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list pbrs "
@@ -18,10 +18,10 @@
     length: 1
     offset: 0
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list pbrs "
@@ -32,10 +32,10 @@
     sort_order: "ASCENDING"
     sort_attribute: "priority"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list pbrs "

@@ -1,13 +1,15 @@
 ---
 name: Run compile and tests
 
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  - pull_request
 jobs:
   sanity1:
     name: Sanity tests with ansible-core==2.15.0

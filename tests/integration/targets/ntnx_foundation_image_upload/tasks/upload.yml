@@ -1,9 +1,11 @@
 ---
-- debug:
+- name: Start testing ntnx_foundation_image_upload
+  ansible.builtin.debug:
     msg: start testing ntnx_foundation_image_upload
 
 - name: Download image for test
-  get_url:
+  ansible.builtin.get_url:
+    mode: "0644"
     url: "{{ image_url }}"
     dest: "{{ source }}"
 
@@ -11,14 +13,14 @@
   ntnx_foundation_image_upload:
     state: present
     source: "{{ source }}"
-    filename: "integration-test-ntnx-package.tar.gz"
+    filename: integration-test-ntnx-package.tar.gz
     installer_type: nos
     timeout: 1800
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed==false
@@ -29,13 +31,13 @@
 - name: Delete Image with nos installer_type
   ntnx_foundation_image_upload:
     state: absent
-    filename: "integration-test-ntnx-package.tar.gz"
+    filename: integration-test-ntnx-package.tar.gz
     installer_type: nos
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response.status_code == 200
       - result.failed==false

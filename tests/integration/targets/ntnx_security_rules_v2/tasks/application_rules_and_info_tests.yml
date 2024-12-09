@@ -1,0 +1,1173 @@
+---
+- name: Start testing application security rules
+  ansible.builtin.debug:
+    msg: Start testing application security rules
+
+- name: Generate random names for security rules creation
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set prefix name
+  ansible.builtin.set_fact:
+    prefix: ansible-nsr-
+
+- name: Set security rules name
+  ansible.builtin.set_fact:
+    rule_name_1: "{{ prefix }}{{ random_name }}1"
+    rule_name_2: "{{ prefix }}{{ random_name }}2"
+    rule_name_3: "{{ prefix }}{{ random_name }}3"
+
+################################################ Test Setup ################################################
+
+- name: Create min VPC for security rules
+  ntnx_vpcs_v2:
+    name: ansible-vpc-{{ random_name }}
+    external_subnets:
+      - subnet_reference: "{{ external_nat_subnet.uuid }}"
+  register: result
+
+- name: Verify VPC creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id is defined
+    fail_msg: Failed to create VPC
+    success_msg: Successfully created VPC
+
+- name: Set VPC id
+  ansible.builtin.set_fact:
+    vpc_id: "{{ result.ext_id }}"
+
+- name: Create categories for tests
+  ntnx_categories_v2:
+    key: AnsibleSecurityRuleTest
+    value: AnsibleSecurityRuleTest{{ random_name }}{{ item }}
+    description: ansible test
+  register: results
+  loop: [0, 1, 2, 3, 4]
+
+- name: Verify category creation status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.ext_id is defined
+    fail_msg: Failed to create category
+    success_msg: Successfully created category
+  loop: "{{ results.results }}"
+  no_log: true
+
+- name: Set categories to be used in security rules
+  ansible.builtin.set_fact:
+    category1: "{{ results.results[0].response.ext_id }}"
+    category2: "{{ results.results[1].response.ext_id }}"
+    category3: "{{ results.results[2].response.ext_id }}"
+    category4: "{{ results.results[3].response.ext_id }}"
+    category5: "{{ results.results[4].response.ext_id }}"
+
+- name: Create service group to be used in security rules
+  ntnx_service_groups_v2:
+    name: ansible-sg-{{ random_name }}
+    description: desc
+    tcp_services:
+      - start_port: 80
+        end_port: 90
+  register: result
+
+- name: Verify service group creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id is defined
+    fail_msg: Failed to create service group
+    success_msg: Successfully created service group
+
+- name: Set service group id
+  ansible.builtin.set_fact:
+    service_group_id: "{{ result.ext_id }}"
+
+- name: Create address group to be used in security rules
+  ntnx_address_groups_v2:
+    state: present
+    name: ansible-ag-{{ random_name }}
+    description: test-ansible-group-1-desc
+    ipv4_addresses:
+      - value: 10.1.1.0
+        prefix_length: 24
+      - value: 10.1.2.2
+        prefix_length: 32
+  register: result
+
+- name: Verify creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == true
+    fail_msg: Unable to create address group
+    success_msg: Address group created successfully
+
+- name: Set address group id
+  ansible.builtin.set_fact:
+    address_group_ext_id: "{{ result.ext_id }}"
+
+################################################ Create tests ################################################
+
+- name: Generate spec for basic application rule using check mode
+  ntnx_security_rules_v2:
+    name: "{{ rule_name_1 }}"
+    description: Ansible created rule
+    type: APPLICATION
+    policy_state: SAVE
+    scope: ALL_VPC
+    is_hitlog_enabled: true
+    is_ipv6_traffic_allowed: true
+    rules:
+      - description: Allow intra category group for cat1
+        type: INTRA_GROUP
+        spec:
+          intra_entity_group_rule_spec:
+            secured_group_category_references:
+              - "{{ category1 }}"
+            secured_group_action: ALLOW
+      - description: Allow to all destinations for cat 1
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            dest_allow_spec: ALL
+            secured_group_category_references:
+              - "{{ category1 }}"
+      - description: Allow to all sources for cat 1
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            src_allow_spec: ALL
+            secured_group_category_references:
+              - "{{ category1 }}"
+  register: result
+  check_mode: true
+
+- name: Verify spec creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.name == "{{ rule_name_1 }}"
+      - result.response.description == "Ansible created rule"
+      - result.response.type == "APPLICATION"
+      - result.response.state == "SAVE"
+      - result.response.scope == "ALL_VPC"
+      - result.response.is_hitlog_enabled == true
+      - result.response.is_ipv6_traffic_allowed == true
+      - result.response.rules | length == 3
+      - result.response.rules[0].description == "Allow intra category group for cat1"
+      - result.response.rules[0].type == "INTRA_GROUP"
+      - result.response.rules[0].spec.secured_group_category_references[0] == "{{ category1 }}"
+      - result.response.rules[0].spec.secured_group_action == "ALLOW"
+      - result.response.rules[1].description == "Allow to all destinations for cat 1"
+      - result.response.rules[1].type == "APPLICATION"
+      - result.response.rules[1].spec.dest_allow_spec == "ALL"
+      - result.response.rules[1].spec.secured_group_category_references[0] == "{{ category1 }}"
+      - result.response.rules[2].description == "Allow to all sources for cat 1"
+      - result.response.rules[2].type == "APPLICATION"
+      - result.response.rules[2].spec.src_allow_spec == "ALL"
+      - result.response.rules[2].spec.secured_group_category_references[0] == "{{ category1 }}"
+    fail_msg: Failed to create security rule
+    success_msg: Successfully created security rule
+
+- name: Create basic application security rule for certain VPC scope with intra group traffic not allowed
+  ntnx_security_rules_v2:
+    name: "{{ rule_name_1 }}"
+    description: Ansible created rule
+    type: APPLICATION
+    policy_state: ENFORCE
+    scope: VPC_LIST
+    vpc_references:
+      - "{{ vpc_id }}"
+    is_hitlog_enabled: true
+    is_ipv6_traffic_allowed: false
+    rules:
+      - description: inbound1
+        type: INTRA_GROUP
+        spec:
+          intra_entity_group_rule_spec:
+            secured_group_category_references:
+              - "{{ category1 }}"
+              - "{{ category2 }}"
+            secured_group_action: DENY
+      - description: outbound1
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            dest_allow_spec: ALL
+            secured_group_category_references:
+              - "{{ category1 }}"
+              - "{{ category2 }}"
+            is_all_protocol_allowed: true
+      - description: inbound2
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            src_allow_spec: ALL
+            secured_group_category_references:
+              - "{{ category1 }}"
+              - "{{ category2 }}"
+            is_all_protocol_allowed: true
+  register: result
+
+- name: Create category list for asserts
+  ansible.builtin.set_fact:
+    category_list: ["{{ category1 }}", "{{ category2 }}"]
+
+- name: Initialize indexes for inbound1, inbound2, and outbound1
+  ansible.builtin.set_fact:
+    inbound1_index: -1
+    inbound2_index: -1
+    outbound1_index: -1
+
+- name: Find index of 'inbound1'
+  ansible.builtin.set_fact:
+    inbound1_index: "{{ item_index }}"
+  when: item.description == "inbound1"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+  no_log: true
+
+- name: Find index of 'inbound2'
+  ansible.builtin.set_fact:
+    inbound2_index: "{{ item_index }}"
+  when: item.description == "inbound2"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+  no_log: true
+
+- name: Find index of 'outbound1'
+  ansible.builtin.set_fact:
+    outbound1_index: "{{ item_index }}"
+  when: item.description == "outbound1"
+  with_items: "{{ result.response.rules }}"
+  loop_control:
+    index_var: item_index
+  no_log: true
+
+- name: Verify creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.name == "{{ rule_name_1 }}"
+      - result.response.description == "Ansible created rule"
+      - result.response.type == "APPLICATION"
+      - result.response.state == "ENFORCE"
+      - result.response.scope == "VPC_LIST"
+      - result.response.vpc_references | length == 1
+      - result.response.vpc_references[0] == "{{ vpc_id }}"
+      - result.response.is_hitlog_enabled == true
+      - result.response.is_ipv6_traffic_allowed == false
+      - result.response.rules | length == 3
+      - result.response.rules[inbound1_index].description == "inbound1"
+      - result.response.rules[inbound1_index].type == "INTRA_GROUP"
+      - result.response.rules[inbound1_index].spec.secured_group_category_references[0] in category_list
+      - result.response.rules[inbound1_index].spec.secured_group_category_references[1] in category_list
+      - result.response.rules[inbound1_index].spec.secured_group_action == "DENY"
+      - result.response.rules[outbound1_index].description == "outbound1"
+      - result.response.rules[outbound1_index].type == "APPLICATION"
+      - result.response.rules[outbound1_index].spec.dest_allow_spec == "ALL"
+      - result.response.rules[outbound1_index].spec.secured_group_category_references[0] in category_list
+      - result.response.rules[outbound1_index].spec.secured_group_category_references[1] in category_list
+      - result.response.rules[outbound1_index].spec.is_all_protocol_allowed == true
+      - result.response.rules[inbound2_index].description == "inbound2"
+      - result.response.rules[inbound2_index].type == "APPLICATION"
+      - result.response.rules[inbound2_index].spec.src_allow_spec == "ALL"
+      - result.response.rules[inbound2_index].spec.secured_group_category_references[0] in category_list
+      - result.response.rules[inbound2_index].spec.secured_group_category_references[1] in category_list
+      - result.response.rules[inbound2_index].spec.is_all_protocol_allowed == true
+    fail_msg: Failed to create security rule
+    success_msg: Successfully created security rule
+
+- name: Delete created security rule
+  ntnx_security_rules_v2:
+    state: absent
+    ext_id: "{{ result.ext_id }}"
+  register: result
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete security rule
+    success_msg: Successfully deleted security rule
+
+- name: Create security rule with multienvisolation rule
+  ntnx_security_rules_v2:
+    name: "{{ rule_name_3 }}"
+    description: Ansible created rule
+    type: ISOLATION
+    policy_state: ENFORCE
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    is_ipv6_traffic_allowed: false
+    rules:
+      - description: multienvisolation rule
+        type: MULTI_ENV_ISOLATION
+        spec:
+          multi_env_isolation_rule_spec:
+            spec:
+              all_to_all_isolation_group:
+                isolation_groups:
+                  - group_category_references:
+                      - "{{ category1 }}"
+                  - group_category_references:
+                      - "{{ category2 }}"
+  register: result
+
+- name: Create default rule map
+  ansible.builtin.set_fact:
+    rule_map: {}
+
+- name: Since rules are unordered, create map of unique description to rules config
+  ansible.builtin.set_fact:
+    rule_map: "{{ rule_map | default({}) | combine({item.description: item}) }}"
+  loop: "{{ result.response.rules }}"
+  no_log: true
+
+- name: Verify creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.name == "{{ rule_name_3 }}"
+      - result.response.description == "Ansible created rule"
+      - result.response.type == "ISOLATION"
+      - result.response.state == "ENFORCE"
+      - result.response.scope == "ALL_VLAN"
+      - result.response.is_hitlog_enabled == true
+      - result.response.is_ipv6_traffic_allowed == false
+      - result.response.rules | length == 1
+      - result.response.rules[0].description == "multienvisolation rule"
+      - result.response.rules[0].type == "MULTI_ENV_ISOLATION"
+      - result.response.rules[0].spec.spec.isolation_groups[0].group_category_references[0] in category_list
+      - result.response.rules[0].spec.spec.isolation_groups[1].group_category_references[0] in category_list
+    fail_msg: Failed to create security rule
+    success_msg: Successfully created security rule
+
+- name: Set policy external ID
+  ansible.builtin.set_fact:
+    policy_ext_id1: "{{ result.ext_id }}"
+
+- name: Create policy with all vlan scope and using certain sources and destinations
+  ntnx_security_rules_v2:
+    name: "{{ rule_name_2 }}"
+    description: Ansible created rule
+    type: APPLICATION
+    policy_state: MONITOR
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    is_ipv6_traffic_allowed: true
+    rules:
+      - description: inbound1
+        type: INTRA_GROUP
+        spec:
+          intra_entity_group_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            secured_group_action: DENY
+      - description: inbound2
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_category_references:
+              - "{{ category3 }}"
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: inbound3
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_address_group_references:
+              - "{{ address_group_ext_id }}"
+            tcp_services:
+              - start_port: 80
+                end_port: 90
+              - start_port: 100
+                end_port: 110
+            udp_services:
+              - start_port: 120
+                end_port: 130
+              - start_port: 140
+                end_port: 150
+            icmp_services:
+              - type: 3
+                code: 1
+              - type: 4
+                code: 2
+      - description: inbound4
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_subnet:
+              value: 10.0.0.0
+              prefix_length: 24
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: outbound1
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_category_references:
+              - "{{ category5 }}"
+            is_all_protocol_allowed: true
+      - description: outbound2
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_subnet:
+              value: 10.0.1.1
+              prefix_length: 32
+            is_all_protocol_allowed: true
+      - description: outbound3
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_address_group_references:
+              - "{{ address_group_ext_id }}"
+            is_all_protocol_allowed: true
+  register: result
+
+- name: Create default rule map
+  ansible.builtin.set_fact:
+    rule_map: {}
+
+- name: Since rules are unordered, create map of unique description to rules config
+  ansible.builtin.set_fact:
+    rule_map: "{{ rule_map | default({}) | combine({item.description: item}) }}"
+  loop: "{{ result.response.rules }}"
+  no_log: true
+
+- name: Verify creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.name == "{{ rule_name_2 }}"
+      - result.response.description == "Ansible created rule"
+      - result.response.type == "APPLICATION"
+      - result.response.state == "MONITOR"
+      - result.response.scope == "ALL_VLAN"
+      - result.response.is_hitlog_enabled == true
+      - result.response.is_ipv6_traffic_allowed == true
+      - result.response.rules | length == 7
+      - rule_map["inbound1"].type == "INTRA_GROUP"
+      - rule_map["inbound1"].description == "inbound1"
+      - rule_map["inbound1"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["inbound1"].spec.secured_group_action == "DENY"
+      - rule_map["inbound2"].type == "APPLICATION"
+      - rule_map["inbound2"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["inbound2"].spec.src_category_references[0] == "{{ category3 }}"
+      - rule_map["inbound2"].spec.service_group_references[0] == "{{ service_group_id }}"
+      - rule_map["inbound3"].type == "APPLICATION"
+      - rule_map["inbound3"].spec.src_address_group_references[0] == "{{ address_group_ext_id }}"
+      - rule_map["inbound3"].spec.tcp_services[0].start_port == 80
+      - rule_map["inbound3"].spec.tcp_services[0].end_port == 90
+      - rule_map["inbound3"].spec.tcp_services[1].start_port == 100
+      - rule_map["inbound3"].spec.tcp_services[1].end_port == 110
+      - rule_map["inbound3"].spec.udp_services[0].start_port == 120
+      - rule_map["inbound3"].spec.udp_services[0].end_port == 130
+      - rule_map["inbound3"].spec.udp_services[1].start_port == 140
+      - rule_map["inbound3"].spec.udp_services[1].end_port == 150
+      - rule_map["inbound3"].spec.icmp_services[0].type == 3
+      - rule_map["inbound3"].spec.icmp_services[0].code == 1
+      - rule_map["inbound3"].spec.icmp_services[1].type == 4
+      - rule_map["inbound3"].spec.icmp_services[1].code == 2
+      - rule_map["inbound4"].spec.src_subnet.value == "10.0.0.0"
+      - rule_map["inbound4"].spec.src_subnet.prefix_length == 24
+      - rule_map["inbound4"].spec.service_group_references[0] == "{{ service_group_id }}"
+      - rule_map["inbound4"].type == "APPLICATION"
+      - rule_map["inbound4"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound1"].type == "APPLICATION"
+      - rule_map["outbound1"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound1"].spec.dest_category_references[0] == "{{ category5 }}"
+      - rule_map["outbound1"].spec.is_all_protocol_allowed == true
+      - rule_map["outbound2"].type == "APPLICATION"
+      - rule_map["outbound2"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound2"].spec.dest_subnet.value == "10.0.1.1"
+      - rule_map["outbound2"].spec.dest_subnet.prefix_length == 32
+      - rule_map["outbound2"].spec.is_all_protocol_allowed == true
+      - rule_map["outbound3"].type == "APPLICATION"
+      - rule_map["outbound3"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound3"].spec.dest_address_group_references[0] == "{{ address_group_ext_id }}"
+      - rule_map["outbound3"].spec.is_all_protocol_allowed == true
+    fail_msg: Failed to create security rule
+    success_msg: Successfully created security rule
+
+- name: Set policy external ID
+  ansible.builtin.set_fact:
+    policy_ext_id2: "{{ result.ext_id }}"
+
+######################################### Update tests #########################################
+
+- name: Generate spec to update the policy using check mode
+  check_mode: true
+  ntnx_security_rules_v2:
+    ext_id: "{{ policy_ext_id2 }}"
+    name: "{{ rule_name_2 }}-updated"
+    rules:
+      - description: inbound1
+        type: INTRA_GROUP
+        spec:
+          intra_entity_group_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            secured_group_action: DENY
+      - description: inbound2_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_category_references:
+              - "{{ category5 }}"
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: inbound3_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_address_group_references:
+              - "{{ address_group_ext_id }}"
+            tcp_services:
+              - start_port: 85
+                end_port: 90
+            udp_services:
+              - start_port: 125
+                end_port: 130
+            icmp_services:
+              - type: 3
+                code: 2
+      - description: inbound4_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_subnet:
+              value: 10.0.1.0
+              prefix_length: 24
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: outbound1
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_category_references:
+              - "{{ category5 }}"
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: outbound2_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_subnet:
+              value: 10.0.1.2
+              prefix_length: 32
+            is_all_protocol_allowed: true
+      - description: outbound3
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_address_group_references:
+              - "{{ address_group_ext_id }}"
+            is_all_protocol_allowed: true
+  register: result
+
+- name: Verify update spec
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.ext_id == "{{ policy_ext_id2 }}"
+      - result.response.name == "{{ rule_name_2 }}-updated"
+      - result.response.description == "Ansible created rule"
+      - result.response.type == "APPLICATION"
+      - result.response.state == "MONITOR"
+      - result.response.scope == "ALL_VLAN"
+      - result.response.is_hitlog_enabled == true
+      - result.response.is_ipv6_traffic_allowed == true
+      - result.response.rules | length == 7
+      - result.response.rules[0].description == "inbound1"
+      - result.response.rules[0].type == "INTRA_GROUP"
+      - result.response.rules[0].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - result.response.rules[0].spec.secured_group_action == "DENY"
+      - result.response.rules[1].description == "inbound2_updated"
+      - result.response.rules[1].type == "APPLICATION"
+      - result.response.rules[1].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - result.response.rules[1].spec.src_category_references[0] == "{{ category5 }}"
+      - result.response.rules[1].spec.service_group_references[0] == "{{ service_group_id }}"
+      - result.response.rules[2].description == "inbound3_updated"
+      - result.response.rules[2].type == "APPLICATION"
+      - result.response.rules[2].spec.src_address_group_references[0] == "{{ address_group_ext_id }}"
+      - result.response.rules[2].spec.tcp_services[0].start_port == 85
+      - result.response.rules[2].spec.tcp_services[0].end_port == 90
+      - result.response.rules[2].spec.udp_services[0].start_port == 125
+      - result.response.rules[2].spec.udp_services[0].end_port == 130
+      - result.response.rules[2].spec.icmp_services[0].type == 3
+      - result.response.rules[2].spec.icmp_services[0].code == 2
+      - result.response.rules[3].description == "inbound4_updated"
+      - result.response.rules[3].spec.src_subnet.value == "10.0.1.0"
+      - result.response.rules[3].spec.src_subnet.prefix_length == 24
+      - result.response.rules[3].spec.service_group_references[0] == "{{ service_group_id }}"
+      - result.response.rules[3].type == "APPLICATION"
+      - result.response.rules[3].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - result.response.rules[4].description == "outbound1"
+      - result.response.rules[4].type == "APPLICATION"
+      - result.response.rules[4].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - result.response.rules[4].spec.dest_category_references[0] == "{{ category5 }}"
+      - result.response.rules[4].spec.service_group_references[0] == "{{ service_group_id }}"
+      - result.response.rules[5].description == "outbound2_updated"
+      - result.response.rules[5].type == "APPLICATION"
+      - result.response.rules[5].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - result.response.rules[5].spec.dest_subnet.value == "10.0.1.2"
+      - result.response.rules[5].spec.dest_subnet.prefix_length == 32
+      - result.response.rules[5].spec.is_all_protocol_allowed == true
+      - result.response.rules[6].description == "outbound3"
+      - result.response.rules[6].type == "APPLICATION"
+      - result.response.rules[6].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - result.response.rules[6].spec.dest_address_group_references[0] == "{{ address_group_ext_id }}"
+      - result.response.rules[6].spec.is_all_protocol_allowed == true
+    fail_msg: Failed to update security rule
+    success_msg: Successfully updated security rule
+
+- name: Update policy rules and config
+  ntnx_security_rules_v2:
+    ext_id: "{{ policy_ext_id2 }}"
+    name: "{{ rule_name_2 }}-updated"
+    description: Ansible created rule updated
+    type: APPLICATION
+    policy_state: ENFORCE
+    scope: ALL_VLAN
+    is_hitlog_enabled: false
+    is_ipv6_traffic_allowed: false
+    rules:
+      - description: inbound1
+        type: INTRA_GROUP
+        spec:
+          intra_entity_group_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            secured_group_action: DENY
+      - description: inbound2_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_category_references:
+              - "{{ category5 }}"
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: inbound3_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_address_group_references:
+              - "{{ address_group_ext_id }}"
+            tcp_services:
+              - start_port: 85
+                end_port: 90
+            udp_services:
+              - start_port: 125
+                end_port: 130
+            icmp_services:
+              - type: 3
+                code: 2
+      - description: inbound4_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_subnet:
+              value: 10.0.1.0
+              prefix_length: 24
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: outbound1
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_category_references:
+              - "{{ category5 }}"
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: outbound2_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_subnet:
+              value: 10.0.1.2
+              prefix_length: 32
+            is_all_protocol_allowed: true
+      - description: outbound3
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_address_group_references:
+              - "{{ address_group_ext_id }}"
+            is_all_protocol_allowed: true
+  register: result
+
+- name: Create default rule map
+  ansible.builtin.set_fact:
+    rule_map: {}
+
+- name: Since rules are unordered, create map of unique description to rules config
+  ansible.builtin.set_fact:
+    rule_map: "{{ rule_map | default({}) | combine({item.description: item}) }}"
+  loop: "{{ result.response.rules }}"
+  no_log: true
+
+- name: Verify updated policy status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.name == "{{ rule_name_2 }}-updated"
+      - result.response.description == "Ansible created rule updated"
+      - result.response.type == "APPLICATION"
+      - result.response.state == "ENFORCE"
+      - result.response.scope == "ALL_VLAN"
+      - result.response.is_hitlog_enabled == false
+      - result.response.is_ipv6_traffic_allowed == false
+      - result.response.rules | length == 7
+      - rule_map["inbound1"].type == "INTRA_GROUP"
+      - rule_map["inbound1"].description == "inbound1"
+      - rule_map["inbound1"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["inbound1"].spec.secured_group_action == "DENY"
+      - rule_map["inbound2_updated"].type == "APPLICATION"
+      - rule_map["inbound2_updated"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["inbound2_updated"].spec.src_category_references[0] == "{{ category5 }}"
+      - rule_map["inbound2_updated"].spec.service_group_references[0] == "{{ service_group_id }}"
+      - rule_map["inbound3_updated"].type == "APPLICATION"
+      - rule_map["inbound3_updated"].spec.src_address_group_references[0] == "{{ address_group_ext_id }}"
+      - rule_map["inbound3_updated"].spec.tcp_services[0].start_port == 85
+      - rule_map["inbound3_updated"].spec.tcp_services[0].end_port == 90
+      - rule_map["inbound3_updated"].spec.udp_services[0].start_port == 125
+      - rule_map["inbound3_updated"].spec.udp_services[0].end_port == 130
+      - rule_map["inbound3_updated"].spec.icmp_services[0].type == 3
+      - rule_map["inbound3_updated"].spec.icmp_services[0].code == 2
+      - rule_map["inbound4_updated"].spec.src_subnet.value == "10.0.1.0"
+      - rule_map["inbound4_updated"].spec.src_subnet.prefix_length == 24
+      - rule_map["inbound4_updated"].spec.service_group_references[0] == "{{ service_group_id }}"
+      - rule_map["inbound4_updated"].type == "APPLICATION"
+      - rule_map["inbound4_updated"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound1"].type == "APPLICATION"
+      - rule_map["outbound1"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound1"].spec.dest_category_references[0] == "{{ category5 }}"
+      - rule_map["outbound1"].spec.service_group_references[0] == "{{ service_group_id }}"
+      - rule_map["outbound2_updated"].type == "APPLICATION"
+      - rule_map["outbound2_updated"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound2_updated"].spec.dest_subnet.value == "10.0.1.2"
+      - rule_map["outbound2_updated"].spec.dest_subnet.prefix_length == 32
+      - rule_map["outbound2_updated"].spec.is_all_protocol_allowed == true
+      - rule_map["outbound3"].type == "APPLICATION"
+      - rule_map["outbound3"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound3"].spec.dest_address_group_references[0] == "{{ address_group_ext_id }}"
+      - rule_map["outbound3"].spec.is_all_protocol_allowed == true
+    fail_msg: Failed to update security rule
+    success_msg: Successfully updated security rule
+
+- name: Update policy rules and config with same value to check idempotency
+  ntnx_security_rules_v2:
+    ext_id: "{{ policy_ext_id2 }}"
+    name: "{{ rule_name_2 }}-updated"
+    description: Ansible created rule updated
+    type: APPLICATION
+    policy_state: ENFORCE
+    scope: ALL_VLAN
+    is_hitlog_enabled: false
+    is_ipv6_traffic_allowed: false
+    rules:
+      - description: inbound1
+        type: INTRA_GROUP
+        spec:
+          intra_entity_group_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            secured_group_action: DENY
+      - description: inbound2_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_category_references:
+              - "{{ category5 }}"
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: inbound3_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_address_group_references:
+              - "{{ address_group_ext_id }}"
+            tcp_services:
+              - start_port: 85
+                end_port: 90
+            udp_services:
+              - start_port: 125
+                end_port: 130
+            icmp_services:
+              - type: 3
+                code: 2
+      - description: inbound4_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_subnet:
+              value: 10.0.1.0
+              prefix_length: 24
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: outbound1
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_category_references:
+              - "{{ category5 }}"
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: outbound2_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_subnet:
+              value: 10.0.1.2
+              prefix_length: 32
+            is_all_protocol_allowed: true
+      - description: outbound3
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_address_group_references:
+              - "{{ address_group_ext_id }}"
+            is_all_protocol_allowed: true
+  register: result
+
+- name: Verify skip status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+      - result.skipped == true
+    fail_msg: Module failed to skip the update
+    success_msg: "Pass : return as expected"
+
+- name: Update the policy state
+  ntnx_security_rules_v2:
+    ext_id: "{{ policy_ext_id2 }}"
+    policy_state: MONITOR
+  register: result
+
+- name: Verify policy state update
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.state == "MONITOR"
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.rules | length == 7
+    fail_msg: Failed to update policy state
+    success_msg: Successfully updated policy state
+
+- name: Update some rules and delete some rules from policy
+  ntnx_security_rules_v2:
+    ext_id: "{{ policy_ext_id2 }}"
+    rules:
+      - description: inbound1
+        type: INTRA_GROUP
+        spec:
+          intra_entity_group_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            secured_group_action: ALLOW
+      - description: inbound4_updated
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            src_subnet:
+              value: 10.0.1.0
+              prefix_length: 24
+            service_group_references:
+              - "{{ service_group_id }}"
+      - description: outbound1
+        type: APPLICATION
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - "{{ category4 }}"
+            dest_subnet:
+              value: 10.0.1.0
+              prefix_length: 24
+            is_all_protocol_allowed: true
+  register: result
+
+- name: Create default rule map
+  ansible.builtin.set_fact:
+    rule_map: {}
+
+- name: Since rules are unordered, create map of unique description to rules config
+  ansible.builtin.set_fact:
+    rule_map: "{{ rule_map | default({}) | combine({item.description: item}) }}"
+  loop: "{{ result.response.rules }}"
+  no_log: true
+
+- name: Verify update status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.rules | length == 3
+      - rule_map["inbound1"].type == "INTRA_GROUP"
+      - rule_map["inbound1"].description == "inbound1"
+      - rule_map["inbound1"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["inbound1"].spec.secured_group_action == "ALLOW"
+      - rule_map["inbound4_updated"].type == "APPLICATION"
+      - rule_map["inbound4_updated"].spec.src_subnet.value == "10.0.1.0"
+      - rule_map["inbound4_updated"].spec.src_subnet.prefix_length == 24
+      - rule_map["inbound4_updated"].spec.service_group_references[0] == "{{ service_group_id }}"
+      - rule_map["inbound4_updated"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound1"].type == "APPLICATION"
+      - rule_map["outbound1"].spec.secured_group_category_references[0] == "{{ category4 }}"
+      - rule_map["outbound1"].spec.dest_subnet.value == "10.0.1.0"
+      - rule_map["outbound1"].spec.dest_subnet.prefix_length == 24
+      - rule_map["outbound1"].spec.is_all_protocol_allowed == true
+    fail_msg: Failed to update security rule
+    success_msg: Successfully updated security rule
+
+######################################### Info tests #########################################
+
+- name: Get all policies
+  ntnx_security_rules_info_v2:
+  register: result
+
+- name: Verify listing status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response | length > 1
+    fail_msg: Failed to list security rules
+    success_msg: Successfully listed security rules
+
+- name: Get particular policy
+  ntnx_security_rules_info_v2:
+    ext_id: "{{ policy_ext_id2 }}"
+  register: result
+
+- name: Verify get status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.ext_id == "{{ policy_ext_id2 }}"
+      - result.response.name == "{{ rule_name_2 }}-updated"
+    fail_msg: Failed to get security rule
+    success_msg: Successfully got security rule
+
+- name: Fetch certain policy using filters
+  ntnx_security_rules_info_v2:
+    filter: name eq '{{ rule_name_2 }}-updated'
+  register: result
+
+- name: Verify filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response | length == 1
+      - result.response[0].name == "{{ rule_name_2 }}-updated"
+      - result.response[0].ext_id == "{{ policy_ext_id2 }}"
+    fail_msg: Failed to filter security rules
+    success_msg: Successfully filtered security rules
+
+- name: Fetch policies using limit
+  ntnx_security_rules_info_v2:
+    limit: 1
+  register: result
+
+- name: Verify limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: Failed to limit security rules
+    success_msg: Successfully limited security rules
+
+######################################### Delete tests #########################################
+
+- name: Delete security rule 1
+  ntnx_security_rules_v2:
+    state: absent
+    ext_id: "{{ policy_ext_id1 }}"
+  register: result
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete security rule
+    success_msg: Successfully deleted security rule
+
+- name: Delete security rule 2
+  ntnx_security_rules_v2:
+    state: absent
+    ext_id: "{{ policy_ext_id2 }}"
+  register: result
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete security rule
+    success_msg: Successfully deleted security rule
+
+######################################### Delete test setup created entities #########################################
+
+- name: Delete service group
+  ntnx_service_groups_v2:
+    state: absent
+    ext_id: "{{ service_group_id }}"
+  register: result
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete service group
+    success_msg: Successfully deleted service group
+
+- name: Delete address group
+  ntnx_address_groups_v2:
+    state: absent
+    ext_id: "{{ address_group_ext_id }}"
+  register: result
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete address group
+    success_msg: Successfully deleted address group
+
+- name: Delete vpc
+  ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ vpc_id }}"
+  register: result
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Failed to delete vpc
+    success_msg: Successfully deleted vpc
+
+- name: Delete all categories
+  ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop:
+    [
+      "{{ category1 }}",
+      "{{ category2 }}",
+      "{{ category3 }}",
+      "{{ category4 }}",
+      "{{ category5 }}",
+    ]
+  no_log: true
+
+- name: Verify deletion status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+    fail_msg: Failed to delete category
+    success_msg: Successfully deleted category
+  loop: "{{ result.results }}"
+  no_log: true

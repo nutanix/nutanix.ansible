@@ -1,0 +1,197 @@
+---
+- name: Start ntnx_categories_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_categories_v2 tests
+
+- name: Generate random category  key & value
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-ag"
+
+- name: Set category key & value
+  ansible.builtin.set_fact:
+    todelete: []
+    key1: "{{random_name}}{{suffix_name}}key1"
+    value1: "{{random_name}}{{suffix_name}}value1"
+    value2: "{{random_name}}{{suffix_name}}value2"
+########################################################################
+- name: Create category key & value with check_mode
+  ntnx_categories_v2:
+    key: "{{key1}}"
+    value: "{{value1}}"
+    description: "ansible test"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.response.key == "{{key1}}"
+      - result.response.value == "{{value1}}"
+      - result.response.description == "ansible test"
+    fail_msg: "Check mode failed"
+    success_msg: "Check mode passed"
+########################################################################
+- name: Create category key & value
+  ntnx_categories_v2:
+    key: "{{key1}}"
+    value: "{{value1}}"
+    description: "ansible test"
+  register: output
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - output.response is defined
+      - output.response.key == "{{key1}}"
+      - output.response.value == "{{value1}}"
+      - output.response.type == "USER"
+      - output.response.ext_id is defined
+      - output.changed == True
+      - output.failed == False
+      - output.response.description == "ansible test"
+    fail_msg: "Unable to create category key & value"
+    success_msg: "Category key & value created successfully"
+
+- name: Add category to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [  output["response"]["ext_id"] ] }}'
+########################################################################
+- name: Update category value and description
+  ntnx_categories_v2:
+    ext_id: "{{output.response.ext_id}}"
+    key: "{{key1}}"
+    value: "{{value2}}"
+    description: "ansible test New value"
+  register: result
+  ignore_errors: true
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.response.type == "USER"
+      - result.response.key == "{{key1}}"
+      - result.response.value == "{{value2}}"
+      - result.response.description == "ansible test New value"
+    fail_msg: "Unable to update category key & value"
+    success_msg: "Category description & value updated successfully"
+########################################################################
+- name: Check idempotency
+  ntnx_categories_v2:
+    ext_id: "{{output.response.ext_id}}"
+    key: "{{key1}}"
+    value: "{{value2}}"
+    description: "ansible test New value"
+  register: result
+  ignore_errors: true
+
+- name: Idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.skipped == True
+      - result.msg == "Nothing to change."
+    fail_msg: "Idempotency failed"
+    success_msg: "Idempotency passed"
+########################################################################
+- name: Update category value and description with check_mode
+  ntnx_categories_v2:
+    ext_id: "{{output.response.ext_id}}"
+    key: "{{key1}}"
+    value: "new value"
+    description: "ansible test New value"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.response.key == "{{key1}}"
+      - result.response.value == "new value"
+      - result.response.description == "ansible test New value"
+    fail_msg: "Check mode failed"
+    success_msg: "Check mode passed"
+########################################################################
+- name: List all categories
+  ntnx_categories_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of all categories
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 0
+    fail_msg: "Unable to list categories "
+    success_msg: "categories  listed successfully"
+
+- name: Set category name
+  ansible.builtin.set_fact:
+    category_name: "{{result.response.0.key}}"
+
+########################################################################
+- name: List all categories with keyname & expand associations
+  ntnx_categories_info_v2:
+    expand: associations
+    filter: "key eq '{{category_name}}'"
+  register: result
+  ignore_errors: true
+
+- name: Status of all categories
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 0
+      - result.response.0.associations is defined
+    fail_msg: "Unable to List all categories with keyname & expand associations "
+    success_msg: "categories with keyname & expand  listed successfully"
+########################################################################
+- name: Fetch category using ext id & expand detailedAssociations
+  ntnx_categories_info_v2:
+    ext_id: "{{result.response.0.ext_id}}"
+    expand: detailedAssociations
+  register: result
+  ignore_errors: true
+
+- name: Status of category
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.key == "{{category_name}}"
+    fail_msg: "Unable to fetch category using ext id & expand detailedAssociations"
+    success_msg: "category fetched using ext id & expand detailedAssociations successfully"
+########################################################################
+- name: Delete Created categories
+  ntnx_categories_v2:
+    ext_id: "{{item}}"
+    state: absent
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.msg == "All items completed"
+    fail_msg: "Unable to delete category key & value"
+    success_msg: "Category key & value deleted successfully"

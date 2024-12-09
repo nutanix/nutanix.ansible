@@ -1,119 +1,121 @@
-    - name: Image nodes with check mode
-      check_mode: yes
-      ntnx_foundation:
-        timeout: 3660
-        nutanix_host: "{{foundation_host}}"
-        cvm_gateway: "{{cvm_gateway}}"
-        cvm_netmask: "{{cvm_netmask}}"
-        hypervisor_gateway: "{{hypervisor_gateway}}"
-        hypervisor_netmask: "{{hypervisor_netmask}}"
-        default_ipmi_user: "{{default_ipmi_user}}"
-        current_cvm_vlan_tag: "0"
-        nos_package: "{{nos_package}}"
-        blocks:
-          - block_id: "{{IBIS_node.block_id}}"
-            nodes:
-              - manual_mode:
-                  cvm_gb_ram: 50
-                  cvm_ip: "{{IBIS_node.node1.cvm_ip}}"
-                  hypervisor_hostname: "{{IBIS_node.node1.hypervisor_hostname}}"
-                  ipmi_ip: "{{IBIS_node.node1.ipmi_ip}}"
-                  ipmi_password: "{{IBIS_node.node1.ipmi_password}}"
-                  hypervisor: "{{IBIS_node.node1.hypervisor}}"
-                  hypervisor_ip: "{{IBIS_node.node1.hypervisor_ip}}"
-                  node_position: "{{IBIS_node.node1.node_position}}"
-        clusters:
-            - redundancy_factor: 2
-              cluster_members:
-                - "{{IBIS_node.node1.cvm_ip}}"
-                - "{{IBIS_node.node3.cvm_ip}}"
-                - "{{IBIS_node.node2.cvm_ip}}"
-              name: "test-cluster"
-      register: result
+- name: Image nodes with check mode
+  check_mode: true
+  ntnx_foundation:
+    timeout: 3660
+    nutanix_host: "{{foundation_host}}"
+    cvm_gateway: "{{cvm_gateway}}"
+    cvm_netmask: "{{cvm_netmask}}"
+    hypervisor_gateway: "{{hypervisor_gateway}}"
+    hypervisor_netmask: "{{hypervisor_netmask}}"
+    default_ipmi_user: "{{default_ipmi_user}}"
+    current_cvm_vlan_tag: "0"
+    nos_package: "{{nos_package}}"
+    blocks:
+      - block_id: "{{IBIS_node.block_id}}"
+        nodes:
+          - manual_mode:
+              cvm_gb_ram: 50
+              cvm_ip: "{{IBIS_node.node1.cvm_ip}}"
+              hypervisor_hostname: "{{IBIS_node.node1.hypervisor_hostname}}"
+              ipmi_ip: "{{IBIS_node.node1.ipmi_ip}}"
+              ipmi_password: "{{IBIS_node.node1.ipmi_password}}"
+              hypervisor: "{{IBIS_node.node1.hypervisor}}"
+              hypervisor_ip: "{{IBIS_node.node1.hypervisor_ip}}"
+              node_position: "{{IBIS_node.node1.node_position}}"
+    clusters:
+      - redundancy_factor: 2
+        cluster_members:
+          - "{{IBIS_node.node1.cvm_ip}}"
+          - "{{IBIS_node.node3.cvm_ip}}"
+          - "{{IBIS_node.node2.cvm_ip}}"
+        name: "test-cluster"
+  register: result
 
-    - name: Creation Status
-      assert:
-        that:
-          - result.response is defined
-          - result.failed==false
-          - result.changed==false
-          - result.response.blocks.0.nodes.0.cvm_ip=="{{IBIS_node.node1.cvm_ip}}"
-          - result.response.blocks.0.nodes.0.hypervisor_hostname=="{{IBIS_node.node1.hypervisor_hostname}}"
-          - result.response.blocks.0.nodes.0.ipmi_ip=="{{IBIS_node.node1.ipmi_ip}}"
-          - result.response.blocks.0.nodes.0.hypervisor=="{{IBIS_node.node1.hypervisor}}"
-          - result.response.blocks.0.nodes.0.node_position=="{{IBIS_node.node1.node_position}}"
-          - result.response.clusters.0.cluster_name=="test-cluster"
-        fail_msg: " Fail : check_mode fail"
-        success_msg: "Succes: returned response as expected"
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed==false
+      - result.changed==false
+      - result.response.blocks.0.nodes.0.cvm_ip=="{{IBIS_node.node1.cvm_ip}}"
+      - result.response.blocks.0.nodes.0.hypervisor_hostname=="{{IBIS_node.node1.hypervisor_hostname}}"
+      - result.response.blocks.0.nodes.0.ipmi_ip=="{{IBIS_node.node1.ipmi_ip}}"
+      - result.response.blocks.0.nodes.0.hypervisor=="{{IBIS_node.node1.hypervisor}}"
+      - result.response.blocks.0.nodes.0.node_position=="{{IBIS_node.node1.node_position}}"
+      - result.response.clusters.0.cluster_name=="test-cluster"
+    fail_msg: " Fail : check_mode fail"
+    success_msg: "Succes: returned response as expected"
 ###################################
-    - debug:
-        msg: start negative_scenarios for ntnx_foundation
+- name: Start negative_scenarios for ntnx_foundation
+  ansible.builtin.debug:
+    msg: Start negative_scenarios for ntnx_foundation
 ###################################
-    - name: Image nodes with wrong serial
-      ntnx_foundation:
-        timeout: 3660
-        nutanix_host: "{{foundation_host}}"
-        cvm_gateway: "{{cvm_gateway}}"
-        cvm_netmask: "{{cvm_netmask}}"
-        hypervisor_gateway: "{{hypervisor_gateway}}"
-        hypervisor_netmask: "{{hypervisor_netmask}}"
-        default_ipmi_user: "{{default_ipmi_user}}"
-        current_cvm_vlan_tag: "0"
-        nos_package: "{{nos_package}}"
-        blocks:
-          - block_id: "{{IBIS_node.block_id}}"
-            nodes:
-              - discovery_mode:
-                  cvm_gb_ram: 50
-                  node_serial: wrong_serial
-                  device_hint: "vm_installer"
-                  discovery_override:
-                    hypervisor_hostname:  "{{IBIS_node.node3.hypervisor_hostname}}"
-                    hypervisor_ip: "{{IBIS_node.node3.hypervisor_ip}}"
-                    cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
-                    hypervisor: "{{IBIS_node.node3.hypervisor}}"
-      register: result
-      ignore_errors: True
+- name: Image nodes with wrong serial
+  ntnx_foundation:
+    timeout: 3660
+    nutanix_host: "{{foundation_host}}"
+    cvm_gateway: "{{cvm_gateway}}"
+    cvm_netmask: "{{cvm_netmask}}"
+    hypervisor_gateway: "{{hypervisor_gateway}}"
+    hypervisor_netmask: "{{hypervisor_netmask}}"
+    default_ipmi_user: "{{default_ipmi_user}}"
+    current_cvm_vlan_tag: "0"
+    nos_package: "{{nos_package}}"
+    blocks:
+      - block_id: "{{IBIS_node.block_id}}"
+        nodes:
+          - discovery_mode:
+              cvm_gb_ram: 50
+              node_serial: wrong_serial
+              device_hint: "vm_installer"
+              discovery_override:
+                hypervisor_hostname: "{{IBIS_node.node3.hypervisor_hostname}}"
+                hypervisor_ip: "{{IBIS_node.node3.hypervisor_ip}}"
+                cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
+                hypervisor: "{{IBIS_node.node3.hypervisor}}"
+  register: result
+  ignore_errors: false
 
-    - name: Creation Status
-      assert:
-        that:
-          - result.msg == "Failed generating Image Nodes Spec"
-          - result.changed==false
-          - result.failed==true
-        fail_msg: " Fail : image node with wrong serial done successfully "
-        success_msg: "Succes: unable to image node with wrong serial "
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.msg == "Failed generating Image Nodes Spec"
+      - result.changed==false
+      - result.failed==true
+    fail_msg: " Fail : image node with wrong serial done successfully "
+    success_msg: "Succes: unable to image node with wrong serial "
 ###################################
-    - name: Image nodes with wrong hypervisor
-      ntnx_foundation:
-        timeout: 3660
-        cvm_gateway: "{{cvm_gateway}}"
-        cvm_netmask: "{{cvm_netmask}}"
-        hypervisor_gateway: "{{hypervisor_gateway}}"
-        hypervisor_netmask: "{{hypervisor_netmask}}"
-        default_ipmi_user: "{{default_ipmi_user}}"
-        current_cvm_vlan_tag: "0"
-        nos_package: "{{nos_package}}"
-        blocks:
-          - block_id: "{{IBIS_node.block_id}}"
-            nodes:
-              - discovery_mode:
-                  cvm_gb_ram: 50
-                  node_serial: wrong_serial
-                  device_hint: "vm_installer"
-                  discovery_override:
-                    hypervisor_ip: "{{IBIS_node.node3.hypervisor_ip}}"
-                    cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
-                    hypervisor_hostname:  "{{IBIS_node.node3.hypervisor_hostname}}"
-                    hypervisor: "phoenix"
-      register: result
-      ignore_errors: True
+- name: Image nodes with wrong hypervisor
+  ntnx_foundation:
+    timeout: 3660
+    cvm_gateway: "{{cvm_gateway}}"
+    cvm_netmask: "{{cvm_netmask}}"
+    hypervisor_gateway: "{{hypervisor_gateway}}"
+    hypervisor_netmask: "{{hypervisor_netmask}}"
+    default_ipmi_user: "{{default_ipmi_user}}"
+    current_cvm_vlan_tag: "0"
+    nos_package: "{{nos_package}}"
+    blocks:
+      - block_id: "{{IBIS_node.block_id}}"
+        nodes:
+          - discovery_mode:
+              cvm_gb_ram: 50
+              node_serial: wrong_serial
+              device_hint: "vm_installer"
+              discovery_override:
+                hypervisor_ip: "{{IBIS_node.node3.hypervisor_ip}}"
+                cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
+                hypervisor_hostname: "{{IBIS_node.node3.hypervisor_hostname}}"
+                hypervisor: "phoenix"
+  register: result
+  ignore_errors: false
 
-    - name: Creation Status
-      assert:
-        that:
-          - result.changed==false
-          - result.failed==true
-          - "result.msg=='value of hypervisor must be one of: kvm, hyperv, xen, esx, ahv, got: phoenix found in blocks -> nodes -> discovery_mode -> discovery_override'"
-        fail_msg: " Fail : Image nodes with wrong hypervisor done successfully "
-        success_msg: "Succes: unable to image node with wrong hypervisor"
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.changed==false
+      - result.failed==true
+      - "result.msg=='value of hypervisor must be one of: kvm, hyperv, xen, esx, ahv, got: \
+        phoenix found in blocks -> nodes -> discovery_mode -> discovery_override'"
+    fail_msg: " Fail : Image nodes with wrong hypervisor done successfully "
+    success_msg: "Succes: unable to image node with wrong hypervisor"

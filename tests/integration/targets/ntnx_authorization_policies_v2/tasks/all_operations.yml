@@ -1,0 +1,508 @@
+---
+- name: Start authorization CRUD tests
+  ansible.builtin.debug:
+    msg: Start authorization CRUD tests
+
+- name: Generate random string
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Create random acp_name and todelete list
+  ansible.builtin.set_fact:
+    acp_name: "{{ random_name }}-ansible-ag"
+    todelete: []
+
+######################################################################## Test setup ########################################################################
+
+- name: Get create operations
+  ntnx_operations_info_v2:
+    filter: displayName startswith 'Create_'
+  register: create_operations
+  ignore_errors: true
+
+- name: Define variables
+  ansible.builtin.set_fact:
+    test_operation_1_uuid: "{{ create_operations.response[0].ext_id }}"
+    test_operation_2_uuid: "{{ create_operations.response[1].ext_id }}"
+
+- name: Create roles with operations
+  ntnx_roles_v2:
+    state: present
+    display_name: "{{ acp_name }}-ansible-ag-role"
+    description: Role for ansible acp tests
+    operations:
+      - "{{ test_operation_1_uuid }}"
+      - "{{ test_operation_2_uuid }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Save role uuid
+  ansible.builtin.set_fact:
+    role_ext_id: "{{ result.ext_id }}"
+
+- name: Verify role creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.display_name == "{{ acp_name }}-ansible-ag-role"
+    success_msg: Created roles with operations
+    fail_msg: Create roles with operations failed
+######################################################################## Create Tests ########################################################################
+- name: Create auth policy spec using check mode
+  ntnx_authorization_policies_v2:
+    state: present
+    display_name: "{{ acp_name }}1"
+    description: ansible created acps
+    role: "{{ role_ext_id }}"
+    authorization_policy_type: USER_DEFINED
+    entities:
+      - images:
+          "*":
+            eq: "*"
+      - directory_service:
+          uuid:
+            anyof:
+              - ebbfbd38-794b-5529-adcc-dcb6b4177382
+              - ebbfbd38-794b-5529-adcc-dcb6b4177383
+      - marketplace_item:
+          owner_uuid:
+            eq: SELF_OWNED
+    identities:
+      - user:
+          uuid:
+            anyof:
+              - ebbfbd38-794b-5529-adcc-dcb6b4177384
+              - ebbfbd38-794b-5529-adcc-dcb6b4177385
+      - user:
+          group:
+            anyof:
+              - ebbfbd38-794b-5529-adcc-dcb6b4177386
+              - ebbfbd38-794b-5529-adcc-dcb6b4177387
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify auth policy spec creation in check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.display_name == "{{ acp_name }}1"
+      - result.response.description == "ansible created acps"
+      - result.response.role == "{{ role_ext_id }}"
+      - result.response.authorization_policy_type == "USER_DEFINED"
+      - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
+      - result.response.entities[1].entity_filter.directory_service.uuid.anyof | length == 2
+      - result.response.entities[1].entity_filter.directory_service.uuid.anyof[0] == "ebbfbd38-794b-5529-adcc-dcb6b4177382"
+      - result.response.entities[1].entity_filter.directory_service.uuid.anyof[1] == "ebbfbd38-794b-5529-adcc-dcb6b4177383"
+      - result.response.entities[2].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
+      - result.response.identities[0].identity_filter.user.uuid.anyof | length == 2
+      - result.response.identities[0].identity_filter.user.uuid.anyof[0] == "ebbfbd38-794b-5529-adcc-dcb6b4177384"
+      - result.response.identities[0].identity_filter.user.uuid.anyof[1] == "ebbfbd38-794b-5529-adcc-dcb6b4177385"
+      - result.response.identities[1].identity_filter.user.group.anyof | length == 2
+      - result.response.identities[1].identity_filter.user.group.anyof[0] == "ebbfbd38-794b-5529-adcc-dcb6b4177386"
+      - result.response.identities[1].identity_filter.user.group.anyof[1] == "ebbfbd38-794b-5529-adcc-dcb6b4177387"
+    fail_msg: Unable to create auth policy spec in check mode
+    success_msg: Auth policy spec created successfully in check mode
+
+- name: Create auth policy
+  ntnx_authorization_policies_v2:
+    state: present
+    display_name: "{{ acp_name }}1"
+    description: ansible created acps
+    role: "{{ role_ext_id }}"
+    authorization_policy_type: USER_DEFINED
+    entities:
+      - images:
+          "*":
+            eq: "*"
+      - directory_service:
+          uuid:
+            anyof:
+              - "{{ directory_service_uuid }}"
+      - marketplace_item:
+          owner_uuid:
+            eq: SELF_OWNED
+    identities:
+      - user:
+          uuid:
+            anyof:
+              - "{{ users[0] }}"
+              - "{{ users[1] }}"
+      - user:
+          group:
+            anyof:
+              - "{{ user_groups[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify auth policy creation
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.display_name == "{{ acp_name }}1"
+      - result.response.description == "ansible created acps"
+      - result.response.role == "{{ role_ext_id }}"
+      - result.response.authorization_policy_type == "USER_DEFINED"
+      - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
+      - result.response.entities[1].entity_filter.directory_service.uuid.anyof | length == 1
+      - result.response.entities[1].entity_filter.directory_service.uuid.anyof[0] == "{{ directory_service_uuid }}"
+      - result.response.entities[2].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
+      - result.response.identities[0].identity_filter.user.uuid.anyof | length == 2
+      - result.response.identities[0].identity_filter.user.uuid.anyof[0] == "{{ users[0] }}"
+      - result.response.identities[0].identity_filter.user.uuid.anyof[1] == "{{ users[1] }}"
+      - result.response.identities[1].identity_filter.user.group.anyof | length == 1
+      - result.response.identities[1].identity_filter.user.group.anyof[0] == "{{ user_groups[0] }}"
+    fail_msg: Unable to create auth policy
+    success_msg: Auth policy created successfully
+
+- name: Add acp to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create another auth policy
+  ntnx_authorization_policies_v2:
+    state: present
+    display_name: "{{ acp_name }}2"
+    role: "{{ role_ext_id }}"
+    entities:
+      - images:
+          "*":
+            eq: "*"
+    identities:
+      - user:
+          group:
+            anyof:
+              - "{{ user_groups[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify auth policy creation
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.display_name == "{{ acp_name }}2"
+      - result.response.role == "{{ role_ext_id }}"
+      - result.response.authorization_policy_type == "USER_DEFINED"
+      - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
+      - result.response.identities[0].identity_filter.user.group.anyof | length == 1
+      - result.response.identities[0].identity_filter.user.group.anyof[0] == "{{ user_groups[0] }}"
+    fail_msg: Unable to create auth policy
+    success_msg: Auth policy created successfully
+
+- name: Add acp to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Save policy external Id for update tests
+  ansible.builtin.set_fact:
+    policy_ext_id: "{{ result.ext_id }}"
+
+###################################################### Update tests ########################################################
+
+- name: Generate spec with checkmode for updating acp
+  ntnx_authorization_policies_v2:
+    state: present
+    ext_id: "{{ policy_ext_id }}"
+    entities:
+      - images:
+          "*":
+            eq: "*"
+      - marketplace_item:
+          owner_uuid:
+            eq: SELF_OWNED
+      - "*":
+          project_uuid:
+            anyof:
+              - "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify spec
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.ext_id == "{{ policy_ext_id }}"
+      - result.response.entities | length == 3
+      - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
+      - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
+      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project.uuid }}"
+      - result.response.identities | length == 1
+      - result.response.identities[0].identity_filter.user.group.anyof | length == 1
+      - result.response.identities[0].identity_filter.user.group.anyof[0] == "{{ user_groups[0] }}"
+    fail_msg: Unable to create spec for updating acps
+    success_msg: Spec for updating acps created successfully
+
+- name: Add access to self owned marketplace_item and certain projects
+  ntnx_authorization_policies_v2:
+    state: present
+    ext_id: "{{ policy_ext_id }}"
+    entities:
+      - images:
+          "*":
+            eq: "*"
+      - marketplace_item:
+          owner_uuid:
+            eq: SELF_OWNED
+      - "*":
+          project_uuid:
+            anyof:
+              - "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify auth policy update
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id == "{{ policy_ext_id }}"
+      - result.response.entities | length == 3
+      - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
+      - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
+      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project.uuid }}"
+      - result.response.identities | length == 1
+      - result.response.identities[0].identity_filter.user.group.anyof | length == 1
+      - result.response.identities[0].identity_filter.user.group.anyof[0] == "{{ user_groups[0] }}"
+    fail_msg: Unable to update policy
+    success_msg: Policy updated successfully
+
+- name: Give access to users and remove access of user groups
+  ntnx_authorization_policies_v2:
+    state: present
+    ext_id: "{{ policy_ext_id }}"
+    identities:
+      - user:
+          uuid:
+            anyof:
+              - "{{ users[0] }}"
+              - "{{ users[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify auth policy update
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id == "{{ policy_ext_id }}"
+      - result.response.entities | length == 3
+      - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
+      - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
+      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project.uuid }}"
+      - result.response.identities | length == 1
+      - result.response.identities[0].identity_filter.user.uuid.anyof | length == 2
+      - result.response.identities[0].identity_filter.user.uuid.anyof[0] == "{{ users[0] }}"
+      - result.response.identities[0].identity_filter.user.uuid.anyof[1] == "{{ users[1] }}"
+    fail_msg: Unable to update policy
+    success_msg: Policy updated successfully
+
+- name: Remove access of certain users and certain entities
+  ntnx_authorization_policies_v2:
+    state: present
+    ext_id: "{{ policy_ext_id }}"
+    entities:
+      - images:
+          "*":
+            eq: "*"
+      - marketplace_item:
+          owner_uuid:
+            eq: SELF_OWNED
+    identities:
+      - user:
+          uuid:
+            anyof:
+              - "{{ users[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify update  status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id == "{{ policy_ext_id }}"
+      - result.response.entities | length == 2
+      - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
+      - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
+      - result.response.identities | length == 1
+      - result.response.identities[0].identity_filter.user.uuid.anyof | length == 1
+      - result.response.identities[0].identity_filter.user.uuid.anyof[0] == "{{ users[0] }}"
+    fail_msg: Unable to update policy
+    success_msg: Policy updated successfully
+
+- name: Try update with same data to check idempotency
+  ntnx_authorization_policies_v2:
+    state: present
+    ext_id: "{{ policy_ext_id }}"
+    display_name: "{{ acp_name }}2"
+    role: "{{ role_ext_id }}"
+    entities:
+      - images:
+          "*":
+            eq: "*"
+      - marketplace_item:
+          owner_uuid:
+            eq: SELF_OWNED
+    identities:
+      - user:
+          uuid:
+            anyof:
+              - "{{ users[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify update status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.ext_id == "{{ policy_ext_id }}"
+      - result.msg == "Nothing to change."
+      - result.skipped == True
+    fail_msg: Module failed to skip when nothing to change
+    success_msg: Policy auth update skipped successfully
+
+- name: Update name of policy
+  ntnx_authorization_policies_v2:
+    state: present
+    ext_id: "{{ policy_ext_id }}"
+    display_name: "{{ acp_name }}2-updated"
+  register: result
+  ignore_errors: true
+
+- name: Verify update status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id == "{{ policy_ext_id }}"
+      - result.response.display_name == "{{ acp_name }}2-updated"
+      - result.response.entities | length == 2
+      - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
+      - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
+      - result.response.identities | length == 1
+      - result.response.identities[0].identity_filter.user.uuid.anyof | length == 1
+      - result.response.identities[0].identity_filter.user.uuid.anyof[0] == "{{ users[0] }}"
+      - result.response.role == "{{ role_ext_id }}"
+    fail_msg: Unable to update policy
+    success_msg: Policy updated successfully
+
+###################################################### Read Tests ########################################################
+
+- name: Get all auth policies
+  ntnx_authorization_policies_info_v2:
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: Verify all auth policies
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 5
+    fail_msg: Unable to get all auth policies
+    success_msg: All auth policies fetched successfully
+
+- name: Get specific auth policy
+  ntnx_authorization_policies_info_v2:
+    ext_id: "{{ policy_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify specific auth policy
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id == "{{ policy_ext_id }}"
+      - result.response.display_name == "{{ acp_name }}2-updated"
+      - result.response.entities | length == 2
+      - result.response.entities[0].images["*"]["eq"] == "*"
+      - result.response.entities[1].marketplace_item.owner_uuid.eq == "SELF_OWNED"
+      - result.response.identities | length == 1
+      - result.response.identities[0].user.uuid.anyof | length == 1
+      - result.response.identities[0].user.uuid.anyof[0] == "{{ users[0] }}"
+      - result.response.role == "{{ role_ext_id }}"
+    fail_msg: Unable to get specific auth policy
+    success_msg: Specific auth policy fetched successfully
+
+- name: Fetch using filters
+  ntnx_authorization_policies_info_v2:
+    filter: displayName eq '{{ acp_name }}2-updated'
+  register: result
+  ignore_errors: true
+
+- name: Verify fetch using filters
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].ext_id == "{{ policy_ext_id }}"
+    fail_msg: Unable to fetch using filters
+    success_msg: Fetched using filters successfully
+###################################################### Delete Tests ########################################################
+- name: Delete created auth policies
+  ntnx_authorization_policies_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Verify status
+  vars:
+    msg: "Authorization policy with ext_id: {{ item.ext_id }} deleted successfully"
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == todelete | length
+      - item.failed == false
+      - item.ext_id in todelete
+      - item.msg == "{{ msg }}"
+    fail_msg: Delete created auth policies failed
+    success_msg: Delete created auth policies passed
+  loop: "{{ result.results }}"
+  when: todelete | length > 0 and result | length > 0
+  no_log: true
+
+- name: Reset todelete
+  ansible.builtin.set_fact:
+    todelete: []
+
+###################################################### Deleted role ########################################################
+
+- name: Delete role
+  ntnx_roles_v2:
+    state: absent
+    ext_id: "{{ role_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete roles Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+    fail_msg: Unable to delete roles
+    success_msg: Roles deleted successfully

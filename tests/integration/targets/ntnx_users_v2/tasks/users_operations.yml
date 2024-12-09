@@ -1,0 +1,623 @@
+---
+- name: Start ntnx_users_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_users_v2 tests
+
+- name: Generate random strings
+  ansible.builtin.set_fact:
+    random_string: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
+
+- name: Ensure Pattern Compliance
+  ansible.builtin.set_fact:
+    random: user_test_{{ random_string | regex_replace('[^a-zA-Z0-9]', '') }}
+    users_query: ""
+
+- name: Set users variable
+  ansible.builtin.set_fact:
+    users:
+      - "{{ random }}_username_1"
+      - "{{ new_user }}"
+      - "{{ new_saml_user }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Set users_query variable
+  ansible.builtin.set_fact:
+    users_query: "{{ users_query }}{{ ' or ' if users_query else '' }}username eq '{{ item }}'"
+  with_items: "{{ users }}"
+
+- name: Create local user with check mode
+  ntnx_users_v2:
+    user_type: LOCAL
+    username: "{{ random }}_username_1"
+    first_name: "{{ random }}_firstname_1"
+    last_name: "{{ random }}_lastname_1"
+    display_name: "{{ random }}_displayname_1"
+    password: test.Password.123
+    middle_initial: "{{ random }}_middleinitial_1"
+    email_id: "{{ random }}_1@email.com"
+    locale: en-US
+    region: ansible-region
+    status: ACTIVE
+    is_force_reset_password_enabled: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create local user with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.user_type == "LOCAL"
+      - result.response.username == "{{ random }}_username_1"
+      - result.response.first_name == "{{ random }}_firstname_1"
+      - result.response.last_name == "{{ random }}_lastname_1"
+      - result.response.display_name == "{{ random }}_displayname_1"
+      - result.response.middle_initial == "{{ random }}_middleinitial_1"
+      - result.response.email_id == "{{ random }}_1@email.com"
+      - result.response.locale == "en-US"
+      - result.response.status == "ACTIVE"
+      - result.response.is_force_reset_password_enabled == True
+    fail_msg: create local user with check mode failed
+    success_msg: create local user with check mode passed
+
+################################################
+# Commented as the delete API is not available using v1 instead
+- name: Fetch users to delete if already exist
+  ntnx_users_info_v2:
+    filter: "{{ users_query }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch users to delete if already exist Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+    fail_msg: Fetch users to delete if already exist failed
+    success_msg: Fetch users to delete if already exist passed
+
+- name: Adding user external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ result.response | map(attribute='ext_id') | list }}"
+
+# - name: Delete users if already exist
+#   ntnx_users_v2:
+#     state: absent
+#     ext_id: "{{ item }}"
+#   register: result
+#   ignore_errors: true
+#   loop: "{{ todelete }}"
+#   when: todelete | length > 0
+
+# - name: Delete users if already exist status
+#   ansible.builtin.assert:
+#     that:
+#       - result.changed == true
+#       - result.msg == "All items completed"
+#     fail_msg: Delete users if already exist failed
+#     success_msg: Delete users if already exist passed
+#   when: todelete | length > 0
+- name: Delete created users
+  ntnx_users:
+    state: absent
+    user_uuid: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Check listing status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "Fail: unable to delete all users"
+    success_msg: "Pass: all users deleted successfully"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+################################################
+
+- name: Create active local user
+  ntnx_users_v2:
+    user_type: LOCAL
+    username: "{{ random }}_username_1"
+    first_name: "{{ random }}_firstname_1"
+    last_name: "{{ random }}_lastname_1"
+    display_name: "{{ random }}_displayname_1"
+    password: test.Password.123
+    middle_initial: "{{ random }}_middleinitial_1"
+    email_id: "{{ random }}_1@email.com"
+    locale: en-US
+    status: ACTIVE
+    is_force_reset_password_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Create active local user status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.user_type == "LOCAL"
+      - result.response.username | lower == "{{ random }}_username_1" | lower
+      - result.response.first_name == "{{ random }}_firstname_1"
+      - result.response.last_name == "{{ random }}_lastname_1"
+      - result.response.display_name == "{{ random }}_displayname_1"
+      - result.response.middle_initial == "{{ random }}_middleinitial_1"
+      - result.response.email_id == "{{ random }}_1@email.com"
+      - result.response.locale == "en-US"
+      - result.response.status == "ACTIVE"
+      - result.response.is_force_reset_password_enabled == True
+    fail_msg: create active local user failed
+    success_msg: create active local user passed
+
+- name: Adding user external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+#################################################
+
+- name: Create inactive local user
+  ntnx_users_v2:
+    user_type: LOCAL
+    username: "{{ random }}_username_2"
+    first_name: "{{ random }}_firstname_2"
+    last_name: "{{ random }}_lastname_2"
+    display_name: "{{ random }}_displayname_2"
+    password: test.Password.123
+    middle_initial: "{{ random }}_middleinitial_2"
+    email_id: "{{ random }}_2@email.com"
+    locale: en-US
+    status: INACTIVE
+    is_force_reset_password_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Create inactive local user status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.user_type == "LOCAL"
+      - result.response.username | lower == "{{ random }}_username_2" | lower
+      - result.response.first_name == "{{ random }}_firstname_2"
+      - result.response.last_name == "{{ random }}_lastname_2"
+      - result.response.display_name == "{{ random }}_displayname_2"
+      - result.response.middle_initial == "{{ random }}_middleinitial_2"
+      - result.response.email_id == "{{ random }}_2@email.com"
+      - result.response.locale == "en-US"
+      - result.response.status == "INACTIVE"
+      - result.response.is_force_reset_password_enabled == True
+    fail_msg: create inactive local user failed
+    success_msg: create inactive local user passed
+
+- name: Adding user external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+#################################################
+
+- name: Create local user that already exists
+  ntnx_users_v2:
+    user_type: LOCAL
+    username: "{{ random }}_username_1"
+    first_name: "{{ random }}_firstname_1"
+    last_name: "{{ random }}_lastname_1"
+    display_name: "{{ random }}_displayname_1"
+    password: test.Password.123
+    middle_initial: "{{ random }}_middleinitial_1"
+    email_id: "{{ random }}_1@email.com"
+    locale: en-US
+    region: ansible-region
+    status: ACTIVE
+    is_force_reset_password_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Create local user that already exists status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == true
+      - result.status == 409
+      - result.response.data.error is defined
+      - result.response.data.error | length > 0
+    fail_msg: create local user that already exists failed
+    success_msg: create local user that already exists passed
+
+#################################################
+
+- name: Create SAML user
+  ntnx_users_v2:
+    user_type: SAML
+    username: "{{ users[2] }}"
+    idp_id: "{{ identity_provider_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create SAML user status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.user_type == "SAML"
+      - result.response.username == "{{ users[2] }}"
+      - result.response.idp_id == "{{ identity_provider_uuid }}"
+      - result.ext_id == result.response.ext_id
+    fail_msg: Create SAML user failed
+    success_msg: Create SAML user passed
+
+- name: Adding user external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+#################################################
+
+- name: Create LDAP user with minimum config
+  ntnx_users_v2:
+    user_type: LDAP
+    username: "{{ new_user }}"
+    idp_id: "{{ directory_service_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create LDAP user with minimum config status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.user_type == "LDAP"
+      - result.response.idp_id == "{{ directory_service_uuid }}"
+      - result.ext_id == result.response.ext_id
+      - result.response.username == "{{ new_user }}"
+    fail_msg: Create LDAP user with minimum config failed
+    success_msg: Create LDAP user with minimum config passed
+
+- name: Adding user external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+#################################################
+
+- name: Update local user with check mode enabled
+  ntnx_users_v2:
+    ext_id: "{{ todelete[0] }}"
+    first_name: "{{ random }}_firstname_1_updated"
+    last_name: "{{ random }}_lastname_1_updated"
+    password: test.Password.123Updated
+    display_name: "{{ random }}_displayname_1_updated"
+    middle_initial: "{{ random }}_middleinitial_1_updated"
+    email_id: "{{ random }}_1_updated@email.com"
+    is_force_reset_password_enabled: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update local user with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.response.first_name == "{{ random }}_firstname_1_updated"
+      - result.response.last_name == "{{ random }}_lastname_1_updated"
+      - result.response.display_name == "{{ random }}_displayname_1_updated"
+      - result.response.middle_initial == "{{ random }}_middleinitial_1_updated"
+      - result.response.email_id == "{{ random }}_1_updated@email.com"
+      - result.response.is_force_reset_password_enabled == true
+    fail_msg: Update local user with check mode enabled failed
+    success_msg: Update local user with check mode enabled passed
+
+#################################################
+
+- name: Update local user
+  ntnx_users_v2:
+    ext_id: "{{ todelete[0] }}"
+    first_name: "{{ random }}_firstname_1_updated"
+    last_name: "{{ random }}_lastname_1_updated"
+    password: test.Password.123Updated
+    display_name: "{{ random }}_displayname_1_updated"
+    middle_initial: "{{ random }}_middleinitial_1_updated"
+    email_id: "{{ random }}_1_updated@email.com"
+    is_force_reset_password_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Update local user status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.response.first_name == "{{ random }}_firstname_1_updated"
+      - result.response.last_name == "{{ random }}_lastname_1_updated"
+      - result.response.display_name == "{{ random }}_displayname_1_updated"
+      - result.response.middle_initial == "{{ random }}_middleinitial_1_updated"
+      - result.response.email_id == "{{ random }}_1_updated@email.com"
+      - result.response.is_force_reset_password_enabled == true
+    fail_msg: Update local user failed
+    success_msg: Update local user passed
+
+#################################################
+
+- name: Verify if module is idempotent if same config is provided
+  ntnx_users_v2:
+    ext_id: "{{ todelete[0] }}"
+    first_name: "{{ random }}_firstname_1_updated"
+    last_name: "{{ random }}_lastname_1_updated"
+    display_name: "{{ random }}_displayname_1_updated"
+    middle_initial: "{{ random }}_middleinitial_1_updated"
+    email_id: "{{ random }}_1_updated@email.com"
+    is_force_reset_password_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Verify if module is idempotent if same config is provided status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+      - result.skipped == true
+    fail_msg: Verify if module is idempotent if same config is provided failed
+    success_msg: Verify if module is idempotent if same config is provided passed
+
+#################################################
+
+- name: Verify if idempotency checks are skipped if password is provided
+  ntnx_users_v2:
+    ext_id: "{{ todelete[0] }}"
+    first_name: "{{ random }}_firstname_1_updated"
+    last_name: "{{ random }}_lastname_1_updated"
+    password: test.Password.123Updated
+    display_name: "{{ random }}_displayname_1_updated"
+    middle_initial: "{{ random }}_middleinitial_1_updated"
+    email_id: "{{ random }}_1_updated@email.com"
+    is_force_reset_password_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Verify if idempotency checks are skipped if password is provided status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.response.first_name == "{{ random }}_firstname_1_updated"
+      - result.response.last_name == "{{ random }}_lastname_1_updated"
+      - result.response.display_name == "{{ random }}_displayname_1_updated"
+      - result.response.middle_initial == "{{ random }}_middleinitial_1_updated"
+      - result.response.email_id == "{{ random }}_1_updated@email.com"
+      - result.response.is_force_reset_password_enabled == true
+    fail_msg: Verify if idempotency checks are skipped if password is provided failed
+    success_msg: Verify if idempotency checks are skipped if password is provided passed
+
+#################################################
+# these test were commented since they are using different APIs
+# - name: Deactivate local user
+#   ntnx_users_v2:
+#     ext_id: "{{todelete[0]}}"
+#     status: INACTIVE
+#   register: result
+#   ignore_errors: true
+
+# - name: Deactivate local user status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.failed == false
+#       - result.ext_id == "{{todelete[0]}}"
+#     fail_msg: "Deactivate local user failed"
+#     success_msg: "Deactivate local user passed"
+
+# #################################################
+
+# - name: Fetch user info using user ext_id criteria and check status
+#   ntnx_users_info_v2:
+#     ext_id: "{{todelete[0]}}"
+#   register: result
+#   ignore_errors: True
+
+# - name: Fetch user info using user ext_id criteria and check status result
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.failed == false
+#       - result.response.ext_id == "{{todelete[0]}}"
+#       - result.response.status == "INACTIVE"
+#     fail_msg: "Fetch user info using user ext_id criteria and check status failed"
+#     success_msg: "Fetch user info using user ext_id criteria and check status passed"
+
+# ####################################################
+
+# - name: Activate local user
+#   ntnx_users_v2:
+#     ext_id: "{{todelete[0]}}"
+#     status: ACTIVE
+#   register: result
+#   ignore_errors: true
+
+# - name: Activate local user status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.failed == false
+#       - result.ext_id == "{{todelete[0]}}"
+#       - result.response.status == "ACTIVE"
+#     fail_msg: "Activate local user failed"
+#     success_msg: "Activate local user passed"
+
+####################################################
+
+- name: List all users
+  ntnx_users_info_v2:
+  register: users
+  ignore_errors: true
+
+- name: List all users Status
+  ansible.builtin.assert:
+    that:
+      - users.response is defined
+      - users.response | length> 0
+      - users.failed == false
+      - users.changed == false
+    fail_msg: Unable to list all users
+    success_msg: User info obtained successfully
+
+- name: Set test user name and uuid
+  ansible.builtin.set_fact:
+    test_user_name: "{{users.response.0.username}}"
+    test_user_uuid: "{{users.response.0.ext_id}}"
+
+##################################################
+
+- name: Fetch only local users
+  ntnx_users_info_v2:
+    filter: userType eq Schema.Enums.UserType'LOCAL'
+  register: result
+  ignore_errors: true
+
+- name: Get all users type and remove duplicates to check if only LOCAL users are fetched
+  ansible.builtin.set_fact:
+    user_type: "{{ result.response | map(attribute='user_type') | list | unique }}"
+
+- name: Fetch only local users Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+      - user_type | length == 1
+      - user_type[0] == "LOCAL"
+    fail_msg: Fetch only local users failed
+    success_msg: Fetch only local users passed
+
+####################################################
+
+- name: Fetch user info using user ext_id criteria
+  ntnx_users_info_v2:
+    ext_id: "{{ test_user_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch user info using user ext_id criteria Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.username == "{{ test_user_name }}"
+      - result.response.ext_id == "{{ test_user_uuid }}"
+    fail_msg: Unable to fetch user using user ext_id criteria
+    success_msg: user info obtained successfully
+
+##################################################
+
+- name: List users with specific username
+  ntnx_users_info_v2:
+    filter: username eq '{{ test_user_name }}'
+  register: result
+  ignore_errors: true
+
+- name: List users with specific username Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].username == "{{ test_user_name }}"
+      - result.response[0].ext_id == "{{ test_user_uuid }}"
+      - result.response | length == 1
+
+    fail_msg: Unable to List users with specific username
+    success_msg: users listed successfully with specific username
+
+##################################################
+
+- name: List users using limit
+  ntnx_users_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List users using limit Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+
+    fail_msg: Unable to list users using limit
+    success_msg: users listed successfully using limit
+##################################################
+# Commented as the delete API is not available using v1 instead
+# - name: Delete created users
+#   ntnx_users_v2:
+#     state: absent
+#     ext_id: "{{ item }}"
+#   register: result
+#   ignore_errors: true
+#   loop: "{{ todelete }}"
+
+# - name: Delete created users status
+#   vars:
+#     msg: "User with ext_id: {{ item.ext_id }} deleted successfully"
+#   ansible.builtin.assert:
+#     that:
+#       - result.changed == true
+#       - result.msg == "All items completed"
+#       - result.results | length == todelete | length
+#       - item.failed == false
+#       - item.ext_id in todelete
+#       - item.msg == "{{ msg }}"
+#     fail_msg: Delete created users failed
+#     success_msg: Delete created users passed
+#   loop: "{{ result.results }}"
+#   when: todelete | length > 0 and result | length > 0
+
+- name: Delete created users
+  ntnx_users:
+    state: absent
+    user_uuid: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Check listing status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: "Fail: unable to delete all users"
+    success_msg: "Pass: all users deleted successfully"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []

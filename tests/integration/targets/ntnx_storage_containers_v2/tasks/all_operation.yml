@@ -1,0 +1,399 @@
+---
+- name: Start ntnx_storage_containers_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_storage_containers_v2 tests
+
+- name: Generate random  key & value
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set prefix name
+  ansible.builtin.set_fact:
+    prefix_name: ansible-ag
+
+- name: Set storage container name
+  ansible.builtin.set_fact:
+    todelete: []
+    storage_container_name: "{{ prefix_name }}{{ random_name }}"
+
+- name: Generate storage container create spec with check mode enabled
+  ntnx_storage_containers_v2:
+    name: "{{ storage_container_name }}1"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    owner_ext_id: "{{ owner.uuid }}"
+    replication_factor: 2
+    logical_explicit_reserved_capacity_bytes: 0
+    logical_advertised_capacity_bytes: 107374182400
+    nfs_whitelist_address:
+      - ipv4:
+          value: 192.168.1.1
+    erasure_code: "ON"
+    is_inline_ec_enabled: true
+    has_higher_ec_fault_domain_preference: true
+    erasure_code_delay_secs: 0
+    cache_deduplication: "ON"
+    on_disk_dedup: "OFF"
+    is_compression_enabled: true
+    compression_delay_secs: 0
+    is_internal: false
+    is_software_encryption_enabled: true
+    affinity_host_ext_id: "0005b6b1-3d06-ce49-1fc3-ac1f6b6029c1"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate storage container create spec with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ storage_container_name }}1"
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.owner_ext_id == "{{ owner.uuid }}"
+      - result.response.replication_factor == 2
+      - result.response.logical_explicit_reserved_capacity_bytes == 0
+      - result.response.logical_advertised_capacity_bytes == 107374182400
+      - result.response.nfs_whitelist_address[0].ipv4.value == "192.168.1.1"
+      - result.response.erasure_code == "ON"
+      - result.response.is_inline_ec_enabled == true
+      - result.response.has_higher_ec_fault_domain_preference == true
+      - result.response.erasure_code_delay_secs == 0
+      - result.response.cache_deduplication == "ON"
+      - result.response.on_disk_dedup == "OFF"
+      - result.response.is_compression_enabled == true
+      - result.response.compression_delay_secs == 0
+      - result.response.is_internal == false
+      - result.response.is_software_encryption_enabled == true
+      - result.response.affinity_host_ext_id == "0005b6b1-3d06-ce49-1fc3-ac1f6b6029c1"
+    fail_msg: Unable to generate storage container create spec with check mode enabled
+    success_msg: Storage container create spec generated successfully with check mode enabled
+
+- name: Create storage container with minimal spec
+  ntnx_storage_containers_v2:
+    name: "{{ storage_container_name }}1"
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Check storage container creation with minimal spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.container_ext_id == result.ext_id
+      - result.task_ext_id is defined
+      - result.response.name == "{{ storage_container_name }}1"
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.ext_id is defined
+    fail_msg: Unable to create storage container with minimal spec
+    success_msg: Storage container created successfully with minimal spec
+
+- name: Adding storage container to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create storage container with missing cluster id
+  ntnx_storage_containers_v2:
+    name: "{{ storage_container_name }}1"
+  register: result
+  ignore_errors: true
+
+- name: Creaion status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - "'state is present but all of the following are missing: cluster_ext_id' in result.msg"
+    fail_msg: "Fail: storage container created with missing cluster id"
+    success_msg: "Success: Returned as expected"
+
+- name: Create storage container with diffrent attributes
+  ntnx_storage_containers_v2:
+    name: "{{ storage_container_name }}2"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    owner_ext_id: "{{ owner.uuid }}"
+    logical_explicit_reserved_capacity_bytes: 20
+    logical_advertised_capacity_bytes: 1073741824000
+    on_disk_dedup: "OFF"
+    is_compression_enabled: true
+    compression_delay_secs: 3600
+    is_internal: false
+    is_software_encryption_enabled: false
+    is_inline_ec_enabled: false
+    has_higher_ec_fault_domain_preference: true
+    nfs_whitelist_address:
+      - ipv4:
+          value: 192.168.12.0
+  register: result
+  ignore_errors: true
+
+- name: Adding storage container to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Check storage container creation with diffrent attributes
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.container_ext_id == result.ext_id
+      - result.task_ext_id is defined
+      - result.response.name == "{{ storage_container_name }}2"
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.owner_ext_id == "{{ owner.uuid }}"
+      - result.response.logical_explicit_reserved_capacity_bytes == 20
+      - result.response.logical_advertised_capacity_bytes == 1073741824000
+      - result.response.nfs_whitelist_address[0].ipv4.value == "192.168.12.0"
+      - result.response.nfs_whitelist_address[0].ipv4.prefix_length == 32
+    fail_msg: Unable to create storage container with diffrent attributes
+    success_msg: Storage container created successfully with diffrent attributes
+
+- name: Set storage container external id
+  ansible.builtin.set_fact:
+    storage_container_ext_id: "{{ result.ext_id }}"
+
+- name: Check for idempotency
+  ntnx_storage_containers_v2:
+    state: present
+    name: "{{ storage_container_name }}2"
+    ext_id: "{{ storage_container_ext_id }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    owner_ext_id: "{{ owner.uuid }}"
+    logical_explicit_reserved_capacity_bytes: 20
+    logical_advertised_capacity_bytes: 1073741824000
+  register: result
+  ignore_errors: true
+
+- name: Check storage container idempotency
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: Unable to create storage container idempotency
+    success_msg: Storage container created successfully idempotency
+
+- name: Generate storage container update spec with check mode enabled
+  ntnx_storage_containers_v2:
+    state: present
+    ext_id: "{{ storage_container_ext_id }}"
+    name: "{{ storage_container_name }}2_updated"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    owner_ext_id: "{{ owner.uuid }}"
+    logical_explicit_reserved_capacity_bytes: 20
+    logical_advertised_capacity_bytes: 1073741824000
+    nfs_whitelist_address:
+      - ipv4:
+          value: 192.168.13.0
+          prefix_length: 32
+      - ipv6:
+          value: "2001:db8::1"
+          prefix_length: 128
+      - fqdn:
+          value: "example.com"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate storage container update spec with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ storage_container_name }}2_updated"
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.owner_ext_id == "{{ owner.uuid }}"
+      - result.response.logical_explicit_reserved_capacity_bytes == 20
+      - result.response.logical_advertised_capacity_bytes == 1073741824000
+      - result.response.nfs_whitelist_address[0].ipv4.value == "192.168.13.0"
+      - result.response.nfs_whitelist_address[0].ipv4.prefix_length == 32
+      - result.response.nfs_whitelist_address[1].ipv6.value == "2001:db8::1"
+      - result.response.nfs_whitelist_address[1].ipv6.prefix_length == 128
+      - result.response.nfs_whitelist_address[2].fqdn.value == "example.com"
+      - result.ext_id == "{{ storage_container_ext_id }}"
+    fail_msg: Unable to generate storage container update spec with check mode enabled
+    success_msg: Storage container update spec generated successfully with check mode enabled
+
+- name: Update storage container
+  ntnx_storage_containers_v2:
+    state: present
+    ext_id: "{{ storage_container_ext_id }}"
+    name: "{{ storage_container_name }}2_updated"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    owner_ext_id: "{{ owner.uuid }}"
+    logical_explicit_reserved_capacity_bytes: 25
+    logical_advertised_capacity_bytes: 2147483648000
+    nfs_whitelist_address:
+      - ipv4:
+          value: 192.168.13.2
+  register: result
+  ignore_errors: true
+
+- name: Check storage container update
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ storage_container_name }}2_updated"
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.owner_ext_id == "{{ owner.uuid }}"
+      - result.response.logical_explicit_reserved_capacity_bytes == 25
+      - result.response.logical_advertised_capacity_bytes == 2147483648000
+      - result.response.nfs_whitelist_address[0].ipv4.value == "192.168.13.2"
+      - result.response.nfs_whitelist_address[0].ipv4.prefix_length == 32
+      - result.ext_id == "{{ storage_container_ext_id }}"
+    fail_msg: "Unable to update storage container "
+    success_msg: "Storage container updated successfully "
+
+- name: Fetch storage container configurations
+  ntnx_storage_containers_info_v2:
+    ext_id: "{{ storage_container_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Check storage container configurations
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ storage_container_name }}2_updated"
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.owner_ext_id == "{{ owner.uuid }}"
+      - result.response.logical_explicit_reserved_capacity_bytes == 25
+      - result.response.logical_advertised_capacity_bytes == 2147483648000
+      - result.response.nfs_whitelist_address[0].ipv4.value == "192.168.13.2"
+      - result.response.nfs_whitelist_address[0].ipv4.prefix_length == 32
+      - result.ext_id == "{{ storage_container_ext_id }}"
+    fail_msg: Unable to fetch storage container configurations
+    success_msg: Storage container configurations fetched successfully
+
+- name: Get current time in the required format
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time
+  changed_when: false
+
+- name: Get current time minus 5 minutes in the required format
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time
+  changed_when: false
+
+- name: Fetch storage container stats
+  ntnx_storage_containers_stats_v2:
+    ext_id: "{{ storage_container.uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: result
+  ignore_errors: true
+
+- name: Check storage container stats
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.controller_num_iops is defined
+      - result.response.controller_num_iops | length > 2
+      - result.response.container_ext_id is defined
+      - result.response.container_ext_id == "{{ storage_container.uuid }}"
+      - result.ext_id == "{{ storage_container.uuid }}"
+    fail_msg: Unable to fetch storage container stats
+    success_msg: Storage container stats fetched successfully
+
+- name: Fetch storage container stats with interval defined
+  ntnx_storage_containers_stats_v2:
+    ext_id: "{{ storage_container.uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    sampling_interval: 30
+    stat_type: SUM
+  register: result
+  ignore_errors: true
+
+- name: Check storage container stats with interval defined
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.controller_num_iops is defined
+      - result.response.controller_num_iops | length > 2
+      - result.response.container_ext_id is defined
+      - result.response.container_ext_id == "{{ storage_container.uuid }}"
+      - result.ext_id == "{{ storage_container.uuid }}"
+    fail_msg: Unable to fetch storage container stats with interval defined
+    success_msg: Storage container stats fetched successfully with interval defined
+
+- name: Fetch all storage containers
+  ntnx_storage_containers_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Check all storage containers
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+    fail_msg: Unable to fetch all storage containers
+    success_msg: All storage containers fetched successfully
+
+- name: Fetch a particular storage container using filter
+  ntnx_storage_containers_info_v2:
+    filter: name eq '{{ storage_container_name }}2_updated'
+  register: result
+  ignore_errors: true
+
+- name: Check all storage containers with filter
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+      - result.response[0].name == "{{ storage_container_name }}2_updated"
+    fail_msg: Unable to Fetch a particular storage container using filter
+    success_msg: A particular storage container fetched successfully using filter
+
+- name: Fetch all storage containers with limit
+  ntnx_storage_containers_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Check all storage containers with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: Unable to fetch all storage containers with limit
+    success_msg: All storage containers fetched successfully with limit
+
+- name: Delete all Created storage containers
+  ntnx_storage_containers_v2:
+    state: absent
+    ext_id: "{{ item }}"
+    ignore_small_files: true
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.ext_id == "{{ todelete[storage_containers_index] }}"
+    fail_msg: "Unable to delete storage_container "
+    success_msg: "storage_container is deleted successfully "
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: storage_containers_index
+  no_log: true
+
+- name: Reset to delete list
+  ansible.builtin.set_fact:
+    todelete: []

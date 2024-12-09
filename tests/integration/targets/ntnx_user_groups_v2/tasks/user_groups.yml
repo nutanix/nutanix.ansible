@@ -1,0 +1,340 @@
+---
+- name: Start ntnx_user_groups_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_user_groups_v2 tests
+
+- name: Set user groups variable. usergroups is a list of user groups to be deleted if already exist.
+  ansible.builtin.set_fact:
+    usergroups_query: ""
+    usergroups:
+      - "{{ distinguished_name }}"
+      - "{{ new_saml_user_group }}#{{ identity_provider_uuid }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Here we create a query string to fetch given user groups to delete if already exist
+  ansible.builtin.set_fact:
+    usergroups_query: "{{ usergroups_query }}{{ ' or ' if usergroups_query else '' }}distinguishedName eq '{{ item }}'"
+  with_items: "{{ usergroups }}"
+
+- name: Create LDAP user group with check mode enabled
+  ntnx_user_groups_v2:
+    distinguished_name: "{{ distinguished_name }}"
+    idp_id: "{{ directory_service_uuid }}"
+    group_type: LDAP
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create LDAP user group with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.idp_id == "{{ directory_service_uuid }}"
+      - result.response.group_type == "LDAP"
+      - result.response.distinguished_name == "{{ distinguished_name }}"
+    fail_msg: Unable to create LDAP user group with check mode enabled
+    success_msg: LDAP user group created successfully with check mode enabled
+
+#################################################################################
+
+- name: Fetch user groups to delete if already exist
+  ntnx_user_groups_info_v2:
+    filter: "{{ usergroups_query }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch user groups to delete if already exist Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+    fail_msg: Fetch user groups to delete if already exist failed
+    success_msg: Fetch user groups to delete if already exist passed
+
+- name: Adding user group external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ result.response | map(attribute='ext_id') | list }}"
+
+- name: Delete user groups if already exist
+  ntnx_user_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+  when: todelete | length > 0
+
+- name: Delete user groups if already exist status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: Delete user groups if already exist failed
+    success_msg: Delete user groups if already exist passed
+  when: todelete | length > 0
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+#################################################################################
+
+- name: Create LDAP user group
+  ntnx_user_groups_v2:
+    group_type: LDAP
+    distinguished_name: "{{ distinguished_name }}"
+    idp_id: "{{ directory_service_uuid }}"
+
+  register: result
+  ignore_errors: true
+
+- name: Create LDAP user group status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.distinguished_name == "{{ distinguished_name }}"
+      - result.response.group_type == "LDAP"
+      - result.response.idp_id == "{{ directory_service_uuid }}"
+      - result.response.ext_id == result.ext_id
+    fail_msg: Unable to create LDAP user group
+    success_msg: LDAP user group created successfully
+
+- name: Adding user group external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+#################################################################################
+
+- name: Create LDAP user group that already exists
+  ntnx_user_groups_v2:
+    group_type: LDAP
+    distinguished_name: "{{ distinguished_name }}"
+    idp_id: "{{ directory_service_uuid }}"
+
+  register: result
+  ignore_errors: true
+
+- name: Create LDAP user group that already exists status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == true
+      - result.status == 409
+      - result.response.data.error is defined
+      - result.response.data.error | length > 0
+    fail_msg: Create LDAP user group that already exists failed
+    success_msg: Create LDAP user group that already exists passed
+
+#################################################################################
+
+- name: Create SAML user group with check mode enabled
+  ntnx_user_groups_v2:
+    group_type: SAML
+    idp_id: "{{ identity_provider_uuid }}"
+    name: "{{ new_saml_user_group }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create SAML user group with check mode enabled status
+
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.idp_id == "{{ identity_provider_uuid }}"
+      - result.response.group_type == "SAML"
+      - result.response.name == "{{ new_saml_user_group }}"
+    fail_msg: Unable to create SAML user group with check mode enabled
+    success_msg: SAML user group created successfully with check mode enabled
+
+###############################################################################
+
+- name: Create SAML user group
+  ntnx_user_groups_v2:
+    group_type: SAML
+    idp_id: "{{ identity_provider_uuid }}"
+    name: "{{ new_saml_user_group }}"
+  register: result
+  ignore_errors: true
+
+- name: Create SAML user group status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.group_type == "SAML"
+      - result.response.idp_id == "{{ identity_provider_uuid }}"
+      - result.response.ext_id == result.ext_id
+      - result.response.name == "{{ new_saml_user_group }}"
+    fail_msg: Unable to create SAML user group
+    success_msg: SAML user group created successfully
+
+- name: Adding user group external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+###############################################################################
+
+- name: List all user groups
+  ntnx_user_groups_info_v2:
+  register: user_groups
+  ignore_errors: true
+
+- name: List all user groups Status
+  ansible.builtin.assert:
+    that:
+      - user_groups.response is defined
+      - user_groups.response | length > 0
+    fail_msg: Unable to list all user groups
+    success_msg: User groups info obtained successfully
+
+- name: Set test user group name and uuid
+  ansible.builtin.set_fact:
+    test_user_group_name: "{{user_groups.response.0.name}}"
+    test_user_group_uuid: "{{user_groups.response.0.ext_id}}"
+
+###############################################################################
+
+- name: List user groups using user_group uuid criteria
+  ntnx_user_groups_info_v2:
+    ext_id: "{{ test_user_group_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: List user groups using user_group uuid criteria Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ test_user_group_name }}"
+    fail_msg: Unable to list user group using uuid
+    success_msg: user group info obtained successfully
+
+###############################################################################
+
+- name: List user groups using filter criteria
+  ntnx_user_groups_info_v2:
+    filter: name eq '{{ test_user_group_name }}'
+  register: result
+  ignore_errors: true
+
+- name: List user groups using filter criteria Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].name == "{{ test_user_group_name }}"
+      - result.response | length == 1
+    fail_msg: Unable to list user groups using filter
+    success_msg: user group info obtained successfully
+
+###############################################################################
+# these tests are commented because the filter is not working as expected: https://jira.nutanix.com/browse/ENG-673830
+# - name: Fetch only LDAP user groups
+#   ntnx_user_groups_info_v2:
+#     filter: "groupType eq Schema.Enums.GroupType'LDAP'"
+#   register: result
+#   ignore_errors: True
+
+# - set_fact:
+#     group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
+
+# - name: Fetch only LDAP user groups Status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.failed == false
+#       - result.response | length > 0        # response is null
+#       - group_type | length == 1
+#       - group_type[0] == "LDAP"
+#     fail_msg: "Unable to fetch only LDAP user groups"
+#     success_msg: "LDAP user groups fetched successfully"
+
+# ###############################################################################
+
+# - name: Fetch only SAML user groups
+#   ntnx_user_groups_info_v2:
+#     filter: "groupType eq Schema.Enums.GroupType'SAML'"
+#   register: result
+#   ignore_errors: True
+
+# - set_fact:
+#     group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
+
+# - name: Fetch only SAML user groups Status
+#   assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.failed == false
+#       - result.response | length > 0    # response is null
+#       - group_type | length == 1
+#       - group_type[0] == "SAML"
+#     fail_msg: "Unable to fetch only SAML user groups"
+#     success_msg: "SAML user groups fetched successfully"
+
+###############################################################################
+
+- name: List user groups using limit
+  ntnx_user_groups_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List user groups using limit Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+
+    fail_msg: Unable to list user groups using length and offset
+    success_msg: user groups listed successfully using length and offset
+
+###############################################################################
+
+- name: Delete created user groups
+  ntnx_user_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Delete created user groups status
+  vars:
+    msg: "User group with ext_id: {{ item.ext_id }} deleted successfully"
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == todelete | length
+      - item.failed == false
+      - item.ext_id in todelete
+      - item.msg == "{{ msg }}"
+    fail_msg: Delete created user groups failed
+    success_msg: Delete created user groups passed
+  loop: "{{ result.results }}"
+  when: todelete | length > 0 and result | length > 0
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []

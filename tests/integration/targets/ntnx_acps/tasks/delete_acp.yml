@@ -1,9 +1,10 @@
 ---
 - name: Generate random name
-  set_fact:
+  ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
 
-- set_fact:
+- name: Set acp name
+  ansible.builtin.set_fact:
     acp1_name: "{{random_name[0]}}1"
 
 - name: Create ACP with all specfactions
@@ -31,10 +32,10 @@
             rhs:
               collection: ALL
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -59,7 +60,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == 'SUCCEEDED'

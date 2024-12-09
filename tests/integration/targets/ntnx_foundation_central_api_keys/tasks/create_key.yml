@@ -1,15 +1,17 @@
-- debug:
+---
+- name: Start testing ntnx_foundation_central_api_keys module
+  ansible.builtin.debug:
     msg: start testing ntnx_foundation_central_api_keys module
 
-- name: create api key with check_mode
+- name: Create api key with check_mode
   ntnx_foundation_central_api_keys:
-    alias:  test
+    alias: test
   check_mode: true
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed==false
@@ -19,18 +21,17 @@
     success_msg: "succes: api key with check_mode: "
 
 - name: Generate random alias for api key
-  set_fact:
-    random_alias: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+  ansible.builtin.set_fact:
+    random_alias: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
-
-- name: create api key with random alias
+- name: Create api key with random alias
   ntnx_foundation_central_api_keys:
-    alias:  "{{random_alias.0}}"
+    alias: "{{random_alias.0}}"
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed==false
@@ -39,13 +40,14 @@
     fail_msg: "fail: Unable to create api key "
     success_msg: "succes: api key created successfully "
 
-- ntnx_foundation_central_api_keys:
-    alias:  "{{random_alias.0}}"
+- name: Create duplicate api key with same alias
+  ntnx_foundation_central_api_keys:
+    alias: "{{random_alias.0}}"
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed==false
       - result.failed==true

@@ -1,27 +1,28 @@
 ---
-- debug:
-    msg: "start ntnx_images_info tests"
+- name: Start ntnx_images_info tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_images_info tests"
 
-- name: test getting all images
+- name: Test getting all images
   ntnx_images_info:
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: "Unable to list all images"
     success_msg: "Images listed successfully"
 ################################################################
 
-- name: test getting particular image using filter
+- name: Test getting particular image using filter
   ntnx_images_info:
     filter:
       name: "{{ disk_image.centos }}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.entities[0].status.name == '{{ disk_image.centos }}'
@@ -30,19 +31,19 @@
 
 ################################################################
 
-- name: getting image info for test
+- name: Getting image info for test
   ntnx_images_info:
     filter:
       name: "{{ disk_image.centos }}"
   register: result
 
-- name: test getting particular image using uuid
+- name: Test getting particular image using uuid
   ntnx_images_info:
     image_uuid: '{{ result.response.entities[0].metadata.uuid }}'
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.name == '{{ disk_image.centos }}'

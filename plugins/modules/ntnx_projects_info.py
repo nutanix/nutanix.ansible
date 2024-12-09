@@ -41,7 +41,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     filter:
       name: "test-ansible-project-7"
 
@@ -50,7 +50,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
   register: result
 
 - name: List project using project uuid criteria
@@ -58,10 +58,9 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     project_uuid: "<uuid>"
   register: result
-
 """
 RETURN = r"""
 api_version:
@@ -153,10 +152,10 @@ status:
             }
 """
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.projects import Project  # noqa: E402
-from ..module_utils.prism.projects_internal import ProjectsInternal  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.prism.projects import Project  # noqa: E402
+from ..module_utils.v3.prism.projects_internal import ProjectsInternal  # noqa: E402
 
 
 def get_module_spec():

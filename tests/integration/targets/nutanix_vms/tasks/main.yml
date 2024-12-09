@@ -1,14 +1,21 @@
 ---
-- module_defaults:
-    group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
+- name: Set module defaults
+  module_defaults:
+  group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
   block:
-        - import_tasks: "create.yml"
-        - import_tasks: "negtaive_scenarios.yml"
-        - import_tasks: "delete.yml"
-        - import_tasks: "vm_operations.yml"
-        - import_tasks: "vm_update.yml"
-        - import_tasks: "negtaive_vm_update.yml"
+      - name: Import create.yml
+        ansible.builtin.import_tasks: "create.yml"
+      - name: Import negtaive_scenarios.yml
+        ansible.builtin.import_tasks: "negtaive_scenarios.yml"
+      - name: Import delete.yml
+        ansible.builtin.import_tasks: "delete.yml"
+      - name: Import vm_operations.yml
+        ansible.builtin.import_tasks: "vm_operations.yml"
+      - name: Import vm_update.yml
+        ansible.builtin.import_tasks: "vm_update.yml"
+      - name: Import negtaive_vm_update.yml
+        ansible.builtin.import_tasks: "negtaive_vm_update.yml"

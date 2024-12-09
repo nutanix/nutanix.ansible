@@ -1,0 +1,306 @@
+---
+- name: Start testing ntnx_vms_categories_v2 module
+  ansible.builtin.debug:
+    msg: "Start testing ntnx_vms_categories_v2 module"
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+
+- name: Create VM to test categories
+  ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+    fail_msg: "Unable to Create VM  "
+    success_msg: "VM is created successfully "
+
+- name: Set VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+
+##################################################################################
+
+- name: List all categories and define variables
+  ntnx_categories_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of all categories
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 0
+    fail_msg: "Unable to list categories "
+    success_msg: "Categories  listed successfully"
+
+- name: Set category ext_id
+  ansible.builtin.set_fact:
+    category_ext_id: '{{ result["response"][0]["ext_id"] }}'
+    category_ext_id1: '{{ result["response"][1]["ext_id"] }}'
+    category_ext_id2: '{{ result["response"][2]["ext_id"] }}'
+    category_ext_id3: '{{ result["response"][3]["ext_id"] }}'
+
+##################################################################################
+
+- name: Associate category to VM - check mode is enabled
+  ntnx_vms_categories_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+      - ext_id: "{{ category_ext_id1 }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Set all categories
+  ansible.builtin.set_fact:
+    all_categories: "{{ result.response.categories | map(attribute='ext_id') | list }}"
+
+- name: Associate category to VM - check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - all_categories[0] == "{{ category_ext_id }}"
+      - all_categories[1] == "{{ category_ext_id1 }}"
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: " Associate category to VM - check mode is enabled failed  "
+    success_msg: " Associate category to VM - check mode is enabled passed  "
+
+###############################################################################
+
+- name: Associate category to VM
+  ntnx_vms_categories_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Associate category to VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response[0] == "{{ category_ext_id }}"
+      - result.response | length == 1
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: "Associate category to VM failed  "
+    success_msg: "Associate category to VM passed  "
+
+###############################################################################
+
+- name: Associate categories to VM
+  ntnx_vms_categories_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id1 }}"
+      - ext_id: "{{ category_ext_id2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Associate categories to VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response[0] == "{{ category_ext_id }}"
+      - result.response[1] == "{{ category_ext_id1 }}"
+      - result.response[2] == "{{ category_ext_id2 }}"
+      - result.response | length == 3
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: "Associate categories to VM failed  "
+    success_msg: "Associate categories to VM passed  "
+
+###############################################################################
+
+- name: Associate category to VM that is already associated to that VM
+  ntnx_vms_categories_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Associate category to VM that is already associated to that VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: "Associate category to VM that is already associated to that VM failed  "
+    success_msg: "Associate category to VM that is already associated to that VM passed  "
+
+###############################################################################
+
+- name: Get categories from VM
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Set all categories
+  ansible.builtin.set_fact:
+    all_categories: "{{ result.response.categories | map(attribute='ext_id') | list }}"
+
+- name: Get categories from VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.categories | length > 0
+      - all_categories | length == 3
+      - all_categories[0] == "{{ category_ext_id }}"
+      - all_categories[1] == "{{ category_ext_id1 }}"
+      - all_categories[2] == "{{ category_ext_id2 }}"
+    fail_msg: "Get categories from VM failed  "
+    success_msg: "Get categories from VM passed  "
+
+##################################################################################
+
+- name: Disassociate category from VM - check mode is enabled
+  ntnx_vms_categories_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+      - ext_id: "{{ category_ext_id1 }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Set all categories
+  ansible.builtin.set_fact:
+    all_categories: "{{ result.response.categories | map(attribute='ext_id') | list }}"
+
+- name: Disassociate category from VM - check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - all_categories[0] == "{{ category_ext_id }}"
+      - all_categories[1] == "{{ category_ext_id1 }}"
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: " Disassociate category from VM - check mode is enabled failed  "
+    success_msg: " Disassociate category from VM - check mode is enabled passed  "
+
+###############################################################################
+
+- name: Disassociate category from VM that is not associated to that VM
+  ntnx_vms_categories_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id3 }}"
+  register: result
+  ignore_errors: true
+
+- name: Disassociate category from VM that is not associated to that VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: "Disassociate category from VM that is not associated to that VM failed  "
+    success_msg: "Disassociate category from VM that is not associated to that VM passed  "
+
+###############################################################################
+
+- name: Disassociate category from VM
+  ntnx_vms_categories_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Disassociate category from VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response[0] == "{{ category_ext_id1 }}"
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: "Disassociate category from VM failed  "
+    success_msg: "Disassociate category from VM passed  "
+
+###############################################################################
+
+- name: Get categories from VM
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Set all categories
+  ansible.builtin.set_fact:
+    all_categories: "{{ result.response.categories | map(attribute='ext_id') | list }}"
+
+- name: Get categories from VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.categories | length > 0
+      - all_categories | length == 2
+      - all_categories[0] == "{{ category_ext_id1 }}"
+      - all_categories[1] == "{{ category_ext_id2 }}"
+    fail_msg: "Get categories from VM failed  "
+    success_msg: "Get categories from VM passed  "
+
+###############################################################################
+
+- name: Delete the VM
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VM  "
+    success_msg: "VM is deleted successfully "
