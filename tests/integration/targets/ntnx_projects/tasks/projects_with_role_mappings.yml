@@ -16,6 +16,9 @@
     project2_name: "{{random_name}}{{suffix_name}}2"
     project3_name: "{{random_name}}{{suffix_name}}3"
 
+- set_fact:
+    ignore_errors: false
+
 - name: Create Project with min spec
   ntnx_projects:
     name: "{{project1_name}}"

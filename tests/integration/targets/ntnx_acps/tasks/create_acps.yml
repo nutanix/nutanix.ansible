@@ -10,7 +10,6 @@
     acp3_name: "{{random_name[0]}}3"
     acp4_name: "{{random_name[0]}}4"
     acp5_name: "{{random_name[0]}}5"
-
 - name: Create min ACP
   ntnx_acps:
     state: present

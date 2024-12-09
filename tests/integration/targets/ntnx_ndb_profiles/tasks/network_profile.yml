@@ -188,9 +188,8 @@
       - result.changed is defined
       - result.changed == true
       - result.msg == "All items completed"
-    fail_msg: unable to delete all created network profiles
-    success_msg: All network profiles deleted successfully
+    fail_msg: "unable to delete all created network profiles"
+    success_msg: "All network profiles deleted successfully"
 
-- name: Define variable todelete
-  ansible.builtin.set_fact:
+- set_fact:
     todelete: []

@@ -68,6 +68,7 @@
   register: result
   ignore_errors: true
 
+
 - name: Creation Status
   ansible.builtin.assert:
     that:
