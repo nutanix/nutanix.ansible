@@ -178,6 +178,49 @@ EXAMPLES = r"""
           size_gb: 10
           bus: "PCI"
 
+  - name: VM with Cluster, Network with vlan trunk, Universal time zone, one Disk, api style
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      name: "VM with Cluster Network and Disk"
+      timezone: "Universal"
+      cluster:
+        name: "{{ cluster_name }}"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "{{ network_name }}"
+          vlan_mode: "TRUNKED"
+          trunked_vlan_list: [100, 200, 300, 400]
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          bus: "PCI"
+
+  - name: VM with Cluster, Network with vlan trunk, Universal time zone, one Disk, easy user style
+    ntnx_vms:
+      state: present
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: False
+      name: "VM with Cluster Network and Disk"
+      timezone: "Universal"
+      cluster:
+        name: "{{ cluster_name }}"
+      networks:
+        - is_connected: True
+          subnet:
+            name: "{{ network_name }}"
+          vlan_list: [100, 200, 300, 400]
+      disks:
+        - type: "DISK"
+          size_gb: 10
+          bus: "PCI"
+
   - name: VM with Cluster, different CDROMs
     ntnx_vms:
       state: present
@@ -795,6 +838,33 @@ def get_module_spec():
                 ("size_gb", "empty_cdrom"),
                 ("uuid", "bus"),
             ],
+        ),
+        networks=dict(
+            type="list",
+            elements="dict",
+            options=dict(
+                is_connected=dict(type="bool", required=False, default=True),
+                subnet=dict(type="dict", required=False),
+                vlan_mode=dict(
+                    type="str",
+                    required=False,
+                    default="ACCESS",
+                    choices=["ACCESS", "TRUNKED"],
+                ),
+                trunked_vlan_list=dict(
+                    type="list", required=False, default=[], elements="int"
+                ),
+                private_ip=dict(type="str", required=False),
+                uuid=dict(type="str", required=False),
+                state=dict(type="str", required=False, choices=["absent"]),
+                vlan_list=dict(
+                    type="list", required=False, default=[], elements="int"
+                ),
+            ),
+            mutually_exclusive=[
+                ("subnet", "uuid"),
+                ("trunked_vlan_list", "vlan_list"),
+            ]
         ),
     )
     default_vm_spec.update(module_args)
