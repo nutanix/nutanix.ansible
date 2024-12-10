@@ -18,6 +18,7 @@ class DefaultVMSpec:
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
     )
+
     network_spec = dict(
         uuid=dict(type="str"),
         state=dict(type="str", choices=["absent"]),
@@ -38,15 +39,40 @@ class DefaultVMSpec:
         ),
     )
 
+    vtpm_config_spec = dict(
+        vtpm_enabled=dict(
+            type="bool", required=True
+        ),
+        vtpm_secret=dict(
+            type="str", required=False
+        )
+    )
+
     gc_spec = dict(
         type=dict(type="str", choices=["cloud_init", "sysprep"], required=True),
         script_path=dict(type="path", required=True),
         is_overridable=dict(type="bool", default=False),
     )
 
+    disk_spec = dict(
+        type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
+        uuid=dict(type="str"),
+        state=dict(type="str", choices=["absent"]),
+        size_gb=dict(type="int"),
+        bus=dict(type="str", choices=["SCSI", "PCI", "SATA", "IDE"], default="SCSI"),
+        storage_container=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        clone_image=dict(
+            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
+        ),
+        empty_cdrom=dict(type="bool"),
+    )
+
     vm_argument_spec = dict(
         name=dict(type="str", required=False),
         vm_uuid=dict(type="str"),
+        desc=dict(type="str"),
         project=dict(
             type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
         ),
@@ -60,9 +86,11 @@ class DefaultVMSpec:
         cores_per_vcpu=dict(type="int"),
         memory_gb=dict(type="int"),
         networks=dict(type="list", elements="dict", options=network_spec),
+        disks=dict(type="list", elements="dict", options=disk_spec),
         boot_config=dict(type="dict", options=boot_config_spec),
         guest_customization=dict(type="dict", options=gc_spec),
         timezone=dict(type="str", default="UTC"),
         categories=dict(type="dict"),
         force_power_off=dict(type="bool", default=False),
+        vtpm_config=dict(type="dict", options=vtpm_config_spec),
     )
