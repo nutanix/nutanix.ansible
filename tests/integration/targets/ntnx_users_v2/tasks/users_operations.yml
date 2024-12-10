@@ -103,21 +103,24 @@
 #     fail_msg: Delete users if already exist failed
 #     success_msg: Delete users if already exist passed
 #   when: todelete | length > 0
-- name: Delete created users
+
+- name: Delete users if already exist
   ntnx_users:
     state: absent
     user_uuid: "{{ item }}"
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
+  when: todelete | length > 0
 
-- name: Check listing status
+- name: Delete users if already exist status
   ansible.builtin.assert:
     that:
       - result.changed == true
       - result.msg == "All items completed"
-    fail_msg: "Fail: unable to delete all users"
-    success_msg: "Pass: all users deleted successfully"
+    fail_msg: Delete users if already exist failed
+    success_msg: Delete users if already exist passed
+  when: todelete | length > 0
 
 - name: Reset todelete list
   ansible.builtin.set_fact:
@@ -609,14 +612,20 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
+  no_log: true
 
-- name: Check listing status
+- name: Delete created users status
   ansible.builtin.assert:
     that:
       - result.changed == true
       - result.msg == "All items completed"
-    fail_msg: "Fail: unable to delete all users"
-    success_msg: "Pass: all users deleted successfully"
+      - result.results | length == todelete | length
+      - item.failed == false
+    fail_msg: Delete created users failed
+    success_msg: Delete created users passed
+  loop: "{{ result.results }}"
+  when: todelete | length > 0 and result | length > 0
+  no_log: true
 
 - name: Reset todelete list
   ansible.builtin.set_fact:
