@@ -56,6 +56,10 @@
     fail_msg: " Unable to Verify spec generation for identity providers with check_mode "
     success_msg: " Verify spec generation for identity providers with check_mode finished successfully "
 
+- name: Read content from file
+  ansible.builtin.set_fact:
+    xml_file_content: "{{ lookup('file', xml_content.dest + '/content.txt') }}"
+
 - name: Create saml
   ntnx_saml_identity_providers_v2:
     name: "{{ full_name }}1"
@@ -63,7 +67,7 @@
     email_attribute: email
     groups_attribute: groups
     groups_delim: ","
-    idp_metadata_xml: "{{ xml_content }}"
+    idp_metadata_xml: "{{ xml_file_content }}"
     state: present
   register: result
   ignore_errors: true
