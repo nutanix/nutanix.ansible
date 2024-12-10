@@ -143,7 +143,7 @@
       - result.response.disks[1].disk_address.bus_type == "SCSI"
       - result.response.disks[1].disk_address.index == 3
       - result.response.gpus[0].mode == "VIRTUAL"
-      - result.response.gpus[0].device_id == "1"
+      - result.response.gpus[0].device_id == 1
       - result.response.gpus[0].name == "NVIDIA T4"
       - result.response.gpus[0].vendor == "NVIDIA"
       - result.response.gpus[0].pci_address.segment == 0

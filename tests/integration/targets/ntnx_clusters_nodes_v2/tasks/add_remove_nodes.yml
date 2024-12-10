@@ -265,6 +265,7 @@
   register: results
   ignore_errors: true
   changed_when: results.rc != 0
+  no_log: true
 
 # verify that all nodes are unconfigured by checking the return code and stderr in all of them
 - name: Assert that all cluster nodes are unconfigured
@@ -296,6 +297,7 @@
     fail_msg: "Discover unconfigured nodes failed"
     success_msg: "Discover unconfigured nodes passed"
   loop: "{{ results.results }}"
+  no_log: true
 
 - name: Run cluster create prechecks
   ntnx_clusters_v2:
