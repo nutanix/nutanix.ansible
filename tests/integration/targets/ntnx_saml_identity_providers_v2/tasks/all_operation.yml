@@ -57,7 +57,7 @@
     success_msg: " Verify spec generation for identity providers with check_mode finished successfully "
 
 - name: Read content from file
-  set_fact:
+  ansible.builtin.set_fact:
     xml_file_content: "{{ lookup('file', xml_content.dest + '/content.txt') }}"
 
 - name: Create saml
