@@ -131,7 +131,7 @@
       - result.response is defined
       - result.changed == true
       - result.ext_id == result.response.ext_id
-      - result.response.cluster_reference == "{ {cluster.uuid }}"
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
       - result.response.name == "{{ vg_name }}_2"
       - result.response.description == "Volume group"
       - result.response.should_load_balance_vm_attachments == false

@@ -51,7 +51,7 @@
     network_info:
       nic_type: "NORMAL_NIC"
       subnet:
-        ext_id: "{{ network.managed.uuid }}"
+        ext_id: "{{ static.uuid }}"
       vlan_mode: "ACCESS"
       ipv4_config:
         should_assign_ip: true
@@ -66,7 +66,7 @@
       - result.changed == false
       - result.failed == false
       - result.response.network_info.nic_type == "NORMAL_NIC"
-      - result.response.network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.vlan_mode == "ACCESS"
       - result.response.network_info.ipv4_config.should_assign_ip == true
       - result.response.backing_info.is_connected == true
@@ -86,7 +86,7 @@
     network_info:
       nic_type: "DIRECT_NIC"
       subnet:
-        ext_id: "{{ network.managed.uuid }}"
+        ext_id: "{{ static.uuid }}"
       vlan_mode: "ACCESS"
       should_allow_unknown_macs: false
       ipv4_config:
@@ -106,7 +106,7 @@
       - result.changed == false
       - result.failed == false
       - result.response.network_info.nic_type == "DIRECT_NIC"
-      - result.response.network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.vlan_mode == "ACCESS"
       - result.response.network_info.ipv4_config.ip_address.value == "{{ network.managed.IPs[0] }}"
       - result.response.network_info.ipv4_config.secondary_ip_address_list[0].value == "{{ network.managed.IPs[1] }}"
@@ -127,7 +127,7 @@
     network_info:
       nic_type: "DIRECT_NIC"
       subnet:
-        ext_id: "{{ network.managed.uuid }}"
+        ext_id: "{{ static.uuid }}"
       vlan_mode: "ACCESS"
       should_allow_unknown_macs: true
       ipv4_config:
@@ -143,7 +143,7 @@
       - result.changed == false
       - result.failed == false
       - result.response.network_info.nic_type == "DIRECT_NIC"
-      - result.response.network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.vlan_mode == "ACCESS"
       - result.response.backing_info.is_connected == true
       - result.response.network_info.should_allow_unknown_macs == true
@@ -221,7 +221,7 @@
     network_info:
       nic_type: "DIRECT_NIC"
       subnet:
-        ext_id: "{{ network.managed.uuid }}"
+        ext_id: "{{ static.uuid }}"
       vlan_mode: "ACCESS"
       should_allow_unknown_macs: false
       ipv4_config:
@@ -238,7 +238,7 @@
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.ext_id is defined
       - result.response.network_info.nic_type == "DIRECT_NIC"
-      - result.response.network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.vlan_mode == "ACCESS"
       - result.response.network_info.should_allow_unknown_macs == false
       - result.response.backing_info.is_connected == true
@@ -258,7 +258,7 @@
     network_info:
       nic_type: "NORMAL_NIC"
       subnet:
-        ext_id: "{{ network.managed.uuid }}"
+        ext_id: "{{ static.uuid }}"
       vlan_mode: "ACCESS"
       should_allow_unknown_macs: false
       ipv4_config:
@@ -277,7 +277,7 @@
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.ext_id is defined
       - result.response.network_info.nic_type == "NORMAL_NIC"
-      - result.response.network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.vlan_mode == "ACCESS"
       - result.response.network_info.should_allow_unknown_macs == false
       - result.response.backing_info.is_connected == true
@@ -322,13 +322,13 @@
       - result.response.nics[2].backing_info.is_connected == true
       - result.response.nics[2].network_info.nic_type == "DIRECT_NIC"
       - result.response.nics[2].network_info.ipv4_config.ip_address.value is defined
-      - result.response.nics[2].network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.nics[2].network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.nics[2].network_info.vlan_mode == "ACCESS"
       - result.response.nics[2].network_info.should_allow_unknown_macs == false
       - result.response.nics[3].backing_info.is_connected == true
       - result.response.nics[3].network_info.nic_type == "NORMAL_NIC"
       - result.response.nics[3].network_info.ipv4_config.ip_address.value == "{{ network.managed.IPs[0] }}"
-      - result.response.nics[3].network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.nics[3].network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.nics[3].network_info.vlan_mode == "ACCESS"
       - result.response.nics[3].network_info.should_allow_unknown_macs == false
     fail_msg: "Unable to get nics ids from VM "
@@ -384,7 +384,7 @@
     network_info:
       nic_type: "NORMAL_NIC"
       subnet:
-        ext_id: "{{ network.managed.uuid }}"
+        ext_id: "{{ static.uuid }}"
       vlan_mode: "ACCESS"
       should_allow_unknown_macs: false
       ipv4_config:
@@ -435,7 +435,7 @@
     vm_ext_id: "{{ vm_uuid }}"
     migrate_type: "ASSIGN_IP"
     subnet:
-      ext_id: "{{ network.managed.uuid }}"
+      ext_id: "{{ static.uuid }}"
     ip_address:
       value: "{{ network.managed.IPs[1] }}"
   register: result
@@ -449,7 +449,7 @@
       - result.changed == false
       - result.failed == false
       - result.response.migrate_type == "ASSIGN_IP"
-      - result.response.subnet.ext_id == '{{ network.managed.uuid }}'
+      - result.response.subnet.ext_id == '{{ static.uuid }}'
       - result.vm_ext_id == "{{ vm_uuid }}"
     fail_msg: "Unable to migrate nic to another subnet when check mode is enabled "
     success_msg: "nic migrated to another subnet successfully when check mode is enabled "
@@ -462,7 +462,7 @@
     vm_ext_id: "{{ vm_uuid }}"
     migrate_type: "ASSIGN_IP"
     subnet:
-      ext_id: "{{ network.managed.uuid }}"
+      ext_id: "{{ static.uuid }}"
     ip_address:
       value: "{{ network.managed.IPs[1] }}"
   register: result
@@ -474,7 +474,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.response.network_info.subnet.ext_id == '{{ network.managed.uuid }}'
+      - result.response.network_info.subnet.ext_id == '{{ static.uuid }}'
       - result.response.network_info.ipv4_config.ip_address.value == "{{ network.managed.IPs[1] }}"
       - result.response.network_info.nic_type == "NORMAL_NIC"
       - result.response.backing_info.is_connected == false
@@ -498,7 +498,7 @@
       - result.failed == false
       - result.ext_id == "{{ todelete[0] }}"
       - result.vm_ext_id == "{{ vm_uuid }}"
-      - result.response.network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.ipv4_config.ip_address.value == "{{ network.managed.IPs[1] }}"
     fail_msg: "Unable to get nic info "
     success_msg: "nic info fetched successfully "
@@ -511,7 +511,7 @@
     vm_ext_id: "{{ vm_uuid }}"
     migrate_type: "RELEASE_IP"
     subnet:
-      ext_id: "{{ network.managed.uuid }}"
+      ext_id: "{{ static.uuid }}"
   register: result
   ignore_errors: true
 
@@ -521,7 +521,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.response.network_info.subnet.ext_id == '{{ network.managed.uuid }}'
+      - result.response.network_info.subnet.ext_id == '{{ static.uuid }}'
       - result.response.network_info.ipv4_config.ip_address.value != "{{ network.managed.IPs[1] }}"
       - result.response.backing_info.is_connected == false
     fail_msg: "Unable to migrate nic to another subnet "
@@ -544,7 +544,7 @@
       - result.failed == false
       - result.ext_id == "{{ todelete[0] }}"
       - result.vm_ext_id == "{{ vm_uuid }}"
-      - result.response.network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.ipv4_config.ip_address.value != "{{ network.managed.IPs[1] }}"
     fail_msg: "Unable to get nic info "
     success_msg: "nic info fetched successfully "
@@ -616,7 +616,7 @@
       - result.ext_id == "{{ todelete[0] }}"
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.response.backing_info.is_connected == false
-      - result.response.network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.ipv4_config.ip_address.value == "{{ network.managed.IPs[1] }}"
     fail_msg: "Unable to get nic info "
     success_msg: "nic info fetched successfully "
@@ -686,7 +686,7 @@
       - result.ext_id == "{{ todelete[0] }}"
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.response.backing_info.is_connected == false
-      - result.response.network_info.subnet.ext_id == "{{ network.managed.uuid }}"
+      - result.response.network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.network_info.ipv4_config == none
     fail_msg: "Unable to get nic info "
     success_msg: "nic info fetched successfully "
