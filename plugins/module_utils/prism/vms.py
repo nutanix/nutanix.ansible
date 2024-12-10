@@ -45,6 +45,7 @@ class VM(Prism):
             "timezone": self._build_spec_timezone,
             "categories": CategoriesMapping.build_categories_mapping_spec,
             "remove_categories": CategoriesMapping.build_remove_all_categories_spec,
+            "vtpm_config": self._build_spec_vtpm_config,
         }
 
     def list(
@@ -161,6 +162,7 @@ class VM(Prism):
                         "disk_list": [],
                         "nic_list": [],
                         "gpu_list": [],
+                        "vtpm_config": {},
                         "boot_config": {
                             "boot_type": "LEGACY",
                             "boot_device_order_list": ["CDROM", "DISK", "NETWORK"],
@@ -176,6 +178,13 @@ class VM(Prism):
             {
                 "boot_type": "LEGACY",
                 "boot_device_order_list": ["CDROM", "DISK", "NETWORK"],
+            }
+        )
+
+    def _get_default_vtpm_config_spec(self):
+        return deepcopy(
+            {
+                "vtpm_enabled": True
             }
         )
 
@@ -382,6 +391,12 @@ class VM(Prism):
             boot_config.pop("boot_device_order_list", None)
             boot_config["boot_type"] = "SECURE_BOOT"
             payload["spec"]["resources"]["machine_type"] = "Q35"
+        return payload, None
+
+    def _build_spec_vtpm_config(self, payload, param):
+        payload["spec"]["resources"]["vtpm_config"] = {"vtpm_enabled": param["vtpm_enabled"]}
+        if param.get("vtpm_secret"):
+            payload["spec"]["resources"]["vtpm_config"].update({"vtpm_secret", param["vtpm_secret"]})
         return payload, None
 
     def _build_spec_gc(self, payload, param):

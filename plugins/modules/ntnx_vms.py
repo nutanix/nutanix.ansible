@@ -751,26 +751,6 @@ from ..module_utils.prism.vms import VM  # noqa: E402
 
 def get_module_spec():
     default_vm_spec = deepcopy(DefaultVMSpec.vm_argument_spec)
-
-    mutually_exclusive = [("name", "uuid")]
-
-    entity_by_spec = dict(name=dict(type="str"), uuid=dict(type="str"))
-
-    disk_spec = dict(
-        type=dict(type="str", choices=["CDROM", "DISK"], default="DISK"),
-        uuid=dict(type="str"),
-        state=dict(type="str", choices=["absent"]),
-        size_gb=dict(type="int"),
-        bus=dict(type="str", choices=["SCSI", "PCI", "SATA", "IDE"], default="SCSI"),
-        storage_container=dict(
-            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
-        ),
-        clone_image=dict(
-            type="dict", options=entity_by_spec, mutually_exclusive=mutually_exclusive
-        ),
-        empty_cdrom=dict(type="bool"),
-    )
-
     module_args = dict(
         state=dict(
             type="str",
@@ -784,18 +764,7 @@ def get_module_spec():
             ],
             default="present",
         ),
-        desc=dict(type="str"),
-        remove_categories=dict(type="bool", required=False, default=False),
-        disks=dict(
-            type="list",
-            elements="dict",
-            options=disk_spec,
-            mutually_exclusive=[
-                ("storage_container", "clone_image", "empty_cdrom"),
-                ("size_gb", "empty_cdrom"),
-                ("uuid", "bus"),
-            ],
-        ),
+        remove_categories=dict(type="bool", required=False, default=False)
     )
     default_vm_spec.update(module_args)
     return default_vm_spec
