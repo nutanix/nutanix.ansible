@@ -470,13 +470,118 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Expand cluster
+  ntnx_clusters_nodes_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    cluster_ext_id: "000628e4-4c8f-1239-5575-0cc47a9a3e6d"
+    node_params:
+      node_list:
+        - block_id: "18SM8B010159"
+          current_network_interface: "eth1"
+          cvm_ip:
+            ipv4:
+              prefix_length: 32
+              value: "10.0.0.1"
+          hypervisor_hostname: "test"
+          hypervisor_ip:
+            ipv4:
+              prefix_length: 32
+              value: "10.0.0.2"
+          hypervisor_type: "AHV"
+          hypervisor_version: "10.0-793"
+          ipmi_ip:
+            ipv4:
+              prefix_length: 32
+              value: "10.0.0.3"
+          is_light_compute: false
+          is_robo_mixed_hypervisor: true
+          model: "NX-3060-G5"
+          networks:
+            - name: "br0"
+              networks:
+                - "Management"
+              uplinks:
+                active:
+                  - mac: "1c:f4:7b:5f:a9:2a"
+                    name: "eth1"
+                    value: "eth1"
+                standby:
+                  - mac: "12:ee:23:33:2f:43"
+                    name: "eth2"
+                    value: "eth2"
+          node_position: "B"
+          node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+          nos_version: "7.0"
+    config_params:
+      is_compute_only: false
+      is_never_scheduleable: false
+      is_nos_compatible: false
+      should_skip_discovery: false
+      should_skip_imaging: true
+  register: result
+
+- name: Remove node from cluster
+  ntnx_clusters_nodes_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    cluster_ext_id: "000628e4-4c8f-1239-5575-0cc47a9a3e6d"
+    node_uuids:
+      - "54b7581b-2e35-413e-8608-0531b065a5d8"
+  register: result
 """
 
 RETURN = r"""
 response:
-  description: The response from the Nutanix API.
+  description: Task response for adding or removing cluster nodes.
   type: dict
   returned: always
+  sample:
+    {
+      "cluster_ext_ids": [
+          "000628e4-4c8f-1239-5575-0cc47a9a3e6d"
+      ],
+      "completed_time": "2024-12-10T06:26:48.551062+00:00",
+      "completion_details": null,
+      "created_time": "2024-12-10T06:17:52.467169+00:00",
+      "entities_affected": [
+          {
+              "ext_id": "000628e4-4c8f-1239-5575-0cc47a9a3e6d",
+              "name": null,
+              "rel": "clustermgmt:config:cluster"
+          }
+      ],
+      "error_messages": null,
+      "ext_id": "ZXJnb24=:a2734e72-f034-49de-a3c8-d50e2dbaf44a",
+      "is_background_task": false,
+      "is_cancelable": false,
+      "last_updated_time": "2024-12-10T06:26:48.551061+00:00",
+      "legacy_error_message": null,
+      "number_of_entities_affected": 1,
+      "number_of_subtasks": 1,
+      "operation": "Expand Cluster",
+      "operation_description": "Expand Cluster",
+      "owned_by": {
+          "ext_id": "00000000-0000-0000-0000-000000000000",
+          "name": "admin"
+      },
+      "parent_task": null,
+      "progress_percentage": 100,
+      "root_task": null,
+      "started_time": "2024-12-10T06:17:52.492332+00:00",
+      "status": "SUCCEEDED",
+      "sub_steps": null,
+      "sub_tasks": [
+          {
+              "ext_id": "ZXJnb24=:74cb5bb6-f888-4c4a-7c99-74d95d76443a",
+              "href": "https://10.44.76.117:9440/api/prism/v4.0/config/tasks/ZXJnb24=:74cb5bb6-f888-4c4a-7c99-74d95d76443a",
+              "rel": "subtask"
+          }
+      ],
+      "warnings": null
+    }
 task_ext_id:
   description: The external ID of the task.
   type: str
