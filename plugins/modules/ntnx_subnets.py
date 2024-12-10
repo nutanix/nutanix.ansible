@@ -456,6 +456,7 @@ task_uuid:
   sample: "ae015bd7-eada-4e23-a225-4f02f9b2b21e"
 """
 
+from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.prism.subnets import Subnet  # noqa: E402
 from ..module_utils.prism.tasks import Task  # noqa: E402
@@ -541,6 +542,8 @@ def get_module_spec():
     )
 
     module_args = dict(
+        remove_categories=dict(type="bool", required=False, default=False),
+        categories=dict(type="dict", required=False),
         name=dict(type="str", required=False),
         subnet_uuid=dict(type="str", required=False),
         vlan_subnet=dict(type="dict", options=vlan_subnet_spec),
@@ -570,9 +573,50 @@ def create_subnet(module, result):
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
-        wait_for_task_completion(module, result)
-        resp = subnet.read(subnet_uuid)
+        task = Task(module)
+        resp = task.wait_for_task_completion(task_uuid)
         result["response"] = resp
+
+def update_subnet(module, result):
+    subnet = Subnet(module)
+    subnet_uuid = mdoule.params.get("subnet_uuid")
+    if not subnet_uuid:
+        result["error"] = "Missing parameter of subnet_uuid in playbook"
+        module.fail_json(msg="Failed updating subnet", **result)
+
+    resp = subnet.read(subnet_uuid)
+    utils.strip_extra_attrs(resp["status"], resp["spec"])
+    resp["spec"] = resp.pop("status")
+
+    update_spec, error = subnet.get_spec(resp)
+    if error:
+        result["error"] = error
+        module.fail_json(msg="Failed generating Subnet udpate spec", **result)
+
+    #check for idempotency
+    if resp == update_spec:
+        result["skipped"] = True
+        module.exit_json(
+          msg="Nothing to change. Refer to docs to check for fields which can be updated"
+        )
+
+    if module.check_mode:
+        result["response"] = update_spec
+        return
+
+    #update subnet
+    resp = subnet.udpate(update_spec, uuid=subnet_uuid)
+    task_uuid = resp["status"]["execution_context"]["task_uuid"]
+
+    #wait for subnet update to finish
+    if module.params.get("wait"):
+        task = Task(module)
+        task.wait_for_task_completion(task_uuid)
+        #get the subnet
+        resp = subnet.read(subnet_uuid)
+
+    result["changed"] = True
+    result["response"] = resp
 
 
 def delete_subnet(module, result):
@@ -586,7 +630,9 @@ def delete_subnet(module, result):
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):
-        wait_for_task_completion(module, result)
+        task = Task(module)
+        resp = task.wait_for_task_completion(task_uuid)
+        result["response"] = resp
 
 
 def wait_for_task_completion(module, result):
@@ -601,14 +647,14 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         mutually_exclusive=[
-            ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet")
+            ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet"), ("categories", "remove_categories")
         ],
         required_one_of=[  # check
             ("vlan_subnet", "external_subnet", "subnet_uuid", "overlay_subnet")
         ],
         required_if=[["state", "absent", ["subnet_uuid"]]],
     )
-    remove_param_with_none_value(module.params)
+    utils.remove_param_with_none_value(module.params)
     result = {
         "changed": False,
         "error": None,
@@ -617,10 +663,13 @@ def run_module():
         "task_uuid": None,
     }
     state = module.params["state"]
-    if state == "present":
-        create_subnet(module, result)
-    elif state == "absent":
+
+    if state == "absent":
         delete_subnet(module, result)
+    elif module.params.get("subnet_uuid"):
+        update_subnet(module, result)
+    elif state == "present":
+        create_subnet(module, result)
 
     module.exit_json(**result)
 
