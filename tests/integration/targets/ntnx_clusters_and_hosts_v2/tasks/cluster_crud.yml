@@ -261,10 +261,10 @@
       authorized_public_key_list:
         - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
           key: "{{ clusters[0].config.auth_public_keys[0].key }}"
-      redundancy_factor: "{{ clusters[0].config.redundancy_factor }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
       fault_tolerance_state:
-        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level }}"
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
     network:
       external_address:
         ipv4:
@@ -339,10 +339,10 @@
               value: "{{ clusters[0].nodes[0].cvm_ip }}"
     config:
       cluster_function: "{{ clusters[0].config.cluster_functions }}"
-      redundancy_factor: "{{ clusters[0].config.redundancy_factor }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
       fault_tolerance_state:
-        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level }}"
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
     timeout: 1800
   register: result
   ignore_errors: true
@@ -501,9 +501,9 @@
       - result.response.name == "{{ cluster_name }}"
       - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
       - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
-      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor
+      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
       - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
-      - result.response.config.fault_tolerance_state.domain_awareness_level == "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level }}"
+      - result.response.config.fault_tolerance_state.domain_awareness_level == "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
     fail_msg: Failed verifying cluster creation
     success_msg: Cluster creation passed successfully
 
@@ -557,10 +557,10 @@
       authorized_public_key_list:
         - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
           key: "{{ clusters[0].config.auth_public_keys[0].key }}"
-      redundancy_factor: "{{ clusters[0].config.redundancy_factor }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
       fault_tolerance_state:
-        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level }}"
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
     network:
       external_address:
         ipv4:
@@ -675,9 +675,9 @@
       - result.response.name == "{{ cluster_name }}"
       - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
       - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
-      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor
+      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
       - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
-      - result.response.config.fault_tolerance_state.domain_awareness_level == "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level }}"
+      - result.response.config.fault_tolerance_state.domain_awareness_level == "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
       - result.response.network.external_address.ipv4.value == "{{ clusters[0].network.virtual_ip }}"
       - unique_ntp_servers | length == 4
       - unique_dns_servers | length == 2
