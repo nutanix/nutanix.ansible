@@ -632,7 +632,6 @@
     fail_msg: "List all disks from VM failed"
     success_msg: "List all disks from VM passed"
   loop: "{{ result.response }}"
-  no_log: true
 
 #################################################################################
 
@@ -654,7 +653,6 @@
     fail_msg: "List all disks from VM with limit 1 failed"
     success_msg: "List all disks from VM with limit 1 passed"
   loop: "{{ result.response }}"
-  no_log: true
 
 #################################################################################
 
@@ -676,7 +674,6 @@
     fail_msg: "List all disks from VM with limit 2 failed"
     success_msg: "List all disks from VM with limit 2 passed"
   loop: "{{ result.response }}"
-  no_log: true
 
 #################################################################################
 
@@ -688,7 +685,6 @@
   register: result
   ignore_errors: true
   loop: "{{ todelete }}"
-  no_log: true
 
 - name: Deletion Status
   ansible.builtin.assert:
@@ -702,7 +698,6 @@
     fail_msg: "Unable to delete disks from VM "
     success_msg: "Disks from VM are deleted successfully "
   loop: "{{ result.results }}"
-  no_log: true
 
 ################################################################################
 

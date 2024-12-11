@@ -392,7 +392,6 @@
   loop: "{{ result.results }}"
   loop_control:
     index_var: storage_containers_index
-  no_log: true
 
 - name: Reset to delete list
   ansible.builtin.set_fact:
