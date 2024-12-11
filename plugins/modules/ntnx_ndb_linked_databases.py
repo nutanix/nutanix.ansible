@@ -229,10 +229,10 @@ database_instance_uuid:
 """
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.database_instances import DatabaseInstance  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
 
 
 def get_module_spec():

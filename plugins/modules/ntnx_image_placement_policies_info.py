@@ -31,36 +31,36 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
-  - name: Get image placement policy using policy_uuid
-    ntnx_image_placement_policies_info:
-      policy_uuid: "<policy_uuid>"
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        - name: test_policy
-    register: result
+- name: Get image placement policy using policy_uuid
+  ntnx_image_placement_policies_info:
+    policy_uuid: "<policy_uuid>"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      - name: test_policy
+  register: result
 
-  - name: List image placement policies using name filter criteria
-    ntnx_image_placement_policies_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        - name: test_policy
-    register: result
+- name: List image placement policies using name filter criteria
+  ntnx_image_placement_policies_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      - name: test_policy
+  register: result
 
-  - name: List image placement policies using length, offset
-    ntnx_image_placement_policies_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 2
-      offset: 1
-    register: result
+- name: List image placement policies using length, offset
+  ntnx_image_placement_policies_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    length: 2
+    offset: 1
+  register: result
 """
 RETURN = r"""
 api_version:
@@ -224,11 +224,11 @@ entities:
 """
 
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.image_placement_policy import (  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.prism.image_placement_policy import (  # noqa: E402
     ImagePlacementPolicy,
 )
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

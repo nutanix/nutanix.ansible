@@ -2,8 +2,6 @@
 - name: Static Routes  playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <host_ip>
@@ -12,15 +10,15 @@
       validate_certs: false
   tasks:
     - name: Setting Variables
-      set_fact:
+      ansible.builtin.set_fact:
         vpc_uuid: ""
         vpn_uuid: ""
         external_nat_subnet:
           name: ""
-          uuid:  ""
+          uuid: ""
 
-    - name: create static routes and default static routes with external nat subnet
-      ntnx_static_routes:
+    - name: Create static routes and default static routes with external nat subnet
+      nutanix.ncp.ntnx_static_routes:
         vpc_uuid: "{{ vpc_uuid }}"
         static_routes:
           - destination: "0.0.0.0/0"
@@ -40,7 +38,7 @@
               vpn_connection_ref:
                 uuid: "{{ vpn_uuid }}"
 
-    - name: remove all routes excluding dynamic and local routes
-      ntnx_static_routes:
+    - name: Remove all routes excluding dynamic and local routes
+      nutanix.ncp.ntnx_static_routes:
         vpc_uuid: "{{ vpc_uuid }}"
         remove_all_routes: true

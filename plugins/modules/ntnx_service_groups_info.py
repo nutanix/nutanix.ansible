@@ -39,28 +39,28 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List service_group using name filter criteria
-    ntnx_service_groups_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        name: "{{ service_group.name }}"
-      kind: service_group
-    register: result
+- name: List service_group using name filter criteria
+  ntnx_service_groups_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      name: "{{ service_group.name }}"
+    kind: service_group
+  register: result
 
-  - name: List service_group using length, offset, sort order and name sort attribute
-    ntnx_service_groups_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 1
-      offset: 1
-      sort_order: "ASCENDING"
-      sort_attribute: "name"
-    register: result
+- name: List service_group using length, offset, sort order and name sort attribute
+  ntnx_service_groups_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    length: 1
+    offset: 1
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+  register: result
 """
 RETURN = r"""
 api_version:
@@ -141,9 +141,9 @@ entities:
             }
 """
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.service_groups import ServiceGroup  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.prism.service_groups import ServiceGroup  # noqa: E402
 
 
 def get_module_spec():

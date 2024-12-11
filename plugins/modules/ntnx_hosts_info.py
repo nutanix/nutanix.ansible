@@ -32,23 +32,23 @@ author:
   - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List hosts
-    ntnx_hosts_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      kind: host
-    register: result
+- name: List hosts
+  ntnx_hosts_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    kind: host
+  register: result
 
-  - name: test getting particular host using uuid
-    ntnx_hosts_info:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: False
-        host_uuid: <host-uuid>
-    register: result
+- name: test getting particular host using uuid
+  ntnx_hosts_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    host_uuid: <host-uuid>
+  register: result
 """
 RETURN = r"""
 api_version:
@@ -149,9 +149,9 @@ entities:
         }
 """
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.hosts import Host  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.prism.hosts import Host  # noqa: E402
 
 
 def get_module_spec():

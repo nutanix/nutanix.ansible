@@ -1,0 +1,303 @@
+---
+- name: Start ntnx_roles_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_roles_v2 tests
+
+- name: Get create operations
+  ntnx_operations_info_v2:
+    filter: displayName startswith 'Create_'
+  register: create_operations
+  ignore_errors: true
+
+- name: Define variables
+  ansible.builtin.set_fact:
+    test_operation_1_uuid: "{{ create_operations.response[0].ext_id }}"
+    test_operation_2_uuid: "{{ create_operations.response[1].ext_id }}"
+    test_operation_3_uuid: "{{ create_operations.response[2].ext_id }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Generate random role name
+  ansible.builtin.set_fact:
+    raw_role_1_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
+    raw_role_2_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
+
+- name: Ensure Pattern Compliance
+  ansible.builtin.set_fact:
+    role_1_name: role_name_{{ raw_role_1_name | regex_replace('[^a-zA-Z0-9]', '') }}
+    role_2_name: role_name_{{ raw_role_2_name | regex_replace('[^a-zA-Z0-9]', '') }}
+
+###################################################################################################
+
+- name: Create roles with operations in check mode
+  ntnx_roles_v2:
+    state: present
+    display_name: "{{ role_2_name }}"
+    description: test-ansible-role-1-desc
+    operations:
+      - "{{ test_operation_1_uuid }}"
+      - "{{ test_operation_2_uuid }}"
+    wait: true
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create roles with operations in check mode Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.response.display_name == "{{ role_2_name }}"
+      - result.response.description == "test-ansible-role-1-desc"
+      - result.response.operations[0] == "{{ test_operation_1_uuid }}"
+      - result.response.operations[1] == "{{ test_operation_2_uuid }}"
+
+    fail_msg: Create roles with operations in check mode failed
+    success_msg: Create roles with operations in check mode passed
+
+##############################################################################################
+
+- name: Create roles with operations
+  ntnx_roles_v2:
+    state: present
+    display_name: "{{ role_1_name }}"
+    description: test-ansible-role-1-desc
+    operations:
+      - "{{ test_operation_1_uuid }}"
+      - "{{ test_operation_2_uuid }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Set p1 and p2 variables
+  ansible.builtin.set_fact:
+    p1: "{{ result.response.operations[0] }}"
+    p2: "{{ result.response.operations[1] }}"
+
+- name: Create roles with operations Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.display_name == "{{ role_1_name }}"
+      - result.response.description == "test-ansible-role-1-desc"
+      - result.response.operations | length == 2
+      - p1 in result.response.operations
+      - p2 in result.response.operations
+
+    fail_msg: Unable to create roles with certain operations
+    success_msg: Roles with given operations created successfully
+
+- name: Adding role external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ result["response"]["ext_id"] }}'
+
+###################################################################################################
+
+- name: Check if role with existing name fails or not
+  ntnx_roles_v2:
+    state: present
+    display_name: "{{ role_1_name }}"
+    operations:
+      - "{{ test_operation_1_uuid }}"
+      - "{{ test_operation_2_uuid }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Check if role with existing name fails or not Status
+  ansible.builtin.assert:
+    that:
+      - result.status == 409
+      - result.changed == False
+      - result.failed == true
+    fail_msg: Was able to create role with existing role name
+    success_msg: Roles with duplicate role name failed successfully
+
+###################################################################################################
+
+- name: Update roles in check mode
+  ntnx_roles_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    display_name: "{{ role_2_name }}"
+    description: test-ansible-role-2-desc
+    operations:
+      - "{{ test_operation_2_uuid }}"
+    wait: true
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Update roles in check mode Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.ext_id is defined
+      - result.ext_id == "{{ todelete }}"
+      - result.response.display_name == "{{ role_2_name }}"
+      - result.response.description == "test-ansible-role-2-desc"
+      - result.response.operations[0] == "{{ test_operation_2_uuid }}"
+      - result.response.operations | length == 1
+    fail_msg: Update roles in check mode failed
+    success_msg: Update roles in check mode passed
+
+###################################################################################################
+
+- name: Update roles
+  ntnx_roles_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    display_name: "{{ role_2_name }}"
+    description: test-ansible-role-3-desc-updated
+    operations:
+      - "{{ test_operation_3_uuid }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Update roles status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == "{{ todelete }}"
+      - result.changed == True
+      - result.response.display_name == "{{ role_2_name }}"
+      - result.response.description == "test-ansible-role-3-desc-updated"
+      - result.response.operations[0] == "{{ test_operation_3_uuid }}"
+      - result.response.operations | length == 1
+
+    fail_msg: Unable to update role
+    success_msg: Roles with given operations updated successfully
+
+###################################################################################################
+
+- name: Test idempotency by updating roles with same values
+  ntnx_roles_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    display_name: "{{ role_2_name }}"
+    description: test-ansible-role-3-desc-updated
+    operations:
+      - "{{ test_operation_3_uuid }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Idempotency check status
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.msg == "Nothing to change."
+
+    fail_msg: Idempotency check failed
+    success_msg: Idempotency check passed
+
+###################################################################################################
+
+- name: List all roles
+  ntnx_roles_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all roles Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: Unable to list all roles
+    success_msg: roles info obtained successfully
+
+- name: Set test role name
+  ansible.builtin.set_fact:
+    test_role_name: "{{result.response.0.display_name}}"
+- name: Set test role uuid
+  ansible.builtin.set_fact:
+    test_role_uuid: "{{result.response.0.ext_id}}"
+
+###################################################################################################
+
+- name: Fetch role using external ID
+  ntnx_roles_info_v2:
+    ext_id: "{{ test_role_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch role using external ID Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.display_name == "{{ test_role_name }}"
+      - result.response.ext_id == "{{ test_role_uuid }}"
+    fail_msg: Fetch role using external ID failed
+    success_msg: Fetch role using external ID passed
+
+###################################################################################################
+
+- name: List roles using limit
+  ntnx_roles_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List roles using limit Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: Unable to list roles using length and offset
+    success_msg: roles listed successfully using length and offset
+
+###################################################################################################
+
+- name: List roles using filter
+  ntnx_roles_info_v2:
+    filter: displayName eq '{{ test_role_name }}'
+  register: result
+  ignore_errors: true
+
+- name: List roles using filter Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].display_name == '{{ test_role_name }}'
+      - result.response[0].ext_id == "{{ test_role_uuid }}"
+      - result.response | length == 1
+    fail_msg: List roles using filter failed
+    success_msg: roles listed successfully using filter
+
+###################################################################################################
+
+- name: Delete roles
+  ntnx_roles_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete roles Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id == "{{ todelete }}"
+    fail_msg: Unable to delete roles
+    success_msg: Roles deleted successfully
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []

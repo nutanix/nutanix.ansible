@@ -24,9 +24,9 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: List packages
-    ntnx_foundation_aos_packages_info:
-      nutanix_host: "{{ ip }}"
+- name: List packages
+  ntnx_foundation_aos_packages_info:
+    nutanix_host: "{{ ip }}"
 """
 
 RETURN = r"""
@@ -39,11 +39,11 @@ aos_packages:
     "package2",s
   ]
 """
-from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
-from ..module_utils.foundation.enumerate_aos_packages import (  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.v3.foundation.enumerate_aos_packages import (  # noqa: E402
     EnumerateAOSPackages,
 )
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

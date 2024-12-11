@@ -2,8 +2,6 @@
 - name: VM playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -11,8 +9,8 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
-  - name: Setting Variables
-    set_fact:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
         cluster_name: ""
         script_path: ""
         subnet_name: ""
@@ -20,55 +18,56 @@
         password: ""
         fqdn: ""
 
-  - name: Create Cloud-init Script file
-    copy:
-      dest: "cloud_init.yml"
-      content: |
-         #cloud-config
-         chpasswd:
-           list: |
-             root: "{{ password }}"
-             expire: False
-         fqdn: "{{ fqdn }}"
+    - name: Create Cloud-init Script file
+      ansible.builtin.copy:
+        mode: "0644"
+        dest: "cloud_init.yml"
+        content: |
+          #cloud-config
+          chpasswd:
+            list: |
+              root: "{{ password }}"
+              expire: False
+          fqdn: "{{ fqdn }}"
 
-  - name: create Vm
-    ntnx_vms:
-      state: present
-      name: "ansible_automation_demo"
-      desc: "ansible_vm_description"
-      categories:
-        AppType:
-          - "Apache_Spark"
-      cluster:
-        name: "{{cluster_name}}"
-      networks:
-        - is_connected: True
-          subnet:
-            name: "{{ subnet_name }}"
-            # mention cluster only when there are multiple subnets with same name accross clusters
-            # and subnet name is set above
-            cluster:
-              name: "{{cluster_name}}"
-      disks:
-        - type: "DISK"
-          size_gb: 30
-          bus: "SATA"
-          clone_image:
-            name: "{{ image_name }}"
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-      guest_customization:
-        type: "cloud_init"
-        script_path: "./cloud_init.yml"
-        is_overridable: True
-    register: output
+    - name: Create Vm
+      nutanix.ncp.ntnx_vms:
+        state: present
+        name: "ansible_automation_demo"
+        desc: "ansible_vm_description"
+        categories:
+          AppType:
+            - "Apache_Spark"
+        cluster:
+          name: "{{cluster_name}}"
+        networks:
+          - is_connected: true
+            subnet:
+              name: "{{ subnet_name }}"
+              # mention cluster only when there are multiple subnets with same name accross clusters
+              # and subnet name is set above
+              cluster:
+                name: "{{cluster_name}}"
+        disks:
+          - type: "DISK"
+            size_gb: 30
+            bus: "SATA"
+            clone_image:
+              name: "{{ image_name }}"
+        vcpus: 1
+        cores_per_vcpu: 1
+        memory_gb: 1
+        guest_customization:
+          type: "cloud_init"
+          script_path: "./cloud_init.yml"
+          is_overridable: true
+      register: output
 
-  - name: output of vm created
-    debug:
-      msg: '{{ output }}'
+    - name: Output of vm created
+      ansible.builtin.debug:
+        msg: "{{ output }}"
 
-  - name: delete VM
-    ntnx_vms:
-      state: absent
-      vm_uuid: "{{output.vm_uuid}}"
+    - name: Delete VM
+      nutanix.ncp.ntnx_vms:
+        state: absent
+        vm_uuid: "{{output.vm_uuid}}"

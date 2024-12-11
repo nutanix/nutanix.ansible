@@ -1,0 +1,15 @@
+---
+- name: Set module defaults
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
+  block:
+    - name: Import tests for application rule CRUD and security rules info tests
+      ansible.builtin.import_tasks: application_rules_and_info_tests.yml
+    - name: Import create, update and delete tests for isolation type security rules
+      ansible.builtin.import_tasks: isolation_rules_tests.yml
+    - name: Import tests for quarantine type security rules
+      ansible.builtin.import_tasks: quarantine_rules_tests.yml

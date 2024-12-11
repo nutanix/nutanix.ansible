@@ -202,11 +202,17 @@
         mode: "0644"
         url: "{{ disk_image.url }}"
         dest: "{{ disk_image.dest }}"
-#   # - name: create address group for network security policy related tests
-#   #   nutanix.ncp.ntnx_address_groups:
-#   #     state: present
-#   #     name: dest
-#   #     desc: dest
-#   #     subnets:
-#   #       - network_ip: "10.1.1.0"
-#   #         network_prefix: 24
+    #   # - name: create address group for network security policy related tests
+    #   #   nutanix.ncp.ntnx_address_groups:
+    #   #     state: present
+    #   #     name: dest
+    #   #     desc: dest
+    #   #     subnets:
+    #   #       - network_ip: "10.1.1.0"
+    #   #         network_prefix: 24
+
+    - name: Downloading xml content for saml tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ xml_content.url }}"
+        dest: "{{ xml_content.dest }}"

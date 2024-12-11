@@ -1,5 +1,6 @@
-- debug:
-    msg: start testing ntnx_address_groups_info
+- name: Start testing ntnx_address_groups_info
+  ansible.builtin.debug:
+    msg: Start testing ntnx_address_groups_info
 
 - name: Create address groups for tests
   ntnx_address_groups:
@@ -22,10 +23,10 @@
 - name: List all address groups
   ntnx_address_groups_info:
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.metadata.total_matches > 0
@@ -33,9 +34,9 @@
     fail_msg: "Unable to list all address groups"
     success_msg: " address groups info obtained successfully"
 
-- set_fact:
+- name: Set address group name and uuid for further tests
+  ansible.builtin.set_fact:
     test_address_groups_name: "{{result.response.entities.1.address_group.name}}"
-- set_fact:
     test_address_groups_uuid: "{{result.response.entities.1.uuid}}"
 
 ##################################################
@@ -44,10 +45,10 @@
   ntnx_address_groups_info:
     address_group_uuid: "{{ test_address_groups_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -63,10 +64,10 @@
     filter:
       name: "{{ test_address_groups_name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -84,10 +85,10 @@
     length: 1
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -98,14 +99,16 @@
 
 ##################################################
 
-- name: delete created address groups for tests
+- name: Delete created address groups for tests
   ntnx_address_groups:
     state: absent
     address_group_uuid: "{{ ag_1.address_group_uuid}}"
+  register: result
   ignore_errors: true
 
-- name: delete created address groups for tests
+- name: Delete created address groups for tests
   ntnx_address_groups:
     state: absent
     address_group_uuid: "{{ ag_2.address_group_uuid}}"
+  register: result
   ignore_errors: true

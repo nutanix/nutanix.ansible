@@ -1,0 +1,861 @@
+---
+- name: Start ntnx_power_actions_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_power_actions_v2 tests
+
+- name: Set random name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+
+- name: Create VM to test the power actions
+  ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    memory_size_bytes: 4294967296
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 4294967296
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ ngt_config.image_uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
+    cd_roms:
+      - disk_address:
+          bus_type: IDE
+          index: 0
+    nics:
+      - network_info:
+          nic_type: "NORMAL_NIC"
+          vlan_mode: "ACCESS"
+          subnet:
+            ext_id: "{{ network.dhcp.uuid }}"
+    boot_config:
+      legacy_boot:
+        boot_order: ["CDROM", "DISK", "NETWORK"]
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.memory_size_bytes == 4294967296
+      - result.response.disks[0].backing_info.data_source.reference.image_ext_id == "{{ ngt_config.image_uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 0
+      - result.response.cd_roms[0].disk_address.bus_type == "IDE"
+      - result.response.cd_roms[0].disk_address.index == 0
+      - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
+      - result.response.boot_config.boot_order[0] == "CDROM"
+      - result.response.boot_config.boot_order[1] == "DISK"
+      - result.response.boot_config.boot_order[2] == "NETWORK"
+    fail_msg: "Unable to Create VM  "
+    success_msg: "VM is created successfully "
+
+- name: Get VM UUID
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+
+################################################################################
+
+- name: Power off VM
+  ntnx_vms_power_actions_v2:
+    state: power_off
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Power off Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.changed == false
+      - result.failed == false
+      - result.msg == 'Nothing to change.'
+      - result.skipped == true
+    fail_msg: "Unable to Power off VM "
+    success_msg: "VM is powered off successfully "
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not powered off "
+    success_msg: "VM is powered off successfully "
+
+###############################################################################
+
+- name: Power on VM
+  ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Power on Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power on VM "
+    success_msg: "VM is powered on successfully "
+
+- name: Sleep for 20 seconds until VM is powered on
+  ansible.builtin.pause:
+    seconds: 20
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+    fail_msg: "VM is not powered on "
+    success_msg: "VM is powered on successfully "
+
+################################################################################
+
+- name: Get VM info and check if IP address is assigned
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value is defined
+
+- name: Get VM info and check if IP address is assigned Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value is defined
+    fail_msg: "Unable to get VM info and check if IP address is assigned  "
+    success_msg: "VM info is retrieved successfully and IP address is assigned "
+
+# #################################################################################
+
+- name: Install NGT in VM
+  ntnx_vms_ngt_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - "VSS_SNAPSHOT"
+      - "SELF_SERVICE_RESTORE"
+    credential:
+      username: "{{ VM_username }}"
+      password: "{{ VM_password }}"
+    reboot_preference:
+      schedule_type: "IMMEDIATE"
+  register: result
+  ignore_errors: true
+
+- name: Install NGT in VM Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - "'VSS_SNAPSHOT' in result.response.capabilities"
+      - "'SELF_SERVICE_RESTORE' in result.response.capabilities"
+      - result.response.capabilities | length == 2
+      - result.task_ext_id is defined
+    fail_msg: "Unable to install NGT in VM "
+    success_msg: "NGT is installed successfully "
+
+#################################################################################
+
+- name: Sleep for 2 minutes until NGT is installed completely
+  ansible.builtin.pause:
+    minutes: 2
+
+- name: Power off VM
+  ntnx_vms_power_actions_v2:
+    state: power_off
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Power off Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power off VM "
+    success_msg: "VM is powered off successfully "
+
+- name: Sleep for 15 seconds until VM is powered off
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not powered off "
+    success_msg: "VM is powered off successfully "
+
+################################################################################
+
+- name: Shutdown VM using acpi
+  ntnx_vms_power_actions_v2:
+    state: shutdown
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Shutdown Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.changed == false
+      - result.failed == false
+      - result.msg == 'Nothing to change.'
+      - result.skipped == true
+    fail_msg: "Unable to shutdown VM using acpi "
+    success_msg: "VM is shutdown successfully "
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not shutdown "
+    success_msg: "VM is shutdown successfully "
+
+################################################################################
+
+- name: Shutdown VM using ngt
+  ntnx_vms_power_actions_v2:
+    state: guest_shutdown
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Shutdown Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.changed == false
+      - result.failed == false
+      - result.msg == 'Nothing to change.'
+      - result.skipped == true
+    fail_msg: "Unable to shutdown VM using ngt "
+    success_msg: "VM is shutdown successfully "
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not shutdown "
+    success_msg: "VM is shutdown successfully "
+
+################################################################################
+
+- name: Generate spec for rebooting VM using ngt with check mode
+  ntnx_vms_power_actions_v2:
+    state: guest_reboot
+    ext_id: "0005a7b8-0b0b-4b3b-0000-000000000000"
+    guest_power_state_transition_config:
+      should_enable_script_exec: true
+      should_fail_on_script_failure: false
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for rebooting VM using ngt with check mode Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.guest_power_state_transition_config.should_enable_script_exec == true
+      - result.response.guest_power_state_transition_config.should_fail_on_script_failure == false
+    fail_msg: "Unable to generate spec for rebooting VM using ngt with check mode "
+    success_msg: "Spec for rebooting VM using ngt with check mode is generated successfully "
+
+- name: Rebooting VM using ngt
+  ntnx_vms_power_actions_v2:
+    state: guest_reboot
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Reboot Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == 'Nothing to change.'
+      - result.skipped == true
+    fail_msg: "Unable to reboot VM using ngt "
+    success_msg: "VM is rebooted successfully "
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not rebooted "
+    success_msg: "VM is rebooted successfully "
+
+################################################################################
+
+- name: Rebooting VM using acpi
+  ntnx_vms_power_actions_v2:
+    state: reboot
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Reboot Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == 'Nothing to change.'
+      - result.skipped == true
+    fail_msg: "Unable to reboot VM using acpi "
+    success_msg: "VM is rebooted successfully "
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not rebooted "
+    success_msg: "VM is rebooted successfully "
+
+################################################################################
+
+- name: Force power cycle
+  ntnx_vms_power_actions_v2:
+    state: force_power_cycle
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Force power cycle Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == 'Nothing to change.'
+      - result.skipped == true
+    fail_msg: "Unable to perform force power cycle on VM "
+    success_msg: "Force power cycle on VM is completed successfully "
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not power cycled "
+    success_msg: "VM is power cycled successfully "
+
+################################################################################
+
+- name: Resetting VM
+  ntnx_vms_power_actions_v2:
+    state: reset
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Reset Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == 'Nothing to change.'
+      - result.skipped == true
+    fail_msg: "Unable to reset VM "
+    success_msg: "Reset VM is completed successfully "
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not reset "
+    success_msg: "VM is reset successfully "
+
+################################################################################
+
+- name: Power on VM
+  ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Power on Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power on VM "
+    success_msg: "VM is powered on successfully "
+
+- name: Sleep for 20 seconds until VM is powered on
+  ansible.builtin.pause:
+    seconds: 20
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+    fail_msg: "VM is not powered on "
+    success_msg: "VM is powered on successfully "
+
+################################################################################
+
+- name: Sleep for 30 seconds before rebooting VM
+  ansible.builtin.pause:
+    seconds: 30
+
+- name: Rebooting VM using ngt
+  ntnx_vms_power_actions_v2:
+    state: guest_reboot
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Reboot Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Failed to reboot VM using ngt"
+    success_msg: "Reboot VM using ngt is completed successfully"
+
+- name: Sleep for 15 seconds until VM is rebooted
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+    fail_msg: "VM is not powered on "
+    success_msg: "VM is powered on successfully "
+
+################################################################################
+
+- name: Sleep for 30 seconds before rebooting VM
+  ansible.builtin.pause:
+    seconds: 30
+
+- name: Rebooting VM using acpi
+  ntnx_vms_power_actions_v2:
+    state: reboot
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Reboot Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Failed to reboot VM using acpi"
+    success_msg: "Reboot VM using acpi is completed successfully"
+
+- name: Sleep for 15 seconds until VM is rebooted
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+    fail_msg: "VM is not powered on "
+    success_msg: "VM is powered on successfully "
+
+################################################################################
+
+- name: Resetting VM
+  ntnx_vms_power_actions_v2:
+    state: reset
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Reset Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Failed reset VM"
+    success_msg: "Reset VM is completed successfully"
+
+- name: Sleep for 15 seconds until VM is reset
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+    fail_msg: "VM is not powered on "
+    success_msg: "VM is powered on successfully "
+
+################################################################################
+
+- name: Force power cycle
+  ntnx_vms_power_actions_v2:
+    state: force_power_cycle
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Force power cycle Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Failed to perform force power cycle on VM"
+    success_msg: "Force power cycle on VM is completed successfully"
+
+- name: Sleep for 20 seconds until VM is powered on
+  ansible.builtin.pause:
+    seconds: 20
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+    fail_msg: "VM is not powered on "
+    success_msg: "VM is powered on successfully "
+
+################################################################################
+
+- name: Sleep for 30 seconds before shutting down VM
+  ansible.builtin.pause:
+    seconds: 30
+
+- name: Shutdown VM using acpi
+  ntnx_vms_power_actions_v2:
+    state: shutdown
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Shutdown Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Failed to shutdown VM using acpi"
+    success_msg: "Shutdown VM using acpi is completed successfully"
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+  until: result.response.power_state == 'OFF'
+  retries: 60
+  delay: 1
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not powered off "
+    success_msg: "VM is powered off successfully "
+
+################################################################################
+
+- name: Power on VM
+  ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Power on Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power on VM "
+    success_msg: "VM is powered on successfully "
+
+- name: Sleep for 20 seconds until VM is powered on
+  ansible.builtin.pause:
+    seconds: 20
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+    fail_msg: "VM is not powered on "
+    success_msg: "VM is powered on successfully "
+
+###############################################################################
+
+- name: Sleep for 30 seconds before shutting down VM
+  ansible.builtin.pause:
+    seconds: 30
+
+- name: Generate spec for shutting down VM using ngt with check mode
+  ntnx_vms_power_actions_v2:
+    state: guest_shutdown
+    ext_id: "0005a7b8-0b0b-4b3b-1234-847530000000"
+    guest_power_state_transition_config:
+      should_enable_script_exec: false
+      should_fail_on_script_failure: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for shutting down VM using ngt with check mode Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.guest_power_state_transition_config.should_enable_script_exec == false
+      - result.response.guest_power_state_transition_config.should_fail_on_script_failure == true
+    fail_msg: "Unable to generate spec for shutting down VM using ngt with check mode "
+    success_msg: "Spec for shutting down VM using ngt with check mode is generated successfully "
+
+- name: Shutdown VM using ngt
+  ntnx_vms_power_actions_v2:
+    state: guest_shutdown
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Shutdown Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Failed to shutdown VM using ngt"
+    success_msg: "Shutdown VM using ngt is completed successfully"
+
+- name: Sleep for 15 seconds until VM is powered off
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not powered off "
+    success_msg: "VM is powered off successfully "
+
+################################################################################
+
+- name: Delete the VM
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "

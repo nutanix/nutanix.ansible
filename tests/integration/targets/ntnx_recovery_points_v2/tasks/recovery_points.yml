@@ -1,0 +1,1085 @@
+---
+- name: Start recovery points related tests
+  ansible.builtin.debug:
+    msg: Start recovery points related tests
+
+- name: Generate random category key & value
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set recovery point name suffix
+  ansible.builtin.set_fact:
+    prefix_name: ansible_test
+
+- name: Set recovery and VM names and todelete lists
+  ansible.builtin.set_fact:
+    vm_todelete: []
+    recovery_point_todelete: []
+    vg_todelete: []
+    recovery_point_name: "{{ prefix_name }}_{{ random_name }}"
+    vm_name: "{{ prefix_name }}_{{ random_name }}_vm"
+    vg_name: "{{ prefix_name }}_{{ random_name }}_vg"
+
+- name: Get current time in ISO-8601 format and set expiration time after a month
+  ansible.builtin.set_fact:
+    expiration_time: '{{ lookup(''pipe'', ''date -d "+1 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+
+########################################################################################################
+
+- name: Create first VM
+  ntnx_vms_v2:
+    name: "{{ vm_name }}_1"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}_1"
+      - result.response.description == "ansible test"
+    fail_msg: " Unable to Create first VM "
+    success_msg: "first VM is created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    vm_todelete: '{{ vm_todelete + [result["ext_id"]] }}'
+    vm_ext_id_1: '{{ result["ext_id"] }}'
+
+########################################################################################################
+
+- name: Create second VM
+  ntnx_vms_v2:
+    name: "{{ vm_name }}_2"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}_2"
+      - result.response.description == "ansible test"
+    fail_msg: " Unable to Create second VM "
+    success_msg: "second VM is created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    vm_todelete: '{{ vm_todelete + [result["ext_id"]] }}'
+    vm_ext_id_2: '{{ result["ext_id"] }}'
+
+########################################################################################################
+
+- name: Create first Volume group
+  ntnx_volume_groups_v2:
+    name: "{{ vg_name }}_1"
+    description: "Volume group"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify creation of VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id == result.response.ext_id
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vg_name }}_1"
+      - result.response.description == "Volume group"
+      - result.response.should_load_balance_vm_attachments == false
+      - result.response.sharing_status == None
+    fail_msg: "Unable to create VG"
+    success_msg: "VG created successfully"
+
+- name: Adding VG to todelete list
+  ansible.builtin.set_fact:
+    vg_todelete: '{{ vg_todelete + [result["ext_id"]] }}'
+    vg_ext_id_1: '{{ result["ext_id"] }}'
+
+########################################################################################################
+
+- name: Create second Volume group
+  ntnx_volume_groups_v2:
+    name: "{{ vg_name }}_2"
+    description: "Volume group"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify creation of VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id == result.response.ext_id
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vg_name }}_2"
+      - result.response.description == "Volume group"
+      - result.response.should_load_balance_vm_attachments == false
+      - result.response.sharing_status == None
+    fail_msg: "Unable to create VG"
+    success_msg: "VG created successfully"
+
+- name: Adding VG to todelete list
+  ansible.builtin.set_fact:
+    vg_todelete: '{{ vg_todelete + [result["ext_id"]] }}'
+    vg_ext_id_2: '{{ result["ext_id"] }}'
+
+########################################################################################################
+
+- name: Create VM recovery point with check mode enabled
+  ntnx_recovery_points_v2:
+    name: "Recovery Point"
+    expiration_time: "2024-09-30T14:15:22+00:00"
+    recovery_point_type: "APPLICATION_CONSISTENT"
+    vm_recovery_points:
+      - vm_ext_id: 15a06f9e-1371-4486-99e5-0d27855ee7ba
+        application_consistent_properties:
+          application_consistent_properties_spec:
+            backup_type: "FULL_BACKUP"
+            should_include_writers: true
+            writers:
+              - 0f95b402-67aa-431c-9eab-bf0907a99345
+              - 87e74c5f-2a51-48f5-a74a-ab121923f6d8
+            should_store_vss_metadata: true
+    volume_group_recovery_points:
+      - volume_group_ext_id: 6aeec7b5-6ab6-4eb6-acf9-cf1e8b14a0b8
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Create VM recovery point with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.response is defined
+      - result.response.name == "Recovery Point"
+      - result.response.expiration_time == "2024-09-30T14:15:22+00:00"
+      - result.response.recovery_point_type == "APPLICATION_CONSISTENT"
+      - result.response.vm_recovery_points[0].vm_ext_id == "15a06f9e-1371-4486-99e5-0d27855ee7ba"
+      - result.response.vm_recovery_points[0].application_consistent_properties.backup_type == "FULL_BACKUP"
+      - result.response.vm_recovery_points[0].application_consistent_properties.should_include_writers == true
+      - >
+        result.response.vm_recovery_points[0].application_consistent_properties.writers ==
+         ["0f95b402-67aa-431c-9eab-bf0907a99345", "87e74c5f-2a51-48f5-a74a-ab121923f6d8"]
+      - result.response.vm_recovery_points[0].application_consistent_properties.should_store_vss_metadata == true
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id == "6aeec7b5-6ab6-4eb6-acf9-cf1e8b14a0b8"
+    fail_msg: "Unable to create VM recovery point with check mode enabled"
+    success_msg: "VM recovery point created successfully with check mode enabled"
+
+########################################################################################################
+
+- name: Create VM recovery point
+  ntnx_recovery_points_v2:
+    name: "{{ recovery_point_name }}_1"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    vm_recovery_points:
+      - vm_ext_id: "{{ vm_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Set actual and expected expiration time in seconds
+  ansible.builtin.set_fact:
+    actual_expiration_time: "{{ lookup('pipe', 'date -d ' ~ expiration_time ~ ' +%s') | int }}"
+    expected_expiration_time: "{{ lookup('pipe', 'date -d ' ~ result.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Create VM recovery point status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.name == "{{ recovery_point_name }}_1"
+      - actual_expiration_time == expected_expiration_time
+      - result.response.status == "COMPLETE"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.vm_recovery_points[0].vm_ext_id == "{{ vm_ext_id_1 }}"
+    fail_msg: "Unable to create VM recovery point"
+    success_msg: "VM recovery point created successfully"
+
+- name: Add recovery point to todelete list
+  ansible.builtin.set_fact:
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_1: '{{ result["ext_id"] }}'
+
+########################################################################################################
+
+- name: Create VM recovery point with multiple VMs
+  ntnx_recovery_points_v2:
+    name: "{{ recovery_point_name }}_2"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    vm_recovery_points:
+      - vm_ext_id: "{{ vm_ext_id_1 }}"
+      - vm_ext_id: "{{ vm_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Set actual and expected expiration time in seconds
+  ansible.builtin.set_fact:
+    actual_expiration_time: "{{ lookup('pipe', 'date -d ' ~ expiration_time ~ ' +%s') | int }}"
+    expected_expiration_time: "{{ lookup('pipe', 'date -d ' ~ result.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Create VM recovery point with multiple VMs status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.name == "{{ recovery_point_name }}_2"
+      - actual_expiration_time == expected_expiration_time
+      - result.response.status == "COMPLETE"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.vm_recovery_points[0].vm_ext_id in "{{ vm_todelete[0:2] }}"
+      - result.response.vm_recovery_points[1].vm_ext_id in "{{ vm_todelete[0:2] }}"
+    fail_msg: "Unable to create VM recovery point with multiple VMs"
+    success_msg: "VM recovery point created successfully with multiple VMs"
+
+- name: Add recovery point to todelete list
+  ansible.builtin.set_fact:
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_2: '{{ result["ext_id"] }}'
+
+########################################################################################################
+
+- name: Create VG recovery point
+  ntnx_recovery_points_v2:
+    name: "{{ recovery_point_name }}_3"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    volume_group_recovery_points:
+      - volume_group_ext_id: "{{ vg_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Set actual and expected expiration time in seconds
+  ansible.builtin.set_fact:
+    actual_expiration_time: "{{ lookup('pipe', 'date -d ' ~ expiration_time ~ ' +%s') | int }}"
+    expected_expiration_time: "{{ lookup('pipe', 'date -d ' ~ result.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Create VG recovery point status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.name == "{{ recovery_point_name }}_3"
+      - actual_expiration_time == expected_expiration_time
+      - result.response.status == "COMPLETE"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id == "{{ vg_ext_id_1 }}"
+    fail_msg: "Unable to create VG recovery point"
+    success_msg: "VG recovery point created successfully"
+
+- name: Add recovery point to todelete list
+  ansible.builtin.set_fact:
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_3: '{{ result["ext_id"] }}'
+
+########################################################################################################
+
+- name: Create VG recovery point with multiple VGs
+  ntnx_recovery_points_v2:
+    name: "{{ recovery_point_name }}_4"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    volume_group_recovery_points:
+      - volume_group_ext_id: "{{ vg_ext_id_1 }}"
+      - volume_group_ext_id: "{{ vg_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Set actual and expected expiration time in seconds
+  ansible.builtin.set_fact:
+    actual_expiration_time: "{{ lookup('pipe', 'date -d ' ~ expiration_time ~ ' +%s') | int }}"
+    expected_expiration_time: "{{ lookup('pipe', 'date -d ' ~ result.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Create VG recovery point with multiple VGs status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.name == "{{ recovery_point_name }}_4"
+      - actual_expiration_time == expected_expiration_time
+      - result.response.status == "COMPLETE"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
+      - result.response.volume_group_recovery_points[1].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
+    fail_msg: "Unable to create VG recovery point with multiple VGs"
+    success_msg: "VG recovery point created successfully with multiple VGs"
+
+- name: Add recovery point to todelete list
+  ansible.builtin.set_fact:
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_4: '{{ result["ext_id"] }}'
+
+########################################################################################################
+
+- name: Create recovery point with multiple VMs and VGs
+  ntnx_recovery_points_v2:
+    name: "{{ recovery_point_name }}_5"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    vm_recovery_points:
+      - vm_ext_id: "{{ vm_ext_id_1 }}"
+      - vm_ext_id: "{{ vm_ext_id_2 }}"
+    volume_group_recovery_points:
+      - volume_group_ext_id: "{{ vg_ext_id_1 }}"
+      - volume_group_ext_id: "{{ vg_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Set actual and expected expiration time in seconds
+  ansible.builtin.set_fact:
+    actual_expiration_time: "{{ lookup('pipe', 'date -d ' ~ expiration_time ~ ' +%s') | int }}"
+    expected_expiration_time: "{{ lookup('pipe', 'date -d ' ~ result.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Create recovery point with multiple VMs and VGs status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.name == "{{ recovery_point_name }}_5"
+      - actual_expiration_time == expected_expiration_time
+      - result.response.status == "COMPLETE"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.vm_recovery_points[0].vm_ext_id in "{{ vm_todelete[0:2] }}"
+      - result.response.vm_recovery_points[1].vm_ext_id in "{{ vm_todelete[0:2] }}"
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
+      - result.response.volume_group_recovery_points[1].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
+      - result.task_ext_id is defined
+    fail_msg: "Unable to create recovery point with multiple VMs and VGs"
+    success_msg: "Recovery point created successfully with multiple VMs and VGs"
+
+- name: Add recovery point to todelete list
+  ansible.builtin.set_fact:
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_5: '{{ result["ext_id"] }}'
+
+########################################################################################################
+
+- name: Get current time in ISO-8601 format and set updated expiration time after two months
+  ansible.builtin.set_fact:
+    expiration_time_updated: '{{ lookup(''pipe'', ''date -d "+2 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+
+- name: Update recovery point expiration time with check mode enabled
+  ntnx_recovery_points_v2:
+    ext_id: "{{ recovery_point_ext_id_1 }}"
+    expiration_time: "2024-09-30T14:15:22+00:00"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Update recovery point expiration time with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.ext_id == "{{ recovery_point_ext_id_1 }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ recovery_point_ext_id_1 }}"
+      - result.response.expiration_time == "2024-09-30T14:15:22+00:00"
+    fail_msg: "Unable to update recovery point expiration time with check mode enabled"
+    success_msg: "Recovery point expiration time updated successfully with check mode enabled"
+
+########################################################################################################
+
+- name: Update recovery point expiration time
+  ntnx_recovery_points_v2:
+    ext_id: "{{ recovery_point_ext_id_1 }}"
+    expiration_time: "{{ expiration_time_updated }}"
+  register: result
+  ignore_errors: true
+
+- name: Set actual and expected expiration time in seconds
+  ansible.builtin.set_fact:
+    actual_expiration_time: "{{ lookup('pipe', 'date -d ' ~ expiration_time_updated ~ ' +%s') | int }}"
+    expected_expiration_time: "{{ lookup('pipe', 'date -d ' ~ result.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Update recovery point expiration time status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id == "{{ recovery_point_ext_id_1 }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ recovery_point_ext_id_1 }}"
+      - actual_expiration_time == expected_expiration_time
+    fail_msg: "Unable to update recovery point expiration time"
+    success_msg: "Recovery point expiration time updated successfully"
+
+#######################################################################################################
+
+- name: Check idempotency by updating recovery point expiration time with the same value
+  ntnx_recovery_points_v2:
+    ext_id: "{{ recovery_point_ext_id_1 }}"
+    expiration_time: "{{ expiration_time_updated }}"
+  register: result
+  ignore_errors: true
+
+- name: Check idempotency by updating recovery point expiration time with the same value status
+  ansible.builtin.assert:
+    that:
+      - result.skipped == true
+      - result.response is defined
+      - result.msg == "Nothing to change."
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+#######################################################################################################
+
+- name: Get current time in ISO-8601 format and set updated expiration time after three months
+  ansible.builtin.set_fact:
+    expiration_time_updated: '{{ lookup(''pipe'', ''date -d "+3 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+
+- name: Check if expiration time is updated but name is same
+  ntnx_recovery_points_v2:
+    ext_id: "{{ recovery_point_ext_id_1 }}"
+    expiration_time: "{{ expiration_time_updated }}"
+    name: "{{ recovery_point_name }}_updated"
+  register: result
+  ignore_errors: true
+
+- name: Set actual and expected expiration time in seconds
+  ansible.builtin.set_fact:
+    actual_expiration_time: "{{ lookup('pipe', 'date -d ' ~ expiration_time_updated ~ ' +%s') | int }}"
+    expected_expiration_time: "{{ lookup('pipe', 'date -d ' ~ result.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Check if expiration time is updated but name is same status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.response is defined
+      - result.ext_id == "{{ recovery_point_ext_id_1 }}"
+      - result.response.ext_id == "{{ recovery_point_ext_id_1 }}"
+      - actual_expiration_time == expected_expiration_time
+      - result.response.name == "{{ recovery_point_name }}_1"
+      - result.warning == "Only Expiration time Updation is allowed. Can't update other fields."
+    fail_msg: "Check if expiration time is updated but name is same failed"
+    success_msg: "Check if expiration time is updated but name is same passed"
+
+#######################################################################################################
+
+- name: Check for name is changed but expiration time is same
+  ntnx_recovery_points_v2:
+    ext_id: "{{ recovery_point_ext_id_1 }}"
+    expiration_time: "{{ expiration_time_updated }}"
+    name: "{{ recovery_point_name }}_updated"
+  register: result
+  ignore_errors: true
+
+- name: Check for name is changed but expiration time is same status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.msg == "Update of other operations is not supported. Only updation of Expiration time is allowed."
+    fail_msg: "Updated name but expiration time is same"
+    success_msg: "Didn't update name as expiration time is same"
+
+#######################################################################################################
+
+- name: Check if Expiration time is not passed for update
+  ntnx_recovery_points_v2:
+    ext_id: "{{ recovery_point_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Check if Expiration time is not passed for update status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.error == "Expiration time is required for updating recovery point and other fields can't be updated."
+      - result.msg == "Expiration time is required"
+    fail_msg: "Expiration time is not passed for update test failed"
+    success_msg: "Expiration time is not passed for update test passed"
+
+#######################################################################################################
+
+- name: Get recovery point details and set recovery point restore external ID for one VM
+  ntnx_recovery_points_info_v2:
+    ext_id: "{{ recovery_point_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Get recovery point details status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.ext_id == "{{ recovery_point_ext_id_1 }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ recovery_point_ext_id_1 }}"
+      - result.response.name == "{{ recovery_point_name }}_1"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.vm_recovery_points[0].vm_ext_id == "{{ vm_ext_id_1 }}"
+      - result.response.vm_recovery_points[0].ext_id is defined
+    fail_msg: "Unable to get recovery point details"
+    success_msg: "Recovery point details fetched successfully"
+
+- name: Set recovery point restore external ID
+  ansible.builtin.set_fact:
+    vm_restore_ext_id: "{{ result.response.vm_recovery_points[0].ext_id }}"
+
+- name: Restore recovery point for one VM
+  ntnx_recovery_point_restore_v2:
+    ext_id: "{{ recovery_point_ext_id_1 }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    vm_recovery_point_restore_overrides:
+      - vm_recovery_point_ext_id: "{{ vm_restore_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Add Newly created VM to todelete list
+  ansible.builtin.set_fact:
+    vm_todelete: '{{ vm_todelete + [result["vms_ext_ids"]] }}'
+
+- name: Restore recovery point for one VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.response is defined
+      - result.ext_id == "{{ recovery_point_ext_id_1 }}"
+      - result.response.completion_details | length == 1
+      - result.response.entities_affected | length == 1
+      - result.response.entities_affected[0].ext_id == "{{ recovery_point_ext_id_1 }}"
+      - result.response.status == "SUCCEEDED"
+      - result.task_ext_id is defined
+    fail_msg: "Unable to restore VM recovery point for one VM"
+    success_msg: "recovery point for one VM is restored successfully"
+
+########################################################################################################
+# Testing the restore module for multiple VMs
+- name: Get recovery point details and set recovery point restore external ID for multiple VMs
+  ntnx_recovery_points_info_v2:
+    ext_id: "{{ recovery_point_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Get recovery point details status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.ext_id == "{{ recovery_point_ext_id_2 }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ recovery_point_ext_id_2 }}"
+      - result.response.name == "{{ recovery_point_name }}_2"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.vm_recovery_points[0].vm_ext_id in "{{ vm_todelete[0:2] }}"
+      - result.response.vm_recovery_points[1].vm_ext_id in "{{ vm_todelete[0:2] }}"
+      - result.response.vm_recovery_points[0].ext_id is defined
+      - result.response.vm_recovery_points[1].ext_id is defined
+    fail_msg: "Unable to get recovery point details"
+    success_msg: "Recovery point details fetched successfully"
+
+- name: Set recovery point restore external ID
+  ansible.builtin.set_fact:
+    vm_restore_ext_id_1: "{{ result.response.vm_recovery_points[0].ext_id }}"
+    vm_restore_ext_id_2: "{{ result.response.vm_recovery_points[1].ext_id }}"
+
+- name: Restore recovery point for multiple VMs
+  ntnx_recovery_point_restore_v2:
+    ext_id: "{{ recovery_point_ext_id_2 }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    vm_recovery_point_restore_overrides:
+      - vm_recovery_point_ext_id: "{{ vm_restore_ext_id_1 }}"
+      - vm_recovery_point_ext_id: "{{ vm_restore_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Define new VMs ext ids
+  ansible.builtin.set_fact:
+    vms_ext_ids: "{{ result.vms_ext_ids.split(',') }}"
+
+- name: Add Newly created VMs to todelete list
+  ansible.builtin.set_fact:
+    vm_todelete: "{{ vm_todelete + vms_ext_ids }}"
+
+- name: Restore recovery point for multiple VMs status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.response is defined
+      - result.ext_id == "{{ recovery_point_ext_id_2 }}"
+      - result.vms_ext_ids.split(',') | length == 2
+      - result.response.status == "SUCCEEDED"
+      - result.task_ext_id is defined
+    fail_msg: "Unable to restore VM recovery point for multiple VMs"
+    success_msg: "recovery point for multiple VMs is restored successfully"
+
+########################################################################################################
+
+- name: Get recovery point details and set recovery point restore external ID for one VG
+  ntnx_recovery_points_info_v2:
+    ext_id: "{{ recovery_point_ext_id_3 }}"
+  register: result
+  ignore_errors: true
+
+- name: Get recovery point details status
+
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.ext_id == "{{ recovery_point_ext_id_3 }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ recovery_point_ext_id_3 }}"
+      - result.response.name == "{{ recovery_point_name }}_3"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id == "{{ vg_ext_id_1 }}"
+      - result.response.volume_group_recovery_points[0].ext_id is defined
+    fail_msg: "Unable to get recovery point details"
+    success_msg: "Recovery point details fetched successfully"
+
+- name: Set recovery point restore external ID
+  ansible.builtin.set_fact:
+    vg_restore_ext_id: "{{ result.response.volume_group_recovery_points[0].ext_id }}"
+
+- name: Restore recovery point for one VG
+  ntnx_recovery_point_restore_v2:
+    ext_id: "{{ recovery_point_ext_id_3 }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    volume_group_recovery_point_restore_overrides:
+      - volume_group_recovery_point_ext_id: "{{ vg_restore_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Add Newly created VG to todelete list
+  ansible.builtin.set_fact:
+    vg_todelete: '{{ vg_todelete + [result["vgs_ext_ids"]] }}'
+
+- name: Restore recovery point for one VG status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.response is defined
+      - result.ext_id == "{{ recovery_point_ext_id_3 }}"
+      - result.response.completion_details | length == 1
+      - result.response.entities_affected | length == 1
+      - result.response.entities_affected[0].ext_id == "{{ recovery_point_ext_id_3 }}"
+      - result.response.status == "SUCCEEDED"
+      - result.task_ext_id is defined
+    fail_msg: "Unable to restore VG recovery point for one VG"
+    success_msg: "recovery point for one VG is restored successfully"
+
+########################################################################################################
+
+- name: Get recovery point details and set recovery point restore external ID for multiple VGs
+  ntnx_recovery_points_info_v2:
+    ext_id: "{{ recovery_point_ext_id_4 }}"
+  register: result
+  ignore_errors: true
+
+- name: Get recovery point details status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.ext_id == "{{ recovery_point_ext_id_4 }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ recovery_point_ext_id_4 }}"
+      - result.response.name == "{{ recovery_point_name }}_4"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
+      - result.response.volume_group_recovery_points[1].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
+      - result.response.volume_group_recovery_points[0].ext_id is defined
+      - result.response.volume_group_recovery_points[1].ext_id is defined
+    fail_msg: "Unable to get recovery point details"
+    success_msg: "Recovery point details fetched successfully"
+
+- name: Set recovery point restore external ID
+  ansible.builtin.set_fact:
+    vg_restore_ext_id_1: "{{ result.response.volume_group_recovery_points[0].ext_id }}"
+    vg_restore_ext_id_2: "{{ result.response.volume_group_recovery_points[1].ext_id }}"
+
+- name: Restore recovery point for multiple VGs
+  ntnx_recovery_point_restore_v2:
+    ext_id: "{{ recovery_point_ext_id_4 }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    volume_group_recovery_point_restore_overrides:
+      - volume_group_recovery_point_ext_id: "{{ vg_restore_ext_id_1 }}"
+      - volume_group_recovery_point_ext_id: "{{ vg_restore_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Define new VGs ext ids
+  ansible.builtin.set_fact:
+    vgs_ext_ids: "{{ result.vgs_ext_ids.split(',') }}"
+
+- name: Add Newly created VGs to todelete list
+  ansible.builtin.set_fact:
+    vg_todelete: "{{ vg_todelete + vgs_ext_ids }}"
+
+- name: Restore recovery point for multiple VGs status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.response is defined
+      - result.ext_id == "{{ recovery_point_ext_id_4 }}"
+      - result.response.completion_details[0].value.split(',') | length == 2
+      - result.response.entities_affected | length == 1
+      - result.response.entities_affected[0].ext_id == "{{ recovery_point_ext_id_4 }}"
+      - result.response.status == "SUCCEEDED"
+      - result.task_ext_id is defined
+    fail_msg: "Unable to restore VG recovery point for multiple VGs"
+    success_msg: "recovery point for multiple VGs is restored successfully"
+
+########################################################################################################
+
+- name: Get recovery point details and set recovery point restore external ID for multiple VMs and VGs
+  ntnx_recovery_points_info_v2:
+    ext_id: "{{ recovery_point_ext_id_5 }}"
+  register: result
+  ignore_errors: true
+
+- name: Get recovery point details status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.ext_id == "{{ recovery_point_ext_id_5 }}"
+      - result.response is defined
+      - result.response.ext_id == "{{ recovery_point_ext_id_5 }}"
+      - result.response.name == "{{ recovery_point_name }}_5"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.vm_recovery_points | length == 2
+      - result.response.volume_group_recovery_points | length == 2
+      - result.response.vm_recovery_points[0].vm_ext_id in "{{ vm_todelete }}"
+      - result.response.vm_recovery_points[1].vm_ext_id in "{{ vm_todelete }}"
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id in "{{ vg_todelete }}"
+      - result.response.volume_group_recovery_points[1].volume_group_ext_id in "{{ vg_todelete }}"
+      - result.response.vm_recovery_points[0].ext_id is defined
+      - result.response.vm_recovery_points[1].ext_id is defined
+      - result.response.volume_group_recovery_points[0].ext_id is defined
+      - result.response.volume_group_recovery_points[1].ext_id is defined
+    fail_msg: "Unable to get recovery point details"
+    success_msg: "Recovery point details fetched successfully"
+
+- name: Set recovery point restore external ID
+  ansible.builtin.set_fact:
+    vm_restore_ext_id_1: "{{ result.response.vm_recovery_points[0].ext_id }}"
+    vm_restore_ext_id_2: "{{ result.response.vm_recovery_points[1].ext_id }}"
+    vg_restore_ext_id_1: "{{ result.response.volume_group_recovery_points[0].ext_id }}"
+    vg_restore_ext_id_2: "{{ result.response.volume_group_recovery_points[1].ext_id }}"
+
+- name: Restore recovery point for multiple VMs and VGs
+  ntnx_recovery_point_restore_v2:
+    ext_id: "{{ recovery_point_ext_id_5 }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    vm_recovery_point_restore_overrides:
+      - vm_recovery_point_ext_id: "{{ vm_restore_ext_id_1 }}"
+      - vm_recovery_point_ext_id: "{{ vm_restore_ext_id_2 }}"
+    volume_group_recovery_point_restore_overrides:
+      - volume_group_recovery_point_ext_id: "{{ vg_restore_ext_id_1 }}"
+      - volume_group_recovery_point_ext_id: "{{ vg_restore_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Define new VMs ext ids
+  ansible.builtin.set_fact:
+    vms_ext_ids: "{{ result.vms_ext_ids.split(',') }}"
+
+- name: Define new VGs ext ids
+  ansible.builtin.set_fact:
+    vgs_ext_ids: "{{ result.vgs_ext_ids.split(',') }}"
+
+- name: Add Newly created VMs to todelete list
+  ansible.builtin.set_fact:
+    vm_todelete: "{{ vm_todelete + vms_ext_ids }}"
+
+- name: Add Newly created VGs to todelete list
+  ansible.builtin.set_fact:
+    vg_todelete: "{{ vg_todelete + vgs_ext_ids }}"
+
+- name: Restore recovery point for multiple VMs and VGs status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.response is defined
+      - result.ext_id == "{{ recovery_point_ext_id_5 }}"
+      - result.response.completion_details | length == 2
+      - result.response.entities_affected | length == 1
+      - result.response.entities_affected[0].ext_id == "{{ recovery_point_ext_id_5 }}"
+      - result.response.status == "SUCCEEDED"
+      - result.task_ext_id is defined
+    fail_msg: "Unable to restore recovery point for multiple VMs and VGs"
+    success_msg: "recovery point for multiple VMs and VGs is restored successfully"
+
+########################################################################################################
+
+- name: Replicate Recovery point
+  ntnx_recovery_point_replicate_v2:
+    ext_id: "{{ recovery_point_ext_id_5 }}"
+    pc_ext_id: "{{ pc_uuid }}"
+    cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Replicate Recovery point status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.response is defined
+      - result.response.cluster_ext_ids[0] == "{{ cluster.uuid }}"
+      - result.response.entities_affected | length >= 2
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to replicate recovery point"
+    success_msg: "Recovery point replicated successfully"
+
+########################################################################################################
+
+- name: Get recovery point details
+  ntnx_recovery_points_info_v2:
+    ext_id: "{{ recovery_point_ext_id_5 }}"
+  register: result
+  ignore_errors: true
+
+- name: Set actual and expected expiration time in seconds
+  ansible.builtin.set_fact:
+    actual_expiration_time: "{{ lookup('pipe', 'date -d ' ~ expiration_time ~ ' +%s') | int }}"
+    expected_expiration_time: "{{ lookup('pipe', 'date -d ' ~ result.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Get recovery point details status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.response is defined
+      - result.response.ext_id == "{{ recovery_point_ext_id_5 }}"
+      - result.response.name == "{{ recovery_point_name }}_5"
+      - actual_expiration_time == expected_expiration_time
+      - result.response.status == "COMPLETE"
+      - result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - result.response.vm_recovery_points | length == 2
+      - result.response.volume_group_recovery_points | length == 2
+      - result.response.vm_recovery_points[0].vm_ext_id in "{{ vm_todelete }}"
+      - result.response.vm_recovery_points[1].vm_ext_id in "{{ vm_todelete }}"
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id in "{{ vg_todelete }}"
+      - result.response.volume_group_recovery_points[1].volume_group_ext_id in "{{ vg_todelete }}"
+    fail_msg: "Unable to get recovery point details"
+    success_msg: "Recovery point details fetched successfully"
+
+########################################################################################################
+
+- name: Get a VM recovery point details
+  ntnx_vm_recovery_point_info_v2:
+    recovery_point_ext_id: "{{ recovery_point_ext_id_5 }}"
+    vm_recovery_point_ext_id: "{{ result.response.vm_recovery_points[0].ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get a VM recovery point details status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.ext_id is defined
+      - result.ext_id == "{{ vm_restore_ext_id_1 }}"
+      - result.response is defined
+      - result.recovery_point_ext_id == "{{ recovery_point_ext_id_5 }}"
+      - result.response.ext_id == "{{ vm_restore_ext_id_1 }}"
+      - result.response.vm_ext_id == "{{ vm_ext_id_1 }}"
+    fail_msg: "Unable to get VM recovery point details"
+    success_msg: "VM recovery point details fetched successfully"
+
+########################################################################################################
+
+- name: Revert a VM recovery point
+  ntnx_vm_revert_v2:
+    ext_id: "{{ vm_ext_id_1 }}"
+    vm_recovery_point_ext_id: "{{ vm_restore_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Revert a VM recovery point status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.response is defined
+      - result.response.ext_id is defined
+      - result.response.completion_details | length == 1
+      - result.response.entities_affected | length == 2
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to revert VM recovery point"
+    success_msg: "VM recovery point reverted successfully"
+
+########################################################################################################
+
+- name: Get recovery point using wrong external ID
+  ntnx_recovery_points_info_v2:
+    ext_id: "0dc3fd69-dc3c-4812-a8d3-9a77a20a0981"
+  register: result
+  ignore_errors: true
+
+- name: Get recovery point using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.response.data.error | length > 0
+      - result.status == 404
+    fail_msg: "Get recovery point using wrong external ID failed"
+    success_msg: "Get recovery point using wrong external ID passed"
+
+########################################################################################################
+
+- name: List all recovery points
+  ntnx_recovery_points_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all recovery points status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: "List all recovery points failed"
+    success_msg: "List all recovery points passed"
+
+########################################################################################################
+
+- name: List all recovery points with filter
+  ntnx_recovery_points_info_v2:
+    filter: "name eq '{{ recovery_point_name }}_1'"
+  register: result
+  ignore_errors: true
+
+- name: Set actual and expected expiration time in seconds
+  ansible.builtin.set_fact:
+    actual_expiration_time: "{{ lookup('pipe', 'date -d ' ~ expiration_time_updated ~ ' +%s') | int }}"
+    expected_expiration_time: "{{ lookup('pipe', 'date -d ' ~ result.response[0].expiration_time ~ ' +%s') | int }}"
+
+- name: List all recovery points with filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ recovery_point_name }}_1"
+      - actual_expiration_time == expected_expiration_time
+    fail_msg: "List all recovery points with filter failed"
+    success_msg: "List all recovery points with filter passed"
+
+########################################################################################################
+
+- name: List all recovery points with limit
+  ntnx_recovery_points_info_v2:
+    limit: 2
+  register: result
+  ignore_errors: true
+
+- name: List all recovery points with limit status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 2
+    fail_msg: "List all recovery points with limit failed"
+    success_msg: "List all recovery points with limit passed"
+
+########################################################################################################
+
+- name: Delete all Created recovery points
+  ntnx_recovery_points_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ recovery_point_todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.changed == True
+      - item.failed == False
+      - item.ext_id == "{{ recovery_point_todelete[recovery_point_index] }}"
+    fail_msg: "Unable to delete recovery point "
+    success_msg: "Recovery point is deleted successfully "
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: recovery_point_index
+
+########################################################################################################
+
+- name: Delete all Created Volume Groups
+  ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ vg_todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.changed == True
+      - item.failed == False
+      - item.ext_id == "{{ vg_todelete[vgs_index] }}"
+    fail_msg: "Unable to delete Volume Group "
+    success_msg: "Volume Group is deleted successfully "
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: vgs_index
+
+########################################################################################################
+
+- name: Delete all Created VMs
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ vm_todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.changed == True
+      - item.failed == False
+      - item.ext_id == "{{ vm_todelete[vms_index] }}"
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: vms_index
+
+- name: Reset to delete lists
+  ansible.builtin.set_fact:
+    vm_todelete: []
+    vg_todelete: []
+    recovery_point_todelete: []

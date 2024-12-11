@@ -1,0 +1,221 @@
+- name: "Start Volume groups tests"
+  ansible.builtin.debug:
+    msg: "Start Volume groups tests"
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-vgs"
+
+- name: Set VG names
+  ansible.builtin.set_fact:
+    vg1_name: "{{suffix_name}}-{{random_name}}1"
+    vg2_name: "{{suffix_name}}-{{random_name}}2"
+
+- name: Create Volume group with check mode
+  check_mode: true
+  ntnx_volume_groups_v2:
+    name: "{{vg1_name}}"
+    description: "Volume group 1"
+    should_load_balance_vm_attachments: true
+    sharing_status: "SHARED"
+    target_prefix: "vg1"
+    cluster_reference: "{{ cluster.uuid }}"
+    usage_type: "USER"
+    is_hidden: true
+    storage_features:
+      flash_mode:
+        is_enabled: true
+    iscsi_features:
+      target_secret: "Secret1234567"
+      enabled_authentications: "CHAP"
+  register: result
+  ignore_errors: true
+
+- name: Verify spec of VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.response is defined
+      - result.changed == false
+      - result.response.cluster_reference == "{{cluster.uuid}}"
+      - result.response.name == "{{vg1_name}}"
+      - result.response.description == "Volume group 1"
+      - result.response.should_load_balance_vm_attachments == true
+      - result.response.sharing_status == "SHARED"
+      - result.response.target_prefix == "vg1"
+      - result.response.usage_type == "USER"
+      - result.response.is_hidden == true
+      - result.response.storage_features.flash_mode.is_enabled == true
+      - result.response.iscsi_features.enabled_authentications == "CHAP"
+
+    fail_msg: "Unable to create spec for VG create"
+    success_msg: "Spec generated successfully for VG create"
+
+- name: Create Volume group with min spec and no Auth
+  ntnx_volume_groups_v2:
+    name: "{{vg1_name}}"
+    description: "Volume group 1"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify creation of VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id == result.response.ext_id
+      - result.response.cluster_reference == "{{cluster.uuid}}"
+      - result.response.name == "{{vg1_name}}"
+      - result.response.description == "Volume group 1"
+      - result.response.should_load_balance_vm_attachments == false
+      - result.response.sharing_status == None
+    fail_msg: "Unable to create VG"
+    success_msg: "VG created successfully"
+
+- name: Set VG UUID
+  ansible.builtin.set_fact:
+    vg1_uuid: "{{ result.ext_id }}"
+
+- name: Create Volume group with all config and enabled chap auth
+  ntnx_volume_groups_v2:
+    name: "{{vg2_name}}"
+    description: "Volume group 2"
+    should_load_balance_vm_attachments: true
+    sharing_status: "SHARED"
+    target_prefix: "vg1"
+    cluster_reference: "{{ cluster.uuid }}"
+    usage_type: "USER"
+    storage_features:
+      flash_mode:
+        is_enabled: true
+    iscsi_features:
+      target_secret: "Secret1234567"
+      enabled_authentications: "CHAP"
+  register: result
+  ignore_errors: true
+
+- name: Verify creation of VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.changed == true
+      - result.response.cluster_reference == "{{cluster.uuid}}"
+      - result.response.name == "{{vg2_name}}"
+      - result.response.description == "Volume group 2"
+      - result.response.should_load_balance_vm_attachments == true
+      - result.response.sharing_status == "SHARED"
+      - "'vg1' in result.response.target_name"
+      - result.response.usage_type == "USER"
+      - result.response.storage_features.flash_mode.is_enabled == true
+      - result.response.iscsi_features.target_secret == None
+      - result.response.iscsi_features.enabled_authentications == "CHAP"
+    fail_msg: "Unable to create VG"
+    success_msg: "VG created successfully"
+
+- name: Set VG UUID
+  ansible.builtin.set_fact:
+    vg2_uuid: "{{ result.ext_id }}"
+
+- name: Fetch above created VG
+  ntnx_volume_groups_info_v2:
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch above created VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == False
+      - result.response is defined
+      - result.ext_id == "{{vg1_uuid}}"
+      - result.response.ext_id == "{{vg1_uuid}}"
+      - result.response.cluster_reference == "{{cluster.uuid}}"
+      - result.response.name == "{{vg1_name}}"
+    fail_msg: "Unable to fetch VG"
+    success_msg: "VG fetched successfully"
+
+- name: Fetch all VGs created above using filters
+  ntnx_volume_groups_info_v2:
+    filter: "startswith(name, '{{suffix_name}}-{{random_name}}')"
+  register: result
+  ignore_errors: true
+
+- name: Set expected VGs
+  ansible.builtin.set_fact:
+    expected_vgs: ["{{vg1_uuid}}", "{{vg2_uuid}}"]
+
+- name: Fetch above created VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == False
+      - result.response is defined
+      - result.response | length == 2
+      - result.response[0].ext_id in expected_vgs
+      - result.response[1].ext_id in expected_vgs
+    fail_msg: "Unable to fetch VGs using filters"
+    success_msg: "VGs fetched successfully"
+
+- name: Apply limits on VG response from list
+  ntnx_volume_groups_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Fetch above created VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == False
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "Unable to fetch VGs using limits"
+    success_msg: "VGs fetched successfully"
+
+- name: Delete Volume groups
+  ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify delete of VGs
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.ext_id == "{{vg1_uuid}}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete VG"
+    success_msg: "VG deleted successfully"
+
+- name: Delete Volume groups
+  ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg2_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify delete of VGs
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.ext_id == "{{vg2_uuid}}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete VG"
+    success_msg: "VG deleted successfully"

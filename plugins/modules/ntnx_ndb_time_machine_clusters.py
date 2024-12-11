@@ -86,29 +86,28 @@ EXAMPLES = r"""
 
 - name: update data access instance with new sla name
   ntnx_ndb_time_machine_clusters:
-      nutanix_host: <pc_ip>
-      nutanix_username: <user>
-      nutanix_password: <pass>
-      validate_certs: false
-      time_machine_uuid: "<time_machine-uuid>"
-      cluster:
-        name: "<cluster-uuid>"
-      sla:
-        name: "<sla-uuid>"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    time_machine_uuid: "<time_machine-uuid>"
+    cluster:
+      name: "<cluster-uuid>"
+    sla:
+      name: "<sla-uuid>"
   register: result
 
 - name: delete time machine
   ntnx_ndb_time_machine_clusters:
-      nutanix_host: <pc_ip>
-      nutanix_username: <user>
-      nutanix_password: <pass>
-      validate_certs: false
-      state: absent
-      time_machine_uuid: "<time_machine-uuid>"
-      cluster:
-        uuid: "<cluster-uuid>"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    state: absent
+    time_machine_uuid: "<time_machine-uuid>"
+    cluster:
+      uuid: "<cluster-uuid>"
   register: result
-
 """
 
 RETURN = r"""
@@ -154,9 +153,12 @@ time_machine_uuid:
 
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
-from ..module_utils.ndb.time_machines import TimeMachine, get_cluster_uuid  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
+from ..module_utils.v3.ndb.time_machines import (  # noqa: E402
+    TimeMachine,
+    get_cluster_uuid,
+)
 
 
 def get_module_spec():

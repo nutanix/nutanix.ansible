@@ -1,9 +1,7 @@
 ---
-- name: get k8s cluster info
+- name: Get k8s cluster info
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,22 +10,23 @@
       validate_certs: false
 
   tasks:
-  - set_fact:
-      cluster_name: <cluster_name>
+    - name: Set cluster name
+      ansible.builtin.set_fact:
+        cluster_name: <cluster_name>
 
-  - name: test getting cluster using name
-    ntnx_karbon_clusters_info:
-      cluster_name: "{{cluster_name}}"
-    register: result
+    - name: Test getting cluster using name
+      nutanix.ncp.ntnx_karbon_clusters_info:
+        cluster_name: "{{ cluster_name }}"
+      register: result
 
-  - name: test getting cluster with ssh config using cluster name
-    ntnx_karbon_clusters_info:
-      cluster_name: "{{cluster_name}}"
-      fetch_ssh_credentials: true
-    register: result
+    - name: Test getting cluster with ssh config using cluster name
+      nutanix.ncp.ntnx_karbon_clusters_info:
+        cluster_name: "{{ cluster_name }}"
+        fetch_ssh_credentials: true
+      register: result
 
-  - name: test getting cluster with kubeconfig config using cluster name
-    ntnx_karbon_clusters_info:
-      cluster_name: "{{cluster_name}}"
-      fetch_kubeconfig: true
-    register: result
+    - name: Test getting cluster with kubeconfig config using cluster name
+      nutanix.ncp.ntnx_karbon_clusters_info:
+        cluster_name: "{{ cluster_name }}"
+        fetch_kubeconfig: true
+      register: result

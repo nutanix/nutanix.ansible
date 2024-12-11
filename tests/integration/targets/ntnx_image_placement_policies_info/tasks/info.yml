@@ -1,8 +1,9 @@
 ---
-- debug:
-    msg: "start ntnx_image_placement_policies_info tests"
+- name: Start ntnx_image_placement_policies_info tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_image_placement_policies_info tests"
 
-- name: create image placement policy
+- name: Create image placement policy
   ntnx_image_placement_policy:
     placement_type: soft
     name: "test_policy_1"
@@ -14,7 +15,7 @@
         - Default
   register: policy_1
 
-- name: create image placement policy
+- name: Create image placement policy
   ntnx_image_placement_policy:
     placement_type: soft
     name: "test_policy_2"
@@ -26,19 +27,21 @@
         - Default
   register: policy_2
 
-- set_fact:
+- name: Adding policies to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  policy_1["response"]["metadata"]["uuid"] ] }}'
 
-- set_fact:
+- name: Adding policies to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  policy_2["response"]["metadata"]["uuid"] ] }}'
 
 ###################################################################
-- name: test getting all image placement policies
+- name: Test getting all image placement policies
   ntnx_image_placement_policies_info:
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -47,7 +50,7 @@
     success_msg: "Image placement policies listed successfully"
 ################################################################
 
-- name: test getting particular image placement policy using filter
+- name: Test getting particular image placement policy using filter
   ntnx_image_placement_policies_info:
     filter:
       name: "{{ policy_1.response.status.name }}"
@@ -55,8 +58,8 @@
     offset: 0
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.entities[0].status.name == '{{ policy_1.response.status.name }}'
@@ -65,13 +68,13 @@
 
 ################################################################
 
-- name: test getting particular image placement policy using uuid
+- name: Test getting particular image placement policy using uuid
   ntnx_image_placement_policies_info:
     policy_uuid: "{{ policy_2.response.metadata.uuid }}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.name == '{{ policy_2.response.status.name }}'
@@ -87,21 +90,22 @@
   register: result
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: "Unable to list policies as per names"
     success_msg: "Image placement policy listed successfully"
 
-##################################################CLEANUP#######################################################
+################################################## CLEANUP #######################################################
 
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

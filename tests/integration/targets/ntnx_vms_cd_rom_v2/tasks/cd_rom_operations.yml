@@ -1,0 +1,441 @@
+---
+- name: Start testing ntnx_vms_cd_rom_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vms_cd_rom_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Create VM to test CD ROM
+  ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+    fail_msg: "Unable to Create VM  "
+    success_msg: "VM is created successfully "
+
+- name: Set VM attributes
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+
+#################################################################################
+
+- name: Create CD ROM with minimum requirements
+  ntnx_vms_cd_rom_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: CD-ROM Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.disk_address.bus_type == "IDE"
+      - result.response.disk_address.index == 0
+      - result.response.backing_info == none
+      - result.response.ext_id == result.ext_id
+    fail_msg: "Create CD ROM with minimum requirements failed "
+    success_msg: "Create CD ROM with minimum requirements passed "
+
+#################################################################################
+
+- name: Create CD ROM with all attributes - check mode is enabled
+  ntnx_vms_cd_rom_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    disk_address:
+      bus_type: "IDE"
+      index: 1
+    backing_info:
+      data_source:
+        reference:
+          image_reference:
+            image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: CD-ROM Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disk_address.bus_type == "IDE"
+      - result.response.disk_address.index == 1
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: " Create CD ROM with all attributes check mode failed "
+    success_msg: "Create CD ROM with all attributes check mode passed "
+
+#################################################################################
+
+- name: Create CD ROM with all attributes
+  ntnx_vms_cd_rom_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    disk_address:
+      bus_type: "IDE"
+      index: 1
+    backing_info:
+      data_source:
+        reference:
+          image_reference:
+            image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: CD-ROM Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.disk_address.bus_type == "IDE"
+      - result.response.disk_address.index == 1
+      - result.response.backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.ext_id == result.ext_id
+    fail_msg: " Create CD ROM with all attributes failed "
+    success_msg: "Create CD ROM with all attributes passed "
+
+#################################################################################
+
+- name: Get CD ROM IDs from VM
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get CD ROM IDs from VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.cd_roms is defined
+      - result.response.cd_roms | length == 2
+      - result.response.cd_roms[0].disk_address.bus_type == "IDE"
+      - result.response.cd_roms[0].disk_address.index == 0
+      - result.response.cd_roms[0].backing_info == none
+      - result.response.cd_roms[1].disk_address.bus_type == "IDE"
+      - result.response.cd_roms[1].disk_address.index == 1
+      - result.response.cd_roms[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+    fail_msg: "Unable to get CD ROMs IDs"
+    success_msg: "CD ROMs IDs are fetched successfully "
+
+- name: Adding CD ROM IDs to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ result.response.cd_roms | map(attribute='ext_id') | list }}"
+
+################################################################################
+
+- name: Inject ISO in CD ROM of a VM - check mode is enabled
+  ntnx_vms_cd_rom_iso_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[0] }}"
+    backing_info:
+      data_source:
+        reference:
+          image_reference:
+            image_ext_id: "{{ iso_image.image_ext_ids[0] }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Inject ISO in CD ROM of a VM with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.backing_info.data_source.reference.image_ext_id == "{{ iso_image.image_ext_ids[0] }}"
+    fail_msg: "Inject ISO in CD ROM of a VM with check mode enabled failed "
+    success_msg: "Inject ISO in CD ROM of a VM with check mode enabled passed "
+
+#################################################################################
+
+- name: Inject ISO in CD ROM of a VM
+  ntnx_vms_cd_rom_iso_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[0] }}"
+    backing_info:
+      data_source:
+        reference:
+          image_reference:
+            image_ext_id: "{{ iso_image.image_ext_ids[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Inject ISO in CD ROM of a VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == todelete[0]
+      - result.response.backing_info.data_source.reference.image_ext_id == "{{ iso_image.image_ext_ids[0] }}"
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: "Inject ISO in CD ROM of a VM failed "
+    success_msg: "Inject ISO in CD ROM of a VM passed "
+
+#################################################################################
+
+- name: Get CD ROM details
+  ntnx_vms_cd_rom_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Get CD ROM details status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == todelete[0]
+      - result.response.disk_address.bus_type == "IDE"
+      - result.response.backing_info.data_source.reference.image_ext_id == "{{ iso_image.image_ext_ids[0] }}"
+    fail_msg: "Unable to get CD ROM details "
+    success_msg: "CD ROM details are fetched successfully "
+
+################################################################################
+
+- name: Eject ISO from CD ROM of a VM - check mode is enabled
+  ntnx_vms_cd_rom_iso_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Eject ISO from CD ROM of a VM with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == todelete[0]
+      - todelete[0] in result.response
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: "Eject ISO from CD ROM of a VM with check mode failed "
+    success_msg: "Eject ISO from CD ROM of a VM with check mode passed "
+
+#################################################################################
+
+- name: Eject ISO from CD ROM of a VM
+  ntnx_vms_cd_rom_iso_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[0] }}"
+    backing_info:
+      data_source:
+        reference:
+          image_reference:
+            image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Eject ISO from CD ROM of a VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == todelete[0]
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.task_ext_id is defined
+      - result.response.ext_id == todelete[0]
+      - result.response.backing_info == none
+    fail_msg: "Eject ISO from CD ROM of a VM failed "
+    success_msg: "Eject ISO from CD ROM of a VM passed "
+
+#################################################################################
+
+- name: Get CD ROM details
+  ntnx_vms_cd_rom_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Get CD ROM details status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == todelete[0]
+      - result.response.disk_address.bus_type == "IDE"
+      - result.response.backing_info == none
+    fail_msg: "Unable to get CD ROM details "
+    success_msg: "CD ROM details are fetched successfully "
+
+################################################################################
+
+- name: Get all CD ROMs details
+  ntnx_vms_cd_rom_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Set CD ROM list
+  ansible.builtin.set_fact:
+    cd_rom_list: "{{ result.response | map(attribute='ext_id') | list }}"
+
+- name: Get all CD ROMs details status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - cd_rom_list | length == 2
+      - cd_rom_list[0] == todelete[0]
+      - cd_rom_list[1] == todelete[1]
+    fail_msg: "Get all CD ROMs details failed "
+    success_msg: "Get all CD ROMs details passed "
+
+################################################################################
+
+- name: Get all CD ROMs details with limit 1
+  ntnx_vms_cd_rom_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Set CD ROM list
+  ansible.builtin.set_fact:
+    cd_rom_list: "{{ result.response | map(attribute='ext_id') | list }}"
+
+- name: Get all CD ROMs details with limit 1 status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - cd_rom_list | length == 1
+      - cd_rom_list[0] == todelete[0]
+    fail_msg: "Get all CD ROMs details with limit 1 failed "
+    success_msg: "Get all CD ROMs details with limit 1 passed "
+
+################################################################################
+
+- name: Get all CD ROMs details with limit 2
+  ntnx_vms_cd_rom_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    limit: 2
+  register: result
+  ignore_errors: true
+
+- name: Set CD ROM list
+  ansible.builtin.set_fact:
+    cd_rom_list: "{{ result.response | map(attribute='ext_id') | list }}"
+
+- name: Get all CD ROMs details with limit 2 status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - cd_rom_list | length == 2
+      - cd_rom_list[0] == todelete[0]
+      - cd_rom_list[1] == todelete[1]
+    fail_msg: "Get all CD ROMs details with limit 2 failed "
+    success_msg: "Get all CD ROMs details with limit 2 passed "
+
+###############################################################################
+
+- name: Delete All CD ROMs
+  ntnx_vms_cd_rom_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.ext_id in todelete
+      - result.results | length == todelete | length
+    fail_msg: "Unable to delete CD ROM "
+    success_msg: "CD ROM is deleted successfully "
+  loop: "{{ result.results }}"
+
+#################################################################################
+
+- name: Verify CD ROMs are deleted
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify CD ROMs are deleted status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.cd_roms == none
+    fail_msg: "Verify CD ROMs are deleted failed"
+    success_msg: "Verify CD ROMs are deleted passed "
+
+#################################################################################
+
+- name: Delete the VM
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+      - result.vm_uuid == "{{ vm_uuid }}"
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "

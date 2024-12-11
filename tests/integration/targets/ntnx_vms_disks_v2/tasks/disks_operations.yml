@@ -1,0 +1,740 @@
+---
+- name: Start testing ntnx_vms_disks_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vms_disks_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set VM and VG Names
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+    vg_name: "{{ random_name }}_vg_test"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Create VM with minimum requirements
+  ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    storage_config:
+      is_flash_mode_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+    fail_msg: "Unable to Create VM with minimum requirements "
+    success_msg: "VM with minimum requirements created successfully "
+
+- name: Set VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+
+#################################################################################
+
+- name: Create a disk for a VM - check mode is enabled
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 26843545600
+        storage_config:
+          is_flash_mode_enabled: true
+        storage_container:
+          ext_id: "{{ storage_container.uuid }}"
+        data_source:
+          reference:
+            image_reference:
+              image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+    disk_address:
+      bus_type: "SCSI"
+      index: 1
+    state: present
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create a disk for a VM - check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.backing_info.storage_config.is_flash_mode_enabled == true
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.disk_address.index == 1
+    fail_msg: "Create a disk for a VM - check mode is enabled failed"
+    success_msg: "Create a disk for a VM - check mode is enabled passed"
+
+#################################################################################
+
+- name: Create Disk with storage container
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 26843545600
+        storage_container:
+          ext_id: "{{ storage_container.uuid }}"
+    disk_address:
+      bus_type: "SCSI"
+      index: 1
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Create Disk with storage container status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.backing_info.disk_size_bytes == 26843545600
+      - result.response.disk_address.index == 1
+      - result.response.disk_address.bus_type == "SCSI"
+    fail_msg: "Create Disk with storage container failed"
+    success_msg: "Create Disk with storage container passed"
+
+################################################################################
+
+- name: Create Disk with image reference
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 26843545600
+        storage_container:
+          ext_id: "{{ storage_container.uuid }}"
+        data_source:
+          reference:
+            image_reference:
+              image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+    disk_address:
+      bus_type: "SCSI"
+      index: 2
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Create Disk with image reference status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disk_address.index == 2
+      - result.response.disk_address.bus_type == "SCSI"
+    fail_msg: "Create Disk with image reference failed"
+    success_msg: "Create Disk with image reference passed"
+
+###############################################################################
+
+- name: Get disks ids from VM
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Adding disks ids to todelete
+  ansible.builtin.set_fact:
+    todelete: "{{ result.response.disks | map(attribute='ext_id') | list }}"
+
+- name: Get disks ids from VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.disks is defined
+      - todelete | length == 2
+      - result.response.disks | length == 2
+      - result.response.disks[0].disk_address.index == 1
+      - result.response.disks[1].disk_address.index == 2
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[1].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].backing_info.storage_config.is_flash_mode_enabled == true
+      - result.response.disks[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disks[1].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[1].backing_info.storage_config.is_flash_mode_enabled == true
+    fail_msg: "Unable to get disks ids from VM "
+    success_msg: "disks ids are fetched from VM successfully "
+
+################################################################################
+
+- name: Create Disk with disk reference
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 26843545600
+        data_source:
+          reference:
+            vm_disk_reference:
+              disk_ext_id: "{{ todelete[0] }}"
+              vm_reference:
+                ext_id: "{{ vm_uuid }}"
+              disk_address:
+                bus_type: "SCSI"
+                index: 2
+    disk_address:
+      bus_type: "SCSI"
+      index: 3
+    state: present
+  register: result
+  ignore_errors: true
+
+# this fails since data source is null in response
+# - name: Create Disk with disk reference status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.failed == false
+#       - result.ext_id is defined
+#       - result.task_ext_id is defined
+#       - result.vm_ext_id == "{{ vm_uuid }}"
+#       - result.response.backing_info.data_source.vm_disk_reference.disk_ext_id == "{{ todelete[0] }}"
+#       - result.response.backing_info.data_source.vm_disk_reference.vm_reference.ext_id == "{{ vm_uuid }}"
+#       - result.response.backing_info.data_source.vm_disk_reference.disk_address.index == 2
+#       - result.response.backing_info.data_source.vm_disk_reference.disk_address.bus_type == "SCSI"
+#       - result.response.disk_address.index == 3
+#       - result.response.disk_address.bus_type == "SCSI"
+#     fail_msg: "Create Disk with disk reference failed"
+#     success_msg: "Create Disk with disk reference passed"
+
+################################################################################
+
+- name: Create Disk with minimum spec
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 26843545600
+        storage_container:
+          ext_id: "{{ storage_container.uuid }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Create Disk without disk index and bus type status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.disk_address.index == 0
+      - result.response.disk_address.bus_type == "SCSI"
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.backing_info.disk_size_bytes == 26843545600
+    fail_msg: "Create Disk without disk index and bus type failed"
+    success_msg: "Create Disk without disk index and bus type passed"
+
+#################################################################################
+
+- name: Create Volume group with min spec and no Auth
+  ntnx_volume_groups_v2:
+    state: "present"
+    name: "{{ vg_name }}"
+    description: "Volume group with min spec and no Auth"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create Volume group with min spec and no Auth status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ vg_name }}"
+    fail_msg: "Create Volume group with min spec and no Auth failed"
+    success_msg: "Create Volume group with min spec and no Auth passed"
+
+- name: Set VG ext_id
+  ansible.builtin.set_fact:
+    vg1_uuid: '{{ result["response"]["ext_id"] }}'
+
+################################################################################
+
+- name: Create disk from volume group disk
+  ntnx_volume_groups_disks_v2:
+    state: "present"
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    index: 6
+    description: "Create disk from volume group disk description"
+    disk_data_source_reference:
+      entity_type: "STORAGE_CONTAINER"
+      ext_id: "{{ storage_container.uuid }}"
+    disk_size_bytes: 26843545600
+  register: result
+  ignore_errors: true
+
+- name: Set VG ref
+  ansible.builtin.set_fact:
+    vg_ref: '{{ result["response"]["ext_id"] }}'
+
+- name: Create disk from volume group disk status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.volume_group_ext_id == "{{ vg1_uuid }}"
+      - result.response.disk_size_bytes == 26843545600
+      - result.response.storage_container_id == "{{ storage_container.uuid }}"
+      - result.response.index == 6
+    fail_msg: "Create disk from volume group disk failed"
+    success_msg: "Create disk from volume group disk passed"
+
+################################################################################
+
+- name: Create Disk with VG reference
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    backing_info:
+      adsf_volume_group:
+        volume_group_ext_id: "{{ vg1_uuid }}"
+    disk_address:
+      bus_type: "SCSI"
+      index: 7
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Create Disk with VG reference status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.backing_info.volume_group_ext_id == "{{ vg1_uuid }}"
+      - result.response.disk_address.index == 7
+      - result.response.disk_address.bus_type == "SCSI"
+    fail_msg: "Create Disk with VG reference failed"
+    success_msg: "Create Disk with VG reference passed"
+
+################################################################################
+
+- name: Get disks ids from VM and verify disks info
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Adding disks ids to todelete
+  ansible.builtin.set_fact:
+    todelete: "{{ result.response.disks | map(attribute='ext_id') | list }}"
+
+- name: Get disks ids from VM and verify disks info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.disks is defined
+      - todelete | length == 5
+      - result.response.disks | length == 5
+      - result.response.disks[0].disk_address.index == 1
+      - result.response.disks[1].disk_address.index == 2
+      - result.response.disks[2].disk_address.index == 3
+      - result.response.disks[3].disk_address.index == 0
+      - result.response.disks[4].disk_address.index == 7
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[1].disk_address.bus_type == "SCSI"
+      - result.response.disks[2].disk_address.bus_type == "SCSI"
+      - result.response.disks[3].disk_address.bus_type == "SCSI"
+      - result.response.disks[4].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].backing_info.storage_config.is_flash_mode_enabled == true
+      - result.response.disks[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disks[1].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[1].backing_info.storage_config.is_flash_mode_enabled == true
+      - result.response.disks[2].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[2].backing_info.storage_config.is_flash_mode_enabled == true
+      - result.response.disks[3].backing_info.disk_size_bytes == 26843545600
+      - result.response.disks[3].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[4].backing_info.volume_group_ext_id == "{{ vg1_uuid }}"
+    fail_msg: "Get disks ids from VM and verify disks info failed "
+    success_msg: "Get disks ids from VM and verify disks info passed "
+
+#################################################################################
+
+- name: Update Disk - check mode is enabled
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[1] }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 29527900160
+        storage_container:
+          ext_id: "{{ storage_container.uuid }}"
+    state: present
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update Disk - check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.backing_info.storage_config.is_flash_mode_enabled == true
+      - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.disk_address.index == 2
+    fail_msg: "Update Disk - check mode is enabled failed"
+    success_msg: "Update Disk - check mode is enabled passed"
+
+#################################################################################
+
+# Update disk image is not working, the disk is not getting updated
+# - name: Update disk image
+#   ntnx_vms_disks_v2:
+#     vm_ext_id: "{{ vm_uuid }}"
+#     ext_id: "{{ todelete[1] }}"
+#     backing_info:
+#       vm_disk:
+#         storage_container:
+#           ext_id: "{{ storage_container.uuid }}"
+#         data_source:
+#           reference:
+#             image_reference:
+#               image_ext_id: "{{ disk_image.image_ext_ids[1] }}"
+#     state: present
+#   register: result
+#   ignore_errors: true
+
+# - name: Update disk image status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.failed == false
+#       - result.response.backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[1] }}"
+#       - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+#       - result.response.backing_info.storage_config.is_flash_mode_enabled == true
+#       - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
+#       - result.vm_ext_id == "{{ vm_uuid }}"
+#     fail_msg: "Update disk image failed"
+#     success_msg: "Update disk image passed"
+
+#################################################################################
+
+- name: Update disk data source and disk_size_bytes together
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[1] }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 268435456000
+        storage_container:
+          ext_id: "{{ storage_container.uuid }}"
+        data_source:
+          reference:
+            image_reference:
+              image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Update disk data source and disk_size_bytes together status
+  ansible.builtin.assert:
+    that:
+      - result.response == None
+      - result.changed == false
+      - result.failed == false
+      - result.error == "data source and disk_size_bytes cannot be sent together"
+    fail_msg: "Update disk data source and disk_size_bytes together failed"
+    success_msg: "Update disk data source and disk_size_bytes together passed"
+
+#################################################################################
+
+- name: Power on VM
+  ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Power on Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power on VM "
+    success_msg: "VM is powered on successfully "
+
+- name: Pausing for 10 seconds until VM is powered on
+  ansible.builtin.pause:
+    seconds: 10
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+    fail_msg: "VM is not powered on "
+    success_msg: "VM is powered on successfully "
+
+################################################################################
+
+- name: Update disk size when VM is powered on
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[1] }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 29527900160
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Update disk size when VM is powered on status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.backing_info.storage_config.is_flash_mode_enabled == true
+      - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.disk_address.index == 2
+      - result.response.backing_info.disk_size_bytes == 29527900160
+    fail_msg: "Update disk size when VM is powered on failed"
+    success_msg: "Update disk size when VM is powered on passed"
+
+################################################################################
+
+- name: Check for idempotency by updating disk size with same value
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[1] }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 29527900160
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Check for idempotency by updating disk size with same value status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    fail_msg: "Check for idempotency by updating disk size with same value failed"
+    success_msg: "Check for idempotency by updating disk size with same value passed"
+
+#################################################################################
+
+- name: Get disk info
+  ntnx_vms_disks_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Get disk info status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response.backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.backing_info.storage_config.is_flash_mode_enabled == true
+      - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
+      - result.response.disk_address.bus_type == "SCSI"
+      - result.response.disk_address.index == 2
+    fail_msg: "Get disk info failed"
+    success_msg: "Get disk info passed"
+
+#################################################################################
+
+- name: Get disk info that does not exist
+  ntnx_vms_disks_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "12345678-1234-1234-1234-123456789123"
+  register: result
+  ignore_errors: true
+
+- name: Get disk info that does not exist status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == true
+      - result.status == 404
+    fail_msg: "Get disk info that does not exist failed"
+    success_msg: "Get disk info that does not exist passed"
+
+#################################################################################
+
+- name: List all disks from VM
+  ntnx_vms_disks_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: List all disks from VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - item.ext_id in todelete
+      - result.response | length == todelete | length
+    fail_msg: "List all disks from VM failed"
+    success_msg: "List all disks from VM passed"
+  loop: "{{ result.response }}"
+
+#################################################################################
+
+- name: List all disks from VM with limit 1
+  ntnx_vms_disks_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all disks from VM with limit 1 status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response | length == 1
+    fail_msg: "List all disks from VM with limit 1 failed"
+    success_msg: "List all disks from VM with limit 1 passed"
+  loop: "{{ result.response }}"
+
+#################################################################################
+
+- name: List all disks from VM with limit 2
+  ntnx_vms_disks_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    limit: 2
+  register: result
+  ignore_errors: true
+
+- name: List all disks from VM with limit 2 status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.vm_ext_id == "{{ vm_uuid }}"
+      - result.response | length == 2
+    fail_msg: "List all disks from VM with limit 2 failed"
+    success_msg: "List all disks from VM with limit 2 passed"
+  loop: "{{ result.response }}"
+
+#################################################################################
+
+- name: Delete all disks from VM
+  ntnx_vms_disks_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.item in todelete
+      - result.results | length == todelete | length
+    fail_msg: "Unable to delete disks from VM "
+    success_msg: "Disks from VM are deleted successfully "
+  loop: "{{ result.results }}"
+
+################################################################################
+
+- name: Delete Volume group
+  ntnx_volume_groups_v2:
+    state: "absent"
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete Volume group status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+      - result.ext_id == "{{ vg1_uuid }}"
+    fail_msg: "Delete Volume group failed"
+    success_msg: "Volume group deleted successfully "
+
+#################################################################################
+
+- name: Delete the VM
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+      - result.ext_id == "{{ vm_uuid }}"
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "

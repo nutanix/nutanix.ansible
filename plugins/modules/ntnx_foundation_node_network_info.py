@@ -29,15 +29,13 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: Get node network info
-    ntnx_foundation_node_network_info:
-      nutanix_host: "{{ ip }}"
-      nodes:
-       - node_1_ipv6
-       - node_2_ipv6
-       - node_3_ipv6
-
-
+- name: Get node network info
+  ntnx_foundation_node_network_info:
+    nutanix_host: '{{ ip }}'
+    nodes:
+      - node_1_ipv6
+      - node_2_ipv6
+      - node_3_ipv6
 """
 
 RETURN = r"""
@@ -64,11 +62,11 @@ nodes:
       }
     ]
 """
-from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
-from ..module_utils.foundation.node_network_details import (  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.v3.foundation.node_network_details import (  # noqa: E402
     NodeNetworkDetails,
 )
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

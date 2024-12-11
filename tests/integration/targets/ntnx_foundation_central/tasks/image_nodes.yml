@@ -1,51 +1,53 @@
-- debug:
+---
+- name: Start testing ntnx_foundation_central module
+  ansible.builtin.debug:
     msg: start testing ntnx_foundation_central module
 
-- name: api
+- name: Api
   ntnx_foundation_central:
-    cluster_name: "{{cluster_name}}"
+    cluster_name: "{{ cluster_name }}"
     skip_cluster_creation: false
     redundancy_factor: 2
-    aos_package_url: "{{aos_package_url}}"
+    aos_package_url: "{{ aos_package_url }}"
     common_network_settings:
       cvm_dns_servers:
-        - "{{common_network_settings.cvm_dns_servers}}"
+        - "{{ common_network_settings.cvm_dns_servers }}"
       hypervisor_dns_servers:
-        - "{{common_network_settings.hypervisor_dns_servers}}"
+        - "{{ common_network_settings.hypervisor_dns_servers }}"
       cvm_ntp_servers:
-        - "{{common_network_settings.cvm_ntp_servers}}"
+        - "{{ common_network_settings.cvm_ntp_servers }}"
       hypervisor_ntp_servers:
-        - "{{common_network_settings.hypervisor_ntp_servers}}"
+        - "{{ common_network_settings.hypervisor_ntp_servers }}"
     hypervisor_iso_details:
-      url: "{{hypervisor_iso_details.url}}"
+      url: "{{ hypervisor_iso_details.url }}"
     nodes_list:
       - manual_mode:
-          cvm_gateway: "{{node1.cvm_gateway}}"
-          cvm_netmask: "{{node1.cvm_netmask}}"
-          cvm_ip: "{{node1.cvm_ip}}"
-          hypervisor_gateway: "{{node1.hypervisor_gateway}}"
-          hypervisor_netmask: "{{node1.hypervisor_netmask}}"
-          hypervisor_ip: "{{node1.hypervisor_ip}}"
-          hypervisor_hostname: "{{node1.hypervisor_hostname}}"
-          imaged_node_uuid: "{{node1.imaged_node_uuid}}"
+          cvm_gateway: "{{ node1.cvm_gateway }}"
+          cvm_netmask: "{{ node1.cvm_netmask }}"
+          cvm_ip: "{{ node1.cvm_ip }}"
+          hypervisor_gateway: "{{ node1.hypervisor_gateway }}"
+          hypervisor_netmask: "{{ node1.hypervisor_netmask }}"
+          hypervisor_ip: "{{ node1.hypervisor_ip }}"
+          hypervisor_hostname: "{{ node1.hypervisor_hostname }}"
+          imaged_node_uuid: "{{ node1.imaged_node_uuid }}"
           use_existing_network_settings: false
-          ipmi_gateway: "{{node1.ipmi_gateway}}"
-          ipmi_netmask: "{{node1.ipmi_netmask}}"
-          ipmi_ip: "{{node1.ipmi_ip}}"
+          ipmi_gateway: "{{ node1.ipmi_gateway }}"
+          ipmi_netmask: "{{ node1.ipmi_netmask }}"
+          ipmi_ip: "{{ node1.ipmi_ip }}"
           image_now: true
-          hypervisor_type: "{{node1.hypervisor_type}}"
+          hypervisor_type: "{{ node1.hypervisor_type }}"
       - discovery_mode:
-          node_serial: "{{node2.node_serial}}"
+          node_serial: "{{ node2.node_serial }}"
       - discovery_mode:
-          node_serial: "{{node3.node_serial}}"
+          node_serial: "{{ node3.node_serial }}"
           discovery_override:
-            hypervisor_hostname: "{{node3.discovery_override.hypervisor_hostname}}"
+            hypervisor_hostname: "{{ node3.discovery_override.hypervisor_hostname }}"
   register: result
   ignore_errors: true
   # when: false # make it true or remove to unskip task
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed==false

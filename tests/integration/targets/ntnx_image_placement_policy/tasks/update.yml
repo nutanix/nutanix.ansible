@@ -1,6 +1,7 @@
 ---
-- debug:
-    msg: start ntnx_image_placement_policy update tests
+- name: Start ntnx_image_placement_policy update tests
+  ansible.builtin.debug:
+    msg: Start ntnx_image_placement_policy update tests
 
 - name: Create image placement policy with minimal spec for update tests
   ntnx_image_placement_policy:
@@ -20,7 +21,7 @@
   register: setup_policy
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - setup_policy.response is defined
       - setup_policy.changed == true
@@ -28,12 +29,13 @@
     fail_msg: "Unable to create image placement policy with minimal spec"
     success_msg: "Image placement policy with minimal spec created successfully"
 
-- set_fact:
+- name: Adding policy to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  setup_policy["response"]["metadata"]["uuid"] ] }}'
 
 #############################################################################################
 
-- name: test idempotency by definig same spec as before
+- name: Test idempotency by definig same spec as before
   ntnx_image_placement_policy:
     state: present
     policy_uuid: "{{ setup_policy.response.metadata.uuid }}"
@@ -52,7 +54,7 @@
   register: result
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - "'Nothing to change' in result.msg"
@@ -61,7 +63,7 @@
 
 #####################################################################################################
 
-- name: update all specs
+- name: Update all specs
   ntnx_image_placement_policy:
     state: present
     policy_uuid: "{{ setup_policy.response.metadata.uuid }}"
@@ -82,7 +84,7 @@
   register: result
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -99,7 +101,7 @@
 
 #####################################################################################################
 
-- name: remove attached categories to the policy
+- name: Remove attached categories to the policy
   ntnx_image_placement_policy:
     state: present
     policy_uuid: "{{ setup_policy.response.metadata.uuid }}"
@@ -107,7 +109,7 @@
   register: result
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -116,15 +118,16 @@
     fail_msg: "Unable to remove categories from image placement policy"
     success_msg: "Image placement policy updated successfully"
 
-##################################################CLEANUP#######################################################
+################################################## CLEANUP #######################################################
 
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: false
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

@@ -1,6 +1,7 @@
 ---
-- debug:
-    msg: start ntnx_image_placement_policy delete tests
+- name: Start ntnx_image_placement_policy delete tests
+  ansible.builtin.debug:
+    msg: Start ntnx_image_placement_policy delete tests
 
 - name: Create image placement policy with minimal spec for delete tests
   ntnx_image_placement_policy:
@@ -15,7 +16,7 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -30,7 +31,7 @@
   register: result
 
 - name: Delete Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -48,7 +49,7 @@
   ignore_errors: true
 
 - name: Delete Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false

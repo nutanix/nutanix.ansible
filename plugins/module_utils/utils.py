@@ -38,25 +38,6 @@ def strip_extra_attrs(spec1, spec2, deep=True):
                     break
 
 
-def check_for_idempotency(spec, resp, **kwargs):
-    state = kwargs.get("state")
-    if spec == resp:
-        if (
-            state == "present"
-            # only for VMs
-            or (
-                state in ["soft_shutdown", "hard_poweroff", "power_off"]
-                and resp["spec"]["resources"]["power_state"] == "OFF"
-            )
-            # only for VMs
-            or (
-                state == "power_on" and resp["spec"]["resources"]["power_state"] == "ON"
-            )
-        ):
-            return True
-    return False
-
-
 def intersection(first_obj, second_obj):
     if isinstance(first_obj, dict):
         for key, value in first_obj.items():
@@ -99,6 +80,13 @@ def extract_uuids_from_references_list(reference_lists):
     return uuids
 
 
+def list_to_string(lst):
+    """
+    This routine create comma seperated string from list of strings
+    """
+    return ",".join(lst)
+
+
 def format_filters_map(filters, except_keys=None):
     if filters:
         mapped_filters = {}
@@ -109,6 +97,12 @@ def format_filters_map(filters, except_keys=None):
                 mapped_filters.update({key: value})
         filters = mapped_filters
     return filters
+
+
+def conv_mb_to_bytes(val):
+    if not isinstance(val, int):
+        return None, "Invalid value type passed for conv_mb_to_bytes"
+    return val * 1024 * 1024, None
 
 
 def create_filter_criteria_string(filters):

@@ -1,10 +1,13 @@
 ---
-- module_defaults:
+- name: Ntnx_karbon_clusters_and_info integration tests
+  module_defaults:
     group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
   block:
-        - import_tasks: "crud.yml"
-        - import_tasks: "negative_scenarios.yml"
+    - name: Import Tasks
+      ansible.builtin.import_tasks: crud.yml
+    - name: Import Tasks
+      ansible.builtin.import_tasks: negative_scenarios.yml

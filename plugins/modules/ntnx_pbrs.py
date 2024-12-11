@@ -183,7 +183,7 @@ EXAMPLES = r"""
 
 - name: create PBR with vpc name with any source or destination or protocol with deny action
   ntnx_pbrs:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -192,17 +192,17 @@ EXAMPLES = r"""
     vpc:
       name: "{{ vpc.name }}"
     source:
-      any: True
+      any: true
     destination:
-      any: True
+      any: true
     action:
-      deny: True
+      deny: true
     protocol:
-      any: True
+      any: true
 
 - name: create PBR with vpc uuid with source Any and destination external and allow action with protocol number
   ntnx_pbrs:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -211,18 +211,18 @@ EXAMPLES = r"""
     vpc:
       uuid: "{{ vpc.uuid }}"
     source:
-      any: True
+      any: true
     destination:
-      external: True
+      external: true
     action:
-      allow: True
+      allow: true
       type: bool
     protocol:
       number: "{{ protocol.number }}"
 
 - name: create PBR with vpc name with source external and destination network with reroute action and  tcp port rangelist
   ntnx_pbrs:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -231,7 +231,7 @@ EXAMPLES = r"""
     vpc:
       name: "{{ vpc.name }}"
     source:
-      external: True
+      external: true
     destination:
       network:
         ip: "{{ network.ip }}"
@@ -245,7 +245,7 @@ EXAMPLES = r"""
 
 - name: create PBR with vpc name with source network and destination external with reroute action and  udp port rangelist
   ntnx_pbrs:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -258,7 +258,7 @@ EXAMPLES = r"""
         ip: "{{ network.ip }}"
         prefix: "{{ network.prefix }}"
     destination:
-      any: True
+      any: true
     action:
       reroute: "{{reroute_ip}}"
     protocol:
@@ -268,7 +268,7 @@ EXAMPLES = r"""
 
 - name: create PBR with vpc name with source network and destination external with reroute action and icmp
   ntnx_pbrs:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -281,7 +281,7 @@ EXAMPLES = r"""
         ip: "{{ network.ip }}"
         prefix: "{{ network.prefix }}"
     destination:
-      external: True
+      external: true
     action:
       reroute: "{{ reroute_ip }}"
     protocol:
@@ -398,9 +398,9 @@ task_uuid:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.pbrs import Pbr  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.prism.pbrs import Pbr  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

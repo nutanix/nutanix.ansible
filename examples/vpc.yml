@@ -2,8 +2,6 @@
 - name: VPC playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,21 +10,21 @@
       validate_certs: false
   tasks:
     - name: Setting Variables
-      set_fact:
+      ansible.builtin.set_fact:
         external_subnet_name: ""
         vm_name: ""
 
     - name: Create min VPC with subnet name
-      ntnx_vpcs:
+      nutanix.ncp.ntnx_vpcs:
         state: present
-        wait: True
+        wait: true
         name: MinVPC
         external_subnets:
           - subnet_name: "{{ external_subnet.name }}"
       register: result
 
     - name: Delete all created vpcs
-      ntnx_vpcs:
+      nutanix.ncp.ntnx_vpcs:
         state: absent
         vpc_uuid: "{{ result.vpc_uuid }}"
       register: result

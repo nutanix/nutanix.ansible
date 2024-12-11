@@ -1,0 +1,385 @@
+---
+- name: Start testing ntnx_service_groups_v2 module
+  ansible.builtin.debug:
+    msg: Start testing ntnx_service_groups_v2 module
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set service group name
+  ansible.builtin.set_fact:
+    service_group_name: service_group_{{ random_name }}
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Create tcp service group with check mode enabled
+  ntnx_service_groups_v2:
+    name: "{{ service_group_name }}_1"
+    description: desc
+    tcp_services:
+      - start_port: 10
+        end_port: 50
+      - start_port: 60
+        end_port: 90
+      - start_port: 98
+        end_port: 98
+      - start_port: 99
+        end_port: 99
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{ service_group_name }}_1"
+      - result.response.description == "desc"
+      - result.response.tcp_services[0].start_port == 10
+      - result.response.tcp_services[0].end_port == 50
+      - result.response.tcp_services[1].start_port == 60
+      - result.response.tcp_services[1].end_port == 90
+      - result.response.tcp_services[2].start_port == 98
+      - result.response.tcp_services[2].end_port == 98
+      - result.response.tcp_services[3].start_port == 99
+      - result.response.tcp_services[3].end_port == 99
+    fail_msg: "Fail: Unable to create tcp service group with check mode enabled"
+    success_msg: "Pass: tcp service group created successfully with check mode enabled"
+#####################################################################
+- name: Create tcp service group
+  ntnx_service_groups_v2:
+    name: "{{ service_group_name }}_1"
+    description: desc
+    tcp_services:
+      - start_port: 10
+        end_port: 50
+      - start_port: 60
+        end_port: 90
+      - start_port: 98
+        end_port: 98
+      - start_port: 99
+        end_port: 99
+  register: result
+  ignore_errors: true
+
+- name: Getting particular service_group using uuid
+  ntnx_service_groups_info_v2:
+    ext_id: "{{ result.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch service group status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == "{{ result.response.ext_id }}"
+      - result.failed == false
+      - result.response.name == "{{ service_group_name }}_1"
+      - result.response.description == "desc"
+      - result.response.tcp_services[0].start_port == 10
+      - result.response.tcp_services[0].end_port == 50
+      - result.response.tcp_services[1].start_port == 60
+      - result.response.tcp_services[1].end_port == 90
+      - result.response.tcp_services[2].start_port == 98
+      - result.response.tcp_services[2].end_port == 98
+      - result.response.tcp_services[3].start_port == 99
+      - result.response.tcp_services[3].end_port == 99
+    fail_msg: "Fail: Unable to create tcp service group  "
+    success_msg: "Pass: tcp service group  created successfully"
+
+- name: Add service group to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+###############################################################
+- name: Create udp service group
+  ntnx_service_groups_v2:
+    name: "{{ service_group_name }}_2"
+    description: desc
+    udp_services:
+      - start_port: 10
+        end_port: 50
+      - start_port: 60
+        end_port: 90
+      - start_port: 98
+        end_port: 98
+      - start_port: 99
+        end_port: 99
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.ext_id == "{{ result.response.ext_id }}"
+      - result.response.description == "desc"
+      - result.response.name == "{{ service_group_name }}_2"
+      - result.response.udp_services[0].start_port == 10
+      - result.response.udp_services[0].end_port == 50
+      - result.response.udp_services[1].start_port == 60
+      - result.response.udp_services[1].end_port == 90
+      - result.response.udp_services[2].start_port == 98
+      - result.response.udp_services[2].end_port == 98
+      - result.response.udp_services[3].start_port == 99
+      - result.response.udp_services[3].end_port == 99
+    fail_msg: "Fail: Unable to create udp service group  "
+    success_msg: "Pass: udp service group  created successfully"
+
+- name: Add service group to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+###############################################################
+- name: Create icmp with service group
+  ntnx_service_groups_v2:
+    name: "{{ service_group_name }}_3"
+    description: desc
+    icmp_services:
+      - code: 10
+      - type: 1
+      - type: 2
+        code: 3
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.ext_id == "{{ result.response.ext_id }}"
+      - result.response.description == "desc"
+      - result.response.name == "{{ service_group_name }}_3"
+      - result.response.icmp_services[0].code == 10
+      - result.response.icmp_services[1].type == 1
+      - result.response.icmp_services[2].code == 3
+      - result.response.icmp_services[2].type == 2
+
+    fail_msg: "Fail: Unable to create icmp service group  "
+    success_msg: "Pass: icmp service group  created successfully"
+
+- name: Add service group to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+###############################################################
+- name: Create service group with tcp and udp and icmp
+  ntnx_service_groups_v2:
+    name: "{{ service_group_name }}_4"
+    description: desc
+    tcp_services:
+      - start_port: 1
+        end_port: 65535
+    udp_services:
+      - start_port: 10
+        end_port: 50
+      - start_port: 60
+        end_port: 90
+      - start_port: 99
+        end_port: 99
+    icmp_services:
+      - is_all_allowed: true
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id is defined
+      - result.ext_id == "{{ result.response.ext_id }}"
+      - result.response.name == "{{ service_group_name }}_4"
+      - result.response.icmp_services[0].is_all_allowed == true
+      - result.response.tcp_services[0].start_port == 1
+      - result.response.tcp_services[0].end_port == 65535
+      - result.response.udp_services[0].start_port == 10
+      - result.response.udp_services[0].end_port == 50
+      - result.response.udp_services[1].start_port == 60
+      - result.response.udp_services[1].end_port == 90
+      - result.response.udp_services[2].start_port == 99
+      - result.response.udp_services[2].end_port == 99
+    fail_msg: "Fail: Unable to create tcp service group  "
+    success_msg: "Pass: tcp service group  created successfully"
+
+- name: Add service group to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+################################################################
+- name: Test getting all service groups
+  ntnx_service_groups_info_v2:
+  register: service_groups
+  ignore_errors: true
+
+- name: Fetching all service groups status
+  ansible.builtin.assert:
+    that:
+      - service_groups.response is defined
+      - service_groups.changed == false
+      - service_groups.failed == false
+      - service_groups.response | length > 0
+    fail_msg: Unable to list all service groups
+    success_msg: service groups listed successfully
+################################################################
+- name: List service_group using limit
+  ntnx_service_groups_info_v2:
+    limit: 1
+  register: result
+
+- name: List service group with limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: Unable to list all service groups  using limit
+    success_msg: service groups listed successfully  using limit
+###############################################################
+- name: Test getting particular service_group using filter
+  ntnx_service_groups_info_v2:
+    filter: name eq '{{ service_group_name }}_4'
+  register: result
+  ignore_errors: true
+
+- name: List service group with filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].ext_id == '{{ todelete[3] }}'
+      - result.response[0].name == "{{ service_group_name }}_4"
+    fail_msg: Unable to get particular service_group
+    success_msg: service_group info obtained successfully
+################################################################
+- name: Test getting particular service_group using external id
+  ntnx_service_groups_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: List service group with external id status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ service_group_name }}_1"
+    fail_msg: Unable to get particular service_group
+    success_msg: service_group info obtained successfully
+################################################################
+- name: Update tcp service group name and description and other protocols with check mode enabled
+  ntnx_service_groups_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: updated_name
+    description: updated_desc
+    tcp_services:
+      - start_port: 60
+        end_port: 90
+    icmp_services:
+      - type: 2
+        code: 3
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update service group status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "updated_name"
+      - result.response.description == "updated_desc"
+      - result.response.tcp_services[0].start_port == 60
+      - result.response.tcp_services[0].end_port == 90
+      - result.response.icmp_services[0].code == 3
+      - result.response.icmp_services[0].type == 2
+    fail_msg: "Fail: Unable to update tcp service group with check mode enabled"
+    success_msg: "Pass: tcp service group update successfully with check mode enabled"
+################################################################
+- name: Update tcp service group name and description and other protocols
+  ntnx_service_groups_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: updated_name
+    description: updated_desc
+    tcp_services:
+      - start_port: 60
+        end_port: 90
+    icmp_services:
+      - type: 2
+        code: 3
+  register: result
+  ignore_errors: true
+
+- name: Update service group status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id is defined
+      - result.ext_id == "{{ result.response.ext_id }}"
+      - result.response.name == "updated_name"
+      - result.response.description == "updated_desc"
+      - result.response.tcp_services[0].start_port == 60
+      - result.response.tcp_services[0].end_port == 90
+      - result.response.icmp_services[0].code == 3
+      - result.response.icmp_services[0].type == 2
+    fail_msg: "Fail: Unable to update tcp service group  "
+    success_msg: "Pass: tcp service group  update successfully"
+################################################################
+- name: Update tcp service group with same values
+  ntnx_service_groups_v2:
+    ext_id: "{{ todelete[0] }}"
+    name: updated_name
+    description: updated_desc
+    tcp_services:
+      - start_port: 60
+        end_port: 90
+    icmp_services:
+      - type: 2
+        code: 3
+  register: result
+  ignore_errors: true
+
+- name: Update service group status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    fail_msg: Fail service group updated with same values
+    success_msg: "Pass : return as expected "
+################################################################
+- name: Delete all created service groups
+  ntnx_service_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Delete service group status
+  ansible.builtin.assert:
+    that:
+      - result.changed is defined
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: unable to delete all created service groups
+    success_msg: All service groups deleted successfully
+
+- name: Set todelete to empty list
+  ansible.builtin.set_fact:
+    todelete: []

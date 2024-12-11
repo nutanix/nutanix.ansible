@@ -1,14 +1,15 @@
 ---
-- debug:
+- name: Start testing ntnx_categories_info
+  ansible.builtin.debug:
     msg: Start testing ntnx_categories_info
 
-- name: test getting all categories
+- name: Test getting all categories
   ntnx_categories_info:
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response.entities is defined
       - result.changed == false
@@ -18,12 +19,13 @@
     fail_msg: "Unable to list all categories"
     success_msg: "categories listed successfully"
 #####################################################################################################
-- set_fact:
+- name: Set category name and values
+  ansible.builtin.set_fact:
     category_name: test-catAA
     values:
-        - 'value-a'
-        - 'value-b'
-        - 'value-c'
+      - "value-a"
+      - "value-b"
+      - "value-c"
 
 - name: Create category key
   ntnx_categories:
@@ -33,15 +35,15 @@
   register: result
   ignore_errors: true
 
-- name: test getting the category with filter by it's name
+- name: Test getting the category with filter by it's name
   ntnx_categories_info:
     filter:
-        name: "{{category_name}}"
+      name: "{{category_name}}"
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response.entities|length == 1
       - result.changed == false
@@ -50,14 +52,14 @@
     fail_msg: "Unable to get particular category with name filter"
     success_msg: "category info obtained successfully by name filter"
 #####################################################################################################
-- name: test getting the category  by it's name
+- name: Test getting the category  by it's name
   ntnx_categories_info:
-        name: "{{category_name}}"
+    name: "{{category_name}}"
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -66,7 +68,7 @@
     fail_msg: "Unable to get particular category with it's name"
     success_msg: "category info obtained successfully by it's name"
 #####################################################################################################
-- name: delete the category
+- name: Delete the category
   ntnx_categories:
     state: "absent"
     name: "{{category_name}}"
@@ -74,7 +76,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
