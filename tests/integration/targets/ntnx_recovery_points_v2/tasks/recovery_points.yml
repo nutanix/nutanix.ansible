@@ -1025,7 +1025,6 @@
   loop: "{{ result.results }}"
   loop_control:
     index_var: recovery_point_index
-  no_log: true
 
 ########################################################################################################
 
@@ -1052,7 +1051,6 @@
   loop: "{{ result.results }}"
   loop_control:
     index_var: vgs_index
-  no_log: true
 
 ########################################################################################################
 
@@ -1079,7 +1077,6 @@
   loop: "{{ result.results }}"
   loop_control:
     index_var: vms_index
-  no_log: true
 
 - name: Reset to delete lists
   ansible.builtin.set_fact:

@@ -483,7 +483,6 @@
     success_msg: Delete created auth policies passed
   loop: "{{ result.results }}"
   when: todelete | length > 0 and result | length > 0
-  no_log: true
 
 - name: Reset todelete
   ansible.builtin.set_fact:

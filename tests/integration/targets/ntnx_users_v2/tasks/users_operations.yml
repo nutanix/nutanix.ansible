@@ -612,7 +612,6 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
-  no_log: true
 
 - name: Delete created users status
   ansible.builtin.assert:
@@ -625,7 +624,6 @@
     success_msg: Delete created users passed
   loop: "{{ result.results }}"
   when: todelete | length > 0 and result | length > 0
-  no_log: true
 
 - name: Reset todelete list
   ansible.builtin.set_fact:

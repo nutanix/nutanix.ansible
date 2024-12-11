@@ -24,7 +24,6 @@
     description: ansible test
   register: results
   loop: [0, 1, 2, 3]
-  no_log: true
 
 - name: Verify category creation status
   ansible.builtin.assert:
@@ -35,7 +34,6 @@
     fail_msg: Failed to create category
     success_msg: Successfully created category
   loop: "{{ results.results }}"
-  no_log: true
 
 - name: Set categories to be used in security rules
   ansible.builtin.set_fact:
@@ -233,7 +231,6 @@
   register: result
   loop:
     ["{{ category1 }}", "{{ category2 }}", "{{ category3 }}", "{{ category4 }}"]
-  no_log: true
 
 - name: Verify deletion status
   ansible.builtin.assert:
@@ -243,4 +240,3 @@
     fail_msg: Failed to delete category
     success_msg: Successfully deleted category
   loop: "{{ result.results }}"
-  no_log: true

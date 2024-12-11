@@ -371,7 +371,6 @@
     fail_msg: "Unable to delete Subnet "
     success_msg: "Subnet is deleted successfully "
   loop: "{{ result.results }}"
-  no_log: true
 
 - name: Reset todelete list
   ansible.builtin.set_fact:
@@ -923,7 +922,6 @@
     fail_msg: "Unable to delete Subnet "
     success_msg: "Subnet is deleted successfully "
   loop: "{{ result.results }}"
-  no_log: true
 
 - name: Reset todelete list
   ansible.builtin.set_fact:

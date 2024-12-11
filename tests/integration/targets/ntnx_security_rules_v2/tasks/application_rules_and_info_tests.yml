@@ -56,7 +56,6 @@
     fail_msg: Failed to create category
     success_msg: Successfully created category
   loop: "{{ results.results }}"
-  no_log: true
 
 - name: Set categories to be used in security rules
   ansible.builtin.set_fact:
@@ -234,7 +233,6 @@
   with_items: "{{ result.response.rules }}"
   loop_control:
     index_var: item_index
-  no_log: true
 
 - name: Find index of 'inbound2'
   ansible.builtin.set_fact:
@@ -243,7 +241,6 @@
   with_items: "{{ result.response.rules }}"
   loop_control:
     index_var: item_index
-  no_log: true
 
 - name: Find index of 'outbound1'
   ansible.builtin.set_fact:
@@ -252,7 +249,6 @@
   with_items: "{{ result.response.rules }}"
   loop_control:
     index_var: item_index
-  no_log: true
 
 - name: Verify creation status
   ansible.builtin.assert:
@@ -339,7 +335,6 @@
   ansible.builtin.set_fact:
     rule_map: "{{ rule_map | default({}) | combine({item.description: item}) }}"
   loop: "{{ result.response.rules }}"
-  no_log: true
 
 - name: Verify creation status
   ansible.builtin.assert:
@@ -468,7 +463,6 @@
   ansible.builtin.set_fact:
     rule_map: "{{ rule_map | default({}) | combine({item.description: item}) }}"
   loop: "{{ result.response.rules }}"
-  no_log: true
 
 - name: Verify creation status
   ansible.builtin.assert:
@@ -770,7 +764,6 @@
   ansible.builtin.set_fact:
     rule_map: "{{ rule_map | default({}) | combine({item.description: item}) }}"
   loop: "{{ result.response.rules }}"
-  no_log: true
 
 - name: Verify updated policy status
   ansible.builtin.assert:
@@ -983,7 +976,6 @@
   ansible.builtin.set_fact:
     rule_map: "{{ rule_map | default({}) | combine({item.description: item}) }}"
   loop: "{{ result.response.rules }}"
-  no_log: true
 
 - name: Verify update status
   ansible.builtin.assert:
@@ -1160,7 +1152,6 @@
       "{{ category4 }}",
       "{{ category5 }}",
     ]
-  no_log: true
 
 - name: Verify deletion status
   ansible.builtin.assert:
@@ -1170,4 +1161,3 @@
     fail_msg: Failed to delete category
     success_msg: Successfully deleted category
   loop: "{{ result.results }}"
-  no_log: true
