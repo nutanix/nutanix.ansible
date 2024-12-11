@@ -30,6 +30,10 @@
 
 ###########################################################################################################
 
+- name: Wait 60 seconds for static routes to be created
+  pause:
+    seconds: 60
+
 - name: get all static routes
   ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
