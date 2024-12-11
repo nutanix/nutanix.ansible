@@ -1,15 +1,15 @@
 ---
 - name: Set module defaults
   module_defaults:
-  group/nutanix.ncp.ntnx:
+    group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
   block:
-      - name: Import create.yml
-        ansible.builtin.import_tasks: "create.yml"
-      - name: Import update.yml
-        ansible.builtin.import_tasks: "update.yml"
-      - name: Import delete.yml
-        ansible.builtin.import_tasks: "delete.yml"
+    - name: Import create.yml
+      ansible.builtin.import_tasks: "create.yml"
+    - name: Import update.yml
+      ansible.builtin.import_tasks: "update.yml"
+    - name: Import delete.yml
+      ansible.builtin.import_tasks: "delete.yml"
