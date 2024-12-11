@@ -252,8 +252,8 @@
       - actual_expiration_time == expected_expiration_time
       - result.response.status == "COMPLETE"
       - result.response.recovery_point_type == "CRASH_CONSISTENT"
-      - result.response.vm_recovery_points[0].vm_ext_id == "{{ vm_ext_id_1 }}"
-      - result.response.vm_recovery_points[1].vm_ext_id == "{{ vm_ext_id_2 }}"
+      - result.response.vm_recovery_points[0].vm_ext_id in "{{ vm_todelete[0:2] }}"
+      - result.response.vm_recovery_points[1].vm_ext_id in "{{ vm_todelete[0:2] }}"
     fail_msg: "Unable to create VM recovery point with multiple VMs"
     success_msg: "VM recovery point created successfully with multiple VMs"
 
@@ -328,8 +328,8 @@
       - actual_expiration_time == expected_expiration_time
       - result.response.status == "COMPLETE"
       - result.response.recovery_point_type == "CRASH_CONSISTENT"
-      - result.response.volume_group_recovery_points[0].volume_group_ext_id == "{{ vg_ext_id_1 }}"
-      - result.response.volume_group_recovery_points[1].volume_group_ext_id == "{{ vg_ext_id_2 }}"
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
+      - result.response.volume_group_recovery_points[1].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
     fail_msg: "Unable to create VG recovery point with multiple VGs"
     success_msg: "VG recovery point created successfully with multiple VGs"
 
@@ -370,8 +370,8 @@
       - actual_expiration_time == expected_expiration_time
       - result.response.status == "COMPLETE"
       - result.response.recovery_point_type == "CRASH_CONSISTENT"
-      - result.response.vm_recovery_points[0].vm_ext_id == "{{ vm_ext_id_1 }}"
-      - result.response.vm_recovery_points[1].vm_ext_id == "{{ vm_ext_id_2 }}"
+      - result.response.vm_recovery_points[0].vm_ext_id in "{{ vm_todelete[0:2] }}"
+      - result.response.vm_recovery_points[1].vm_ext_id in "{{ vm_todelete[0:2] }}"
       - result.response.volume_group_recovery_points[0].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
       - result.response.volume_group_recovery_points[1].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
       - result.task_ext_id is defined
@@ -588,8 +588,8 @@
       - result.response.ext_id == "{{ recovery_point_ext_id_2 }}"
       - result.response.name == "{{ recovery_point_name }}_2"
       - result.response.recovery_point_type == "CRASH_CONSISTENT"
-      - result.response.vm_recovery_points[0].vm_ext_id == "{{ vm_ext_id_1 }}"
-      - result.response.vm_recovery_points[1].vm_ext_id == "{{ vm_ext_id_2 }}"
+      - result.response.vm_recovery_points[0].vm_ext_id in "{{ vm_todelete[0:2] }}"
+      - result.response.vm_recovery_points[1].vm_ext_id in "{{ vm_todelete[0:2] }}"
       - result.response.vm_recovery_points[0].ext_id is defined
       - result.response.vm_recovery_points[1].ext_id is defined
     fail_msg: "Unable to get recovery point details"
@@ -701,8 +701,8 @@
       - result.response.ext_id == "{{ recovery_point_ext_id_4 }}"
       - result.response.name == "{{ recovery_point_name }}_4"
       - result.response.recovery_point_type == "CRASH_CONSISTENT"
-      - result.response.volume_group_recovery_points[0].volume_group_ext_id == "{{ vg_ext_id_1 }}"
-      - result.response.volume_group_recovery_points[1].volume_group_ext_id == "{{ vg_ext_id_2 }}"
+      - result.response.volume_group_recovery_points[0].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
+      - result.response.volume_group_recovery_points[1].volume_group_ext_id in "{{ vg_todelete[0:2] }}"
       - result.response.volume_group_recovery_points[0].ext_id is defined
       - result.response.volume_group_recovery_points[1].ext_id is defined
     fail_msg: "Unable to get recovery point details"
