@@ -10,17 +10,17 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_storage_containers_info_v2
-short_description: Retrieve information about Nutanix storage continer from PC
+short_description: Retrieve information about Nutanix storage container from PC
 version_added: 2.0.0
 description:
-    - This module retrieves information about Nutanix storage continer from PC.
-    - Fetch particular storage continer info using external ID
-    - Fetch multiple storage continers info with/without using filters, limit, etc.
+    - This module retrieves information about Nutanix storage container from PC.
+    - Fetch particular storage container info using external ID
+    - Fetch multiple storage containers info with/without using filters, limit, etc.
 options:
   ext_id:
     description:
-      - The external ID of the storage continer.
-      - If not provided, multiple storage continer info will be fetched.
+      - The external ID of the storage container.
+      - If not provided, multiple storage container info will be fetched.
     type: str
     required: false
 extends_documentation_fragment:
@@ -33,7 +33,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: fetch storage continer info using external ID
+- name: fetch storage container info using external ID
   ntnx_storage_containerss_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
@@ -41,14 +41,14 @@ EXAMPLES = r"""
     ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
   register: result
 
-- name: fetch all storage continer info
+- name: fetch all storage container info
   ntnx_storage_containerss_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
   register: result
 
-- name: fetch all storage continer info with filter
+- name: fetch all storage container info with filter
   ntnx_storage_containerss_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>

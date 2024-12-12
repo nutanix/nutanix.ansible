@@ -1,5 +1,5 @@
 ---
-- name: Create registeries
+- name: Create registries
   hosts: localhost
   gather_facts: false
   module_defaults:

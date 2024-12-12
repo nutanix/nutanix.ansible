@@ -103,7 +103,7 @@
       - spec.changed==false
       - spec.response == expected_spec
     fail_msg: " Fail : unable to create spec for imaging nodes"
-    success_msg: "Succes: spec generated successfully"
+    success_msg: "Success: spec generated successfully"
 
 - name: Image nodes without cluster creation
   ntnx_foundation:
@@ -143,7 +143,7 @@
       - result.failed==false
       - result.changed==true
     fail_msg: " Fail : unable to image nodes"
-    success_msg: "Succes: node imaging done successfully"
+    success_msg: "Success: node imaging done successfully"
 
 - name: Image nodes and create cluster out of it
   ntnx_foundation:
@@ -198,6 +198,5 @@
       - result.changed==true
       - result.response.cluster_urls is defined
     fail_msg: " Fail : unable to image nodes and create cluster"
-    success_msg: "Succes: cluster and node imaging done successfully"
-
+    success_msg: "Success: cluster and node imaging done successfully"
 ######################################################

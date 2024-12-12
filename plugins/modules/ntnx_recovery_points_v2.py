@@ -349,7 +349,7 @@ def create_recovery_point(module, result):
         task_status = wait_for_completion(module, task_ext_id, True)
         result["response"] = strip_internal_attributes(task_status.to_dict())
         ext_id = get_ext_id_from_task_completion_details(
-            task_status, name=TASK_CONSTANTS.CompletetionDetailsName.RECOVERY_POINT
+            task_status, name=TASK_CONSTANTS.CompletionDetailsName.RECOVERY_POINT
         )
         if ext_id:
             resp = get_recovery_point(module, recovery_points, ext_id)

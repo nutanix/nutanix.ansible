@@ -256,7 +256,7 @@ class ACP:
                 "right_hand_side": {"collection": "ALL"},
                 "left_hand_side": {"entity_type": "directory_service"},
             },
-            "Search_Sirectory_Service": {
+            "Search_Directory_Service": {
                 "operator": "IN",
                 "right_hand_side": {"collection": "ALL"},
                 "left_hand_side": {"entity_type": "directory_service"},

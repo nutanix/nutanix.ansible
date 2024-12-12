@@ -20,7 +20,7 @@ class Tag(NutanixDatabase):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "entity_type": self._build_spec_entity_type,
-            "tag_value_required": self._build_spec_tag_vlaue_required,
+            "tag_value_required": self._build_spec_tag_value_required,
             "status": self._build_spec_status,
         }
 
@@ -137,7 +137,7 @@ class Tag(NutanixDatabase):
         payload["entityType"] = entity_type
         return payload, None
 
-    def _build_spec_tag_vlaue_required(self, payload, tag_value_required):
+    def _build_spec_tag_value_required(self, payload, tag_value_required):
         payload["required"] = tag_value_required
         return payload, None
 

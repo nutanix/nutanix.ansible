@@ -1,5 +1,5 @@
 ---
-- name: Get registeries info
+- name: Get registries info
   hosts: localhost
   gather_facts: false
   module_defaults:

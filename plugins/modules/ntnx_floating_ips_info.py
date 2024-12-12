@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_floating_ips_info
-short_description: Floting ips info module
+short_description: Floating ips info module
 version_added: 1.0.0
 description: 'Get floating_ip info'
 options:
@@ -21,7 +21,7 @@ options:
         default: floating_ip
       fip_uuid:
         description:
-            - Floting ip UUID
+            - Floating ip UUID
         type: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials

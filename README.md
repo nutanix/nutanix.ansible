@@ -243,7 +243,7 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_ndb_database_restore | perform database restore |
 | ntnx_ndb_database_scale | perform database scaling |
 | ntnx_ndb_linked_databases | Add and remove linked databases of database instance |
-| ntnx_ndb_replicate_database_snapshots | replicate snapshots accross clusters in time machines |
+| ntnx_ndb_replicate_database_snapshots | replicate snapshots across clusters in time machines |
 | ntnx_ndb_register_db_server_vm | register database server vm |
 | ntnx_ndb_maintenance_tasks | Add and remove maintenance tasks in window |
 | ntnx_ndb_maintenance_window | Create, update and delete maintenance window |

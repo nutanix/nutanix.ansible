@@ -8,7 +8,7 @@ from copy import deepcopy
 from .accounts import Account, get_account_uuid
 from .acps import ACP
 from .clusters import Cluster
-from .idempotence_identifiers import IdempotenceIdenitifiers
+from .idempotence_identifiers import IdempotenceIdentifiers
 from .prism import Prism
 from .roles import get_role_uuid
 from .subnets import Subnet, get_subnet_uuid
@@ -133,9 +133,9 @@ class ProjectsInternal(Prism):
         if err:
             return None, err
 
-        payload["spec"]["project_detail"]["resources"][
-            "default_subnet_reference"
-        ] = Subnet.build_subnet_reference_spec(uuid)
+        payload["spec"]["project_detail"]["resources"]["default_subnet_reference"] = (
+            Subnet.build_subnet_reference_spec(uuid)
+        )
         return payload, None
 
     def _build_spec_subnets(self, payload, subnet_ref_list):
@@ -193,7 +193,7 @@ class ProjectsInternal(Prism):
             ):
                 new_uuids_required += 1
 
-        ii = IdempotenceIdenitifiers(self.module)
+        ii = IdempotenceIdentifiers(self.module)
 
         # get uuids for user groups
         new_uuid_list = ii.get_idempotent_uuids(new_uuids_required)
@@ -393,13 +393,11 @@ class ProjectsInternal(Prism):
                 acp["acp"]["resources"]["user_reference_list"] = role_user_groups_map[
                     acp["acp"]["resources"]["role_reference"]["uuid"]
                 ]["users"]
-                acp["acp"]["resources"][
-                    "user_group_reference_list"
-                ] = role_user_groups_map[
-                    acp["acp"]["resources"]["role_reference"]["uuid"]
-                ][
-                    "user_groups"
-                ]
+                acp["acp"]["resources"]["user_group_reference_list"] = (
+                    role_user_groups_map[
+                        acp["acp"]["resources"]["role_reference"]["uuid"]
+                    ]["user_groups"]
+                )
 
                 # pop the role uuid entry once used for acp update
                 role_user_groups_map.pop(

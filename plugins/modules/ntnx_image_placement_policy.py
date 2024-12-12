@@ -41,7 +41,7 @@ options:
         type: str
     policy_uuid:
         description:
-            - image placement policy of existig uuid
+            - image placement policy of existing uuid
             - required only when updating or deleting
         type: str
         required: false

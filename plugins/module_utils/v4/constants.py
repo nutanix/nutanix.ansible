@@ -41,7 +41,7 @@ class Tasks:
         STORAGE_CONTAINER = "clustermgmt:config:storage-containers"
         ROUTE = "networking:config:route"
 
-    class CompletetionDetailsName:
+    class CompletionDetailsName:
         """Completion details name for the task entities affected"""
 
         RECOVERY_POINT = "recoveryPointExtId"

@@ -24,7 +24,7 @@ options:
         type: str
       name:
         description:
-            - name of snaphsot.
+            - name of snapshot.
             - required for create
             - update is allowed
         type: str

@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_acps
-short_description: acp module which suports acp Create, update and delete operations
+short_description: acp module which supports acp Create, update and delete operations
 version_added: 1.4.0
 description: 'Create, Update, Delete acp'
 options:
@@ -155,14 +155,14 @@ EXAMPLES = r"""
     user_group_uuids:
       - "{{ user_group_uuid }}"
 
-- name: Create ACP with all specfactions
+- name: Create ACP with all specifications
   ntnx_acps:
     validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    name: acp_with_all_specfactions
+    name: acp_with_all_specifications
     role:
       uuid: "{{ role.uuid }}"
     user_uuids:

@@ -451,7 +451,7 @@ class DBServerVM(NutanixDatabase):
             if not vm_info.get("ipAddresses", []):
                 return None, "No IP address found for given db server vm"
 
-            # picking first IP of db server vm for registraion
+            # picking first IP of db server vm for registration
             payload["vmIp"] = vm_info["ipAddresses"][0]
 
         elif params.get("ip"):
@@ -631,7 +631,7 @@ class DBServerVM(NutanixDatabase):
         cluster = Cluster(self.module)
         clusters = cluster.get_all_clusters_name_uuid_map()
 
-        # spec with default vlaues
+        # spec with default values
         spec = {
             "properties": [],
             "vmName": "",

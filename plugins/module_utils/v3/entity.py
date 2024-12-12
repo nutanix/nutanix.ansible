@@ -624,7 +624,7 @@ class Entity(object):
         return filtered_entities
 
 
-# Read files in chunks and yeild it
+# Read files in chunks and yield it
 class CreateChunks(object):
     def __init__(self, filename, chunk_size=1 << 13):
         self.filename = filename

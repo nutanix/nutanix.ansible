@@ -10,13 +10,13 @@ __metaclass__ = type
 
 class ModuleDocFragment(object):
 
-    # Plugin options for ntnx CRUD opperations
+    # Plugin options for ntnx CRUD operations
     DOCUMENTATION = r"""
 options:
   state:
     description:
       - Specify state
-      - If C(state) is set to C(present) then the opperation will be  create the item
+      - If C(state) is set to C(present) then the operation will be  create the item
       - >-
         If C(state) is set to C(absent) and if the item exists, then
         item is removed.

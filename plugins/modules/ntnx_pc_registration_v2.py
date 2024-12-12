@@ -14,7 +14,7 @@ short_description: Registers a domain manager (Prism Central) instance to other 
 version_added: 2.0.0
 description:
     - Registers a domain manager (Prism Central) instance to other entities like PE and PC
-    - Unregisteration of a domain manager (Prism Central) instance is not supported
+    - Unregistration of a domain manager (Prism Central) instance is not supported
 options:
   wait:
       description: Wait for the operation to complete.
