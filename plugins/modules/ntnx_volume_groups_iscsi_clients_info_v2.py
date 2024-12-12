@@ -131,35 +131,6 @@ def get_module_spec():
     return module_args
 
 
-def get_vg_iscsi_clients(module, result):
-    vgs = get_vg_api_instance(module)
-    volume_group_ext_id = module.params.get("volume_group_ext_id")
-
-    sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
-
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed generating info Spec", **result)
-
-    try:
-        resp = vgs.list_external_iscsi_attachments_by_volume_group_id(
-            volumeGroupExtId=volume_group_ext_id, **kwargs
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching ISCSI clients attached to VGs",
-        )
-
-    result["volume_group_ext_id"] = volume_group_ext_id
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
-
-
 def get_iscsi_client(module, result):
     clients = get_iscsi_client_api_instance(module)
     ext_id = module.params.get("ext_id")
@@ -214,13 +185,10 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
-    if module.params.get("volume_group_ext_id"):
-        get_vg_iscsi_clients(module, result)
+    if module.params.get("ext_id"):
+        get_iscsi_client(module, result)
     else:
-        if module.params.get("ext_id"):
-            get_iscsi_client(module, result)
-        else:
-            get_iscsi_clients(module, result)
+        get_iscsi_clients(module, result)
 
     module.exit_json(**result)
 
