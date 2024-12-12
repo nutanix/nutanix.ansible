@@ -119,7 +119,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
 )
 from ..module_utils.v4.volumes.api_client import (  # noqa: E402
     get_iscsi_client_api_instance,
-    get_vg_api_instance,
 )
 
 

@@ -156,6 +156,8 @@
     fail_msg: "Unable to attach iscsi client using initiator name"
     success_msg: "ISCSI client attached successfully using initiator name"
 
+# Need to verify attachment
+
 # - name: List all clients attached to VG to verify attachment
 #   ntnx_volume_groups_iscsi_clients_info_v2:
 #     volume_group_ext_id: "{{ vg1_uuid }}"
@@ -209,6 +211,8 @@
     fail_msg: "Unable to detach iscsi client using initiator name"
     success_msg: "ISCSI client detached successfully using initiator name"
 
+# Need to verify detachment
+
 # - name: List all clients attached to VG to verify detachment
 #   ntnx_volume_groups_iscsi_clients_info_v2:
 #     volume_group_ext_id: "{{ vg1_uuid }}"
@@ -243,6 +247,8 @@
       - result.response.status == "SUCCEEDED"
     fail_msg: "Unable to attach iscsi client using ext_id"
     success_msg: "ISCSI client attached successfully using ext_id"
+
+# Need to verify attachment
 
 # - name: List all clients attached to VG to verify attachment
 #   ntnx_volume_groups_iscsi_clients_info_v2:
@@ -279,6 +285,8 @@
       - result.response.status == "SUCCEEDED"
     fail_msg: "Unable to detach iscsi client using initiator name"
     success_msg: "ISCSI client detached successfully using initiator name"
+
+# Need to verify detachment
 
 # - name: List all clients attached to VG to verify detachment
 #   ntnx_volume_groups_iscsi_clients_info_v2:
