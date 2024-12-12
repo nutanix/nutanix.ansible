@@ -126,7 +126,7 @@ options:
 
             use_authorized_server:
                 description:
-                    - conifgure authorized database server VM for hosting database clone
+                    - configure authorized database server VM for hosting database clone
                 type: dict
                 suboptions:
                     name:
@@ -747,13 +747,13 @@ def get_clone_spec(module, result, time_machine_uuid):
     provision_new_server = (
         True if module.params.get("db_vm", {}).get("create_new_server") else False
     )
-    use_athorized_server = not provision_new_server
+    use_authorized_server = not provision_new_server
 
     kwargs = {
         "time_machine_uuid": time_machine_uuid,
         "db_clone": True,
         "provision_new_server": provision_new_server,
-        "use_authorized_server": use_athorized_server,
+        "use_authorized_server": use_authorized_server,
     }
 
     spec, err = db_server_vms.get_spec(old_spec=spec, **kwargs)

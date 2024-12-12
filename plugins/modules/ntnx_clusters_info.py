@@ -32,7 +32,7 @@ author:
   - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-- name: List clusterss
+- name: List clusters
   ntnx_clusters_info:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

@@ -363,7 +363,7 @@ from ..module_utils.utils import (  # noqa: E402
     strip_extra_attrs,
 )
 from ..module_utils.v3.prism.idempotence_identifiers import (  # noqa: E402
-    IdempotenceIdenitifiers,
+    IdempotenceIdentifiers,
 )
 from ..module_utils.v3.prism.projects import Project  # noqa: E402
 from ..module_utils.v3.prism.projects_internal import ProjectsInternal  # noqa: E402
@@ -486,7 +486,7 @@ def create_project(module, result):
     if module.params.get("role_mappings"):
 
         # generate new uuid for project
-        ii = IdempotenceIdenitifiers(module)
+        ii = IdempotenceIdentifiers(module)
         uuids = ii.get_idempotent_uuids()
         projects = ProjectsInternal(module, uuid=uuids[0])
 

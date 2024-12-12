@@ -83,7 +83,7 @@
 ## Workflow
 
 1. Create a github issue with following details
- * **Title** should contain <font color="red">one of</font> the follwoing
+ * **Title** should contain <font color="red">one of</font> the following
     - [Feat] Develop ansible module for \<api_name>
     - [Imprv] Modify ansible module to support \<new_functionality>
     - [Bug] Fix \<summary of issue> bug in \<ansible_module_name>
@@ -106,7 +106,7 @@
  * `imprv/issue#<id>`
  * `bug/issue#<id>`
 
-3. Develop `sanity`, `unit` and `integrtaion` tests.
+3. Develop `sanity`, `unit` and `integration` tests.
 
 4. Create a [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
 

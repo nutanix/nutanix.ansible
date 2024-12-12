@@ -44,7 +44,7 @@
           - is_connected: true
             subnet:
               name: "{{ subnet_name }}"
-              # mention cluster only when there are multiple subnets with same name accross clusters
+              # mention cluster only when there are multiple subnets with same name across clusters
               # and subnet name is set above
               cluster:
                 name: "{{cluster_name}}"

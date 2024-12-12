@@ -10,14 +10,14 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_storage_containers_stats_v2
-short_description: Retrieve stats about Nutanix storage continer from PC
+short_description: Retrieve stats about Nutanix storage container from PC
 version_added: 2.0.0
 description:
     - Get Stats for a Storage Container
 options:
   ext_id:
     description:
-      - The external ID of the storage continer.
+      - The external ID of the storage container.
     type: str
     required: true
   start_time:

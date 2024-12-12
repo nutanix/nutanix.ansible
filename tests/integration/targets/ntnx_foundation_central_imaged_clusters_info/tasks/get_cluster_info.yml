@@ -17,7 +17,7 @@
       - clusters.failed==false
       - clusters.response is defined
     fail_msg: "fail: unable to get all imaged,archived cluster  "
-    success_msg: "succes:  get all imaged,archived cluster sucessfuly "
+    success_msg: "Success:  get all imaged,archived cluster successfully "
 
 - name: Get imaged cluster using image_cluster_uuid
   ntnx_foundation_central_imaged_clusters_info:
@@ -33,7 +33,7 @@
       - result.response is defined
       - result.response.imaged_cluster_uuid == "{{clusters.response.imaged_clusters.0.imaged_cluster_uuid}}"
     fail_msg: "fail: unable to get imaged cluster using image_cluster_uuid "
-    success_msg: "succes: get imaged cluster using image_cluster_uuid sucessfuly "
+    success_msg: "Success: get imaged cluster using image_cluster_uuid successfully "
 
 - name: Get imaged cluster using custom filter
   ntnx_foundation_central_imaged_clusters_info:
@@ -49,8 +49,7 @@
       - result.failed==false
       - result.response.imaged_clusters is defined
     fail_msg: "fail: unable to get imaged cluster using custom filter "
-    success_msg: "succes: get imaged cluster using custom filter sucessfully"
-
+    success_msg: "Success: get imaged cluster using custom filter successfully"
 # still offset and length
 # - debug:
 #     var: clusters.response

@@ -3,7 +3,7 @@
   ansible.builtin.debug:
     msg: "Started Negative Creation Cases"
 
-- name: Unknow virtual switch name
+- name: Unknown virtual switch name
   ntnx_subnets:
     state: present
     name: VLAN subnet without IPAM
@@ -23,7 +23,7 @@
       - result.msg=="Failed generating subnet spec"
     success_msg: " Success: returned error as expected "
 ###############################################################
-- name: Unknow virtual switch uuid
+- name: Unknown virtual switch uuid
   ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM
@@ -76,7 +76,7 @@
   ntnx_subnets:
     state: absent
     subnet_uuid: 5
-  register: resultt
+  register: result
   ignore_errors: true
 
 - name: Creation Status

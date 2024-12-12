@@ -100,14 +100,14 @@ New Modules
 - ntnx_ndb_db_servers_info - info module for ndb db server vms info
 - ntnx_ndb_linked_databases - module to manage linked databases of a database instance
 - ntnx_ndb_maintenance_tasks - module to add and remove maintenance related tasks
-- ntnx_ndb_maintenance_window - module to create, update and delete mainetance window
+- ntnx_ndb_maintenance_window - module to create, update and delete maintenance window
 - ntnx_ndb_maintenance_windows_info - module for fetching maintenance windows info
 - ntnx_ndb_profiles - module for create, update and delete of profiles
 - ntnx_ndb_profiles_info - info module for ndb profiles
 - ntnx_ndb_register_database - module for database instance registration
 - ntnx_ndb_register_db_server_vm - module for registration of database server vm
 - ntnx_ndb_replicate_database_snapshots - module for replicating database snapshots across clusters of time machine
-- ntnx_ndb_slas - moudle for creating, updating and deleting slas
+- ntnx_ndb_slas - module for creating, updating and deleting slas
 - ntnx_ndb_slas_info - info module for ndb slas
 - ntnx_ndb_snapshots_info - info module for ndb snapshots info
 - ntnx_ndb_stretched_vlans - Module for create, update and delete of stretched vlan.
@@ -173,7 +173,7 @@ Bugfixes
 New Modules
 -----------
 
-- ntnx_acps - acp module which suports acp Create, update and delete operations
+- ntnx_acps - acp module which supports acp Create, update and delete operations
 - ntnx_acps_info - acp info module
 - ntnx_address_groups - module which supports address groups CRUD operations
 - ntnx_address_groups_info - address groups info module
@@ -186,7 +186,7 @@ New Modules
 - ntnx_projects_info - projects info module
 - ntnx_roles - module which supports role CRUD operations
 - ntnx_roles_info - role info module
-- ntnx_service_groups - service_groups module which suports service_groups CRUD operations
+- ntnx_service_groups - service_groups module which supports service_groups CRUD operations
 - ntnx_service_groups_info - service_group info module
 - ntnx_user_groups - user_groups module which supports pc user_groups management create delete operations
 - ntnx_user_groups_info - User Groups info module
@@ -203,7 +203,7 @@ New Modules
 - ntnx_image_placement_policy - image placement policy module which supports Create, update and delete operations
 - ntnx_images - images module which supports pc images management CRUD operations
 - ntnx_images_info - images info module
-- ntnx_security_rules - security_rule module which suports security_rule CRUD operations
+- ntnx_security_rules - security_rule module which supports security_rule CRUD operations
 - ntnx_security_rules_info - security_rule info module
 - ntnx_static_routes - vpc static routes
 - ntnx_static_routes_info - vpc static routes info module
@@ -243,8 +243,8 @@ New Modules
 - ntnx_foundation_central - Nutanix module to imaged Nodes and optionally create cluster
 - ntnx_foundation_central_api_keys - Nutanix module which creates api key for foundation central
 - ntnx_foundation_central_api_keys_info - Nutanix module which returns the api key
-- ntnx_foundation_central_imaged_clusters_info - Nutanix module which returns the imaged clusters within the Foudation Central
-- ntnx_foundation_central_imaged_nodes_info - Nutanix module which returns the imaged nodes within the Foudation Central
+- ntnx_foundation_central_imaged_clusters_info - Nutanix module which returns the imaged clusters within the Foundation Central
+- ntnx_foundation_central_imaged_nodes_info - Nutanix module which returns the imaged nodes within the Foundation Central
 - ntnx_foundation_discover_nodes_info - Nutanix module which returns nodes discovered by Foundation
 - ntnx_foundation_hypervisor_images_info - Nutanix module which returns the hypervisor images uploaded to Foundation
 - ntnx_foundation_image_upload - Nutanix module which uploads hypervisor or AOS image to foundation vm.
@@ -274,7 +274,7 @@ Bugfixes
 - Bug/cluster UUID issue68 [\#72](https://github.com/nutanix/nutanix.ansible/pull/72)
 - Client SDK with inventory [\#45](https://github.com/nutanix/nutanix.ansible/pull/45)
 - Creating a VM based on a disk_image without specifying the size_gb
-- Fix error messages for get_uuid() reponse [\#47](https://github.com/nutanix/nutanix.ansible/pull/47)
+- Fix error messages for get_uuid() response [\#47](https://github.com/nutanix/nutanix.ansible/pull/47)
 - Fix/integ [\#96](https://github.com/nutanix/nutanix.ansible/pull/96)
 - Sanity and python fix [\#46](https://github.com/nutanix/nutanix.ansible/pull/46)
 - Task/fix failing sanity [\#117](https://github.com/nutanix/nutanix.ansible/pull/117)

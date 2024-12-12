@@ -59,8 +59,8 @@
     - name: Update VM by deleting and editing disks and subnets
       nutanix.ncp.ntnx_vms:
         vm_uuid: "{{ vm_uuid }}"
-        name: update diks
-        desc: update disks
+        name: update disks name
+        desc: update disks desc
         disks:
           - type: "DISK"
             uuid: "{{ disk_uuid }}"

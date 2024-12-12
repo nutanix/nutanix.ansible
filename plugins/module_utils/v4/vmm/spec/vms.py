@@ -20,7 +20,7 @@ except ImportError:
 class VmSpecs:
     """Module specs related to Vms"""
 
-    # Allowed object types for variouse attributes
+    # Allowed object types for various attributes
 
     disk_backing_info_allowed_types = {
         "vm_disk": vmm_sdk.AhvConfigVmDisk,
