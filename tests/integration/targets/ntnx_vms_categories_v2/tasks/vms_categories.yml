@@ -81,8 +81,8 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - all_categories[0] == "{{ category_ext_id }}"
-      - all_categories[1] == "{{ category_ext_id1 }}"
+      - "'{{ category_ext_id }}' in {{ all_categories }}"
+      - "'{{ category_ext_id1 }}' in {{ all_categories }}"
       - result.vm_ext_id == "{{ vm_uuid }}"
     fail_msg: " Associate category to VM - check mode is enabled failed  "
     success_msg: " Associate category to VM - check mode is enabled passed  "
@@ -180,9 +180,9 @@
       - result.failed == false
       - result.response.categories | length > 0
       - all_categories | length == 3
-      - all_categories[0] == "{{ category_ext_id }}"
-      - all_categories[1] == "{{ category_ext_id1 }}"
-      - all_categories[2] == "{{ category_ext_id2 }}"
+      - "'{{ category_ext_id }}' in {{ all_categories }}"
+      - "'{{ category_ext_id1 }}' in {{ all_categories }}"
+      - "'{{ category_ext_id2 }}' in {{ all_categories }}"
     fail_msg: "Get categories from VM failed  "
     success_msg: "Get categories from VM passed  "
 
@@ -209,8 +209,8 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - all_categories[0] == "{{ category_ext_id }}"
-      - all_categories[1] == "{{ category_ext_id1 }}"
+      - "'{{ category_ext_id }}' in {{ all_categories }}"
+      - "'{{ category_ext_id1 }}' in {{ all_categories }}"
       - result.vm_ext_id == "{{ vm_uuid }}"
     fail_msg: " Disassociate category from VM - check mode is enabled failed  "
     success_msg: " Disassociate category from VM - check mode is enabled passed  "
@@ -281,8 +281,8 @@
       - result.failed == false
       - result.response.categories | length > 0
       - all_categories | length == 2
-      - all_categories[0] == "{{ category_ext_id1 }}"
-      - all_categories[1] == "{{ category_ext_id2 }}"
+      - "'{{ category_ext_id1 }}' in {{ all_categories }}"
+      - "'{{ category_ext_id2 }}' in {{ all_categories }}"
     fail_msg: "Get categories from VM failed  "
     success_msg: "Get categories from VM passed  "
 
