@@ -183,3 +183,5 @@ The `ntnx_vm_recovery_point_info_v2` module fetches detailed information about V
 ---
 
 Recovery points are an integral part of data protection strategies. The operations and modules discussed above provide a robust framework for managing and leveraging recovery points efficiently.
+
+See detailed information in [ Nutanix Recovery Point V4 ](https://developers.nutanix.com/api-reference?namespace=dataprotection&version=v4.0)
