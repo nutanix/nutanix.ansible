@@ -25,7 +25,7 @@
         cd_rom_ext_id: "d7419d65-7896-3544-4545-ec1431516bbe"
 
     - name: Create CD ROM with all attributes
-      ntnx_vms_cd_rom_v2:
+      nutanix.ncp.ntnx_vms_cd_rom_v2:
         state: present
         vm_ext_id: "{{ vm_uuid }}"
         disk_address:
@@ -40,7 +40,7 @@
       ignore_errors: true
 
     - name: Inject ISO in CD ROM of a VM
-      ntnx_vms_cd_rom_iso_v2:
+      nutanix.ncp.ntnx_vms_cd_rom_iso_v2:
         state: present
         vm_ext_id: "{{ vm_uuid }}"
         ext_id: "{{ cd_rom_ext_id }}"
@@ -53,14 +53,14 @@
       ignore_errors: true
 
     - name: Get CD ROM details
-      ntnx_vms_cd_rom_info_v2:
+      nutanix.ncp.ntnx_vms_cd_rom_info_v2:
         vm_ext_id: "{{ vm_uuid }}"
         ext_id: "{{ cd_rom_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Eject ISO from CD ROM of a VM
-      ntnx_vms_cd_rom_iso_v2:
+      nutanix.ncp.ntnx_vms_cd_rom_iso_v2:
         state: absent
         vm_ext_id: "{{ vm_uuid }}"
         ext_id: "{{ cd_rom_ext_id }}"
@@ -73,7 +73,7 @@
       ignore_errors: true
 
     - name: Delete CD ROM
-      ntnx_vms_cd_rom_v2:
+      nutanix.ncp.ntnx_vms_cd_rom_v2:
         state: absent
         vm_ext_id: "{{ vm_uuid }}"
         ext_id: "{{ cd_rom_ext_id }}"

@@ -23,24 +23,24 @@
         iscsi_client_uuid: "12345678-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
 
     - name: Attach iscsi client to VG using initiator name
-      ntnx_volume_groups_iscsi_clients_v2:
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
         volume_group_ext_id: "{{ vg1_uuid }}"
         iscsi_initiator_name: "{{ iscsi_client_name }}"
         num_virtual_targets: 32
       register: result
 
     - name: List all clients attached to VG
-      ntnx_volume_groups_iscsi_clients_info_v2:
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
         volume_group_ext_id: "{{ vg1_uuid }}"
       register: result
 
     - name: Fetch specific client
-      ntnx_volume_groups_iscsi_clients_info_v2:
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
         ext_id: "{{ iscsi_client_uuid }}"
       register: result
 
     - name: Detach client from VG
-      ntnx_volume_groups_iscsi_clients_v2:
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
         volume_group_ext_id: "{{ vg1_uuid }}"
         ext_id: "{{ iscsi_client_uuid }}"
         state: absent

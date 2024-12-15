@@ -42,7 +42,7 @@
       changed_when: false
 
     - name: Create storage container
-      ntnx_storage_containers_v2:
+      nutanix.ncp.ntnx_storage_containers_v2:
         name: "{{ storage_container_name }}"
         cluster_ext_id: "{{ cluster_ext_id }}"
         owner_ext_id: "{{ owner_uuid }}"
@@ -62,7 +62,7 @@
       ignore_errors: true
 
     - name: Update storage container
-      ntnx_storage_containers_v2:
+      nutanix.ncp.ntnx_storage_containers_v2:
         state: present
         ext_id: "{{ storage_container_ext_id }}"
         name: "{{ storage_container_name }}_updated"
@@ -77,13 +77,13 @@
       ignore_errors: true
 
     - name: Fetch storage container configurations
-      ntnx_storage_containers_info_v2:
+      nutanix.ncp.ntnx_storage_containers_info_v2:
         ext_id: "{{ storage_container_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Fetch storage container stats
-      ntnx_storage_containers_stats_v2:
+      nutanix.ncp.ntnx_storage_containers_stats_v2:
         ext_id: "{{ storage_container_ext_id }}"
         start_time: "{{ start_time.stdout }}"
         end_time: "{{ end_time.stdout }}"
@@ -91,7 +91,7 @@
       ignore_errors: true
 
     - name: Fetch storage container stats with interval defined
-      ntnx_storage_containers_stats_v2:
+      nutanix.ncp.ntnx_storage_containers_stats_v2:
         ext_id: "{{ storage_container_ext_id }}"
         start_time: "{{ start_time.stdout }}"
         end_time: "{{ end_time.stdout }}"
@@ -101,12 +101,12 @@
       ignore_errors: true
 
     - name: Fetch all storage containers
-      ntnx_storage_containers_info_v2:
+      nutanix.ncp.ntnx_storage_containers_info_v2:
       register: result
       ignore_errors: true
 
     - name: Delete storage container
-      ntnx_storage_containers_v2:
+      nutanix.ncp.ntnx_storage_containers_v2:
         state: absent
         ext_id: "{{ storage_container_ext_id }}"
         ignore_small_files: true

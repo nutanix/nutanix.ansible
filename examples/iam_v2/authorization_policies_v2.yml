@@ -33,7 +33,7 @@
           uuid: "12321232-0000-0909-0864-6788222f17b8"
 
     - name: Create auth policy
-      ntnx_authorization_policies_v2:
+      nutanix.ncp.ntnx_authorization_policies_v2:
         state: present
         display_name: "{{ auth_policy_name }}"
         description: ansible created acps
@@ -64,7 +64,7 @@
       ignore_errors: true
 
     - name: Update auth policy
-      ntnx_authorization_policies_v2:
+      nutanix.ncp.ntnx_authorization_policies_v2:
         state: present
         ext_id: "{{ policy_ext_id }}"
         entities:
@@ -82,24 +82,24 @@
       ignore_errors: true
 
     - name: Get all auth policies
-      ntnx_authorization_policies_info_v2:
+      nutanix.ncp.ntnx_authorization_policies_info_v2:
       register: result
       ignore_errors: true
 
     - name: Get specific auth policy
-      ntnx_authorization_policies_info_v2:
+      nutanix.ncp.ntnx_authorization_policies_info_v2:
         ext_id: "{{ policy_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Fetch using filters
-      ntnx_authorization_policies_info_v2:
+      nutanix.ncp.ntnx_authorization_policies_info_v2:
         filter: displayName eq '{{ auth_policy_name }}'
       register: result
       ignore_errors: true
 
     - name: Delete created auth policy
-      ntnx_authorization_policies_v2:
+      nutanix.ncp.ntnx_authorization_policies_v2:
         state: absent
         ext_id: "{{ policy_ext_id }}"
       register: result

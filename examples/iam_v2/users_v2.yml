@@ -34,7 +34,7 @@
         user_ext_id: 00000000-0000-0000-0000-000000000003
 
     - name: Create active local user
-      ntnx_users_v2:
+      nutanix.ncp.ntnx_users_v2:
         user_type: LOCAL
         username: "{{ username }}"
         first_name: "{{ first_name }}"
@@ -50,7 +50,7 @@
       ignore_errors: true
 
     - name: Create SAML user
-      ntnx_users_v2:
+      nutanix.ncp.ntnx_users_v2:
         user_type: SAML
         username: "{{ username }}"
         idp_id: "{{ identity_provider_uuid }}"
@@ -58,7 +58,7 @@
       ignore_errors: true
 
     - name: Create LDAP user
-      ntnx_users_v2:
+      nutanix.ncp.ntnx_users_v2:
         user_type: LDAP
         username: "{{ new_user }}"
         idp_id: "{{ directory_service_uuid }}"
@@ -66,7 +66,7 @@
       ignore_errors: true
 
     - name: Update local user
-      ntnx_users_v2:
+      nutanix.ncp.ntnx_users_v2:
         ext_id: "{{ user_ext_id }}"
         first_name: "{{ first_name }}_updated"
         last_name: "{{ last_name }}_updated"
@@ -79,24 +79,24 @@
       ignore_errors: true
 
     - name: List all users
-      ntnx_users_info_v2:
+      nutanix.ncp.ntnx_users_info_v2:
       register: users
       ignore_errors: true
 
     - name: Fetch user info using user ext_id criteria
-      ntnx_users_info_v2:
+      nutanix.ncp.ntnx_users_info_v2:
         ext_id: "{{ user_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: List users with specific username
-      ntnx_users_info_v2:
+      nutanix.ncp.ntnx_users_info_v2:
         filter: username eq '{{ username }}'
       register: result
       ignore_errors: true
 
     - name: Delete created user
-      ntnx_users:
+      nutanix.ncp.ntnx_users:
         state: absent
         user_uuid: "{{ user_ext_id }}"
       register: result

@@ -35,7 +35,7 @@
         directory_service_ext_id: "12345678-1234-1234-1234-123456789012"
 
     - name: Create ACTIVE_DIRECTORY service
-      ntnx_directory_services_v2:
+      nutanix.ncp.ntnx_directory_services_v2:
         state: present
         name: "{{ name }}"
         url: "{{ url }}"
@@ -50,7 +50,7 @@
       ignore_errors: true
 
     - name: Update directory service
-      ntnx_directory_services_v2:
+      nutanix.ncp.ntnx_directory_services_v2:
         state: present
         ext_id: "{{ directory_service_ext_id }}"
         name: "{{ name }}_updated"
@@ -67,24 +67,24 @@
       ignore_errors: true
 
     - name: Fetch directory service info using ext id
-      ntnx_directory_services_info_v2:
+      nutanix.ncp.ntnx_directory_services_info_v2:
         ext_id: "{{ directory_service_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: List all directory services
-      ntnx_directory_services_info_v2:
+      nutanix.ncp.ntnx_directory_services_info_v2:
       register: result
       ignore_errors: true
 
     - name: List all directory services with filter
-      ntnx_directory_services_info_v2:
+      nutanix.ncp.ntnx_directory_services_info_v2:
         filter: name eq '{{ name }}'
       register: result
       ignore_errors: true
 
     - name: Delete directory service
-      ntnx_directory_services_v2:
+      nutanix.ncp.ntnx_directory_services_v2:
         state: absent
         ext_id: "{{ directory_service_ext_id }}"
       register: result

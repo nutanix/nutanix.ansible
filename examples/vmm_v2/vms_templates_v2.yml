@@ -33,7 +33,7 @@
         cluster_uuid: "00062899-4a29-0cf9-0000-000000028f57"
 
     - name: Create new template from a vm
-      ntnx_templates_v2:
+      nutanix.ncp.ntnx_templates_v2:
         template_name: "{{ template_name }}"
         template_description: ansible test
         template_version_spec:
@@ -44,13 +44,13 @@
       ignore_errors: true
 
     - name: Fetch template info using ext id
-      ntnx_templates_info_v2:
+      nutanix.ncp.ntnx_templates_info_v2:
         ext_id: "{{ template_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Update template description & name
-      ntnx_templates_v2:
+      nutanix.ncp.ntnx_templates_v2:
         ext_id: "{{ template_ext_id }}"
         template_version_spec:
           version_name: "{{ version_name }}"
@@ -67,28 +67,28 @@
       ignore_errors: true
 
     - name: Retrieve the Template Version details for the given Template Version identifier.
-      ntnx_templates_versions_info_v2:
+      nutanix.ncp.ntnx_templates_versions_info_v2:
         ext_id: "{{ version_id }}"
         template_ext_id: "{{ template_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Set the Active Version
-      ntnx_templates_version_v2:
+      nutanix.ncp.ntnx_templates_version_v2:
         template_ext_id: "{{ template_ext_id }}"
         version_id: "{{ version_id }}"
       register: result
       ignore_errors: true
 
     - name: Delete Template Version
-      ntnx_templates_version_v2:
+      nutanix.ncp.ntnx_templates_version_v2:
         state: absent
         template_ext_id: "{{ template_ext_id }}"
         version_id: "{{ version_id }}"
       register: result
 
     - name: Deploy VM
-      ntnx_templates_deploy_v2:
+      nutanix.ncp.ntnx_templates_deploy_v2:
         ext_id: "{{ template_ext_id }}"
         version_id: "{{ version_id }}"
         cluster_reference: "{{ cluster_uuid }}"
@@ -96,7 +96,7 @@
       ignore_errors: true
 
     - name: Initiate_guest_os_update
-      ntnx_templates_guest_os_v2:
+      nutanix.ncp.ntnx_templates_guest_os_v2:
         template_ext_id: "{{ template_ext_id }}"
         version_id: "{{ version_id }}"
         state: start
@@ -104,7 +104,7 @@
       ignore_errors: true
 
     - name: Finish guest_os_update
-      ntnx_templates_guest_os_v2:
+      nutanix.ncp.ntnx_templates_guest_os_v2:
         template_ext_id: "{{ template_ext_id }}"
         version_id: "{{ version_id }}"
         state: finish
@@ -114,7 +114,7 @@
       ignore_errors: true
 
     - name: Delete Template
-      ntnx_templates_v2:
+      nutanix.ncp.ntnx_templates_v2:
         state: absent
         ext_id: "{{ template_ext_id }}"
       register: result

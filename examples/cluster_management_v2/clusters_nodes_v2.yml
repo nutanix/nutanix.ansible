@@ -64,7 +64,7 @@
 
     # to expand cluster, we need to create one with three nodes
     - name: Create 3 nodes cluster with minimum spec
-      ntnx_clusters_v2:
+      nutanix.ncp.ntnx_clusters_v2:
         name: "{{ clusters[0].name }}"
         nodes:
           node_list:
@@ -89,7 +89,7 @@
 
     # we use this to get prism central external ID to use it to register the cluster
     - name: List all clusters to get prism central external ID
-      ntnx_clusters_info_v2:
+      nutanix.ncp.ntnx_clusters_info_v2:
         filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
       register: result
       ignore_errors: true
@@ -100,7 +100,7 @@
         prism_central_external_id: "{{ result.response[0].ext_id }}"
 
     - name: Run PE PC registration
-      ntnx_pc_registration_v2:
+      nutanix.ncp.ntnx_pc_registration_v2:
         ext_id: "{{ prism_central_external_id }}"
         remote_cluster:
           aos_remote_cluster:
@@ -117,7 +117,7 @@
 
     # here we fetch the cluster using the name
     - name: Fetch cluster using name
-      ntnx_clusters_info_v2:
+      nutanix.ncp.ntnx_clusters_info_v2:
         filter: name eq '{{ cluster_name }}'
       register: result
       ignore_errors: true
@@ -129,7 +129,7 @@
 
     # here we discover the unconfigured node which we want to add to the cluster
     - name: Discover unconfigured node
-      ntnx_discover_unconfigured_nodes_v2:
+      nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         address_type: "IPV4"
         ip_filter_list:
@@ -140,7 +140,7 @@
 
     # here we get the network info of the unconfigured node
     - name: Get network info of unconfigured node
-      ntnx_nodes_network_info_v2:
+      nutanix.ncp.ntnx_nodes_network_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         node_list:
           - cvm_ip:
@@ -155,7 +155,7 @@
 
     # here we expand the cluster by adding the unconfigured node
     - name: Expand cluster by adding a node
-      ntnx_clusters_nodes_v2:
+      nutanix.ncp.ntnx_clusters_nodes_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         node_params:
           node_list:
@@ -209,7 +209,7 @@
 
     # here we remove the node from the cluster
     - name: Remove node from cluster
-      ntnx_clusters_nodes_v2:
+      nutanix.ncp.ntnx_clusters_nodes_v2:
         state: absent
         cluster_ext_id: "{{ cluster_ext_id }}"
         node_uuids:
@@ -218,7 +218,7 @@
       ignore_errors: true
 
     - name: Destroy the cluster
-      ntnx_clusters_v2:
+      nutanix.ncp.ntnx_clusters_v2:
         state: absent
         ext_id: "{{ cluster_ext_id }}"
       register: result

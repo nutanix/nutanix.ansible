@@ -23,7 +23,7 @@
         vm_uuid: "a990cfaa-95a8-4861-bdf6-14060555442d"
 
     - name: Create VM
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         name: "{{ vm_name }}"
         description: "vm description"
         cluster:
@@ -52,7 +52,7 @@
       ignore_errors: true
 
     - name: Update VM
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         state: present
         ext_id: "{{ vm_uuid }}"
         name: "{{ vm_name }}"
@@ -83,13 +83,13 @@
       ignore_errors: true
 
     - name: Fetch VM
-      ntnx_vms_info_v2.py:
+      nutanix.ncp.ntnx_vms_info_v2.py:
         ext_id: "{{ vm_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Delete VM
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         state: absent
         ext_id: "{{ vm_uuid }}"
       register: result

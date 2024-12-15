@@ -26,7 +26,7 @@
         saml_ext_id: "33425890-8888-9999-5555-6788222f17b8"
 
     - name: Create saml
-      ntnx_saml_identity_providers_v2:
+      nutanix.ncp.ntnx_saml_identity_providers_v2:
         name: "{{ name }}"
         username_attribute: "{{ username_attribute }}1"
         email_attribute: email
@@ -38,13 +38,13 @@
       ignore_errors: true
 
     - name: Get saml using filter name
-      ntnx_saml_identity_providers_info_v2:
+      nutanix.ncp.ntnx_saml_identity_providers_info_v2:
         filter: name eq  '{{ name }}'
       register: result
       ignore_errors: true
 
     - name: Update saml
-      ntnx_saml_identity_providers_v2:
+      nutanix.ncp.ntnx_saml_identity_providers_v2:
         state: present
         ext_id: "{{ saml_ext_id }}"
         name: "{{ name }}2"
@@ -57,12 +57,12 @@
       ignore_errors: true
 
     - name: List all identity providers
-      ntnx_saml_identity_providers_info_v2:
+      nutanix.ncp.ntnx_saml_identity_providers_info_v2:
       register: result
       ignore_errors: true
 
     - name: Delete the created SAML identity providers
-      ntnx_saml_identity_providers_v2:
+      nutanix.ncp.ntnx_saml_identity_providers_v2:
         state: absent
         ext_id: "{{ saml_ext_id }}"
       register: result

@@ -37,7 +37,7 @@
           end_address_2: "10.0.0.7"
 
     - name: Create VLAN subnet without IPAM
-      ntnx_subnets_v2:
+      nutanix.ncp.ntnx_subnets_v2:
         state: present
         wait: true
         name: "{{ subnet_name }}"
@@ -49,7 +49,7 @@
       ignore_errors: true
 
     - name: Update VLAN subnet name and IP pools
-      ntnx_subnets_v2:
+      nutanix.ncp.ntnx_subnets_v2:
         state: present
         name: "{{ subnet_name }}"
         ext_id: "{{ subnet_uuid }}"
@@ -76,13 +76,13 @@
       ignore_errors: true
 
     - name: Get subnet using ext_id
-      ntnx_subnets_info_v2:
+      nutanix.ncp.ntnx_subnets_info_v2:
         ext_id: "{{ subnet_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Create Overlay Subnet with minimum requirements
-      ntnx_subnets_v2:
+      nutanix.ncp.ntnx_subnets_v2:
         state: present
         name: "{{ subnet_name }}"
         subnet_type: OVERLAY
@@ -99,7 +99,7 @@
       ignore_errors: true
 
     - name: Delete subnet
-      ntnx_subnets_v2:
+      nutanix.ncp.ntnx_subnets_v2:
         state: absent
         ext_id: "{{ subnet_uuid }}"
       register: result

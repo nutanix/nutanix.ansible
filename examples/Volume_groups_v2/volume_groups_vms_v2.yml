@@ -20,7 +20,7 @@
         vm1_uuid: "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6"
 
     - name: Attach VM1 to VG
-      ntnx_volume_groups_vms_v2:
+      nutanix.ncp.ntnx_volume_groups_vms_v2:
         state: present
         volume_group_ext_id: "{{ vg1_uuid }}"
         ext_id: "{{ vm1_uuid }}"
@@ -28,7 +28,7 @@
       register: result
 
     - name: Detach VM1 from VG
-      ntnx_volume_groups_vms_v2:
+      nutanix.ncp.ntnx_volume_groups_vms_v2:
         state: absent
         volume_group_ext_id: "{{ vg1_uuid }}"
         ext_id: "{{ vm1_uuid }}"

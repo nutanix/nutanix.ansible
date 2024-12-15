@@ -27,7 +27,7 @@
         ip_address: "10.0.0.1"
 
     - name: Create nic
-      ntnx_vms_nics_v2:
+      nutanix.ncp.ntnx_vms_nics_v2:
         vm_ext_id: "{{ vm_uuid }}"
         state: present
         network_info:
@@ -37,7 +37,7 @@
       ignore_errors: true
 
     - name: Update nic
-      ntnx_vms_nics_v2:
+      nutanix.ncp.ntnx_vms_nics_v2:
         vm_ext_id: "{{ vm_uuid }}"
         ext_id: "{{ nic_ext_id }}"
         state: present
@@ -47,7 +47,7 @@
       ignore_errors: true
 
     - name: Migrate nic to another subnet - migrate type = ASSIGN_IP
-      ntnx_vms_nics_migrate_v2:
+      nutanix.ncp.ntnx_vms_nics_migrate_v2:
         ext_id: "{{ nic_ext_id }}"
         vm_ext_id: "{{ vm_uuid }}"
         migrate_type: "ASSIGN_IP"
@@ -59,14 +59,14 @@
       ignore_errors: true
 
     - name: Retrieve nic info after migrating nic to another subnet
-      ntnx_vms_nics_info_v2:
+      nutanix.ncp.ntnx_vms_nics_info_v2:
         ext_id: "{{ nic_ext_id }}"
         vm_ext_id: "{{ vm_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Assign IP address to nic
-      ntnx_vms_nics_ip_v2:
+      nutanix.ncp.ntnx_vms_nics_ip_v2:
         state: present
         ext_id: "{{ nic_ext_id }}"
         vm_ext_id: "{{ vm_uuid }}"
@@ -76,7 +76,7 @@
       ignore_errors: true
 
     - name: Release IP address from nic
-      ntnx_vms_nics_ip_v2:
+      nutanix.ncp.ntnx_vms_nics_ip_v2:
         state: absent
         ext_id: "{{ nic_ext_id }}"
         vm_ext_id: "{{ vm_uuid }}"
@@ -86,7 +86,7 @@
       ignore_errors: true
 
     - name: Delete nic
-      ntnx_vms_nics_v2:
+      nutanix.ncp.ntnx_vms_nics_v2:
         vm_ext_id: "{{ vm_uuid }}"
         ext_id: "{{ nic_ext_id }}"
         state: absent

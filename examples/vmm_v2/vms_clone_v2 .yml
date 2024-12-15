@@ -19,14 +19,14 @@
         vm_uuid: "a990cfaa-95a8-4861-bdf6-14060555442d"
 
     - name: Clone VM with same attributes values
-      ntnx_vms_clone_v2:
+      nutanix.ncp.ntnx_vms_clone_v2:
         ext_id: "{{ vm_uuid }}"
         name: "integration_test_vm_clone1"
       register: result
       ignore_errors: true
 
     - name: Clone VM with different attributes values
-      ntnx_vms_clone_v2:
+      nutanix.ncp.ntnx_vms_clone_v2:
         ext_id: "{{ vm_uuid }}"
         name: "integration_test_vm_clone2"
         num_sockets: 2

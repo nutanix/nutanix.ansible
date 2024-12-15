@@ -29,7 +29,7 @@
         ip2: "10.0.0.2"
 
 - name: Create static route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: present
     name: "{{ route_name }}"
     description: "Route for testing"
@@ -51,7 +51,7 @@
   ignore_errors: true
 
 - name: Update route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: present
     name: "{{ route_name }}_updated"
     description: "Route for testing updated"
@@ -68,14 +68,14 @@
   ignore_errors: true
 
 - name: Fetch route by external ID
-  ntnx_routes_info_v2:
+  nutanix.ncp.ntnx_routes_info_v2:
     ext_id: "{{ route_uuid }}"
     route_table_ext_id: "{{ route_table_external_id }}"
   register: result
   ignore_errors: true
 
 - name: Delete static route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     state: absent
     ext_id: "{{ route_uuid }}"
     route_table_ext_id: "{{ route_table_external_id }}"

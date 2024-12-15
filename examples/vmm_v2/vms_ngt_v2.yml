@@ -25,7 +25,7 @@
         ngt_password: "password"
 
     - name: Install NGT in VM with reboot preference set to IMMEDIATE
-      ntnx_vms_ngt_v2:
+      nutanix.ncp.ntnx_vms_ngt_v2:
         state: present
         ext_id: "{{ vm_uuid }}"
         capabilities:
@@ -39,13 +39,13 @@
       ignore_errors: true
 
     - name: Fetch NGT config after installing NGT in VM with reboot preference set to IMMEDIATE
-      ntnx_vms_ngt_info_v2:
+      nutanix.ncp.ntnx_vms_ngt_info_v2:
         ext_id: "{{ vm_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Update NGT in VM by disabling it and setting capabilities to VSS_SNAPSHOT
-      ntnx_vms_ngt_update_v2:
+      nutanix.ncp.ntnx_vms_ngt_update_v2:
         state: present
         ext_id: "{{ vm_uuid }}"
         is_enabled: false
@@ -55,7 +55,7 @@
       ignore_errors: true
 
     - name: Upgrade NGT in VM
-      ntnx_vms_ngt_upgrade_v2:
+      nutanix.ncp.ntnx_vms_ngt_upgrade_v2:
         state: present
         ext_id: "{{ vm_uuid }}"
         reboot_preference:
@@ -64,7 +64,7 @@
       ignore_errors: true
 
     - name: Insert ISO into CD ROM in VM
-      ntnx_vms_ngt_insert_iso_v2:
+      nutanix.ncp.ntnx_vms_ngt_insert_iso_v2:
         state: present
         ext_id: "{{ vm_uuid }}"
         capabilities:
@@ -74,7 +74,7 @@
       ignore_errors: true
 
     - name: Uninstall NGT in VM
-      ntnx_vms_ngt_v2:
+      nutanix.ncp.ntnx_vms_ngt_v2:
         state: absent
         ext_id: "{{ vm_uuid }}"
       register: result

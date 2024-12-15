@@ -23,7 +23,7 @@
         external_nat_subnet_uuid: "d7419d65-100e-4c99-a666-ec1431516bbe"
 
     - name: Create min VPC with external_nat_subnet uuid
-      ntnx_vpcs_v2:
+      nutanix.ncp.ntnx_vpcs_v2:
         state: present
         wait: true
         name: "{{vpc_name}}"
@@ -32,7 +32,7 @@
       register: result
 
     - name: Update vpc name
-      ntnx_vpcs_v2:
+      nutanix.ncp.ntnx_vpcs_v2:
         state: present
         ext_id: "{{vpc_uuid}}"
         name: "{{vpc_name}}_updated"
@@ -40,13 +40,13 @@
       ignore_errors: true
 
     - name: Fetch VPC info
-      ntnx_vpcs_info_v2:
+      nutanix.ncp.ntnx_vpcs_info_v2:
         ext_id: "{{vpc_uuid}}"
       register: result
       ignore_errors: true
 
     - name: Delete VPC
-      ntnx_vpcs_v2:
+      nutanix.ncp.ntnx_vpcs_v2:
         state: absent
         ext_id: "{{vpc_uuid}}"
       register: result

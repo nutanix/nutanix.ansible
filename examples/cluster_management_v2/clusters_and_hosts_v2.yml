@@ -64,7 +64,7 @@
 
     # we use this to get prism central external ID to use it to register the cluster
     - name: List all clusters to get prism central external ID
-      ntnx_clusters_info_v2:
+      nutanix.ncp.ntnx_clusters_info_v2:
         filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
       register: result
       ignore_errors: true
@@ -76,7 +76,7 @@
 
     # before creating cluster, we need to make sure that the cluster is not already created
     - name: Discover unconfigured node
-      ntnx_discover_unconfigured_nodes_v2:
+      nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
         address_type: "IPV4"
         ip_filter_list:
           - ipv4:
@@ -85,7 +85,7 @@
       ignore_errors: true
 
     - name: Run cluster create prechecks
-      ntnx_clusters_v2:
+      nutanix.ncp.ntnx_clusters_v2:
         name: "{{ clusters[0].name }}"
         nodes:
           node_list:
@@ -138,7 +138,7 @@
       ignore_errors: true
 
     - name: Create cluster
-      ntnx_clusters_v2:
+      nutanix.ncp.ntnx_clusters_v2:
         name: "{{ clusters[0].name }}"
         nodes:
           node_list:
@@ -157,7 +157,7 @@
 
     # here we register the cluster to prism central
     - name: Run PE PC registration
-      ntnx_pc_registration_v2:
+      nutanix.ncp.ntnx_pc_registration_v2:
         ext_id: "{{ prism_central_external_id }}"
         remote_cluster:
           aos_remote_cluster:
@@ -173,19 +173,19 @@
       ignore_errors: true
 
     - name: Fetch cluster using name
-      ntnx_clusters_info_v2:
+      nutanix.ncp.ntnx_clusters_info_v2:
         filter: name eq '{{ clusters[0].name }}'
       register: result
       ignore_errors: true
 
     - name: Fetch cluster info using external ID
-      ntnx_clusters_info_v2:
+      nutanix.ncp.ntnx_clusters_info_v2:
         ext_id: "{{ cluster_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Update ntp servers, dns servers and smtp servers in cluster
-      ntnx_clusters_v2:
+      nutanix.ncp.ntnx_clusters_v2:
         ext_id: "{{ cluster_ext_id }}"
         network:
           external_data_service_ip:
@@ -212,31 +212,31 @@
       ignore_errors: true
 
     - name: List all hosts
-      ntnx_hosts_info_v2:
+      nutanix.ncp.ntnx_hosts_info_v2:
       register: result
       ignore_errors: true
 
     - name: List all hosts using filter
-      ntnx_hosts_info_v2:
+      nutanix.ncp.ntnx_hosts_info_v2:
         filter: hostName eq '{{ host_name }}'
       register: result
       ignore_errors: true
 
     - name: Verify fetching host using external ID
-      ntnx_hosts_info_v2:
+      nutanix.ncp.ntnx_hosts_info_v2:
         ext_id: "{{ host_ext_id }}"
         cluster_ext_id: "{{ cluster_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Fetch hosts of particular cluster
-      ntnx_hosts_info_v2:
+      nutanix.ncp.ntnx_hosts_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Destroy the cluster
-      ntnx_clusters_v2:
+      nutanix.ncp.ntnx_clusters_v2:
         state: absent
         ext_id: "{{ cluster_ext_id }}"
       register: result

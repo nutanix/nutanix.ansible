@@ -17,7 +17,7 @@
         vm_uuid: "323e4567-e89b-12d3-a456-426614174001"
 
     - name: Update guest script
-      ntnx_vms_stage_guest_customization_v2:
+      nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
         ext_id: "{{ vm_uuid }}"
         config:
           cloudinit:

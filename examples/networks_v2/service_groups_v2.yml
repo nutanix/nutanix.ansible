@@ -34,7 +34,7 @@
         service_group_uuid: "7c62834e-43f0-4c20-a5d4-cbf36b9a142b"
 
     - name: Create tcp service group
-      ntnx_service_groups_v2:
+      nutanix.ncp.ntnx_service_groups_v2:
         name: "{{ service_group_name }}"
         description: "service group description"
         tcp_services:
@@ -50,7 +50,7 @@
       ignore_errors: true
 
     - name: Update tcp service group name and description and other protocols
-      ntnx_service_groups_v2:
+      nutanix.ncp.ntnx_service_groups_v2:
         ext_id: "{{ service_group_uuid }}"
         name: "{{ service_group_name }}_updated"
         description: "service group description updated"
@@ -64,13 +64,13 @@
       ignore_errors: true
 
     - name: Getting particular service_group using uuid
-      ntnx_service_groups_info_v2:
+      nutanix.ncp.ntnx_service_groups_info_v2:
         ext_id: "{{ service_group_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Delete service group
-      ntnx_service_groups_v2:
+      nutanix.ncp.ntnx_service_groups_v2:
         state: absent
         ext_id: "{{ service_group_uuid }}"
       register: result

@@ -19,12 +19,12 @@
         test_permission_uuid: 00000000-0000-0000-0000-000000000001
 
     - name: List all operations
-      ntnx_operations_info_v2:
+      nutanix.ncp.ntnx_operations_info_v2:
       register: result
       ignore_errors: true
 
     - name: List permission using ext_id criteria
-      ntnx_operations_info_v2:
+      nutanix.ncp.ntnx_operations_info_v2:
         ext_id: "{{ test_permission_uuid }}"
       register: result
       ignore_errors: true

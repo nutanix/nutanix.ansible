@@ -29,7 +29,7 @@
         vpc_uuid: "2dff5b0a-2368-3456-1236-d42439a8b6e5"
 
     - name: Create floating ip with external subnet uuid
-      ntnx_floating_ips_v2:
+      nutanix.ncp.ntnx_floating_ips_v2:
         state: present
         name: "{{ floating_ip_name }}"
         external_subnet_reference: "{{ external_nat_subnet_uuid }}"
@@ -45,7 +45,7 @@
       ignore_errors: true
 
     - name: Update floating ip name and private IP
-      ntnx_floating_ips_v2:
+      nutanix.ncp.ntnx_floating_ips_v2:
         state: present
         name: "{{ floating_ip_name }}_updated"
         ext_id: "{{ floating_ip_ext_id }}"
@@ -59,13 +59,13 @@
       ignore_errors: true
 
     - name: Get floating_ips using ext_id
-      ntnx_floating_ips_info_v2:
+      nutanix.ncp.ntnx_floating_ips_info_v2:
         ext_id: "{{ floating_ip_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Delete floating ip
-      ntnx_floating_ips_v2:
+      nutanix.ncp.ntnx_floating_ips_v2:
         state: absent
         ext_id: "{{ floating_ip_ext_id }}"
       register: result

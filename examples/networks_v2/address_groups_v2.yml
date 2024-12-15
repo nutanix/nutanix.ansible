@@ -27,7 +27,7 @@
             prefix_length: 24
 
     - name: Create address group
-      ntnx_address_groups_v2:
+      nutanix.ncp.ntnx_address_groups_v2:
         state: present
         name: "{{ address_group_name }}"
         description: address group description
@@ -40,7 +40,7 @@
       ignore_errors: true
 
     - name: Update address group with the given uuid
-      ntnx_address_groups_v2:
+      nutanix.ncp.ntnx_address_groups_v2:
         state: present
         ext_id: "{{ address_group_uuid }}"
         name: "{{ address_group_name }}_updated"
@@ -52,13 +52,13 @@
       ignore_errors: true
 
     - name: Fetch address group info
-      ntnx_address_groups_info_v2:
+      nutanix.ncp.ntnx_address_groups_info_v2:
         ext_id: "{{ address_group_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Delete address group
-      ntnx_address_groups_v2:
+      nutanix.ncp.ntnx_address_groups_v2:
         state: absent
         ext_id: "{{ address_group_uuid }}"
       register: result

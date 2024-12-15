@@ -27,7 +27,7 @@
           prefix: 24
 
     - name: Create PBR with vpc , source network, external destination, with PERMIT action and icmp
-      ntnx_pbrs_v2:
+      nutanix.ncp.ntnx_pbrs_v2:
         state: present
         name: "{{ pbr_name }}"
         priority: "{{ priority }}"
@@ -55,7 +55,7 @@
       ignore_errors: true
 
     - name: Update PBR name ,description, priority
-      ntnx_pbrs_v2:
+      nutanix.ncp.ntnx_pbrs_v2:
         state: present
         ext_id: "{{ pbr_uuid }}"
         priority: 3
@@ -65,13 +65,13 @@
       ignore_errors: true
 
     - name: Fetch PBR details
-      ntnx_pbrs_info_v2:
+      nutanix.ncp.ntnx_pbrs_info_v2:
         ext_id: "{{ pbr_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Delete PBR
-      ntnx_pbrs_v2:
+      nutanix.ncp.ntnx_pbrs_v2:
         state: absent
         ext_id: "{{ pbr_uuid }}"
       register: result

@@ -23,7 +23,7 @@
         serial_port_uuid: "123e4567-1234-12d3-a456-426614174002"
 
     - name: Create Serial Port
-      ntnx_vms_serial_port_v2:
+      nutanix.ncp.ntnx_vms_serial_port_v2:
         vm_ext_id: "{{ vm_uuid }}"
         state: present
         index: 0
@@ -32,13 +32,13 @@
       ignore_errors: true
 
     - name: Fetch serial port information
-      ntnx_vms_serial_port_info_v2:
+      nutanix.ncp.ntnx_vms_serial_port_info_v2:
         vm_ext_id: "{{ vm_uuid }}"
       register: result
       ignore_errors: true
 
     - name: Update Serial Port connection
-      ntnx_vms_serial_port_v2:
+      nutanix.ncp.ntnx_vms_serial_port_v2:
         vm_ext_id: "{{ vm_uuid }}"
         ext_id: "{{ serial_port_uuid }}"
         state: present
@@ -47,7 +47,7 @@
       ignore_errors: true
 
     - name: Delete Serial Port
-      ntnx_vms_serial_port_v2:
+      nutanix.ncp.ntnx_vms_serial_port_v2:
         vm_ext_id: "{{ vm_uuid }}"
         ext_id: "{{ serial_port_uuid }}"
         state: absent

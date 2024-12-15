@@ -24,7 +24,7 @@
           uuid: "00000000-0000-0000-0000-000000000000"
 
     - name: Create disks
-      ntnx_volume_groups_disks_v2:
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
         state: "present"
         volume_group_ext_id: "{{ vg1_uuid }}"
         disk_size_bytes: 21474836480
@@ -35,7 +35,7 @@
       ignore_errors: true
 
     - name: Create disk from previously created vdisk
-      ntnx_volume_groups_disks_v2:
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
         state: "present"
         volume_group_ext_id: "{{ vg1_uuid }}"
         index: 2
@@ -50,7 +50,7 @@
       ignore_errors: true
 
     - name: Delete disk
-      ntnx_volume_groups_disks_v2:
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
         state: absent
         volume_group_ext_id: "{{ vg1_uuid }}"
         ext_id: "{{ result.ext_id }}"

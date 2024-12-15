@@ -26,7 +26,7 @@
         role_uuid: 00000000-0000-0000-0000-000000000003
 
 - name: Create roles with operations
-  ntnx_roles_v2:
+  nutanix.ncp.ntnx_roles_v2:
     state: present
     display_name: "{{ role_name }}"
     description: test-ansible-role-1-desc
@@ -38,7 +38,7 @@
   ignore_errors: true
 
 - name: Update roles in check mode
-  ntnx_roles_v2:
+  nutanix.ncp.ntnx_roles_v2:
     state: present
     ext_id: "{{ role_uuid }}"
     display_name: "{{ role_name_updated }}"
@@ -51,18 +51,18 @@
   ignore_errors: true
 
 - name: List all roles
-  ntnx_roles_info_v2:
+  nutanix.ncp.ntnx_roles_info_v2:
   register: result
   ignore_errors: true
 
 - name: Fetch role using external ID
-  ntnx_roles_info_v2:
+  nutanix.ncp.ntnx_roles_info_v2:
     ext_id: "{{ role_uuid }}"
   register: result
   ignore_errors: true
 
 - name: Delete role
-  ntnx_roles_v2:
+  nutanix.ncp.ntnx_roles_v2:
     state: absent
     ext_id: "{{ role_uuid }}"
   register: result

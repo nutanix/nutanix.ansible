@@ -20,7 +20,7 @@
         category_ext_id: "d7419d65-100e-4c99-a666-ec1431516bbe"
 
     - name: Associate category to VM
-      ntnx_vms_categories_v2:
+      nutanix.ncp.ntnx_vms_categories_v2:
         state: present
         vm_ext_id: "{{ vm_uuid }}"
         categories:
@@ -29,7 +29,7 @@
       ignore_errors: true
 
     - name: Disassociate category from VM
-      ntnx_vms_categories_v2:
+      nutanix.ncp.ntnx_vms_categories_v2:
         state: absent
         vm_ext_id: "{{ vm_uuid }}"
         categories:

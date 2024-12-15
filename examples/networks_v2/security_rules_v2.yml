@@ -29,7 +29,7 @@
         category4: "22113344-9632-8520-4455-365478214587"
 
     - name: Create basic application security rule for certain VPC scope with intra group traffic not allowed
-      ntnx_security_rules_v2:
+      nutanix.ncp.ntnx_security_rules_v2:
         name: "{{ security_rule_name }}"
         description: Ansible created rule
         type: APPLICATION
@@ -69,7 +69,7 @@
       register: result
 
     - name: Update policy rules and config
-      ntnx_security_rules_v2:
+      nutanix.ncp.ntnx_security_rules_v2:
         ext_id: "{{ security_rule_uuid }}"
         name: "{{ security_rule_name }}_updated"
         description: Ansible updated rule
@@ -156,12 +156,12 @@
       register: result
 
     - name: Fetch security rule info
-      ntnx_security_rules_info_v2:
+      nutanix.ncp.ntnx_security_rules_info_v2:
         ext_id: "{{ security_rule_uuid }}"
       register: result
 
     - name: Delete security rule
-      ntnx_security_rules_v2:
+      nutanix.ncp.ntnx_security_rules_v2:
         state: absent
         ext_id: "{{ security_rule_uuid }}"
       register: result
