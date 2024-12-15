@@ -1,0 +1,30 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all operations
+# 2. List permission using ext_id criteria
+
+- name: operations playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        test_permission_uuid: 00000000-0000-0000-0000-000000000001
+
+    - name: List all operations
+      ntnx_operations_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List permission using ext_id criteria
+      ntnx_operations_info_v2:
+        ext_id: "{{ test_permission_uuid }}"
+      register: result
+      ignore_errors: true

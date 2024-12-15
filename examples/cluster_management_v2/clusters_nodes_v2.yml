@@ -1,0 +1,225 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a cluster with 3 nodes
+# 2. Register the cluster with Prism Central
+# 3. Expand the cluster by adding a node
+# 4. Remove the node from the cluster
+# 5. Destroy the cluster
+
+- name: cluster expanding playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_username: "username"
+        cluster_password: "password"
+        cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+        host_ext_id: "0005f1e6-4a87-6b06-185b-ac1f6b6f97e2"
+        host_name: "host1"
+        clusters:
+          nodes:
+            - cvm_ip: "10.0.0.1"
+            - cvm_ip: "10.0.1.0"
+            - cvm_ip: "10.0.2.0"
+            - cvm_ip: "10.0.3.0"
+          name: "cluster1"
+          config:
+            cluster_functions:
+              - "function1"
+            auth_public_keys:
+              - name: "key1"
+                key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6"
+            redundancy_factor_cluster_crud: 2
+            redundancy_factor_cluster_expanding: 3
+            cluster_arch: "ARCH64"
+            fault_tolerance_state:
+              domain_awareness_level_cluster_crud: "DOMAIN_AWARE"
+              domain_awareness_level_cluster_expanding: "DOMAIN_AWARE"
+          network:
+            virtual_ip: "10.0.0.2"
+            iscsi_ip: "10.0.0.6"
+            ntp_servers:
+              - "ntp1"
+              - "ntp2"
+              - "ntp3"
+              - "ntp4"
+            dns_servers:
+              - "dns1"
+              - "dns2"
+            smtp_server:
+              email_address: "test@test.com"
+              ip: "10.0.0.87"
+              port: 25
+              username: "test"
+              password: "test"
+              type: "SMTP"
+
+    # to expand cluster, we need to create one with three nodes
+    - name: Create 3 nodes cluster with minimum spec
+      ntnx_clusters_v2:
+        name: "{{ clusters[0].name }}"
+        nodes:
+          node_list:
+            - controller_vm_ip:
+                ipv4:
+                  value: "{{ clusters[0].nodes[0].cvm_ip }}"
+            - controller_vm_ip:
+                ipv4:
+                  value: "{{ clusters[0].nodes[1].cvm_ip }}"
+            - controller_vm_ip:
+                ipv4:
+                  value: "{{ clusters[0].nodes[2].cvm_ip }}"
+        config:
+          cluster_function: "{{ clusters[0].config.cluster_functions }}"
+          redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_expanding }}"
+          cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+          fault_tolerance_state:
+            domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_expanding }}"
+        timeout: 1800
+      register: result
+      ignore_errors: true
+
+    # we use this to get prism central external ID to use it to register the cluster
+    - name: List all clusters to get prism central external ID
+      ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+      register: result
+      ignore_errors: true
+
+    # here we set the prism central external ID
+    - name: Get prism central external ID
+      ansible.builtin.set_fact:
+        prism_central_external_id: "{{ result.response[0].ext_id }}"
+
+    - name: Run PE PC registration
+      ntnx_pc_registration_v2:
+        ext_id: "{{ prism_central_external_id }}"
+        remote_cluster:
+          aos_remote_cluster:
+            remote_cluster:
+              address:
+                ipv4:
+                  value: "{{ clusters[0].nodes[0].cvm_ip }}"
+              credentials:
+                authentication:
+                  username: "{{ username }}"
+                  password: "{{ password }}"
+      register: result
+      ignore_errors: true
+
+    # here we fetch the cluster using the name
+    - name: Fetch cluster using name
+      ntnx_clusters_info_v2:
+        filter: name eq '{{ cluster_name }}'
+      register: result
+      ignore_errors: true
+
+    # here we set the cluster external ID
+    - name: Set cluster external ID
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ result.response[0].ext_id }}"
+
+    # here we discover the unconfigured node which we want to add to the cluster
+    - name: Discover unconfigured node
+      ntnx_discover_unconfigured_nodes_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        address_type: "IPV4"
+        ip_filter_list:
+          - ipv4:
+              value: "{{ clusters[0].nodes[3].cvm_ip }}"
+      register: result_discover
+      ignore_errors: true
+
+    # here we get the network info of the unconfigured node
+    - name: Get network info of unconfigured node
+      ntnx_nodes_network_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        node_list:
+          - cvm_ip:
+              ipv4:
+                value: "{{ result_discover.response.response.node_list[0].cvm_ip.ipv4.value }}"
+            hypervisor_ip:
+              ipv4:
+                value: "{{ result_discover.response.response.node_list[0].hypervisor_ip.ipv4.value }}"
+        request_type: "expand_cluster"
+      register: result_network_info
+      ignore_errors: true
+
+    # here we expand the cluster by adding the unconfigured node
+    - name: Expand cluster by adding a node
+      ntnx_clusters_nodes_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        node_params:
+          node_list:
+            - node_uuid: "{{ result_discover.response.response.node_list[0].node_uuid }}"
+              block_id: "{{ result_discover.response.response.node_list[0].rackable_unit_serial }}"
+              node_position: "{{ result_discover.response.response.node_list[0].node_position }}"
+              nos_version: "{{ result_discover.response.response.node_list[0].nos_version }}"
+              hypervisor_type: "{{ result_discover.response.response.node_list[0].hypervisor_type }}"
+              hypervisor_version: "{{ result_discover.response.response.node_list[0].hypervisor_version }}"
+              is_light_compute: false
+              is_robo_mixed_hypervisor: true
+              hypervisor_hostname: test
+              model: "{{ result_discover.response.response.node_list[0].rackable_unit_model }}"
+              cvm_ip:
+                ipv4:
+                  value: "{{ result_discover.response.response.node_list[0].cvm_ip.ipv4.value }}"
+                  prefix_length: "{{ result_discover.response.response.node_list[0].cvm_ip.ipv4.prefix_length | int }}"
+              hypervisor_ip:
+                ipv4:
+                  value: "{{ result_discover.response.response.node_list[0].hypervisor_ip.ipv4.value }}"
+                  prefix_length: "{{ result_discover.response.response.node_list[0].hypervisor_ip.ipv4.prefix_length | int }}"
+              ipmi_ip:
+                ipv4:
+                  value: "{{ result_discover.response.response.node_list[0].ipmi_ip.ipv4.value }}"
+                  prefix_length: "{{ result_discover.response.response.node_list[0].ipmi_ip.ipv4.prefix_length | int }}"
+              current_network_interface: "{{ result_network_info.response.response.uplinks[0].uplink_list[0].name }}"
+              networks:
+                - name: "{{ result_network_info.response.response.network_info.hci[0].name }}"
+                  networks: "{{ result_network_info.response.response.network_info.hci[0].networks }}"
+                  uplinks:
+                    active:
+                      - mac: "{{ result_network_info.response.response.uplinks[0].uplink_list[0].mac }}"
+                        name: "{{ result_network_info.response.response.uplinks[0].uplink_list[0].name }}"
+                        value: "{{ result_network_info.response.response.uplinks[0].uplink_list[0].name }}"
+                    standby:
+                      - mac: "{{ result_network_info.response.response.uplinks[0].uplink_list[1].mac }}"
+                        name: "{{ result_network_info.response.response.uplinks[0].uplink_list[1].name }}"
+                        value: "{{ result_network_info.response.response.uplinks[0].uplink_list[1].name }}"
+        config_params:
+          should_skip_discovery: false
+          should_skip_imaging: true
+          should_validate_rack_awareness: false
+          is_nos_compatible: false
+          is_compute_only: false
+          is_never_scheduleable: false
+          target_hypervisor: "{{ result_discover.response.response.node_list[0].hypervisor_type }}"
+        should_skip_add_node: false
+        should_skip_pre_expand_checks: false
+      register: result_expand
+      ignore_errors: true
+
+    # here we remove the node from the cluster
+    - name: Remove node from cluster
+      ntnx_clusters_nodes_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        node_uuids:
+          - "{{ result_discover.response.response.node_list[0].node_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Destroy the cluster
+      ntnx_clusters_v2:
+        state: absent
+        ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true

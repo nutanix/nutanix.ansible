@@ -1,0 +1,167 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a security rule
+# 2. Update the security rule
+# 3. Fetch the security rule info
+# 4. Delete the security rule
+
+- name: security rules playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        security_rule_name: "ansible_security_rule"
+        security_rule_uuid: "f1b1b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
+        service_group_id: "25412365-9999-9999-8888-1b1b1b1b1b1b"
+        address_group_ext_id: "78963254-1111-0000-0000-1b1b1b1b1b1b"
+        vpc_id: "f1b1b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
+        category1_uuid: "12345678-1122-2233-4455-365478214587"
+        category2_uuid: "87654321-2211-3322-6655-963258741258"
+        category3: "11223355-9632-8520-4455-365478214587"
+        category4: "22113344-9632-8520-4455-365478214587"
+
+    - name: Create basic application security rule for certain VPC scope with intra group traffic not allowed
+      ntnx_security_rules_v2:
+        name: "{{ security_rule_name }}"
+        description: Ansible created rule
+        type: APPLICATION
+        policy_state: ENFORCE
+        scope: VPC_LIST
+        vpc_references:
+          - "{{ vpc_id }}"
+        is_hitlog_enabled: true
+        is_ipv6_traffic_allowed: false
+        rules:
+          - description: inbound1
+            type: INTRA_GROUP
+            spec:
+              intra_entity_group_rule_spec:
+                secured_group_category_references:
+                  - "{{ category1_uuid }}"
+                  - "{{ category2_uuid }}"
+                secured_group_action: DENY
+          - description: outbound1
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                dest_allow_spec: ALL
+                secured_group_category_references:
+                  - "{{ category1_uuid }}"
+                  - "{{ category2_uuid }}"
+                is_all_protocol_allowed: true
+          - description: inbound2
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                src_allow_spec: ALL
+                secured_group_category_references:
+                  - "{{ category1_uuid }}"
+                  - "{{ category2_uuid }}"
+                is_all_protocol_allowed: true
+      register: result
+
+    - name: Update policy rules and config
+      ntnx_security_rules_v2:
+        ext_id: "{{ security_rule_uuid }}"
+        name: "{{ security_rule_name }}_updated"
+        description: Ansible updated rule
+        type: APPLICATION
+        policy_state: ENFORCE
+        scope: ALL_VLAN
+        is_hitlog_enabled: false
+        is_ipv6_traffic_allowed: false
+        rules:
+          - description: inbound1
+            type: INTRA_GROUP
+            spec:
+              intra_entity_group_rule_spec:
+                secured_group_category_references:
+                  - "{{ category3 }}"
+                secured_group_action: DENY
+          - description: inbound2_updated
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category3 }}"
+                src_category_references:
+                  - "{{ category4 }}"
+                service_group_references:
+                  - "{{ service_group_id }}"
+          - description: inbound3_updated
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category3 }}"
+                src_address_group_references:
+                  - "{{ address_group_ext_id }}"
+                tcp_services:
+                  - start_port: 85
+                    end_port: 90
+                udp_services:
+                  - start_port: 125
+                    end_port: 130
+                icmp_services:
+                  - type: 3
+                    code: 2
+          - description: inbound4_updated
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category3 }}"
+                src_subnet:
+                  value: 10.0.1.0
+                  prefix_length: 24
+                service_group_references:
+                  - "{{ service_group_id }}"
+          - description: outbound1
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category3 }}"
+                dest_category_references:
+                  - "{{ category4 }}"
+                service_group_references:
+                  - "{{ service_group_id }}"
+          - description: outbound2_updated
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category3 }}"
+                dest_subnet:
+                  value: 10.0.1.2
+                  prefix_length: 32
+                is_all_protocol_allowed: true
+          - description: outbound3
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category3 }}"
+                dest_address_group_references:
+                  - "{{ address_group_ext_id }}"
+                is_all_protocol_allowed: true
+      register: result
+
+    - name: Fetch security rule info
+      ntnx_security_rules_info_v2:
+        ext_id: "{{ security_rule_uuid }}"
+      register: result
+
+    - name: Delete security rule
+      ntnx_security_rules_v2:
+        state: absent
+        ext_id: "{{ security_rule_uuid }}"
+      register: result

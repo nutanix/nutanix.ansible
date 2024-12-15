@@ -1,0 +1,53 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a VPC with external_nat_subnet uuid
+# 2. Update the VPC name
+# 3. Fetch VPC info
+# 4. Delete the VPC
+
+- name: VPCs playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vpc_name: "integration_test_vpc"
+        vpc_uuid: "2dff5b0a-99c5-46d6-9002-d42439a8b6e5"
+        external_nat_subnet_uuid: "d7419d65-100e-4c99-a666-ec1431516bbe"
+
+    - name: Create min VPC with external_nat_subnet uuid
+      ntnx_vpcs_v2:
+        state: present
+        wait: true
+        name: "{{vpc_name}}"
+        external_subnets:
+          - subnet_reference: "{{external_nat_subnet_uuid}}"
+      register: result
+
+    - name: Update vpc name
+      ntnx_vpcs_v2:
+        state: present
+        ext_id: "{{vpc_uuid}}"
+        name: "{{vpc_name}}_updated"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch VPC info
+      ntnx_vpcs_info_v2:
+        ext_id: "{{vpc_uuid}}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete VPC
+      ntnx_vpcs_v2:
+        state: absent
+        ext_id: "{{vpc_uuid}}"
+      register: result
+      ignore_errors: true

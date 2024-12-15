@@ -1,0 +1,103 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create active local user
+# 2. Create SAML user
+# 3. Create LDAP user
+# 4. Update local user
+# 5. List all users
+# 6. Fetch user info using user ext_id criteria
+# 7. List users with specific username
+# 8. Delete created user
+
+- name: users playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        username: test-ansible-user-1
+        first_name: test-ansible-firstname-1
+        last_name: test-ansible-lastname-1
+        display_name: test-ansible-displayname-1
+        middle_initial: test-ansible-middleinitial-1
+        email_id: test@test.com
+        password: test.Password.123
+        identity_provider_uuid: 00000000-0000-0000-0000-000000000001
+        directory_service_uuid: 00000000-0000-0000-0000-000000000002
+        user_ext_id: 00000000-0000-0000-0000-000000000003
+
+    - name: Create active local user
+      ntnx_users_v2:
+        user_type: LOCAL
+        username: "{{ username }}"
+        first_name: "{{ first_name }}"
+        last_name: "{{ last_name }}"
+        display_name: "{{ display_name }}"
+        password: "{{ password }}"
+        middle_initial: "{{ middle_initial }}"
+        email_id: "{{ email_id }}"
+        locale: en-US
+        status: ACTIVE
+        is_force_reset_password_enabled: true
+      register: result
+      ignore_errors: true
+
+    - name: Create SAML user
+      ntnx_users_v2:
+        user_type: SAML
+        username: "{{ username }}"
+        idp_id: "{{ identity_provider_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create LDAP user
+      ntnx_users_v2:
+        user_type: LDAP
+        username: "{{ new_user }}"
+        idp_id: "{{ directory_service_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update local user
+      ntnx_users_v2:
+        ext_id: "{{ user_ext_id }}"
+        first_name: "{{ first_name }}_updated"
+        last_name: "{{ last_name }}_updated"
+        password: "{{ password }}"
+        display_name: "{{ display_name }}_updated"
+        middle_initial: "{{ middle_initial }}_updated"
+        email_id: "{{ email_id }}"
+        is_force_reset_password_enabled: true
+      register: result
+      ignore_errors: true
+
+    - name: List all users
+      ntnx_users_info_v2:
+      register: users
+      ignore_errors: true
+
+    - name: Fetch user info using user ext_id criteria
+      ntnx_users_info_v2:
+        ext_id: "{{ user_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List users with specific username
+      ntnx_users_info_v2:
+        filter: username eq '{{ username }}'
+      register: result
+      ignore_errors: true
+
+    - name: Delete created user
+      ntnx_users:
+        state: absent
+        user_uuid: "{{ user_ext_id }}"
+      register: result
+      ignore_errors: true

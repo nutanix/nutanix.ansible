@@ -1,0 +1,65 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create an address group
+# 2. Update the address group
+# 3. Fetch the address group info
+# 4. Delete the address group
+
+- name: address groups playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        address_group_name: "ansible_address_group"
+        address_group_uuid: "f1b1b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
+        ipv4_addresses:
+          - value: 10.0.0.1
+            prefix_length: 24
+          - value: 10.0.0.2
+            prefix_length: 24
+
+    - name: Create address group
+      ntnx_address_groups_v2:
+        state: present
+        name: "{{ address_group_name }}"
+        description: address group description
+        ipv4_addresses:
+          - value: "{{ ipv4_addresses[0].value }}"
+            prefix_length: "{{ ipv4_addresses[0].prefix_length }}"
+          - value: "{{ ipv4_addresses[1].value }}"
+            prefix_length: "{{ ipv4_addresses[1].prefix_length }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update address group with the given uuid
+      ntnx_address_groups_v2:
+        state: present
+        ext_id: "{{ address_group_uuid }}"
+        name: "{{ address_group_name }}_updated"
+        description: address group description updated
+        ipv4_addresses:
+          - value: "{{ ipv4_addresses[1].value }}"
+            prefix_length: "{{ ipv4_addresses[1].prefix_length }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch address group info
+      ntnx_address_groups_info_v2:
+        ext_id: "{{ address_group_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete address group
+      ntnx_address_groups_v2:
+        state: absent
+        ext_id: "{{ address_group_uuid }}"
+      register: result
+      ignore_errors: true

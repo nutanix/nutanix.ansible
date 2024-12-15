@@ -1,0 +1,69 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a role with operations
+# 2. Update the role
+# 3. List all roles
+# 4. Fetch the role using external ID
+# 5. Delete the role
+
+- name: Roles playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        role_name: test-ansible-role-1
+        role_name_updated: test-ansible-role-2
+        test_operation_1_uuid: 00000000-0000-0000-0000-000000000001
+        test_operation_2_uuid: 00000000-0000-0000-0000-000000000002
+        role_uuid: 00000000-0000-0000-0000-000000000003
+
+- name: Create roles with operations
+  ntnx_roles_v2:
+    state: present
+    display_name: "{{ role_name }}"
+    description: test-ansible-role-1-desc
+    operations:
+      - "{{ test_operation_1_uuid }}"
+      - "{{ test_operation_2_uuid }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Update roles in check mode
+  ntnx_roles_v2:
+    state: present
+    ext_id: "{{ role_uuid }}"
+    display_name: "{{ role_name_updated }}"
+    description: test-ansible-role-2-desc
+    operations:
+      - "{{ test_operation_2_uuid }}"
+    wait: true
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: List all roles
+  ntnx_roles_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Fetch role using external ID
+  ntnx_roles_info_v2:
+    ext_id: "{{ role_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete role
+  ntnx_roles_v2:
+    state: absent
+    ext_id: "{{ role_uuid }}"
+  register: result
+  ignore_errors: true

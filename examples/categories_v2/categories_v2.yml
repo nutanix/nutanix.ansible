@@ -1,0 +1,61 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a category key & value
+# 2. Update the category value and description
+# 3. List all categories
+# 4. Fetch category using ext id & expand detailedAssociations
+# 5. Delete Created category
+
+- name: Categories playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        key1: "ansible_category_key"
+        value1: "ansible_category_value"
+        value2: "ansible_category_value_updated"
+        category_ext_id: "11223344-1234-1111-2222-6788222f17b8"
+
+    - name: Create category key & value
+      ntnx_categories_v2:
+        key: "{{key1}}"
+        value: "{{value1}}"
+        description: "ansible test"
+      register: output
+      ignore_errors: true
+
+    - name: Update category value and description
+      ntnx_categories_v2:
+        ext_id: "{{category_ext_id}}"
+        key: "{{key1}}"
+        value: "{{value2}}"
+        description: "ansible test New value"
+      register: result
+      ignore_errors: true
+
+    - name: List all categories
+      ntnx_categories_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Fetch category using ext id & expand detailedAssociations
+      ntnx_categories_info_v2:
+        ext_id: "{{category_ext_id}}"
+        expand: detailedAssociations
+      register: result
+      ignore_errors: true
+
+    - name: Delete Created category
+      ntnx_categories_v2:
+        ext_id: "{{category_ext_id}}"
+        state: absent
+      register: result
+      ignore_errors: true

@@ -1,0 +1,91 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create ACTIVE_DIRECTORY service
+# 2. Update ACTIVE_DIRECTORY service
+# 3. Fetch ACTIVE_DIRECTORY service info using ext id
+# 4. List all directory services
+# 5. List all directory services with filter
+# 6. Delete ACTIVE_DIRECTORY service
+
+- name: Directory Services playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        name: "Directory Services"
+        url: "https://example.com"
+        url2: "https://example2.com"
+        domain_name: "example.com"
+        domain_name_updated: "example2.com"
+        username: "admin"
+        username_updated: "admin2"
+        password: "password"
+        password_updated: "password2"
+        white_listed_groups:
+          - "group1"
+          - "group2"
+        directory_service_ext_id: "12345678-1234-1234-1234-123456789012"
+
+    - name: Create ACTIVE_DIRECTORY service
+      ntnx_directory_services_v2:
+        state: present
+        name: "{{ name }}"
+        url: "{{ url }}"
+        directory_type: ACTIVE_DIRECTORY
+        domain_name: "{{ domain_name }}"
+        service_account:
+          username: "{{ username }}"
+          password: "{{ password }}"
+        white_listed_groups:
+          - "{{ white_listed_groups[0] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update directory service
+      ntnx_directory_services_v2:
+        state: present
+        ext_id: "{{ directory_service_ext_id }}"
+        name: "{{ name }}_updated"
+        url: "{{ url2 }}"
+        directory_type: ACTIVE_DIRECTORY
+        domain_name: "{{ domain_name_updated }}"
+        service_account:
+          username: "{{ username_updated }}"
+          password: "{{ password_updated }}"
+        group_search_type: RECURSIVE
+        white_listed_groups:
+          - "{{ white_listed_groups[1] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch directory service info using ext id
+      ntnx_directory_services_info_v2:
+        ext_id: "{{ directory_service_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all directory services
+      ntnx_directory_services_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all directory services with filter
+      ntnx_directory_services_info_v2:
+        filter: name eq '{{ name }}'
+      register: result
+      ignore_errors: true
+
+    - name: Delete directory service
+      ntnx_directory_services_v2:
+        state: absent
+        ext_id: "{{ directory_service_ext_id }}"
+      register: result
+      ignore_errors: true

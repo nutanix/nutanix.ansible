@@ -1,0 +1,121 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create new template from a vm
+# 2. Fetch template info using ext id
+# 3. Update template description & name
+# 4. Retrieve the Template Version details for the given Template Version identifier.
+# 5. Set the Active Version
+# 6. Delete Template Version
+# 7. Deploy VM
+# 8. Initiate_guest_os_update
+# 9. Finish guest_os_update
+# 10. Delete Template
+
+- name: VM templates playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_uuid: "323e4567-e89b-12d3-a456-426614174001"
+        template_name: "ansible_template"
+        template_ext_id: "00000000-0000-0000-0000-000000000000"
+        version_name: "ansible_template_version"
+        version_id: "00000000-0000-0000-0000-000000000000"
+        vm2_name: "ansible_template_vm"
+        cluster_uuid: "00062899-4a29-0cf9-0000-000000028f57"
+
+    - name: Create new template from a vm
+      ntnx_templates_v2:
+        template_name: "{{ template_name }}"
+        template_description: ansible test
+        template_version_spec:
+          version_source:
+            template_vm_reference:
+              ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch template info using ext id
+      ntnx_templates_info_v2:
+        ext_id: "{{ template_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update template description & name
+      ntnx_templates_v2:
+        ext_id: "{{ template_ext_id }}"
+        template_version_spec:
+          version_name: "{{ version_name }}"
+          version_description: ansible_template_version_description New
+          version_source:
+            template_version_reference:
+              version_id: "{{ version_id }}"
+              override_vm_config:
+                num_sockets: 2
+                num_cores_per_socket: 2
+                num_threads_per_core: 2
+                name: "{{ vm2_name }}"
+      register: result
+      ignore_errors: true
+
+    - name: Retrieve the Template Version details for the given Template Version identifier.
+      ntnx_templates_versions_info_v2:
+        ext_id: "{{ version_id }}"
+        template_ext_id: "{{ template_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set the Active Version
+      ntnx_templates_version_v2:
+        template_ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete Template Version
+      ntnx_templates_version_v2:
+        state: absent
+        template_ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_id }}"
+      register: result
+
+    - name: Deploy VM
+      ntnx_templates_deploy_v2:
+        ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_id }}"
+        cluster_reference: "{{ cluster_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Initiate_guest_os_update
+      ntnx_templates_guest_os_v2:
+        template_ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_id }}"
+        state: start
+      register: result
+      ignore_errors: true
+
+    - name: Finish guest_os_update
+      ntnx_templates_guest_os_v2:
+        template_ext_id: "{{ template_ext_id }}"
+        version_id: "{{ version_id }}"
+        state: finish
+        version_name: "{{ version_name }}"
+        version_description: finish guest os update
+      register: result
+      ignore_errors: true
+
+    - name: Delete Template
+      ntnx_templates_v2:
+        state: absent
+        ext_id: "{{ template_ext_id }}"
+      register: result
+      ignore_errors: true

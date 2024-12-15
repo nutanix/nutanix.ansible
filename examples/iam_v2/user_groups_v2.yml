@@ -1,0 +1,58 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create LDAP user group
+# 2. Create SAML user group
+# 3. List all user groups
+# 4. List user groups using filter criteria
+# 5. Delete created user group
+
+- name: user groups playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        distinguished_name: "cn=group_0876339e,ou=group,dc=devtest,dc=local"
+        directory_service_uuid: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
+        identity_provider_uuid: "2bfd579d-c5f4-5038-9127-4a46ab066f48"
+        new_saml_user_group: "245266admin"
+        user_group_ext_id: "e2dee03b-1234-1111-2222-6788222f17b8"
+
+    - name: Create LDAP user group
+      ntnx_user_groups_v2:
+        group_type: LDAP
+        distinguished_name: "{{ distinguished_name }}"
+        idp_id: "{{ directory_service_uuid }}"
+
+    - name: Create SAML user group
+      ntnx_user_groups_v2:
+        group_type: SAML
+        idp_id: "{{ identity_provider_uuid }}"
+        name: "{{ new_saml_user_group }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all user groups
+      ntnx_user_groups_info_v2:
+      register: user_groups
+      ignore_errors: true
+
+    - name: List user groups using filter criteria
+      ntnx_user_groups_info_v2:
+        filter: name eq '{{ new_saml_user_group }}'
+      register: result
+      ignore_errors: true
+
+    - name: Delete created user group
+      ntnx_user_groups_v2:
+        state: absent
+        ext_id: "{{ user_group_ext_id }}"
+      register: result
+      ignore_errors: true

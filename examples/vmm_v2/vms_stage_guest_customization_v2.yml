@@ -1,0 +1,28 @@
+---
+# Summary:
+# This playbook will update guest customization script for a VM
+
+- name: VM guest guest customization playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_uuid: "323e4567-e89b-12d3-a456-426614174001"
+
+    - name: Update guest script
+      ntnx_vms_stage_guest_customization_v2:
+        ext_id: "{{ vm_uuid }}"
+        config:
+          cloudinit:
+            datasource_type: CONFIG_DRIVE_V2
+            cloud_init_script:
+              user_data:
+                value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+      register: result

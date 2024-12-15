@@ -1,0 +1,77 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a service group
+# 2. Update the service group
+# 3. Fetch the service group details using ext_id
+# 4. Delete the service group
+
+- name: service groups playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        service_group_name: "service_group"
+        tcp_services:
+          - start_port: 10
+            end_port: 50
+          - start_port: 60
+            end_port: 90
+          - start_port: 98
+            end_port: 98
+          - start_port: 99
+            end_port: 99
+        icmp_services:
+          - type: 8
+            code: 0
+        service_group_uuid: "7c62834e-43f0-4c20-a5d4-cbf36b9a142b"
+
+    - name: Create tcp service group
+      ntnx_service_groups_v2:
+        name: "{{ service_group_name }}"
+        description: "service group description"
+        tcp_services:
+          - start_port: "{{ tcp_services[0].start_port }}"
+            end_port: "{{ tcp_services[0].end_port }}"
+          - start_port: "{{ tcp_services[1].start_port }}"
+            end_port: "{{ tcp_services[1].end_port }}"
+          - start_port: "{{ tcp_services[2].start_port }}"
+            end_port: "{{ tcp_services[2].end_port }}"
+          - start_port: "{{ tcp_services[3].start_port }}"
+            end_port: "{{ tcp_services[3].end_port }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update tcp service group name and description and other protocols
+      ntnx_service_groups_v2:
+        ext_id: "{{ service_group_uuid }}"
+        name: "{{ service_group_name }}_updated"
+        description: "service group description updated"
+        tcp_services:
+          - start_port: "{{ tcp_services[2].start_port }}"
+            end_port: "{{ tcp_services[2].end_port }}"
+        icmp_services:
+          - type: "{{ icmp_services[0].type }}"
+            code: "{{ icmp_services[0].code }}"
+      register: result
+      ignore_errors: true
+
+    - name: Getting particular service_group using uuid
+      ntnx_service_groups_info_v2:
+        ext_id: "{{ service_group_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete service group
+      ntnx_service_groups_v2:
+        state: absent
+        ext_id: "{{ service_group_uuid }}"
+      register: result
+      ignore_errors: true

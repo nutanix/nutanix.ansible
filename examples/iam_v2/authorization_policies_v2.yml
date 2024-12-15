@@ -1,0 +1,106 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create authorization policy
+# 2. Update authorization policy
+# 3. List all authorization policies
+# 4. Get specific authorization policy
+# 5. Fetch authorization policies using filters
+# 6. Delete created authorization policy
+
+- name: authorization policies playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        auth_policy_name: "ansible_auth_policy"
+        role_uuid: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
+        directory_service_uuid: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
+        policy_ext_id: "33425890-8888-9999-5555-6788222f17b8"
+        users:
+          - "11111111-3333-5555-7777-6788222f17b8"
+          - "22222222-4444-6666-8888-6788222f17b8"
+        user_groups:
+          - "e2dee03b-1234-1111-2222-6788222f17b8"
+        project:
+          uuid: "12321232-0000-0909-0864-6788222f17b8"
+
+    - name: Create auth policy
+      ntnx_authorization_policies_v2:
+        state: present
+        display_name: "{{ auth_policy_name }}"
+        description: ansible created acps
+        role: "{{ role_uuid }}"
+        authorization_policy_type: USER_DEFINED
+        entities:
+          - images:
+              "*":
+                eq: "*"
+          - directory_service:
+              uuid:
+                anyof:
+                  - "{{ directory_service_uuid }}"
+          - marketplace_item:
+              owner_uuid:
+                eq: SELF_OWNED
+        identities:
+          - user:
+              uuid:
+                anyof:
+                  - "{{ users[0] }}"
+                  - "{{ users[1] }}"
+          - user:
+              group:
+                anyof:
+                  - "{{ user_groups[0] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update auth policy
+      ntnx_authorization_policies_v2:
+        state: present
+        ext_id: "{{ policy_ext_id }}"
+        entities:
+          - images:
+              "*":
+                eq: "*"
+          - marketplace_item:
+              owner_uuid:
+                eq: SELF_OWNED
+          - "*":
+              project_uuid:
+                anyof:
+                  - "{{ project.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get all auth policies
+      ntnx_authorization_policies_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get specific auth policy
+      ntnx_authorization_policies_info_v2:
+        ext_id: "{{ policy_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch using filters
+      ntnx_authorization_policies_info_v2:
+        filter: displayName eq '{{ auth_policy_name }}'
+      register: result
+      ignore_errors: true
+
+    - name: Delete created auth policy
+      ntnx_authorization_policies_v2:
+        state: absent
+        ext_id: "{{ policy_ext_id }}"
+      register: result
+      ignore_errors: true
