@@ -537,6 +537,46 @@
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [result["ext_id"]] }}'
 ########################################################################
+
+- name: Read content from file
+  ansible.builtin.set_fact:
+    xml_file_content: "{{ lookup('file', unattendxml.dest + '/unattendxml.txt') }}"
+
+- name: Create vm with windows unattend xml file
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    guest_customization:
+      config:
+        sysprep:
+          install_type: "FRESH"
+          sysprep_script:
+            unattendxml:
+              value: "{{ xml_file_content }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.ext_id is defined
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.cd_roms[0] is defined
+      - result.response.cd_roms[0].iso_type == "GUEST_CUSTOMIZATION"
+    fail_msg: " Unable to create VM with windows unattend xml file "
+    success_msg: " VM with windows unattend xml file created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+########################################################################
 - name: List all VMs
   ntnx_vms_info_v2:
   register: result
