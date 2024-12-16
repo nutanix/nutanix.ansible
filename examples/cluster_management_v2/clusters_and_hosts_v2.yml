@@ -12,7 +12,7 @@
 # 9. Fetch hosts of particular cluster
 # 10. Destroy the cluster
 
-- name: clusters CRUD playbook
+- name: Clusters CRUD playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
