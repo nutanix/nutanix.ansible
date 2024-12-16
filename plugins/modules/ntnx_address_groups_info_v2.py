@@ -31,7 +31,7 @@ author:
 """
 EXAMPLES = r"""
 - name: Fetch address groups using external id
-  ntnx_address_groups_info_v2:
+  nutanix.ncp.ntnx_address_groups_info_v2:
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -40,7 +40,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List all address groups
-  ntnx_address_groups_info_v2:
+  nutanix.ncp.ntnx_address_groups_info_v2:
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

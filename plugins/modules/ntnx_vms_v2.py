@@ -928,7 +928,7 @@ author:
 """
 EXAMPLES = r"""
 - name: Create VM with minimum requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "test_name"
     description: "ansible test"
     cluster:
@@ -937,7 +937,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Create VM with full requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "test_name"
     description: "ansible test"
     cluster:
@@ -965,7 +965,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 - name: Update VM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
     name: "new_name_updated"
@@ -987,7 +987,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 - name: Delete VM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
   register: result

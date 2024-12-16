@@ -98,7 +98,7 @@ author:
 
 EXAMPLES = r"""
 - name: create tcp service group
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -116,7 +116,7 @@ EXAMPLES = r"""
         end_port: 99
 
 - name: create udp service group
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -134,7 +134,7 @@ EXAMPLES = r"""
         end_port: 99
 
 - name: create icmp with service group
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -148,7 +148,7 @@ EXAMPLES = r"""
         type: 2
 
 - name: Delete all created service groups
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

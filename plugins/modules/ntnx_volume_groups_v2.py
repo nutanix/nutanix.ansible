@@ -159,7 +159,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Create Volume group with all config and enabled chap auth
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -181,7 +181,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Create Volume group with min spec and no Auth
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -193,7 +193,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete Volume groups
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

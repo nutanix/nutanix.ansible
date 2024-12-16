@@ -753,7 +753,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create cluster
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -771,7 +771,7 @@ EXAMPLES = r"""
         domain_awareness_level: "DISK"
 
 - name: Create cluster with network configuration
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -803,7 +803,7 @@ EXAMPLES = r"""
     timeout: 1800
 
 - name: Update cluster
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -822,7 +822,7 @@ EXAMPLES = r"""
         domain_awareness_level: "DISK"
 
 - name: Destroy cluster
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

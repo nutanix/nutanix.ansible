@@ -169,7 +169,7 @@ EXAMPLES = r"""
     wait: true
 
 - name: Remove CD ROM from VM
-  ntnx_vms_cd_rom_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

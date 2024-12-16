@@ -179,7 +179,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Create a disk for a VM
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -203,7 +203,7 @@ EXAMPLES = r"""
     wait: true
 
 - name: Update a disk's storage container and size for a VM
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -218,7 +218,7 @@ EXAMPLES = r"""
     wait: true
 
 - name: Delete a disk from a VM
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd6"
     ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd7"
     state: absent

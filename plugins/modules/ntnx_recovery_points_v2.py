@@ -117,7 +117,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create Recovery Point for 2 VMs and 2 Volume Groups
-  ntnx_recovery_points_v2:
+  nutanix.ncp.ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -134,7 +134,7 @@ EXAMPLES = r"""
       - volume_group_ext_id: "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7g"
 
 - name: Update a Recovery Point
-  ntnx_recovery_points_v2:
+  nutanix.ncp.ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -143,7 +143,7 @@ EXAMPLES = r"""
     expiration_time: "2024-11-30T14:15:22Z"
 
 - name: Delete a Recovery Point
-  ntnx_recovery_points_v2:
+  nutanix.ncp.ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

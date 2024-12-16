@@ -70,7 +70,7 @@ author:
 EXAMPLES = r"""
 
 - name: Power on a VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -81,7 +81,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Power off a VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -92,7 +92,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Reset a VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -103,7 +103,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Shutdown a VM using ACPI
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -114,7 +114,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Shutdown a VM using NGT
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -125,7 +125,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Reboot a VM using ACPI
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -136,7 +136,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Reboot a VM using NGT
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -150,7 +150,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Power on a VM with guest power state transition configuration
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"

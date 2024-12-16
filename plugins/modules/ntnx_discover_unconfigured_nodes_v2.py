@@ -91,7 +91,7 @@ author:
 
 EXAMPLES = r"""
 - name: Discover unconfigured node
-  ntnx_discover_unconfigured_nodes_v2:
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

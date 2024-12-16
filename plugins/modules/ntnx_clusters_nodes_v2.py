@@ -471,7 +471,7 @@ author:
 
 EXAMPLES = r"""
 - name: Expand cluster
-  ntnx_clusters_nodes_v2:
+  nutanix.ncp.ntnx_clusters_nodes_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -523,7 +523,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Remove node from cluster
-  ntnx_clusters_nodes_v2:
+  nutanix.ncp.ntnx_clusters_nodes_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

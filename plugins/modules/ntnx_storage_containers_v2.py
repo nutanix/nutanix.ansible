@@ -190,7 +190,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create storage container with minimal spec
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -198,7 +198,7 @@ EXAMPLES = r"""
     cluster_ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
 
 - name: Create storage container
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -219,7 +219,7 @@ EXAMPLES = r"""
     has_higher_ec_fault_domain_preference: true
 
 - name: Update storage container
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -230,7 +230,7 @@ EXAMPLES = r"""
     logical_explicit_reserved_capacity_bytes: 20
 
 - name: Delete storage container
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

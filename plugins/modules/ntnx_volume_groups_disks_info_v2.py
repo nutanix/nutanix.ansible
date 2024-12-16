@@ -35,7 +35,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch information about all Disks of VG
-  ntnx_volume_groups_disks_info_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -43,7 +43,7 @@ EXAMPLES = r"""
     validate_certs: false
 
 - name: Fetch information about all Disks of VG using page and limits
-  ntnx_volume_groups_disks_info_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -53,7 +53,7 @@ EXAMPLES = r"""
     validate_certs: false
 
 - name: Fetch information about a specific VG Disk
-  ntnx_volume_groups_disks_info_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

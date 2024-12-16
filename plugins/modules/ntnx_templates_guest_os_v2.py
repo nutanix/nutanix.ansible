@@ -58,7 +58,7 @@ author:
 
 EXAMPLES = r"""
 - name: initiate_guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{version1_ext_id}}"
     state: start
@@ -68,7 +68,7 @@ EXAMPLES = r"""
     validate_certs: false
 
 - name: cancel guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{version1_ext_id}}"
     nutanix_host: "{{ ip }}"
@@ -78,7 +78,7 @@ EXAMPLES = r"""
     state: cancel
 
 - name: finish guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{version1_ext_id}}"
     state: finish

@@ -32,14 +32,14 @@ author:
 """
 EXAMPLES = r"""
 - name: List Floating_ips
-  ntnx_floating_ips_info_v2:
+  nutanix.ncp.ntnx_floating_ips_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
 
 - name: Get floating_ips using ext_id
-  ntnx_floating_ips_info_v2:
+  nutanix.ncp.ntnx_floating_ips_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

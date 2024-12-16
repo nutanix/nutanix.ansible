@@ -163,7 +163,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Create an image
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -191,7 +191,7 @@ EXAMPLES = r"""
     state: present
 
 - name: Update an image
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -202,7 +202,7 @@ EXAMPLES = r"""
     state: present
 
 - name: Delete an image
-  ntnx_images_v2:
+  nutanix.ncp.ntnx_images_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

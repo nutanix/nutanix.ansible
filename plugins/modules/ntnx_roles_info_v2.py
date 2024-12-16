@@ -31,7 +31,7 @@ author:
 """
 EXAMPLES = r"""
 - name: List roles
-  ntnx_roles_info_v2:
+  nutanix.ncp.ntnx_roles_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -39,7 +39,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch role using uuid criteria
-  ntnx_roles_info_v2:
+  nutanix.ncp.ntnx_roles_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -48,7 +48,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List roles using filter
-  ntnx_roles_info_v2:
+  nutanix.ncp.ntnx_roles_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

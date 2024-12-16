@@ -96,7 +96,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Install NGT on a VM
-  ntnx_vm_ngt_installation_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -113,7 +113,7 @@ EXAMPLES = r"""
         start_time: "2022-01-01T00:00:00Z"
 
 - name: Uninstall NGT from a VM
-  ntnx_vm_ngt_installation_v2:
+  nutanix.ncp.ntnx_vms_ngt_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

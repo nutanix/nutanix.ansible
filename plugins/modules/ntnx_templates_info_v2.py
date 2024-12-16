@@ -28,7 +28,7 @@ author:
 """
 EXAMPLES = r"""
 - name: Fetch template info using ext id
-  ntnx_templates_info_v2:
+  nutanix.ncp.ntnx_templates_info_v2:
     ext_id: "{{ template1_ext_id }}"
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -36,7 +36,7 @@ EXAMPLES = r"""
     validate_certs: false
 
 - name: List all templates
-  ntnx_templates_info_v2:
+  nutanix.ncp.ntnx_templates_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

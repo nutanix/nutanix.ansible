@@ -378,7 +378,7 @@ author:
 
 EXAMPLES = r"""
 - name: VLAN subnet with IPAM IP pools
-  ntnx_subnets_v2:
+  nutanix.ncp.ntnx_subnets_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -407,7 +407,7 @@ EXAMPLES = r"""
                 prefix_length: 24
 
 - name: External subnet with NAT
-  ntnx_subnets_v2:
+  nutanix.ncp.ntnx_subnets_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -442,7 +442,7 @@ EXAMPLES = r"""
                 prefix_length: 27
 
 - name: Overlay Subnet with IP_pools
-  ntnx_subnets_v2:
+  nutanix.ncp.ntnx_subnets_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -469,7 +469,7 @@ EXAMPLES = r"""
                 prefix_length: 24
 
 - name: Delete subnets
-  ntnx_subnets_v2:
+  nutanix.ncp.ntnx_subnets_v2:
     state: absent
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

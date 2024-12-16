@@ -78,7 +78,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create address group
-  ntnx_address_groups_v2:
+  nutanix.ncp.ntnx_address_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -92,7 +92,7 @@ EXAMPLES = r"""
         prefix_length: 32
 
 - name: delete address group
-  ntnx_address_groups_v2:
+  nutanix.ncp.ntnx_address_groups_v2:
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

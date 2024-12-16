@@ -68,7 +68,7 @@ author:
 
 EXAMPLES = r"""
 - name: Attach GPU to VM
-  ntnx_gpus_v2:
+  nutanix.ncp.ntnx_gpus_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -81,7 +81,7 @@ EXAMPLES = r"""
     vendor: NVIDIA
 
 - name: Detach GPU from VM
-  ntnx_gpus_v2:
+  nutanix.ncp.ntnx_gpus_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

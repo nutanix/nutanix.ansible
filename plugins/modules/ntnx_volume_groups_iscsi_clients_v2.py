@@ -132,7 +132,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Attach iscsi client to VG using initiator name
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -143,7 +143,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Attach using ipv4 address
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -159,7 +159,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Detach client from VG
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

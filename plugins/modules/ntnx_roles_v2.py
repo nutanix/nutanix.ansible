@@ -68,7 +68,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create roles with operations
-  ntnx_roles_v2:
+  nutanix.ncp.ntnx_roles_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -81,7 +81,7 @@ EXAMPLES = r"""
       - "0194fbfd-a5d1-49f8-46f4-e4b01d0abe47"
 
 - name: Update all fields
-  ntnx_roles_v2:
+  nutanix.ncp.ntnx_roles_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -94,7 +94,7 @@ EXAMPLES = r"""
       - "0194fbfd-a5d1-49f8-46f4-e4b01d0abe47"
 
 - name: delete role
-  ntnx_roles_v2:
+  nutanix.ncp.ntnx_roles_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

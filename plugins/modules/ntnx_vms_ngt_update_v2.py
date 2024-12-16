@@ -44,7 +44,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Update NGT configuration for a VM
-  ntnx_vm_ngt_update:
+  nutanix.ncp.ntnx_vms_ngt_update_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

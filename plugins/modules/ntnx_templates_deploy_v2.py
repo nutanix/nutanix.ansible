@@ -260,7 +260,7 @@ author:
 
 EXAMPLES = r"""
 - name: Deploy VM
-  ntnx_templates_deploy_v2:
+  nutanix.ncp.ntnx_templates_deploy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -270,7 +270,7 @@ EXAMPLES = r"""
     cluster_reference: "{{cluster.uuid}}"
 
 - name: Deploy vm and override config
-  ntnx_templates_deploy_v2:
+  nutanix.ncp.ntnx_templates_deploy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

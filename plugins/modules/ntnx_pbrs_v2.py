@@ -384,7 +384,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create PBR with vpc, custom source network, external destination, reroute action and udp port rangelist
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -427,7 +427,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Create a routing policy for a VPC to permit certain source for certain destination
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -459,7 +459,7 @@ EXAMPLES = r"""
 
 
 - name: Create PBR with vpc, any source, any destination, any protocol and deny action
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -481,7 +481,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Update PBR name ,description, priority
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
     priority: "156"
@@ -491,7 +491,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete created pbr
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

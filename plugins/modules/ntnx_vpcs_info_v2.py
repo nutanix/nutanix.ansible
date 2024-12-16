@@ -30,7 +30,7 @@ author:
 """
 EXAMPLES = r"""
 - name: List VPCs
-  ntnx_vpcs_info_v2:
+  nutanix.ncp.ntnx_vpcs_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -38,7 +38,7 @@ EXAMPLES = r"""
   register: vpcs
 
 - name: List VPC using name filter criteria
-  ntnx_vpcs_info_v2:
+  nutanix.ncp.ntnx_vpcs_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -47,7 +47,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List VPC using ext_id
-  ntnx_vpcs_info_v2:
+  nutanix.ncp.ntnx_vpcs_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

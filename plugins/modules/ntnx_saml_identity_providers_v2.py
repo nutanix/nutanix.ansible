@@ -127,7 +127,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create identity provider
-  ntnx_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -143,7 +143,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 - name: Update identity provider
-  ntnx_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     ext_id: "59d5de78-a964-5746-8c6e-677c4c7a79df"
     name: "ansible-saml"
     username_attribute: "new_name2"
@@ -155,7 +155,7 @@ EXAMPLES = r"""
     validate_certs: false
     state: present
 - name: Delete identity provider
-  ntnx_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

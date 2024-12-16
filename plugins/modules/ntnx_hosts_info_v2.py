@@ -37,7 +37,7 @@ author:
 
 EXAMPLES = r"""
 - name: Get host by external ID
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -45,7 +45,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Get hosts by cluster external ID
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -53,14 +53,14 @@ EXAMPLES = r"""
   register: result
 
 - name: List all hosts
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
   register: result
 
 - name: List all hosts with filter
-  ntnx_hosts_info_v2:
+  nutanix.ncp.ntnx_hosts_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

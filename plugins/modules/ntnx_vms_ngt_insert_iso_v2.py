@@ -44,7 +44,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Insert NGT ISO into virtual machine
-  ntnx_vm_ngt_insert_iso_v2:
+  nutanix.ncp.ntnx_vms_ngt_insert_iso_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
