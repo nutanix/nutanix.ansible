@@ -32,7 +32,7 @@
 ###########################################################################################################
 
 - name: Wait 60 seconds for static routes to be created
-  pause:
+  ansible.builtin.pause:
     seconds: 60
 
 - name: Get all static routes

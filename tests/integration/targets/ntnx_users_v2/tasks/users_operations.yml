@@ -427,7 +427,7 @@
 #   ignore_errors: true
 
 # - name: Deactivate local user status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
 #       - result.changed == true
@@ -445,7 +445,7 @@
 #   ignore_errors: True
 
 # - name: Fetch user info using user ext_id criteria and check status result
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
 #       - result.changed == false
@@ -465,7 +465,7 @@
 #   ignore_errors: true
 
 # - name: Activate local user status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
 #       - result.changed == true
