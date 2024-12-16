@@ -8,7 +8,7 @@
 # 5. Fetch authorization policies using filters
 # 6. Delete created authorization policy
 
-- name: authorization policies playbook
+- name: Authorization policies playbook
   hosts: localhost
   gather_facts: false
   module_defaults:

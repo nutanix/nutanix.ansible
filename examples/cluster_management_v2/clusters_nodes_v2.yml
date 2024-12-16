@@ -7,7 +7,7 @@
 # 4. Remove the node from the cluster
 # 5. Destroy the cluster
 
-- name: cluster expanding playbook
+- name: Cluster expanding playbook
   hosts: localhost
   gather_facts: false
   module_defaults:

@@ -9,7 +9,7 @@
 # 6. Fetch all storage containers
 # 7. Delete the storage container
 
-- name: storage container playbook
+- name: Storage container playbook
   hosts: localhost
   gather_facts: false
   module_defaults:

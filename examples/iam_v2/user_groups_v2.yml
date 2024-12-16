@@ -7,7 +7,7 @@
 # 4. List user groups using filter criteria
 # 5. Delete created user group
 
-- name: user groups playbook
+- name: User groups playbook
   hosts: localhost
   gather_facts: false
   module_defaults:

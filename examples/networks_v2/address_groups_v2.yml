@@ -6,7 +6,7 @@
 # 3. Fetch the address group info
 # 4. Delete the address group
 
-- name: address groups playbook
+- name: Address groups playbook
   hosts: localhost
   gather_facts: false
   module_defaults:

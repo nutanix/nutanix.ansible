@@ -6,7 +6,7 @@
 # 3. Fetch the security rule info
 # 4. Delete the security rule
 
-- name: security rules playbook
+- name: Security rules playbook
   hosts: localhost
   gather_facts: false
   module_defaults:

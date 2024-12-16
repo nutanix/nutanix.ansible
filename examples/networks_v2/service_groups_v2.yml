@@ -6,7 +6,7 @@
 # 3. Fetch the service group details using ext_id
 # 4. Delete the service group
 
-- name: service groups playbook
+- name: Service groups playbook
   hosts: localhost
   gather_facts: false
   module_defaults:

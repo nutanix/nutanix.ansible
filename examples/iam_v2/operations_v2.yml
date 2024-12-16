@@ -4,7 +4,7 @@
 # 1. List all operations
 # 2. List permission using ext_id criteria
 
-- name: operations playbook
+- name: Operations playbook
   hosts: localhost
   gather_facts: false
   module_defaults:

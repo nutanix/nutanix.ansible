@@ -83,7 +83,7 @@
       ignore_errors: true
 
     - name: Fetch VM
-      nutanix.ncp.ntnx_vms_info_v2.py:
+      nutanix.ncp.ntnx_vms_info_v2:
         ext_id: "{{ vm_uuid }}"
       register: result
       ignore_errors: true

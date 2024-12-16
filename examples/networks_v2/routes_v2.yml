@@ -28,56 +28,56 @@
         ip1: "10.0.0.1"
         ip2: "10.0.0.2"
 
-- name: Create static route
-  nutanix.ncp.ntnx_routes_v2:
-    state: present
-    name: "{{ route_name }}"
-    description: "Route for testing"
-    vpc_reference: "{{ vpc_uuid }}"
-    route_table_ext_id: "{{ route_table_external_id }}"
-    route_type: STATIC
-    destination:
-      ipv4:
-        ip:
-          value: "{{ ip1 }}"
-        prefix_length: 32
-    nexthop:
-      nexthop_type: "EXTERNAL_SUBNET"
-      nexthop_reference: "{{ external_subnet_uuid }}"
-    metadata:
-      owner_reference_id: "{{ user_uuid }}"
-      project_reference_id: "{{ project_uuid }}"
-  register: result
-  ignore_errors: true
+    - name: Create static route
+      nutanix.ncp.ntnx_routes_v2:
+        state: present
+        name: "{{ route_name }}"
+        description: "Route for testing"
+        vpc_reference: "{{ vpc_uuid }}"
+        route_table_ext_id: "{{ route_table_external_id }}"
+        route_type: STATIC
+        destination:
+          ipv4:
+            ip:
+              value: "{{ ip1 }}"
+              prefix_length: 32
+        nexthop:
+          nexthop_type: "EXTERNAL_SUBNET"
+          nexthop_reference: "{{ external_subnet_uuid }}"
+        metadata:
+        owner_reference_id: "{{ user_uuid }}"
+        project_reference_id: "{{ project_uuid }}"
+      register: result
+      ignore_errors: true
 
-- name: Update route
-  nutanix.ncp.ntnx_routes_v2:
-    state: present
-    name: "{{ route_name }}_updated"
-    description: "Route for testing updated"
-    vpc_reference: "{{ vpc_uuid }}"
-    route_table_ext_id: "{{ route_table_external_id }}"
-    ext_id: "{{ route_uuid }}"
-    route_type: STATIC
-    destination:
-      ipv4:
-        ip:
-          value: "{{ ip2 }}"
-        prefix_length: 32
-  register: result
-  ignore_errors: true
+    - name: Update route
+      nutanix.ncp.ntnx_routes_v2:
+        state: present
+        name: "{{ route_name }}_updated"
+        description: "Route for testing updated"
+        vpc_reference: "{{ vpc_uuid }}"
+        route_table_ext_id: "{{ route_table_external_id }}"
+        ext_id: "{{ route_uuid }}"
+        route_type: STATIC
+        destination:
+          ipv4:
+            ip:
+              value: "{{ ip2 }}"
+            prefix_length: 32
+      register: result
+      ignore_errors: true
 
-- name: Fetch route by external ID
-  nutanix.ncp.ntnx_routes_info_v2:
-    ext_id: "{{ route_uuid }}"
-    route_table_ext_id: "{{ route_table_external_id }}"
-  register: result
-  ignore_errors: true
+    - name: Fetch route by external ID
+      nutanix.ncp.ntnx_routes_info_v2:
+        ext_id: "{{ route_uuid }}"
+        route_table_ext_id: "{{ route_table_external_id }}"
+      register: result
+      ignore_errors: true
 
-- name: Delete static route
-  nutanix.ncp.ntnx_routes_v2:
-    state: absent
-    ext_id: "{{ route_uuid }}"
-    route_table_ext_id: "{{ route_table_external_id }}"
-  register: result
-  ignore_errors: true
+    - name: Delete static route
+      nutanix.ncp.ntnx_routes_v2:
+        state: absent
+        ext_id: "{{ route_uuid }}"
+        route_table_ext_id: "{{ route_table_external_id }}"
+      register: result
+      ignore_errors: true

@@ -10,7 +10,7 @@
 # 7. List users with specific username
 # 8. Delete created user
 
-- name: users playbook
+- name: Users playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
