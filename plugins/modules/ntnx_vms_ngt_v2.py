@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Pradeepsingh Bhati
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
@@ -15,7 +15,6 @@ description:
     - This module allows you to install or uninstall Nutanix Guest Tools (NGT) on a VM in a Nutanix cluster.
 version_added: "2.0.0"
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 notes:
     - Module will skip if install/uninstall is not required checking the current installation status.

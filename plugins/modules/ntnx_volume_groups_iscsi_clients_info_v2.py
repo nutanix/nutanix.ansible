@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Pradeepsingh Bhati
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
@@ -17,7 +17,6 @@ description:
     - Fetch all iscsi clients attached to a particular VG if C(volume_group_ext_id) is given
 version_added: "2.0.0"
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     ext_id:

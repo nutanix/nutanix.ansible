@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, George Ghawali
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
@@ -84,7 +84,6 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
 """
