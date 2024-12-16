@@ -184,9 +184,102 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Get network information for uncofigured cluster nodes
+  nutanix.ncp.ntnx_nodes_network_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    cluster_ext_id: 00061de6-1234-4321-1122-ac1f6b6f97e2
+    node_list:
+      - cvm_ip:
+          ipv4:
+            value: "10.0.0.1"
+        hypervisor_ip:
+          ipv4:
+            value: "10.0.0.2"
+    request_type: "expand_cluster"
 """
 
 RETURN = r"""
+response:
+    description:
+        - Response for getting network information for uncofigured cluster nodes.
+    type: dict
+    returned: always
+    sample:
+      {
+        "ext_id": "54fbdaf3-972d-4d1c-4413-005a9fe1fc1d",
+        "links": null,
+        "response": {
+            "network_info": {
+                "hci": [
+                    {
+                        "hypervisor_type": "AHV",
+                        "name": "br0",
+                        "networks": [
+                            "Management"
+                        ]
+                    }
+                ],
+                "so": [
+                    {
+                        "hypervisor_type": "AHV",
+                        "name": "br0",
+                        "networks": [
+                            "Management"
+                        ]
+                    }
+                ]
+            },
+            "uplinks": [
+                {
+                    "cvm_ip": {
+                        "ipv4": {
+                            "prefix_length": 32,
+                            "value": "10.39.6.77"
+                        },
+                        "ipv6": null
+                    },
+                    "uplink_list": [
+                        {
+                            "mac": "00:e0:ed:36:41:a8",
+                            "name": "eth2"
+                        },
+                        {
+                            "mac": "0c:c4:7a:c7:c2:0b",
+                            "name": "eth1"
+                        },
+                        {
+                            "mac": "00:e0:ed:36:41:a9",
+                            "name": "eth3"
+                        },
+                        {
+                            "mac": "0c:c4:7a:c7:c2:0a",
+                            "name": "eth0"
+                        }
+                    ]
+                }
+            ],
+            "warnings": null
+        },
+        "task_response_type": "NETWORKING_DETAILS",
+        "tenant_id": null
+      }
+error:
+    description: The error message if an error occurs.
+    type: str
+    returned: when an error occurs
+
+cluster_ext_id:
+    description: The external ID of the cluster.
+    type: str
+    returned: always
+
+task_ext_id:
+    description: The external ID of the task.
+    type: str
+    returned: always
+
 """
 
 
