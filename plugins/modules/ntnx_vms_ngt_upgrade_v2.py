@@ -54,7 +54,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Upgrade NGT on a VM
-  nutanix.ncp.ntnx_vms_ngt_upgrade:
+  nutanix.ncp.ntnx_vms_ngt_upgrade_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
