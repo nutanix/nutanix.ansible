@@ -252,11 +252,11 @@
 #   register: result
 #   ignore_errors: True
 
-# - set_fact:
+# - ansible.builtin.set_fact:
 #     group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
 
 # - name: Fetch only LDAP user groups Status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
 #       - result.changed == false
@@ -275,11 +275,11 @@
 #   register: result
 #   ignore_errors: True
 
-# - set_fact:
+# - ansible.builtin.set_fact:
 #     group_type: "{{ result.response | map(attribute='group_type') | list | unique }}"
 
 # - name: Fetch only SAML user groups Status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
 #       - result.changed == false

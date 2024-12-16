@@ -52,7 +52,7 @@
     success_msg: "succes: get imaged cluster using custom filter sucessfully"
 
 # still offset and length
-# - debug:
+# - ansible.builtin.debug:
 #     var: clusters.response
 
 # - name: get imaged cluster using image_cluster_uuid
@@ -62,5 +62,5 @@
 #     length: 20
 #   register: result
 #   ignore_errors: true
-# - debug:
+# - ansible.builtin.debug:
 #     var:  result.response.imaged_clusters|length
