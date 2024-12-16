@@ -28,7 +28,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Get image placement policy by ID
-  ntnx_image_placement_policies_info_v2:
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -36,7 +36,7 @@ EXAMPLES = r"""
     ext_id: "policy-12345"
 
 - name: Get all image placement policies
-  ntnx_image_placement_policies_info_v2:
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

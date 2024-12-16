@@ -55,7 +55,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Associate categories with a VM
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -69,7 +69,7 @@ EXAMPLES = r"""
     wait: true
 
 - name: Disassociate categories from a VM
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

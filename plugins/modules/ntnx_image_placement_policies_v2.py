@@ -126,7 +126,7 @@ notes:
 
 EXAMPLES = r"""
 - name: Create an image placement policy
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -149,7 +149,7 @@ EXAMPLES = r"""
     wait: true
 
 - name: Delete an image placement policy
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

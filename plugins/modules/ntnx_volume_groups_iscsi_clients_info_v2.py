@@ -39,7 +39,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch iscsi clients attached to VG
-  ntnx_volume_groups_iscsi_clients_info_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -48,7 +48,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch specific iscsi client info
-  ntnx_volume_groups_iscsi_clients_info_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -57,7 +57,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch all iscsi clients attached across VGs
-  ntnx_volume_groups_iscsi_clients_info_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

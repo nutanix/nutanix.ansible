@@ -129,7 +129,7 @@ extends_documentation_fragment:
 """
 EXAMPLES = r"""
 - name: Update guest script
-  ntnx_vms_stage_guest_customization_v2:
+  nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
     ext_id: "7334f142-9653-4c84-7287-3c758d1a0aeb"
     config:
       cloudinit:

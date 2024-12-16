@@ -32,7 +32,7 @@ author:
 """
 EXAMPLES = r"""
 - name: List all user groups
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -40,7 +40,7 @@ EXAMPLES = r"""
   register: user_groups
 
 - name: List user_groups using user_group uuid criteria
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -49,7 +49,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List user_groups using filter criteria
-  ntnx_user_groups_info_v2:
+  nutanix.ncp.ntnx_user_groups_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

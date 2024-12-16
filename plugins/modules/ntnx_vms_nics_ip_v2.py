@@ -62,7 +62,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Assign IP
-  nutanix.ncp.ntnx_vms_nic_assign_ip_v2:
+  nutanix.ncp.ntnx_vms_nics_ip_v2:
       nutanix_host: "<pc-ip>"
       nutanix_username: "<username>"
       nutanix_password: "<password>"
@@ -74,7 +74,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Release IP
-  nutanix.ncp.ntnx_vms_nic_assign_ip_v2:
+  nutanix.ncp.ntnx_vms_nics_ip_v2:
       nutanix_host: "<pc-ip>"
       nutanix_username: "<username>"
       nutanix_password: "<password>"

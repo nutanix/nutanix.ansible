@@ -155,7 +155,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Inject ISO in CD ROM of a VM
-  ntnx_vms_cd_rom_iso_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_iso_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

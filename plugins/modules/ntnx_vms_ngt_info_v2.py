@@ -28,7 +28,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Get NGT info for a virtual machine
-  ntnx_vm_ngt_info_v2:
+  nutanix.ncp.ntnx_vms_ngt_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -36,9 +36,6 @@ EXAMPLES = r"""
     ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd1"
   register: result
 
-- name: Print NGT info
-  debug:
-    var: result.response
 """
 
 RETURN = r"""

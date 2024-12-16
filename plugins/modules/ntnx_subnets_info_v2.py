@@ -33,7 +33,7 @@ author:
 """
 EXAMPLES = r"""
 - name: List all subnets
-  ntnx_subnets_info:
+  nutanix.ncp.ntnx_subnets_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -41,7 +41,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List subnet using uuid criteria
-  ntnx_subnets_info:
+  nutanix.ncp.ntnx_subnets_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -50,7 +50,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List subnets using filter criteria and filter for subnet name
-  ntnx_subnets_info:
+  nutanix.ncp.ntnx_subnets_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -58,7 +58,7 @@ EXAMPLES = r"""
     filter: "name eq '{{ test_subnet_name }}'"
 
 - name: List subnet using filter criteria and filter for cluster uuid
-  ntnx_subnets_info:
+  nutanix.ncp.ntnx_subnets_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

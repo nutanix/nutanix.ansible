@@ -58,7 +58,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Create Serial Port
-  ntnx_vms_serial_port_v2:
+  nutanix.ncp.ntnx_vms_serial_port_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -69,7 +69,7 @@ EXAMPLES = r"""
     is_connected: true
 
 - name: Update Serial Port connection status
-  ntnx_vms_serial_port_v2:
+  nutanix.ncp.ntnx_vms_serial_port_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -80,7 +80,7 @@ EXAMPLES = r"""
     is_connected: false
 
 - name: Delete Serial Port
-  ntnx_vms_serial_port_v2:
+  nutanix.ncp.ntnx_vms_serial_port_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

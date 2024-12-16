@@ -33,7 +33,7 @@ author:
 
 EXAMPLES = r"""
 - name: List all operations
-  ntnx_operations_info_v2:
+  nutanix.ncp.ntnx_operations_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -41,7 +41,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch permission info using external id
-  ntnx_operations_info_v2:
+  nutanix.ncp.ntnx_operations_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -50,7 +50,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List operations using filter criteria
-  ntnx_operations_info_v2:
+  nutanix.ncp.ntnx_operations_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

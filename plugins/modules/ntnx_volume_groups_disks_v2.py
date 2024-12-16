@@ -101,7 +101,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Create disk with all attributes
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -120,8 +120,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Create disk with vdisk ref
-  check_mode: true
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -140,7 +139,7 @@ EXAMPLES = r"""
 
 
 - name: Create disk from volume group disk
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -158,7 +157,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete a volume group disk
-  ntnx_volume_groups_disks_v2:
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

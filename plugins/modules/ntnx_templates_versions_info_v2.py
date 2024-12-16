@@ -36,7 +36,7 @@ author:
 
 EXAMPLES = r"""
 - name: Retrieve the Template Version details for the given Template Version identifier.
-  ntnx_templates_versions_info_v2:
+  nutanix.ncp.ntnx_templates_versions_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

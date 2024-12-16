@@ -34,7 +34,7 @@ author:
 """
 EXAMPLES = r"""
 - name: List all directory services
-  ntnx_directory_services_info_v2:
+  nutanix.ncp.ntnx_directory_services_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -42,7 +42,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch directory service by ext_id
-  ntnx_directory_services_info_v2:
+  nutanix.ncp.ntnx_directory_services_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -51,7 +51,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List all directory services with filter
-  ntnx_directory_services_info_v2:
+  nutanix.ncp.ntnx_directory_services_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

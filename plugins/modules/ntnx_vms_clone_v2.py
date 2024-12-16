@@ -417,7 +417,7 @@ author:
 
 EXAMPLES = r"""
 - name: Clone VM with same attributes values
-  ntnx_vms_clone_v2:
+  nutanix.ncp.ntnx_vms_clone_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -426,7 +426,7 @@ EXAMPLES = r"""
     name: "cloned_VM"
 
 - name: Clone VM with different attributes values
-  ntnx_vms_clone_v2:
+  nutanix.ncp.ntnx_vms_clone_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

@@ -47,7 +47,7 @@ author:
 
 EXAMPLES = r"""
 - name: Set the Active Version
-  ntnx_templates_version_v2:
+  nutanix.ncp.ntnx_templates_version_v2:
     template_ext_id: "f3ae7dfe-9f7f-4085-8619-5d93ad9c4e64"
     version_id: "5fbfc4d6-7736-49e4-97e7-eb55b061f16f"
     nutanix_host: "{{ ip }}"
@@ -56,7 +56,7 @@ EXAMPLES = r"""
     validate_certs: false
 
 - name: Delete Template Version
-  ntnx_templates_version_v2:
+  nutanix.ncp.ntnx_templates_version_v2:
     state: absent
     template_ext_id: "f3ae7dfe-9f7f-4085-8619-5d93ad9c4e64"
     version_id: "5fbfc4d6-7736-49e4-97e7-eb55b061f16f"

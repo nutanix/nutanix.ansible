@@ -34,7 +34,7 @@ author:
 """
 EXAMPLES = r"""
 - name: List all routes
-  ntnx_routes_info_v2:
+  nutanix.ncp.ntnx_routes_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -43,7 +43,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch route by external ID
-  ntnx_routes_info_v2:
+  nutanix.ncp.ntnx_routes_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -54,7 +54,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List all routes with filter
-  ntnx_routes_info_v2:
+  nutanix.ncp.ntnx_routes_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -64,7 +64,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List all routes with limit
-  ntnx_routes_info_v2:
+  nutanix.ncp.ntnx_routes_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

@@ -33,7 +33,7 @@ author:
 """
 EXAMPLES = r"""
 - name: Get 10 auth policies
-  ntnx_authorization_policies_info_v2:
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
     nutanix_host: "{{ nutanix_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -42,7 +42,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Get specific auth policy
-  ntnx_authorization_policies_info_v2:
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
     nutanix_host: "{{ nutanix_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -51,7 +51,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Fetch using filters
-  ntnx_authorization_policies_info_v2:
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
     nutanix_host: "{{ nutanix_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

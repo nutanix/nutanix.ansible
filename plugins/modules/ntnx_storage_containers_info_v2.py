@@ -34,7 +34,7 @@ author:
 
 EXAMPLES = r"""
 - name: fetch storage continer info using external ID
-  ntnx_storage_containerss_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -42,14 +42,14 @@ EXAMPLES = r"""
   register: result
 
 - name: fetch all storage continer info
-  ntnx_storage_containerss_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
   register: result
 
 - name: fetch all storage continer info with filter
-  ntnx_storage_containerss_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

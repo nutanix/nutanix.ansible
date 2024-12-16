@@ -29,7 +29,7 @@ author:
 """
 EXAMPLES = r"""
 - name: List all route tables
-  ntnx_route_tables_info_v2:
+  nutanix.ncp.ntnx_route_tables_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -37,7 +37,7 @@ EXAMPLES = r"""
   register: route_tables
 
 - name: Fetch route table by external_id
-  ntnx_route_tables_info_v2:
+  nutanix.ncp.ntnx_route_tables_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -46,7 +46,7 @@ EXAMPLES = r"""
   register: route_table
 
 - name: List all route tables with filter
-  ntnx_route_tables_info_v2:
+  nutanix.ncp.ntnx_route_tables_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

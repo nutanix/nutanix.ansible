@@ -233,7 +233,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create min VPC with external_nat_subnet uuid
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -246,7 +246,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Create VPC with routable_ips
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -261,7 +261,7 @@ EXAMPLES = r"""
           prefix_length: "{{ routable_ips.network_prefix }}"
 
 - name: Create VPC with dns_servers
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -281,7 +281,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Delete all created vpcs
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

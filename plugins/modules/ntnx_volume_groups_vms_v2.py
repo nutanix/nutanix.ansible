@@ -58,7 +58,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Attach VM1 to VG
-  ntnx_volume_groups_vms_v2:
+  nutanix.ncp.ntnx_volume_groups_vms_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -69,7 +69,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Attach VM2 to VG
-  ntnx_volume_groups_vms_v2:
+  nutanix.ncp.ntnx_volume_groups_vms_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

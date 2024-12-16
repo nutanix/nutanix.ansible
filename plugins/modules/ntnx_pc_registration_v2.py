@@ -224,7 +224,7 @@ author:
 
 EXAMPLES = r"""
 - name: PE PC registration
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

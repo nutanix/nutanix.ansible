@@ -67,7 +67,7 @@ author:
 """
 EXAMPLES = r"""
 - name: Restore one of the VM recovery point from a recovery point
-  ntnx_recovery_point_restore_v2:
+  nutanix.ncp.ntnx_recovery_point_restore_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
