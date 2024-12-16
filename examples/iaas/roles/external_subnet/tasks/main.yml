@@ -1,5 +1,12 @@
 ---
 - name: Inputs for external subnets task
-  include_tasks: external_subnet.yml
+  ansible.builtin.include_tasks: external_subnet.yml
   with_items:
-    - { name: "{{external_subnet.name}}", vlan_id: "{{external_subnet.vlan_id}}", ip: "{{external_subnet.ip}}", prefix: "{{external_subnet.prefix}}", gip: "{{external_subnet.gip}}", sip: "{{external_subnet.sip}}", eip: "{{external_subnet.eip}}", eNat: "{{external_subnet.eNat}}" }
+    - name: "{{ external_subnet.name }}"
+      vlan_id: "{{ external_subnet.vlan_id }}"
+      ip: "{{ external_subnet.ip }}"
+      prefix: "{{ external_subnet.prefix }}"
+      gip: "{{ external_subnet.gip }}"
+      sip: "{{ external_subnet.sip }}"
+      eip: "{{ external_subnet.eip }}"
+      eNat: "{{ external_subnet.eNat }}"

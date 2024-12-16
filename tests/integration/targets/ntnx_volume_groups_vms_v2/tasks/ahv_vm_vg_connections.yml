@@ -1,0 +1,360 @@
+- name: "Start Volume groups disks tests"
+  ansible.builtin.debug:
+    msg: "Start Volume groups disks tests"
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-vgs"
+
+- name: Set VG names
+  ansible.builtin.set_fact:
+    vg1_name: "{{suffix_name}}-{{random_name}}1"
+
+############################################ Test Setup ############################################
+- name: Create Volume group for tests
+  ntnx_volume_groups_v2:
+    name: "{{vg1_name}}"
+    description: "Volume group for disk tests"
+    should_load_balance_vm_attachments: true
+    sharing_status: "SHARED"
+    target_prefix: "vg1"
+    cluster_reference: "{{ cluster.uuid }}"
+    usage_type: "USER"
+    storage_features:
+      flash_mode:
+        is_enabled: true
+  register: result
+
+- name: Verify vg create
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id is defined
+
+    fail_msg: "Unable to create VG for tests"
+    success_msg: "VG created successfully for tests"
+
+- name: Set VG UUID
+  ansible.builtin.set_fact:
+    vg1_uuid: "{{ result.ext_id }}"
+
+- name: Create VM1 for VG
+  ntnx_vms_v2:
+    name: "ansible-created-for-vg"
+    num_sockets: 2
+    num_cores_per_socket: 2
+    memory_size_bytes: 4294967296
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    nics:
+      - network_info:
+          nic_type: "NORMAL_NIC"
+          vlan_mode: "ACCESS"
+          subnet:
+            ext_id: "{{network.dhcp.uuid}}"
+          ipv4_config:
+            should_assign_ip: true
+  register: result
+
+- name: Set VM1 UUID
+  ansible.builtin.set_fact:
+    vm1_uuid: "{{ result.ext_id }}"
+
+- name: Create VM2 for VG
+  ntnx_vms_v2:
+    name: "ansible-created-for-vg"
+    num_sockets: 2
+    num_cores_per_socket: 2
+    memory_size_bytes: 4294967296
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    nics:
+      - network_info:
+          nic_type: "NORMAL_NIC"
+          vlan_mode: "ACCESS"
+          subnet:
+            ext_id: "{{network.dhcp.uuid}}"
+          ipv4_config:
+            should_assign_ip: true
+  register: result
+
+- name: Verify vm creation
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id is defined
+
+    fail_msg: "Unable to create VM for tests"
+    success_msg: "VM created successfully for tests"
+
+- name: Set VM2 UUID
+  ansible.builtin.set_fact:
+    vm2_uuid: "{{ result.ext_id }}"
+
+############################################ Attach VM tests ############################################
+- name: Create spec for attaching VM to VG
+  check_mode: true
+  ntnx_volume_groups_vms_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+    index: 0
+  register: result
+
+- name: Verify spec creation
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == false
+      - result.ext_id == "{{ vm1_uuid }}"
+      - result.volume_group_ext_id == "{{ vg1_uuid }}"
+      - result.response.index == 0
+    fail_msg: "Unable to create spec for attaching VM to VG"
+    success_msg: "Spec created successfully for VM to VG"
+
+- name: Attach VM1 to VG
+  ntnx_volume_groups_vms_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+    index: 1
+  register: result
+
+- name: Verify attachment of VM from VG side
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.ext_id == "{{ vm1_uuid }}"
+      - result.volume_group_ext_id == "{{ vg1_uuid }}"
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to attach VM to VG"
+    success_msg: "VM attached to VG successfully"
+
+- name: Fetch VM1 info to verify attachment
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm1_uuid }}"
+  register: result
+
+- name: Verify VG attachment from VM status
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == false
+      - result.response.disks[0].backing_info.volume_group_ext_id == "{{ vg1_uuid }}"
+      - result.response.disks[0].disk_address.index == 1
+
+    fail_msg: "Unable to verify VG attachment from VM side"
+    success_msg: "VG attachment verified from VM side"
+
+- name: Attach VM2 to VG
+  ntnx_volume_groups_vms_v2:
+    state: present
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ vm2_uuid }}"
+  register: result
+
+- name: Verify attachment of VM from VG side
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.ext_id == "{{ vm2_uuid }}"
+      - result.volume_group_ext_id == "{{ vg1_uuid }}"
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to attach VM to VG"
+    success_msg: "VM attached to VG successfully"
+
+- name: Fetch VM2 info to verify attachment
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm2_uuid }}"
+  register: result
+
+- name: Verify VG attachment from VM status
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == false
+      - result.response.disks[0].backing_info.volume_group_ext_id == "{{ vg1_uuid }}"
+      - result.response.disks[0].disk_address.index == 0
+
+    fail_msg: "Unable to verify VG attachment from VM side"
+    success_msg: "VG attachment verified from VM side"
+
+############################################ Info tests ############################################
+- name: Fetch all VMs attached to VG
+  ntnx_volume_groups_vms_info_v2:
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+
+- name: Verify all VMs attached to VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == false
+      - result.response | length == 2
+      - result.response[0].ext_id in [ "{{ vm1_uuid }}", "{{ vm2_uuid }}" ]
+      - result.response[1].ext_id in [ "{{ vm1_uuid }}", "{{ vm2_uuid }}" ]
+
+    fail_msg: "Unable to verify all VMs attached to VG"
+    success_msg: "All VMs attached to VG verified successfully"
+
+- name: Fetch all VMs attached to VG with limit
+  ntnx_volume_groups_vms_info_v2:
+    limit: 1
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+
+- name: Verify all VMs attached to VG with limit
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == false
+      - result.response | length == 1
+
+    fail_msg: "Unable to verify all VMs attached to VG with limit query"
+    success_msg: "All VMs attached to VG with limit verified successfully query"
+
+- name: Fetch all VMs attached to VG with filter
+  ntnx_volume_groups_vms_info_v2:
+    filter: extId eq '{{ vm1_uuid }}'
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+
+- name: Verify fetching VM attached using filter
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == false
+      - result.response | length == 1
+      - result.response[0].ext_id == "{{ vm1_uuid }}"
+
+    fail_msg: "Unable to verify fetching VM attached using filter"
+    success_msg: "Fetching VM attached using filter verified successfully"
+
+############################################ Detach VM tests ############################################
+
+- name: Detach VM1 from VG
+  ntnx_volume_groups_vms_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ vm1_uuid }}"
+  register: result
+
+- name: Verify detachment of VM from VG side
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.ext_id == "{{ vm1_uuid }}"
+      - result.volume_group_ext_id == "{{ vg1_uuid }}"
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to detach VM from VG"
+    success_msg: "VM detached from VG successfully"
+
+- name: Fetch all VMs attached to VG
+  ntnx_volume_groups_vms_info_v2:
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+
+- name: Verify VM1 is detached from VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == false
+      - result.response | length == 1
+      - result.response[0].ext_id == "{{ vm2_uuid }}"
+
+    fail_msg: "Unable to verify VM1 is detached from VG"
+    success_msg: "VM1 is detached from VG verified successfully"
+
+- name: Detach VM2 from VG
+  ntnx_volume_groups_vms_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ vm2_uuid }}"
+  register: result
+
+- name: Verify detachment of VM2 from VG side
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.ext_id == "{{ vm2_uuid }}"
+      - result.volume_group_ext_id == "{{ vg1_uuid }}"
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to detach VM2 from VG"
+    success_msg: "VM2 detached from VG successfully"
+
+- name: Fetch all VMs attached to VG
+  ntnx_volume_groups_vms_info_v2:
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+
+- name: Verify VM2 is detached from VG
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == false
+      - result.response | length == 0
+
+    fail_msg: "Unable to verify VM2 is detached from VG"
+    success_msg: "VM2 is detached from VG verified successfully"
+
+############################################ Cleanup tests ############################################
+
+- name: Delete VM1
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm1_uuid }}"
+  register: result
+
+- name: Verify delete of VM1
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete VM1"
+    success_msg: "VM1 deleted successfully"
+
+- name: Delete VM2
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm2_uuid }}"
+  register: result
+
+- name: Verify delete of VM1
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete VM1"
+    success_msg: "VM1 deleted successfully"
+
+- name: Delete Volume group
+  ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+
+- name: Verify delete of VGs
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.ext_id == "{{ vg1_uuid }}"
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete VG"
+    success_msg: "VG deleted successfully"

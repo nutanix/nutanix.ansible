@@ -12,6 +12,7 @@ __metaclass__ = type
 class BaseModule(AnsibleModule):
     """Basic module with common arguments"""
 
+    unsupported_spec_keys = ["obj"]
     argument_spec = dict(
         nutanix_host=dict(
             type="str", fallback=(env_fallback, ["NUTANIX_HOST"]), required=True
@@ -38,10 +39,22 @@ class BaseModule(AnsibleModule):
     def __init__(self, **kwargs):
         argument_spec = deepcopy(self.argument_spec)
         if kwargs.get("argument_spec"):
-            argument_spec.update(kwargs["argument_spec"])
+            argument_spec.update(deepcopy(kwargs["argument_spec"]))
+        self.argument_spec_with_extra_keys = deepcopy(argument_spec)
+        self.strip_extra_attributes(argument_spec)
         kwargs["argument_spec"] = argument_spec
 
         if not kwargs.get("supports_check_mode"):
             kwargs["supports_check_mode"] = True
 
         super(BaseModule, self).__init__(**kwargs)
+
+    def strip_extra_attributes(self, argument_spec):
+        """
+        This recursive method checks argument spec and remove extra spec definations which are not allowed in ansible
+        """
+        for spec in argument_spec.values():
+            for k in self.unsupported_spec_keys:
+                spec.pop(k, None)
+            if spec.get("options"):
+                self.strip_extra_attributes(spec["options"])

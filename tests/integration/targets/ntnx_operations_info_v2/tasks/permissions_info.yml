@@ -1,0 +1,82 @@
+---
+- name: Start testing ntnx_operations_info_v2
+  ansible.builtin.debug:
+    msg: start testing ntnx_operations_info_v2
+
+- name: List all operations
+  ntnx_operations_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all operations Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+    fail_msg: Unable to list all operations
+    success_msg: operations info obtained successfully
+
+- name: Set test permission name
+  ansible.builtin.set_fact:
+    test_permission_name: "{{ result.response[0].display_name }}"
+
+##################################################
+
+- name: List operations using filter criteria
+  ntnx_operations_info_v2:
+    filter: displayName eq '{{ test_permission_name }}'
+  register: result
+  ignore_errors: true
+
+- name: List operations using filter criteria Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].display_name == "{{ test_permission_name }}"
+      - result.response | length  == 1
+    fail_msg: Unable to list operations using filter
+    success_msg: permission info obtained successfully
+
+- name: Set test permission uuid
+  ansible.builtin.set_fact:
+    test_permission_uuid: "{{result.response.0.ext_id}}"
+
+##################################################
+
+- name: List permission using ext_id criteria
+  ntnx_operations_info_v2:
+    ext_id: "{{ test_permission_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: List permission using ext_id criteria Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.display_name == "{{ test_permission_name }}"
+    fail_msg: Unable to list permission using ext_id
+    success_msg: permission info obtained successfully
+
+##################################################
+
+- name: List operations using limit
+  ntnx_operations_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List operations using limit Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: Unable to list operations using limit
+    success_msg: operations listed successfully limit

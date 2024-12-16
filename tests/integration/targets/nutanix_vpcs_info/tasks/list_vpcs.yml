@@ -3,10 +3,10 @@
     filter:
       name: "{{ vpc.name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list vpcs "
@@ -18,10 +18,10 @@
     offset: 1
   check_mode: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list vpcs "
@@ -32,10 +32,10 @@
     sort_order: "DESCENDING"
     sort_attribute: "name"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list vpcs "

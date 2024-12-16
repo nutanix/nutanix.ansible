@@ -1,0 +1,351 @@
+---
+- name: Start testing ntnx_vpcs_v2, ntnx_vpcs_info_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vpcs_v2, ntnx_vpcs_info_v2
+
+- name: Generate random vpc name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-ag-vpc"
+
+- name: Generate random vpc name
+  ansible.builtin.set_fact:
+    vpc_name: "{{ random_name }}{{ suffix_name }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+###########################################################
+- name: Create min VPC with check mode
+  ntnx_vpcs_v2:
+    state: present
+    wait: true
+    name: "{{ vpc_name }}1"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{vpc_name}}1"
+    fail_msg: " Unable to Create min VPC with check mode"
+    success_msg: "Create min VPC with check mode finished as expected"
+###########################################################
+- name: Create min VPC with external_nat_subnet uuid
+  ntnx_vpcs_v2:
+    state: present
+    wait: true
+    name: "{{vpc_name}}2"
+    external_subnets:
+      - subnet_reference: "{{ external_nat_subnet.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.external_subnets.0.subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response.name == "{{vpc_name}}2"
+    fail_msg: " Unable to create Min vpc with external subnet uuid "
+    success_msg: " Min vpc with external subnet uuid created successfully "
+
+- name: Adding VPC external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+###########################################################
+- name: Update vpc name
+  ntnx_vpcs_v2:
+    state: present
+    ext_id: "{{ result.ext_id }}"
+    name: "{{vpc_name}}2_updated"
+  register: result
+  ignore_errors: true
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.name == "{{vpc_name}}2_updated"
+    fail_msg: " Unable to update vpc name "
+    success_msg: " VPC name updated successfully "
+###########################################################
+- name: Delete all created vpcs
+  ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+###########################################################
+- name: Create VPC with routable_ips
+  ntnx_vpcs_v2:
+    state: present
+    name: "{{vpc_name}}3"
+    description: "VPC with routable_ips"
+    externally_routable_prefixes:
+      - ipv4:
+          ip:
+            value: "{{ routable_ips.network_ip }}"
+            prefix_length: "{{ routable_ips.network_prefix }}"
+          prefix_length: "{{ routable_ips.network_prefix }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.name == "{{vpc_name}}3"
+      - result.response.description == "VPC with routable_ips"
+      - result.response.externally_routable_prefixes.0.ipv4.prefix_length  == {{ routable_ips.network_prefix }}
+      - result.response.externally_routable_prefixes.0.ipv4.ip.value  ==  "{{ routable_ips.network_ip }}"
+    fail_msg: " Unable to create vpc with routable_ips "
+    success_msg: " VPC with routable ips created successfully "
+
+- name: Adding VPC external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+##########################################################
+- name: Update vpc with external_nat_subnet
+  ntnx_vpcs_v2:
+    state: present
+    ext_id: "{{ result.ext_id }}"
+    external_subnets:
+      - subnet_reference: "{{ external_nat_subnet.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.external_subnets.0.subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response.name == "{{vpc_name}}3"
+      - result.response.description == "VPC with routable_ips"
+      - result.response.externally_routable_prefixes.0.ipv4.prefix_length  == {{ routable_ips.network_prefix }}
+      - result.response.externally_routable_prefixes.0.ipv4.ip.value  ==  "{{ routable_ips.network_ip }}"
+    fail_msg: " Unable to update vpc with external_nat_subnet "
+    success_msg: " VPC updated with external_nat_subnet successfully "
+##########################################################
+- name: Check idempotency
+  ntnx_vpcs_v2:
+    state: present
+    ext_id: "{{ result.ext_id }}"
+    name: "{{vpc_name}}3"
+    description: "VPC with routable_ips"
+    externally_routable_prefixes:
+      - ipv4:
+          ip:
+            value: "{{ routable_ips.network_ip }}"
+          prefix_length: "{{ routable_ips.network_prefix }}"
+  register: result
+  ignore_errors: true
+
+- name: Idempotency Status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.msg == "Nothing to change."
+    fail_msg: " Unable to check idempotency "
+    success_msg: " Idempotency check finished successfully "
+###########################################################
+- name: Create VPC with routable_ips and external subnet
+  ntnx_vpcs_v2:
+    state: present
+    name: "{{vpc_name}}4"
+    externally_routable_prefixes:
+      - ipv4:
+          ip:
+            value: "{{ routable_ips.network_ip_2 }}"
+          prefix_length: "{{ routable_ips.network_prefix_2 }}"
+    external_subnets:
+      - subnet_reference: "{{ external_nat_subnet.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.name == "{{vpc_name}}4"
+      - result.response.externally_routable_prefixes.0.ipv4.prefix_length  == {{ routable_ips.network_prefix_2 }}
+      - result.response.externally_routable_prefixes.0.ipv4.ip.value  ==  "{{ routable_ips.network_ip_2 }}"
+      - result.response.external_subnets.0.subnet_reference == "{{ external_nat_subnet.uuid }}"
+    fail_msg: " Unable to create vpc with routable_ips and external subnet "
+    success_msg: " VPC with routable ips and external subnet created successfully "
+
+- name: Adding VPC external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+##########################################################
+- name: Create VPC with dns_servers
+  ntnx_vpcs_v2:
+    state: present
+    name: "{{vpc_name}}5"
+    common_dhcp_options:
+      domain_name_servers:
+        - ipv4:
+            value: "{{ dns_servers.0 }}"
+            prefix_length: 32
+        - ipv4:
+            value: "{{ dns_servers.1 }}"
+            prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.name == "{{vpc_name}}5"
+      - result.response.common_dhcp_options.domain_name_servers.0.ipv4.value == "{{ dns_servers.0 }}"
+      - result.response.common_dhcp_options.domain_name_servers.1.ipv4.value == "{{ dns_servers.1 }}"
+    fail_msg: "Unable to create VPC with dns_servers "
+    success_msg: "Create VPC with dns_servers finished successfully"
+
+- name: Adding VPC external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+##########################################################
+- name: List VPCs
+  ntnx_vpcs_info_v2:
+  register: vpcs
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - vpcs.response is defined
+      - vpcs.response | length > 3
+    fail_msg: " Unable to list vpcs "
+    success_msg: " VPCs listed successfully "
+##########################################################
+- name: List VPC using name filter criteria
+  ntnx_vpcs_info_v2:
+    filter: "name eq '{{ vpcs.response.0.name }}'"
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.0.ext_id == vpcs.response.0.ext_id
+    fail_msg: " Unable to list vpcs "
+    success_msg: " VPCs listed successfully "
+########################################################
+- name: List VPC using limit
+  ntnx_vpcs_info_v2:
+    limit: 1
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: " Unable to list vpcs "
+    success_msg: " VPCs listed successfully "
+##########################################################
+- name: List VPC using ext_id
+  ntnx_vpcs_info_v2:
+    ext_id: "{{ vpcs.response.0.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.name == vpcs.response.0.name
+    fail_msg: " Unable to list vpcs "
+    success_msg: " VPCs listed successfully "
+##########################################################
+- name: Delete all created vpcs
+  ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+###########################################################
+- name: Create VPC with all specifications
+  ntnx_vpcs_v2:
+    state: present
+    name: "{{vpc_name}}6"
+    common_dhcp_options:
+      domain_name_servers:
+        - ipv4:
+            value: "{{ dns_servers.0 }}"
+            prefix_length: 32
+        - ipv4:
+            value: "{{ dns_servers.1 }}"
+            prefix_length: 32
+    externally_routable_prefixes:
+      - ipv4:
+          ip:
+            value: "{{ routable_ips.network_ip}}"
+          prefix_length: "{{ routable_ips.network_prefix }}"
+    external_subnets:
+      - subnet_reference: "{{ external_nat_subnet.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.name == "{{vpc_name}}6"
+      - result.response.externally_routable_prefixes.0.ipv4.prefix_length  == {{ routable_ips.network_prefix }}
+      - result.response.externally_routable_prefixes.0.ipv4.ip.value  ==  "{{ routable_ips.network_ip }}"
+      - result.response.external_subnets.0.subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response.common_dhcp_options.domain_name_servers.0.ipv4.value == "{{ dns_servers.0 }}"
+      - result.response.common_dhcp_options.domain_name_servers.1.ipv4.value == "{{ dns_servers.1 }}"
+    fail_msg: " Unable to create vpc all specifications "
+    success_msg: " VPC with all specifications created successfully "
+
+- name: Adding VPC external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+###########################################################
+- name: Delete all created vpcs
+  ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: " Unable to Delete VPC"
+    success_msg: "Vpc has been deleted successfully"

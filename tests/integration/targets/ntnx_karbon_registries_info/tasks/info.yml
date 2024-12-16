@@ -1,71 +1,73 @@
 ---
-- debug:
-    msg: "start ntnx_karbon_registries_info tests"
+- name: Start ntnx_karbon_registries_info tests
+  ansible.builtin.debug:
+    msg: start ntnx_karbon_registries_info tests
 
 - name: Generate random registry_name
-  set_fact:
-    random_name1: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
-    random_name2: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+  ansible.builtin.set_fact:
+    random_name1: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
+    random_name2: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
-- set_fact:
-    registry_name1: "{{random_name1[0]}}"
-    registry_name2: "{{random_name2[0]}}"
+- name: Set registry_name
+  ansible.builtin.set_fact:
+    registry_name1: "{{ random_name1[0] }}"
+    registry_name2: "{{ random_name2[0] }}"
 
-- name: create registries for tests
+- name: Create registries for tests
   ntnx_karbon_registries:
-    name: "{{registry_name1}}"
-    url: "{{url}}"
+    name: "{{ registry_name1 }}"
+    url: "{{ url }}"
   register: r1
 
-- name: create registries for tests
+- name: Create registries for tests
   ntnx_karbon_registries:
-    name: "{{registry_name2}}"
-    url: "{{url}}"
+    name: "{{ registry_name2 }}"
+    url: "{{ url }}"
   register: r2
 
 ################################################################
 
-- name: test getting all registries
+- name: Test getting all registries
   ntnx_karbon_registries_info:
   register: registries
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - registries.response is defined
       - registries.response | length > 0
       - registries.failed == false
       - registries.changed == false
-    fail_msg: "Unable to list all registries"
-    success_msg: "registries listed successfully"
+    fail_msg: Unable to list all registries
+    success_msg: registries listed successfully
 ################################################################
-- name: test getting particular register using name
+- name: Test getting particular register using name
   ntnx_karbon_registries_info:
-      registry_name: "{{ registries.response[1].name }}"
+    registry_name: "{{ registries.response[1].name }}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.uuid == "{{ registries.response[1].uuid }}"
       - result.response.name == "{{ registries.response[1].name }}"
       - result.response.endpoint == "{{ registries.response[1].endpoint }}"
-    fail_msg: "Unable to get particular registry"
-    success_msg: "register info obtained successfully"
+    fail_msg: Unable to get particular registry
+    success_msg: register info obtained successfully
 
 ################################################################
 
-- name: delete registry entry
+- name: Delete registry entry
   ntnx_karbon_registries:
-    name: "{{registry_name1}}"
+    name: "{{ registry_name1 }}"
     state: absent
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- name: delete registry
+- name: Delete registry
   ntnx_karbon_registries:
-    name: "{{registry_name2}}"
+    name: "{{ registry_name2 }}"
     state: absent
   register: result
-  ignore_errors: True
+  ignore_errors: true

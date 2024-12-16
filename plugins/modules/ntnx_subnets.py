@@ -291,91 +291,91 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: VLAN subnet with IPAM IP pools and DHCP
-    ntnx_subnets:
-      state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: VLAN subnet with IPAM IP pools and DHCP
-      vlan_subnet:
-        vlan_id: "{{vlan_subnets_ids.3}}"
-        virtual_switch:
-          name: "{{ virtual_switch.name }}"
-        cluster:
-          name: "{{ cluster.name }}"
-        ipam:
-          network_ip: "{{ network_ip }}"
-          network_prefix: "{{ network_prefix }}"
-          gateway_ip: "{{ gateway_ip_address }}"
-          ip_pools:
-            - start_ip: "{{ start_address }}"
-              end_ip: "{{ end_address }}"
-          dhcp:
-            dns_servers: "{{ dns_servers }}"
-            domain_search: "{{ domain_search }}"
-            domain_name: "{{ domain_name }}"
-            tftp_server_name: "{{ tftp_server_name }}"
-            boot_file: "{{ boot_file }}"
-            dhcp_server_ip: "{{ dhcp_server_address }}"
+- name: VLAN subnet with IPAM IP pools and DHCP
+  ntnx_subnets:
+    state: present
+    nutanix_host: "{{ ip }}"
+    validate_certs: false
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: VLAN subnet with IPAM IP pools and DHCP
+    vlan_subnet:
+      vlan_id: "{{vlan_subnets_ids.3}}"
+      virtual_switch:
+        name: "{{ virtual_switch.name }}"
+      cluster:
+        name: "{{ cluster.name }}"
+      ipam:
+        network_ip: "{{ network_ip }}"
+        network_prefix: "{{ network_prefix }}"
+        gateway_ip: "{{ gateway_ip_address }}"
+        ip_pools:
+          - start_ip: "{{ start_address }}"
+            end_ip: "{{ end_address }}"
+        dhcp:
+          dns_servers: "{{ dns_servers }}"
+          domain_search: "{{ domain_search }}"
+          domain_name: "{{ domain_name }}"
+          tftp_server_name: "{{ tftp_server_name }}"
+          boot_file: "{{ boot_file }}"
+          dhcp_server_ip: "{{ dhcp_server_address }}"
 
-  - name: External subnet with NAT
-    ntnx_subnets:
-      state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: " External subnet with NAT "
-      external_subnet:
-        vlan_id: "{{ vlan_id }}"
-        enable_nat: True
-        cluster:
-          name: "{{ cluster_name }}"
-        ipam:
-          network_ip: "{{ network_ip }}"
-          network_prefix: "{{ network_prefix }}"
-          gateway_ip: "{{ gateway_ip_address }}"
-          ip_pools:
-            - start_ip: "{{ dhcp.start_address }}"
-              end_ip: "{{ dhcp.end_address }}"
-            - start_ip: "{{ static.start_address }}"
-              end_ip: "{{ static.end_address }}"
+- name: External subnet with NAT
+  ntnx_subnets:
+    state: present
+    nutanix_host: "{{ ip }}"
+    validate_certs: false
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: " External subnet with NAT "
+    external_subnet:
+      vlan_id: "{{ vlan_id }}"
+      enable_nat: true
+      cluster:
+        name: "{{ cluster_name }}"
+      ipam:
+        network_ip: "{{ network_ip }}"
+        network_prefix: "{{ network_prefix }}"
+        gateway_ip: "{{ gateway_ip_address }}"
+        ip_pools:
+          - start_ip: "{{ dhcp.start_address }}"
+            end_ip: "{{ dhcp.end_address }}"
+          - start_ip: "{{ static.start_address }}"
+            end_ip: "{{ static.end_address }}"
 
-  - name: Overlay Subnet with IP_pools and DHCP
-    ntnx_subnets:
-      state: present
-      nutanix_host: "{{ ip }}"
-      validate_certs: false
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: Overlay Subnet with IP_pools and DHCP
-      overlay_subnet:
-        vpc:
-          name: "{{ vpc_name }}"
-        ipam:
-          network_ip: "{{ network_ip }}"
-          network_prefix: "{{ network_prefix }}"
-          gateway_ip: "{{ gateway_ip_address }}"
-          ip_pools:
-            - start_ip: "{{ start_address }}"
-              end_ip: "{{ end_address }}"
-          dhcp:
-            dns_servers: "{{ dns_servers }}"
-            domain_search: "{{ domain_search }}"
-            domain_name: "{{ domain_name }}"
-            tftp_server_name: "{{ tftp_server_name }}"
-            boot_file: "{{ boot_file }}"
+- name: Overlay Subnet with IP_pools and DHCP
+  ntnx_subnets:
+    state: present
+    nutanix_host: "{{ ip }}"
+    validate_certs: false
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: Overlay Subnet with IP_pools and DHCP
+    overlay_subnet:
+      vpc:
+        name: "{{ vpc_name }}"
+      ipam:
+        network_ip: "{{ network_ip }}"
+        network_prefix: "{{ network_prefix }}"
+        gateway_ip: "{{ gateway_ip_address }}"
+        ip_pools:
+          - start_ip: "{{ start_address }}"
+            end_ip: "{{ end_address }}"
+        dhcp:
+          dns_servers: "{{ dns_servers }}"
+          domain_search: "{{ domain_search }}"
+          domain_name: "{{ domain_name }}"
+          tftp_server_name: "{{ tftp_server_name }}"
+          boot_file: "{{ boot_file }}"
 
-  - name: Delete subnets
-    ntnx_subnets:
-      state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: false
-      subnet_uuid: "{{ subnet_uuid }}"
+- name: Delete subnets
+  ntnx_subnets:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    subnet_uuid: "{{ subnet_uuid }}"
 """
 
 RETURN = r"""
@@ -457,9 +457,9 @@ task_uuid:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.subnets import Subnet  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.prism.subnets import Subnet  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

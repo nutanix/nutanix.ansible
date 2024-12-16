@@ -1,0 +1,388 @@
+---
+- name: Start ntnx_gpus_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_gpus_v2 tests
+
+- name: Generate random name for VM
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+
+- name: Generate spec for VM creation with GPU using check mode
+  ntnx_vms_v2:
+    name: "vm_test"
+    cluster:
+      ext_id: "00062742-82e3-b07b-0000-0000000136bb"
+    gpus:
+      - mode: VIRTUAL
+        device_id: "123"
+        vendor: "NVIDIA"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for VM creation with GPU using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.cluster.ext_id == "00062742-82e3-b07b-0000-0000000136bb"
+      - result.response.gpus[0].device_id == 123
+      - result.response.gpus[0].vendor == "NVIDIA"
+      - result.response.gpus[0].mode == "VIRTUAL"
+      - result.response.gpus[0].ext_id is defined
+    fail_msg: "Generate spec for VM creation with GPU using check mode failed  "
+    success_msg: "Generate spec for VM creation with GPU using check mode passed  "
+
+##################################################################################
+
+- name: Create VM with GPU attached
+  ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    gpus:
+      - mode: "{{ gpus[0].gpu_device_mode }}"
+        device_id: "{{ gpus[0].gpu_device_id }}"
+        vendor: "{{ gpus[0].gpu_device_vendor }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.gpus[0].device_id == {{ gpus[0].gpu_device_id }}
+      - result.response.gpus[0].vendor == "{{ gpus[0].gpu_device_vendor }}"
+      - result.response.gpus[0].mode == "{{ gpus[0].gpu_device_mode }}"
+      - result.response.gpus[0].ext_id is defined
+    fail_msg: "Unable to create VM with GPU attached  "
+    success_msg: "VM with GPU attached is created successfully  "
+
+- name: Set VM and GPU external id
+  ansible.builtin.set_fact:
+    vm_ext_id: '{{ result["ext_id"] }}'
+    gpu_ext_id: '{{ result["response"]["gpus"][0]["ext_id"] }}'
+
+# here we are powering on the VM to check the full GPU details
+- name: Power on VM
+  ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Power on Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power on VM "
+    success_msg: "VM is powered on successfully "
+
+- name: Sleep for 20 seconds until VM is powered on
+  ansible.builtin.pause:
+    seconds: 20
+
+- name: Get VM info
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM info Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+      - result.response.ext_id == "{{ vm_ext_id }}"
+      - result.response.gpus[0].device_id == {{ gpus[0].gpu_device_id }}
+      - result.response.gpus[0].vendor == "{{ gpus[0].gpu_device_vendor }}"
+      - result.response.gpus[0].mode == "{{ gpus[0].gpu_device_mode }}"
+      - result.response.gpus[0].ext_id == "{{ gpu_ext_id }}"
+      - result.response.gpus[0].name is defined
+      - result.response.gpus[0].pci_address is defined
+    fail_msg: "Unable to get VM info "
+    success_msg: "VM info is fetched successfully "
+
+# here we are powering off the VM to detach the GPU
+- name: Power off VM
+  ntnx_vms_power_actions_v2:
+    state: power_off
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Power off Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power off VM "
+    success_msg: "VM is powered off successfully "
+
+- name: Sleep for 15 seconds until VM is powered off
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not powered off "
+    success_msg: "VM is powered off successfully "
+
+##################################################################################
+
+- name: Detach GPU from VM
+  ntnx_gpus_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ gpu_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Detach GPU from VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response == None
+      - result.vm_ext_id == "{{ vm_ext_id }}"
+      - result.task_ext_id is defined
+    fail_msg: "Unable to detach GPU from VM  "
+    success_msg: "GPU is detached from VM successfully  "
+
+##################################################################################
+
+- name: Attach GPU to VM
+  ntnx_gpus_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+    mode: "{{ gpus[0].gpu_device_mode }}"
+    device_id: "{{ gpus[0].gpu_device_id }}"
+    vendor: "{{ gpus[0].gpu_device_vendor }}"
+  register: result
+  ignore_errors: true
+
+- name: Attach GPU to VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response[0].device_id == {{ gpus[0].gpu_device_id }}
+      - result.response[0].vendor == "{{ gpus[0].gpu_device_vendor }}"
+      - result.response[0].mode == "{{ gpus[0].gpu_device_mode }}"
+      - result.response[0].ext_id is defined
+      - result.vm_ext_id == "{{ vm_ext_id }}"
+      - result.task_ext_id is defined
+    fail_msg: "Unable to attach GPU to VM  "
+    success_msg: "GPU is attached to VM successfully  "
+
+- name: Set GPU external id
+  ansible.builtin.set_fact:
+    gpu_ext_id: '{{ result["response"]["gpus"][0]["ext_id"] }}'
+
+# here we are powering on the VM to check the full GPU details
+- name: Power on VM
+  ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Power on Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power on VM "
+    success_msg: "VM is powered on successfully "
+
+- name: Sleep for 20 seconds until VM is powered on
+  ansible.builtin.pause:
+    seconds: 20
+
+- name: Get VM info
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM info Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'ON'
+      - result.response.ext_id == "{{ vm_ext_id }}"
+      - result.response.gpus[0].device_id == {{ gpus[0].gpu_device_id }}
+      - result.response.gpus[0].vendor == "{{ gpus[0].gpu_device_vendor }}"
+      - result.response.gpus[0].mode == "{{ gpus[0].gpu_device_mode }}"
+      - result.response.gpus[0].ext_id == "{{ gpu_ext_id }}"
+      - result.response.gpus[0].name is defined
+      - result.response.gpus[0].pci_address is defined
+    fail_msg: "Unable to get VM info "
+    success_msg: "VM info is fetched successfully "
+
+##################################################################################
+
+- name: List all GPUs attached to the VM
+  ntnx_gpus_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List GPUs attached to the VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+      - result.response[0].device_id == {{ gpus[0].gpu_device_id }}
+      - result.response[0].vendor == "{{ gpus[0].gpu_device_vendor }}"
+      - result.response[0].mode == "{{ gpus[0].gpu_device_mode }}"
+      - result.response[0].ext_id is defined
+    fail_msg: "Unable to list GPUs attached to the VM  "
+    success_msg: "List GPUs attached to the VM is successful  "
+
+##################################################################################
+
+- name: List GPUs attached to the VM with limit
+  ntnx_gpus_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List GPUs attached to the VM with limit status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: "Unable to list GPUs attached to the VM with limit  "
+    success_msg: "List GPUs attached to the VM with limit is successful  "
+
+##################################################################################
+
+- name: Fetch GPU details using ext_id
+  ntnx_gpus_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ gpu_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch GPU details using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.device_id == {{ gpus[0].gpu_device_id }}
+      - result.response.vendor == "{{ gpus[0].gpu_device_vendor }}"
+      - result.response.mode == "{{ gpus[0].gpu_device_mode }}"
+      - result.response.ext_id == "{{ gpu_ext_id }}"
+    fail_msg: "Unable to fetch GPU details using ext_id  "
+    success_msg: "Fetch GPU details using ext_id is successful  "
+
+##################################################################################
+
+# here we are powering off the VM to detach the GPU
+- name: Power off VM
+  ntnx_vms_power_actions_v2:
+    state: power_off
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Power off Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power off VM "
+    success_msg: "VM is powered off successfully "
+
+- name: Sleep for 15 seconds until VM is powered off
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Get VM power state
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM power state Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.power_state == 'OFF'
+    fail_msg: "VM is not powered off "
+    success_msg: "VM is powered off successfully "
+
+- name: Detach GPU from VM
+  ntnx_gpus_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ gpu_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Detach GPU from VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response == None
+      - result.vm_ext_id == "{{ vm_ext_id }}"
+      - result.task_ext_id is defined
+    fail_msg: "Unable to detach GPU from VM  "
+    success_msg: "GPU is detached from VM successfully  "
+
+##################################################################################
+
+- name: Delete VM
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+
+- name: Delete VM status
+  ansible.builtin.assert:
+    that:
+      - result.error == None
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete VM  "
+    success_msg: "VM is deleted successfully  "

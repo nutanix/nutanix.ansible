@@ -48,7 +48,7 @@ EXAMPLES = r"""
       file_format: VMDK
   register: result
   ignore_errors: true
-  check_mode: yes
+  check_mode: true
 
 - name: create QCOW2 ova_image
   ntnx_vms_ova:
@@ -214,8 +214,8 @@ task_uuid:
 
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.vms import VM  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.vms import VM  # noqa: E402
 
 
 def get_module_spec():

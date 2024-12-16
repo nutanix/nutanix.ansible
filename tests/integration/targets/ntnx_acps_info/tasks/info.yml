@@ -1,8 +1,10 @@
 ---
-- debug:
-    msg: "start ntnx_acps_info tests"
+- name: Start ntnx_acps_info tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_acps_info tests"
 
-- set_fact:
+- name: Generate random acp name
+  ansible.builtin.set_fact:
     acp_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
 
 - name: Create min ACP for update
@@ -11,14 +13,14 @@
     wait: true
     name: "{{acp_name}}"
     role:
-      uuid: '{{ acp.role.uuid }}'
+      uuid: "{{ acp.role.uuid }}"
   register: acps
 
-- set_fact:
+- name: Adding acp to delete later
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  acps["response"]["metadata"]["uuid"] ] }}'
 
-
-- name: test getting all acp's
+- name: Test getting all acp's
   ntnx_acps_info:
     kind: access_control_policy
     length: 1
@@ -27,8 +29,8 @@
     sort_attribute: "name"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -37,14 +39,14 @@
     success_msg: "acps listed successfully"
 ################################################################
 
-- name: test getting particular acp using filter
+- name: Test getting particular acp using filter
   ntnx_acps_info:
     filter:
       name: "{{ acp_name }}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -55,13 +57,13 @@
 
 #################################################################
 
-- name: test getting particular acp using uuid
+- name: Test getting particular acp using uuid
   ntnx_acps_info:
-    acp_uuid: '{{ acps.response.metadata.uuid }}'
+    acp_uuid: "{{ acps.response.metadata.uuid }}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -70,14 +72,14 @@
     fail_msg: "Unable to get particular acp using uuid"
     success_msg: "acp info obtained successfully using uuid"
 
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_acps:
     state: absent
     acp_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

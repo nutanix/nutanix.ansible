@@ -2,8 +2,6 @@
 - name: Single instance postgres database creation with new db server VM
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <ndb-era-server-ip>
@@ -12,9 +10,8 @@
       validate_certs: false
 
   tasks:
-
     - name: Create single instance postgres database
-      ntnx_ndb_databases:
+      nutanix.ncp.ntnx_ndb_databases:
 
         name: POSTGRES_DATABASE_ANSIBLE
 
@@ -33,7 +30,7 @@
               name: DEFAULT_OOB_POSTGRESQL_NETWORK
             compute_profile:
               name: DEFAULT_OOB_SMALL_COMPUTE
-            pub_ssh_key: "<publickey-for-vm-access>"
+            pub_ssh_key: <publickey-for-vm-access>
 
         postgres:
           listener_port: "5432"
@@ -56,5 +53,6 @@
 
       register: output
 
-    - debug:
-        msg: "{{output}}"
+    - name: Print output
+      ansible.builtin.debug:
+        msg: "{{ output }}"

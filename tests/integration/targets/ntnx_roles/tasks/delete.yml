@@ -1,13 +1,15 @@
 ---
-- debug:
-    msg: start ntnx_roles delete tests
+- name: Start ntnx_roles delete tests
+  ansible.builtin.debug:
+    msg: Start ntnx_roles delete tests
 
 - name: Get Some permissions for test
   ntnx_permissions_info:
     length: 3
   register: result
 
-- set_fact:
+- name: Setting permission variables
+  ansible.builtin.set_fact:
     test_permission_1_uuid: "{{ result.response.entities[0].metadata.uuid }}"
 
 ##############################################################################################
@@ -23,7 +25,7 @@
   register: test_role
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - test_role.response is defined
       - test_role.changed == True
@@ -32,14 +34,14 @@
 
 ###################################################################################################
 
-- name: delete role
+- name: Delete role
   ntnx_roles:
     state: absent
     role_uuid: "{{ test_role.role_uuid }}"
   register: result
 
-- name: delete Status
-  assert:
+- name: Delete Status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True

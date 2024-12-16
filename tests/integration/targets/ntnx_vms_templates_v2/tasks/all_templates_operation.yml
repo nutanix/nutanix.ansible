@@ -1,0 +1,693 @@
+---
+- name: >
+    Start ntnx_templates_deploy_v2,ntnx_templates_guest_os_v2,ntnx_templates_v2,ntnx_templates_info_v2,
+    ntnx_templates_version_v2,ntnx_templates_versions_info_v2 tests
+  ansible.builtin.debug:
+    msg: >
+      start ntnx_templates_deploy_v2,ntnx_templates_guest_os_v2,ntnx_templates_v2,ntnx_templates_info_v2,
+      ntnx_templates_version_v2,ntnx_templates_versions_info_v2 tests
+
+- name: Generate random category key & value
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set suffix_name
+  ansible.builtin.set_fact:
+    suffix_name: ansible-ag
+
+- name: Define variables
+  ansible.builtin.set_fact:
+    category_name: OSType
+    vm1_name: "{{ random_name }}{{ suffix_name }}vm1"
+    vm2_name: "{{ random_name }}{{ suffix_name }}vm2"
+    vm3_name: "{{ random_name }}{{ suffix_name }}vm3"
+    to_delete_vms: []
+    template_name: "{{ random_name }}{{ suffix_name }}template"
+    template2_name: "{{ random_name }}{{ suffix_name }}template2"
+    template3_name: "{{ random_name }}{{ suffix_name }}template3"
+    version_1_name: "{{ random_name }}{{ suffix_name }}version1"
+    version_2_name: "{{ random_name }}{{ suffix_name }}version2"
+    version_3_name: "{{ random_name }}{{ suffix_name }}version3"
+    value2: "{{ random_name }}{{ suffix_name }}value2"
+########################################################################
+- name: VM with minimum requirements
+  ntnx_vms:
+    state: present
+    name: "{{ vm1_name }}"
+    cluster:
+      name: "{{ cluster.name }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    to_delete_vms: "{{ to_delete_vms + [result.vm_uuid] }}"
+    vm_uuid: "{{ result.vm_uuid }}"
+########################################################################
+- name: Create new template from a vm with check mode
+  ntnx_templates_v2:
+    template_name: "{{ template_name }}"
+    template_description: ansible test
+    template_version_spec:
+      version_source:
+        template_vm_reference:
+          ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify spec
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.template_name == "{{ template_name }}"
+      - result.response.template_description == "ansible test"
+      - result.response.template_version_spec.version_source.ext_id == "{{ vm_uuid }}"
+    fail_msg: " Template created successfully in check mode "
+    success_msg: Returned as expected in check mode
+########################################################################
+- name: Create new template from a vm
+  ntnx_templates_v2:
+    template_name: "{{ template_name }}"
+    template_description: ansible test
+    template_version_spec:
+      version_source:
+        template_vm_reference:
+          ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    template1_ext_id: "{{ result.ext_id }}"
+    version1_ext_id: "{{ result.response.template_version_spec.ext_id }}"
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id is defined
+      - result.response.template_name == "{{ template_name }}"
+      - result.response.template_description == "ansible test"
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+    fail_msg: " Unable to create new template "
+    success_msg: " New template created successfully "
+########################################################################
+- name: List all templates
+  ntnx_templates_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of all templates
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 0
+    fail_msg: "Unable to list templates "
+    success_msg: templates  listed successfully
+########################################################################
+- name: Fetch template info using ext id
+  ntnx_templates_info_v2:
+    ext_id: "{{ template1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of template
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.ext_id == "{{ template1_ext_id }}"
+      - result.response.template_name == "{{ template_name }}"
+      - result.response.template_description == "ansible test"
+    fail_msg: Unable to fetch template using ext id
+    success_msg: template fetched using ext id successfully
+########################################################################
+- name: Update template description & name & override_vm_config & guest_customization user_data with check mode
+  ntnx_templates_v2:
+    ext_id: "{{ template1_ext_id }}"
+    template_version_spec:
+      version_name: "{{ version_2_name }}"
+      version_description: ansible_template_version_description New
+      version_source:
+        template_version_reference:
+          version_id: "{{ version1_ext_id }}"
+          override_vm_config:
+            num_sockets: 1
+            num_cores_per_socket: 1
+            num_threads_per_core: 1
+            name: "{{ vm2_name }}"
+            guest_customization:
+              config:
+                cloudinit:
+                  datasource_type: CONFIG_DRIVE_V2
+                  metadata: test
+                  cloud_init_script:
+                    user_data:
+                      value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.response.template_name == "{{ template_name }}"
+      - result.response.template_description == "ansible test"
+      - result.response.template_version_spec.version_name == "{{ version_2_name }}"
+      - result.response.template_version_spec.version_description == "ansible_template_version_description New"
+      - result.response.template_version_spec.version_source.override_vm_config.num_cores_per_socket == 1
+      - result.response.template_version_spec.version_source.override_vm_config.num_sockets == 1
+      - result.response.template_version_spec.version_source.override_vm_config.num_threads_per_core == 1
+      - result.response.template_version_spec.version_source.override_vm_config.name == "{{ vm2_name }}"
+      - >
+        result.response.template_version_spec.version_source.override_vm_config.
+        guest_customization.config.datasource_type == "CONFIG_DRIVE_V2"
+      - >
+        result.response.template_version_spec.version_source.override_vm_config.guest_customization.config.cloud_init_script.value
+        == "I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ=="
+      - result.response.template_version_spec.version_source.override_vm_config.guest_customization.config.metadata == "test"
+    fail_msg: Finished update template description & name in check mode
+    success_msg: Returned as expected in check mode
+
+########################################################################
+- name: Update template description & name & override_vm_config with guest_customization key_value_pairs with check mode
+  ntnx_templates_v2:
+    ext_id: "{{ template1_ext_id }}"
+    template_version_spec:
+      version_name: "{{ version_2_name }}"
+      version_description: ansible_template_version_description New
+      version_source:
+        template_version_reference:
+          version_id: "{{ version1_ext_id }}"
+          override_vm_config:
+            num_sockets: 2
+            num_cores_per_socket: 2
+            num_threads_per_core: 2
+            name: "{{ vm2_name }}"
+            guest_customization:
+              config:
+                cloudinit:
+                  datasource_type: CONFIG_DRIVE_V2
+                  metadata: test
+                  cloud_init_script:
+                    custom_key_values:
+                      key_value_pairs:
+                        - name: test_name
+                          value: test_value
+                        - name: test2_name
+                          value: test2_value
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.response.template_name == "{{ template_name }}"
+      - result.response.template_description == "ansible test"
+      - result.response.template_version_spec.version_name == "{{ version_2_name }}"
+      - result.response.template_version_spec.version_description == "ansible_template_version_description New"
+      - result.response.template_version_spec.version_source.override_vm_config.num_cores_per_socket == 2
+      - result.response.template_version_spec.version_source.override_vm_config.num_sockets == 2
+      - result.response.template_version_spec.version_source.override_vm_config.num_threads_per_core == 2
+      - result.response.template_version_spec.version_source.override_vm_config.name == "{{ vm2_name }}"
+      - >
+        result.response.template_version_spec.version_source.override_vm_config.
+        guest_customization.config.datasource_type == "CONFIG_DRIVE_V2"
+      - >
+        result.response.template_version_spec.version_source.override_vm_config.guest_customization.
+        config.cloud_init_script.key_value_pairs is defined
+      - >
+        result.response.template_version_spec.version_source.override_vm_config.guest_customization.
+        config.cloud_init_script.key_value_pairs | length == 2
+      - >
+        result.response.template_version_spec.version_source.override_vm_config.guest_customization.
+        config.cloud_init_script.key_value_pairs[0].name == "test_name"
+      - >
+        result.response.template_version_spec.version_source.override_vm_config.guest_customization.
+        config.cloud_init_script.key_value_pairs[0].value == "test_value"
+      - >
+        result.response.template_version_spec.version_source.override_vm_config.guest_customization.
+        config.cloud_init_script.key_value_pairs[1].name == "test2_name"
+      - >
+        result.response.template_version_spec.version_source.override_vm_config.guest_customization.
+        config.cloud_init_script.key_value_pairs[1].value == "test2_value"
+      - result.response.template_version_spec.version_source.override_vm_config.guest_customization.config.metadata == "test"
+    fail_msg: Finished update template description & name in check mode
+    success_msg: Returned as expected in check mode
+########################################################################
+- name: Update template description & name
+  ntnx_templates_v2:
+    ext_id: "{{ template1_ext_id }}"
+    template_version_spec:
+      version_name: "{{ version_2_name }}"
+      version_description: ansible_template_version_description New
+      version_source:
+        template_version_reference:
+          version_id: "{{ version1_ext_id }}"
+          override_vm_config:
+            num_sockets: 2
+            num_cores_per_socket: 2
+            num_threads_per_core: 2
+            name: "{{ vm2_name }}"
+  register: result
+  ignore_errors: true
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    version2_ext_id: "{{ result.response.template_version_spec.ext_id }}"
+
+- name: Update status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.response.template_name == "{{ template_name }}"
+      - result.response.template_description == "ansible test"
+      - result.response.template_version_spec.version_name == "{{ version_2_name }}"
+      - result.response.template_version_spec.version_description == "ansible_template_version_description New"
+      - result.response.template_version_spec.vm_spec.num_cores_per_socket == 2
+      - result.response.template_version_spec.vm_spec.num_sockets == 2
+      - result.response.template_version_spec.vm_spec.num_threads_per_core == 2
+      - result.response.template_version_spec.vm_spec.name == "{{ vm2_name }}"
+    fail_msg: Unable to update template description & name
+    success_msg: template description & name updated successfully
+########################################################################
+- name: Retrieve the Template Version details for the given Template Version identifier.
+  ntnx_templates_versions_info_v2:
+    ext_id: "{{ version2_ext_id }}"
+    template_ext_id: "{{ template1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of template version
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.ext_id == "{{ version2_ext_id }}"
+      - result.response.version_name == "{{ version_2_name }}"
+      - result.response.version_description == "ansible_template_version_description New"
+      - result.response.vm_spec.num_cores_per_socket == 2
+      - result.response.vm_spec.num_sockets == 2
+      - result.response.vm_spec.num_threads_per_core == 2
+      - result.response.vm_spec.name == "{{ vm2_name }}"
+      - result.response.is_active_version == true
+    fail_msg: Unable to fetch template version using ext id
+    success_msg: template version fetched using ext id successfully
+########################################################################
+- name: Set the Active Version
+  ntnx_templates_version_v2:
+    template_ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of template version
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.template_ext_id == "{{ template1_ext_id }}"
+      - result.response.template_version_spec.ext_id == "{{ version1_ext_id }}"
+      - result.response.template_description == "ansible test"
+      - result.response.template_version_spec.version_name == "Initial Version"
+      - result.response.template_version_spec.is_active_version == true
+    fail_msg: Unable to set the Active Version
+    success_msg: Active Version set successfully
+########################################################################
+- name: Delete Template Version
+  ntnx_templates_version_v2:
+    state: absent
+    template_ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version2_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Retrieve the Template Version details for the given Template Version identifier.
+  ntnx_templates_versions_info_v2:
+    ext_id: "{{ version2_ext_id }}"
+    template_ext_id: "{{ template1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Check version Deletion
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == True
+      - result.error == "NOT FOUND"
+    fail_msg: Unable to delete template version
+    success_msg: template version deleted successfully
+########################################################################
+- name: Deploy VM
+  ntnx_templates_deploy_v2:
+    ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version1_ext_id }}"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of VM deployment
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Unable to deploy VM
+    success_msg: VM deployed successfully
+########################################################################
+- name: Generate spec for deploying vm with override config with check mode
+  ntnx_templates_deploy_v2:
+    ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version1_ext_id }}"
+    cluster_reference: "{{ cluster.uuid }}"
+    override_vms_config:
+      - name: "{{ vm3_name }}"
+        num_sockets: 2
+        num_cores_per_socket: 2
+        num_threads_per_core: 2
+        memory_size_bytes: 4294967296
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Status of VM deployment
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.ext_id == "{{ template1_ext_id }}"
+      - result.response.number_of_vms == 1
+      - result.response.override_vm_config_map['0'].memory_size_bytes == 4294967296
+      - result.response.override_vm_config_map['0'].num_cores_per_socket == 2
+      - result.response.override_vm_config_map['0'].num_sockets == 2
+      - result.response.override_vm_config_map['0'].num_threads_per_core == 2
+      - result.response.override_vm_config_map['0'].name == "{{ vm3_name }}"
+      - result.response.version_id == "{{ version1_ext_id }}"
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.msg == "Template ({{ template1_ext_id }}) with given version ({{ version1_ext_id }}) will be deployed."
+
+    fail_msg: VM deployed with override config successfully with check mode
+    success_msg: Returned as expected with check mode
+########################################################################
+- name: Deploy vm and override config
+  ntnx_templates_deploy_v2:
+    ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version1_ext_id }}"
+    cluster_reference: "{{ cluster.uuid }}"
+    override_vms_config:
+      - name: "{{ vm3_name }}"
+        num_sockets: 4
+        num_cores_per_socket: 4
+        num_threads_per_core: 2
+        memory_size_bytes: 4294967296
+  register: result
+  ignore_errors: true
+
+- name: Status of VM deployment
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Unable to deploy VM with override config
+    success_msg: VM deployed with override config successfully
+- name: Get deployed vms using name filter criteria
+  ntnx_vms_info:
+    filter:
+      vm_name: "{{ vm3_name }}"
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.entities | length == 1
+      - result.response.entities[0].spec.name == "{{ vm3_name }}"
+      - result.response.entities[0].spec.resources.num_vcpus_per_socket == 4
+      - result.response.entities[0].spec.resources.num_sockets == 4
+      - result.response.entities[0].spec.resources.num_threads_per_core == 2
+      - result.response.entities[0].spec.cluster_reference.uuid == "{{ cluster.uuid }}"
+      - result.response.entities[0].status.state == "COMPLETE"
+    fail_msg: " Unable to find deployed vms using name filter criteria"
+    success_msg: " VMs listed successfully "
+- name: Add vm to delete list
+  ansible.builtin.set_fact:
+    to_delete_vms: "{{ to_delete_vms + [result.response.entities[0].metadata.uuid] }}"
+########################################################################
+- name: Initiate_guest_os_update with check mode
+  ntnx_templates_guest_os_v2:
+    template_ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version1_ext_id }}"
+    state: start
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Status of guest os update
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.response.version_id == "{{ version1_ext_id }}"
+      - result.template_ext_id == "{{ template1_ext_id }}"
+      - result.msg == "Guest OS update will be initiated"
+    fail_msg: Guest os update initiated successfully with check mode
+    success_msg: Returned as expected with check mode
+########################################################################
+- name: Initiate_guest_os_update
+  ntnx_templates_guest_os_v2:
+    template_ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version1_ext_id }}"
+    state: start
+  register: result
+  ignore_errors: true
+
+- name: Status of guest os update
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Unable to initiate guest os update
+    success_msg: Guest os update initiated successfully
+########################################################################
+- name: Cancel guest_os_update
+  ntnx_templates_guest_os_v2:
+    template_ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version1_ext_id }}"
+    state: cancel
+  register: result
+  ignore_errors: true
+
+- name: Status of guest os update cancel
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Unable to cancel guest os update
+    success_msg: Guest os update cancel successfully
+########################################################################
+- name: Initiate_guest_os_update
+  ntnx_templates_guest_os_v2:
+    template_ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version1_ext_id }}"
+    state: start
+  register: result
+  ignore_errors: true
+
+- name: Status of guest os update
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Unable to initiate guest os update
+    success_msg: Guest os update initiated successfully
+########################################################################
+- name: Finish guest_os_update
+  ntnx_templates_guest_os_v2:
+    template_ext_id: "{{ template1_ext_id }}"
+    version_id: "{{ version1_ext_id }}"
+    state: finish
+    version_name: "{{ version_3_name }}"
+    version_description: finish guest os update
+  register: result
+  ignore_errors: true
+
+- name: Status of guest os update finish
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.response.status == "SUCCEEDED"
+      - result.response.entities_affected[0].ext_id == "{{ template1_ext_id }}"
+    fail_msg: Unable to finish guest os update
+    success_msg: Guest os update finish successfully
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    version3_ext_id: "{{ result.response.entities_affected.1.ext_id }}"
+
+- name: Retrieve the Template Version details for the given Template Version identifier.
+  ntnx_templates_versions_info_v2:
+    ext_id: "{{ version3_ext_id }}"
+    template_ext_id: "{{ template1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of template version
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.ext_id == "{{ version3_ext_id }}"
+      - result.response.version_name == "{{ version_3_name }}"
+      - result.response.version_description == "finish guest os update"
+      - result.response.is_active_version == true
+    fail_msg: Unable to fetch template version using ext id
+    success_msg: template version fetched using ext id successfully
+########################################################################
+- name: Create new template from a vm
+  ntnx_templates_v2:
+    template_name: "{{ template2_name }}"
+    template_description: ansible test
+    template_version_spec:
+      version_source:
+        template_vm_reference:
+          ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    template2_ext_id: "{{ result.ext_id }}"
+    version3_ext_id: "{{ result.response.template_version_spec.ext_id }}"
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id is defined
+      - result.response.template_name == "{{ template2_name }}"
+      - result.response.template_description == "ansible test"
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+    fail_msg: " Unable to create new template "
+    success_msg: " New template created successfully "
+########################################################################
+- name: List all templates
+  ntnx_templates_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Status of all templates
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length == 1
+    fail_msg: "Unable to list templates "
+    success_msg: templates  listed successfully
+########################################################################
+- name: Get all templates with non existent name
+  ntnx_templates_info_v2:
+    filter: templateName eq '{{ template3_name }}'
+  register: result
+  ignore_errors: true
+
+- name: Status of all templates
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response == []
+    fail_msg: Template listed with non existent name
+    success_msg: Returned as expected
+########################################################################
+- name: Delete Template
+  ntnx_templates_v2:
+    state: absent
+    ext_id: "{{ template1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id == "{{ template1_ext_id }}"
+    fail_msg: Unable to delete template
+    success_msg: Template deleted successfully
+
+- name: Fetch template info using ext id
+  ntnx_templates_info_v2:
+    ext_id: "{{ template1_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of template
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == True
+      - result.error == "NOT FOUND"
+    fail_msg: Templated not deleted
+    success_msg: Returned as expected
+########################################################################
+- name: Delete created vms
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ to_delete_vms }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.msg ==  "All items completed"
+    fail_msg: Unable to delete vm
+    success_msg: VM deleted successfully
+########################################################################
+- name: Delete Created Templates
+  ntnx_templates_v2:
+    state: absent
+    ext_id: "{{ template2_ext_id }}"
+  register: result
+  ignore_errors: true

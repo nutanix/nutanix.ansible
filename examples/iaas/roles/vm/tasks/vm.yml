@@ -1,6 +1,10 @@
 ---
-- name: Create "{{ item.name }}" VM
-  ntnx_vms:
+- name: Start vm task
+  ansible.builtin.debug:
+    msg: Create "{{ item.name }}" VM
+
+- name: Create VM
+  nutanix.ncp.ntnx_vms:
     state: present
     name: "{{ item.name }}"
     desc: "{{ item.desc }}"
@@ -12,13 +16,14 @@
           name: "{{ item.subnet_name }}"
         private_ip: "{{ item.private_ip }}"
     disks:
-        - type: "DISK"
-          size_gb: 30
-          bus: "SATA"
-          clone_image:
-            name: "{{ item.image_name }}"
+      - type: DISK
+        size_gb: 30
+        bus: SATA
+        clone_image:
+          name: "{{ item.image_name }}"
   register: vm
-- debug:
+- name: Print vm name and uuid
+  ansible.builtin.debug:
     msg:
-        - "name: {{ vm.response.status.name }}"
-        - "uuid: {{ vm.vm_uuid }}"
+      - "name: {{ vm.response.status.name }}"
+      - "uuid: {{ vm.vm_uuid }}"

@@ -382,9 +382,9 @@ response:
         ]
 """
 
-from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
 from ..module_utils.utils import format_filters_map  # noqa: E402
+from ..module_utils.v3.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.v3.ndb.db_server_vm import DBServerVM  # noqa: E402
 
 
 def get_module_spec():

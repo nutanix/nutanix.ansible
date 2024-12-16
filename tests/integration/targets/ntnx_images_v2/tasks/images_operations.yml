@@ -1,0 +1,601 @@
+---
+- name: Start testing ntnx_images_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_images_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM and images names
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+    iso_image_name: "{{ random_name }}_iso_image_test"
+    disk_image_name: "{{ random_name }}_disk_image_test"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Create VM to test the images
+  ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+    fail_msg: "Unable to Create VM  "
+    success_msg: "VM is created successfully "
+
+- name: Set vm_uuid and disk_uuid
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+    disk_uuid: '{{ result["response"]["disks"][0]["ext_id"] }}'
+
+##################################################################################
+
+- name: List all categories and define variables
+  ntnx_categories_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of all categories
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 0
+    fail_msg: "Unable to list categories "
+    success_msg: categories  listed successfully
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    category_ext_id: '{{ result["response"][0]["ext_id"] }}'
+    category_ext_id1: '{{ result["response"][1]["ext_id"] }}'
+
+##################################################################################
+
+- name: Create ISO_IMAGE using valid source url - check mode is enabled
+  ntnx_images_v2:
+    state: present
+    type: ISO_IMAGE
+    name: "{{ iso_image_name }}"
+    description: image created from integration test
+    checksum:
+      sha1:
+        hex_digest: "{{ iso_image.checksum }}"
+    source:
+      url_source:
+        url: "{{ iso_image.url }}"
+        should_allow_insecure_url: true
+    cluster_location_ext_ids: "{{ cluster.uuid }}"
+    category_ext_ids: "{{ category_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.checksum.hex_digest == "{{ iso_image.checksum }}"
+      - result.response.name == "{{ iso_image_name }}"
+      - result.response.source.url == "{{ iso_image.url }}"
+      - result.response.category_ext_ids[0] == "{{ category_ext_id }}"
+    fail_msg: "Unable to Create ISO_IMAGE with valid source url with check mode enabled  "
+    success_msg: "ISO_IMAGE with valid source url is created successfully with check mode enabled "
+
+##################################################################################
+
+- name: Create DISK_IMAGE using valid source url - check mode is enabled
+  ntnx_images_v2:
+    state: present
+    type: DISK_IMAGE
+    name: "{{ disk_image_name }}"
+    description: image created from integration test
+    checksum:
+      sha1:
+        hex_digest: "{{ disk_image.checksum }}"
+    source:
+      url_source:
+        url: "{{ disk_image.url }}"
+        should_allow_insecure_url: true
+    cluster_location_ext_ids: "{{ cluster.uuid }}"
+    category_ext_ids: "{{ category_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.checksum.hex_digest == "{{ disk_image.checksum }}"
+      - result.response.name == "{{ disk_image_name }}"
+      - result.response.source.url == "{{ disk_image.url }}"
+      - result.response.cluster_location_ext_ids[0] == "{{ cluster.uuid }}"
+      - result.response.category_ext_ids[0] == "{{ category_ext_id }}"
+    fail_msg: "Unable to Create DISK_IMAGE with valid source url with check mode enabled "
+    success_msg: "DISK_IMAGE with valid source url is created successfully with check mode enabled "
+
+##################################################################################
+
+- name: Create ISO_IMAGE using valid source url
+  ntnx_images_v2:
+    state: present
+    type: ISO_IMAGE
+    name: "{{ iso_image_name }}"
+    description: image created from integration test
+    checksum:
+      sha1:
+        hex_digest: "{{ iso_image.checksum }}"
+    source:
+      url_source:
+        url: "{{ iso_image.url }}"
+        should_allow_insecure_url: true
+    cluster_location_ext_ids: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.checksum.hex_digest == "{{ iso_image.checksum }}"
+      - result.response.name == "{{ iso_image_name }}"
+      - result.response.source.url == "{{ iso_image.url }}"
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+      - result.response.cluster_location_ext_ids[0] == "{{ cluster.uuid }}"
+    fail_msg: "Unable to Create ISO_IMAGE with valid source url  "
+    success_msg: "ISO_IMAGE with valid source url is created successfully "
+
+- name: Add to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+##################################################################################
+
+- name: Create DISK_IMAGE using valid source url
+  ntnx_images_v2:
+    state: present
+    type: DISK_IMAGE
+    name: "{{ disk_image_name }}"
+    description: image created from integration test
+    checksum:
+      sha1:
+        hex_digest: "{{ disk_image.checksum }}"
+    source:
+      url_source:
+        url: "{{ disk_image.url }}"
+        should_allow_insecure_url: true
+    category_ext_ids: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.checksum.hex_digest == "{{ disk_image.checksum }}"
+      - result.response.name == "{{ disk_image_name }}"
+      - result.response.source.url == "{{ disk_image.url }}"
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+      - result.response.category_ext_ids[0] == "{{ category_ext_id }}"
+    fail_msg: "Unable to Create DISK_IMAGE with valid source url  "
+    success_msg: "DISK_IMAGE with valid source url is created successfully "
+
+- name: Add the image to the list of images to delete
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+##################################################################################
+
+- name: Create ISO_IMAGE using invalid source url
+  ntnx_images_v2:
+    state: present
+    type: ISO_IMAGE
+    name: "{{ iso_image_name }}"
+    description: image created from integration test
+    checksum:
+      sha1:
+        hex_digest: "{{ iso_image.checksum }}"
+    source:
+      url_source:
+        url: http://google.com
+        should_allow_insecure_url: true
+    category_ext_ids: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == true
+      - result.response.status == "FAILED"
+    fail_msg: "Create ISO_IMAGE using invalid source url failed  "
+    success_msg: "Create ISO_IMAGE using invalid source url passed "
+
+#################################################################################
+
+- name: Create DISK_IMAGE using valid disk source
+  ntnx_images_v2:
+    state: present
+    type: DISK_IMAGE
+    name: "{{ disk_image_name }}"
+    description: image created from integration test
+    source:
+      vm_disk_source:
+        ext_id: "{{ disk_uuid }}"
+    category_ext_ids: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ disk_image_name }}"
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+      - result.response.category_ext_ids[0] == "{{ category_ext_id }}"
+    fail_msg: "Unable to Create DISK_IMAGE with valid disk source  "
+    success_msg: "DISK_IMAGE with valid disk source is created successfully "
+
+- name: Add to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+#################################################################################
+
+- name: Retrieve an existing ISO image
+  ntnx_images_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Reading Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.response.type == "ISO_IMAGE"
+      - result.response.name == "{{ iso_image_name }}"
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.cluster_location_ext_ids[0] == "{{ cluster.uuid }}"
+    fail_msg: "Unable to retrieve ISO image  "
+    success_msg: "ISO image retrieved successfully "
+
+###################################################################################
+
+- name: Retrieve image that does not exist
+  ntnx_images_info_v2:
+    ext_id: 12345678-1234-1234-1324-123456789123
+  register: result
+  ignore_errors: true
+
+- name: Reading Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == true
+      - result.status == 404
+    fail_msg: Retrieve image that does not exist failed
+    success_msg: Retrieve image that does not exist passed
+
+#################################################################################
+
+- name: Retrieve all images with limit 1
+  ntnx_images_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Reading Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: "Retrieve all images with limit 1 failed  "
+    success_msg: "Retrieve all images with limit 1 passed "
+
+#################################################################################
+
+- name: Retrieve all images with limit 2
+  ntnx_images_info_v2:
+    limit: 2
+  register: result
+  ignore_errors: true
+
+- name: Reading Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 2
+    fail_msg: "Retrieve all images with limit 2 failed  "
+    success_msg: "Retrieve all images with limit 2 passed "
+
+#################################################################################
+
+- name: Retrieve all images and filter for disk image
+  ntnx_images_info_v2:
+    filter: name eq '{{ disk_image_name }}'
+  register: result
+  ignore_errors: true
+
+- name: Reading Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].name == "{{ disk_image_name }}"
+      - result.response[0].type == "DISK_IMAGE"
+    fail_msg: "Unable to retrieve DISK image  "
+    success_msg: "DISK image retrieved successfully "
+
+#################################################################################
+
+- name: Update DISK_IMAGE by changing its name and type - check mode is enabled
+  ntnx_images_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    type: ISO_IMAGE
+    name: "{{ disk_image_name }}_updated"
+    cluster_location_ext_ids: "{{ cluster.uuid }}"
+    category_ext_ids: "{{ category_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.name == "{{ disk_image_name }}_updated"
+      - result.response.type == "ISO_IMAGE"
+      - result.response.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+    fail_msg: "Unable to update DISK_IMAGE by changing its name and type with check mode enabled "
+    success_msg: "DISK_IMAGE updated successfully by changing its name and type with check mode enabled "
+
+##################################################################################
+
+- name: Update ISO_IMAGE by changing its name and type - check mode is enabled
+  ntnx_images_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    type: DISK_IMAGE
+    name: "{{ disk_image_name }}"
+    cluster_location_ext_ids: "{{ cluster.uuid }}"
+    category_ext_ids: "{{ category_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+    fail_msg: "Unable to update ISO_IMAGE by changing its name and type with check mode enabled "
+    success_msg: "ISO_IMAGE updated successfully by changing its name and type with check mode enabled "
+
+##################################################################################
+
+- name: Update DISK_IMAGE by changing its name and type
+  ntnx_images_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    type: ISO_IMAGE
+    name: "{{ iso_image_name }}_updated"
+    category_ext_ids: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ iso_image_name }}_updated"
+      - result.response.type == 'ISO_IMAGE'
+      - result.response.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+    fail_msg: "Unable to update DISK_IMAGE by changing its name and type  "
+    success_msg: "DISK_IMAGE updated successfully by changing its name and type "
+
+##################################################################################
+
+- name: Update ISO_IMAGE by changing its name and type
+  ntnx_images_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    type: DISK_IMAGE
+    name: "{{ disk_image_name }}"
+    category_ext_ids: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ disk_image_name }}"
+      - result.response.type == 'DISK_IMAGE'
+      - result.response.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+    fail_msg: "Unable to update ISO_IMAGE by changing its name and type  "
+    success_msg: "ISO_IMAGE updated successfully by changing its name and type "
+
+#################################################################################
+
+- name: Update ISO_IMAGE by changing category
+  ntnx_images_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    category_ext_ids: "{{ category_ext_id1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ disk_image_name }}"
+      - result.response.type == 'DISK_IMAGE'
+      - result.response.category_ext_ids[0] == "{{ category_ext_id1 }}"
+      - result.response.ext_id == "{{ todelete[0] }}"
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.task_ext_id is defined
+    fail_msg: "Unable to update ISO_IMAGE by changing its name and type  "
+    success_msg: "ISO_IMAGE updated successfully by changing its name and type "
+
+#################################################################################
+
+- name: Update Image that does not exist
+  ntnx_images_v2:
+    state: present
+    ext_id: 12345678-1234-1234-1324-123456789123
+    type: DISK_IMAGE
+    name: "{{ disk_image_name }}"
+    category_ext_ids: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == true
+    fail_msg: Update Image that does not exist failed
+    success_msg: Update Image that does not exist passed
+
+##################################################################################
+
+- name: Delete images
+  ntnx_images_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete images  "
+    success_msg: "Images deleted successfully "
+  loop: "{{ result.results }}"
+
+#################################################################################
+
+- name: Delete Image that does not exist
+  ntnx_images_v2:
+    state: absent
+    ext_id: 12345678-1234-1234-1324-123456789123
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == true
+      - result.status == 404
+      - result.changed == false
+    fail_msg: Delete Image that does not exist failed
+    success_msg: Delete Image that does not exist passed
+
+##################################################################################
+
+- name: Delete the VM
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VM  "
+    success_msg: "VM is deleted successfully "

@@ -1,0 +1,647 @@
+---
+- name: Start ntnx_clusters_nodes_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_clusters_nodes_v2 tests
+
+- name: Set cluster variables
+  ansible.builtin.set_fact:
+    node_indices: [0, 1, 2, 3]
+    prefix_name: ansible_cluster_test
+    pe_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
+
+- name: Set cluster name and reset command
+  ansible.builtin.set_fact:
+    cluster_name: "{{ prefix_name }}_{{ clusters[0].name }}"
+    reset_command: '{{ pe_ssh_cmd }} "{{ reset_username_password }}"'
+
+- name: Generate spec for fetching network info for an unconfigured node using check mode
+  ntnx_nodes_network_info_v2:
+    cluster_ext_id: "000625a6-246f-7d5d-0000-00000001381e"
+    node_list:
+      - node_uuid: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+        block_id: "17SM6B010052"
+        node_position: "A"
+        cvm_ip:
+          ipv4:
+            value: "10.0.0.0"
+            prefix_length: 24
+          ipv6:
+            value: "0001:db8:3333:4444:5555:6666:7777:8888"
+            prefix_length: 64
+        hypervisor_ip:
+          ipv4:
+            value: "10.0.1.0"
+            prefix_length: 24
+          ipv6:
+            value: "0001:db7:3333:4444:5555:6666:7777:8888"
+            prefix_length: 64
+        ipmi_ip:
+          ipv4:
+            value: "10.1.1.1"
+            prefix_length: 24
+          ipv6:
+            value: "0001:db6:3333:4444:5555:6666:7777:8888"
+            prefix_length: 64
+        digital_certificate_map_list:
+          - key: "key1"
+            value: "value1"
+          - key: "key2"
+            value: "value2"
+        model: "model1"
+        is_compute_only: true
+        is_light_compute: true
+        hypervisor_type: "AHV"
+        hypervisor_version: "version1"
+        nos_version: "nos_version1"
+        current_network_interface: "interface1"
+        is_robo_mixed_hypervisor: true
+    request_type: "expand_cluster"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for fetching network info for an unconfigured node using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id == "000625a6-246f-7d5d-0000-00000001381e"
+      - result.response.node_list[0].node_uuid == "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+      - result.response.node_list[0].block_id == "17SM6B010052"
+      - result.response.node_list[0].node_position == "A"
+      - result.response.node_list[0].cvm_ip.ipv4.value == "10.0.0.0"
+      - result.response.node_list[0].cvm_ip.ipv4.prefix_length == 24
+      - result.response.node_list[0].cvm_ip.ipv6.value == "0001:db8:3333:4444:5555:6666:7777:8888"
+      - result.response.node_list[0].cvm_ip.ipv6.prefix_length == 64
+      - result.response.node_list[0].hypervisor_ip.ipv4.value == "10.0.1.0"
+      - result.response.node_list[0].hypervisor_ip.ipv4.prefix_length == 24
+      - result.response.node_list[0].hypervisor_ip.ipv6.value == "0001:db7:3333:4444:5555:6666:7777:8888"
+      - result.response.node_list[0].hypervisor_ip.ipv6.prefix_length == 64
+      - result.response.node_list[0].ipmi_ip.ipv4.value == "10.1.1.1"
+      - result.response.node_list[0].ipmi_ip.ipv4.prefix_length == 24
+      - result.response.node_list[0].ipmi_ip.ipv6.value == "0001:db6:3333:4444:5555:6666:7777:8888"
+      - result.response.node_list[0].ipmi_ip.ipv6.prefix_length == 64
+      - result.response.node_list[0].digital_certificate_map_list[0].key == "key1"
+      - result.response.node_list[0].digital_certificate_map_list[0].value == "value1"
+      - result.response.node_list[0].digital_certificate_map_list[1].key == "key2"
+      - result.response.node_list[0].digital_certificate_map_list[1].value == "value2"
+      - result.response.node_list[0].model == "model1"
+      - result.response.node_list[0].is_compute_only == true
+      - result.response.node_list[0].is_light_compute == true
+      - result.response.node_list[0].hypervisor_type == "AHV"
+      - result.response.node_list[0].hypervisor_version == "version1"
+      - result.response.node_list[0].nos_version == "nos_version1"
+      - result.response.node_list[0].current_network_interface == "interface1"
+      - result.response.node_list[0].is_robo_mixed_hypervisor == true
+      - result.response.request_type == "expand_cluster"
+    fail_msg: "Generate spec for fetching network info for an unconfigured node using check mode failed"
+    success_msg: "Generate spec for fetching network info for an unconfigured node using check mode passed"
+
+- name: Generate spec for discovering unconfigured nodes using check mode
+  ntnx_discover_unconfigured_nodes_v2:
+    address_type: "IPV4"
+    ip_filter_list:
+      - ipv4:
+          value: "10.0.0.1"
+      - ipv4:
+          value: "10.0.0.5"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for discovering unconfigured nodes using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.ip_filter_list[0].ipv4.value == "10.0.0.1"
+      - result.response.ip_filter_list[1].ipv4.value == "10.0.0.5"
+    fail_msg: "Generate spec for discovering unconfigured nodes using check mode failed"
+    success_msg: "Generate spec for discovering unconfigured nodes using check mode passed"
+
+- name: Generate spec for expanding cluster using check mode
+  ntnx_clusters_nodes_v2:
+    node_params:
+      node_list:
+        - node_uuid: "6750557f-673b-462a-9b58-3acd29e15eaa"
+          block_id: block-id
+          node_position: node-position
+          hypervisor_type: AHV
+          is_robo_mixed_hypervisor: false
+          hypervisor_hostname: hypervisor-hostname
+          hypervisor_version: hypervisor-version
+          nos_version: nos-version
+          is_light_compute: false
+          ipmi_ip:
+            ipv4:
+              value: 192.168.1.10
+              prefix_length: 24
+          digital_certificate_map_list:
+            - key: certificate-key
+              value: certificate-value
+          cvm_ip:
+            ipv4:
+              value: 192.168.1.10
+              prefix_length: 24
+          hypervisor_ip:
+            ipv4:
+              value: 192.168.1.10
+              prefix_length: 24
+          model: node-model
+          current_network_interface: network-interface
+          networks:
+            - name: network-name
+              networks: network1
+              uplinks:
+                active:
+                  - mac: "0c:c4:7a:9a:40:e8"
+                    name: "name"
+                    value: "value"
+    config_params:
+      should_skip_discovery: false
+      should_skip_imaging: false
+      should_validate_rack_awareness: false
+      is_nos_compatible: false
+      is_compute_only: false
+      is_never_scheduleable: false
+      target_hypervisor: AHV
+      hyperv:
+        domain_details:
+          username: domain-username
+          password: domain-password
+          cluster_name: domain-cluster
+        failover_cluster_details:
+          username: failover-username
+          password: failover-password
+          cluster_name: failover-cluster
+    cluster_ext_id: "000625a6-246f-7d5d-0000-00000001381e"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for expanding cluster using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.node_params.node_list[0].node_uuid == "6750557f-673b-462a-9b58-3acd29e15eaa"
+      - result.response.node_params.node_list[0].block_id == "block-id"
+      - result.response.node_params.node_list[0].node_position == "node-position"
+      - result.response.node_params.node_list[0].hypervisor_type == "AHV"
+      - result.response.node_params.node_list[0].is_robo_mixed_hypervisor == false
+      - result.response.node_params.node_list[0].hypervisor_hostname == "hypervisor-hostname"
+      - result.response.node_params.node_list[0].hypervisor_version == "hypervisor-version"
+      - result.response.node_params.node_list[0].nos_version == "nos-version"
+      - result.response.node_params.node_list[0].is_light_compute == false
+      - result.response.node_params.node_list[0].ipmi_ip.ipv4.value == "192.168.1.10"
+      - result.response.node_params.node_list[0].ipmi_ip.ipv4.prefix_length == 24
+      - result.response.node_params.node_list[0].digital_certificate_map_list[0].key == "certificate-key"
+      - result.response.node_params.node_list[0].digital_certificate_map_list[0].value == "certificate-value"
+      - result.response.node_params.node_list[0].cvm_ip.ipv4.value == "192.168.1.10"
+      - result.response.node_params.node_list[0].cvm_ip.ipv4.prefix_length == 24
+      - result.response.node_params.node_list[0].hypervisor_ip.ipv4.value == "192.168.1.10"
+      - result.response.node_params.node_list[0].hypervisor_ip.ipv4.prefix_length == 24
+      - result.response.node_params.node_list[0].model == "node-model"
+      - result.response.node_params.node_list[0].current_network_interface == "network-interface"
+      - result.response.node_params.node_list[0].networks[0].name == "network-name"
+      - result.response.node_params.node_list[0].networks[0].networks[0] == "network1"
+      - result.response.node_params.node_list[0].networks[0].uplinks.active[0].mac == "0c:c4:7a:9a:40:e8"
+      - result.response.node_params.node_list[0].networks[0].uplinks.active[0].name == "name"
+      - result.response.node_params.node_list[0].networks[0].uplinks.active[0].value == "value"
+      - result.response.config_params.should_skip_discovery == false
+      - result.response.config_params.should_skip_imaging == false
+      - result.response.config_params.should_validate_rack_awareness == false
+      - result.response.config_params.is_nos_compatible == false
+      - result.response.config_params.is_compute_only == false
+      - result.response.config_params.is_never_scheduleable == false
+      - result.response.config_params.target_hypervisor == "AHV"
+      - result.response.config_params.hyperv.domain_details.username == "domain-username"
+      - result.response.config_params.hyperv.domain_details.password == "domain-password"
+      - result.response.config_params.hyperv.domain_details.cluster_name == "domain-cluster"
+      - result.response.config_params.hyperv.failover_cluster_details.username == "failover-username"
+      - result.response.config_params.hyperv.failover_cluster_details.password == "failover-password"
+      - result.response.config_params.hyperv.failover_cluster_details.cluster_name == "failover-cluster"
+      - result.cluster_ext_id == "000625a6-246f-7d5d-0000-00000001381e"
+    fail_msg: Generate spec for expanding cluster using check mode failed
+    success_msg: Generate spec for expanding cluster using check mode passed
+
+- name: Generate spec for removing node from cluster using check mode
+  ntnx_clusters_nodes_v2:
+    state: absent
+    cluster_ext_id: "000625a6-246f-7d5d-0000-00000001381e"
+    should_skip_prechecks: true
+    should_skip_remove: true
+    node_uuids:
+      - "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    extra_params:
+      should_skip_upgrade_check: true
+      should_skip_space_check: true
+      should_skip_add_check: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for removing node from cluster using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id == "000625a6-246f-7d5d-0000-00000001381e"
+      - result.response.node_uuids[0] == "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+      - result.response.should_skip_prechecks == true
+      - result.response.should_skip_remove == true
+      - result.response.extra_params.should_skip_upgrade_check == true
+      - result.response.extra_params.should_skip_space_check == true
+      - result.response.extra_params.should_skip_add_check == true
+    fail_msg: Generate spec for removing node from cluster using check mode failed
+    success_msg: Generate spec for removing node from cluster using check mode passed
+
+- name: Check if each cluster node is unconfigured
+  ansible.builtin.command:
+    'sshpass -p "{{ clusters[0].pe_password }}" ssh -o StrictHostKeyChecking=no \
+    {{ clusters[0].pe_username }}@{{ clusters[0].nodes[item].cvm_ip }} "/usr/local/nutanix/cluster/bin/cluster status"'
+  loop: "{{ node_indices }}"
+  register: results
+  ignore_errors: true
+  changed_when: results.rc != 0
+  no_log: true
+
+# verify that all nodes are unconfigured by checking the return code and stderr in all of them
+- name: Assert that all cluster nodes are unconfigured
+  ansible.builtin.assert:
+    that:
+      - results.results | map(attribute='rc') | select('equalto', 1) | list | length == 4
+      - results.results | map(attribute='stderr') | select('search', 'Cluster is currently unconfigured') | list | length == 4
+    fail_msg: Cannot create cluster, one or more nodes are already configured
+    success_msg: All cluster nodes are unconfigured
+
+- name: Discover unconfigured nodes
+  ntnx_discover_unconfigured_nodes_v2:
+    address_type: "IPV4"
+    ip_filter_list:
+      - ipv4:
+          value: "{{ clusters[0].nodes[item].cvm_ip }}"
+  loop: "{{ node_indices }}"
+  register: results
+  ignore_errors: true
+
+- name: Assert discover unconfigured nodes status for each node
+  ansible.builtin.assert:
+    that:
+      - item.changed == false
+      - item.failed == false
+      - item.response.ext_id is defined
+      - item.response.response.node_list.0.cvm_ip.ipv4.value | string in "{{ clusters[0].nodes }}"
+      - results | map(attribute='response.node_list.0.cvm_ip.ipv4.value') | list | length == clusters[0].nodes | length
+    fail_msg: "Discover unconfigured nodes failed"
+    success_msg: "Discover unconfigured nodes passed"
+  loop: "{{ results.results }}"
+  no_log: true
+
+- name: Run cluster create prechecks
+  ntnx_clusters_v2:
+    name: "{{ clusters[0].name }}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[1].cvm_ip }}"
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[2].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      authorized_public_key_list:
+        - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
+          key: "{{ clusters[0].config.auth_public_keys[0].key }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_expanding }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_expanding }}"
+    network:
+      external_address:
+        ipv4:
+          value: "{{ clusters[0].network.virtual_ip }}"
+      external_data_service_ip:
+        ipv4:
+          value: "{{ clusters[0].network.iscsi_ip }}"
+      ntp_server_ip_list:
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[0] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[1] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[2] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[3] }}"
+      name_server_ip_list:
+        - ipv4:
+            value: "{{ clusters[0].network.dns_servers[0] }}"
+        - ipv4:
+            value: "{{ clusters[0].network.dns_servers[1] }}"
+      smtp_server:
+        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
+        server:
+          ip_address:
+            ipv4:
+              value: "{{ clusters[0].network.smtp_server.ip }}"
+          port: "{{ clusters[0].network.smtp_server.port }}"
+          username: "{{ clusters[0].network.smtp_server.username }}"
+          password: "{{ clusters[0].network.smtp_server.password }}"
+        type: "{{ clusters[0].network.smtp_server.type }}"
+    dryrun: true
+    timeout: 1800
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster create prechecks run
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create prechecks failed
+    success_msg: Cluster create prechecks passed
+
+- name: Create 3 nodes cluster with minimum spec
+  ntnx_clusters_v2:
+    name: "{{cluster_name}}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[1].cvm_ip }}"
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[2].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_expanding }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_expanding }}"
+    timeout: 1800
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster create task status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create failed
+    success_msg: Cluster create passed
+
+- name: Reset username and password
+  ansible.builtin.command: "{{ reset_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: List all clusters to get prism central external ID
+  ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: result
+  ignore_errors: true
+
+- name: Get prism central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ result.response[0].ext_id }}"
+
+- name: Run PE PC registration
+  ntnx_pc_registration_v2:
+    ext_id: "{{ prism_central_external_id }}"
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+          credentials:
+            authentication:
+              username: "{{ username }}"
+              password: "{{ password }}"
+  register: result
+  ignore_errors: true
+
+- name: Run PE PC registration status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.ext_id == prism_central_external_id
+      - result.response.status == 'SUCCEEDED'
+      - result.task_ext_id is defined
+    fail_msg: "Run PE PC registration failed"
+    success_msg: "Run PE PC registration passed"
+
+- name: Sleep for 1 minute
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: Fetch cluster using name
+  ntnx_clusters_info_v2:
+    filter: name eq '{{ cluster_name }}'
+  register: result
+  ignore_errors: true
+
+- name: Verify listing
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: Failed vefifying PE PC registration
+    success_msg: PE PC registration passed successfully
+
+- name: Set cluster external ID
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Fetch cluster info using external ID
+  ntnx_clusters_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify created cluster's details using cluster info
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == cluster_ext_id
+      - result.response.name == "{{ cluster_name }}"
+      - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+      - result.response.nodes.node_list[1].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[1].cvm_ip }}"
+      - result.response.nodes.node_list[2].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[2].cvm_ip }}"
+      - result.response.config.cluster_function[0] == "{{ clusters[0].config.cluster_functions[0] }}"
+      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_expanding
+      - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
+      - >
+        result.response.config.fault_tolerance_state.domain_awareness_level ==
+        "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_expanding }}"
+    fail_msg: Failed verifying cluster creation
+    success_msg: Cluster creation passed successfully
+
+- name: Discover unconfigured node
+  ntnx_discover_unconfigured_nodes_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    address_type: "IPV4"
+    ip_filter_list:
+      - ipv4:
+          value: "{{ clusters[0].nodes[3].cvm_ip }}"
+  register: result_discover
+  ignore_errors: true
+
+- name: Assert discover unconfigured node status
+  ansible.builtin.assert:
+    that:
+      - result_discover.changed == false
+      - result_discover.failed == false
+      - result_discover.cluster_ext_id == cluster_ext_id
+      - result_discover.response.ext_id is defined
+      - result_discover.response.response.node_list.0.cvm_ip.ipv4.value == "{{ clusters[0].nodes[3].cvm_ip }}"
+    fail_msg: "Discover unconfigured node failed"
+    success_msg: "Discover unconfigured node passed"
+
+- name: Get network info of unconfigured node
+  ntnx_nodes_network_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    node_list:
+      - cvm_ip:
+          ipv4:
+            value: "{{ result_discover.response.response.node_list[0].cvm_ip.ipv4.value }}"
+        hypervisor_ip:
+          ipv4:
+            value: "{{ result_discover.response.response.node_list[0].hypervisor_ip.ipv4.value }}"
+    request_type: "expand_cluster"
+  register: result_network_info
+  ignore_errors: true
+
+- name: Get network info of unconfigured node status
+  ansible.builtin.assert:
+    that:
+      - result_network_info.changed == false
+      - result_network_info.failed == false
+      - result_network_info.response.ext_id is defined
+      - result_network_info.response.response.network_info is defined
+      - result_network_info.response.response.uplinks is defined
+      - result_network_info.response.response.uplinks[0].cvm_ip.ipv4.value == "{{ result_discover.response.response.node_list[0].cvm_ip.ipv4.value }}"
+      - result_network_info.response.task_response_type == "NETWORKING_DETAILS"
+    fail_msg: "Get network info of unconfigured node failed"
+    success_msg: "Get network info of unconfigured node passed"
+
+- name: Expand cluster by adding a node
+  ntnx_clusters_nodes_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    node_params:
+      node_list:
+        - node_uuid: "{{ result_discover.response.response.node_list[0].node_uuid }}"
+          block_id: "{{ result_discover.response.response.node_list[0].rackable_unit_serial }}"
+          node_position: "{{ result_discover.response.response.node_list[0].node_position }}"
+          nos_version: "{{ result_discover.response.response.node_list[0].nos_version }}"
+          hypervisor_type: "{{ result_discover.response.response.node_list[0].hypervisor_type }}"
+          hypervisor_version: "{{ result_discover.response.response.node_list[0].hypervisor_version }}"
+          is_light_compute: false
+          is_robo_mixed_hypervisor: true
+          hypervisor_hostname: test
+          model: "{{ result_discover.response.response.node_list[0].rackable_unit_model }}"
+          cvm_ip:
+            ipv4:
+              value: "{{ result_discover.response.response.node_list[0].cvm_ip.ipv4.value }}"
+              prefix_length: "{{ result_discover.response.response.node_list[0].cvm_ip.ipv4.prefix_length | int }}"
+          hypervisor_ip:
+            ipv4:
+              value: "{{ result_discover.response.response.node_list[0].hypervisor_ip.ipv4.value }}"
+              prefix_length: "{{ result_discover.response.response.node_list[0].hypervisor_ip.ipv4.prefix_length | int }}"
+          ipmi_ip:
+            ipv4:
+              value: "{{ result_discover.response.response.node_list[0].ipmi_ip.ipv4.value }}"
+              prefix_length: "{{ result_discover.response.response.node_list[0].ipmi_ip.ipv4.prefix_length | int }}"
+          current_network_interface: "{{ result_network_info.response.response.uplinks[0].uplink_list[0].name }}"
+          networks:
+            - name: "{{ result_network_info.response.response.network_info.hci[0].name }}"
+              networks: "{{ result_network_info.response.response.network_info.hci[0].networks }}"
+              uplinks:
+                active:
+                  - mac: "{{ result_network_info.response.response.uplinks[0].uplink_list[0].mac }}"
+                    name: "{{ result_network_info.response.response.uplinks[0].uplink_list[0].name }}"
+                    value: "{{ result_network_info.response.response.uplinks[0].uplink_list[0].name }}"
+                standby:
+                  - mac: "{{ result_network_info.response.response.uplinks[0].uplink_list[1].mac }}"
+                    name: "{{ result_network_info.response.response.uplinks[0].uplink_list[1].name }}"
+                    value: "{{ result_network_info.response.response.uplinks[0].uplink_list[1].name }}"
+    config_params:
+      should_skip_discovery: false
+      should_skip_imaging: true
+      should_validate_rack_awareness: false
+      is_nos_compatible: false
+      is_compute_only: false
+      is_never_scheduleable: false
+      target_hypervisor: "{{ result_discover.response.response.node_list[0].hypervisor_type }}"
+    should_skip_add_node: false
+    should_skip_pre_expand_checks: false
+  register: result_expand
+  ignore_errors: true
+
+- name: Expand cluster by adding a node status
+  ansible.builtin.assert:
+    that:
+      - result_expand.changed == true
+      - result_expand.failed == false
+      - result_expand.response.ext_id is defined
+      - result_expand.response.status == "SUCCEEDED"
+      - result_expand.task_ext_id is defined
+    fail_msg: "Expand cluster failed"
+    success_msg: "Expand cluster passed"
+
+- name: Sleep for 5 minutes
+  ansible.builtin.pause:
+    seconds: 300
+
+- name: Remove node from cluster
+  ntnx_clusters_nodes_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    node_uuids:
+      - "{{ result_discover.response.response.node_list[0].node_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Remove node from cluster status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Remove node from cluster failed"
+    success_msg: "Remove node from cluster passed"
+
+- name: Sleep for 1 minute
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: Destroy the cluster for cleanup
+  ntnx_clusters_v2:
+    state: absent
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster deletion
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.status == "SUCCEEDED"
+      - result.ext_id == cluster_ext_id
+    fail_msg: Failed verifying cluster deletion
+    success_msg: Cluster deletion passed successfully

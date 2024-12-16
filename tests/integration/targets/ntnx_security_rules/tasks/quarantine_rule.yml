@@ -1,35 +1,33 @@
-    - name: update quarantine_rule by adding inbound and outbound list
-      ntnx_security_rules:
-        security_rule_uuid: "{{quarantine_rule_uuid}}"
-        quarantine_rule:
-          target_group:
-              default_internal_policy: DENY_ALL
-          inbounds:
-            -
-                categories:
-                  AppFamily:
-                    - Databases
-                    - DevOps
-          outbounds:
-            -
-                categories:
-                  AppFamily:
-                    - Databases
-                    - DevOps
-          policy_mode: MONITOR
-        allow_ipv6_traffic: true
-        policy_hitlog: true
-      register: result
-      ignore_errors: true
+- name: Update quarantine_rule by adding inbound and outbound list
+  ntnx_security_rules:
+    security_rule_uuid: "{{quarantine_rule_uuid}}"
+    quarantine_rule:
+      target_group:
+        default_internal_policy: DENY_ALL
+      inbounds:
+        - categories:
+            AppFamily:
+              - Databases
+              - DevOps
+      outbounds:
+        - categories:
+            AppFamily:
+              - Databases
+              - DevOps
+      policy_mode: MONITOR
+    allow_ipv6_traffic: true
+    policy_hitlog: true
+  register: result
+  ignore_errors: true
 
-    - name: Creation Status
-      assert:
-        that:
-          - result.response is defined
-          - result.failed == false
-          - result.response.status.state == 'COMPLETE'
-          - result.response.spec.resources.quarantine_rule.action == "MONITOR"
-        fail_msg: ' fail: unable to update quarantine_rule by adding inbound and outbound list '
-        success_msg: >-
-          pass: update quarantine_rule by adding inbound and outbound list
-          successfully
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.response.status.state == 'COMPLETE'
+      - result.response.spec.resources.quarantine_rule.action == "MONITOR"
+    fail_msg: " fail: unable to update quarantine_rule by adding inbound and outbound list "
+    success_msg: >-
+      pass: update quarantine_rule by adding inbound and outbound list
+      successfully

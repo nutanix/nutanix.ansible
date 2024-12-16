@@ -1,0 +1,636 @@
+---
+- name: Start ntnx_vms_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_vms_v2 tests
+
+- name: Generate random category key & value
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name suffix
+  ansible.builtin.set_fact:
+    suffix_name: ansible-ag
+
+- name: Set VM name and todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+    vm_name: "{{ random_name }}{{ suffix_name }}vm"
+
+- name: Create VM with full requirements with check_mode
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    num_threads_per_core: 1
+    num_numa_nodes: 1
+    memory_size_bytes: 4294967296
+    is_vcpu_hard_pinning_enabled: false
+    is_cpu_passthrough_enabled: false
+    is_memory_overcommit_enabled: false
+    is_gpu_console_enabled: false
+    is_vga_console_enabled: false
+    machine_type: PC
+    hardware_clock_timezone: UTC
+    enabled_cpu_features:
+      - HARDWARE_VIRTUALIZATION
+    is_branding_enabled: false
+    is_agent_vm: false
+    apc_config:
+      is_apc_enabled: true
+      cpu_model:
+        name: test
+        ext_id: "00000000-0000-0000-0000-000000000000"
+    vtpm_config:
+      is_vtpm_enabled: true
+      version: "2.0"
+    gpus:
+      - mode: VIRTUAL
+        device_id: 1
+        name: NVIDIA T4
+        vendor: NVIDIA
+        pci_address:
+          segment: "0000"
+          func: 0
+          device: 0
+          bus: 1
+    availability_zone:
+      ext_id: "00000000-0000-0000-0000-000000000000"
+    cd_roms:
+      - disk_address:
+          bus_type: IDE
+        backing_info:
+          data_source:
+            reference:
+              image_reference:
+                image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+        disk_address:
+          bus_type: SCSI
+          index: 3
+    boot_config:
+      uefi_boot:
+        nvram_device:
+          backing_storage_info:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+    serial_ports:
+      - is_connected: true
+        index: 0
+      - is_connected: true
+        index: 3
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 1
+      - result.response.num_threads_per_core == 1
+      - result.response.memory_size_bytes == 4294967296
+      - result.response.is_vcpu_hard_pinning_enabled == false
+      - result.response.is_cpu_passthrough_enabled == false
+      - result.response.is_memory_overcommit_enabled == false
+      - result.response.is_gpu_console_enabled == false
+      - result.response.is_vga_console_enabled == false
+      - result.response.machine_type == "PC"
+      - result.response.hardware_clock_timezone == "UTC"
+      - result.response.num_numa_nodes == 1
+      - result.response.enabled_cpu_features[0] == "HARDWARE_VIRTUALIZATION"
+      - result.response.is_branding_enabled == false
+      - result.response.is_agent_vm == false
+      - result.response.apc_config.is_apc_enabled == true
+      - result.response.vtpm_config.is_vtpm_enabled == true
+      - result.response.apc_config.cpu_model.name == "test"
+      - result.response.apc_config.cpu_model.ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.vtpm_config.version == "2.0"
+      - result.response.cd_roms[0].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.cd_roms[0].disk_address.bus_type == "IDE"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.disks[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disks[1].disk_address.bus_type == "SCSI"
+      - result.response.disks[1].disk_address.index == 3
+      - result.response.gpus[0].mode == "VIRTUAL"
+      - result.response.gpus[0].device_id == 1
+      - result.response.gpus[0].name == "NVIDIA T4"
+      - result.response.gpus[0].vendor == "NVIDIA"
+      - result.response.gpus[0].pci_address.segment == 0
+      - result.response.gpus[0].pci_address.func == 0
+      - result.response.gpus[0].pci_address.device == 0
+      - result.response.gpus[0].pci_address.bus == 1
+      - result.response.availability_zone.ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.serial_ports[0].is_connected == true
+      - result.response.serial_ports[0].index == 0
+      - result.response.serial_ports[1].is_connected == true
+      - result.response.serial_ports[1].index == 3
+      - result.response.boot_config.nvram_device.backing_storage_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.boot_config.nvram_device.backing_storage_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
+    fail_msg: " Unable to create VM with full requirements "
+    success_msg: Returned as expected
+########################################################################
+- name: Create VM with minimum requirements
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test"
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+- name: Get vm using filter name
+  ntnx_vms_info_v2:
+    filter: name eq '{{ vm_name }}'
+  register: result
+  ignore_errors: true
+
+- name: Status of vm
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response[0].name == "{{ vm_name }}"
+      - result.response[0].description == "ansible test"
+      - result.response[0].cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response[0].ext_id == "{{ todelete.0 }}"
+    fail_msg: " Unable to fetch vm using filter name "
+    success_msg: " vm fetched using filter name successfully "
+########################################################################
+- name: Create VM with full requirements
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    num_threads_per_core: 1
+    num_numa_nodes: 1
+    memory_size_bytes: 4294967296
+    is_vcpu_hard_pinning_enabled: false
+    is_cpu_passthrough_enabled: false
+    is_memory_overcommit_enabled: false
+    is_gpu_console_enabled: false
+    is_vga_console_enabled: false
+    machine_type: PC
+    hardware_clock_timezone: UTC
+    enabled_cpu_features:
+      - HARDWARE_VIRTUALIZATION
+    is_branding_enabled: false
+    is_agent_vm: false
+    apc_config:
+      is_apc_enabled: false
+    vtpm_config:
+      is_vtpm_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 1
+      - result.response.num_threads_per_core == 1
+      - result.response.memory_size_bytes == 4294967296
+      - result.response.is_vcpu_hard_pinning_enabled == false
+      - result.response.is_cpu_passthrough_enabled == false
+      - result.response.is_memory_overcommit_enabled == false
+      - result.response.is_gpu_console_enabled == false
+      - result.response.is_vga_console_enabled == false
+      - result.response.machine_type == "PC"
+      - result.response.hardware_clock_timezone == "UTC"
+      - result.response.num_numa_nodes == 1
+      - result.response.enabled_cpu_features[0] == "HARDWARE_VIRTUALIZATION"
+      - result.response.is_branding_enabled == false
+      - result.response.is_agent_vm == false
+      - result.response.apc_config.is_apc_enabled == false
+      - result.response.vtpm_config.is_vtpm_enabled == false
+    fail_msg: " Unable to create VM with full requirements "
+    success_msg: " VM with full requirements created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+########################################################################
+- name: Create vm with different disks, using ubuntu image , with cdrom
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    cd_roms:
+      - disk_address:
+          bus_type: IDE
+        backing_info:
+          data_source:
+            reference:
+              image_reference:
+                image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+        disk_address:
+          bus_type: SCSI
+          index: 3
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.disks[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disks[1].disk_address.bus_type == "SCSI"
+      - result.response.disks[1].disk_address.index == 3
+      - result.response.cd_roms[0].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.cd_roms[0].disk_address.bus_type == "IDE"
+    fail_msg: " Unable to create  vm with different disks, using ubuntu image , with cdrom"
+    success_msg: "Vm with different disks, using ubuntu image , with cdrom created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+- name: Fetch vm using ext_id
+  ntnx_vms_info_v2:
+    ext_id: "{{ result.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of vm
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.ext_id == "{{ result.ext_id }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.disks[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disks[1].disk_address.bus_type == "SCSI"
+      - result.response.disks[1].disk_address.index == 3
+      - result.response.cd_roms[0].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.cd_roms[0].disk_address.bus_type == "IDE"
+    fail_msg: " Unable to fetch vm using ext_id "
+    success_msg: " vm fetched using ext_id successfully "
+########################################################################
+- name: List all categories
+  ntnx_categories_info_v2:
+    limit: 3
+  register: result
+  ignore_errors: true
+
+- name: Set category ext_id
+  ansible.builtin.set_fact:
+    category_ext_id_1: "{{ result.response[0].ext_id }}"
+    category_ext_id_2: "{{ result.response[1].ext_id }}"
+
+- name: Create vm with multiple serial port, and categories
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    categories:
+      - ext_id: "{{ result.response[0].ext_id }}"
+      - ext_id: "{{ result.response[1].ext_id }}"
+    serial_ports:
+      - is_connected: true
+        index: 0
+      - is_connected: true
+        index: 3
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test"
+      - result.response.serial_ports[0].is_connected == true
+      - result.response.serial_ports[0].index == 0
+      - result.response.serial_ports[1].is_connected == true
+      - result.response.serial_ports[1].index == 3
+      - result.response.categories[0].ext_id == "{{ category_ext_id_1 }}"
+      - result.response.categories[1].ext_id == "{{ category_ext_id_2 }}"
+    fail_msg: " Unable to Create vm with multiple serial port, and categories "
+    success_msg: " Vm with multiple serial port, and categories created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+########################################################################
+- name: Create vm with legacy_boot
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+        disk_address:
+          bus_type: SCSI
+          index: 3
+    boot_config:
+      legacy_boot:
+        boot_device:
+          boot_device_disk:
+            disk_address:
+              bus_type: SCSI
+              index: 3
+        boot_order:
+          - DISK
+          - CDROM
+          - NETWORK
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.disks[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disks[1].disk_address.bus_type == "SCSI"
+      - result.response.disks[1].disk_address.index == 3
+      - result.response.boot_config.boot_device.disk_address.bus_type == "SCSI"
+      - result.response.boot_config.boot_device.disk_address.index == 3
+      - result.response.boot_config.boot_order[0] == "DISK"
+      - result.response.boot_config.boot_order[1] == "CDROM"
+      - result.response.boot_config.boot_order[2] == "NETWORK"
+    fail_msg: " Unable to create VM with legacy_boot "
+    success_msg: " VM with legacy_boot created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+########################################################################
+- name: Create vm with nics,cloud_init script
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    nics:
+      - network_info:
+          subnet:
+            ext_id: "{{ network.dhcp.uuid }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+        disk_address:
+          bus_type: SCSI
+          index: 3
+    guest_customization:
+      config:
+        cloudinit:
+          datasource_type: CONFIG_DRIVE_V2
+          cloud_init_script:
+            user_data:
+              value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.disks[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disks[1].disk_address.bus_type == "SCSI"
+      - result.response.disks[1].disk_address.index == 3
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
+      - result.response.nics[0].backing_info.is_connected == true
+      - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
+      - result.response.cd_roms[0] is defined
+      - result.response.cd_roms[0].iso_type == "GUEST_CUSTOMIZATION"
+    fail_msg: " Unable to create VM with cloud_init script "
+    success_msg: " VM with cloud_init script created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+########################################################################
+
+- name: Read content from file
+  ansible.builtin.set_fact:
+    xml_file_content: "{{ lookup('file', unattendxml.dest + '/unattendxml.txt') }}"
+
+- name: Create vm with windows unattend xml file
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    guest_customization:
+      config:
+        sysprep:
+          install_type: "FRESH"
+          sysprep_script:
+            unattendxml:
+              value: "{{ xml_file_content }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.ext_id is defined
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.cd_roms[0] is defined
+      - result.response.cd_roms[0].iso_type == "GUEST_CUSTOMIZATION"
+    fail_msg: " Unable to create VM with windows unattend xml file "
+    success_msg: " VM with windows unattend xml file created successfully "
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+########################################################################
+- name: List all VMs
+  ntnx_vms_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of all VMs
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 1
+    fail_msg: "Unable to list VMs "
+    success_msg: VMs  listed successfully
+########################################################################
+- name: List all VMs with limit 3
+  ntnx_vms_info_v2:
+    limit: 3
+  register: result
+  ignore_errors: true
+
+- name: Status of all VMs
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length == 3
+    fail_msg: "Unable to list VMs "
+    success_msg: VMs  listed successfully
+########################################################################
+- name: Delete all Created VMs
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.changed == True
+      - item.failed == False
+      - item.ext_id == "{{ todelete[vms_index] }}"
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: vms_index
+
+- name: Reset to delete list
+  ansible.builtin.set_fact:
+    todelete: []

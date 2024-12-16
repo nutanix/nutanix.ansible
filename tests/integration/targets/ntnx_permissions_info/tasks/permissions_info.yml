@@ -1,14 +1,15 @@
-- debug:
-    msg: start testing ntnx_permissions_info
+- name: Start testing ntnx_permissions_info
+  ansible.builtin.debug:
+    msg: Start testing ntnx_permissions_info
 ##################################################
 
 - name: List all permissions
   ntnx_permissions_info:
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.metadata.total_matches > 0
@@ -19,7 +20,8 @@
 
 ##################################################
 
-- set_fact:
+- name: Setting permission name
+  ansible.builtin.set_fact:
     test_permission_name: "Create_Playbook"
 
 - name: List permissions using filter criteria
@@ -27,10 +29,10 @@
     filter:
       name: "{{ test_permission_name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -41,7 +43,8 @@
     fail_msg: "Unable to list permissions using filter"
     success_msg: "permission info obtained successfully"
 
-- set_fact:
+- name: Setting permission uuid
+  ansible.builtin.set_fact:
     test_permission_uuid: "{{result.response.entities.0.metadata.uuid}}"
 
 ##################################################
@@ -50,10 +53,10 @@
   ntnx_permissions_info:
     permission_uuid: "{{ test_permission_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -71,10 +74,10 @@
     length: 1
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false

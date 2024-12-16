@@ -1,7 +1,10 @@
 ---
-- module_defaults:
+- name: Ntnx_foundation_image_upload integration tests
+  module_defaults:
     nutanix.ncp.ntnx_foundation_image_upload:
-        nutanix_host: "{{ foundation_host }}"
+      nutanix_host: "{{ foundation_host }}"
   block:
-        - import_tasks: "upload.yml"
-        - import_tasks: "negative_scenarios.yml"
+    - name: Import Tasks
+      ansible.builtin.import_tasks: upload.yml
+    - name: Import Tasks
+      ansible.builtin.import_tasks: negative_scenarios.yml
