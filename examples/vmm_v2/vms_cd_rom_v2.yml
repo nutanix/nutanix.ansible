@@ -1,0 +1,81 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create CD ROM for a VM
+# 2. Inject ISO in CD ROM of a VM
+# 3. Get CD ROM details
+# 4. Eject ISO from CD ROM of a VM
+# 5. Delete CD ROM
+
+- name: VM cd rom playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_uuid: "a990cfaa-95a8-4861-bdf6-14060555442d"
+        category_ext_id: "d7419d65-100e-4c99-a666-ec1431516bbe"
+        image_uuid: "d7419d65-1234-4c99-4545-ec1431516bbe"
+        cd_rom_ext_id: "d7419d65-7896-3544-4545-ec1431516bbe"
+
+    - name: Create CD ROM with all attributes
+      nutanix.ncp.ntnx_vms_cd_rom_v2:
+        state: present
+        vm_ext_id: "{{ vm_uuid }}"
+        disk_address:
+          bus_type: "IDE"
+          index: 1
+        backing_info:
+          data_source:
+            reference:
+              image_reference:
+                image_ext_id: "{{ image_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Inject ISO in CD ROM of a VM
+      nutanix.ncp.ntnx_vms_cd_rom_iso_v2:
+        state: present
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ cd_rom_ext_id }}"
+        backing_info:
+          data_source:
+            reference:
+              image_reference:
+                image_ext_id: "{{ image_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get CD ROM details
+      nutanix.ncp.ntnx_vms_cd_rom_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ cd_rom_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Eject ISO from CD ROM of a VM
+      nutanix.ncp.ntnx_vms_cd_rom_iso_v2:
+        state: absent
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ cd_rom_ext_id }}"
+        backing_info:
+          data_source:
+            reference:
+              image_reference:
+                image_ext_id: "{{ image_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete CD ROM
+      nutanix.ncp.ntnx_vms_cd_rom_v2:
+        state: absent
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ cd_rom_ext_id }}"
+      register: result
+      ignore_errors: true

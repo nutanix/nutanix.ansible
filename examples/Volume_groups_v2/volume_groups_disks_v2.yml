@@ -1,0 +1,57 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create disks
+# 2. Create disk from previously created vdisk
+# 3. Delete disk
+
+- name: Volume groups disks playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vg1_uuid: "d1b1b3b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
+        disk1_uuid: "12345678-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
+        storage_container:
+          name: "default"
+          uuid: "00000000-0000-0000-0000-000000000000"
+
+    - name: Create disks
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
+        state: "present"
+        volume_group_ext_id: "{{ vg1_uuid }}"
+        disk_size_bytes: 21474836480
+        disk_data_source_reference:
+          entity_type: "STORAGE_CONTAINER"
+          ext_id: "{{ storage_container.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create disk from previously created vdisk
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
+        state: "present"
+        volume_group_ext_id: "{{ vg1_uuid }}"
+        index: 2
+        description: "ansible-created-disk-updated"
+        disk_storage_features:
+          flash_mode:
+            is_enabled: true
+        disk_data_source_reference:
+          entity_type: "VOLUME_DISK"
+          ext_id: "{{disk1_uuid}}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete disk
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
+        state: absent
+        volume_group_ext_id: "{{ vg1_uuid }}"
+        ext_id: "{{ result.ext_id }}"
+      register: result
