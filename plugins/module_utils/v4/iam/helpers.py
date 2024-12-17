@@ -6,6 +6,15 @@ from ..utils import raise_api_exception  # noqa: E402
 
 
 def get_authorization_policy(module, api_instance, ext_id):
+    """
+    This method will return authorization policy info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Authorization policy api instance
+        ext_id (str): External id of authorization policy
+    Returns:
+        authorization_policy_info (dict): Authorization policy info
+    """
     try:
         return api_instance.get_authorization_policy_by_id(extId=ext_id).data
     except Exception as e:
