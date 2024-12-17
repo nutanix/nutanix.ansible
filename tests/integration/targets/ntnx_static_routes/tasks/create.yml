@@ -42,23 +42,21 @@
     success_msg: "Succes: static routes updated successfully"
 
 - name: Wait 1 minute for static routes to be become active
-  pause:
+  ansible.builtin.pause:
     seconds: 60
 
-- name: get all static routes
+- name: Get all static routes
   ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
   register: result
 
-- set_fact:
+- name: Set destination variables
+  ansible.builtin.set_fact:
     d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
     d2: "{{ result.response.status.resources.static_routes_list[1].destination }}"
 
-- debug:
-    msg: "{{ result }}"
-
-- name: check info module response
-  assert:
+- name: Check info module response
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -115,19 +113,20 @@
     success_msg: "Static routes overriden successfully"
 
 - name: Wait 1 minute for static routes to be become active
-  pause:
+  ansible.builtin.pause:
     seconds: 60
 
-- name: get all static routes
+- name: Get all static routes
   ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
   register: result
 
-- set_fact:
+- name: Set destination variable
+  ansible.builtin.set_fact:
     d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
 
-- name: check info module response
-  assert:
+- name: Check info module response
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false

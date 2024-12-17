@@ -33,13 +33,13 @@ author:
 """
 EXAMPLES = r"""
 - name: list all categories
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
 
 - name: List all categories with keyname & expand associations
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

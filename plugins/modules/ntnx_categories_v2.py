@@ -59,7 +59,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create category key & value
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -68,7 +68,7 @@ EXAMPLES = r"""
     description: "ansible test"
 
 - name: Update category value and description
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -78,7 +78,7 @@ EXAMPLES = r"""
     description: "ansible test New value"
 
 - name: Delete created category key value pair
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

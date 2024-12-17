@@ -144,7 +144,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create floating ip using private IP in VPC
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -160,7 +160,7 @@ EXAMPLES = r"""
         vpc_reference: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
 
 - name: Delete floating IP
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -169,7 +169,7 @@ EXAMPLES = r"""
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
 
 - name: Create floating ip with external subnet and vm nic reference
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

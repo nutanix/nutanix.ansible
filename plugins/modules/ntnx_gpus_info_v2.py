@@ -37,7 +37,7 @@ author:
 
 EXAMPLES = r"""
 - name: Fetch GPU information by GPU external ID and VM external ID
-  ntnx_gpus_info_v2:
+  nutanix.ncp.ntnx_gpus_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -47,7 +47,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch all GPUs attached to a VM
-  ntnx_gpus_info_v2:
+  nutanix.ncp.ntnx_gpus_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -56,7 +56,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch all GPUs attached to a VM using filter
-  ntnx_gpus_info_v2:
+  nutanix.ncp.ntnx_gpus_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

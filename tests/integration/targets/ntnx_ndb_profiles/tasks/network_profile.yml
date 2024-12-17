@@ -116,7 +116,7 @@
 #   ignore_errors: true
 
 # - name: check listing status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
 #       - result.failed == false
@@ -133,7 +133,7 @@
 #     fail_msg: "Fail: unable to verify create of multiple cluster network profile "
 #     success_msg: "Pass:  verify create of multiple cluster network profile finished sucessfully"
 
-# - set_fact:
+# - ansible.builtin.set_fact:
 #     todelete: "{{ todelete + [  result.profile_uuid ] }}"
 ################################################################
 # - name: update the profile for multiple cluster by  subnets, publish
@@ -156,7 +156,7 @@
 #   ignore_errors: true
 
 # - name: check listing status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
 #       - result.failed == false

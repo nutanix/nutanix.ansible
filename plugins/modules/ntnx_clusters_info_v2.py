@@ -33,7 +33,7 @@ author:
 
 EXAMPLES = r"""
 - name: fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -41,14 +41,14 @@ EXAMPLES = r"""
   register: result
 
 - name: fetch all clusters info
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
   register: result
 
 - name: fetch all clusters info with filter
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

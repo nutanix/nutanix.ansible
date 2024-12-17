@@ -205,7 +205,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -230,7 +230,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Update route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -250,7 +250,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Delete route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

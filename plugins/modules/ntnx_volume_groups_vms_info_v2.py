@@ -30,7 +30,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch particular VM attached to VG using filters
-  ntnx_volume_groups_vms_info_v2:
+  nutanix.ncp.ntnx_volume_groups_vms_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -40,7 +40,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch all VMs attached to VG
-  ntnx_volume_groups_vms_info_v2:
+  nutanix.ncp.ntnx_volume_groups_vms_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

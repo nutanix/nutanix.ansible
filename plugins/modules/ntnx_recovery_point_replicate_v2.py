@@ -39,7 +39,7 @@ author:
 """
 EXAMPLES = r"""
 - name: Replicate a Recovery Point
-  ntnx_recovery_point_replicate_v2:
+  nutanix.ncp.ntnx_recovery_point_replicate_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

@@ -39,7 +39,7 @@
 #   register: result
 
 # - name: Creation Status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.blocks is defined
 #       - result.failed==false

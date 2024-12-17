@@ -31,18 +31,18 @@ author:
 """
 EXAMPLES = r"""
 - name: List all pbrs
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
   register: result
   ignore_errors: true
 
 - name: List pbrs using name filter criteria
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     filter: "name eq 'test_policy_name'"
   register: result
   ignore_errors: true
 
 - name: List pbrs using ext_id
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     ext_id: '47ca25c3-9d27-4b94-b6b1-dfa5b25660b4'
   register: result
   ignore_errors: true

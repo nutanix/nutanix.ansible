@@ -31,7 +31,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch info of all categories attached to VG
-  ntnx_volume_groups_vms_info_v2:
+  nutanix.ncp.ntnx_volume_groups_categories_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

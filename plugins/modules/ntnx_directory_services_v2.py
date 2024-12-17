@@ -145,7 +145,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create ACTIVE_DIRECTORY service
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -161,7 +161,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Update ACTIVE_DIRECTORY service
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -180,7 +180,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Delete ACTIVE_DIRECTORY service
-  ntnx_directory_services_v2:
+  nutanix.ncp.ntnx_directory_services_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

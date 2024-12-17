@@ -63,7 +63,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create LDAP user group
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -73,7 +73,7 @@ EXAMPLES = r"""
       idp_id: "6863c60b-ae9d-5c32-b8c1-2d45b9ba343a"
 
 - name: Create SAML user group
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
@@ -83,7 +83,7 @@ EXAMPLES = r"""
       name: group_name_test
 
 - name: Delete user group
-  ntnx_user_groups_v2:
+  nutanix.ncp.ntnx_user_groups_v2:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"

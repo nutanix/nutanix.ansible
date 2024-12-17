@@ -34,7 +34,7 @@ author:
 """
 EXAMPLES = r"""
 - name: Revert a VM to a Recovery Point
-  ntnx_vm_revert_v2:
+  nutanix.ncp.ntnx_vm_revert_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

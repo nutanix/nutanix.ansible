@@ -35,7 +35,7 @@ author:
 """
 EXAMPLES = r"""
 - name: Fetch specific VM recovery point info which is part of top level recovery point
-  ntnx_vm_recovery_point_info_v2:
+  nutanix.ncp.ntnx_vm_recovery_point_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

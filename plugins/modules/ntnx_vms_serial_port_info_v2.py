@@ -35,7 +35,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch information about all serial ports of a vm
-  ntnx_vms_serial_port_info_v2:
+  nutanix.ncp.ntnx_vms_serial_port_info_v2:
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"
@@ -43,7 +43,7 @@ EXAMPLES = r"""
         vm_ext_id: 00000-00000-000000-000000
 
 - name: Fetch information about a specific serial port
-  ntnx_vms_serial_port_info_v2:
+  nutanix.ncp.ntnx_vms_serial_port_info_v2:
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"

@@ -597,7 +597,7 @@
 #   ignore_errors: true
 
 # - name: Upgrade NGT in VM Status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
 #       - result.changed == true

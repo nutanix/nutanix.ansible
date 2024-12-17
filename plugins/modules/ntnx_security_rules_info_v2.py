@@ -31,14 +31,14 @@ author:
 """
 EXAMPLES = r"""
 - name: Get all policies
-  ntnx_security_rules_info_v2:
+  nutanix.ncp.ntnx_security_rules_info_v2:
     nutanix_host: "<pc_ip>"
     nutanix_username: "<pc_username>"
     nutanix_password: "<pc_password>"
   register: result
 
 - name: Get particular policy
-  ntnx_security_rules_info_v2:
+  nutanix.ncp.ntnx_security_rules_info_v2:
     nutanix_host: "<pc_ip>"
     nutanix_username: "<pc_username>"
     nutanix_password: "<pc_password>"
@@ -46,7 +46,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch certain policy using filters
-  ntnx_security_rules_info_v2:
+  nutanix.ncp.ntnx_security_rules_info_v2:
     nutanix_host: "<pc_ip>"
     nutanix_username: "<pc_username>"
     nutanix_password: "<pc_password>"
@@ -54,7 +54,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch only 5 policies using limit
-  ntnx_security_rules_info_v2:
+  nutanix.ncp.ntnx_security_rules_info_v2:
     nutanix_host: "<pc_ip>"
     nutanix_username: "<pc_username>"
     nutanix_password: "<pc_password>"

@@ -62,7 +62,7 @@ author:
 
 EXAMPLES = r"""
 - name: Fetch storage container stats during time interval
-  ntnx_storage_containers_stats_v2:
+  nutanix.ncp.ntnx_storage_containers_stats_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -72,7 +72,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch storage container stats with all attributes
-  ntnx_storage_containers_stats_v2:
+  nutanix.ncp.ntnx_storage_containers_stats_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

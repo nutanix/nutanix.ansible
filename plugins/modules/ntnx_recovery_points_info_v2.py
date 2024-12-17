@@ -30,7 +30,7 @@ author:
 """
 EXAMPLES = r"""
 - name: Fetch recovery point using external id
-  ntnx_recovery_points_info_v2:
+  nutanix.ncp.ntnx_recovery_points_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -38,14 +38,14 @@ EXAMPLES = r"""
   register: result
 
 - name: List all recovery points
-  ntnx_recovery_points_info_v2:
+  nutanix.ncp.ntnx_recovery_points_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
   register: result
 
 - name: Fetch details for a Recovery Point using Filters
-  ntnx_recovery_points_info_v2:
+  nutanix.ncp.ntnx_recovery_points_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

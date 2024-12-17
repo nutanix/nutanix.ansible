@@ -31,7 +31,7 @@ author:
 """
 EXAMPLES = r"""
 - name: test getting particular service_group using external id
-  ntnx_service_groups_info_v2:
+  nutanix.ncp.ntnx_service_groups_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -39,7 +39,7 @@ EXAMPLES = r"""
     ext_id: '{{ result.response.0.ext_id }}'
 
 - name: test getting all service groups
-  ntnx_service_groups_info_v2:
+  nutanix.ncp.ntnx_service_groups_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

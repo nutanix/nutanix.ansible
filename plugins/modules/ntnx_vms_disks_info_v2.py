@@ -35,7 +35,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch information about all disks of a vm
-  ntnx_vms_disks_info_v2:
+  nutanix.ncp.ntnx_vms_disks_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -43,7 +43,7 @@ EXAMPLES = r"""
     vm_ext_id: 530567f3-abda-4913-b5d0-0ab6758ec16e
 
 - name: Fetch information about a specific disk
-  ntnx_vms_disks_info_v2:
+  nutanix.ncp.ntnx_vms_disks_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

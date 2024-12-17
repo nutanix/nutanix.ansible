@@ -31,7 +31,7 @@ author:
 """
 EXAMPLES = r"""
 - name: List all users
-  ntnx_users_info_v2:
+  nutanix.ncp.ntnx_users_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -39,7 +39,7 @@ EXAMPLES = r"""
   register: users
 
 - name: List users using user ext_id criteria
-  ntnx_users_info_v2:
+  nutanix.ncp.ntnx_users_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -48,7 +48,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List users using filter
-  ntnx_users_info_v2:
+  nutanix.ncp.ntnx_users_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

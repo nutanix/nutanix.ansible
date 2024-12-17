@@ -134,7 +134,7 @@ author:
 
 EXAMPLES = r"""
 - name: create local user
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -149,7 +149,7 @@ EXAMPLES = r"""
   register: result
 
 - name: update local user
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -160,7 +160,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Create SAML user
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -170,7 +170,7 @@ EXAMPLES = r"""
     idp_id: "40fe7aeb-f420-5aee-ba42-cfc2369bc1ec"
 
 - name: Create LDAP user
-  ntnx_users_v2:
+  nutanix.ncp.ntnx_users_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
