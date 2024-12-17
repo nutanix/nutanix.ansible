@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Gevorg Khachatryan
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -424,9 +425,9 @@ def delete_authorization_policy(module, result):
 
     result["changed"] = True
     if resp is None:
-        result[
-            "msg"
-        ] = "Authorization policy with ext_id: {} deleted successfully".format(ext_id)
+        result["msg"] = (
+            "Authorization policy with ext_id: {} deleted successfully".format(ext_id)
+        )
     else:
         result["response"] = strip_internal_attributes(resp.to_dict())
 
