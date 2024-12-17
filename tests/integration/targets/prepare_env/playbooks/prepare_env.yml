@@ -222,4 +222,3 @@
         mode: "0644"
         url: "{{ unattendxml.url }}"
         dest: "{{ unattendxml.dest }}"
-
