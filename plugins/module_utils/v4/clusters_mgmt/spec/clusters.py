@@ -1,5 +1,9 @@
-# Copyright: 2021, Ansible Project
-# Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2024, Nutanix
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type

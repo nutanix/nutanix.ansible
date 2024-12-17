@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -110,7 +111,6 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
     - Pradeepsingh Bhati (@bhati-pradeep)
 """
@@ -389,9 +389,9 @@ def update_expiry_date_recovery_point(module, result):
     new_expiration_time = module.params.get("expiration_time")
 
     if new_expiration_time is None:
-        result[
-            "error"
-        ] = "Expiration time is required for updating recovery point and other fields can't be updated."
+        result["error"] = (
+            "Expiration time is required for updating recovery point and other fields can't be updated."
+        )
         module.fail_json(msg="Expiration time is required", **result)
 
     if int(old_expiration_time.timestamp()) == int(
@@ -413,9 +413,9 @@ def update_expiry_date_recovery_point(module, result):
     elif not check_recovery_point_idempotency_without_expiration(
         old_spec.to_dict(), update_spec.to_dict()
     ):
-        result[
-            "warning"
-        ] = "Only Expiration time Updation is allowed. Can't update other fields."
+        result["warning"] = (
+            "Only Expiration time Updation is allowed. Can't update other fields."
+        )
 
     expirationTimeSpec = data_protection_sdk.ExpirationTimeSpec()
     expirationTimeSpec.expiration_time = new_expiration_time
