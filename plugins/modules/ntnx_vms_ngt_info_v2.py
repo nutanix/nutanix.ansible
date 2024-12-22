@@ -35,7 +35,6 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd1"
   register: result
-
 """
 
 RETURN = r"""
