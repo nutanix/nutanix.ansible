@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -146,7 +147,6 @@ options:
     type: bool
     default: true
 author:
-  - Prem Karat (@premkarat)
   - Pradeepsingh Bhati (@bhati-pradeep)
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
@@ -342,9 +342,9 @@ def eject_iso(module, vms, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result[
-            "response"
-        ] = "ISO will be ejected from CD ROM with external ID: {0}".format(ext_id)
+        result["response"] = (
+            "ISO will be ejected from CD ROM with external ID: {0}".format(ext_id)
+        )
 
         return
 

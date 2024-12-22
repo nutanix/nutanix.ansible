@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -253,7 +254,6 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
@@ -470,9 +470,9 @@ def deploy_template(module, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         version_ext_id = module.params.get("version_id")
-        result[
-            "msg"
-        ] = f"Template ({ext_id}) with given version ({version_ext_id}) will be deployed."
+        result["msg"] = (
+            f"Template ({ext_id}) with given version ({version_ext_id}) will be deployed."
+        )
         return
 
     etag = get_etag(data=current_spec)

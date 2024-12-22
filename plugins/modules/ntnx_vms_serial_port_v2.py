@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -49,7 +50,6 @@ options:
             - Indicates whether the serial port is connected or not.
         type: bool
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaa-bish)
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
