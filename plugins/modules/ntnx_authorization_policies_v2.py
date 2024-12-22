@@ -426,9 +426,9 @@ def delete_authorization_policy(module, result):
 
     result["changed"] = True
     if resp is None:
-        result["msg"] = (
-            "Authorization policy with ext_id: {} deleted successfully".format(ext_id)
-        )
+        result[
+            "msg"
+        ] = "Authorization policy with ext_id: {} deleted successfully".format(ext_id)
     else:
         result["response"] = strip_internal_attributes(resp.to_dict())
 

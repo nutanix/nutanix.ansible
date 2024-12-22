@@ -471,9 +471,9 @@ def deploy_template(module, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         version_ext_id = module.params.get("version_id")
-        result["msg"] = (
-            f"Template ({ext_id}) with given version ({version_ext_id}) will be deployed."
-        )
+        result[
+            "msg"
+        ] = f"Template ({ext_id}) with given version ({version_ext_id}) will be deployed."
         return
 
     etag = get_etag(data=current_spec)
