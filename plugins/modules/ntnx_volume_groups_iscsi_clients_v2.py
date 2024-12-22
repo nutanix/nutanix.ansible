@@ -14,6 +14,7 @@ module: ntnx_volume_groups_iscsi_clients_v2
 short_description: Manage Nutanix volume groups iscsi clients in Nutanix PC.
 description:
     - This module allows you to attach & detach ISCSI clients to/from a volume group in a Nutanix cluster.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

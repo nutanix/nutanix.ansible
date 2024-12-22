@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_vpcs_v2
 short_description: vpcs module which supports vpc CRUD operations
 version_added: 2.0.0
-description: "Create, Update, Delete vpcs"
+description:
+  - Create, Update, Delete vpcs
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:

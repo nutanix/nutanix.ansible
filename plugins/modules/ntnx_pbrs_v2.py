@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_pbrs_v2
 short_description: Module for create, update and delete of Policy based routing.
 version_added: 2.0.0
-description: "Create, Update, Delete Routing Policies"
+description:
+  - Create, Update, Delete Routing Policies
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:

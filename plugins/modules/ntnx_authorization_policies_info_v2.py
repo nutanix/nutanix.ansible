@@ -18,6 +18,7 @@ description:
     - It will fetch specific authorization policy if external ID is provided
     - It will fetch multiple authorization policies if external ID is not provided
     - Use filters to fetch specific authorization policies
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

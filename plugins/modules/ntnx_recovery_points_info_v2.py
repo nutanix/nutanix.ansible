@@ -16,6 +16,7 @@ version_added: 2.0.0
 description:
     - Fetch specific recovery point info using external ID
     - Fetch list of multiple recovery points info if external ID is not provided with optional filters
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

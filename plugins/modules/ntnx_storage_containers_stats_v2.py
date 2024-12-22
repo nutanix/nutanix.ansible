@@ -15,6 +15,7 @@ short_description: Retrieve stats about Nutanix storage continer from PC
 version_added: 2.0.0
 description:
     - Get Stats for a Storage Container
+    - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:

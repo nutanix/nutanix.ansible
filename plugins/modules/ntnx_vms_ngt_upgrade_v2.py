@@ -14,6 +14,7 @@ short_description: Upgrade Nutanix Guest Tools on a VM
 version_added: "2.0.0"
 description:
     - This module upgrades Nutanix Guest Tools (NGT) on a VM in a Nutanix PC.
+    - This module uses PC v4 APIs based SDKs
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:

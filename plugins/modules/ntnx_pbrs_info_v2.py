@@ -17,6 +17,7 @@ description:
     - Fetch a single or list of all routing policies
     - if ext_id is provided, it will return the routing policy info
     - if ext_id is not provided, it will return the list of all routing policies
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

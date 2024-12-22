@@ -12,7 +12,9 @@ DOCUMENTATION = r"""
 module: ntnx_vms_v2
 short_description: "Create, Update and delete VMs in Nutanix AHV based PC"
 version_added: 2.0.0
-description: "Create, Update and delete VMs in Nutanix AHV based PC"
+description:
+    - Create, Update and delete VMs in Nutanix AHV based PC
+    - This module uses PC v4 APIs based SDKs
 notes:
     - During vm update, Update or create of subresources like disks, nics, cd_roms, gpus, serial_ports, etc. is not supported.
     - Use subresources specific modules to update or create subresources.

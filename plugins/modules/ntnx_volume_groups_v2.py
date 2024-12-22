@@ -14,6 +14,7 @@ module: ntnx_volume_groups_v2
 short_description: Manage Nutanix volume group in PC
 description:
     - This module allows you to create and delete volume group in Nutanix PC.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

@@ -16,6 +16,7 @@ version_added: 2.0.0
 description:
     - This module is used to get service groups info.
     - It can be used to get all service groups or a particular service group using ext_id.
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

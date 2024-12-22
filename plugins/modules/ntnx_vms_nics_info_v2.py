@@ -14,6 +14,7 @@ short_description: Fetch information about Nutanix VM's NICs
 description:
   - This module fetches information about Nutanix VM's NICs.
   - The module can fetch information about all NICs or a specific NICs.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     ext_id:

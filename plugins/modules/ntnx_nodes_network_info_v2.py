@@ -13,6 +13,7 @@ module: ntnx_nodes_network_info_v2
 short_description: Get netowrk information for uncofigured cluster nodes
 description:
   - This module allows you to Get netowrk information for uncofigured cluster nodes.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   cluster_ext_id:

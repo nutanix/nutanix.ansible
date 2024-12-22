@@ -14,6 +14,7 @@ short_description: Module to create and update users from Nutanix PC.
 version_added: "2.0.0"
 description:
     - This module allows you to create and update users.
+    - This module uses PC v4 APIs based SDKs
 options:
     state:
         description:

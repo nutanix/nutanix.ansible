@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_categories_info_v2
 short_description: Nutanix PC categories info module
 version_added: 2.0.0
-description: 'Get categories info'
+description:
+    - Get categories info
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

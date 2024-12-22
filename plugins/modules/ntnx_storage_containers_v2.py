@@ -14,6 +14,7 @@ module: ntnx_storage_containers_v2
 short_description: Manage storage containers in Nutanix Prism Central
 description:
     - This module allows you to create, update, and delete storage containers in Nutanix Prism Central.
+    - This module uses PC v4 APIs based SDKs
 version_added: 2.0.0
 options:
   state:

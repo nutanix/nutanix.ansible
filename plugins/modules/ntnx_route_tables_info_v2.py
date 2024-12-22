@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_route_tables_info_v2
 short_description: Route tables info module
 version_added: 2.0.0
-description: This module fetches route tables information
+description:
+    - This module fetches route tables information
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

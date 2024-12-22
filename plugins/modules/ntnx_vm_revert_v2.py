@@ -15,6 +15,7 @@ short_description: Revert VM from recovery point
 version_added: 2.0.0
 description:
     - Revert VM from recovery point using VM external ID
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

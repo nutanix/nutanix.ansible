@@ -13,6 +13,7 @@ module: ntnx_vms_categories_v2
 short_description: Associate or disassociate categories to a VM in AHV Nutanix.
 description:
   - This module allows you to associate or disassociate categories to a AHV VM in Nutanix.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   categories:

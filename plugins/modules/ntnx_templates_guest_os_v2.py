@@ -13,6 +13,7 @@ module: ntnx_templates_guest_os_v2
 short_description: Manage guest OS updates for Nutanix AHV templates.
 description:
     - This module allows you to initiate, complete, or cancel guest OS updates for Nutanix AHV templates.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     state:

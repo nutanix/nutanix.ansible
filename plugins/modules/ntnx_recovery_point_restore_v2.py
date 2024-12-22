@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_recovery_point_restore_v2
 short_description: Restore recovery points, Creates a clone of the VM/VG from the selected recovery point
 version_added: 2.0.0
-description: "Restore recovery points using external ID"
+description:
+    - Restore recovery points using external ID
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

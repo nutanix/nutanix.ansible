@@ -17,6 +17,7 @@ description:
   - This module retrieves information about Nutanix hosts from PC.
   - Fetch particular host info using external ID.
   - Fetch multiple hosts info with/without using filters, limit, etc.
+  - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:

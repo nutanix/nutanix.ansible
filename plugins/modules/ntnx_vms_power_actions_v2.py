@@ -14,6 +14,7 @@ module: ntnx_vms_power_actions_v2
 short_description: Perform power actions on Nutanix VMs
 description:
     - This module allows you to perform power actions on Nutanix VMs, such as powering on, powering off, resetting, and more.
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

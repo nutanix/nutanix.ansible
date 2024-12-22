@@ -14,7 +14,9 @@ DOCUMENTATION = r"""
 module: ntnx_routes_v2
 short_description: Module to create, update, and delete routes in route table in VPC
 version_added: 2.0.0
-description: "Create, Update, Delete routes in route table in VPC"
+description:
+  - Create, Update, Delete routes in route table in VPC
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:

@@ -16,6 +16,7 @@ version_added: 2.0.0
 description:
     - This module fetches information about Nutanix vpcs.
     - The module can fetch information about all vpcs or a specific vpc.
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

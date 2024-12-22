@@ -20,6 +20,7 @@ options:
       - State of the service group, whether to create, update or delete.
       - present -> Create service group if external ID is not provided, Update service group if external ID is provided.
       - absent -> Delete service group with the given external ID.
+      - This module uses PC v4 APIs based SDKs
     type: str
     required: false
     choices: ['present', 'absent']

@@ -17,6 +17,7 @@ description:
   - Create, Update, Delete floating_ips
   - For floating IP  create and delete, module will return tasks status in response after operation.
   - For floating IP update, module will return floating IP info if C(wait) is true, else task status.
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:

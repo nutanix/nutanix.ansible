@@ -15,6 +15,7 @@ module: ntnx_vms_stage_guest_customization_v2
 short_description: Stage guest customization configuration for a Nutanix VM
 description:
     - This module stages guest customization configuration for a Nutanix VM.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     ext_id:

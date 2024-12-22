@@ -11,9 +11,11 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_address_groups_v2
-short_description: "Create, Update, Delete address groups"
+short_description: Create, Update, Delete address groups
 version_added: 2.0.0
-description: "Create, Update, Delete address groups"
+description:
+    - Create, Update, Delete address groups
+    - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:

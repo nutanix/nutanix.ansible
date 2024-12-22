@@ -15,6 +15,7 @@ version_added: "2.0.0"
 description:
   - This module allows you to create, update, and delete network security policies in Nutanix Prism Central.
   - During update, the rules provided under C(rules) will replace existing rules.
+  - This module uses PC v4 APIs based SDKs
 options:
   wait:
     description:

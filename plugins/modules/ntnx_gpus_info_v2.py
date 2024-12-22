@@ -14,6 +14,7 @@ module: ntnx_gpus_info_v2
 short_description: Fetches GPU(s) information attached to VM in a Nutanix prism central.
 description:
   - This module fetches GPU(s) information attached to a virtual machine in a Nutanix Prism Central.
+  - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:

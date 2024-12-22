@@ -14,6 +14,7 @@ short_description: Fetch information about Nutanix VM's CD ROM
 description:
   - This module fetches information about Nutanix VM's CD ROM.
   - The module can fetch information about all CD ROMs or a specific CD ROM.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

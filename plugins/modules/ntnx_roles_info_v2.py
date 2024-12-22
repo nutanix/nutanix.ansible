@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_roles_info_v2
 short_description: Get roles info
 version_added: 2.0.0
-description: Get roles info using roles external ID or list all roles
+description:
+    - Get roles info using roles external ID or list all roles
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

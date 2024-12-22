@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_recovery_points_v2
 short_description: Create, Update, Delete  recovery points
 version_added: 2.0.0
-description: Create, Update Expiry Date, Delete recovery points
+description:
+    - Create, Update Expiry Date, Delete recovery points
+    - This module uses PC v4 APIs based SDKs
 options:
     state:
         description:

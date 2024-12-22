@@ -14,6 +14,7 @@ short_description: Update Nutanix Guest Tools (NGT) configuration for a VM.
 version_added: "2.0.0"
 description:
     - This module allows you to update the Nutanix Guest Tools (NGT) configuration for a VM.
+    - This module uses PC v4 APIs based SDKs
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:

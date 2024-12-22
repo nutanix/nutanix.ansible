@@ -16,6 +16,7 @@ version_added: 2.0.0
 description:
     - This module is used to get user_group information.
     - Fetch a specific user group using ext_id or multiple user groups
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

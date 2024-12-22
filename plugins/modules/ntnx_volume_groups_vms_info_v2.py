@@ -14,6 +14,7 @@ module: ntnx_volume_groups_vms_info_v2
 short_description: Fetch VG attached VMs info
 description:
     - Fetch all VMs info attached to VM
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

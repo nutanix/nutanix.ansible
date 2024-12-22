@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_subnets_v2
 short_description: subnets module which supports Create, Update, Delete subnets
 version_added: 2.0.0
-description: "Create, Update, Delete subnets"
+description:
+  - Create, Update, Delete subnets
+  - This module uses PC v4 APIs based SDKs
 notes:
   - For updating IPAM config using C(ip_config), provide all details again. Module will not fetch existing IPAM config.
   - For subnet create and delete, module will return tasks status in response after operation.

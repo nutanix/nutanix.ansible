@@ -16,6 +16,7 @@ description:
     - By default, Fetch all iscsi clients currently attached to any VG
     - Fetch iscsi client if C(ext_id) is given
     - Fetch all iscsi clients attached to a particular VG if C(volume_group_ext_id) is given
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

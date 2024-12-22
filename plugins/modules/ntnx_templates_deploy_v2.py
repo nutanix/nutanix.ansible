@@ -13,6 +13,7 @@ module: ntnx_templates_deploy_v2
 short_description: Deploy Nutanix templates
 description:
     - This module allows you to deploy Nutanix templates.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     ext_id:

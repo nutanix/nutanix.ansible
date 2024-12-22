@@ -14,6 +14,7 @@ module: ntnx_gpus_v2
 short_description: Module to attach/detach GPUs to/from VMs in Nutanix prism central.
 description:
   - This module allows you to attach or detach GPUs to or from virtual machines in Nutanix Prism Central.
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:

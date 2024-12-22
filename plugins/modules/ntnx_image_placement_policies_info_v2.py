@@ -16,6 +16,7 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 description:
   - This module fetches information about Nutanix PC image placement policies.
+  - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:

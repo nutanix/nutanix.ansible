@@ -14,6 +14,7 @@ short_description: Fetch information about Nutanix AHV based PC VMs
 description:
   - This module fetches information about Nutanix AHV based PC VMs
   - The module can fetch information about all VMs or a specific AHV based PC VMs
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

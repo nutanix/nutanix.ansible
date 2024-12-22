@@ -15,6 +15,7 @@ short_description: Module to create, update and delete directory services in Nut
 version_added: "2.0.0"
 description:
     - This module is used to create, update and delete directory services in Nutanix PC.
+    - This module uses PC v4 APIs based SDKs
 options:
     state:
         description:

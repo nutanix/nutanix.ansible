@@ -14,6 +14,7 @@ module: ntnx_clusters_v2
 short_description: Manage Nutanix clusters in Prism Central
 description:
   - This module allows you to create, update, and destroy Nutanix clusters using Prism Central.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   state:

@@ -15,6 +15,7 @@ short_description: Insert or Eject ISO from CD ROM of Nutanix VMs
 version_added: "2.0.0"
 description:
   - This module can insert or eject ISO from CD ROM of Nutanix VMs
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:

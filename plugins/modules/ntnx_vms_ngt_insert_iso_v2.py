@@ -13,6 +13,7 @@ module: ntnx_vms_ngt_insert_iso_v2
 short_description: Insert Nutanix Guest Tools (NGT) ISO into a virtual machine.
 description:
     - This module allows you to insert the Nutanix Guest Tools (NGT) ISO into a virtual machine's available CD-ROM in Nutanix PC.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

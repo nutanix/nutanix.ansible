@@ -14,6 +14,7 @@ module: ntnx_vms_ngt_v2
 short_description: Install or uninstall Nutanix Guest Tools (NGT) on a VM.
 description:
     - This module allows you to install or uninstall Nutanix Guest Tools (NGT) on a VM in a Nutanix cluster.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
