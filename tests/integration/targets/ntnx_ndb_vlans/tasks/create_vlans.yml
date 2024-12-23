@@ -338,10 +338,10 @@
 #        - "{{st_vlan.vlans_subnet1[1]}}"
 #   register: result
 #   ignore_errors: true
-# - debug:
+# - ansible.builtin.debug:
 #    var: result
 # - name: check listing status
-#   assert:
+#   ansible.builtin.assert:
 #    that:
 #      - result.response is defined
 #      - result.changed == true
@@ -354,7 +354,7 @@
 #    fail_msg: "fail: Unable to create ndb_stretched vlan"
 #    success_msg: "pass: create ndb_stretched vlan finished successfully"
 
-# - set_fact:
+# - ansible.builtin.set_fact:
 #     todelete: "{{ todelete + [  result.vlan_uuid ] }}"
 
 # ################################################################
@@ -369,10 +369,10 @@
 #        - "{{st_vlan.vlans_subnet2[1]}}"
 #   register: result
 #   ignore_errors: true
-# - debug:
+# - ansible.builtin.debug:
 #    var: result
 # - name: check listing status
-#   assert:
+#   ansible.builtin.assert:
 #    that:
 #      - result.response is defined
 #      - result.changed == true
@@ -394,10 +394,10 @@
 #      subnet_mask: "{{st_vlan.subnet_mask}}"
 #   register: result
 #   ignore_errors: true
-# - debug:
+# - ansible.builtin.debug:
 #     var: result
 # - name: check listing status
-#   assert:
+#   ansible.builtin.assert:
 #    that:
 #      - result.response is defined
 #      - result.changed == true

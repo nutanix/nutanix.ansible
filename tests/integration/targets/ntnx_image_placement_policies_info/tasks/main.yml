@@ -1,11 +1,11 @@
 ---
 - name: Initializing variables
   module_defaults:
-  group/nutanix.ncp.ntnx:
+    group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
       nutanix_username: "{{ username }}"
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
   block:
-      - name: Import info.yml
-        ansible.builtin.import_tasks: "info.yml"
+    - name: Import info.yml
+      ansible.builtin.import_tasks: "info.yml"

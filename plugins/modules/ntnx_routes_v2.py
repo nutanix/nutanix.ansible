@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,7 +14,9 @@ DOCUMENTATION = r"""
 module: ntnx_routes_v2
 short_description: Module to create, update, and delete routes in route table in VPC
 version_added: 2.0.0
-description: "Create, Update, Delete routes in route table in VPC"
+description:
+  - Create, Update, Delete routes in route table in VPC
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:
@@ -197,7 +200,6 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
 author:
-  - Prem Karat (@premkarat)
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
   - George Ghawali (@george-ghawali)
@@ -205,7 +207,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -230,7 +232,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Update route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -250,7 +252,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Delete route
-  ntnx_routes_v2:
+  nutanix.ncp.ntnx_routes_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

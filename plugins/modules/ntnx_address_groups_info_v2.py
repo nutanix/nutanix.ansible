@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -15,6 +16,7 @@ version_added: 2.0.0
 description:
     - Fetch specific address group info using external ID
     - Fetch list of multiple address groups info if external ID is not provided with optional filters
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:
@@ -24,14 +26,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
  - George Ghawali (@george-ghawali)
 """
 EXAMPLES = r"""
 - name: Fetch address groups using external id
-  ntnx_address_groups_info_v2:
+  nutanix.ncp.ntnx_address_groups_info_v2:
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -40,7 +41,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List all address groups
-  ntnx_address_groups_info_v2:
+  nutanix.ncp.ntnx_address_groups_info_v2:
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

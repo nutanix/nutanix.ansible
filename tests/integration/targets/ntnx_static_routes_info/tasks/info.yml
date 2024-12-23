@@ -20,16 +20,20 @@
             uuid: "{{ external_nat_subnet.uuid }}"
   register: result
 
-- name: Update static routes list Status
+- name: Create new static routes status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.changed == true
-    fail_msg: "Fail: Unable to update static routes of vpc"
-    success_msg: "Succes: static routes updated successfully"
+    fail_msg: "Fail: Unable to create static routes for vpc"
+    success_msg: "Success: Static routes created"
 
 ###########################################################################################################
+
+- name: Wait 60 seconds for static routes to be created
+  ansible.builtin.pause:
+    seconds: 60
 
 - name: Get all static routes
   ntnx_static_routes_info:

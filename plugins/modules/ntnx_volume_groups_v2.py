@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,9 +14,9 @@ module: ntnx_volume_groups_v2
 short_description: Manage Nutanix volume group in PC
 description:
     - This module allows you to create and delete volume group in Nutanix PC.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     state:
@@ -159,7 +160,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Create Volume group with all config and enabled chap auth
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -181,7 +182,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Create Volume group with min spec and no Auth
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -193,7 +194,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete Volume groups
-  ntnx_volume_groups_v2:
+  nutanix.ncp.ntnx_volume_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

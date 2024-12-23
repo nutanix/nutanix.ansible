@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -15,6 +16,7 @@ author:
  - Pradeepsingh Bhati (@bhati-pradeep)
 description:
   - This module fetches information about Nutanix PC image placement policies.
+  - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:
@@ -28,7 +30,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Get image placement policy by ID
-  ntnx_image_placement_policies_info_v2:
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -36,7 +38,7 @@ EXAMPLES = r"""
     ext_id: "policy-12345"
 
 - name: Get all image placement policies
-  ntnx_image_placement_policies_info_v2:
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

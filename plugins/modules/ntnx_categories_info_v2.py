@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_categories_info_v2
 short_description: Nutanix PC categories info module
 version_added: 2.0.0
-description: 'Get categories info'
+description:
+    - Get categories info
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:
@@ -27,19 +30,18 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
 - name: list all categories
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
 
 - name: List all categories with keyname & expand associations
-  ntnx_categories_info_v2:
+  nutanix.ncp.ntnx_categories_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

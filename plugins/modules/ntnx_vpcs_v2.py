@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_vpcs_v2
 short_description: vpcs module which supports vpc CRUD operations
 version_added: 2.0.0
-description: "Create, Update, Delete vpcs"
+description:
+  - Create, Update, Delete vpcs
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:
@@ -226,14 +229,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
 - name: Create min VPC with external_nat_subnet uuid
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -246,7 +248,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Create VPC with routable_ips
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -261,7 +263,7 @@ EXAMPLES = r"""
           prefix_length: "{{ routable_ips.network_prefix }}"
 
 - name: Create VPC with dns_servers
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -281,7 +283,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Delete all created vpcs
-  ntnx_vpcs_v2:
+  nutanix.ncp.ntnx_vpcs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

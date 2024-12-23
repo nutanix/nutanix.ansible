@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_subnets_info_v2
 short_description: subnet info module
 version_added: 2.0.0
-description: 'Fetch list of subnets or subnet info using subnet external ID'
+description:
+    - Fetch list of subnets or subnet info using subnet external ID
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:
@@ -26,14 +29,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
  - George Ghawali (@george-ghawali)
 """
 EXAMPLES = r"""
 - name: List all subnets
-  ntnx_subnets_info:
+  nutanix.ncp.ntnx_subnets_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -41,7 +43,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List subnet using uuid criteria
-  ntnx_subnets_info:
+  nutanix.ncp.ntnx_subnets_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -50,7 +52,7 @@ EXAMPLES = r"""
   register: result
 
 - name: List subnets using filter criteria and filter for subnet name
-  ntnx_subnets_info:
+  nutanix.ncp.ntnx_subnets_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -58,7 +60,7 @@ EXAMPLES = r"""
     filter: "name eq '{{ test_subnet_name }}'"
 
 - name: List subnet using filter criteria and filter for cluster uuid
-  ntnx_subnets_info:
+  nutanix.ncp.ntnx_subnets_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

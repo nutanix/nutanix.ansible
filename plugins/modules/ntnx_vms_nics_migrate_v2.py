@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,8 +13,8 @@ module: ntnx_vms_nics_migrate_v2
 short_description: Migrate a NIC to another subnet in Nutanix VM.
 description:
     - Migrates a network device attached to a Virtual Machine to another subnet.
+    - This module uses PC v4 APIs based SDKs
 author:
-    - Prem Karat (@premkarat)
     - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     wait:

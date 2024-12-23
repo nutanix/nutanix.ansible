@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,6 +13,7 @@ module: ntnx_vms_categories_v2
 short_description: Associate or disassociate categories to a VM in AHV Nutanix.
 description:
   - This module allows you to associate or disassociate categories to a AHV VM in Nutanix.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   categories:
@@ -46,7 +48,6 @@ options:
     type: bool
     default: true
 author:
-    - Prem Karat (@premkarat)
     - Pradeepsingh Bhati (@bhati-pradeep)
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -55,7 +56,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Associate categories with a VM
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -69,7 +70,7 @@ EXAMPLES = r"""
     wait: true
 
 - name: Disassociate categories from a VM
-  ntnx_vms_categories_v2:
+  nutanix.ncp.ntnx_vms_categories_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

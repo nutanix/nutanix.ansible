@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -15,6 +16,7 @@ version_added: 2.0.0
 description:
     - Registers a domain manager (Prism Central) instance to other entities like PE and PC
     - Unregisteration of a domain manager (Prism Central) instance is not supported
+    - This module uses PC v4 APIs based SDKs
 options:
   wait:
       description: Wait for the operation to complete.
@@ -218,13 +220,12 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
 - name: PE PC registration
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

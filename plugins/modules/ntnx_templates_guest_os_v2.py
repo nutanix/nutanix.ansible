@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,6 +13,7 @@ module: ntnx_templates_guest_os_v2
 short_description: Manage guest OS updates for Nutanix AHV templates.
 description:
     - This module allows you to initiate, complete, or cancel guest OS updates for Nutanix AHV templates.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     state:
@@ -51,14 +53,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
 - name: initiate_guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{version1_ext_id}}"
     state: start
@@ -68,7 +69,7 @@ EXAMPLES = r"""
     validate_certs: false
 
 - name: cancel guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{version1_ext_id}}"
     nutanix_host: "{{ ip }}"
@@ -78,7 +79,7 @@ EXAMPLES = r"""
     state: cancel
 
 - name: finish guest_os_update
-  ntnx_templates_guest_os_v2:
+  nutanix.ncp.ntnx_templates_guest_os_v2:
     template_ext_id: "{{ template1_ext_id }}"
     version_id: "{{version1_ext_id}}"
     state: finish

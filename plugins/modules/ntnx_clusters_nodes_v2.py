@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,6 +13,7 @@ module: ntnx_clusters_nodes_v2
 short_description: Add or Remove nodes from cluster using Nutanix PC
 description:
   - This module allows you to manage Nutanix cluster nodes.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   node_params:
@@ -464,14 +466,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
 - name: Expand cluster
-  ntnx_clusters_nodes_v2:
+  nutanix.ncp.ntnx_clusters_nodes_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -523,7 +524,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Remove node from cluster
-  ntnx_clusters_nodes_v2:
+  nutanix.ncp.ntnx_clusters_nodes_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

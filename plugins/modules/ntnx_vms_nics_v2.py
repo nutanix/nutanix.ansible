@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,9 +13,9 @@ module: ntnx_vms_nics_v2
 short_description: Manage NICs of Nutanix VMs
 description:
     - This module allows you to create, update, and delete NICs of Nutanix VMs.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     state:

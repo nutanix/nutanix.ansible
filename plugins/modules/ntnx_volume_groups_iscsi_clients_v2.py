@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,9 +14,9 @@ module: ntnx_volume_groups_iscsi_clients_v2
 short_description: Manage Nutanix volume groups iscsi clients in Nutanix PC.
 description:
     - This module allows you to attach & detach ISCSI clients to/from a volume group in a Nutanix cluster.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     state:
@@ -132,7 +133,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Attach iscsi client to VG using initiator name
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -143,7 +144,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Attach using ipv4 address
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -159,7 +160,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Detach client from VG
-  ntnx_volume_groups_iscsi_clients_v2:
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

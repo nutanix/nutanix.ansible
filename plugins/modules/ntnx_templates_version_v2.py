@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,6 +13,7 @@ module: ntnx_templates_version_v2
 short_description: Manage Nutanix template versions
 description:
     - This module allows you to publish or delete template versions in Nutanix.
+    - This module uses PC v4 APIs based SDKs
 version_added: '2.0.0'
 options:
     template_ext_id:
@@ -40,14 +42,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
 - name: Set the Active Version
-  ntnx_templates_version_v2:
+  nutanix.ncp.ntnx_templates_version_v2:
     template_ext_id: "f3ae7dfe-9f7f-4085-8619-5d93ad9c4e64"
     version_id: "5fbfc4d6-7736-49e4-97e7-eb55b061f16f"
     nutanix_host: "{{ ip }}"
@@ -56,7 +57,7 @@ EXAMPLES = r"""
     validate_certs: false
 
 - name: Delete Template Version
-  ntnx_templates_version_v2:
+  nutanix.ncp.ntnx_templates_version_v2:
     state: absent
     template_ext_id: "f3ae7dfe-9f7f-4085-8619-5d93ad9c4e64"
     version_id: "5fbfc4d6-7736-49e4-97e7-eb55b061f16f"

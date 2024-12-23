@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,6 +14,7 @@ short_description: Fetch information about Nutanix VM's NICs
 description:
   - This module fetches information about Nutanix VM's NICs.
   - The module can fetch information about all NICs or a specific NICs.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     ext_id:
@@ -29,13 +31,12 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
 - name: Fetch information about all nics of a vm
-  ntnx_vms_nics_info_v2:
+  nutanix.ncp.ntnx_vms_nics_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -43,7 +44,7 @@ EXAMPLES = r"""
     vm_ext_id: 530567f3-abda-4913-b5d0-0ab6758ec16e
 
 - name: Fetch information about a specific nic
-  ntnx_vms_nics_info_v2:
+  nutanix.ncp.ntnx_vms_nics_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

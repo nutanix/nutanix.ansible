@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,9 +13,9 @@ module: ntnx_vms_ngt_info_v2
 short_description: Get Nutanix Guest Tools (NGT) current config for a virtual machine.
 description:
     - This module retrieves Nutanix Guest Tools (NGT) current config for a virtual machine in a Nutanix cluster.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     ext_id:
@@ -28,17 +29,13 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Get NGT info for a virtual machine
-  ntnx_vm_ngt_info_v2:
+  nutanix.ncp.ntnx_vms_ngt_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd1"
   register: result
-
-- name: Print NGT info
-  debug:
-    var: result.response
 """
 
 RETURN = r"""

@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,6 +14,7 @@ module: ntnx_storage_containers_v2
 short_description: Manage storage containers in Nutanix Prism Central
 description:
     - This module allows you to create, update, and delete storage containers in Nutanix Prism Central.
+    - This module uses PC v4 APIs based SDKs
 version_added: 2.0.0
 options:
   state:
@@ -183,14 +185,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
 - name: Create storage container with minimal spec
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -198,7 +199,7 @@ EXAMPLES = r"""
     cluster_ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
 
 - name: Create storage container
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -219,7 +220,7 @@ EXAMPLES = r"""
     has_higher_ec_fault_domain_preference: true
 
 - name: Update storage container
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -230,7 +231,7 @@ EXAMPLES = r"""
     logical_explicit_reserved_capacity_bytes: 20
 
 - name: Delete storage container
-  ntnx_storage_containers_v2:
+  nutanix.ncp.ntnx_storage_containers_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

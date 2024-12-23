@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_recovery_points_v2
 short_description: Create, Update, Delete  recovery points
 version_added: 2.0.0
-description: Create, Update Expiry Date, Delete recovery points
+description:
+    - Create, Update Expiry Date, Delete recovery points
+    - This module uses PC v4 APIs based SDKs
 options:
     state:
         description:
@@ -110,14 +113,13 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
     - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
 - name: Create Recovery Point for 2 VMs and 2 Volume Groups
-  ntnx_recovery_points_v2:
+  nutanix.ncp.ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -134,7 +136,7 @@ EXAMPLES = r"""
       - volume_group_ext_id: "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7g"
 
 - name: Update a Recovery Point
-  ntnx_recovery_points_v2:
+  nutanix.ncp.ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -143,7 +145,7 @@ EXAMPLES = r"""
     expiration_time: "2024-11-30T14:15:22Z"
 
 - name: Delete a Recovery Point
-  ntnx_recovery_points_v2:
+  nutanix.ncp.ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

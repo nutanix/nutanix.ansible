@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,9 +13,9 @@ module: ntnx_vms_nics_ip_v2
 short_description: Assign/Release IP to/from Nutanix VM NICs.
 description:
     - This module allows you to assign or release IP from Nutanix VM NICs.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
-    - Prem Karat (@premkarat)
     - Pradeepsingh Bhati (@bhati-pradeep)
 notes:
     - Module will will skip releasing IP from NIC, if no IP is assigned to NIC.
@@ -62,7 +63,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Assign IP
-  nutanix.ncp.ntnx_vms_nic_assign_ip_v2:
+  nutanix.ncp.ntnx_vms_nics_ip_v2:
       nutanix_host: "<pc-ip>"
       nutanix_username: "<username>"
       nutanix_password: "<password>"
@@ -74,7 +75,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Release IP
-  nutanix.ncp.ntnx_vms_nic_assign_ip_v2:
+  nutanix.ncp.ntnx_vms_nics_ip_v2:
       nutanix_host: "<pc-ip>"
       nutanix_username: "<username>"
       nutanix_password: "<password>"

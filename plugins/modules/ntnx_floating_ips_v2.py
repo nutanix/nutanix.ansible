@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -16,6 +17,7 @@ description:
   - Create, Update, Delete floating_ips
   - For floating IP  create and delete, module will return tasks status in response after operation.
   - For floating IP update, module will return floating IP info if C(wait) is true, else task status.
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:
@@ -137,14 +139,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
 - name: Create floating ip using private IP in VPC
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -160,7 +161,7 @@ EXAMPLES = r"""
         vpc_reference: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
 
 - name: Delete floating IP
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -169,7 +170,7 @@ EXAMPLES = r"""
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
 
 - name: Create floating ip with external subnet and vm nic reference
-  ntnx_floating_ips_v2:
+  nutanix.ncp.ntnx_floating_ips_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

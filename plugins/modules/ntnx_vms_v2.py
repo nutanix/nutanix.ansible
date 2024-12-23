@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -11,7 +12,9 @@ DOCUMENTATION = r"""
 module: ntnx_vms_v2
 short_description: "Create, Update and delete VMs in Nutanix AHV based PC"
 version_added: 2.0.0
-description: "Create, Update and delete VMs in Nutanix AHV based PC"
+description:
+    - Create, Update and delete VMs in Nutanix AHV based PC
+    - This module uses PC v4 APIs based SDKs
 notes:
     - During vm update, Update or create of subresources like disks, nics, cd_roms, gpus, serial_ports, etc. is not supported.
     - Use subresources specific modules to update or create subresources.
@@ -921,14 +924,13 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
 - name: Create VM with minimum requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "test_name"
     description: "ansible test"
     cluster:
@@ -937,7 +939,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Create VM with full requirements
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "test_name"
     description: "ansible test"
     cluster:
@@ -965,7 +967,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 - name: Update VM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: present
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
     name: "new_name_updated"
@@ -987,7 +989,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 - name: Delete VM
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
   register: result

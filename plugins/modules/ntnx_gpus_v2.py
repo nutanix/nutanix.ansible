@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,6 +14,7 @@ module: ntnx_gpus_v2
 short_description: Module to attach/detach GPUs to/from VMs in Nutanix prism central.
 description:
   - This module allows you to attach or detach GPUs to or from virtual machines in Nutanix Prism Central.
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:
@@ -62,13 +63,12 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
 author:
-  - Prem Karat (@premkarat)
   - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
 - name: Attach GPU to VM
-  ntnx_gpus_v2:
+  nutanix.ncp.ntnx_gpus_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -81,7 +81,7 @@ EXAMPLES = r"""
     vendor: NVIDIA
 
 - name: Detach GPU from VM
-  ntnx_gpus_v2:
+  nutanix.ncp.ntnx_gpus_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

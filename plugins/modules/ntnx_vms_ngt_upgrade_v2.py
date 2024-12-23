@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,8 +14,8 @@ short_description: Upgrade Nutanix Guest Tools on a VM
 version_added: "2.0.0"
 description:
     - This module upgrades Nutanix Guest Tools (NGT) on a VM in a Nutanix PC.
+    - This module uses PC v4 APIs based SDKs
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     ext_id:
@@ -54,7 +55,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Upgrade NGT on a VM
-  ntnx_vm_ngt_upgrade:
+  nutanix.ncp.ntnx_vms_ngt_upgrade_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

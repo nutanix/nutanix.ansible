@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -14,6 +15,7 @@ module: ntnx_vms_stage_guest_customization_v2
 short_description: Stage guest customization configuration for a Nutanix VM
 description:
     - This module stages guest customization configuration for a Nutanix VM.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     ext_id:
@@ -121,7 +123,6 @@ options:
                                                     - The value of the key-value pair.
                                                 type: raw
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaa-bish)
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -129,7 +130,7 @@ extends_documentation_fragment:
 """
 EXAMPLES = r"""
 - name: Update guest script
-  ntnx_vms_stage_guest_customization_v2:
+  nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
     ext_id: "7334f142-9653-4c84-7287-3c758d1a0aeb"
     config:
       cloudinit:

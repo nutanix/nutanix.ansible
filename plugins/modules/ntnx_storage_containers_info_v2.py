@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -16,6 +17,7 @@ description:
     - This module retrieves information about Nutanix storage continer from PC.
     - Fetch particular storage continer info using external ID
     - Fetch multiple storage continers info with/without using filters, limit, etc.
+    - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:
@@ -27,14 +29,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
 - name: fetch storage continer info using external ID
-  ntnx_storage_containerss_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -42,14 +43,14 @@ EXAMPLES = r"""
   register: result
 
 - name: fetch all storage continer info
-  ntnx_storage_containerss_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
   register: result
 
 - name: fetch all storage continer info with filter
-  ntnx_storage_containerss_info_v2:
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
