@@ -14,6 +14,7 @@ module: ntnx_images_v2
 short_description: Manage Nutanix Prism Central images.
 description:
     - This module allows you to create, update, and delete images in Nutanix.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

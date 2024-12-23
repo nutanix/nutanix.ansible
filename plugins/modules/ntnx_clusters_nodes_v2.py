@@ -13,6 +13,7 @@ module: ntnx_clusters_nodes_v2
 short_description: Add or Remove nodes from cluster using Nutanix PC
 description:
   - This module allows you to manage Nutanix cluster nodes.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   node_params:

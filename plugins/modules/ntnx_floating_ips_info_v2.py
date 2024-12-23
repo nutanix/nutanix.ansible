@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_floating_ips_info_v2
 short_description: floating_ip info module
 version_added: 2.0.0
-description: 'Get floating_ips info'
+description:
+    - Get floating_ips info
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

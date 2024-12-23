@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_routes_info_v2
 short_description: Routes info module
 version_added: 2.0.0
-description: This module fetches routes information
+description:
+    - This module fetches routes information
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

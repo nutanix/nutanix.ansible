@@ -13,6 +13,7 @@ module: ntnx_templates_version_v2
 short_description: Manage Nutanix template versions
 description:
     - This module allows you to publish or delete template versions in Nutanix.
+    - This module uses PC v4 APIs based SDKs
 version_added: '2.0.0'
 options:
     template_ext_id:

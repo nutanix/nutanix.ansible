@@ -15,6 +15,7 @@ version_added: 2.0.0
 description:
     - This module fetches information about Nutanix template versions.
     - It can retrieve information about a specific template version or all template versions.
+    - This module uses PC v4 APIs based SDKs
 options:
     template_ext_id:
         description:

@@ -17,6 +17,7 @@ description:
     - This module retrieves information about Nutanix clusters from PC.
     - Fetch particular cluster info using external ID
     - Fetch multiple clusters info with/without using filters, limit, etc.
+    - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:

@@ -15,6 +15,7 @@ short_description: Manage disks for Nutanix AHV VMs
 version_added: "2.0.0"
 description:
     - This module allows you to manage disks for Nutanix AHV VMs.
+    - This module uses PC v4 APIs based SDKs
 options:
     state:
         description:

@@ -15,6 +15,7 @@ short_description: Get VM recovery point info
 version_added: 2.0.0
 description:
     - Fetch specific VM recovery point info which is part of top level recovery point
+    - This module uses PC v4 APIs based SDKs
 options:
     recovery_point_ext_id:
         description:

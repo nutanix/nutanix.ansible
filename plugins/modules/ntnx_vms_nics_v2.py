@@ -13,6 +13,7 @@ module: ntnx_vms_nics_v2
 short_description: Manage NICs of Nutanix VMs
 description:
     - This module allows you to create, update, and delete NICs of Nutanix VMs.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

@@ -13,6 +13,7 @@ module: ntnx_templates_v2
 short_description: Manage Nutanix AHV template resources
 description:
     - This module allows you to create, update, and delete Nutanix AHV templates.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     state:

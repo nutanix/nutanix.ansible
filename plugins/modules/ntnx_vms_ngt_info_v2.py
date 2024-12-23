@@ -13,6 +13,7 @@ module: ntnx_vms_ngt_info_v2
 short_description: Get Nutanix Guest Tools (NGT) current config for a virtual machine.
 description:
     - This module retrieves Nutanix Guest Tools (NGT) current config for a virtual machine in a Nutanix cluster.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

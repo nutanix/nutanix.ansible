@@ -14,6 +14,7 @@ short_description: Manage image placement policies in Nutanix Prism Central
 description:
     - This module allows you to create, update, and delete image placement policies in Nutanix Prism Central.
     - This module allows you to suspend and resume image placement policies in Nutanix Prism Central.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

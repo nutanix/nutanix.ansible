@@ -17,6 +17,7 @@ description:
     - This module retrieves information about Nutanix storage continer from PC.
     - Fetch particular storage continer info using external ID
     - Fetch multiple storage continers info with/without using filters, limit, etc.
+    - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:

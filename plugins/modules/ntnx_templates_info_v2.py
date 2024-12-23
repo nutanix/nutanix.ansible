@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_templates_info_v2
 short_description: template info module
 version_added: 2.0.0
-description: 'Get templates info'
+description:
+    - Get templates info
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

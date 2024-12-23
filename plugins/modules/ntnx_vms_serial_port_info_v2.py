@@ -14,6 +14,7 @@ short_description: Fetch information about Nutanix VM's serial ports
 description:
   - This module fetches information about Nutanix VM's serial ports.
   - The module can fetch information about all serial ports or a specific serial ports.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

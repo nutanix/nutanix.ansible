@@ -15,6 +15,7 @@ module: ntnx_volume_groups_categories_info_v2
 short_description: Fetch list of attached categories to VG
 description:
     - Fetch list of attached categories to VG
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

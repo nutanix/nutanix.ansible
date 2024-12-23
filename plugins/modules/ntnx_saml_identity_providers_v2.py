@@ -12,7 +12,9 @@ DOCUMENTATION = r"""
 module: ntnx_saml_identity_providers_v2
 short_description: Manage SAML identity providers in Nutanix PC
 version_added: "2.0.0"
-description: "Create, Update, Delete SAML identity providers in Nutanix PC"
+description:
+  - Create, Update, Delete SAML identity providers in Nutanix PC
+  - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:

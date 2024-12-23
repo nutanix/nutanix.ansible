@@ -13,6 +13,7 @@ module: ntnx_templates_deploy_v2
 short_description: Deploy Nutanix templates
 description:
     - This module allows you to deploy Nutanix templates.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     ext_id:
@@ -470,9 +471,9 @@ def deploy_template(module, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         version_ext_id = module.params.get("version_id")
-        result["msg"] = (
-            f"Template ({ext_id}) with given version ({version_ext_id}) will be deployed."
-        )
+        result[
+            "msg"
+        ] = f"Template ({ext_id}) with given version ({version_ext_id}) will be deployed."
         return
 
     etag = get_etag(data=current_spec)

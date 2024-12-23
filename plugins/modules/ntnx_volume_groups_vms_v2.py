@@ -14,6 +14,7 @@ module: ntnx_volume_groups_vms_v2
 short_description: Attach/Detach volume group to AHV VMs in Nutanix PC
 description:
     - Attach/Detach volume group to AHV VMs in Nutanix PC
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

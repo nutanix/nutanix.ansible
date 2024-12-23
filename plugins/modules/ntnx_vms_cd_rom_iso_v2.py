@@ -15,6 +15,7 @@ short_description: Insert or Eject ISO from CD ROM of Nutanix VMs
 version_added: "2.0.0"
 description:
   - This module can insert or eject ISO from CD ROM of Nutanix VMs
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:
@@ -342,9 +343,9 @@ def eject_iso(module, vms, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["response"] = (
-            "ISO will be ejected from CD ROM with external ID: {0}".format(ext_id)
-        )
+        result[
+            "response"
+        ] = "ISO will be ejected from CD ROM with external ID: {0}".format(ext_id)
 
         return
 

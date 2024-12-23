@@ -13,6 +13,7 @@ module: ntnx_vms_nics_migrate_v2
 short_description: Migrate a NIC to another subnet in Nutanix VM.
 description:
     - Migrates a network device attached to a Virtual Machine to another subnet.
+    - This module uses PC v4 APIs based SDKs
 author:
     - Pradeepsingh Bhati (@bhati-pradeep)
 options:

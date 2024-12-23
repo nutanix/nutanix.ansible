@@ -15,6 +15,7 @@ short_description: Replicate recovery points
 version_added: 2.0.0
 description:
     - Replicate recovery points using external ID
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

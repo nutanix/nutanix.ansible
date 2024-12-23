@@ -13,6 +13,7 @@ module: ntnx_vms_serial_port_v2
 version_added: "2.0.0"
 description:
     - This module allows you to manage serial port for Nutanix AHV VMs.
+    - This module uses PC v4 APIs based SDKs
 short_description: VM Serial Port module which supports VM serial port CRUD states
 options:
     state:

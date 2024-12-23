@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_recovery_points_v2
 short_description: Create, Update, Delete  recovery points
 version_added: 2.0.0
-description: Create, Update Expiry Date, Delete recovery points
+description:
+    - Create, Update Expiry Date, Delete recovery points
+    - This module uses PC v4 APIs based SDKs
 options:
     state:
         description:
@@ -389,9 +391,9 @@ def update_expiry_date_recovery_point(module, result):
     new_expiration_time = module.params.get("expiration_time")
 
     if new_expiration_time is None:
-        result["error"] = (
-            "Expiration time is required for updating recovery point and other fields can't be updated."
-        )
+        result[
+            "error"
+        ] = "Expiration time is required for updating recovery point and other fields can't be updated."
         module.fail_json(msg="Expiration time is required", **result)
 
     if int(old_expiration_time.timestamp()) == int(
@@ -413,9 +415,9 @@ def update_expiry_date_recovery_point(module, result):
     elif not check_recovery_point_idempotency_without_expiration(
         old_spec.to_dict(), update_spec.to_dict()
     ):
-        result["warning"] = (
-            "Only Expiration time Updation is allowed. Can't update other fields."
-        )
+        result[
+            "warning"
+        ] = "Only Expiration time Updation is allowed. Can't update other fields."
 
     expirationTimeSpec = data_protection_sdk.ExpirationTimeSpec()
     expirationTimeSpec.expiration_time = new_expiration_time

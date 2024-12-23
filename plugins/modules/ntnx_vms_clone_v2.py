@@ -14,6 +14,7 @@ short_description: Clone a virtual machine in Nutanix AHV.
 version_added: "2.0.0"
 description:
     - This module allows you to clone a virtual machine in Nutanix AHV.
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

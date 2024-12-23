@@ -14,6 +14,7 @@ short_description: Fetch information about Nutanix PC Volume groups.
 description:
   - This module fetches information about Nutanix PC Volume groups.
   - The module can fetch information about all Volume groups or a specific Volume group.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)

@@ -13,6 +13,7 @@ module: ntnx_vms_nics_ip_v2
 short_description: Assign/Release IP to/from Nutanix VM NICs.
 description:
     - This module allows you to assign or release IP from Nutanix VM NICs.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
     - Pradeepsingh Bhati (@bhati-pradeep)

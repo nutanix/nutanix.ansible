@@ -12,7 +12,9 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_user_groups_v2
 short_description: Create and Delete user groups
-description: "Create and Delete user groups in Nutanix PC"
+description:
+    - Create and Delete user groups in Nutanix PC
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     state:

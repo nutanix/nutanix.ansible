@@ -16,6 +16,7 @@ version_added: 2.0.0
 description:
     - This module is used to get operations info
     - It can be used to get all operations info or specific permission info using external id
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

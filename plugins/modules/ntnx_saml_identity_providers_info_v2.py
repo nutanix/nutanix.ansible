@@ -17,6 +17,7 @@ description:
     - Fetch a single or list of multiple identity providers
     - if external id is provided, it will return the identity provider info
     - if external id is not provided, it will return multiple identity providers
+    - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:

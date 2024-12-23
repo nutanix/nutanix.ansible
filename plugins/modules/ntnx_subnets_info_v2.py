@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_subnets_info_v2
 short_description: subnet info module
 version_added: 2.0.0
-description: 'Fetch list of subnets or subnet info using subnet external ID'
+description:
+    - Fetch list of subnets or subnet info using subnet external ID
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

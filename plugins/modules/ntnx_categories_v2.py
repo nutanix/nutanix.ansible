@@ -15,6 +15,7 @@ short_description: Manage categories in Nutanix Prism Central
 version_added: "2.0.0"
 description:
     - This module allows you to create, update, and delete categories in Nutanix Prism Central.
+    - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:

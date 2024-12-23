@@ -13,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_users_info_v2
 short_description: Get users info
 version_added: 2.0.0
-description: Get users info using user external ID or list multiple users
+description:
+    - Get users info using user external ID or list multiple users
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

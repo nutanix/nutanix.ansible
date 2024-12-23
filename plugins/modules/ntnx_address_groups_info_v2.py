@@ -16,6 +16,7 @@ version_added: 2.0.0
 description:
     - Fetch specific address group info using external ID
     - Fetch list of multiple address groups info if external ID is not provided with optional filters
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:

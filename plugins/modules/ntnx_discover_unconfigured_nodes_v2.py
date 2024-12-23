@@ -13,6 +13,7 @@ module: ntnx_discover_unconfigured_nodes_v2
 short_description: Discover unconfigured nodes from Nutanix Prism Central
 description:
   - Discover unconfigured nodes from Nutanix Prism Central.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   address_type:

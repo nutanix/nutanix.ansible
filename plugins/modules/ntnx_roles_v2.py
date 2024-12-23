@@ -13,6 +13,7 @@ module: ntnx_roles_v2
 short_description: Create, update, and delete roles.
 description:
     - This module allows you to create, update, and delete roles.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     state:

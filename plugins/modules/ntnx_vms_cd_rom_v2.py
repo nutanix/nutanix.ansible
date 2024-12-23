@@ -15,6 +15,7 @@ short_description: Manage CDROM for Nutanix AHV VMs
 version_added: "2.0.0"
 description:
     - This module allows you to create and remove CDROM for Nutanix AHV VMs.
+    - This module uses PC v4 APIs based SDKs
 options:
     state:
         description:
