@@ -39,7 +39,7 @@ The `ntnx_recovery_points_v2` module is used to manage recovery points. It suppo
 ```
 `Update Expiration Time of Recovery Points`
 ```
-- name: Update recovery point expiration time with check mode enabled
+- name: Update recovery point expiration time
   ntnx_recovery_points_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -47,7 +47,6 @@ The `ntnx_recovery_points_v2` module is used to manage recovery points. It suppo
     validate_certs: "{{ validate_certs }}"
     ext_id: 6j24g6z1-4f3w-0f3q-5j2j-4n1y9d2e7j3r
     expiration_time: "2024-09-30T14:15:22+00:00"
-  check_mode: true
   register: result
   ignore_errors: true
 ```

@@ -1,0 +1,116 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a recovery point for multiple VMs or VGs
+# 2. List all recovery points
+# 3. Fetch a particular recovery point
+# 4. Update Expiration time for a recovery point
+# 5. Restore a recovery point
+# 6. Revrt a VM
+# 7. Replicate Recovery points
+# 8. Get VM Recovery Point info
+# 9. Delete a recovery point
+
+- name: Recovery Points playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        recovery_point_name: "Recovery Point 1"
+        cluster_uuid: "00062899-4a29-0cf9-0000-000000022f54"
+        vm_uuid1: "3f50a1b2-4c3d-4e6a-9b8e-1a2b3c4d5e6f"
+        vm_uuid2: "7e8f9a0b-1c2d-3e4f-5a6b-7c8d9e0f1a2b"
+        vg_uuid1: "9b8a7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d"
+        vg_uuid2: "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7g"
+        pc_uuid_of_target_pc: "97da301d-0a8b-4334-94cd-16a83563218e"
+        cluster_uuid_of_target_pc: "00062899-58d4-9d37-185b-ac1f6b6f97e2"
+
+    - name: Create recovery point with multiple VMs and VGs
+      nutaninx.ncp.ntnx_recovery_points_v2:
+        name: "{{ recovery_point_name }}"
+        expiration_time: "2024-08-30T14:15:22+00:00"
+        recovery_point_type: "CRASH_CONSISTENT"
+        vm_recovery_points:
+          - vm_ext_id: "{{ vm_uuid1 }}"
+          - vm_ext_id: "{{ vm_uuid2 }}"
+        volume_group_recovery_points:
+          - volume_group_ext_id: "{{ vg_uuid1 }}"
+          - volume_group_ext_id: "{{ vg_uuid2 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set recovery point ext_id
+      ansible.builtin.set_fact:
+        recovery_point_ext_id: "{{ result.response.ext_id }}"
+        vm_recovery_point_ext_id_1: "{{ result.response.vm_recovery_points[0].ext_id }}"
+        vm_recovery_point_ext_id_2: "{{ result.response.vm_recovery_points[1].ext_id }}"
+        vg_recovery_point_ext_id_1: "{{ result.response.volume_group_recovery_points[0].ext_id }}"
+        vg_recovery_point_ext_id_2: "{{ result.response.volume_group_recovery_points[1].ext_id }}"
+
+    - name: List all recovery points
+      nutaninx.ncp.ntnx_recovery_points_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get recovery point details
+      nutaninx.ncp.ntnx_recovery_points_info_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update recovery point expiration time
+      nutaninx.ncp.ntnx_recovery_points_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        expiration_time: "2024-09-30T14:15:22+00:00"
+      register: result
+      ignore_errors: true
+
+    - name: Restore recovery point for multiple VMs and VGs
+      nutaninx.ncp.ntnx_recovery_point_restore_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        cluster_ext_id: "{{ cluster_uuid }}"
+        vm_recovery_point_restore_overrides:
+          - vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id_1 }}"
+          - vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id_2 }}"
+        volume_group_recovery_point_restore_overrides:
+          - volume_group_recovery_point_ext_id: "{{ vg_recovery_point_ext_id_1 }}"
+          - volume_group_recovery_point_ext_id: "{{ vg_recovery_point_ext_id_2 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Revert a VM recovery point
+      nutaninx.ncp.ntnx_vm_revert_v2:
+        ext_id: "{{ vm_uuid1 }}"
+        vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id_1 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Replicate Recovery point
+      nutaninx.ncp.ntnx_recovery_point_replicate_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        pc_ext_id: "{{ pc_uuid_of_target_pc }}"
+        cluster_ext_id: "{{ cluster_uuid_of_target_pc }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get a VM recovery point details
+      nutaninx.ncp.ntnx_vm_recovery_point_info_v2:
+        recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+        vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id_1 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete recovery point
+      nutaninx.ncp.ntnx_recovery_points_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        state: absent
+      register: result
+      ignore_errors: true
