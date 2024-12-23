@@ -188,57 +188,6 @@
     fail_msg: "Unable to verify VG attachment from VM side"
     success_msg: "VG attachment verified from VM side"
 
-############################################ Info tests ############################################
-# - name: Fetch all VMs attached to VG
-#   ntnx_volume_groups_vms_info_v2:
-#     ext_id: "{{ vg1_uuid }}"
-#   register: result
-
-# - name: Verify all VMs attached to VG
-#   ansible.builtin.assert:
-#     that:
-#       - result.error == None
-#       - result.changed == false
-#       - result.response | length == 2
-#       - result.response[0].ext_id in [ "{{ vm1_uuid }}", "{{ vm2_uuid }}" ]
-#       - result.response[1].ext_id in [ "{{ vm1_uuid }}", "{{ vm2_uuid }}" ]
-
-#     fail_msg: "Unable to verify all VMs attached to VG"
-#     success_msg: "All VMs attached to VG verified successfully"
-
-# - name: Fetch all VMs attached to VG with limit
-#   ntnx_volume_groups_vms_info_v2:
-#     limit: 1
-#     ext_id: "{{ vg1_uuid }}"
-#   register: result
-
-# - name: Verify all VMs attached to VG with limit
-#   ansible.builtin.assert:
-#     that:
-#       - result.error == None
-#       - result.changed == false
-#       - result.response | length == 1
-
-#     fail_msg: "Unable to verify all VMs attached to VG with limit query"
-#     success_msg: "All VMs attached to VG with limit verified successfully query"
-
-# - name: Fetch all VMs attached to VG with filter
-#   ntnx_volume_groups_vms_info_v2:
-#     filter: extId eq '{{ vm1_uuid }}'
-#     ext_id: "{{ vg1_uuid }}"
-#   register: result
-
-# - name: Verify fetching VM attached using filter
-#   ansible.builtin.assert:
-#     that:
-#       - result.error == None
-#       - result.changed == false
-#       - result.response | length == 1
-#       - result.response[0].ext_id == "{{ vm1_uuid }}"
-
-#     fail_msg: "Unable to verify fetching VM attached using filter"
-#     success_msg: "Fetching VM attached using filter verified successfully"
-
 ############################################ Detach VM tests ############################################
 
 - name: Detach VM1 from VG
@@ -259,24 +208,6 @@
     fail_msg: "Unable to detach VM from VG"
     success_msg: "VM detached from VG successfully"
 
-# Need to verify here that VM is detached from VG
-
-# - name: Fetch all VMs attached to VG
-#   ntnx_volume_groups_vms_info_v2:
-#     ext_id: "{{ vg1_uuid }}"
-#   register: result
-
-# - name: Verify VM1 is detached from VG
-#   ansible.builtin.assert:
-#     that:
-#       - result.error == None
-#       - result.changed == false
-#       - result.response | length == 1
-#       - result.response[0].ext_id == "{{ vm2_uuid }}"
-
-#     fail_msg: "Unable to verify VM1 is detached from VG"
-#     success_msg: "VM1 is detached from VG verified successfully"
-
 - name: Detach VM2 from VG
   ntnx_volume_groups_vms_v2:
     state: absent
@@ -294,23 +225,6 @@
       - result.response.status == "SUCCEEDED"
     fail_msg: "Unable to detach VM2 from VG"
     success_msg: "VM2 detached from VG successfully"
-
-# Need to verify here that VM is detached from VG
-
-# - name: Fetch all VMs attached to VG
-#   ntnx_volume_groups_vms_info_v2:
-#     ext_id: "{{ vg1_uuid }}"
-#   register: result
-
-# - name: Verify VM2 is detached from VG
-#   ansible.builtin.assert:
-#     that:
-#       - result.error == None
-#       - result.changed == false
-#       - result.response | length == 0
-
-#     fail_msg: "Unable to verify VM2 is detached from VG"
-#     success_msg: "VM2 is detached from VG verified successfully"
 
 ############################################ Cleanup tests ############################################
 

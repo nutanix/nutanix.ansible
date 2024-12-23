@@ -14,7 +14,6 @@ short_description: Fetch ISCSI clients info.
 description:
     - By default, Fetch all iscsi clients currently attached to any VG
     - Fetch iscsi client if C(ext_id) is given
-    - Fetch all iscsi clients attached to a particular VG if C(volume_group_ext_id) is given
 version_added: "2.0.0"
 author:
  - Prem Karat (@premkarat)
@@ -26,27 +25,12 @@ options:
             - This will fetch the iscsi client with the given external ID.
         type: str
         required: false
-    volume_group_ext_id:
-        description:
-            - The external ID of the volume group.
-            - This will fetch all iscsi clients attached to the given volume group.
-        type: str
-        required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
 """
 
 EXAMPLES = r"""
-- name: Fetch iscsi clients attached to VG
-  ntnx_volume_groups_iscsi_clients_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    state: "present"
-    volume_group_ext_id: 0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35
-  register: result
-
 - name: Fetch specific iscsi client info
   ntnx_volume_groups_iscsi_clients_info_v2:
     nutanix_host: "{{ ip }}"
@@ -71,7 +55,6 @@ response:
     description:
         - list of iscsi clients currently attached to any VG
         - specific iscsi client if ext_id given
-        - List of all iscsi clients attached to a particular VG using volume_group_ext_id
     type: dict
     returned: always
     sample:   [
@@ -90,11 +73,6 @@ response:
         ]
 ext_id:
     description: Iscsi client external ID.
-    type: str
-    returned: always
-    sample: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
-volume_group_ext_id:
-    description: Volume group external ID.
     type: str
     returned: always
     sample: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b3b"
@@ -125,7 +103,6 @@ from ..module_utils.v4.volumes.api_client import (  # noqa: E402
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str", required=False),
-        volume_group_ext_id=dict(type="str", required=False),
     )
     return module_args
 
@@ -177,9 +154,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[
-            ("ext_id", "volume_group_ext_id"),
             ("ext_id", "filter"),
-            ("volume_group_ext_id", "filter"),
         ],
     )
     remove_param_with_none_value(module.params)

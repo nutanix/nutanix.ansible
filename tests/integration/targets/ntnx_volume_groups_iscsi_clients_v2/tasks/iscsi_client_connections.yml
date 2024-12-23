@@ -156,25 +156,6 @@
     fail_msg: "Unable to attach iscsi client using initiator name"
     success_msg: "ISCSI client attached successfully using initiator name"
 
-# Need to verify attachment
-
-# - name: List all clients attached to VG to verify attachment
-#   ntnx_volume_groups_iscsi_clients_info_v2:
-#     volume_group_ext_id: "{{ vg1_uuid }}"
-#   register: result
-
-# - name: Verify if attachment was correct
-#   ansible.builtin.assert:
-#     that:
-#       - result.error == None
-#       - result.response is defined
-#       - result.changed == false
-#       - result.response | length == 1
-#       - result.response[0].ext_id == iscsi_client_uuid
-#       - result.volume_group_ext_id == vg1_uuid
-#     fail_msg: "Unable to list iscsi clients attached to VG"
-#     success_msg: "ISCSI clients attached to VG listed successfully"
-
 - name: Fetch specific client
   ntnx_volume_groups_iscsi_clients_info_v2:
     ext_id: "{{ iscsi_client_uuid }}"
@@ -211,24 +192,6 @@
     fail_msg: "Unable to detach iscsi client using initiator name"
     success_msg: "ISCSI client detached successfully using initiator name"
 
-# Need to verify detachment
-
-# - name: List all clients attached to VG to verify detachment
-#   ntnx_volume_groups_iscsi_clients_info_v2:
-#     volume_group_ext_id: "{{ vg1_uuid }}"
-#   register: result
-
-# - name: Verify if attachment went fine
-#   ansible.builtin.assert:
-#     that:
-#       - result.error == None
-#       - result.response is defined
-#       - result.changed == false
-#       - result.response | length == 0
-#       - result.volume_group_ext_id == vg1_uuid
-#     fail_msg: "Unable to verify detachment of iscsi client"
-#     success_msg: "Detachment of client verified successfully"
-
 - name: Attach iscsi client to VG using iscsi client id
   ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
@@ -248,25 +211,6 @@
     fail_msg: "Unable to attach iscsi client using ext_id"
     success_msg: "ISCSI client attached successfully using ext_id"
 
-# Need to verify attachment
-
-# - name: List all clients attached to VG to verify attachment
-#   ntnx_volume_groups_iscsi_clients_info_v2:
-#     volume_group_ext_id: "{{ vg1_uuid }}"
-#   register: result
-
-# - name: Verify if attachment went fine
-#   ansible.builtin.assert:
-#     that:
-#       - result.error == None
-#       - result.response is defined
-#       - result.changed == false
-#       - result.response | length == 1
-#       - result.response[0].ext_id == iscsi_client_uuid
-#       - result.volume_group_ext_id == vg1_uuid
-#     fail_msg: "Unable to list iscsi clients attached to VG"
-#     success_msg: "ISCSI clients attached to VG listed successfully"
-
 - name: Detach client from VG
   ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
@@ -285,24 +229,6 @@
       - result.response.status == "SUCCEEDED"
     fail_msg: "Unable to detach iscsi client using initiator name"
     success_msg: "ISCSI client detached successfully using initiator name"
-
-# Need to verify detachment
-
-# - name: List all clients attached to VG to verify detachment
-#   ntnx_volume_groups_iscsi_clients_info_v2:
-#     volume_group_ext_id: "{{ vg1_uuid }}"
-#   register: result
-
-# - name: Verify if attachment went fine
-#   ansible.builtin.assert:
-#     that:
-#       - result.error == None
-#       - result.response is defined
-#       - result.changed == false
-#       - result.response | length == 0
-#       - result.volume_group_ext_id == vg1_uuid
-#     fail_msg: "Unable to list iscsi clients attached to VG"
-#     success_msg: "ISCSI clients attached to VG listed successfully"
 
 ############################################ Cleanup ############################################
 
