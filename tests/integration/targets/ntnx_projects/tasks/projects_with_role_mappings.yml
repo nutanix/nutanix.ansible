@@ -135,6 +135,13 @@
   ansible.builtin.set_fact:
     user_group_to_delete: "{{result.response.status.project_status.resources.external_user_group_reference_list[0].uuid}}"
 
+- name: Get user UUID to delete
+  ansible.builtin.set_fact:
+    user_to_delete: "{{ item.uuid }}"
+  loop: "{{ result.response.status.project_status.resources.user_reference_list }}"
+  when: item.name == new_user
+  no_log: true
+
 - name: Update Project role mappings and subnets and quotas
   ntnx_projects:
     project_uuid: "{{result.project_uuid}}"
@@ -341,7 +348,7 @@
   register: result
   ignore_errors: true
 
-- name: Check listing status
+- name: Check deleting user group
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -350,3 +357,20 @@
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
     success_msg: "user group deletd successfully"
+
+- name: Delete user
+  ntnx_users:
+    state: absent
+    user_uuid: "{{user_to_delete}}"
+  register: result
+  ignore_errors: true
+
+- name: Check deleting user
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
+    fail_msg: "Unable to delete user  "
+    success_msg: "user deletd successfully"
