@@ -10,9 +10,22 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
+~> **Important Notice:** Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit 
+[Legacy API Deprecation Announcement](https://portal.nutanix.com/page/documents/eol/list?type=announcement)
+[Legacy API Deprecation - FAQs](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA0VO0000005rgP0AQ)
+Nutanix strongly encourages you to migrate your scripts and applications to the latest v2 version of the Nutanix Ansible modules, which are built on our v4 APIs/SDKs. By adopting the latest v2 version based on v4 APIs and SDKs, our users can leverage the enhanced capabilities and latest innovations from Nutanix. 
+We understand that this transition may require some effort, and we are committed to supporting you throughout the process. Please refer to our documentation and support channels for guidance and assistance.
+
+
 ## Support
 
 Ansible Nutanix Provider leverages the community-supported model. See [Open Source Support](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA07V000000LdWPSA0) for more information about its support policy.
+
+-> **Note:** Update!! 
+We now have a brand new developer-centric Support Program designed for organizations that require a deeper level of developer support to manage their Nutanix environment and build applications quickly and efficiently. As part of this new Advanced API/SDK Support Program, you will get access to trusted technical advisors who specialize in developer tools including Nutanix Ansible Collections and receive support for your unique development needs and custom integration queries.
+Visit our Support Portal - Premium Add-On Support Programs  to learn more about this program. 
+**Contributions to open-source Nutanix Ansible Collections repository will continue to leverage a community-supported model. Visit https://portal.nutanix.com/kb/13424  for more details. 
+
 
 # Version compatibility
 
@@ -21,6 +34,13 @@ This collection requires ansible-core>=2.15.0
 
 ## Python
 This collection requires Python 3.9 or greater
+
+## Releases
+
+| Ansible Version | Software releases | Supported Software Versions | AOS |
+| --- | --- | --- | --- |
+| 2.0 | pc release | pc2024.3 | 7.0 |
+| 1.9.2 | 
 
 ## Prism Central
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
@@ -250,6 +270,167 @@ ansible-playbook examples/iaas/iaas.yml
 | ntnx_ndb_maintenance_windows_info | Get maintenance window info |
 | ntnx_ndb_slas | Create, update and delete sla |
 | ntnx_ndb_slas_info | Get slas info |
+
+## Resources
+
+
+| v1 Resources| v2 Resources |
+|  :--- |  :--- |
+| ntnx_acps | ntnx_authorization_policies_v2 |
+| ntnx_address_groups | ntnx_address_groups_v2 |
+| ntnx_categories | ntnx_categories_v2
+| ntnx_floating_ips | ntnx_floating_ips_v2 |
+| ntnx_images | ntnx_images_v2 |
+| ntnx_image_placement_policy | ntnx_image_placement_policies_v2 |
+| ntnx_pbrs | ntnx_pbrs_v2 |
+| ntnx_projects | - |
+| ntnx_protection_rules | - |
+| ntnx_recovery_plans | - |
+| ntnx_recovery_plan_jobs | - |
+| ntnx_roles | ntnx_roles_v2 |
+| ntnx_security_rules | ntnx_security_rules_v2 |
+| ntnx_service_groups | ntnx_service_groups_v2 |
+| ntnx_static_routes | ntnx_routes_v2 |
+| ntnx_subnets | ntnx_subnets_v2 |
+| ntnx_users | ntnx_users_v2 |
+| ntnx_user_groups | ntnx_user_groups_v2 |
+| ntnx_vms_ova | - |
+| ntnx_vms_clone | ntnx_vms_clone_v2 |
+| ntnx_vms | ntnx_vms_v2 |
+| ntnx_vpcs | ntnx_vpcs_v2 |
+| ntnx_foundation_bmc_ipmi_config | - |
+| ntnx_foundation_image_upload | - |
+| ntnx_foundation | - |
+| ntnx_foundation_central | - |
+| ntnx_foundation_central_api_keys | - |
+| ntnx_karbon_clusters | - |
+| ntnx_karbon_clusters_node_pools | - |
+| ntnx_karbon_registries | - |
+| ntnx_ndb_databases | - |
+| ntnx_ndb_register_database | - |
+| ntnx_ndb_db_server_vms | - |
+| ntnx_ndb_clusters | - |
+| ntnx_ndb_vlans | - |
+| ntnx_ndb_stretched_vlans | - |
+| ntnx_ndb_time_machine_clusters | - |
+| ntnx_ndb_tags | - |
+| ntnx_ndb_database_clones | - |
+| ntnx_ndb_database_snapshots | - |
+| ntnx_ndb_database_clone_refresh | - |
+| ntnx_ndb_authorize_db_server_vms | - |
+| ntnx_ndb_profiles | - |
+| ntnx_ndb_database_log_catchup | - |
+| ntnx_ndb_database_restore | - |
+| ntnx_ndb_database_scale | - |
+| ntnx_ndb_linked_databases | - |
+| ntnx_ndb_replicate_database_snapshots | - |
+| ntnx_ndb_register_db_server_vm | - |
+| ntnx_ndb_maintenance_tasks | - |
+| ntnx_ndb_maintenance_window | - |
+| ntnx_ndb_slas | - |
+| - | ntnx_vms_ngt_v2 |
+| - | ntnx_vms_ngt_update_v2 |
+| - | ntnx_vms_ngt_upgrade_v2 |
+| - | ntnx_vms_ngt_insert_iso_v2 |
+| - | ntnx_vms_disks_v2 |
+| - | ntnx_vms_categories_v2 |
+| - | ntnx_vms_nics_v2 |
+| - | ntnx_vms_nics_ip_v2 |
+| - | ntnx_vms_nics_migrate_v2 |
+| - | ntnx_vms_cd_rom_v2 |
+| - | ntnx_vms_cd_rom_iso_v2 |
+| - | ntnx_vms_stage_guest_customization_v2 |
+| - | ntnx_vms_serial_port_v2 |
+| - | ntnx_templates_deploy_v2 |
+| - | ntnx_templates_guest_os_v2 |
+| - | ntnx_templates_v2 |
+| - | ntnx_templates_version_v2 |
+| - | ntnx_vms_power_actions_v2 |
+| - | ntnx_volume_groups_v2 |
+| - | ntnx_volume_groups_disks_v2 |
+| - | ntnx_volume_groups_vms_v2 |
+| - | ntnx_volume_groups_iscsi_clients_v2 |
+| - | ntnx_directory_services_v2 |
+| - | ntnx_saml_identity_providers_v2 |
+| - | ntnx_clusters_v2 |
+| - | ntnx_recovery_points_v2 |
+| - | ntnx_recovery_point_restore_v2 |
+| - | ntnx_vm_revert_v2 |
+| - | ntnx_recovery_point_replicate_v2 |
+| - | ntnx_gpus_v2 |
+| - | ntnx_clusters_nodes_v2 |
+| - | ntnx_pc_registration_v2 |
+| - | ntnx_discover_unconfigured_nodes_v2 |
+| - | ntnx_storage_containers_stats_v2 |
+| - | ntnx_storage_containers_v2 |
+
+## Data Sources
+
+| v1 datasources | v2 datasources |
+|  :--- |  :--- |
+| ntnx_acps_info | ntnx_authorization_policies_info_v2 |
+| ntnx_address_groups_info | ntnx_address_groups_info_v2 |
+| ntnx_categories_info | ntnx_categories_info_v2 |
+| ntnx_clusters_info | ntnx_clusters_info_v2 |
+| ntnx_floating_ips_info | ntnx_floating_ips_info_v2 |
+| ntnx_images_info | ntnx_images_info_v2 |
+| ntnx_image_placement_policies_info | ntnx_image_placement_policies_info_v2 |
+| ntnx_pbrs_info | ntnx_pbrs_info_v2 |
+| ntnx_permissions_info | ntnx_permissions_info_v2 |
+| ntnx_projects_info | - |
+| ntnx_protection_rules_info | - |
+| ntnx_recovery_plans_info | - |
+| ntnx_recovery_plan_jobs_info | - |
+| ntnx_roles_info | ntnx_roles_info_v2 |
+| ntnx_security_rules_info | ntnx_security_rules_info_v2 |
+| ntnx_service_groups_info | ntnx_service_groups_info_v2 |
+| ntnx_static_routes_info | ntnx_routes_info_v2 |
+| ntnx_subnets_info | ntnx_subnets_info_v2 |
+| ntnx_user_groups_info | ntnx_user_groups_info_v2 |
+| ntnx_users_info | ntnx_users_info_v2 |
+| ntnx_vms_info | ntnx_vms_info_v2 |
+| ntnx_vpcs_info | ntnx_vpcs_info_v2 |
+| ntnx_foundation_aos_packages_info | - |
+| ntnx_foundation_discover_nodes_info | - |
+| ntnx_foundation_hypervisor_images_info | - |
+| ntnx_foundation_node_network_info | - |
+| ntnx_foundation_central_imaged_nodes_info | - |
+| ntnx_foundation_central_imaged_clusters_info | - |
+| ntnx_foundation_central_api_keys_info | - |
+| ntnx_karbon_clusters_info | - |
+| ntnx_karbon_registries_info | - |
+| ntnx_ndb_databases_info | - |
+| ntnx_ndb_clones_info | - |
+| ntnx_ndb_time_machines_info | - |
+| ntnx_ndb_profiles_info | - |
+| ntnx_ndb_db_servers_info | - |
+| ntnx_ndb_slas_info | - |
+| ntnx_ndb_clusters_info | - |
+| ntnx_ndb_snapshots_info | - |
+| ntnx_ndb_vlans_info | - |
+| ntnx_ndb_tags_info | - |
+| ntnx_ndb_maintenance_windows_info | - |
+| - | ntnx_vms_ngt_info_v2 |
+| - | ntnx_vms_disks_info_v2 |
+| - | ntnx_vms_nics_info_v2 |
+| - | ntnx_vms_cd_rom_info_v2 |
+| - | ntnx_vms_serial_port_info_v2 |
+| - | ntnx_templates_info_v2 |
+| - | ntnx_templates_versions_info_v2 |
+| - | ntnx_route_tables_info_v2 |
+| - | ntnx_volume_groups_info_v2 |
+| - | ntnx_volume_groups_disks_info_v2 |
+| - | ntnx_volume_groups_iscsi_clients_info_v2 |
+| - | ntnx_directory_services_info_v2 |
+| - | ntnx_saml_identity_providers_info_v2 |
+| - | ntnx_operations_info_v2 |
+| - | ntnx_hosts_info_v2 |
+| - | ntnx_recovery_points_info_v2 |
+| - | ntnx_vm_recovery_point_info_v2 |
+| - | ntnx_gpus_info_v2 |
+| - | ntnx_nodes_network_info_v2 |
+| - | ntnx_storage_containers_info_v2 |
+
 
 ## Inventory Plugins
 
