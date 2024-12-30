@@ -25,8 +25,8 @@ The `ntnx_recovery_points_v2` module is used to manage recovery points. It suppo
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    name: "{{ recovery_point_name }}_5"
-    expiration_time: "{{ expiration_time }}"
+    name: "Recovery Point 1"
+    expiration_time: "2024-08-30T14:15:22+00:00"
     recovery_point_type: "CRASH_CONSISTENT"
     vm_recovery_points:
       - vm_ext_id: "3f50a1b2-4c3d-4e6a-9b8e-1a2b3c4d5e6f"
@@ -109,7 +109,7 @@ The `ntnx_recovery_point_restore_v2` module is used to restore a recovery point.
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
     ext_id: "6j24g6z1-4f3w-0f3q-5j2j-4n1y9d2e7j3r"
-    cluster_ext_id: "{{ cluster.uuid }}"
+    cluster_ext_id: "00062899-4a29-0cf9-0000-000000022f54"
     vm_recovery_point_restore_overrides:
       - vm_recovery_point_ext_id: "1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p"
       - vm_recovery_point_ext_id: "4d5e6f7g-8h9i-0j1k-2l3m-4n5o6p7q8r9s"
@@ -154,8 +154,8 @@ Replication creates a replica of a recovery point on another cluster. The `ntnx_
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
     ext_id: "6j24g6z1-4f3w-0f3q-5j2j-4n1y9d2e7j3r"
-    pc_ext_id: "{{ pc_uuid_of_target_pc }}"
-    cluster_ext_id: "{{ cluster_uuid_of_target_pc }}"
+    pc_ext_id: "97da301d-0a8b-4334-94cd-16a83563218e"
+    cluster_ext_id: "00062899-58d4-9d37-185b-ac1f6b6f97e2"
   register: result
   ignore_errors: true
 ```
