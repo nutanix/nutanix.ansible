@@ -54,3 +54,21 @@ def get_recovery_point(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching recovery point info using ext_id",
         )
+
+
+def get_protected_resource(module, api_instance, ext_id):
+    """
+    This method will return protected resource info using external ID.
+    Args:
+        module: Ansible module
+    Returns:
+        protected_resource_info (object): protected resource info
+    """
+    try:
+        return api_instance.get_protected_resource_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching protected resource info using ext_id",
+        )
