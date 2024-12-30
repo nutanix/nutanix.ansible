@@ -216,8 +216,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
- - Alaa Bishtawi (@alaa-bish)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
