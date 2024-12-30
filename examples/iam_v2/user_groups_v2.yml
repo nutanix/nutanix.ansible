@@ -22,7 +22,7 @@
         distinguished_name: "cn=group_0876339e,ou=group,dc=devtest,dc=local"
         directory_service_uuid: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
         identity_provider_uuid: "2bfd579d-c5f4-5038-9127-4a46ab066f48"
-        new_saml_user_group: "245266admin"
+        new_saml_user_group: "245266admin" # user group name
         user_group_ext_id: "e2dee03b-1234-1111-2222-6788222f17b8"
 
     - name: Create LDAP user group

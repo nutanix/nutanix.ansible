@@ -21,8 +21,8 @@
     - name: Setting Variables
       ansible.builtin.set_fact:
         vm_uuid: "323e4567-e89b-12d3-a456-426614174001"
-        ngt_username: "username"
-        ngt_password: "password"
+        vm_username: "username"
+        vm_password: "password"
 
     - name: Install NGT in VM with reboot preference set to IMMEDIATE
       nutanix.ncp.ntnx_vms_ngt_v2:
@@ -31,8 +31,8 @@
         capabilities:
           - VSS_SNAPSHOT
         credential:
-          username: "{{ ngt_username }}"
-          password: "{{ ngt_password }}"
+          username: "{{ vm_username }}"
+          password: "{{ vm_password }}"
         reboot_preference:
           schedule_type: IMMEDIATE
       register: result
@@ -63,7 +63,7 @@
       register: result
       ignore_errors: true
 
-    - name: Insert ISO into CD ROM in VM
+    - name: Insert ISO for config only after NGT upgrade
       nutanix.ncp.ntnx_vms_ngt_insert_iso_v2:
         state: present
         ext_id: "{{ vm_uuid }}"

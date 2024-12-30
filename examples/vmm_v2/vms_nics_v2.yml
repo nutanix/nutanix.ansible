@@ -46,7 +46,7 @@
       register: result
       ignore_errors: true
 
-    - name: Migrate nic to another subnet - migrate type = ASSIGN_IP
+    - name: Migrate nic to another subnet with assigning given IP
       nutanix.ncp.ntnx_vms_nics_migrate_v2:
         ext_id: "{{ nic_ext_id }}"
         vm_ext_id: "{{ vm_uuid }}"

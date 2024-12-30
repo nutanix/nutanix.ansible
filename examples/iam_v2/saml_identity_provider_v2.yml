@@ -25,7 +25,7 @@
         idp_metadata_xml: "<xml_file_content>"
         saml_ext_id: "33425890-8888-9999-5555-6788222f17b8"
 
-    - name: Create saml
+    - name: Create saml identity provider
       nutanix.ncp.ntnx_saml_identity_providers_v2:
         name: "{{ name }}"
         username_attribute: "{{ username_attribute }}1"

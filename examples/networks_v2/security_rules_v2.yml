@@ -25,8 +25,9 @@
         vpc_id: "f1b1b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
         category1_uuid: "12345678-1122-2233-4455-365478214587"
         category2_uuid: "87654321-2211-3322-6655-963258741258"
-        category3: "11223355-9632-8520-4455-365478214587"
-        category4: "22113344-9632-8520-4455-365478214587"
+        category3_uuid: "11223355-9632-8520-4455-365478214587"
+        category4_uuid: "22113344-9632-8520-4455-365478214587"
+        category5_uuid: "33221155-9632-8520-4455-365478214587"
 
     - name: Create basic application security rule for certain VPC scope with intra group traffic not allowed
       nutanix.ncp.ntnx_security_rules_v2:
@@ -68,6 +69,120 @@
                 is_all_protocol_allowed: true
       register: result
 
+    - name: Create security rule with multienvisolation rule
+      ntnx_security_rules_v2:
+        name: "{{ security_rule_name }}"
+        description: Ansible created rule
+        type: ISOLATION
+        policy_state: ENFORCE
+        scope: ALL_VLAN
+        is_hitlog_enabled: true
+        is_ipv6_traffic_allowed: false
+        rules:
+          - description: multienvisolation rule
+            type: MULTI_ENV_ISOLATION
+            spec:
+              multi_env_isolation_rule_spec:
+                spec:
+                  all_to_all_isolation_group:
+                    isolation_groups:
+                      - group_category_references:
+                          - "{{ category1_uuid }}"
+                      - group_category_references:
+                          - "{{ category2_uuid }}"
+      register: result
+
+    - name: Create policy with all vlan scope and using certain sources and destinations
+      ntnx_security_rules_v2:
+        name: "{{ security_rule_name }}"
+        description: Ansible created rule
+        type: APPLICATION
+        policy_state: MONITOR
+        scope: ALL_VLAN
+        is_hitlog_enabled: true
+        is_ipv6_traffic_allowed: true
+        rules:
+          - description: inbound1
+            type: INTRA_GROUP
+            spec:
+              intra_entity_group_rule_spec:
+                secured_group_category_references:
+                  - "{{ category4_uuid }}"
+                secured_group_action: DENY
+          - description: inbound2
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category4_uuid }}"
+                src_category_references:
+                  - "{{ category3_uuid }}"
+                service_group_references:
+                  - "{{ service_group_id }}"
+          - description: inbound3
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category4_uuid }}"
+                src_address_group_references:
+                  - "{{ address_group_ext_id }}"
+                tcp_services:
+                  - start_port: 80
+                    end_port: 90
+                  - start_port: 100
+                    end_port: 110
+                udp_services:
+                  - start_port: 120
+                    end_port: 130
+                  - start_port: 140
+                    end_port: 150
+                icmp_services:
+                  - type: 3
+                    code: 1
+                  - type: 4
+                    code: 2
+          - description: inbound4
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category4_uuid }}"
+                src_subnet:
+                  value: 10.0.0.0
+                  prefix_length: 24
+                service_group_references:
+                  - "{{ service_group_id }}"
+          - description: outbound1
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category4_uuid }}"
+                dest_category_references:
+                  - "{{ category5_uuid }}"
+                is_all_protocol_allowed: true
+          - description: outbound2
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category4_uuid }}"
+                dest_subnet:
+                  value: 10.0.1.1
+                  prefix_length: 32
+                is_all_protocol_allowed: true
+          - description: outbound3
+            type: APPLICATION
+            spec:
+              application_rule_spec:
+                secured_group_category_references:
+                  - "{{ category4_uuid }}"
+                dest_address_group_references:
+                  - "{{ address_group_ext_id }}"
+                is_all_protocol_allowed: true
+      register: result
+
     - name: Update policy rules and config
       nutanix.ncp.ntnx_security_rules_v2:
         ext_id: "{{ security_rule_uuid }}"
@@ -84,16 +199,16 @@
             spec:
               intra_entity_group_rule_spec:
                 secured_group_category_references:
-                  - "{{ category3 }}"
+                  - "{{ category3_uuid }}"
                 secured_group_action: DENY
           - description: inbound2_updated
             type: APPLICATION
             spec:
               application_rule_spec:
                 secured_group_category_references:
-                  - "{{ category3 }}"
+                  - "{{ category3_uuid }}"
                 src_category_references:
-                  - "{{ category4 }}"
+                  - "{{ category4_uuid }}"
                 service_group_references:
                   - "{{ service_group_id }}"
           - description: inbound3_updated
@@ -101,7 +216,7 @@
             spec:
               application_rule_spec:
                 secured_group_category_references:
-                  - "{{ category3 }}"
+                  - "{{ category3_uuid }}"
                 src_address_group_references:
                   - "{{ address_group_ext_id }}"
                 tcp_services:
@@ -118,7 +233,7 @@
             spec:
               application_rule_spec:
                 secured_group_category_references:
-                  - "{{ category3 }}"
+                  - "{{ category3_uuid }}"
                 src_subnet:
                   value: 10.0.1.0
                   prefix_length: 24
@@ -129,9 +244,9 @@
             spec:
               application_rule_spec:
                 secured_group_category_references:
-                  - "{{ category3 }}"
+                  - "{{ category3_uuid }}"
                 dest_category_references:
-                  - "{{ category4 }}"
+                  - "{{ category4_uuid }}"
                 service_group_references:
                   - "{{ service_group_id }}"
           - description: outbound2_updated
@@ -139,7 +254,7 @@
             spec:
               application_rule_spec:
                 secured_group_category_references:
-                  - "{{ category3 }}"
+                  - "{{ category3_uuid }}"
                 dest_subnet:
                   value: 10.0.1.2
                   prefix_length: 32
@@ -149,7 +264,7 @@
             spec:
               application_rule_spec:
                 secured_group_category_references:
-                  - "{{ category3 }}"
+                  - "{{ category3_uuid }}"
                 dest_address_group_references:
                   - "{{ address_group_ext_id }}"
                 is_all_protocol_allowed: true

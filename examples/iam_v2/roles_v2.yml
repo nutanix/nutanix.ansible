@@ -38,16 +38,27 @@
       ignore_errors: true
 
     - name: Update roles in check mode
-      nutanix.ncp.ntnx_roles_v2:
+      ntnx_roles_v2:
         state: present
         ext_id: "{{ role_uuid }}"
         display_name: "{{ role_name_updated }}"
-        description: test-ansible-role-2-desc
+        description: test-ansible-role-2-desc-updated
+        operations:
+          - "{{ test_operation_2_uuid }}"
+        wait: true
+      check_mode: true
+      ignore_errors: true
+
+    - name: Update roles
+      ntnx_roles_v2:
+        state: present
+        ext_id: "{{ role_uuid }}"
+        display_name: "{{ role_name_updated }}"
+        description: test-ansible-role-2-desc-updated
         operations:
           - "{{ test_operation_2_uuid }}"
         wait: true
       register: result
-      check_mode: true
       ignore_errors: true
 
     - name: List all roles

@@ -30,7 +30,7 @@
         disk_uuid: "623e4567-e89b-12d3-a456-426614174004"
         volume_group_uuid: "723e4567-e89b-12d3-a456-426614174005"
 
-    - name: Create Disk with storage container
+    - name: Create Disk in given storage container
       nutanix.ncp.ntnx_vms_disks_v2:
         vm_ext_id: "{{ vm_uuid }}"
         backing_info:
@@ -64,7 +64,7 @@
       register: result
       ignore_errors: true
 
-    - name: Create Disk with disk reference
+    - name: Create disk from existing vm's disk
       nutanix.ncp.ntnx_vms_disks_v2:
         vm_ext_id: "{{ vm_uuid }}"
         backing_info:

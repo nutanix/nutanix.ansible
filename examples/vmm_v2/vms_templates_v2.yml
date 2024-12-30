@@ -5,7 +5,7 @@
 # 2. Fetch template info using ext id
 # 3. Update template description & name
 # 4. Retrieve the Template Version details for the given Template Version identifier.
-# 5. Set the Active Version
+# 5. Publish template version as active version
 # 6. Delete Template Version
 # 7. Deploy VM
 # 8. Initiate_guest_os_update
@@ -73,7 +73,7 @@
       register: result
       ignore_errors: true
 
-    - name: Set the Active Version
+    - name: Publish template version as active version
       nutanix.ncp.ntnx_templates_version_v2:
         template_ext_id: "{{ template_ext_id }}"
         version_id: "{{ version_id }}"
@@ -87,7 +87,7 @@
         version_id: "{{ version_id }}"
       register: result
 
-    - name: Deploy VM
+    - name: Deploy VM from template
       nutanix.ncp.ntnx_templates_deploy_v2:
         ext_id: "{{ template_ext_id }}"
         version_id: "{{ version_id }}"

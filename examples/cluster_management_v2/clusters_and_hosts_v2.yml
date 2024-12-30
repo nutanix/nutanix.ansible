@@ -35,7 +35,7 @@
           name: "cluster1"
           config:
             cluster_functions:
-              - "function1"
+              - "AOS"
             auth_public_keys:
               - name: "key1"
                 key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6"

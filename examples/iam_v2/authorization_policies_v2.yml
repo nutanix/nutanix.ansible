@@ -32,7 +32,7 @@
         project:
           uuid: "12321232-0000-0909-0864-6788222f17b8"
 
-    - name: Create auth policy
+    - name: Create auth policy to give access to all images, certain directory service and self owned marketplace items
       nutanix.ncp.ntnx_authorization_policies_v2:
         state: present
         display_name: "{{ auth_policy_name }}"
@@ -63,7 +63,7 @@
       register: result
       ignore_errors: true
 
-    - name: Update auth policy
+    - name: Add access to self owned marketplace_item and certain projects
       nutanix.ncp.ntnx_authorization_policies_v2:
         state: present
         ext_id: "{{ policy_ext_id }}"
@@ -78,6 +78,46 @@
               project_uuid:
                 anyof:
                   - "{{ project.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Give access to users and remove access of user groups
+      ntnx_authorization_policies_v2:
+        state: present
+        ext_id: "{{ policy_ext_id }}"
+        identities:
+          - user:
+              uuid:
+                anyof:
+                  - "{{ users[0] }}"
+                  - "{{ users[1] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Remove access of certain users and certain entities
+      ntnx_authorization_policies_v2:
+        state: present
+        ext_id: "{{ policy_ext_id }}"
+        entities:
+          - images:
+              "*":
+                eq: "*"
+          - marketplace_item:
+              owner_uuid:
+                eq: SELF_OWNED
+        identities:
+          - user:
+              uuid:
+                anyof:
+                  - "{{ users[0] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update name of policy
+      ntnx_authorization_policies_v2:
+        state: present
+        ext_id: "{{ policy_ext_id }}"
+        display_name: "name_updated"
       register: result
       ignore_errors: true
 

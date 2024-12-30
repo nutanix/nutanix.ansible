@@ -29,11 +29,6 @@
         num_virtual_targets: 32
       register: result
 
-    - name: List all clients attached to VG
-      nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
-        volume_group_ext_id: "{{ vg1_uuid }}"
-      register: result
-
     - name: Fetch specific client
       nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
         ext_id: "{{ iscsi_client_uuid }}"

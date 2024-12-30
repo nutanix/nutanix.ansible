@@ -17,14 +17,21 @@
     - name: Setting Variables
       ansible.builtin.set_fact:
         test_permission_uuid: 00000000-0000-0000-0000-000000000001
+        test_permission_name: "test_permission"
 
     - name: List all operations
       nutanix.ncp.ntnx_operations_info_v2:
       register: result
       ignore_errors: true
 
-    - name: List permission using ext_id criteria
+    - name: List operations using ext_id criteria
       nutanix.ncp.ntnx_operations_info_v2:
         ext_id: "{{ test_permission_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List operations using filter criteria
+      ntnx_operations_info_v2:
+        filter: displayName eq '{{ test_permission_name }}'
       register: result
       ignore_errors: true
