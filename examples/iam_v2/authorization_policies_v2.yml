@@ -82,7 +82,7 @@
       ignore_errors: true
 
     - name: Give access to users and remove access of user groups
-      ntnx_authorization_policies_v2:
+      nutanix.ncp.ntnx_authorization_policies_v2:
         state: present
         ext_id: "{{ policy_ext_id }}"
         identities:
@@ -95,7 +95,7 @@
       ignore_errors: true
 
     - name: Remove access of certain users and certain entities
-      ntnx_authorization_policies_v2:
+      nutanix.ncp.ntnx_authorization_policies_v2:
         state: present
         ext_id: "{{ policy_ext_id }}"
         entities:
@@ -114,7 +114,7 @@
       ignore_errors: true
 
     - name: Update name of policy
-      ntnx_authorization_policies_v2:
+      nutanix.ncp.ntnx_authorization_policies_v2:
         state: present
         ext_id: "{{ policy_ext_id }}"
         display_name: "name_updated"

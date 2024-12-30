@@ -70,7 +70,7 @@
       register: result
 
     - name: Create security rule with multienvisolation rule
-      ntnx_security_rules_v2:
+      nutanix.ncp.ntnx_security_rules_v2:
         name: "{{ security_rule_name }}"
         description: Ansible created rule
         type: ISOLATION
@@ -93,7 +93,7 @@
       register: result
 
     - name: Create policy with all vlan scope and using certain sources and destinations
-      ntnx_security_rules_v2:
+      nutanix.ncp.ntnx_security_rules_v2:
         name: "{{ security_rule_name }}"
         description: Ansible created rule
         type: APPLICATION

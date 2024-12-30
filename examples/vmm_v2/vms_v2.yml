@@ -35,7 +35,7 @@
         xml_file_content: <xml_file_content>
 
     - name: Create VM with minimum requirements
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         name: "{{ vm_name }}"
         description: ansible test
         cluster:
@@ -44,7 +44,7 @@
       ignore_errors: true
 
     - name: Create VM with full requirements
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         name: "{{ vm_name }}"
         description: ansible test
         cluster:
@@ -73,7 +73,7 @@
       ignore_errors: true
 
     - name: Create vm with different disks, using ubuntu image , with cdrom
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         name: "{{ vm_name }}"
         description: ansible test
         cluster:
@@ -109,7 +109,7 @@
       ignore_errors: true
 
     - name: Create vm with multiple serial port, and categories
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         name: "{{ vm_name }}"
         description: ansible test
         cluster:
@@ -126,7 +126,7 @@
       ignore_errors: true
 
     - name: Create vm with nics,cloud_init script
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         name: "{{ vm_name }}"
         description: ansible test
         cluster:
@@ -165,7 +165,7 @@
       ignore_errors: true
 
     - name: Create vm with windows unattend xml file
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         name: "{{ vm_name }}"
         description: ansible test
         cluster:
@@ -181,7 +181,7 @@
       ignore_errors: true
 
     - name: Create VM with vtpm enabled
-      ntnx_vms_v2:
+      nutanix.ncp.ntnx_vms_v2:
         name: "{{ vm_name }}"
         description: ansible test
         cluster:
@@ -223,18 +223,18 @@
       ignore_errors: true
 
     - name: List all VMs
-      ntnx_vms_info_v2:
+      nutanix.ncp.ntnx_vms_info_v2:
       register: result
       ignore_errors: true
 
     - name: List all VMs with limit
-      ntnx_vms_info_v2:
+      nutanix.ncp.ntnx_vms_info_v2:
         limit: 2
       register: result
       ignore_errors: true
 
     - name: Get vm using filter name
-      ntnx_vms_info_v2:
+      nutanix.ncp.ntnx_vms_info_v2:
         filter: name eq '{{ vm_name }}'
       register: result
       ignore_errors: true

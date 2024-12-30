@@ -18,13 +18,13 @@
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
-        name: "vg1"
+        vg_name: "vg1"
         cluster_reference: "00057b8b-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
         vg1_uuid: "d1b1b3b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
 
     - name: Create Volume group
       nutanix.ncp.ntnx_volume_groups_v2:
-        name: "{{ name }}"
+        name: "{{ vg_name }}"
         description: "Volume group description"
         should_load_balance_vm_attachments: true
         sharing_status: "SHARED"

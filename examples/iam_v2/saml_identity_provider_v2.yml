@@ -20,14 +20,14 @@
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
-        name: "ansible_saml"
+        saml_name: "ansible_saml"
         username_attribute: "username"
         idp_metadata_xml: "<xml_file_content>"
         saml_ext_id: "33425890-8888-9999-5555-6788222f17b8"
 
     - name: Create saml identity provider
       nutanix.ncp.ntnx_saml_identity_providers_v2:
-        name: "{{ name }}"
+        name: "{{ saml_name }}"
         username_attribute: "{{ username_attribute }}1"
         email_attribute: email
         groups_attribute: groups
@@ -39,7 +39,7 @@
 
     - name: Get saml using filter name
       nutanix.ncp.ntnx_saml_identity_providers_info_v2:
-        filter: name eq  '{{ name }}'
+        filter: name eq  '{{ saml_name }}'
       register: result
       ignore_errors: true
 
@@ -47,7 +47,7 @@
       nutanix.ncp.ntnx_saml_identity_providers_v2:
         state: present
         ext_id: "{{ saml_ext_id }}"
-        name: "{{ name }}2"
+        name: "{{ saml_name }}2"
         username_attribute: "{{ username_attribute }}2"
         email_attribute: new_email
         groups_attribute: group_list

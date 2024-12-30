@@ -59,7 +59,7 @@
       ignore_errors: true
 
     - name: VLAN subnet with IPAM and IP pools
-      ntnx_subnets_v2:
+      nutanix.ncp.ntnx_subnets_v2:
         state: present
         name: "{{ subnet_name }}_2"
         subnet_type: VLAN
@@ -85,7 +85,7 @@
       ignore_errors: true
 
     - name: VLAN subnet with IPAM and DHCP options enabled
-      ntnx_subnets_v2:
+      nutanix.ncp.ntnx_subnets_v2:
         state: present
         name: "{{ subnet_name }}_3"
         subnet_type: VLAN

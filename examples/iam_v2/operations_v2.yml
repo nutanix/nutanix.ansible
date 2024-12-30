@@ -31,7 +31,7 @@
       ignore_errors: true
 
     - name: List operations using filter criteria
-      ntnx_operations_info_v2:
+      nutanix.ncp.ntnx_operations_info_v2:
         filter: displayName eq '{{ test_permission_name }}'
       register: result
       ignore_errors: true
