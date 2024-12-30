@@ -34,7 +34,7 @@
         cluster_uuid_of_target_pc: "00062899-58d4-9d37-185b-ac1f6b6f97e2"
 
     - name: Create recovery point with multiple VMs and VGs
-      nutaninx.ncp.ntnx_recovery_points_v2:
+      nutanix.ncp.ntnx_recovery_points_v2:
         name: "{{ recovery_point_name }}"
         expiration_time: "2024-08-30T14:15:22+00:00"
         recovery_point_type: "CRASH_CONSISTENT"
@@ -56,25 +56,25 @@
         vg_recovery_point_ext_id_2: "{{ result.response.volume_group_recovery_points[1].ext_id }}"
 
     - name: List all recovery points
-      nutaninx.ncp.ntnx_recovery_points_info_v2:
+      nutanix.ncp.ntnx_recovery_points_info_v2:
       register: result
       ignore_errors: true
 
     - name: Get recovery point details
-      nutaninx.ncp.ntnx_recovery_points_info_v2:
+      nutanix.ncp.ntnx_recovery_points_info_v2:
         ext_id: "{{ recovery_point_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Update recovery point expiration time
-      nutaninx.ncp.ntnx_recovery_points_v2:
+      nutanix.ncp.ntnx_recovery_points_v2:
         ext_id: "{{ recovery_point_ext_id }}"
         expiration_time: "2024-09-30T14:15:22+00:00"
       register: result
       ignore_errors: true
 
     - name: Restore recovery point for multiple VMs and VGs
-      nutaninx.ncp.ntnx_recovery_point_restore_v2:
+      nutanix.ncp.ntnx_recovery_point_restore_v2:
         ext_id: "{{ recovery_point_ext_id }}"
         cluster_ext_id: "{{ cluster_uuid }}"
         vm_recovery_point_restore_overrides:
@@ -87,14 +87,14 @@
       ignore_errors: true
 
     - name: Revert a VM recovery point
-      nutaninx.ncp.ntnx_vm_revert_v2:
+      nutanix.ncp.ntnx_vm_revert_v2:
         ext_id: "{{ vm_uuid1 }}"
         vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id_1 }}"
       register: result
       ignore_errors: true
 
     - name: Replicate Recovery point
-      nutaninx.ncp.ntnx_recovery_point_replicate_v2:
+      nutanix.ncp.ntnx_recovery_point_replicate_v2:
         ext_id: "{{ recovery_point_ext_id }}"
         pc_ext_id: "{{ pc_uuid_of_target_pc }}"
         cluster_ext_id: "{{ cluster_uuid_of_target_pc }}"
@@ -102,14 +102,14 @@
       ignore_errors: true
 
     - name: Get a VM recovery point details
-      nutaninx.ncp.ntnx_vm_recovery_point_info_v2:
+      nutanix.ncp.ntnx_vm_recovery_point_info_v2:
         recovery_point_ext_id: "{{ recovery_point_ext_id }}"
         vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id_1 }}"
       register: result
       ignore_errors: true
 
     - name: Delete recovery point
-      nutaninx.ncp.ntnx_recovery_points_v2:
+      nutanix.ncp.ntnx_recovery_points_v2:
         ext_id: "{{ recovery_point_ext_id }}"
         state: absent
       register: result
