@@ -37,10 +37,20 @@ This collection requires Python 3.9 or greater
 
 ## Releases
 
-| Ansible Version | Software releases | Supported Software Versions | AOS |
-| --- | --- | --- | --- |
-| 2.0 | pc release | pc2024.3 | 7.0 |
-| 1.9.2 | 
+| Ansible Version |  AOS Version | PC version  | Other software versions |
+|  :--- |  :--- | :--- | :--- |
+| 2.0 | 7.0 | pc2024.3 or later | ndb v2.5.1.1, nke v2.8 |
+| 1.9.2 | | pc2024.1 | |
+| 1.9.1 | | pc2023.1.0.2, pc2023.3 | ndb v2.5.1.1, nke v2.8.0,  foundation v5.2 | 
+| 1.9.0 | | pc2023.1, pc.2023.1.0.1 | ndb v2.5.0.2, nke v2.6.0, nke v2.7.0, nke v2.8.0 |
+| 1.8.0 | | pc2022.6 | ndb v2.5.0, ndb v2.5.1 |
+| 1.7.0 | | pc2022.6, pc2022.4, pc2022.1.0.2 | |
+| 1.6.0 | | | nke v2.3.0, nke v2.4.0, nke v2.5.0 |
+| 1.5.0 | | pc2022.6, pc2022.4.0.2, pc2022.1.0.2 | |
+| 1.4.0 | | pc2022.4, pc2022.1.0.2, pc2021.9.0.4 | |
+| 1.3.0 | | pc2022.4, pc2022.1.0.2, pc2021.9.0.4 |  |
+| 1.2.0 | | pc2022.4, pc2022.1.0.2, pc.2021.9.0.5 | |
+| 1.1.0 | | pc2022.1.0.2, pc.2021.9.0.5, pc.2021.8.0.1 | foundation v5.2, foundation v5.1.1, foundation central v1.3, foundation central v1.2 |
 
 ## Prism Central
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
