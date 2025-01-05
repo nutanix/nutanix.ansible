@@ -1130,7 +1130,7 @@ def get_module_spec():
 
     hypervisor_iso_spec_dict = dict(
         filename=dict(type="str", required=True),
-        checksum=dict(type="str", required=True),
+        checksum=dict(type="str", required=False),
     )
     hypervisor_iso_spec = dict(
         kvm=dict(type="dict", required=False, options=hypervisor_iso_spec_dict),

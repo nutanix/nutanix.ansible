@@ -7,6 +7,10 @@
   ntnx_foundation_aos_packages_info:
   register: images
 
+- name: List hypervisor images
+  nutanix.ncp.ntnx_foundation_hypervisor_images_info:
+  register: hypervisor_images
+
 - name: Create spec for imaging and creating cluster out of bare metal nodes
   check_mode: true
   ntnx_foundation:
@@ -18,6 +22,9 @@
     default_ipmi_user: "{{ default_ipmi_user }}"
     current_cvm_vlan_tag: "{{ nodes.current_cvm_vlan_tag }}"
     nos_package: "{{ images.aos_packages[0] }}"
+    hypervisor_iso:
+      kvm:
+        filename: "{{ hypervisor_images.hypervisor_images.kvm[0].filename }}"
     blocks:
       - block_id: "{{ nodes.block_id }}"
         nodes:
@@ -32,6 +39,8 @@
               hypervisor: "{{ nodes.node1.hypervisor }}"
               hypervisor_ip: "{{ nodes.node1.hypervisor_ip }}"
               node_position: "{{ nodes.node1.node_position }}"
+              bond_mode: "dynamic"
+              bond_lacp_rate: "fast"
     clusters:
       - redundancy_factor: 1
         cluster_members:
@@ -71,6 +80,8 @@
               ipmi_netmask: "{{ nodes.node1.ipmi_netmask }}"
               ipmi_password: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER
               node_position: "{{ nodes.node1.node_position }}"
+              bond_mode: "dynamic"
+              bond_lacp_rate: "fast"
       clusters:
         - backplane_netmask: "{{ nodes.backplane_netmask }}"
           backplane_subnet: "{{ nodes.backplane_subnet }}"
@@ -92,8 +103,12 @@
       hypervisor_gateway: "{{ hypervisor_gateway }}"
       hypervisor_iso: {}
       hypervisor_netmask: "{{ hypervisor_netmask }}"
-      ipmi_user: "{{ default_ipmi_user }}"
+      ipmi_user: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER
       nos_package: "{{ images.aos_packages[0] }}"
+      hypervisor_iso:
+        kvm:
+          filename: "{{ hypervisor_images.hypervisor_images.kvm[0].filename }}"
+          checksum: null
 
 - name: Verify spec
   ansible.builtin.assert:
@@ -115,6 +130,9 @@
     default_ipmi_user: "{{ default_ipmi_user }}"
     current_cvm_vlan_tag: "{{ nodes.current_cvm_vlan_tag }}"
     nos_package: "{{ images.aos_packages[0] }}"
+    hypervisor_iso:
+      kvm:
+        filename: "{{ hypervisor_images.hypervisor_images.kvm[0].filename }}"
     blocks:
       - block_id: "{{ nodes.block_id }}"
         nodes:
@@ -129,9 +147,6 @@
               hypervisor: "{{ nodes.node1.hypervisor }}"
               hypervisor_ip: "{{ nodes.node1.hypervisor_ip }}"
               node_position: "{{ nodes.node1.node_position }}"
-              bond_lacp_rate: "{{ nodes.node1.bond_lacp_rate }}"
-              bond_mode: "{{ nodes.node1.bond_mode }}"
-
   register: result
   no_log: true
   ignore_errors: true
@@ -155,6 +170,9 @@
     default_ipmi_user: "{{ default_ipmi_user }}"
     current_cvm_vlan_tag: "{{ nodes.current_cvm_vlan_tag }}"
     nos_package: "{{ images.aos_packages[0] }}"
+    hypervisor_iso:
+      kvm:
+        filename: "{{ hypervisor_images.hypervisor_images.kvm[0].filename }}"
     blocks:
       - block_id: "{{ nodes.block_id }}"
         nodes:
@@ -169,8 +187,6 @@
               hypervisor: "{{ nodes.node1.hypervisor }}"
               hypervisor_ip: "{{ nodes.node1.hypervisor_ip }}"
               node_position: "{{ nodes.node1.node_position }}"
-              bond_lacp_rate: "{{ nodes.node1.bond_lacp_rate }}"
-              bond_mode: "{{ nodes.node1.bond_mode }}"
     clusters:
       - redundancy_factor: 1
         cluster_members:
