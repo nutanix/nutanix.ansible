@@ -674,7 +674,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
             esx:
                 description: esx hypervisor details
                 type: dict
