@@ -104,7 +104,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: "test_policy_1"
     placement_type: soft
     image_categories:
@@ -121,7 +121,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: "test_policy_2"
     desc: "test_policy_2_desc"
     placement_type: hard
@@ -146,7 +146,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: "test_policy_2-uodated"
     desc: "test_policy_2_desc-updated"
     placement_type: hard
@@ -168,8 +168,8 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
-    remove_categories: True
+    validate_certs: false
+    remove_categories: true
   register: result
 
 - name: Delete image placement policy
@@ -178,7 +178,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     policy_uuid: "<policy-uuid>"
   register: result
 """
@@ -279,10 +279,10 @@ policy_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.image_placement_policy import (  # noqa: E402
+from ..module_utils.v3.prism.image_placement_policy import (  # noqa: E402
     ImagePlacementPolicy,
 )
-from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

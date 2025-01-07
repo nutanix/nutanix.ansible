@@ -82,7 +82,6 @@ EXAMPLES = r"""
       - network_ip: "10.1.2.2"
         network_prefix: 32
   register: result
-
 - name: delete address group
   ntnx_address_groups:
     nutanix_host: <pc_ip>
@@ -118,7 +117,7 @@ address_group_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.address_groups import AddressGroup  # noqa: E402
+from ..module_utils.v3.prism.address_groups import AddressGroup  # noqa: E402
 
 
 def get_module_spec():

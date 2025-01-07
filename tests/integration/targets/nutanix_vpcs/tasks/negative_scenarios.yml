@@ -1,80 +1,82 @@
-  - debug:
-      msg: "Started Negative Creation Cases"
+---
+- name: Started Negative Creation Cases
+  ansible.builtin.debug:
+    msg: "Started Negative Creation Cases"
 
-  - name: Unknown subnet name
-    ntnx_vpcs:
-      state: present
-      name: MinVPC
-      external_subnets:
-        - subnet_name: "ET_90"
-    register: result
-    ignore_errors: True
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed==True
-        - result.msg=="Failed generating vpc spec"
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail VPC created successfully with unknown subnet name '
+- name: Unknown subnet name
+  ntnx_vpcs:
+    state: present
+    name: MinVPC
+    external_subnets:
+      - subnet_name: "ET_90"
+  register: result
+  ignore_errors: true
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed==true
+      - result.msg=="Failed generating vpc spec"
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail VPC created successfully with unknown subnet name "
 #######################################################
-  - name: Unknown subnet uuid
-    ntnx_vpcs:
-      state: present
-      name: MinVPC
-      external_subnets:
-        - subnet_uuid: 57959f75-6b21-431c-b76b-516447d52622
-    register: result
-    ignore_errors: True
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed==True
-        - result.status_code=="500"
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail VPC created successfully with unknown subnet name '
+- name: Unknown subnet uuid
+  ntnx_vpcs:
+    state: present
+    name: MinVPC
+    external_subnets:
+      - subnet_uuid: 57959f75-6b21-431c-b76b-516447d52622
+  register: result
+  ignore_errors: true
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed==true
+      - result.status_code=="500"
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail VPC created successfully with unknown subnet name "
 #######################################################
-  - name: Create VPC with same routable_ips
-    ntnx_vpcs:
-      state: present
-      name: vpc_with_routable_ips
-      routable_ips:
-        - network_ip: 192.168.0.1
-          network_prefix:  24
-        - network_ip: 192.168.0.1
-          network_prefix:  24
-    register: result
-    ignore_errors: True
+- name: Create VPC with same routable_ips
+  ntnx_vpcs:
+    state: present
+    name: vpc_with_routable_ips
+    routable_ips:
+      - network_ip: 192.168.0.1
+        network_prefix: 24
+      - network_ip: 192.168.0.1
+        network_prefix: 24
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed==True
-        - result.status_code=="500"
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail VPC created successfully with unknown subnet name '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed==true
+      - result.status_code=="500"
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail VPC created successfully with unknown subnet name "
 #######################################################
-  - name: Delete vpc with unknown uuid
-    ntnx_vpcs:
-      state: absent
-      vpc_uuid: 5
-    ignore_errors: True
-    register: result
-  - name: Creation Status
-    assert:
-      that:
-        - result.status_code==400
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail deleting vpc with unknown uuid '
+- name: Delete vpc with unknown uuid
+  ntnx_vpcs:
+    state: absent
+    vpc_uuid: 5
+  ignore_errors: true
+  register: result
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.status_code==400
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail deleting vpc with unknown uuid "
 #######################################################
-  - name: Delete vpc with missing uuid
-    ntnx_vpcs:
-      state: absent
-    ignore_errors: True
-    register: result
+- name: Delete vpc with missing uuid
+  ntnx_vpcs:
+    state: absent
+  ignore_errors: true
+  register: result
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed==True
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail deleting vpc with missing  uuid '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed==true
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail deleting vpc with missing  uuid "

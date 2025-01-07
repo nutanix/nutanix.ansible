@@ -1,0 +1,821 @@
+---
+- name: Start testing ntnx_vms_ngt_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vms_ngt_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+
+- name: Create VM
+  ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ ngt_config.image_uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
+    cd_roms:
+      - disk_address:
+          bus_type: IDE
+          index: 0
+    nics:
+      - network_info:
+          subnet:
+            ext_id: "{{ network.dhcp.uuid }}"
+          ipv4_config:
+            should_assign_ip: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.cd_roms[0].disk_address.bus_type == "IDE"
+      - result.response.cd_roms[0].disk_address.index == 0
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 0
+      - result.response.disks[0].backing_info.data_source.reference.image_ext_id == "{{ ngt_config.image_uuid }}"
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ network.dhcp.uuid }}"
+    fail_msg: "Unable to Create VM  "
+    success_msg: "VM is created successfully "
+
+- name: Set vm_uuid
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+
+##############################################################################
+
+- name: Power on VM
+  ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Power on Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to Power on VM "
+    success_msg: "VM is powered on successfully "
+
+#################################################################################
+
+- name: Get VM info and check if IP address is assigned
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+  retries: 60
+  delay: 5
+  until: result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value is defined
+
+- name: Get VM info and check if IP address is assigned Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value is defined
+    fail_msg: "Unable to get VM info and check if IP address is assigned  "
+    success_msg: "VM info is retrieved successfully and IP address is assigned "
+
+#################################################################################
+
+- name: Install NGT in VM with check mode enabled
+  ntnx_vms_ngt_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - SELF_SERVICE_RESTORE
+      - VSS_SNAPSHOT
+    credential:
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
+    reboot_preference:
+      schedule_type: LATER
+      schedule:
+        start_time: "2026-08-01T00:00:00Z"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Install NGT in VM with check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.capabilities[0] == "SELF_SERVICE_RESTORE"
+      - result.response.capabilities[1] == "VSS_SNAPSHOT"
+      - result.response.capabilities | length == 2
+      - result.response.credential.username == "{{ ngt_config.username }}"
+      - result.response.reboot_preference.schedule_type == "LATER"
+      - result.response.reboot_preference.schedule.start_time == "2026-08-01T00:00:00Z"
+    fail_msg: "Unable to install NGT with check mode enabled "
+    success_msg: "NGT is installed successfully with check mode enabled "
+
+##################################################################################
+
+- name: Install NGT in VM with reboot preference set to IMMEDIATE
+  ntnx_vms_ngt_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - VSS_SNAPSHOT
+    credential:
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
+    reboot_preference:
+      schedule_type: IMMEDIATE
+  register: result
+  ignore_errors: true
+
+- name: Install NGT in VM with reboot preference set to IMMEDIATE Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.capabilities[0] == "VSS_SNAPSHOT"
+      - result.response.capabilities | length == 1
+      - result.task_ext_id is defined
+    fail_msg: "Unable to install NGT with reboot preference set to IMMEDIATE "
+    success_msg: "NGT is installed successfully with reboot preference set to IMMEDIATE "
+
+##################################################################################
+
+- name: Sleep for 1 minute until NGT is installed completely
+  ansible.builtin.pause:
+    minutes: 1
+
+- name: Get NGT config from VM after NGT is installed
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get NGT config from VM after NGT is installed Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.guest_tools.is_installed == true
+      - result.response.guest_tools.is_iso_inserted == false
+      - result.response.guest_tools.is_reachable == true
+      - result.response.guest_tools.is_enabled == true
+      - result.response.guest_tools.capabilities[0] == "VSS_SNAPSHOT"
+      - result.response.guest_tools.capabilities | length == 1
+      - result.response.guest_tools.guest_os_version is defined
+      - result.response.guest_tools.version is defined
+    fail_msg: "Unable to get NGT config from VM  "
+    success_msg: "NGT config from VM is retrieved successfully "
+
+##################################################################################
+
+- name: Fetch NGT config after installing NGT in VM with reboot preference set to IMMEDIATE
+  ntnx_vms_ngt_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch NGT config after installing NGT in VM with reboot preference set to IMMEDIATE Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.is_installed == true
+      - result.response.is_iso_inserted == false
+      - result.response.is_reachable == true
+      - result.response.is_enabled == true
+      - result.response.capabilities[0] == "VSS_SNAPSHOT"
+      - result.response.capabilities | length == 1
+    fail_msg: "Unable to fetch NGT config after installing NGT in VM with reboot preference set to IMMEDIATE "
+    success_msg: "NGT config is fetched successfully after installing NGT in VM with reboot preference set to IMMEDIATE "
+
+##################################################################################
+
+- name: Install NGT in VM while it is already installed
+  ntnx_vms_ngt_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - VSS_SNAPSHOT
+    credential:
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
+    reboot_preference:
+      schedule_type: IMMEDIATE
+  register: result
+  ignore_errors: true
+
+- name: Install NGT in VM while it is already installed Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.msg == "NGT is already installed in given vm."
+    fail_msg: "Install NGT in VM while it is already installed failed "
+    success_msg: "Install NGT in VM while it is already installed passed "
+
+##################################################################################
+
+- name: Sleep for 2 minutes before uninstalling NGT
+  ansible.builtin.pause:
+    minutes: 2
+
+- name: Uninstall NGT in VM
+  ntnx_vms_ngt_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Uninstall NGT in VM Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.is_installed == none
+    fail_msg: "Unable to uninstall NGT in VM  "
+    success_msg: "NGT is uninstalled successfully in VM "
+
+##################################################################################
+
+- name: Sleep for 1 minute until NGT is uninstalled completely
+  ansible.builtin.pause:
+    minutes: 1
+
+- name: Get VM info after NGT is uninstalled
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get VM info after NGT is uninstalled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.guest_tools == none
+    fail_msg: "Unable to get VM info after NGT is uninstalled  "
+    success_msg: "VM info is retrieved successfully after NGT is uninstalled "
+
+#################################################################################
+
+- name: Fetch NGT config after NGT is uninstalled
+  ntnx_vms_ngt_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch NGT config after NGT is uninstalled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.is_installed == none
+    fail_msg: "Unable to fetch NGT config after NGT is uninstalled "
+    success_msg: "NGT config is fetched successfully after NGT is uninstalled "
+
+#################################################################################
+
+- name: Install NGT in VM with reboot preference set to SKIP
+  ntnx_vms_ngt_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - SELF_SERVICE_RESTORE
+      - VSS_SNAPSHOT
+    credential:
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
+    reboot_preference:
+      schedule_type: SKIP
+  register: result
+  ignore_errors: true
+
+- name: Install NGT in VM with reboot preference set to SKIP Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.capabilities[0] == "SELF_SERVICE_RESTORE"
+      - result.response.capabilities[1] == "VSS_SNAPSHOT"
+      - result.response.capabilities | length == 2
+      - result.task_ext_id is defined
+    fail_msg: "Unable to install NGT with reboot preference set to SKIP "
+    success_msg: "NGT is installed successfully with reboot preference set to SKIP "
+
+##################################################################################
+
+- name: Sleep for 1 minute until NGT is installed
+  ansible.builtin.pause:
+    minutes: 1
+
+- name: Get NGT config from VM after NGT is installed
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get NGT config from VM after NGT is installed Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.guest_tools.is_installed == true
+      - result.response.guest_tools.is_iso_inserted == false
+      - result.response.guest_tools.is_reachable == true
+      - result.response.guest_tools.is_enabled == true
+      - result.response.guest_tools.capabilities[0] == "SELF_SERVICE_RESTORE"
+      - result.response.guest_tools.capabilities[1] == "VSS_SNAPSHOT"
+      - result.response.guest_tools.capabilities | length == 2
+      - result.response.guest_tools.guest_os_version is defined
+      - result.response.guest_tools.version is defined
+    fail_msg: "Unable to get NGT config from VM  "
+    success_msg: "NGT config from VM is retrieved successfully "
+
+################################################################################
+
+- name: Fetch NGT config after installing NGT in VM with reboot preference set to SKIP
+  ntnx_vms_ngt_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch NGT config after installing NGT in VM with reboot preference set to SKIP Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.is_installed == true
+      - result.response.is_iso_inserted == false
+      - result.response.is_reachable == true
+      - result.response.is_enabled == true
+      - result.response.capabilities[0] == "SELF_SERVICE_RESTORE"
+      - result.response.capabilities[1] == "VSS_SNAPSHOT"
+      - result.response.capabilities | length == 2
+    fail_msg: "Unable to fetch NGT config after installing NGT in VM with reboot preference set to SKIP "
+    success_msg: "NGT config is fetched successfully after installing NGT in VM with reboot preference set to SKIP "
+
+##################################################################################
+
+- name: Update NGT in VM with check mode enabled
+  ntnx_vms_ngt_update_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    is_enabled: false
+    capabilities:
+      - VSS_SNAPSHOT
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update NGT in VM with check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.capabilities[0] == "VSS_SNAPSHOT"
+      - result.response.capabilities | length == 1
+      - result.response.is_enabled == false
+      - result.response.is_installed == true
+      - result.response.is_iso_inserted == false
+      - result.response.is_reachable == true
+      - result.response.guest_os_version is defined
+      - result.response.version is defined
+    fail_msg: "Unable to update NGT with check mode enabled "
+    success_msg: "NGT is updated successfully with check mode enabled "
+
+#################################################################################
+
+- name: Update NGT in VM by disabling it and setting capabilities to VSS_SNAPSHOT
+  ntnx_vms_ngt_update_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    is_enabled: false
+    capabilities:
+      - VSS_SNAPSHOT
+  register: result
+  ignore_errors: true
+
+- name: Update NGT in VM by disabling it and setting capabilities to VSS_SNAPSHOT Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.capabilities[0] == "VSS_SNAPSHOT"
+      - result.response.capabilities | length == 1
+      - result.response.is_enabled == false
+    fail_msg: "Unable to update NGT "
+    success_msg: "NGT is updated successfully "
+
+################################################################################
+
+- name: Get NGT config from VM after NGT is updated
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get NGT config from VM after NGT is updated Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.guest_tools.capabilities[0] == "VSS_SNAPSHOT"
+      - result.response.guest_tools.capabilities | length == 1
+      - result.response.guest_tools.is_enabled == false
+      - result.response.guest_tools.is_installed == true
+      - result.response.guest_tools.is_iso_inserted == false
+      - result.response.guest_tools.is_reachable == false
+      - result.response.guest_tools.guest_os_version is defined
+      - result.response.guest_tools.version is defined
+    fail_msg: "Unable to get NGT config from VM  "
+    success_msg: "NGT config from VM is retrieved successfully "
+
+################################################################################
+
+- name: Test idempotency by updating NGT in VM with same attributes
+  ntnx_vms_ngt_update_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    is_enabled: false
+    capabilities:
+      - VSS_SNAPSHOT
+  register: result
+  ignore_errors: true
+
+- name: Test idempotency by updating NGT in VM with same attributes Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.msg == "Nothing to change."
+    fail_msg: "Test idempotency by updating NGT in VM with same attributes failed "
+    success_msg: "Test idempotency by updating NGT in VM with same attributes passed "
+
+################################################################################
+
+- name: Update NGT in VM by enabling it
+  ntnx_vms_ngt_update_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    is_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Update NGT in VM by enabling it Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.is_enabled == true
+    fail_msg: "Unable to update NGT "
+    success_msg: "NGT is updated successfully "
+
+#################################################################################
+
+- name: Get NGT config from VM after NGT is updated
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get NGT config from VM after NGT is updated Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.guest_tools.capabilities[0] == "VSS_SNAPSHOT"
+      - result.response.guest_tools.capabilities | length == 1
+      - result.response.guest_tools.is_enabled == true
+      - result.response.guest_tools.is_installed == true
+      - result.response.guest_tools.is_iso_inserted == false
+      - result.response.guest_tools.is_reachable == true
+      - result.response.guest_tools.guest_os_version is defined
+      - result.response.guest_tools.version is defined
+    fail_msg: "Unable to get NGT config from VM  "
+    success_msg: "NGT config from VM is retrieved successfully "
+
+#################################################################################
+
+- name: Upgrade NGT in VM with check mode enabled
+  ntnx_vms_ngt_upgrade_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    reboot_preference:
+      schedule_type: LATER
+      schedule:
+        start_time: "2026-08-01T00:00:00Z"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Upgrade NGT in VM with check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.reboot_preference.schedule_type == "LATER"
+      - result.response.reboot_preference.schedule.start_time == "2026-08-01T00:00:00Z"
+    fail_msg: "Unable to upgrade NGT with check mode enabled "
+    success_msg: "NGT is upgraded successfully with check mode enabled "
+
+###############################################################################
+
+# This test case is commented since NGT upgrade is failing from v4 api:
+# https://jira.nutanix.com/browse/ENG-665842
+
+# - name: Upgrade NGT in VM
+#   ntnx_vms_ngt_upgrade_v2:
+#     state: present
+#     ext_id: "{{ vm_uuid }}"
+#     reboot_preference:
+#       schedule_type: "SKIP"
+#   register: result
+#   ignore_errors: true
+
+# - name: Upgrade NGT in VM Status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.failed == false
+#       - result.ext_id == "{{ vm_uuid }}"
+#       - result.response.reboot_preference.schedule_type == "SKIP"
+#     fail_msg: "Unable to upgrade NGT "
+#     success_msg: "NGT is upgraded successfully "
+
+################################################################################
+
+- name: Insert ISO into CD ROM in VM with is_config_only set to true and check mode enabled
+  ntnx_vms_ngt_insert_iso_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - SELF_SERVICE_RESTORE
+      - VSS_SNAPSHOT
+    is_config_only: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Insert ISO into CD ROM in VM with is_config_only set to true and check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.capabilities[0] == "SELF_SERVICE_RESTORE"
+      - result.response.capabilities[1] == "VSS_SNAPSHOT"
+      - result.response.capabilities | length == 2
+      - result.response.is_config_only == true
+    fail_msg: "Insert ISO into CD ROM in VM with is_config_only set to true and check mode enabled failed "
+    success_msg: "Insert ISO into CD ROM in VM with is_config_only set to true and check mode enabled passed "
+
+#################################################################################
+
+- name: Insert ISO into CD ROM in VM with is_config_only set to false and check mode enabled
+  ntnx_vms_ngt_insert_iso_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - SELF_SERVICE_RESTORE
+      - VSS_SNAPSHOT
+    is_config_only: false
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Insert ISO into CD ROM in VM with is_config_only set to false and check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.capabilities[0] == "SELF_SERVICE_RESTORE"
+      - result.response.capabilities[1] == "VSS_SNAPSHOT"
+      - result.response.capabilities | length == 2
+      - result.response.is_config_only == false
+    fail_msg: "Insert ISO into CD ROM in VM with is_config_only set to false and check mode enabled failed "
+    success_msg: "Insert ISO into CD ROM in VM with is_config_only set to false and check mode enabled passed "
+
+#################################################################################
+
+- name: Insert ISO into CD ROM in VM
+  ntnx_vms_ngt_insert_iso_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - SELF_SERVICE_RESTORE
+    is_config_only: true
+  register: result
+  ignore_errors: true
+
+- name: Insert ISO into CD ROM in VM Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.capabilities[0] == "SELF_SERVICE_RESTORE"
+      - result.response.capabilities | length == 1
+      - result.response.is_enabled == true
+      - result.response.is_iso_inserted == true
+      - result.response.is_reachable == true
+      - result.response.guest_os_version is defined
+      - result.response.version is defined
+      - result.task_ext_id is defined
+    fail_msg: "Unable to insert ISO into CD ROM in VM "
+    success_msg: "ISO is inserted into CD ROM in VM successfully "
+
+#################################################################################
+
+- name: Get NGT config from VM after ISO is inserted
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get NGT config from VM after ISO is inserted Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.cd_roms[0].iso_type == "GUEST_TOOLS"
+    fail_msg: "Unable to get NGT config from VM  "
+    success_msg: "NGT config from VM is retrieved successfully "
+
+##################################################################################
+
+- name: Fetch NGT config
+  ntnx_vms_ngt_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch NGT config Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.capabilities[0] == "SELF_SERVICE_RESTORE"
+      - result.response.capabilities | length == 1
+      - result.response.is_enabled == true
+      - result.response.is_reachable == true
+      - result.response.guest_os_version is defined
+      - result.response.version is defined
+    fail_msg: "Unable to fetch NGT config "
+    success_msg: "NGT config is fetched successfully "
+
+##################################################################################
+
+- name: Sleep for 2 minutes before uninstalling NGT
+  ansible.builtin.pause:
+    minutes: 2
+
+- name: Uninstall NGT in VM
+  ntnx_vms_ngt_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Uninstall NGT in VM Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.is_installed == none
+    fail_msg: "Unable to uninstall NGT in VM  "
+    success_msg: "NGT is uninstalled successfully in VM "
+
+##################################################################################
+
+- name: Fetch NGT config after NGT is uninstalled
+  ntnx_vms_ngt_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch NGT config after NGT is uninstalled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.is_installed == none
+    fail_msg: "Unable to fetch NGT config after NGT is uninstalled "
+    success_msg: "NGT config is fetched successfully after NGT is uninstalled "
+
+#################################################################################
+
+- name: Uninstall NGT in VM to test idempotency
+  ntnx_vms_ngt_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Uninstall NGT in VM to test idempotency Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.msg == "NGT is already not installed in the given vm"
+    fail_msg: "Uninstall NGT in VM to test idempotency failed "
+    success_msg: "Uninstall NGT in VM to test idempotency passed "
+
+##################################################################################
+
+- name: Delete the VM
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VM  "
+    success_msg: "VM is deleted successfully "

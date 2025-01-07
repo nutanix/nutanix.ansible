@@ -1,0 +1,78 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a PBR with vpc, source network, external destination, with PERMIT action and icmp
+# 2. Update the PBR name, description, and priority
+# 3. Fetch the PBR details
+# 4. Delete the PBR
+
+- name: PBRs playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        pbr_name: "pbr1"
+        pbr_uuid: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
+        priority: 2
+        vpc_ext_id: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
+        network:
+          ip: "10.0.0.15"
+          prefix: 24
+
+    - name: Create PBR with vpc , source network, external destination, with PERMIT action and icmp
+      nutanix.ncp.ntnx_pbrs_v2:
+        state: present
+        name: "{{ pbr_name }}"
+        priority: "{{ priority }}"
+        vpc_ext_id: "{{ vpc_ext_id }}"
+        description: "test description"
+        policies:
+          - policy_action:
+              action_type: PERMIT
+            policy_match:
+              source:
+                address_type: SUBNET
+                subnet_prefix:
+                  ipv4:
+                    ip:
+                      value: "{{ network.ip }}"
+                    prefix_length: "{{ network.prefix }}"
+              destination:
+                address_type: EXTERNAL
+              protocol_type: ICMP
+              protocol_parameters:
+                icmp:
+                  icmp_type: 25
+                  icmp_code: 1
+      register: result
+      ignore_errors: true
+
+    - name: Update PBR name ,description, priority
+      nutanix.ncp.ntnx_pbrs_v2:
+        state: present
+        ext_id: "{{ pbr_uuid }}"
+        priority: 3
+        name: "Updated PBR"
+        description: "Updated description"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch PBR details
+      nutanix.ncp.ntnx_pbrs_info_v2:
+        ext_id: "{{ pbr_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete PBR
+      nutanix.ncp.ntnx_pbrs_v2:
+        state: absent
+        ext_id: "{{ pbr_uuid }}"
+      register: result
+      ignore_errors: true

@@ -1,0 +1,170 @@
+---
+- name: Start ntnx_vms_stage_guest_customization_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vms_stage_guest_customization_v2 tests
+
+- name: Create vm with different disks, using ubuntu image , with cdrom
+  ntnx_vms_v2:
+    name: test
+    description: ansible test
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
+        disk_address:
+          bus_type: SCSI
+          index: 3
+    guest_customization:
+      config:
+        cloudinit:
+          datasource_type: CONFIG_DRIVE_V2
+          cloud_init_script:
+            user_data:
+              value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IHRydWUKc3NoX3B3YXV0aDogICB0cnVl
+  register: result
+  ignore_errors: true
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "test"
+      - result.response.description == "ansible test"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.disks[1].backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
+      - result.response.disks[1].disk_address.bus_type == "SCSI"
+      - result.response.disks[1].disk_address.index == 3
+    fail_msg: " Unable to create  vm with different disks, using ubuntu image , with cdrom"
+    success_msg: "Vm with different disks, using ubuntu image , with cdrom created successfully "
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ result.response.ext_id }}"
+
+######################################################################################################################
+
+- name: Generate spec with all attributes for linux vm
+  ntnx_vms_stage_guest_customization_v2:
+    ext_id: "{{ vm_uuid }}"
+    config:
+      cloudinit:
+        datasource_type: CONFIG_DRIVE_V2
+        cloud_init_script:
+          user_data:
+            value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+  register: result
+  check_mode: true
+
+- name: Generate spec with all attributes for linux vm status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.config.datasource_type == "CONFIG_DRIVE_V2"
+      - result.response.config.cloud_init_script.value == "I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ=="
+    fail_msg: Unable to Generate spec with all attributes for linux vm in check mode
+    success_msg: Generate spec with all attributes for linux vm finished successfully in check mode
+
+######################################################################################################################
+
+- name: Generate spec with all attributes for sysprep
+  ntnx_vms_stage_guest_customization_v2:
+    ext_id: "{{ vm_uuid }}"
+    config:
+      sysprep:
+        install_type: FRESH
+        sysprep_script:
+          unattendxml:
+            value: test
+  register: result
+  check_mode: true
+
+- name: Check the response
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.config.install_type == "FRESH"
+      - result.response.config.sysprep_script.value == "test"
+    fail_msg: Unable to Generate spec with all attributes for sysprep in check mode
+    success_msg: Generate spec with all attributes for sysprep finished successfully in check mode
+
+######################################################################################################################
+
+- name: Update guest script
+  ntnx_vms_stage_guest_customization_v2:
+    ext_id: "{{ vm_uuid }}"
+    config:
+      cloudinit:
+        datasource_type: CONFIG_DRIVE_V2
+        cloud_init_script:
+          user_data:
+            value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+  register: result
+
+- name: Check the response
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Unable to Update guest script
+    success_msg: Update guest script finished successfully
+
+######################################################################################################################
+
+- name: Power on a VM
+  ntnx_vms_power_actions_v2:
+    ext_id: "{{ vm_uuid }}"
+    state: power_on
+    wait: true
+  register: result
+
+- name: Check the response
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Unable to Power on a VM
+    success_msg: Power on a VM finished successfully
+
+######################################################################################################################
+
+- name: Delete all Created VMs
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+
+- name: Check the response
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+    fail_msg: Unable to Delete all Created VMs
+    success_msg: Delete all Created VMs finished successfully

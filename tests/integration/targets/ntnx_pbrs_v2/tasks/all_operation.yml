@@ -1,0 +1,808 @@
+---
+- name: Start testing ntnx_pbrs_v2, ntnx_pbrs_info_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_pbrs_v2, ntnx_pbrs_info_v2
+
+- name: Generate random pbr name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-pbr-"
+
+- name: Set pbr name
+  ansible.builtin.set_fact:
+    pbr_name: "{{ random_name }}{{ suffix_name }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Create min VPC
+  ntnx_vpcs_v2:
+    state: present
+    name: "{{random_name}}vpc"
+  register: result
+
+- name: Creation status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.name == "{{random_name}}vpc"
+      - result.response.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+    fail_msg: " Unable to create min VPC "
+    success_msg: " Min VPC for pbr testing created successfully "
+
+- name: Set vpc uuid
+  ansible.builtin.set_fact:
+    pbr:
+      vpc:
+        uuid: "{{ result.ext_id }}"
+###############################################################################################################################
+- name: Create PBR with vpc , source network, external destination, with PERMIT action and icmp with check_mode
+  ntnx_pbrs_v2:
+    state: present
+    name: "{{pbr_name}}1"
+    priority: "{{ priority.0 }}"
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    policies:
+      - policy_action:
+          action_type: PERMIT
+        policy_match:
+          source:
+            address_type: SUBNET
+            subnet_prefix:
+              ipv4:
+                ip:
+                  value: "{{ network.ip }}"
+                prefix_length: "{{ network.prefix }}"
+          destination:
+            address_type: EXTERNAL
+          protocol_type: ICMP
+          protocol_parameters:
+            icmp:
+              icmp_type: 25
+              icmp_code: 1
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.name == "{{pbr_name}}1"
+      - result.response.policies.0.policy_action.action_type == "PERMIT"
+      - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
+      - result.response.policies.0.policy_match.protocol_type == "ICMP"
+      - result.response.policies.0.policy_match.source.address_type == "SUBNET"
+      - result.response.priority == {{ priority.0 }}
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_code == 1
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
+      - result.changed == false
+      - result.failed == false
+    fail_msg: " Unable to Create PBR with vpc , source network, external destination, with PERMIT action and icmp with check mode"
+    success_msg: "Returned as expected in check mode"
+###############################################################################################################################
+- name: Create PBR with vpc , source network, external destination, with PERMIT action and icmp
+  ntnx_pbrs_v2:
+    state: present
+    name: "{{pbr_name}}1"
+    priority: "{{ priority.0 }}"
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    description: "test description"
+    policies:
+      - policy_action:
+          action_type: PERMIT
+        policy_match:
+          source:
+            address_type: SUBNET
+            subnet_prefix:
+              ipv4:
+                ip:
+                  value: "{{ network.ip }}"
+                prefix_length: "{{ network.prefix }}"
+          destination:
+            address_type: EXTERNAL
+          protocol_type: ICMP
+          protocol_parameters:
+            icmp:
+              icmp_type: 25
+              icmp_code: 1
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.ext_id == result.ext_id
+      - result.response.description == "test description"
+      - result.response.name == "{{pbr_name}}1"
+      - result.response.policies.0.policy_action.action_type == "PERMIT"
+      - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
+      - result.response.policies.0.policy_match.protocol_type == "ICMP"
+      - result.response.policies.0.policy_match.source.address_type == "SUBNET"
+      - result.response.priority == {{ priority.0 }}
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_code == 1
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
+      - result.changed == true
+      - result.failed == false
+    fail_msg: " Unable to Create PBR with vpc , source network, external destination, with PERMIT action and icmp"
+    success_msg: " Create PBR with vpc , source network, external destination, with PERMIT action and icmp created successfully "
+
+- name: Adding PBR external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+###############################################################################################################################
+- name: Check idempotency
+  ntnx_pbrs_v2:
+    state: present
+    name: "{{pbr_name}}1"
+    ext_id: "{{ result.ext_id }}"
+    priority: "{{ priority.0 }}"
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+  register: result
+  ignore_errors: true
+
+- name: Check idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg  == "Nothing to change."
+    fail_msg: " Unable to check idempotency "
+    success_msg: " idempotency check finished successfully"
+###############################################################################################################################
+- name: List pbr using priority and vpcExtId filter criteria
+  ntnx_pbrs_info_v2:
+    filter: "priority eq {{priority.0}} and vpcExtId eq '{{pbr.vpc.uuid}}' "
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response[0].ext_id == todelete[-1]
+      - result.response.0.priority == {{ priority.0 }}
+      - result.response[0].vpc_ext_id == '{{pbr.vpc.uuid}}'
+      - result.response[0].name == "{{pbr_name}}1"
+      - result.response.0.policies.0.policy_action.action_type == "PERMIT"
+      - result.response.0.policies.0.policy_match.destination.address_type == "EXTERNAL"
+      - result.response.0.policies.0.policy_match.protocol_type == "ICMP"
+      - result.response.0.policies.0.policy_match.source.address_type == "SUBNET"
+      - result.response.0.policies.0.policy_match.protocol_parameters.icmp_code == 1
+      - result.response.0.policies.0.policy_match.protocol_parameters.icmp_type == 25
+      - result.changed == false
+      - result.failed == false
+    fail_msg: " Unable to list pbrs using priority and vpcExtId filter criteria "
+    success_msg: " pbrs listed successfully using priority and vpcExtId filter criteria"
+###############################################################################################################################
+- name: List pbrs using ext_id
+  ntnx_pbrs_info_v2:
+    ext_id: "{{todelete[-1]}}"
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id == "{{todelete[-1]}}"
+      - result.response.name == "{{pbr_name}}1"
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.policies.0.policy_action.action_type == "PERMIT"
+      - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
+      - result.response.policies.0.policy_match.protocol_type == "ICMP"
+      - result.response.policies.0.policy_match.source.address_type == "SUBNET"
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_code == 1
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
+      - result.changed == false
+      - result.failed == false
+    fail_msg: " Unable to list pbrs using ext_id "
+    success_msg: " pbrs listed successfully using ext_id"
+###############################################################################################################################
+- name: Create PBR with vpc, any source, any destination, any protocol and permit action
+  ntnx_pbrs_v2:
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    state: present
+    priority: "{{ priority.1 }}"
+    name: "{{pbr_name}}2"
+    policies:
+      - policy_action:
+          action_type: PERMIT
+        policy_match:
+          source:
+            address_type: ANY
+          destination:
+            address_type: ANY
+          protocol_type: ANY
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.name == "{{pbr_name}}2"
+      - result.response.policies.0.policy_action.action_type == "PERMIT"
+      - result.response.policies.0.policy_match.destination.address_type == "ANY"
+      - result.response.policies.0.policy_match.protocol_type == "ANY"
+      - result.response.policies.0.policy_match.source.address_type == "ANY"
+      - result.response.priority == {{ priority.1}}
+    fail_msg: " Unable to create PBR with vpc, any source, any destination, any protocol and PERMIT action "
+    success_msg: " PBR with vpc, any source, any destination, any protocol and PERMIT action created successfully "
+
+- name: Adding PBR external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+##############################################################################################
+- name: Check idempotency
+  ntnx_pbrs_v2:
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    state: present
+    priority: "{{ priority.1 }}"
+    ext_id: "{{ result.ext_id }}"
+    name: "{{pbr_name}}2"
+    policies:
+      - policy_action:
+          action_type: PERMIT
+        policy_match:
+          source:
+            address_type: ANY
+          destination:
+            address_type: ANY
+          protocol_type: ANY
+  register: result
+  ignore_errors: true
+
+- name: Check idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg  == "Nothing to change."
+    fail_msg: " Unable to check idempotency "
+    success_msg: " Idempotency check finished successfully"
+###############################################################################################################################
+- name: List pbrs using limit
+  ntnx_pbrs_info_v2:
+    limit: 1
+  register: pbrs
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - pbrs.response is defined
+      - pbrs.response | length == 1
+    fail_msg: " Unable to list pbrs using limit "
+    success_msg: " PBRs listed successfully using limit"
+###############################################################################################################################
+- name: Create PBR with vpc, any source, external destination and deny action with protocol number
+  ntnx_pbrs_v2:
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    state: present
+    priority: "{{ priority.2 }}"
+    name: "{{pbr_name}}3"
+    description: "Test desc"
+    policies:
+      - policy_action:
+          action_type: DENY
+        policy_match:
+          source:
+            address_type: ANY
+          destination:
+            address_type: EXTERNAL
+          protocol_type: PROTOCOL_NUMBER
+          protocol_parameters:
+            protocol_number:
+              protocol_number: "{{ protocol.number }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.description == "Test desc"
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.name == "{{pbr_name}}3"
+      - result.response.policies.0.policy_action.action_type == "DENY"
+      - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
+      - result.response.policies.0.policy_match.protocol_type == "PROTOCOL_NUMBER"
+      - result.response.policies.0.policy_match.protocol_parameters.protocol_number == {{ protocol.number }}
+      - result.response.priority == {{ priority.2 }}
+    fail_msg: " Unable to create PBR with vpc, any source, external destination and deny action with protocol number"
+    success_msg: " Create PBR with vpc, any source, external destination and deny action with protocol number created successfully "
+
+- name: Adding PBR external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+######################################################################################################
+- name: Update PBR name ,description, priority
+  ntnx_pbrs_v2:
+    state: present
+    ext_id: "{{ result.ext_id }}"
+    priority: "{{ priority.8 }}"
+    name: "{{pbr_name}}3_new"
+    description: "Updated Test desc"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.changed == true
+      - result.failed == false
+      - result.response.description == "Updated Test desc"
+      - result.response.name == "{{pbr_name}}3_new"
+      - result.response.priority == {{ priority.8 }}
+    fail_msg: " Unable to update PBR name ,description, priority "
+    success_msg: " PBR name ,description, priority updated successfully "
+######################################################################################################
+- name: Update PBR policy_action, policy_match, protocol_parameters
+  ntnx_pbrs_v2:
+    state: present
+    ext_id: "{{ result.ext_id }}"
+    policies:
+      - policy_action:
+          action_type: PERMIT
+        policy_match:
+          source:
+            address_type: ANY
+          destination:
+            address_type: ANY
+          protocol_type: ANY
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.changed == true
+      - result.failed == false
+      - result.response.policies.0.policy_action.action_type == "PERMIT"
+      - result.response.policies.0.policy_match.destination.address_type == "ANY"
+      - result.response.policies.0.policy_match.protocol_type == "ANY"
+      - result.response.policies.0.policy_match.source.address_type == "ANY"
+
+    fail_msg: " Unable to update PBR name ,description, priority "
+    success_msg: " PBR name ,description, priority updated successfully "
+######################################################################################################
+- name: Create PBR with vpc with source external and destination network with reroute action and with tcp protocol
+  ntnx_pbrs_v2:
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    state: present
+    priority: "{{ priority.3 }}"
+    name: "{{pbr_name}}4"
+    policies:
+      - policy_action:
+          action_type: REROUTE
+          reroute_params:
+            - reroute_fallback_action: NO_ACTION
+              service_ip:
+                ipv4:
+                  value: 10.0.0.15
+                  prefix_length: 32
+        policy_match:
+          source:
+            address_type: EXTERNAL
+          destination:
+            address_type: SUBNET
+            subnet_prefix:
+              ipv4:
+                ip:
+                  value: "{{ network.ip }}"
+                prefix_length: "{{ network.prefix }}"
+          protocol_type: TCP
+          protocol_parameters:
+            tcp:
+              source_port_ranges:
+                - start_port: "{{ tcp.port }}"
+                  end_port: "{{ tcp.port }}"
+              destination_port_ranges:
+                - start_port: "{{ tcp.port_rangelist.0 }}"
+                  end_port: "{{ tcp.port_rangelist.1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.name == "{{pbr_name}}4"
+      - result.response.policies.0.policy_action.action_type == "REROUTE"
+      - result.response.policies.0.policy_match.destination.address_type == "SUBNET"
+      - result.response.policies.0.policy_match.source.address_type == "EXTERNAL"
+      - result.response.policies.0.policy_match.protocol_type == "TCP"
+      - result.response.policies.0.policy_match.destination.subnet_prefix.ipv4.ip.value == "{{ network.ip }}"
+      - result.response.policies.0.policy_match.destination.subnet_prefix.ipv4.ip.prefix_length == 32
+      - result.response.priority == {{ priority.3}}
+      - result.response.policies.0.policy_action.reroute_params.0.reroute_fallback_action == "NO_ACTION"
+      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.prefix_length == 32
+      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.value == "10.0.0.15"
+      - result.response.policies.0.policy_match.protocol_parameters.destination_port_ranges.0.end_port == {{ tcp.port_rangelist.1 }}
+      - result.response.policies.0.policy_match.protocol_parameters.destination_port_ranges.0.start_port == {{ tcp.port_rangelist.0 }}
+      - result.response.policies.0.policy_match.protocol_parameters.source_port_ranges.0.end_port == {{ tcp.port }}
+      - result.response.policies.0.policy_match.protocol_parameters.source_port_ranges.0.start_port == {{ tcp.port }}
+    fail_msg: " Unable to create PBR with vpc with source external and destination network with reroute action and tcp port rangelist "
+    success_msg: " PBR with vpc with source external and destination network with reroute action and tcp port rangelist created successfully "
+
+- name: Adding PBR external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+
+##########################################################################################################
+- name: Create PBR with vpc with source external and destination network with reroute action and any tcp port rangelist
+  ntnx_pbrs_v2:
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    state: present
+    priority: "{{ priority.4 }}"
+    name: "{{pbr_name}}5"
+    policies:
+      - policy_action:
+          action_type: PERMIT
+        policy_match:
+          source:
+            address_type: EXTERNAL
+          destination:
+            address_type: SUBNET
+            subnet_prefix:
+              ipv4:
+                ip:
+                  value: "{{ network.ip }}"
+                prefix_length: "{{ network.prefix }}"
+          protocol_type: TCP
+          protocol_parameters:
+            tcp:
+              source_port_ranges: []
+              destination_port_ranges: []
+
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.name == "{{pbr_name}}5"
+      - result.response.policies.0.policy_action.action_type == "PERMIT"
+      - result.response.policies.0.policy_match.destination.address_type == "SUBNET"
+      - result.response.policies.0.policy_match.source.address_type == "EXTERNAL"
+      - result.response.policies.0.policy_match.protocol_type == "TCP"
+      - result.response.policies.0.policy_match.destination.subnet_prefix.ipv4.ip.value == "{{ network.ip }}"
+      - result.response.policies.0.policy_match.destination.subnet_prefix.ipv4.ip.prefix_length ==32
+      - result.response.priority == {{ priority.4}}
+    fail_msg: " Unable to create PBR with vpc with source external and destination network with reroute action and any tcp ports rangelist "
+    success_msg: " PBR with vpc with source external and destination network with reroute action and any tcp ports rangelist created successfully "
+
+- name: Adding PBR external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+###########################################################################################################
+- name: Create PBR with vpc, custom source network, external destination, reroute action and udp port rangelist
+  ntnx_pbrs_v2:
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    state: present
+    priority: "{{ priority.5 }}"
+    name: "{{pbr_name}}6"
+    policies:
+      - policy_action:
+          action_type: REROUTE
+          reroute_params:
+            - reroute_fallback_action: NO_ACTION
+              service_ip:
+                ipv4:
+                  value: 10.0.0.16
+                  prefix_length: 32
+        policy_match:
+          source:
+            address_type: SUBNET
+            subnet_prefix:
+              ipv4:
+                ip:
+                  value: "{{ network.ip }}"
+                prefix_length: "{{ network.prefix }}"
+          destination:
+            address_type: ANY
+
+          protocol_type: UDP
+          protocol_parameters:
+            udp:
+              source_port_ranges:
+                - start_port: "{{ udp.port }}"
+                  end_port: "{{ udp.port }}"
+              destination_port_ranges:
+                - start_port: "{{ udp.port_rangelist.0 }}"
+                  end_port: "{{ udp.port_rangelist.1 }}"
+
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.name == "{{pbr_name}}6"
+      - result.response.policies.0.policy_action.action_type == "REROUTE"
+      - result.response.policies.0.policy_match.destination.address_type == "ANY"
+      - result.response.policies.0.policy_match.source.address_type == "SUBNET"
+      - result.response.policies.0.policy_match.protocol_type == "UDP"
+      - result.response.policies.0.policy_match.source.subnet_prefix.ipv4.ip.value == "{{ network.ip }}"
+      - result.response.policies.0.policy_match.source.subnet_prefix.ipv4.ip.prefix_length == 32
+      - result.response.priority == {{ priority.5}}
+      - result.response.policies.0.policy_action.reroute_params.0.reroute_fallback_action == "NO_ACTION"
+      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.prefix_length == 32
+      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.value == "10.0.0.16"
+      - result.response.policies.0.policy_match.protocol_parameters.destination_port_ranges.0.end_port == {{ udp.port_rangelist.1 }}
+      - result.response.policies.0.policy_match.protocol_parameters.destination_port_ranges.0.start_port == {{ udp.port_rangelist.0 }}
+      - result.response.policies.0.policy_match.protocol_parameters.source_port_ranges.0.end_port == {{ udp.port }}
+      - result.response.policies.0.policy_match.protocol_parameters.source_port_ranges.0.start_port == {{ udp.port }}
+    fail_msg: " Unable to create PBR with vpc with source network and destination external with reroute action and udp port rangelist"
+    success_msg: " PBR with vpc with source network and destination external with reroute action and udp port rangelist created successfully "
+
+- name: Adding PBR external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+##############################################################################################################
+- name: Create PBR with vpc name, custom source network, external destination, reroute action and any udp ports
+  ntnx_pbrs_v2:
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    state: present
+    priority: "{{ priority.6 }}"
+    name: "{{pbr_name}}7"
+    policies:
+      - policy_action:
+          action_type: REROUTE
+          reroute_params:
+            - reroute_fallback_action: NO_ACTION
+              service_ip:
+                ipv4:
+                  value: 10.0.0.17
+                  prefix_length: 32
+        policy_match:
+          source:
+            address_type: SUBNET
+            subnet_prefix:
+              ipv4:
+                ip:
+                  value: "{{ network.ip }}"
+                prefix_length: "{{ network.prefix }}"
+          destination:
+            address_type: ANY
+          protocol_type: UDP
+          protocol_parameters:
+            udp:
+              source_port_ranges: []
+              destination_port_ranges: []
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.name == "{{pbr_name}}7"
+      - result.response.policies.0.policy_action.action_type == "REROUTE"
+      - result.response.policies.0.policy_match.destination.address_type == "ANY"
+      - result.response.policies.0.policy_match.source.address_type == "SUBNET"
+      - result.response.policies.0.policy_match.protocol_type == "UDP"
+      - result.response.policies.0.policy_match.source.subnet_prefix.ipv4.ip.value == "{{ network.ip }}"
+      - result.response.policies.0.policy_match.source.subnet_prefix.ipv4.ip.prefix_length == 32
+      - result.response.priority == {{ priority.6}}
+      - result.response.policies.0.policy_action.reroute_params.0.reroute_fallback_action == "NO_ACTION"
+      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.prefix_length == 32
+      - result.response.policies.0.policy_action.reroute_params.0.service_ip.ipv4.value == "10.0.0.17"
+    fail_msg: " Unable to create PBR with vpc with source network and destination external with reroute action and and udp port "
+    success_msg: " PBR with vpc with source network and destination external with reroute action and any udp ports created successfully "
+
+- name: Adding PBR external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+##################################################################################################################
+- name: Create PBR with vpc, source network, external destination, with reroute action and icmp
+  ntnx_pbrs_v2:
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    state: present
+    priority: "{{ priority.7 }}"
+    name: "{{pbr_name}}8"
+    policies:
+      - policy_action:
+          action_type: REROUTE
+          reroute_params:
+            - service_ip:
+                ipv4:
+                  value: "{{reroute.ip}}"
+                  prefix_length: "{{reroute.prefix_length}}"
+        policy_match:
+          source:
+            address_type: SUBNET
+            subnet_prefix:
+              ipv4:
+                ip:
+                  value: "{{ network.ip }}"
+                prefix_length: "{{ network.prefix }}"
+          destination:
+            address_type: EXTERNAL
+          protocol_type: ICMP
+          protocol_parameters:
+            icmp:
+              icmp_type: "{{ icmp.type }}"
+              icmp_code: "{{ icmp.code }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.name == "{{pbr_name}}8"
+      - result.response.policies.0.policy_action.action_type == "REROUTE"
+      - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
+      - result.response.policies.0.policy_match.protocol_type == "ICMP"
+      - result.response.policies.0.policy_match.source.address_type == "SUBNET"
+      - result.response.priority == {{ priority.7 }}
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_code ==  {{ icmp.code }}
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_type ==  {{ icmp.type }}
+    fail_msg: "Unable to Create PBR with vpc, source network, external destination, with reroute action and icmp"
+    success_msg: "Create PBR with vpc, source network, external destination, with reroute action and icmp finished successfully"
+
+- name: Adding PBR external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+##################################################################################################################
+- name: Create PBR with vpc, source network, external destination, with forward action and icmp
+  ntnx_pbrs_v2:
+    vpc_ext_id: "{{pbr.vpc.uuid}}"
+    state: present
+    priority: "{{ priority.9 }}"
+    name: "{{pbr_name}}9"
+    policies:
+      - policy_action:
+          action_type: FORWARD
+          nexthop_ip_address:
+            ipv4:
+              value: "{{reroute.ip}}"
+              prefix_length: "{{reroute.prefix_length}}"
+
+        policy_match:
+          source:
+            address_type: SUBNET
+            subnet_prefix:
+              ipv4:
+                ip:
+                  value: "{{ network.ip }}"
+                prefix_length: "{{ network.prefix }}"
+          destination:
+            address_type: EXTERNAL
+          protocol_type: ICMP
+          protocol_parameters:
+            icmp:
+              icmp_type: "{{ icmp.type }}"
+              icmp_code: "{{ icmp.code }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.name == "{{pbr_name}}9"
+      - result.response.policies.0.policy_action.action_type == "FORWARD"
+      - result.response.policies.0.policy_action.nexthop_ip_address.ipv4.value == "{{reroute.ip}}"
+      - result.response.policies.0.policy_match.destination.address_type == "EXTERNAL"
+      - result.response.policies.0.policy_match.protocol_type == "ICMP"
+      - result.response.policies.0.policy_match.source.address_type == "SUBNET"
+      - result.response.priority == {{ priority.9 }}
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_code ==  {{ icmp.code }}
+      - result.response.policies.0.policy_match.protocol_parameters.icmp_type ==  {{ icmp.type }}
+    fail_msg: "Unable to Create PBR with vpc, source network, external destination, with forward action and icmp"
+    success_msg: "Create PBR with vpc, source network, external destination, with forward action and icmp finished successfully"
+
+- name: Adding PBR external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+##################################################################################################################
+- name: List pbrs using name filter criteria
+  ntnx_pbrs_info_v2:
+    filter: "name eq '{{pbr_name}}9'"
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].ext_id == "{{ todelete[-1] }}"
+      - result.response[0].name == "{{pbr_name}}9"
+      - result.response[0].vpc_ext_id == "{{pbr.vpc.uuid}}"
+      - result.response.0.policies.0.policy_action.action_type == "FORWARD"
+      - result.response.0.policies.0.policy_action.nexthop_ip_address.ipv4.value == "{{reroute.ip}}"
+      - result.response.0.policies.0.policy_match.destination.address_type == "EXTERNAL"
+      - result.response.0.policies.0.policy_match.protocol_type == "ICMP"
+      - result.response.0.policies.0.policy_match.source.address_type == "SUBNET"
+      - result.response.0.priority == {{ priority.9 }}
+      - result.response.0.policies.0.policy_match.protocol_parameters.icmp_code ==  {{ icmp.code }}
+      - result.response.0.policies.0.policy_match.protocol_parameters.icmp_type ==  {{ icmp.type }}
+    fail_msg: " Unable to list pbrs "
+    success_msg: " PBRs listed successfully "
+###############################################################################################################################
+- name: Delete all created pbrs
+  ntnx_pbrs_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.skipped == false
+      - result.changed == true
+      - result.msg == "All items completed",
+    fail_msg: "Unable to delete all pbrs"
+    success_msg: "All pbrs have been deleted successfully"
+###############################################################################################################################
+- name: Delete vpc
+  ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ pbr.vpc.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Unable to delete vpc"
+    success_msg: "Vpc has been deleted successfully"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
