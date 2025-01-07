@@ -19,11 +19,9 @@ We understand that this transition may require some effort, and we are committed
 
 ## Support
 
-Ansible Nutanix Provider leverages the community-supported model. See [Open Source Support](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA07V000000LdWPSA0) for more information about its support policy.
-
 -> **Note:** Update!! 
 We now have a brand new developer-centric Support Program designed for organizations that require a deeper level of developer support to manage their Nutanix environment and build applications quickly and efficiently. As part of this new Advanced API/SDK Support Program, you will get access to trusted technical advisors who specialize in developer tools including Nutanix Ansible Collections and receive support for your unique development needs and custom integration queries.
-Visit our Support Portal - Premium Add-On Support Programs  to learn more about this program. 
+[Visit our Support Portal - Premium Add-On Support Programs](https://www.nutanix.com/support-services/product-support/premium-support-programs)  to learn more about this program.<br /><br />
 **Contributions to open-source Nutanix Ansible Collections repository will continue to leverage a community-supported model. Visit https://portal.nutanix.com/kb/13424  for more details. 
 
 
@@ -37,20 +35,20 @@ This collection requires Python 3.9 or greater
 
 ## Releases
 
-| Ansible Version |  AOS Version | PC version  | Other software versions |
-|  :--- |  :--- | :--- | :--- |
-| 2.0 | 7.0 | pc2024.3 or later | ndb v2.5.1.1, nke v2.8 |
-| 1.9.2 | | pc2024.1 | |
-| 1.9.1 | | pc2023.1.0.2, pc2023.3 | ndb v2.5.1.1, nke v2.8.0,  foundation v5.2 | 
-| 1.9.0 | | pc2023.1, pc.2023.1.0.1 | ndb v2.5.0.2, nke v2.6.0, nke v2.7.0, nke v2.8.0 |
-| 1.8.0 | | pc2022.6 | ndb v2.5.0, ndb v2.5.1 |
-| 1.7.0 | | pc2022.6, pc2022.4, pc2022.1.0.2 | |
-| 1.6.0 | | | nke v2.3.0, nke v2.4.0, nke v2.5.0 |
-| 1.5.0 | | pc2022.6, pc2022.4.0.2, pc2022.1.0.2 | |
-| 1.4.0 | | pc2022.4, pc2022.1.0.2, pc2021.9.0.4 | |
-| 1.3.0 | | pc2022.4, pc2022.1.0.2, pc2021.9.0.4 |  |
-| 1.2.0 | | pc2022.4, pc2022.1.0.2, pc.2021.9.0.5 | |
-| 1.1.0 | | pc2022.1.0.2, pc.2021.9.0.5, pc.2021.8.0.1 | foundation v5.2, foundation v5.1.1, foundation central v1.3, foundation central v1.2 |
+| Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
+|  :--- |  :--- | :--- | :--- | :--- |
+| 2.0 | 7.0 | pc2024.3 or later | ndb v2.5.1.1, nke v2.8 foundation v5.7 ndb v2.7| yes |
+| 1.9.2 | | pc2024.1 | | yes |
+| 1.9.1 | | pc2023.1.0.2, pc2023.3 | ndb v2.5.1.1, nke v2.8.0,  foundation v5.2 | yes |
+| 1.9.0 | | pc2023.1, pc.2023.1.0.1 | ndb v2.5.0.2, nke v2.6.0, nke v2.7.0, nke v2.8.0 | no |
+| 1.8.0 | | pc2022.6 | ndb v2.5.0, ndb v2.5.1 | no |
+| 1.7.0 | | pc2022.6, pc2022.4, pc2022.1.0.2 | | no |
+| 1.6.0 | | | nke v2.3.0, nke v2.4.0, nke v2.5.0 | no |
+| 1.5.0 | | pc2022.6, pc2022.4.0.2, pc2022.1.0.2 | | no |
+| 1.4.0 | | pc2022.4, pc2022.1.0.2, pc2021.9.0.4 | | no |
+| 1.3.0 | | pc2022.4, pc2022.1.0.2, pc2021.9.0.4 |  | no |
+| 1.2.0 | | pc2022.4, pc2022.1.0.2, pc.2021.9.0.5 | | no |
+| 1.1.0 | | pc2022.1.0.2, pc.2021.9.0.5, pc.2021.8.0.1 | foundation v5.2, foundation v5.1.1, foundation central v1.3, foundation central v1.2 | no |
 
 ## Prism Central
 > For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
