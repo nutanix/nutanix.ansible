@@ -23,7 +23,7 @@ We understand that this transition may require some effort, and we are committed
 Update!! 
 We now have a brand new developer-centric Support Program designed for organizations that require a deeper level of developer support to manage their Nutanix environment and build applications quickly and efficiently. As part of this new Advanced API/SDK Support Program, you will get access to trusted technical advisors who specialize in developer tools including Nutanix Ansible Collections and receive support for your unique development needs and custom integration queries.
 [Visit our Support Portal - Premium Add-On Support Programs](https://www.nutanix.com/support-services/product-support/premium-support-programs)  to learn more about this program.<br /><br />
-**Contributions to open-source Nutanix Ansible Collections repository will continue to leverage a community-supported model. Visit https://portal.nutanix.com/kb/13424  for more details. 
+Contributions to open-source Nutanix Ansible Collections repository will continue to leverage a community-supported model. Visit https://portal.nutanix.com/kb/13424  for more details. 
 
 
 # Version compatibility
