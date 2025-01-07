@@ -384,7 +384,7 @@ def get_nodes_network_information(module, cluster_node_api, result):
         result["error"] = err
         module.fail_json(
             msg="Failed generating spec for getting network information for cluster nodes",
-            **result,
+            **result
         )
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id

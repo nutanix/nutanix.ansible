@@ -388,7 +388,7 @@ def update_authorization_policy(module, result):
         result["error"] = resp.data.message
         module.fail_json(
             msg="Failed to update authorization policy",
-            **result,
+            **result
         )
 
     resp = get_authorization_policy(module, authorization_policies, ext_id=ext_id)

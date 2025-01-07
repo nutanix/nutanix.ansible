@@ -473,7 +473,7 @@ def deploy_template(module, result):
         version_ext_id = module.params.get("version_id")
         result[
             "msg"
-        ] = f"Template ({ext_id}) with given version ({version_ext_id}) will be deployed."
+        ] = "Template ({0}) with given version ({1}) will be deployed.".format(ext_id, version_ext_id)
         return
 
     etag = get_etag(data=current_spec)

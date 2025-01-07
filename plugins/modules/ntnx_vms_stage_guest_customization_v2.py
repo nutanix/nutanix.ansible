@@ -285,7 +285,7 @@ def stage_customize_guest(module, result):
         result["error"] = err
         module.fail_json(
             msg="Failed generating stage guest customization configuration spec",
-            **result,
+            **result
         )
 
     if module.check_mode:

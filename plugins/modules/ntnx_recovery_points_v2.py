@@ -407,7 +407,7 @@ def update_expiry_date_recovery_point(module, result):
             result["skipped"] = True
             module.exit_json(
                 msg="Update of other operations is not supported. Only updation of Expiration time is allowed.",
-                **result,
+                **result
             )
         else:
             result["skipped"] = True

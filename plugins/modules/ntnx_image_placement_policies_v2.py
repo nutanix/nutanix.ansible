@@ -392,7 +392,7 @@ def update_policy_state(module, result, policies, ext_id):
     if not etag:
         return module.fail_json(
             "unable to fetch etag for updating Placement Policy enforcement state",
-            **result,
+            **result
         )
 
     kwargs = {"if_match": etag}

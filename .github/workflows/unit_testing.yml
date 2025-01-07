@@ -40,7 +40,7 @@ jobs:
       - name: Run tests
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
-          ansible-test sanity --docker default --python ${{ matrix.python-version }} -v
+          ansible-test sanity --docker default -v
   unit_testing:
     runs-on: ubuntu-20.04
     strategy:

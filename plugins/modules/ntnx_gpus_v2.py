@@ -238,7 +238,7 @@ def detach_gpu(module, vms, result):
         resp = vms.delete_gpu_by_id(
             vmExtId=vm_ext_id,
             extId=ext_id,
-            **kwargs,
+            **kwargs
         )
     except Exception as e:
         raise_api_exception(

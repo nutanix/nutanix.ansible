@@ -814,7 +814,7 @@ def get_routing_policy_ext_id(module, result, api_instance, vpc_ext_id, priority
         result["error"] = err
         module.fail_json(
             msg="Failed generating spec for fetching routing policy using priority and vpc_ext_id",
-            **result,
+            **result
         )
 
     try:
@@ -836,7 +836,7 @@ def create_pbr(module, result):
     if not module.params.get("vpc_ext_id") and module.params.get("priority"):
         module.fail_json(
             msg="vpc_ext_id and priority are required for creating routing policy",
-            **result,
+            **result
         )
 
     pbrs = get_routing_policies_api_instance(module)
