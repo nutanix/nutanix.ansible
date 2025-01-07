@@ -37,9 +37,9 @@ This collection requires Python 3.9 or greater
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
-| 2.0 | 7.0 | pc2024.3 or later | ndb v2.5.1.1, nke v2.8 foundation v5.7 ndb v2.7| yes |
+| 2.0 | 7.0 | pc2024.3 or later | nke v2.8, foundation v5.7, ndb v2.7| yes |
 | 1.9.2 | | pc2024.1 | | yes |
-| 1.9.1 | | pc2023.1.0.2, pc2023.3 | ndb v2.5.1.1, nke v2.8.0,  foundation v5.2 | yes |
+| 1.9.1 | | pc2023.1.0.2, pc2023.3 | ndb v2.5.1.1, nke v2.8.0, foundation v5.2 | yes |
 | 1.9.0 | | pc2023.1, pc.2023.1.0.1 | ndb v2.5.0.2, nke v2.6.0, nke v2.7.0, nke v2.8.0 | no |
 | 1.8.0 | | pc2022.6 | ndb v2.5.0, ndb v2.5.1 | no |
 | 1.7.0 | | pc2022.6, pc2022.4, pc2022.1.0.2 | | no |
@@ -50,28 +50,6 @@ This collection requires Python 3.9 or greater
 | 1.2.0 | | pc2022.4, pc2022.1.0.2, pc.2021.9.0.5 | | no |
 | 1.1.0 | | pc2022.1.0.2, pc.2021.9.0.5, pc.2021.8.0.1 | foundation v5.2, foundation v5.1.1, foundation central v1.3, foundation central v1.2 | no |
 
-## Prism Central
-> For the 1.1.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc2022.1.0.2, pc.2021.9.0.5 and pc.2021.8.0.1.
-
-> For the 1.2.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.5.
-
-> For the 1.3.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4.
-
-> For the 1.4.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.4, pc2022.1.0.2 and pc.2021.9.0.4.
-
-> For the 1.5.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4.0.2 and pc2022.1.0.2.
-
-> For the 1.7.0 release of the ansible plugin it will have N-2 compatibility with the Prism Central APIs. This release was tested against Prism Central versions pc.2022.6, pc.2022.4 and pc2022.1.0.2.
-
-> For the 1.8.0 release of the ansible plugin it will have N compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2022.6 .
-
-> For the 1.9.0 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2023.1 and pc.2023.1.0.1 .
-
-> For the 1.9.1 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was tested against Prism Central version pc.2023.3 and pc.2023.1.0.2 .
-
-> For the 1.9.2 release of the ansible plugin it will have N-1 compatibility with the Prism Central APIs. This release was sanity tested against Prism Central version pc.2024.1 .
-
-
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1
 
@@ -81,41 +59,18 @@ This collection requires Python 3.9 or greater
 
 4. ntnx_security_rules - The ``apptier`` option in target group has been removed. New option called ``apptiers`` has been added to support multi tier policy.
 
-Prism Central based examples: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
+5. Currently NDB based modules are supported and tested against postgres based databases.
 
-## Foundation
-> For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation. This release was tested against Foundation versions v5.2 and v5.1.1
+### Examples:
+1. Prism Central: https://github.com/nutanix/nutanix.ansible/tree/main/examples/
 
-> For the 1.9.1 release of the ansible plugin, it was tested against versions v5.2
+2. Foundation: https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation
 
-Foundation based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation
+3. Foundation Central: https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc
 
-## Foundation Central
-> For the 1.1.0 release of the ansible plugin, it will have N-1 compatibility with the Foundation Central . This release was tested against Foundation Central versions v1.3 and v1.2
+4. Karbon: https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
 
-Foundation Central based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc
-
-## Karbon
-> For the 1.6.0 release of the ansible plugin, it will have N-2 compatibility with the Karbon. This release was tested against Karbon versions v2.3.0, v2.4.0 and v2.5.0
-
-> For the 1.9.0 release of the ansible plugin, it was tested against Karbon versions v2.6.0, v2.7.0 and v2.8.0
-
-> For the 1.9.1 release of the ansible plugin, it was tested against Karbon version v2.8.0
-
-Karbon based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon
-
-## Nutanix Database Service (ERA)
-
-> For the 1.8.0 release of the ansible plugin, it will have N-1 compatibility with the Nutanix Database Service (ERA). This release was tested against NDB versions v2.5.0 and v2.5.1
-
-> For the 1.9.0 release of the ansible plugin, it was tested against NDB versions v2.5.0.2
-
-> For the 1.9.1 release of the ansible plugin, it was tested against NDB versions v2.5.1.1
-
-NDB based examples : https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
-
-### Notes:
-1. Currently NDB based modules are supported and tested against postgres based databases.
+5. NDB: https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb
 
 # Installing the collection
 **Prerequisite**
@@ -281,6 +236,7 @@ ansible-playbook examples/iaas/iaas.yml
 
 ## Resources
 
+Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on prism central v4 APIs.
 
 | v1 Resources| v2 Resources |
 |  :--- |  :--- |
@@ -374,6 +330,8 @@ ansible-playbook examples/iaas/iaas.yml
 
 ## Data Sources
 
+Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on prism central v4 APIs.
+
 | v1 datasources | v2 datasources |
 |  :--- |  :--- |
 | ntnx_acps_info | ntnx_authorization_policies_info_v2 |
@@ -432,7 +390,7 @@ ansible-playbook examples/iaas/iaas.yml
 | - | ntnx_directory_services_info_v2 |
 | - | ntnx_saml_identity_providers_info_v2 |
 | - | ntnx_operations_info_v2 |
-| - | ntnx_hosts_info_v2 |
+| ntnx_hosts_info | ntnx_hosts_info_v2 |
 | - | ntnx_recovery_points_info_v2 |
 | - | ntnx_vm_recovery_point_info_v2 |
 | - | ntnx_gpus_info_v2 |
