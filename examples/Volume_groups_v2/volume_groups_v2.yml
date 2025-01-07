@@ -1,0 +1,60 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create Volume group
+# 2. Fetch above created VG
+# 3. Fetch all VGs using filters
+# 4. Delete Volume group
+
+- name: Volume groups playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vg_name: "vg1"
+        cluster_reference: "00057b8b-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
+        vg1_uuid: "d1b1b3b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
+
+    - name: Create Volume group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "{{ vg_name }}"
+        description: "Volume group description"
+        should_load_balance_vm_attachments: true
+        sharing_status: "SHARED"
+        target_prefix: "vg1"
+        cluster_reference: "{{ cluster_reference }}"
+        usage_type: "USER"
+        storage_features:
+          flash_mode:
+            is_enabled: true
+        iscsi_features:
+          target_secret: "Secret1234567"
+          enabled_authentications: "CHAP"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch above created VG
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        ext_id: "{{ vg1_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch all VGs using filters
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        filter: "startswith(name, '{{name}}')"
+      register: result
+      ignore_errors: true
+
+    - name: Delete Volume group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ vg1_uuid }}"
+      register: result
+      ignore_errors: true
