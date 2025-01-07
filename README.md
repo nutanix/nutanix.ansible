@@ -10,7 +10,7 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-### Important Notice 
+## Important Notice 
 Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit 
 [Legacy API Deprecation Announcement](https://portal.nutanix.com/page/documents/eol/list?type=announcement)
 [Legacy API Deprecation - FAQs](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA0VO0000005rgP0AQ)
