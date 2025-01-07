@@ -10,7 +10,7 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-NOTE: The latest version of the Nutanix Ansible collection is [v2.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.0).
+NOTE: The latest version of the Nutanix Ansible collection is [v2.0.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.0.0).
 
 ## Important Notice 
 Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit 
@@ -39,7 +39,7 @@ This collection requires Python 3.9 or greater
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
-| 2.0 | 7.0 | pc2024.3 or later | nke v2.8, foundation v5.7, ndb v2.7| yes |
+| 2.0.0 | 7.0 | pc2024.3 or later | nke v2.8, foundation v5.7, ndb v2.7| yes |
 | 1.9.2 | | pc2024.1 | | yes |
 | 1.9.1 | | pc2023.1.0.2, pc2023.3 | ndb v2.5.1.1, nke v2.8.0, foundation v5.2 | yes |
 | 1.9.0 | | pc2023.1, pc.2023.1.0.1 | ndb v2.5.0.2, nke v2.6.0, nke v2.7.0, nke v2.8.0 | no |
