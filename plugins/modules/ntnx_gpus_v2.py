@@ -235,11 +235,7 @@ def detach_gpu(module, vms, result):
     kwargs = {"if_match": etag}
 
     try:
-        resp = vms.delete_gpu_by_id(
-            vmExtId=vm_ext_id,
-            extId=ext_id,
-            **kwargs
-        )
+        resp = vms.delete_gpu_by_id(vmExtId=vm_ext_id, extId=ext_id, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
