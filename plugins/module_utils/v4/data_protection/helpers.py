@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 # Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -41,7 +38,7 @@ def get_recovery_point(module, api_instance, ext_id):
     This method will return recovery point info using external ID.
     Args:
         module: Ansible module
-        api_instance: AddressGroupsApi instance from ntnx_dataprotection_py_client sdk
+        api_instance: RecoveryPointsApi instance from ntnx_dataprotection_py_client sdk
         ext_id (str): top level recovery point external ID
     Returns:
         recovery_point_info (object): recovery point info

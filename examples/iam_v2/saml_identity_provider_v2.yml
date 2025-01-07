@@ -1,0 +1,69 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create SAML identity provider
+# 2. Update SAML identity provider
+# 3. List all SAML identity providers
+# 4. Get specific SAML identity provider
+# 5. Fetch SAML identity providers using filters
+# 6. Delete created SAML identity provider
+
+- name: SAML identity provider playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        saml_name: "ansible_saml"
+        username_attribute: "username"
+        idp_metadata_xml: "<xml_file_content>"
+        saml_ext_id: "33425890-8888-9999-5555-6788222f17b8"
+
+    - name: Create saml identity provider
+      nutanix.ncp.ntnx_saml_identity_providers_v2:
+        name: "{{ saml_name }}"
+        username_attribute: "{{ username_attribute }}1"
+        email_attribute: email
+        groups_attribute: groups
+        groups_delim: ","
+        idp_metadata_xml: "{{ idp_metadata_xml }}"
+        state: present
+      register: result
+      ignore_errors: true
+
+    - name: Get saml using filter name
+      nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+        filter: name eq  '{{ saml_name }}'
+      register: result
+      ignore_errors: true
+
+    - name: Update saml
+      nutanix.ncp.ntnx_saml_identity_providers_v2:
+        state: present
+        ext_id: "{{ saml_ext_id }}"
+        name: "{{ saml_name }}2"
+        username_attribute: "{{ username_attribute }}2"
+        email_attribute: new_email
+        groups_attribute: group_list
+        groups_delim: ;
+        is_signed_authn_req_enabled: true
+      register: result
+      ignore_errors: true
+
+    - name: List all identity providers
+      nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Delete the created SAML identity providers
+      nutanix.ncp.ntnx_saml_identity_providers_v2:
+        state: absent
+        ext_id: "{{ saml_ext_id }}"
+      register: result
+      ignore_errors: true

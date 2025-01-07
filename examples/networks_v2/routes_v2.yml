@@ -1,0 +1,83 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a static route
+# 2. Update the static route
+# 3. Fetch the static route details using ext_id
+# 4. Delete the static route
+
+- name: Routes playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        route_name: "route1"
+        route_uuid: "14785236-aa1a-54dc-81b4-6788222f17b8"
+        route_table_external_id: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
+        vpc_uuid: "11223344-1234-1111-2222-6788222f17b8"
+        external_subnet_uuid: "78965412-1234-5555-9865-6788222f17b8"
+        user_uuid: "7c62834e-43f0-4c20-a5d4-cbf36b9a142b"
+        project_uuid: "d7419d65-100e-4c99-a666-ec1431516bbe"
+        ip1: "10.0.0.1"
+        ip2: "10.0.0.2"
+
+    - name: Create static route
+      nutanix.ncp.ntnx_routes_v2:
+        state: present
+        name: "{{ route_name }}"
+        description: "Route for testing"
+        vpc_reference: "{{ vpc_uuid }}"
+        route_table_ext_id: "{{ route_table_external_id }}"
+        route_type: STATIC
+        destination:
+          ipv4:
+            ip:
+              value: "{{ ip1 }}"
+              prefix_length: 32
+        nexthop:
+          nexthop_type: "EXTERNAL_SUBNET"
+          nexthop_reference: "{{ external_subnet_uuid }}"
+        metadata:
+        owner_reference_id: "{{ user_uuid }}"
+        project_reference_id: "{{ project_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update route
+      nutanix.ncp.ntnx_routes_v2:
+        state: present
+        name: "{{ route_name }}_updated"
+        description: "Route for testing updated"
+        vpc_reference: "{{ vpc_uuid }}"
+        route_table_ext_id: "{{ route_table_external_id }}"
+        ext_id: "{{ route_uuid }}"
+        route_type: STATIC
+        destination:
+          ipv4:
+            ip:
+              value: "{{ ip2 }}"
+            prefix_length: 32
+      register: result
+      ignore_errors: true
+
+    - name: Fetch route by external ID
+      nutanix.ncp.ntnx_routes_info_v2:
+        ext_id: "{{ route_uuid }}"
+        route_table_ext_id: "{{ route_table_external_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete static route
+      nutanix.ncp.ntnx_routes_v2:
+        state: absent
+        ext_id: "{{ route_uuid }}"
+        route_table_ext_id: "{{ route_table_external_id }}"
+      register: result
+      ignore_errors: true

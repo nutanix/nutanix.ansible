@@ -10,13 +10,14 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
+NOTE: The latest version of the Nutanix Ansible collection is [v2.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.0).
+
 ## Important Notice 
 Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit 
 [Legacy API Deprecation Announcement](https://portal.nutanix.com/page/documents/eol/list?type=announcement)
 [Legacy API Deprecation - FAQs](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA0VO0000005rgP0AQ)
 Nutanix strongly encourages you to migrate your scripts and applications to the latest v2 version of the Nutanix Ansible modules, which are built on our v4 APIs/SDKs. By adopting the latest v2 version based on v4 APIs and SDKs, our users can leverage the enhanced capabilities and latest innovations from Nutanix. 
 We understand that this transition may require some effort, and we are committed to supporting you throughout the process. Please refer to our documentation and support channels for guidance and assistance.
-
 
 ## Support
 
@@ -241,7 +242,7 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | ntnx_images_info | ntnx_images_info_v2 |
 | ntnx_image_placement_policies_info | ntnx_image_placement_policies_info_v2 |
 | ntnx_pbrs_info | ntnx_pbrs_info_v2 |
-| ntnx_permissions_info | ntnx_permissions_info_v2 |
+| ntnx_permissions_info | ntnx_operations_info_v2 |
 | ntnx_projects_info | - |
 | ntnx_protection_rules_info | - |
 | ntnx_recovery_plans_info | - |
@@ -288,7 +289,6 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_volume_groups_iscsi_clients_info_v2 |
 | - | ntnx_directory_services_info_v2 |
 | - | ntnx_saml_identity_providers_info_v2 |
-| - | ntnx_operations_info_v2 |
 | ntnx_hosts_info | ntnx_hosts_info_v2 |
 | - | ntnx_recovery_points_info_v2 |
 | - | ntnx_vm_recovery_point_info_v2 |

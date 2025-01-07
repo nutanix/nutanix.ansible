@@ -674,7 +674,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
             esx:
                 description: esx hypervisor details
                 type: dict
@@ -687,7 +687,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
             hyperv:
                 description: hyperv hypervisor details
                 type: dict
@@ -700,7 +700,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
             xen:
                 description: xen hypervisor details
                 type: dict
@@ -713,7 +713,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
             ahv:
                 description: ahv hypervisor details
                 type: dict
@@ -726,7 +726,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
 
     foundation_central:
         description:
@@ -1130,7 +1130,7 @@ def get_module_spec():
 
     hypervisor_iso_spec_dict = dict(
         filename=dict(type="str", required=True),
-        checksum=dict(type="str", required=True),
+        checksum=dict(type="str", required=False),
     )
     hypervisor_iso_spec = dict(
         kvm=dict(type="dict", required=False, options=hypervisor_iso_spec_dict),
