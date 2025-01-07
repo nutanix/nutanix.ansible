@@ -12,6 +12,13 @@ Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the
 
 NOTE: The latest version of the Nutanix Ansible collection is [v2.0.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.0.0).
 
+### Introducing Nutanix Ansible Collection Version 2.0.0
+We're excited to announce the release of Nutanix Ansible Collection Version 2.0.0! This major update brings significant improvements to your infrastructure management experience:
+ 
+- Built on the latest v4 APIs/SDKs: Leveraging the power of Nutanix v4 APIs/SDKs, this version offers enhanced functionality and better integration with the latest Nutanix features.
+- Expanded Resource Coverage:  Discover new resources and data sources, enabling you to model and manage a broader spectrum of Nutanix infrastructure components within your Ansible configurations.
+- Version Suffix: To easily distinguish resources and data sources specific to version 2.0.0, they are marked with the *_v2 suffix.
+
 ## Important Notice 
 Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit 
 [Legacy API Deprecation Announcement](https://portal.nutanix.com/page/documents/eol/list?type=announcement)
