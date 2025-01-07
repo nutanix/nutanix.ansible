@@ -1,0 +1,61 @@
+---
+- name: Start Protection Policy related tests
+  ansible.builtin.debug:
+    msg: Start Protection Policy related tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+    label1: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+    label2: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Create Protection Policy with check mode enabled
+  nutanix.ncp.ntnx_protection_policies_v2:
+    name: "ansible-pp-{{random_name}}"
+    description: "Protection policy for VMs"
+    replication_locations:
+      - label: "{{ label1 }}"
+        domain_manager_ext_id: 550e8400-e29b-41d4-a716-446655440000
+        replication_sub_location:
+          cluster_ext_ids:
+            - 9b2e5d16-8e4f-4d5a-9b2e-5d168e4f4d5a
+        is_primary: true
+      - label: "{{ label2 }}"
+        domain_manager_ext_id: 123e4567-e89b-12d3-a456-426614174000
+        replication_sub_location:
+          cluster_ext_ids:
+            - f47ac10b-58cc-4372-a567-0e02b2c3d479
+        is_primary: false
+    replication_configurations:
+      - source_location_label: "{{ label1 }}"
+        remote_location_label: "{{ label2 }}"
+        schedule:
+          recovery_point_type: CRASH_CONSISTENT
+          recovery_point_objective_time_seconds: 4
+          retention:
+            linear_retention:
+              local: 2
+              remote: 2
+          start_time: "01h:00m"
+          sync_replication_auto_suspend_timeout_seconds: 100
+      - source_location_label: "{{ label2 }}"
+        remote_location_label: "{{ label1 }}"
+        schedule:
+          recovery_point_type: CRASH_CONSISTENT
+          recovery_point_objective_time_seconds: 4
+          retention:
+            linear_retention:
+              local: 2
+              remote: 2
+          start_time: "01h:00m"
+          sync_replication_auto_suspend_timeout_seconds: 100
+    category_ids:
+      - 7c9e6679-7425-40de-944b-e07fc1f90ae7
+      - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+    state: present
+    check_mode: true
+  register: result
+
+- name: Debug Protection Policy create
+  ansible.builtin.debug:
+    var: result
