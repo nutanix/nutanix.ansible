@@ -474,7 +474,7 @@ def deploy_template(module, result):
         result[
             "msg"
         ] = "Template ({0}) with given version ({1}) will be deployed.".format(
-            ext_id, 
+            ext_id,
             version_ext_id  # fmt: skip
         )
         return
