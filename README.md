@@ -10,7 +10,8 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-~> **Important Notice:** Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit 
+### Important Notice 
+Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit 
 [Legacy API Deprecation Announcement](https://portal.nutanix.com/page/documents/eol/list?type=announcement)
 [Legacy API Deprecation - FAQs](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA0VO0000005rgP0AQ)
 Nutanix strongly encourages you to migrate your scripts and applications to the latest v2 version of the Nutanix Ansible modules, which are built on our v4 APIs/SDKs. By adopting the latest v2 version based on v4 APIs and SDKs, our users can leverage the enhanced capabilities and latest innovations from Nutanix. 
@@ -19,7 +20,7 @@ We understand that this transition may require some effort, and we are committed
 
 ## Support
 
--> **Note:** Update!! 
+Update!! 
 We now have a brand new developer-centric Support Program designed for organizations that require a deeper level of developer support to manage their Nutanix environment and build applications quickly and efficiently. As part of this new Advanced API/SDK Support Program, you will get access to trusted technical advisors who specialize in developer tools including Nutanix Ansible Collections and receive support for your unique development needs and custom integration queries.
 [Visit our Support Portal - Premium Add-On Support Programs](https://www.nutanix.com/support-services/product-support/premium-support-programs)  to learn more about this program.<br /><br />
 **Contributions to open-source Nutanix Ansible Collections repository will continue to leverage a community-supported model. Visit https://portal.nutanix.com/kb/13424  for more details. 
@@ -134,109 +135,9 @@ ansible-playbook examples/iaas/iaas.yml
 
 # Included Content
 
-## Modules
-
-| Name | Description |
-| --- | --- |
-| ntnx_acps | Create, Update, Delete acp. |
-| ntnx_acps_info | Get acp info. |
-| ntnx_address_groups | Create, Update, Delete Nutanix address groups. |
-| ntnx_address_groups_info | Get address groups info. |
-| ntnx_categories | Create, Update, Delete categories |
-| ntnx_categories_info | Get categories info. |
-| ntnx_clusters_info | Get cluster info. |
-| ntnx_floating_ips | Create or delete a Floating Ip. |
-| ntnx_floating_ips_info | List existing Floating_Ips. |
-| ntnx_hosts_info | Get host info. |
-| ntnx_images | Create, update or delete a image. |
-| ntnx_images_info | List existing images. |
-| ntnx_image_placement_policy | Create, update or delete a image placement policy. |
-| ntnx_image_placement_policies_info | List existing image placement policies. |
-| ntnx_karbon_clusters | Create, Delete k8s clusters |
-| ntnx_karbon_clusters_info | Get clusters info. |
-| ntnx_karbon_clusters_node_pools | Update node pools of kubernetes cluster |
-| ntnx_karbon_registries | Create, Delete a karbon private registry entry |
-| ntnx_karbon_registries_info | Get karbon private registry registry info. |
-| ntnx_pbrs | Create or delete a PBR. |
-| ntnx_pbrs_info | List existing PBRs. |
-| ntnx_permissions_info | List permissions info |
-| ntnx_projects | create, update and delete pc projects |
-| ntnx_projects_info | Get projects info. |
-| ntnx_protection_rules | create, update and delete pc protection rules |
-| ntnx_protection_rules_info | Get pc protection rules info. |
-| ntnx_recovery_plans | create, update and delete pc recovery plans |
-| ntnx_recovery_plans_info | Get pc recovery plans info. |
-| ntnx_recovery_plan_jobs | create and perform action on pc recovery plans |
-| ntnx_recovery_plan_jobs_info | Get pc recovery plan jobs info. |
-| ntnx_roles | Create, Update, Delete Nutanix roles |
-| ntnx_roles_info | Get roles info. |
-| ntnx_security_rules | Create, update or delete a Security Rule. |
-| ntnx_security_rules_info | List existing Security Rules. |
-| ntnx_service_groups | Create, Update, Delete service_group |
-| ntnx_service_groups_info | Get service groups info. |
-| ntnx_static_routes | Update static routes of a vpc. |
-| ntnx_static_routes_info | List existing static routes of a vpc. |
-| ntnx_subnets | Create or delete a Subnet. |
-| ntnx_subnets_info | List existing Subnets. |
-| ntnx_user_groups | Create, Delete user_groups. |
-| ntnx_user_groups_info | Get user groups info. |
-| ntnx_users | Create, Delete users |
-| ntnx_users_info | Get users info. |
-| ntnx_vms | Create or delete a VM. |
-| ntnx_vms_clone | Clone VM. |
-| ntnx_vms_ova | Create OVA image from VM. |
-| ntnx_vms_info | List existing VMs. |
-| ntnx_vpcs | Create or delete a VPC. |
-| ntnx_vpcs_info | List existing VPCs. |
-| ntnx_foundation | Image nodes and create new cluster. |
-| ntnx_foundation_aos_packages_info | List the AOS packages uploaded to Foundation. |
-| ntnx_foundation_bmc_ipmi_config | Configure IPMI IP address on BMC of nodes. |
-| ntnx_foundation_discover_nodes_info | List the nodes discovered by Foundation. |
-| ntnx_foundation_hypervisor_images_info | List the hypervisor images uploaded to Foundation. |
-| ntnx_foundation_image_upload | Upload hypervisor or AOS image to Foundation VM. |
-| ntnx_foundation_node_network_info | Get node network information discovered by Foundation. |
-| ntnx_foundation_central | Create a cluster out of nodes registered with Foundation Central. |
-| ntnx_foundation_central_api_keys | Create a new api key which will be used by remote nodes to authenticate with Foundation Central. |
-| ntnx_foundation_central_api_keys_info | List all the api keys created in Foundation Central. |
-| ntnx_foundation_central_imaged_clusters_info | List all the clusters created using Foundation Central. |
-| ntnx_foundation_central_imaged_nodes_info | List all the nodes registered with Foundation Central. |
-| ntnx_ndb_databases_info | Get ndb database instance info |
-| ntnx_ndb_clones_info | Get ndb database clones info. |
-| ntnx_ndb_time_machines_info | Get ndb time machines info. |
-| ntnx_ndb_profiles_info | Get ndb profiles info.  |
-| ntnx_ndb_db_servers_info | Get ndb database server vms info.  |
-| ntnx_ndb_databases | Create, update and delete database instances. |
-| ntnx_ndb_register_database | Register database instance. |
-| ntnx_ndb_db_server_vms | Create, update and delete database server vms. |
-| ntnx_ndb_clusters_info | Get clusters info. |
-| ntnx_ndb_clusters | Create, update and delete clusters in NDB |
-| ntnx_ndb_snapshots_info | Get snapshots info |
-| ntnx_ndb_vlans | Create, update and delete vlans |
-| ntnx_ndb_vlans_info | Get vlans info in NDB |
-| ntnx_ndb_stretched_vlans | Get stretched vlans inf in NDB |
-| ntnx_ndb_time_machine_clusters | Manage clusters in NDB time machines |
-| ntnx_ndb_tags | Create, update and delete tags |
-| ntnx_ndb_tags_info | Get tags info |
-| ntnx_ndb_database_clones | Create, update and delete database clones |
-| ntnx_ndb_database_snapshots | Create, update and delete database snapshots |
-| ntnx_ndb_database_clone_refresh | Perform database clone refresh |
-| ntnx_ndb_authorize_db_server_vms | authorize database server vms with time machines |
-| ntnx_ndb_profiles | create, update and delete all kind of profiles |
-| ntnx_ndb_database_log_catchup | perform log catchup |
-| ntnx_ndb_database_restore | perform database restore |
-| ntnx_ndb_database_scale | perform database scaling |
-| ntnx_ndb_linked_databases | Add and remove linked databases of database instance |
-| ntnx_ndb_replicate_database_snapshots | replicate snapshots accross clusters in time machines |
-| ntnx_ndb_register_db_server_vm | register database server vm |
-| ntnx_ndb_maintenance_tasks | Add and remove maintenance tasks in window |
-| ntnx_ndb_maintenance_window | Create, update and delete maintenance window |
-| ntnx_ndb_maintenance_windows_info | Get maintenance window info |
-| ntnx_ndb_slas | Create, update and delete sla |
-| ntnx_ndb_slas_info | Get slas info |
+Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on prism central v4 APIs.
 
 ## Resources
-
-Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on prism central v4 APIs.
 
 | v1 Resources| v2 Resources |
 |  :--- |  :--- |
@@ -329,8 +230,6 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_storage_containers_v2 |
 
 ## Data Sources
-
-Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on prism central v4 APIs.
 
 | v1 datasources | v2 datasources |
 |  :--- |  :--- |
