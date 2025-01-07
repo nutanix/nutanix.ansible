@@ -68,7 +68,7 @@ class Entity(object):
         no_response=False,
         timeout=30,
         method="GET",
-        **kwargs
+        **kwargs  # fmt: skip
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
