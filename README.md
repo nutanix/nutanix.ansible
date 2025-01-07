@@ -10,6 +10,8 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
+NOTE: The latest version of the Nutanix provider is [v2.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.0).
+
 ## Support
 
 Ansible Nutanix Provider leverages the community-supported model. See [Open Source Support](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA07V000000LdWPSA0) for more information about its support policy.
