@@ -8,7 +8,7 @@
   register: images
 
 - name: Get aos package name with given version filter from all packages
-  set_fact:
+  ansible.builtin.set_fact:
     aos_packages: "{{ images.aos_packages | select('search', aos_package_filter ) | list }}"
 
 - name: List hypervisor images
@@ -16,9 +16,8 @@
   register: hypervisor_images
 
 - name: Get hypervisor package info with given version filter from all packages
-  set_fact:
+  ansible.builtin.set_fact:
     hypervisor_images: "{{ hypervisor_images.hypervisor_images.kvm | selectattr('filename', 'search', hypervisor_package_filter) | list }}"
-
 
 - name: Create spec for imaging and creating cluster out of bare metal nodes
   check_mode: true
@@ -223,5 +222,4 @@
       - result.response.cluster_urls is defined
     fail_msg: " Fail : unable to image nodes and create cluster"
     success_msg: "Succes: cluster and node imaging done successfully"
-
 ######################################################

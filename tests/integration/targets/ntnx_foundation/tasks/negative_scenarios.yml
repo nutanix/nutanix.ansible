@@ -2,13 +2,12 @@
   ansible.builtin.debug:
     msg: Start negative_scenarios for ntnx_foundation
 
-
 - name: Get aos_packages_info from foundation
   ntnx_foundation_aos_packages_info:
   register: images
 
 - name: Get aos package name with given version filter from all packages
-  set_fact:
+  ansible.builtin.set_fact:
     aos_packages: "{{ images.aos_packages | select('search', aos_package_filter ) | list }}"
 
 - name: List hypervisor images
@@ -16,7 +15,7 @@
   register: hypervisor_images
 
 - name: Get hypervisor package info with given version filter from all packages
-  set_fact:
+  ansible.builtin.set_fact:
     hypervisor_images: "{{ hypervisor_images.hypervisor_images.kvm | selectattr('filename', 'search', hypervisor_package_filter) | list }}"
 
 ###################################
@@ -44,7 +43,7 @@
                 cvm_ip: "{{IBIS_node.node3.cvm_ip}}"
                 hypervisor: "{{IBIS_node.node3.hypervisor}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -78,7 +77,7 @@
                 hypervisor_hostname: "{{IBIS_node.node3.hypervisor_hostname}}"
                 hypervisor: "phoenix"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
