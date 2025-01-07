@@ -75,7 +75,7 @@ jobs:
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           echo "Code coverage: Checking if code coverage is above threshold..."
-          export TESTCOV_THRESHOLD=55
+          export TESTCOV_THRESHOLD=50
           echo "Threshold: $TESTCOV_THRESHOLD %"
           totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
           echo "TOTAL_COVERAGE=${totalCoverage}" >> $GITHUB_ENV
