@@ -105,7 +105,6 @@ action_groups:
     - ntnx_subnets_info_v2
     - ntnx_vpcs_info_v2
     - ntnx_vpcs_v2
-    - ntnx_permissions_info_v2
     - ntnx_roles_info_v2
     - ntnx_roles_v2
     - ntnx_images_v2
