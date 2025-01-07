@@ -687,7 +687,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
             hyperv:
                 description: hyperv hypervisor details
                 type: dict
@@ -700,7 +700,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
             xen:
                 description: xen hypervisor details
                 type: dict
@@ -713,7 +713,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
             ahv:
                 description: ahv hypervisor details
                 type: dict
@@ -726,7 +726,7 @@ options:
                     checksum:
                         description: checksum of the hypervisor file
                         type: str
-                        required: true
+                        required: false
 
     foundation_central:
         description:
