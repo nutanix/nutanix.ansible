@@ -1,0 +1,267 @@
+---
+- name: Start ntnx_prism_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_prism_v2 tests
+
+- name: Generate spec for deploying a PC using check mode
+  ntnx_pc_deploy_v2:
+    config:
+      name: "test"
+      size: "SMALL"
+      build_info:
+        version: "5.15.0"
+      resource_config:
+        container_ext_ids:
+          - "container-1"
+      should_enable_lockdown_mode: true
+    network:
+      external_address:
+        ipv4:
+          value: "10.0.0.1"
+      name_servers:
+        - ipv4:
+            value: "10.0.0.2"
+        - ipv4:
+            value: "10.0.0.3"
+      ntp_servers:
+        - ipv4:
+            value: "10.0.0.4"
+        - ipv4:
+            value: "10.0.0.5"
+      internal_networks:
+        - default_gateway:
+            ipv4:
+              value: "10.0.0.6"
+          subnet_mask:
+            ipv4:
+              value: "10.0.0.7"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "10.0.0.8"
+              end:
+                ipv4:
+                  value: "10.0.0.9"
+        - default_gateway:
+            ipv4:
+              value: "10.0.0.10"
+          subnet_mask:
+            ipv4:
+              value: "10.0.0.11"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "10.0.0.12"
+              end:
+                ipv4:
+                  value: "10.0.0.13"
+      external_networks:
+        - default_gateway:
+            ipv4:
+              value: "10.0.1.0"
+          subnet_mask:
+            ipv4:
+              value: "10.0.2.0"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "10.0.3.0"
+              end:
+                ipv4:
+                  value: "10.0.4.0"
+          network_ext_id: "16f59216-1234-3333-2222-074816fe2a4f"
+        - default_gateway:
+            ipv4:
+              value: "10.0.5.0"
+          subnet_mask:
+            ipv4:
+              value: "10.0.6.0"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "10.0.7.0"
+              end:
+                ipv4:
+                  value: "10.0.8.0"
+          network_ext_id: "16f59216-a071-41b7-aee3-074816fe2a4f"
+    should_enable_high_availability: true
+  delegate_to: localhost
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for deploying a PC status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.config.name == "test"
+      - result.response.config.size == "SMALL"
+      - result.response.config.build_info.version == "5.15.0"
+      - result.response.config.resource_config.container_ext_ids == ["container-1"]
+      - result.response.config.should_enable_lockdown_mode == true
+      - result.response.network.external_address.ipv4.value == "10.0.0.1"
+      - result.response.network.name_servers[0].ipv4.value == "10.0.0.2"
+      - result.response.network.name_servers[1].ipv4.value == "10.0.0.3"
+      - result.response.network.ntp_servers[0].ipv4.value == "10.0.0.4"
+      - result.response.network.ntp_servers[1].ipv4.value == "10.0.0.5"
+      - result.response.network.internal_networks[0].default_gateway.ipv4.value == "10.0.0.6"
+      - result.response.network.internal_networks[0].subnet_mask.ipv4.value == "10.0.0.7"
+      - result.response.network.internal_networks[0].ip_ranges[0].begin.ipv4.value == "10.0.0.8"
+      - result.response.network.internal_networks[0].ip_ranges[0].end.ipv4.value == "10.0.0.9"
+      - result.response.network.internal_networks[1].default_gateway.ipv4.value == "10.0.0.10"
+      - result.response.network.internal_networks[1].subnet_mask.ipv4.value == "10.0.0.11"
+      - result.response.network.internal_networks[1].ip_ranges[0].begin.ipv4.value == "10.0.0.12"
+      - result.response.network.internal_networks[1].ip_ranges[0].end.ipv4.value == "10.0.0.13"
+      - result.response.network.external_networks[0].default_gateway.ipv4.value == "10.0.1.0"
+      - result.response.network.external_networks[0].subnet_mask.ipv4.value == "10.0.2.0"
+      - result.response.network.external_networks[0].ip_ranges[0].begin.ipv4.value == "10.0.3.0"
+      - result.response.network.external_networks[0].ip_ranges[0].end.ipv4.value == "10.0.4.0"
+      - result.response.network.external_networks[0].network_ext_id == "16f59216-1234-3333-2222-074816fe2a4f"
+      - result.response.network.external_networks[1].default_gateway.ipv4.value == "10.0.5.0"
+      - result.response.network.external_networks[1].subnet_mask.ipv4.value == "10.0.6.0"
+      - result.response.network.external_networks[1].ip_ranges[0].begin.ipv4.value == "10.0.7.0"
+      - result.response.network.external_networks[1].ip_ranges[0].end.ipv4.value == "10.0.8.0"
+      - result.response.network.external_networks[1].network_ext_id == "16f59216-a071-41b7-aee3-074816fe2a4f"
+      - result.response.should_enable_high_availability == true
+    fail_msg: "Generated spec for deploying a PC failed"
+    success_msg: "Generated spec for deploying a PC passed"
+
+- name: Generate spec for creating backup target cluster using check mode
+  ntnx_pc_backup_target_v2:
+    domain_manager_ext_id: "96325874-8523-9865-1478-074816fe2a4f"
+    location:
+      cluster_location:
+        config:
+          ext_id: "38648904-4859-1258-7485-074816fe2a4f"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating backup target cluster status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.location.config.ext_id == "38648904-4859-1258-7485-074816fe2a4f"
+    fail_msg: "Generated spec for creating backup target cluster failed"
+    success_msg: "Generated spec for creating backup target cluster passed"
+
+- name: Generate spec for updating backup target cluster using check mode
+  ntnx_pc_backup_target_v2:
+    ext_id: "84785699-8744-2895-9632-074816fe2a4f"
+    domain_manager_ext_id: "14855555-9999-1235-3141-074816fe2a4f"
+    location:
+      cluster_location:
+        config:
+          ext_id: "31415252-3577-7474-7788-074816fe2a4f"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating backup target cluster status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id == "84785699-8744-2895-9632-074816fe2a4f"
+      - result.response.location.config.ext_id == "31415252-3577-7474-7788-074816fe2a4f"
+    fail_msg: "Generated spec for updating backup target cluster failed"
+    success_msg: "Generated spec for updating backup target cluster passed"
+
+- name: Generate spec for creating backup target object store using check mode
+  ntnx_pc_backup_target_v2:
+    domain_manager_ext_id: "96325874-8523-9865-1478-074816fe2a4f"
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "test1"
+          region: "us-east-1"
+          credentials:
+            access_key_id: "qwertyuiopasdfgh"
+            secret_access_key: "jklzxcvbnm"
+        backup_policy:
+          rpo_in_minutes: 60
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating backup target object store status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.location.provider_config.bucket_name == "test1"
+      - result.response.location.provider_config.region == "us-east-1"
+      - result.response.location.provider_config.credentials.access_key_id == "qwertyuiopasdfgh"
+      - result.response.location.backup_policy.rpo_in_minutes == 60
+    fail_msg: "Generated spec for creating backup target object store failed"
+    success_msg: "Generated spec for creating backup target object store passed"
+
+- name: Generate spec for updating backup target object store using check mode
+  ntnx_pc_backup_target_v2:
+    ext_id: "84785699-8744-2895-9632-074816fe2a4f"
+    domain_manager_ext_id: "14855555-9999-1235-3141-074816fe2a4f"
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "test2"
+          region: "us-east-2"
+          credentials:
+            access_key_id: "qwertyuiopasdfgh"
+            secret_access_key: "jklzxcvbnm"
+        backup_policy:
+          rpo_in_minutes: 120
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating backup target object store status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id == "84785699-8744-2895-9632-074816fe2a4f"
+      - result.response.location.provider_config.bucket_name == "test2"
+      - result.response.location.provider_config.region == "us-east-2"
+      - result.response.location.provider_config.credentials.access_key_id == "qwertyuiopasdfgh"
+      - result.response.location.backup_policy.rpo_in_minutes == 120
+    fail_msg: "Generated spec for updating backup target object store failed"
+    success_msg: "Generated spec for updating backup target object store passed"
+
+- name: Generate spec for creating restore source cluster using check mode
+  ntnx_pc_restore_source_v2:
+    location:
+      cluster_location:
+        config:
+          ext_id: "38648904-4859-1258-7485-074816fe2a4f"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating restore source cluster status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.location.config.ext_id == "38648904-4859-1258-7485-074816fe2a4f"
+    fail_msg: "Generated spec for creating restore source cluster failed"
+    success_msg: "Generated spec for creating restore source cluster passed"
+
+- name: Generate spec for creating restore source object store using check mode
+  ntnx_pc_restore_source_v2:
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "test1"
+          region: "us-east-1"
+          credentials:
+            access_key_id: "qwertyuiopasdfgh"
+            secret_access_key: "jklzxcvbnm"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating restore source object store status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.location.provider_config.bucket_name == "test1"
+      - result.response.location.provider_config.region == "us-east-1"
+      - result.response.location.provider_config.credentials.access_key_id == "qwertyuiopasdfgh"
+    fail_msg: "Generated spec for creating restore source object store failed"
+    success_msg: "Generated spec for creating restore source object store passed"
