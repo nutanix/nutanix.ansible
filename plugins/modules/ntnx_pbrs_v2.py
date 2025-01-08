@@ -812,10 +812,8 @@ def get_routing_policy_ext_id(module, result, api_instance, vpc_ext_id, priority
     kwargs, err = sg.get_info_spec(attr=params)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating spec for fetching routing policy using priority and vpc_ext_id",
-            **result,
-        )
+        msg = "Failed generating spec for fetching routing policy using priority and vpc_ext_id"
+        module.fail_json(msg=msg, **result)
 
     try:
         resp = api_instance.list_routing_policies(**kwargs)
@@ -834,10 +832,8 @@ def get_routing_policy_ext_id(module, result, api_instance, vpc_ext_id, priority
 
 def create_pbr(module, result):
     if not module.params.get("vpc_ext_id") and module.params.get("priority"):
-        module.fail_json(
-            msg="vpc_ext_id and priority are required for creating routing policy",
-            **result,
-        )
+        msg = "vpc_ext_id and priority are required for creating routing policy"
+        module.fail_json(msg=msg, **result)
 
     pbrs = get_routing_policies_api_instance(module)
 

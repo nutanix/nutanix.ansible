@@ -405,10 +405,8 @@ def update_expiry_date_recovery_point(module, result):
             old_spec.to_dict(), update_spec.to_dict()
         ):
             result["skipped"] = True
-            module.exit_json(
-                msg="Update of other operations is not supported. Only updation of Expiration time is allowed.",
-                **result,
-            )
+            msg = "Update of other operations is not supported. Only updation of Expiration time is allowed."
+            module.exit_json(msg=msg, **result)
         else:
             result["skipped"] = True
             module.exit_json(msg="Nothing to change.", **result)

@@ -382,10 +382,8 @@ def get_nodes_network_information(module, cluster_node_api, result):
     spec, err = sg.generate_spec(default_spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating spec for getting network information for cluster nodes",
-            **result,
-        )
+        msg = "Failed generating spec for getting network information for cluster nodes"
+        module.fail_json(msg=msg, **result)
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
     if module.check_mode:

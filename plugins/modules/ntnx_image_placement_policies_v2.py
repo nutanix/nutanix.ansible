@@ -390,10 +390,8 @@ def update_policy_state(module, result, policies, ext_id):
     policy = get_policy(module, policies, ext_id)
     etag = get_etag(data=policy)
     if not etag:
-        return module.fail_json(
-            "unable to fetch etag for updating Placement Policy enforcement state",
-            **result,
-        )
+        msg = "unable to fetch etag for updating Placement Policy enforcement state"
+        return module.fail_json(msg, **result)
 
     kwargs = {"if_match": etag}
     resp = None

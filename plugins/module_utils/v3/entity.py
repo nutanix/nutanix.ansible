@@ -20,110 +20,6 @@ except ImportError:
     from urlparse import urlparse  # python2
 
 
-class EntityV4(object):
-    module = None
-
-    def __init__(self, module):
-        self.module = module
-
-    # old_spec is used for updating entity, where there is already spec object present.
-    def get_spec(self, module_args, params=None, obj=None, old_spec=None):
-        """
-        For given module parameters input, it will create new spec object or update old_spec object.
-        It will pick module.params if 'params' is not given.
-        Args:
-            module_args (dict): module argument spec for reference
-            obj (object): spec class from sdk
-            params (dict): input for creating spec
-            old_spec (object): Old state obj of entity
-        Returns:
-            spec (object): spec object
-        """
-
-        if not params:
-            params = copy.deepcopy(self.module.params)
-
-        if not old_spec and not obj:
-            return (
-                None,
-                "Either 'old_spec' or 'obj' is required to create/update spec object",
-            )
-
-        # create spec obj or shallow copy of old spec as per entity spec - new or existing
-        spec = copy.copy(old_spec) if old_spec else obj()
-
-        # Resolve each input param w.r.t its module argument spec
-        for attr, schema in module_args.items():
-
-            if attr in params:
-
-                type = schema.get("type")
-                if not type:
-                    return (
-                        None,
-                        "Invalid module argument: 'type' is required parameter for attribute {0}".format(
-                            attr
-                        ),
-                    )
-
-                options = schema.get("options")
-                _obj = schema.get("obj")
-                elements = schema.get("elements")
-
-                # for dict type attribute, recursively create spec objects
-                if type == "dict" and options is not None and _obj is not None:
-                    s, err = self.get_spec(
-                        module_args=options,
-                        obj=_obj,
-                        params=params[attr],
-                        old_spec=getattr(spec, attr),
-                    )
-                    if err:
-                        return None, err
-                    setattr(spec, attr, s)
-
-                # for list type attribute, create list of spec objects recursively
-                elif (
-                    type == "list"
-                    and elements == "dict"
-                    and options is not None
-                    and _obj is not None
-                ):
-                    lst = []
-                    for item in params[attr]:
-                        s, err = self.get_spec(
-                            module_args=options, obj=_obj, params=item
-                        )
-                        if err:
-                            return None, err
-                        lst.append(s)
-                    setattr(spec, attr, lst)
-
-                # for other types directly assign
-                else:
-                    setattr(spec, attr, params[attr])
-
-        return spec, None
-
-    def get_info_spec(self, params=None):
-
-        if not params:
-            params = copy.deepcopy(self.module.params)
-        spec = {}
-        all_params = ["page", "limit", "filter", "orderby", "select"]
-        if params.get("name"):
-            _filter = params.get("filter")
-            if _filter:
-                _filter += f"""and name eq '{params["name"]}'"""
-            else:
-                _filter = f"""name eq '{params["name"]}'"""
-            params["filter"] = _filter
-        for key, val in params.items():
-            if key in all_params:
-                spec[f"_{key}"] = val
-        return spec
-
-
 class Entity(object):
     entities_limitation = 20
     entity_type = "entities"
@@ -172,7 +68,7 @@ class Entity(object):
         no_response=False,
         timeout=30,
         method="GET",
-        **kwargs,
+        **kwargs  # fmt: skip
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -185,7 +81,7 @@ class Entity(object):
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
-            **kwargs,
+            **kwargs  # fmt: skip
         )
 
     def update(
@@ -198,7 +94,7 @@ class Entity(object):
         no_response=False,
         timeout=30,
         method="PUT",
-        **kwargs,
+        **kwargs  # fmt: skip
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -212,7 +108,7 @@ class Entity(object):
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
-            **kwargs,
+            **kwargs  # fmt: skip
         )
 
     # source is the file path of resource where ansible yaml runs
@@ -458,7 +354,7 @@ class Entity(object):
         raise_error=True,
         no_response=False,
         timeout=30,
-        **kwargs,
+        **kwargs  # fmt: skip
     ):
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
         if self.headers["Content-Type"] == "application/json" and data is not None:

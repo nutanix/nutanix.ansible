@@ -22,7 +22,9 @@ class DiscoverNodes(Foundation):
             result_nodes = []
             for n in nodes:
                 configured = n.get("configured")
-                if include_configured or (type(configured) == bool and not configured):
+                if include_configured or (
+                    isinstance(configured, bool) and not configured
+                ):
 
                     # handle datatype corner cases for cluster_id & current_cvm_vlan_tag
                     if n.get("cluster_id"):

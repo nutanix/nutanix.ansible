@@ -283,10 +283,8 @@ def stage_customize_guest(module, result):
 
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating stage guest customization configuration spec",
-            **result,
-        )
+        msg = "Failed generating stage guest customization configuration spec"
+        module.fail_json(msg=msg, **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())

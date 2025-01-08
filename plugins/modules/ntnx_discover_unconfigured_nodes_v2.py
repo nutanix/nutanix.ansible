@@ -239,7 +239,7 @@ def discover_unconfigured_cluster_node(module, cluster_node_api, result):
             result["error"] = err
             module.fail_json(
                 msg="Failed generating spec for fetching prism central cluster",
-                **result,
+                **result  # fmt: skip
             )
         try:
             pc_cluster = cluster_node_api.list_clusters(**kwargs)

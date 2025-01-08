@@ -386,10 +386,8 @@ def update_authorization_policy(module, result):
 
     if getattr(resp.data, "severity", None) == "ERROR":
         result["error"] = resp.data.message
-        module.fail_json(
-            msg="Failed to update authorization policy",
-            **result,
-        )
+        msg = "Failed to update authorization policy"
+        module.fail_json(msg=msg, **result)
 
     resp = get_authorization_policy(module, authorization_policies, ext_id=ext_id)
     result["response"] = strip_internal_attributes(resp.to_dict())
