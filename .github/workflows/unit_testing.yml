@@ -12,7 +12,7 @@ on:
   - pull_request
 jobs:
   sanity1:
-    name: Sanity tests with ansible-core==2.15.0
+    name: Sanity tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -27,7 +27,7 @@ jobs:
         uses: docker-practice/actions-setup-docker@master
       - name: Install ansible
         run: |
-          pip install -r requirements.txt
+          pip install -r tests/integration/requirements.txt
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
@@ -42,10 +42,10 @@ jobs:
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           ansible-test sanity --docker default -v
   unit_testing:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -56,7 +56,7 @@ jobs:
         uses: docker-practice/actions-setup-docker@master
       - name: Install ansible
         run: |
-          pip install -r requirements.txt
+          pip install -r tests/integration/requirements.txt
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
