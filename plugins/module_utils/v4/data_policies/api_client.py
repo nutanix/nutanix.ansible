@@ -15,7 +15,7 @@ from ansible.module_utils.basic import missing_required_lib
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_dataprotection_py_client
+    import ntnx_datapolicies_py_client
 except ImportError:
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -27,17 +27,17 @@ def get_api_client(module):
     """
     if SDK_IMP_ERROR:
         module.fail_json(
-            msg=missing_required_lib("ntnx_dataprotection_py_client"),
+            msg=missing_required_lib("ntnx_datapolicies_py_client"),
             exception=SDK_IMP_ERROR,
         )
 
-    config = ntnx_dataprotection_py_client.Configuration()
+    config = ntnx_datapolicies_py_client.Configuration()
     config.host = module.params.get("nutanix_host")
     config.port = module.params.get("nutanix_port")
     config.username = module.params.get("nutanix_username")
     config.password = module.params.get("nutanix_password")
     config.verify_ssl = module.params.get("validate_certs")
-    client = ntnx_dataprotection_py_client.ApiClient(configuration=config)
+    client = ntnx_datapolicies_py_client.ApiClient(configuration=config)
 
     cred = "{0}:{1}".format(config.username, config.password)
     try:
@@ -57,16 +57,16 @@ def get_etag(data):
     Returns:
         str: etag value
     """
-    return ntnx_dataprotection_py_client.ApiClient.get_etag(data)
+    return ntnx_datapolicies_py_client.ApiClient.get_etag(data)
 
 
-def get_recovery_point_api_instance(module):
+def get_protection_policies_api_instance(module):
     """
-    This method will return data protection api instance.
+    This method will return data policies api instance.
     Args:
         module (object): Ansible module object
     Returns:
-        api_instance (object): data protection api instance
+        api_instance (object): data policies api instance
     """
     client = get_api_client(module)
-    return ntnx_dataprotection_py_client.RecoveryPointsApi(client)
+    return ntnx_datapolicies_py_client.ProtectionPoliciesApi(client)

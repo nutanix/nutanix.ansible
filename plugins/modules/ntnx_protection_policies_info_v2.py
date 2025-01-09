@@ -47,7 +47,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    filter: extId eq '840c6c3f-2b01-47d5-81fb-b285e45e89ba'
+    filter: "name eq 'protection_policy_name'"
   register: result
   ignore_errors: true
 """
@@ -59,6 +59,63 @@ response:
         - List of multiple protection policies info if External ID is not provided
     returned: always
     type: dict
+    sample:
+        {
+            "category_ids": [
+                "bbc3555a-133b-5348-9764-bfff196e84e4"
+            ],
+            "description": "ansible-description-linear-hYTLnwHRltSf_updated",
+            "ext_id": "e7ae4b0d-726d-410d-87c2-af46f8bea264",
+            "is_approval_policy_needed": null,
+            "links": null,
+            "name": "ansible-name-linear-hYTLnwHRltSf_updated",
+            "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+            "replication_configurations": [
+                {
+                    "remote_location_label": "ansible-label-OSggSJTEEfyG_updated",
+                    "schedule": {
+                        "recovery_point_objective_time_seconds": 7200,
+                        "recovery_point_type": "CRASH_CONSISTENT",
+                        "retention": {
+                            "local": 2,
+                            "remote": 2
+                        },
+                        "start_time": "16h:12m",
+                        "sync_replication_auto_suspend_timeout_seconds": 90
+                    },
+                    "source_location_label": "ansible-label-RQEKSGCttXaN_updated"
+                },
+                {
+                    "remote_location_label": "ansible-label-RQEKSGCttXaN_updated",
+                    "schedule": {
+                        "recovery_point_objective_time_seconds": 7200,
+                        "recovery_point_type": "CRASH_CONSISTENT",
+                        "retention": {
+                            "local": 2,
+                            "remote": 2
+                        },
+                        "start_time": "16h:12m",
+                        "sync_replication_auto_suspend_timeout_seconds": 90
+                    },
+                    "source_location_label": "ansible-label-OSggSJTEEfyG_updated"
+                }
+            ],
+            "replication_locations": [
+                {
+                    "domain_manager_ext_id": "b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f",
+                    "is_primary": true,
+                    "label": "ansible-label-RQEKSGCttXaN_updated",
+                    "replication_sub_location": null
+                },
+                {
+                    "domain_manager_ext_id": "425cd2d4-32e0-4c2d-a026-31d81fa4c805",
+                    "is_primary": false,
+                    "label": "ansible-label-OSggSJTEEfyG_updated",
+                    "replication_sub_location": null
+                }
+            ],
+            "tenant_id": null
+        }
 
 changed:
     description: This indicates whether the task resulted in any changes
@@ -89,12 +146,10 @@ import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
+from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
     get_protection_policies_api_instance,
 )
-from ..module_utils.v4.data_protection.helpers import (  # noqa: E402
-    get_protection_policy,
-)
+from ..module_utils.v4.data_policies.helpers import get_protection_policy  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,

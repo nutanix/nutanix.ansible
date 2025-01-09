@@ -54,22 +54,3 @@ def get_recovery_point(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching recovery point info using ext_id",
         )
-
-def get_protection_policy(module, api_instance, ext_id):
-    """
-    This method will return protection policy info using external ID.
-    Args:
-        module: Ansible module
-        api_instance: ProtectionPoliciesApi instance from ntnx_datapolicies_py_clien sdk
-        ext_id (str): top level recovery point external ID
-    Returns:
-        protection_policy_info (object): protection policy info
-    """
-    try:
-        return api_instance.get_protection_policy_by_id(extId=ext_id).data
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching protection policy info using ext_id",
-        )
