@@ -168,12 +168,8 @@ def create_restore_source(module, domain_manager_backups_api, result):
             exception=e,
             msg="Api Exception raised while creating restore source",
         )
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
+    result["ext_id"] = resp.data.ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
-    if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
 
@@ -195,12 +191,7 @@ def delete_restore_source(module, domain_manager_backups_api, result):
             exception=e,
             msg="Api Exception raised while deleting restore source",
         )
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
-    if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
 
