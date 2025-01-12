@@ -112,7 +112,9 @@ from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
+    get_etag,
 )
+from ..module_utils.v4.prism.helpers import get_restore_source  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -135,7 +137,10 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    module_args = prism_specs.get_location_backup_spec()
+    module_args = dict(
+        ext_id=dict(type="str"),
+    )
+    module_args.update(prism_specs.get_location_backup_spec())
     return module_args
 
 
@@ -181,16 +186,26 @@ def delete_restore_source(module, domain_manager_backups_api, result):
         result (dict): Result object
     """
     ext_id = module.params.get("ext_id")
+    result["ext_id"] = ext_id
+    current_spec = get_restore_source(module, domain_manager_backups_api, ext_id)
+
+    etag_value = get_etag(data=current_spec)
+    if not etag_value:
+        return module.fail_json(
+            "Unable to fetch etag for Deleting Restore Source", **result
+        )
     resp = None
     try:
-        resp = domain_manager_backups_api.delete_restore_source_by_id(extId=ext_id)
+        resp = domain_manager_backups_api.delete_restore_source_by_id(
+            extId=ext_id, if_match=etag_value
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
             msg="Api Exception raised while deleting restore source",
         )
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    result["response"] = strip_internal_attributes(resp)
     result["changed"] = True
 
 
@@ -198,6 +213,10 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[
+            ("state", "present", ["location"]),
+            ("state", "absent", ["ext_id"]),
+        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(

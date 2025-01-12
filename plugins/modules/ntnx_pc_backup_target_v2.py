@@ -298,6 +298,10 @@ def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[
+            ("state", "present", ["location"]),
+            ("state", "absent", ["ext_id"]),
+        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(

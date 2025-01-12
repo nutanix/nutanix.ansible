@@ -313,7 +313,6 @@ class PrismSpecs:
             options=location_spec,
             obj=location_allowed_types,
             mutually_exclusive=[("cluster_location", "object_store_location")],
-            required=True
         ),
     )
 
