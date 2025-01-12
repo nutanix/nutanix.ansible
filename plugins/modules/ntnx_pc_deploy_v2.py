@@ -609,7 +609,7 @@ def deploy_pc(module, result):
     resp = None
     try:
         resp = domain_manager_api.create_domain_manager(body=spec)
-    except prism_sdk.ApiException as e:
+    except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,

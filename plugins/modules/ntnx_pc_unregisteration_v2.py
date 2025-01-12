@@ -81,6 +81,7 @@ def get_module_spec():
     )
     return module_args
 
+
 def unregister_cluster(module, domain_manager_api, result):
     pc_ext_id = module.params.get("pc_ext_id")
     sg = SpecGenerator(module)
@@ -105,7 +106,7 @@ def unregister_cluster(module, domain_manager_api, result):
             extId=pc_ext_id, body=spec, if_match=etag_value
         )
         result["changed"] = True
-    except prism_sdk.rest.ApiException as e:
+    except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,

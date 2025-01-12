@@ -176,7 +176,7 @@ def create_backup_target(module, domain_manager_backups_api, result):
         resp = domain_manager_backups_api.create_backup_target(
             domainManagerExtId=domain_manager_ext_id, body=spec
         )
-    except prism_sdk.rest.ApiException as e:
+    except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,

@@ -14,7 +14,7 @@ class BasePEModule(AnsibleModule):
 
     unsupported_spec_keys = ["obj"]
     argument_spec = dict(
-        nutanix_host=dict(
+        nutanix_host_pe=dict(
             type="str", fallback=(env_fallback, ["NUTANIX_PE_HOST"]), required=True
         ),
         nutanix_port=dict(

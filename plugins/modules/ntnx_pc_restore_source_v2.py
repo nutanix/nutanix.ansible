@@ -162,7 +162,7 @@ def create_restore_source(module, domain_manager_backups_api, result):
     resp = None
     try:
         resp = domain_manager_backups_api.create_restore_source(body=spec)
-    except prism_sdk.ApiException as e:
+    except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
@@ -185,7 +185,7 @@ def delete_restore_source(module, domain_manager_backups_api, result):
     resp = None
     try:
         resp = domain_manager_backups_api.delete_restore_source_by_id(extId=ext_id)
-    except prism_sdk.ApiException as e:
+    except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
