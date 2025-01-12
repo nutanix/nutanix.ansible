@@ -3,21 +3,25 @@ replication_location_1:
   domain_manager_ext_id: "{{domain_manager_ext_id}}"
   is_primary: true
   replication_sub_location: null
+
 replication_location_2:
   label: "ansible-label-{{label2}}"
   domain_manager_ext_id: "{{pc_uuid}}"
   is_primary: false
   replication_sub_location: null
+
 replication_location_1_updated:
   label: "ansible-label-{{label1}}_updated"
   domain_manager_ext_id: "{{domain_manager_ext_id}}"
   is_primary: true
   replication_sub_location:
+
 replication_location_2_updated:
   label: "ansible-label-{{label2}}_updated"
   domain_manager_ext_id: "{{pc_uuid}}"
   is_primary: false
   replication_sub_location:
+
 replication_configuration_linear_1:
   source_location_label: "ansible-label-{{label1}}"
   remote_location_label: "ansible-label-{{label2}}"
@@ -29,6 +33,7 @@ replication_configuration_linear_1:
       remote: 1
     start_time: "15h:19m"
     sync_replication_auto_suspend_timeout_seconds: 300
+
 replication_configuration_linear_2:
   source_location_label: "ansible-label-{{label2}}"
   remote_location_label: "ansible-label-{{label1}}"
@@ -40,6 +45,7 @@ replication_configuration_linear_2:
       remote: 1
     start_time: "15h:19m"
     sync_replication_auto_suspend_timeout_seconds: 300
+
 replication_configuration_linear_1_updated:
   source_location_label: "ansible-label-{{label1}}_updated"
   remote_location_label: "ansible-label-{{label2}}_updated"
@@ -51,6 +57,7 @@ replication_configuration_linear_1_updated:
       remote: 2
     start_time: "16h:12m"
     sync_replication_auto_suspend_timeout_seconds: 90
+
 replication_configuration_linear_2_updated:
   source_location_label: "ansible-label-{{label2}}_updated"
   remote_location_label: "ansible-label-{{label1}}_updated"
@@ -62,6 +69,7 @@ replication_configuration_linear_2_updated:
       remote: 2
     start_time: "16h:12m"
     sync_replication_auto_suspend_timeout_seconds: 90
+
 replication_configuration_auto_1:
   source_location_label: "ansible-label-{{label1}}"
   remote_location_label: "ansible-label-{{label2}}"
@@ -77,6 +85,7 @@ replication_configuration_auto_1:
         frequency: 1
     start_time: "15h:19m"
     sync_replication_auto_suspend_timeout_seconds: 300
+
 replication_configuration_auto_2:
   source_location_label: "ansible-label-{{label2}}"
   remote_location_label: "ansible-label-{{label1}}"
@@ -92,6 +101,7 @@ replication_configuration_auto_2:
         frequency: 1
     start_time: "15h:19m"
     sync_replication_auto_suspend_timeout_seconds: 300
+
 replication_configuration_auto_1_updated:
   source_location_label: "ansible-label-{{label1}}_updated"
   remote_location_label: "ansible-label-{{label2}}_updated"
@@ -107,6 +117,7 @@ replication_configuration_auto_1_updated:
         frequency: 2
     start_time: "13h:08m"
     sync_replication_auto_suspend_timeout_seconds: 90
+
 replication_configuration_auto_2_updated:
   source_location_label: "ansible-label-{{label2}}_updated"
   remote_location_label: "ansible-label-{{label1}}_updated"
@@ -122,3 +133,23 @@ replication_configuration_auto_2_updated:
         frequency: 2
     start_time: "13h:08m"
     sync_replication_auto_suspend_timeout_seconds: 90
+
+replication_configuration_sync_1:
+  source_location_label: "ansible-label-{{label1}}"
+  remote_location_label: "ansible-label-{{label2}}"
+  schedule:
+    recovery_point_type: "CRASH_CONSISTENT"
+    retention: null
+    recovery_point_objective_time_seconds: 0
+    start_time: "17h:11m"
+    sync_replication_auto_suspend_timeout_seconds: 10
+
+replication_configuration_sync_2:
+  source_location_label: "ansible-label-{{label2}}"
+  remote_location_label: "ansible-label-{{label1}}"
+  schedule:
+    recovery_point_type: "CRASH_CONSISTENT"
+    retention: null
+    recovery_point_objective_time_seconds: 0
+    start_time: "17h:11m"
+    sync_replication_auto_suspend_timeout_seconds: 10

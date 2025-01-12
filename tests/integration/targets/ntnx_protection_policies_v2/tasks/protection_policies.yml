@@ -29,6 +29,7 @@
   ansible.builtin.set_fact:
     category_ext_id_1: "{{ result.response[0].ext_id }}"
     category_ext_id_2: "{{ result.response[1].ext_id }}"
+    category_ext_id_3: "{{ result.response[2].ext_id }}"
 
 - name: List all clusters to get prism central external ID
   ntnx_clusters_info_v2:
@@ -229,6 +230,62 @@
         or result.response.replication_configurations[1] == replication_configuration_auto_2
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_2}}"
+    success_msg: "Protection policy created successfully"
+    fail_msg: "Protection policy creation failed"
+
+- name: Add retention policy external ID to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
+########################################################################################
+
+- name: Create Synchronous replication protection policy
+  nutanix.ncp.ntnx_protection_policies_v2:
+    name: "ansible-name-sync-{{random_name}}"
+    description: "ansible-description-sync-{{random_name}}"
+    replication_locations:
+      - "{{ replication_location_1 }}"
+      - "{{ replication_location_2 }}"
+    replication_configurations:
+      - source_location_label: "{{ replication_configuration_sync_1.source_location_label }}"
+        remote_location_label: "{{ replication_configuration_sync_1.remote_location_label }}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: "{{ replication_configuration_sync_1.schedule.recovery_point_objective_time_seconds | int }}"
+          start_time: "{{ replication_configuration_sync_1.schedule.start_time }}"
+          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+      - source_location_label: "{{ replication_configuration_sync_2.source_location_label }}"
+        remote_location_label: "{{ replication_configuration_sync_2.remote_location_label }}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: "{{ replication_configuration_sync_2.schedule.recovery_point_objective_time_seconds | int }}"
+          start_time: "{{ replication_configuration_sync_2.schedule.start_time }}"
+          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+    category_ids:
+      - "{{category_ext_id_3}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating Synchronous replication protection policy
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == result.protection_policy_ext_id
+      - result.response.name == "ansible-name-sync-{{random_name}}"
+      - result.response.description == "ansible-description-sync-{{random_name}}"
+      - result.response.replication_locations[0] == replication_location_1
+        or result.response.replication_locations[0] == replication_location_2
+      - result.response.replication_locations[1] == replication_location_1
+        or result.response.replication_locations[1] == replication_location_2
+      - result.response.replication_locations[0] != result.response.replication_locations[1]
+      - result.response.replication_configurations[0] == replication_configuration_sync_1
+        or result.response.replication_configurations[0] == replication_configuration_sync_2
+      - result.response.replication_configurations[1] == replication_configuration_sync_1
+        or result.response.replication_configurations[1] == replication_configuration_sync_2
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_3}}"
     success_msg: "Protection policy created successfully"
     fail_msg: "Protection policy creation failed"
 
