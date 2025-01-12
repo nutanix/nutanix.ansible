@@ -214,9 +214,7 @@ def update_backup_target(module, domain_manager_backups_api, result):
 
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating update backup target spec", **result
-        )
+        module.fail_json(msg="Failed generating update backup target spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
