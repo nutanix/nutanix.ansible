@@ -108,12 +108,11 @@ import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.v4.pe.base_module import BasePEModule  # noqa: E402
+from ..module_utils.v4.pe.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
 )
-from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -196,7 +195,7 @@ def delete_restore_source(module, domain_manager_backups_api, result):
 
 
 def run_module():
-    module = BasePEModule(
+    module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

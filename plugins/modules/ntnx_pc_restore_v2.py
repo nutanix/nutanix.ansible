@@ -578,7 +578,7 @@ import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.v4.pe.base_module import BasePEModule  # noqa: E402
+from ..module_utils.v4.pe.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
@@ -610,7 +610,10 @@ def get_module_spec():
         restore_source_ext_id=dict(type="str", required=True),
         restorable_domain_manager_ext_id=dict(type="str", required=True),
         domain_manger=dict(
-            type="dict", options=prism_specs.prism_spec, obj=prism_sdk.DomainManager, required=True
+            type="dict",
+            options=prism_specs.prism_spec,
+            obj=prism_sdk.DomainManager,
+            required=True,
         ),
     )
     return module_args
@@ -659,7 +662,7 @@ def restore_domain_manager(module, result):
 
 
 def run_module():
-    module = BasePEModule(
+    module = BaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
