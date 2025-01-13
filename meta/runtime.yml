@@ -191,3 +191,5 @@ action_groups:
     - ntnx_storage_containers_v2
     - ntnx_protection_policies_info_v2
     - ntnx_protection_policies_v2
+    - ntnx_protected_resources_v2
+    - ntnx_protected_resources_info_v2
