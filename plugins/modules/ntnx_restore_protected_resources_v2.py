@@ -10,10 +10,10 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_protected_resources_v2
-short_description: Module to promote or restore a protected resource in Nutanix Prism Central.
+module: ntnx_restore_protected_resources_v2
+short_description: Module to restore a protected resource in Nutanix Prism Central.
 description:
-  - This module can be used to promote or restore a protected resource in Nutanix Prism Central.
+  - This module can be used to restore a protected resource in Nutanix Prism Central.
 options:
   ext_id:
     description:
@@ -124,31 +124,6 @@ def restore_protected_resource(module, result):
     result["changed"] = True
 
 
-def promote_protected_resource(module, result):
-    protected_resource = get_protected_resource_api_instance(module)
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-
-    resp = None
-    try:
-        resp = protected_resource.promote_protected_resource(extId=ext_id)
-
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while promoting protected resource",
-        )
-
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
-    if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(resp.to_dict())
-    result["changed"] = True
-
-
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
@@ -156,7 +131,8 @@ def run_module():
     )
     if SDK_IMP_ERROR:
         module.fail_json(
-            msg=missing_required_lib("ntnx_vmm_py_client"), exception=SDK_IMP_ERROR
+            msg=missing_required_lib("ntnx_dataprotection_py_client"),
+            exception=SDK_IMP_ERROR,
         )
     remove_param_with_none_value(module.params)
     result = {
@@ -165,11 +141,8 @@ def run_module():
         "response": None,
         "ext_id": None,
     }
-    cluster_ext_id = module.params.get("cluster_ext_id")
-    if cluster_ext_id:
-        restore_protected_resource(module, result)
-    else:
-        promote_protected_resource(module, result)
+
+    restore_protected_resource(module, result)
 
     module.exit_json(**result)
 

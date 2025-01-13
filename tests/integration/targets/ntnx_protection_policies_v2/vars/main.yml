@@ -2,25 +2,69 @@ replication_location_1:
   label: "ansible-label-{{label1}}"
   domain_manager_ext_id: "{{domain_manager_ext_id}}"
   is_primary: true
-  replication_sub_location: null
+  replication_sub_location:
+    nutanix_cluster:
+      cluster_ext_ids:
+        - "{{ cluster.uuid }}"
 
 replication_location_2:
   label: "ansible-label-{{label2}}"
   domain_manager_ext_id: "{{pc_uuid}}"
   is_primary: false
-  replication_sub_location: null
+  replication_sub_location:
+    nutanix_cluster:
+      cluster_ext_ids:
+        - "{{ cluster_availability_zone.uuid }}"
+
+replication_location_1_expected:
+  label: "ansible-label-{{label1}}"
+  domain_manager_ext_id: "{{domain_manager_ext_id}}"
+  is_primary: true
+  replication_sub_location:
+    cluster_ext_ids:
+      - "{{ cluster.uuid }}"
+
+replication_location_2_expected:
+  label: "ansible-label-{{label2}}"
+  domain_manager_ext_id: "{{pc_uuid}}"
+  is_primary: false
+  replication_sub_location:
+    cluster_ext_ids:
+      - "{{ cluster_availability_zone.uuid }}"
 
 replication_location_1_updated:
   label: "ansible-label-{{label1}}_updated"
   domain_manager_ext_id: "{{domain_manager_ext_id}}"
   is_primary: true
   replication_sub_location:
+    nutanix_cluster:
+      cluster_ext_ids:
+        - "{{ cluster.uuid }}"
 
 replication_location_2_updated:
   label: "ansible-label-{{label2}}_updated"
   domain_manager_ext_id: "{{pc_uuid}}"
   is_primary: false
   replication_sub_location:
+    nutanix_cluster:
+      cluster_ext_ids:
+        - "{{ cluster_availability_zone.uuid }}"
+
+replication_location_1_updated_expected:
+  label: "ansible-label-{{label1}}_updated"
+  domain_manager_ext_id: "{{domain_manager_ext_id}}"
+  is_primary: true
+  replication_sub_location:
+    cluster_ext_ids:
+      - "{{ cluster.uuid }}"
+
+replication_location_2_updated_expected:
+  label: "ansible-label-{{label2}}_updated"
+  domain_manager_ext_id: "{{pc_uuid}}"
+  is_primary: false
+  replication_sub_location:
+    cluster_ext_ids:
+      - "{{ cluster_availability_zone.uuid }}"
 
 replication_configuration_linear_1:
   source_location_label: "ansible-label-{{label1}}"
@@ -75,7 +119,7 @@ replication_configuration_auto_1:
   remote_location_label: "ansible-label-{{label2}}"
   schedule:
     recovery_point_type: "CRASH_CONSISTENT"
-    recovery_point_objective_time_seconds: 3600
+    recovery_point_objective_time_seconds: 60
     retention:
       local:
         snapshot_interval_type: "DAILY"
@@ -83,7 +127,7 @@ replication_configuration_auto_1:
       remote:
         snapshot_interval_type: "DAILY"
         frequency: 1
-    start_time: "15h:19m"
+    start_time:
     sync_replication_auto_suspend_timeout_seconds: 300
 
 replication_configuration_auto_2:
@@ -91,7 +135,7 @@ replication_configuration_auto_2:
   remote_location_label: "ansible-label-{{label1}}"
   schedule:
     recovery_point_type: "CRASH_CONSISTENT"
-    recovery_point_objective_time_seconds: 3600
+    recovery_point_objective_time_seconds: 60
     retention:
       local:
         snapshot_interval_type: "DAILY"
@@ -99,7 +143,7 @@ replication_configuration_auto_2:
       remote:
         snapshot_interval_type: "DAILY"
         frequency: 1
-    start_time: "15h:19m"
+    start_time:
     sync_replication_auto_suspend_timeout_seconds: 300
 
 replication_configuration_auto_1_updated:
@@ -107,7 +151,7 @@ replication_configuration_auto_1_updated:
   remote_location_label: "ansible-label-{{label2}}_updated"
   schedule:
     recovery_point_type: "CRASH_CONSISTENT"
-    recovery_point_objective_time_seconds: 7200
+    recovery_point_objective_time_seconds: 3600
     retention:
       local:
         snapshot_interval_type: "DAILY"
@@ -123,7 +167,7 @@ replication_configuration_auto_2_updated:
   remote_location_label: "ansible-label-{{label1}}_updated"
   schedule:
     recovery_point_type: "CRASH_CONSISTENT"
-    recovery_point_objective_time_seconds: 7200
+    recovery_point_objective_time_seconds: 3600
     retention:
       local:
         snapshot_interval_type: "DAILY"

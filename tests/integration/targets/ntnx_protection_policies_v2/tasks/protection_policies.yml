@@ -87,10 +87,10 @@
       - result.response is defined
       - result.response.name == "ansible-name-test-{{random_name}}"
       - result.response.description == "ansible-description-test-{{random_name}}"
-      - result.response.replication_locations[0] == replication_location_1
-        or result.response.replication_locations[0] == replication_location_2
-      - result.response.replication_locations[1] == replication_location_1
-        or result.response.replication_locations[1] == replication_location_2
+      - result.response.replication_locations[0] == replication_location_1_expected
+        or result.response.replication_locations[0] == replication_location_2_expected
+      - result.response.replication_locations[1] == replication_location_1_expected
+        or result.response.replication_locations[1] == replication_location_2_expected
       - result.response.replication_configurations[0] == replication_configuration_linear_1
         or result.response.replication_configurations[0] == replication_configuration_linear_2
       - result.response.replication_configurations[1] == replication_configuration_linear_1
@@ -147,10 +147,10 @@
       - result.response.ext_id == result.protection_policy_ext_id
       - result.response.name == "ansible-name-linear-{{random_name}}"
       - result.response.description == "ansible-description-linear-{{random_name}}"
-      - result.response.replication_locations[0] == replication_location_1
-        or result.response.replication_locations[0] == replication_location_2
-      - result.response.replication_locations[1] == replication_location_1
-        or result.response.replication_locations[1] == replication_location_2
+      - result.response.replication_locations[0] == replication_location_1_expected
+        or result.response.replication_locations[0] == replication_location_2_expected
+      - result.response.replication_locations[1] == replication_location_1_expected
+        or result.response.replication_locations[1] == replication_location_2_expected
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] == replication_configuration_linear_1
         or result.response.replication_configurations[0] == replication_configuration_linear_2
@@ -188,7 +188,6 @@
               remote:
                 snapshot_interval_type: "{{ replication_configuration_auto_1.schedule.retention.remote.snapshot_interval_type }}"
                 frequency: "{{ replication_configuration_auto_1.schedule.retention.remote.frequency }}"
-          start_time: "{{ replication_configuration_auto_1.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
       - source_location_label: "{{ replication_configuration_auto_2.source_location_label }}"
         remote_location_label: "{{ replication_configuration_auto_2.remote_location_label }}"
@@ -203,7 +202,6 @@
               remote:
                 snapshot_interval_type: "{{ replication_configuration_auto_2.schedule.retention.remote.snapshot_interval_type }}"
                 frequency: "{{ replication_configuration_auto_2.schedule.retention.remote.frequency }}"
-          start_time: "{{ replication_configuration_auto_2.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
     category_ids:
       - "{{category_ext_id_2}}"
@@ -219,10 +217,10 @@
       - result.response.ext_id == result.protection_policy_ext_id
       - result.response.name == "ansible-name-auto-{{random_name}}"
       - result.response.description == "ansible-description-auto-{{random_name}}"
-      - result.response.replication_locations[0] == replication_location_1
-        or result.response.replication_locations[0] == replication_location_2
-      - result.response.replication_locations[1] == replication_location_1
-        or result.response.replication_locations[1] == replication_location_2
+      - result.response.replication_locations[0] == replication_location_1_expected
+        or result.response.replication_locations[0] == replication_location_2_expected
+      - result.response.replication_locations[1] == replication_location_1_expected
+        or result.response.replication_locations[1] == replication_location_2_expected
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] == replication_configuration_auto_1
         or result.response.replication_configurations[0] == replication_configuration_auto_2
@@ -275,10 +273,10 @@
       - result.response.ext_id == result.protection_policy_ext_id
       - result.response.name == "ansible-name-sync-{{random_name}}"
       - result.response.description == "ansible-description-sync-{{random_name}}"
-      - result.response.replication_locations[0] == replication_location_1
-        or result.response.replication_locations[0] == replication_location_2
-      - result.response.replication_locations[1] == replication_location_1
-        or result.response.replication_locations[1] == replication_location_2
+      - result.response.replication_locations[0] == replication_location_1_expected
+        or result.response.replication_locations[0] == replication_location_2_expected
+      - result.response.replication_locations[1] == replication_location_1_expected
+        or result.response.replication_locations[1] == replication_location_2_expected
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] == replication_configuration_sync_1
         or result.response.replication_configurations[0] == replication_configuration_sync_2
@@ -292,6 +290,173 @@
 - name: Add retention policy external ID to todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.response.ext_id] }}"
+
+########################################################################################
+
+- name: Create a Protected VM to be promoted
+  ntnx_vms_v2:
+    name: "{{ random_name }}_protected_vm_promote"
+    description: "Protected VM for promotion"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id_3 }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating a Protected VM to be promoted
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ random_name }}_protected_vm_promote"
+      - result.response.description == "Protected VM for promotion"
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.categories[0].ext_id == "{{ category_ext_id_3 }}"
+    success_msg: "Protected VM created successfully"
+    fail_msg: "Protected VM creation failed"
+
+- name: Set VM external ID
+  ansible.builtin.set_fact:
+    vm_ext_id_1: "{{ result.response.ext_id }}"
+
+- name: Create a Protected VM to be restored
+  ntnx_vms_v2:
+    name: "{{ random_name }}_protected_vm_restore"
+    description: "Protected VM for restore"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    categories:
+      - ext_id: "{{ category_ext_id_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating a Protected VM to be restored
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ random_name }}_protected_vm_restore"
+      - result.response.description == "Protected VM for restore"
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.categories[0].ext_id == "{{ category_ext_id_2 }}"
+    success_msg: "Protected VM created successfully"
+    fail_msg: "Protected VM creation failed"
+
+- name: Set VM external ID
+  ansible.builtin.set_fact:
+    vm_ext_id_2: "{{ result.response.ext_id }}"
+
+# Wait for the first VM to be protected
+- name: Fetch VM using ext_id
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_ext_id_1 }}"
+  register: result
+  until: result.response.protection_type == "RULE_PROTECTED"
+  retries: 60
+  delay: 10
+  ignore_errors: true
+
+- name: Status for fetching VM using ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == vm_ext_id_1
+      - result.response.name == "{{ random_name }}_protected_vm_promote"
+      - result.response.description == "Protected VM for promotion"
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.categories[0].ext_id == "{{ category_ext_id_3 }}"
+      - result.response.protection_type == "RULE_PROTECTED"
+    success_msg: "VM fetched successfully"
+    fail_msg: "VM fetch failed"
+
+# Wait for the second VM to be protected
+- name: Fetch VM using ext_id
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_ext_id_2 }}"
+  register: result
+  until: result.response.protection_type == "RULE_PROTECTED"
+  retries: 60
+  delay: 10
+  ignore_errors: true
+
+- name: Status for fetching VM using ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == vm_ext_id_2
+      - result.response.name == "{{ random_name }}_protected_vm_restore"
+      - result.response.description == "Protected VM for restore"
+      - result.response.cluster.ext_id == cluster.uuid
+      - result.response.categories[0].ext_id == "{{ category_ext_id_2 }}"
+      - result.response.protection_type == "RULE_PROTECTED"
+    success_msg: "VM fetched successfully"
+    fail_msg: "VM fetch failed"
+
+- name: Sleep for 2 minutes until VM is protected
+  ansible.builtin.pause:
+    seconds: 120
+
+- name: Get a protected resource
+  nutanix.ncp.ntnx_protected_resources_info_v2:
+    ext_id: "{{ vm_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for getting a protected resource
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.entity_ext_id == vm_ext_id_1
+      - result.response.entity_type == "VM"
+      - result.response.replication_states[0].replication_status == "IN_SYNC"
+      - result.response.replication_states[0].target_site_reference.cluster_ext_id == cluster_availability_zone.uuid
+      - result.response.source_site_reference.cluster_ext_id == cluster.uuid
+      - result.response.site_protection_info[0].location_reference.cluster_ext_id == cluster.uuid
+    success_msg: "Protected resource fetched successfully"
+    fail_msg: "Protected resource fetch failed"
+
+- name: Promote VM
+  nutanix.ncp.ntnx_promote_protected_resources_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    ext_id: "{{ vm_ext_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for promoting VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "VM promoted successfully"
+    fail_msg: "VM promotion failed"
+
+- name: Restore VM
+  nutanix.ncp.ntnx_restore_protected_resources_v2:
+    ext_id: "{{ vm_ext_id_2 }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status for restoring VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "VM restored successfully"
+    fail_msg: "VM restore failed"
 
 ########################################################################################
 
@@ -345,10 +510,10 @@
       - result.response.ext_id == "{{ todelete[0] }}"
       - result.response.name == "ansible-name-linear-{{random_name}}_updated"
       - result.response.description == "ansible-description-linear-{{random_name}}_updated"
-      - result.response.replication_locations[0] == replication_location_1_updated
-        or result.response.replication_locations[0] == replication_location_2_updated
-      - result.response.replication_locations[1] == replication_location_1_updated
-        or result.response.replication_locations[1] == replication_location_2_updated
+      - result.response.replication_locations[0] == replication_location_1_updated_expected
+        or result.response.replication_locations[0] == replication_location_2_updated_expected
+      - result.response.replication_locations[1] == replication_location_1_updated_expected
+        or result.response.replication_locations[1] == replication_location_2_updated_expected
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] == replication_configuration_linear_1_updated
         or result.response.replication_configurations[0] == replication_configuration_linear_2_updated
@@ -410,10 +575,10 @@
       - result.response.ext_id == "{{ todelete[0] }}"
       - result.response.name == "ansible-name-linear-{{random_name}}_updated"
       - result.response.description == "ansible-description-linear-{{random_name}}_updated"
-      - result.response.replication_locations[0] == replication_location_1_updated
-        or result.response.replication_locations[0] == replication_location_2_updated
-      - result.response.replication_locations[1] == replication_location_1_updated
-        or result.response.replication_locations[1] == replication_location_2_updated
+      - result.response.replication_locations[0] == replication_location_1_updated_expected
+        or result.response.replication_locations[0] == replication_location_2_updated_expected
+      - result.response.replication_locations[1] == replication_location_1_updated_expected
+        or result.response.replication_locations[1] == replication_location_2_updated_expected
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] == replication_configuration_linear_1_updated
         or result.response.replication_configurations[0] == replication_configuration_linear_2_updated
@@ -530,10 +695,10 @@
       - result.response.ext_id == "{{ todelete[1] }}"
       - result.response.name == "ansible-name-auto-{{random_name}}_updated"
       - result.response.description == "ansible-description-auto-{{random_name}}_updated"
-      - result.response.replication_locations[0] == replication_location_1_updated
-        or result.response.replication_locations[0] == replication_location_2_updated
-      - result.response.replication_locations[1] == replication_location_1_updated
-        or result.response.replication_locations[1] == replication_location_2_updated
+      - result.response.replication_locations[0] == replication_location_1_updated_expected
+        or result.response.replication_locations[0] == replication_location_2_updated_expected
+      - result.response.replication_locations[1] == replication_location_1_updated_expected
+        or result.response.replication_locations[1] == replication_location_2_updated_expected
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] == replication_configuration_auto_1_updated
         or result.response.replication_configurations[0] == replication_configuration_auto_2_updated
@@ -615,10 +780,10 @@
       - result.response.ext_id == "{{ todelete[0] }}"
       - result.response.name == "ansible-name-linear-{{random_name}}_updated"
       - result.response.description == "ansible-description-linear-{{random_name}}_updated"
-      - result.response.replication_locations[0] == replication_location_1_updated
-        or result.response.replication_locations[0] == replication_location_2_updated
-      - result.response.replication_locations[1] == replication_location_1_updated
-        or result.response.replication_locations[1] == replication_location_2_updated
+      - result.response.replication_locations[0] == replication_location_1_updated_expected
+        or result.response.replication_locations[0] == replication_location_2_updated_expected
+      - result.response.replication_locations[1] == replication_location_1_updated_expected
+        or result.response.replication_locations[1] == replication_location_2_updated_expected
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] == replication_configuration_linear_1_updated
         or result.response.replication_configurations[0] == replication_configuration_linear_2_updated
@@ -628,6 +793,25 @@
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
     success_msg: "Protection policy fetched successfully"
     fail_msg: "Protection policy fetch failed"
+
+########################################################################################
+
+- name: Delete VM
+  nutanix.ncp.ntnx_vms_v2:
+    ext_id: "{{ vm_ext_id_1 }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Status for deleting VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete VM"
+    success_msg: "VM deleted successfully"
 
 ########################################################################################
 
