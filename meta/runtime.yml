@@ -194,3 +194,4 @@ action_groups:
     - ntnx_promote_protected_resources_v2
     - ntnx_restore_protected_resources_v2
     - ntnx_protected_resources_info_v2
+    - ntnx_volume_groups_categories_v2
