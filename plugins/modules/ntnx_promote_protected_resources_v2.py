@@ -34,9 +34,89 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Promote VM
+  nutanix.ncp.ntnx_promote_protected_resources_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
+response:
+  description: Task response for promoting a protected resource.
+  returned: always
+  type: dict
+  sample:
+    {
+      "cluster_ext_ids": [
+          "00062aa9-5634-d950-185b-ac1f6b6f97e2"
+      ],
+      "completed_time": "2025-01-14T08:03:14.995979+00:00",
+      "completion_details": [
+          {
+              "name": "promotedVmExtId",
+              "value": "655ea7b5-22f6-4989-9820-4992f8165bc1"
+          }
+      ],
+      "created_time": "2025-01-14T08:03:03.027768+00:00",
+      "entities_affected": null,
+      "error_messages": null,
+      "ext_id": "ZXJnb24=:3db0a14c-53d4-4b3e-8c86-7417ee9cae43",
+      "is_background_task": false,
+      "is_cancelable": true,
+      "last_updated_time": "2025-01-14T08:03:14.995978+00:00",
+      "legacy_error_message": null,
+      "number_of_entities_affected": 0,
+      "number_of_subtasks": 0,
+      "operation": "VmPromote",
+      "operation_description": "Promote Virtual Machine",
+      "owned_by": {
+          "ext_id": "00000000-0000-0000-0000-000000000000",
+          "name": "admin"
+      },
+      "parent_task": null,
+      "progress_percentage": 100,
+      "root_task": null,
+      "started_time": "2025-01-14T08:03:03.089069+00:00",
+      "status": "SUCCEEDED",
+      "sub_steps": null,
+      "sub_tasks": null,
+      "warnings": null
+    }
+
+changed:
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
+
+error:
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: always
+  type: bool
+  sample: false
+
+failed:
+  description: This indicates whether the task failed
+  returned: always
+  type: bool
+  sample: false
+
+ext_id:
+  description: The external identifier of the protected resource.
+  returned: always
+  type: str
+  sample: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+
+task_ext_id:
+  description: The external identifier of the task.
+  returned: always
+  type: str
+  sample: "ZXJnb24=:af298405-1d59-4c28-9b78-f8f94a5adf2d"
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402

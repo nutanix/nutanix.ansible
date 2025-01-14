@@ -46,9 +46,91 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Restore VM
+  nutanix.ncp.ntnx_restore_protected_resources_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+    cluster_ext_id: "00062aa9-1234-1122-3333-ac1f6b6f97e2
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
+response:
+  description: Task response for restoring a protected resource.
+  returned: always
+  type: dict
+  sample:
+    {
+      "cluster_ext_ids": [
+          "00062899-4a29-0cf9-0000-000000028f57"
+      ],
+      "completed_time": "2025-01-14T07:47:51.573218+00:00",
+      "completion_details": null,
+      "created_time": "2025-01-14T07:47:44.190257+00:00",
+      "entities_affected": [
+          {
+              "ext_id": "4f1e2d82-eab6-420d-b8c1-97096d71df5a",
+              "name": "george_test",
+              "rel": "vmm:ahv:config:vm"
+          }
+      ],
+      "error_messages": null,
+      "ext_id": "ZXJnb24=:af298405-1d59-4c28-9b78-f8f94a5adf2d",
+      "is_background_task": false,
+      "is_cancelable": false,
+      "last_updated_time": "2025-01-14T07:47:51.573216+00:00",
+      "legacy_error_message": null,
+      "number_of_entities_affected": 1,
+      "number_of_subtasks": 0,
+      "operation": "EntitySnapshotRealizeWithAction",
+      "operation_description": "Restore Protected Resource",
+      "owned_by": {
+          "ext_id": "00000000-0000-0000-0000-000000000000",
+          "name": "admin"
+      },
+      "parent_task": null,
+      "progress_percentage": 100,
+      "root_task": null,
+      "started_time": "2025-01-14T07:47:44.205725+00:00",
+      "status": "SUCCEEDED",
+      "sub_steps": null,
+      "sub_tasks": null,
+      "warnings": null
+    }
+
+changed:
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
+
+error:
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: always
+  type: bool
+  sample: false
+
+failed:
+  description: This indicates whether the task failed
+  returned: always
+  type: bool
+  sample: false
+
+ext_id:
+  description: The external identifier of the protected resource.
+  returned: always
+  type: str
+  sample: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+
+task_ext_id:
+  description: The external identifier of the task.
+  returned: always
+  type: str
+  sample: "ZXJnb24=:af298405-1d59-4c28-9b78-f8f94a5adf2d"
 """
 
 import traceback  # noqa: E402
