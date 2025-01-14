@@ -49,7 +49,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     categories_spec = dict(
-        extId=dict(type="str"),
+        ext_id=dict(type="str"),
         name=dict(type="str"),
         uris=dict(type="list", elements="str"),
         entity_type=dict(
