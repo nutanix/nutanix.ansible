@@ -66,3 +66,33 @@ def get_pc_config(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching pc config info using ext_id",
         )
+
+
+def get_restore_point(
+    module,
+    api_instance,
+    ext_id,
+    restore_source_ext_id,
+    restorable_domain_manager_ext_id,
+):
+    """
+    This method will return restore point info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DomainManagerBackupApi instance from ntnx_prism_py_client sdk
+        ext_id (str): restore point info external ID
+    return:
+        restore_point_info (object): restore point info
+    """
+    try:
+        return api_instance.get_restore_point_by_id(
+            restoreSourceExtId=restore_source_ext_id,
+            restorableDomainManagerExtId=restorable_domain_manager_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching restore point info using ext_id",
+        )
