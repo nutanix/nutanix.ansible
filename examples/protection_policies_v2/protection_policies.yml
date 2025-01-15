@@ -145,6 +145,9 @@
         category_ext_id_1: "bbc3555a-5478-1122-4411-bfff196e84e4"
         category_ext_id_2: "e4bda88f-9632-3322-2233-2c0bb00d923d"
         category_ext_id_3: "e4bda88f-1234-5678-3246-2c0bb00d923d"
+        cluster:
+          uuid: "0005b6b1-3b7b-4b3b-8b3b-3b7b3b7b3b7b"
+        availability_zone_pc_ip: "10.0.0.1"
 
     - name: Create linear retention protection policy
       nutanix.ncp.ntnx_protection_policies_v2:
