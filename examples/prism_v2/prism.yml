@@ -25,9 +25,6 @@
       ansible.builtin.set_fact:
         domain_manager_ext_id: "{{ result.response[0].ext_id }}"
 
-    - debug:
-        var: cluster.uuid
-
     - name: Create backup target cluster
       nutanix.ncp.ntnx_pc_backup_target_v2:
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
