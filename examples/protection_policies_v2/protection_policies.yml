@@ -144,6 +144,7 @@
             sync_replication_auto_suspend_timeout_seconds: 90
         category_ext_id_1: "bbc3555a-5478-1122-4411-bfff196e84e4"
         category_ext_id_2: "e4bda88f-9632-3322-2233-2c0bb00d923d"
+        category_ext_id_3: "e4bda88f-1234-5678-3246-2c0bb00d923d"
 
     - name: Create linear retention protection policy
       nutanix.ncp.ntnx_protection_policies_v2:
@@ -228,6 +229,163 @@
     - name: Set protection policy ext id
       ansible.builtin.set_fact:
         protection_policy_ext_id_2: "{{ result.protection_policy_ext_id }}"
+
+    - name: Create Synchronous replication protection policy
+      nutanix.ncp.ntnx_protection_policies_v2:
+        name: "ansible-name-sync-{{random_name}}"
+        description: "ansible-description-sync-{{random_name}}"
+        replication_locations:
+          - "{{ replication_location_1 }}"
+          - "{{ replication_location_2 }}"
+        replication_configurations:
+          - source_location_label: "{{ replication_configuration_sync_1.source_location_label }}"
+            remote_location_label: "{{ replication_configuration_sync_1.remote_location_label }}"
+            schedule:
+              recovery_point_type: "CRASH_CONSISTENT"
+              recovery_point_objective_time_seconds: "{{ replication_configuration_sync_1.schedule.recovery_point_objective_time_seconds | int }}"
+              start_time: "{{ replication_configuration_sync_1.schedule.start_time }}"
+              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+          - source_location_label: "{{ replication_configuration_sync_2.source_location_label }}"
+            remote_location_label: "{{ replication_configuration_sync_2.remote_location_label }}"
+            schedule:
+              recovery_point_type: "CRASH_CONSISTENT"
+              recovery_point_objective_time_seconds: "{{ replication_configuration_sync_2.schedule.recovery_point_objective_time_seconds | int }}"
+              start_time: "{{ replication_configuration_sync_2.schedule.start_time }}"
+              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+        category_ids:
+          - "{{category_ext_id_3}}"
+      register: result
+      ignore_errors: true
+
+    - name: Create a Protected VM to be promoted
+      ntnx_vms_v2:
+        name: "{{ random_name }}_protected_vm_promote"
+        description: "Protected VM for promotion"
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        categories:
+          - ext_id: "{{ category_ext_id_3 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set VM external ID
+      ansible.builtin.set_fact:
+        vm_ext_id_1: "{{ result.response.ext_id }}"
+
+    - name: Create a Protected VM to be restored
+      ntnx_vms_v2:
+        name: "{{ random_name }}_protected_vm_restore"
+        description: "Protected VM for restore"
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+        categories:
+          - ext_id: "{{ category_ext_id_2 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set VM external ID
+      ansible.builtin.set_fact:
+        vm_ext_id_2: "{{ result.response.ext_id }}"
+
+    - name: Create Volume group to be promoted
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "{{ random_name }}_protected_vg_promote"
+        description: "Volume group for promotion"
+        cluster_reference: "{{ cluster.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set VG UUID
+      ansible.builtin.set_fact:
+        vg1_uuid: "{{ result.ext_id }}"
+
+    - name: Create Volume group to be restored
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "{{ random_name }}_protected_vg_restore"
+        description: "Volume group for restore"
+        cluster_reference: "{{ cluster.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set VG UUID
+      ansible.builtin.set_fact:
+        vg2_uuid: "{{ result.ext_id }}"
+
+    - name: Associate category with first VG
+      ntnx_volume_groups_categories_v2:
+        ext_id: "{{ vg1_uuid }}"
+        categories:
+          - ext_id: "{{ category_ext_id_1 }}"
+            entity_type: "CATEGORY"
+      register: result
+      ignore_errors: true
+
+    - name: Associate category with second VG
+      ntnx_volume_groups_categories_v2:
+        ext_id: "{{ vg2_uuid }}"
+        categories:
+          - ext_id: "{{ category_ext_id_2 }}"
+            entity_type: "CATEGORY"
+      register: result
+      ignore_errors: true
+
+    # Wait for the first VM to be protected
+    - name: Fetch VM using ext_id
+      ntnx_vms_info_v2:
+        ext_id: "{{ vm_ext_id_1 }}"
+      register: result
+      until: result.response.protection_type == "RULE_PROTECTED"
+      retries: 60
+      delay: 10
+      ignore_errors: true
+
+    # Wait for the second VM to be protected
+    - name: Fetch VM using ext_id
+      ntnx_vms_info_v2:
+        ext_id: "{{ vm_ext_id_2 }}"
+      register: result
+      until: result.response.protection_type == "RULE_PROTECTED"
+      retries: 60
+      delay: 10
+      ignore_errors: true
+
+    - name: Sleep for 5 minutes until VMs and VGs are protected
+      ansible.builtin.pause:
+        seconds: 300
+
+    - name: Get a protected resource
+      nutanix.ncp.ntnx_protected_resources_info_v2:
+        ext_id: "{{ vm_ext_id_1 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Promote VM
+      nutanix.ncp.ntnx_promote_protected_resources_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
+        ext_id: "{{ vm_ext_id_1 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Restore VM
+      nutanix.ncp.ntnx_restore_protected_resources_v2:
+        ext_id: "{{ vm_ext_id_2 }}"
+        cluster_ext_id: "{{ cluster.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Promote VG
+      nutanix.ncp.ntnx_promote_protected_resources_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
+        ext_id: "{{ vg1_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Restore VG
+      nutanix.ncp.ntnx_restore_protected_resources_v2:
+        ext_id: "{{ vg2_uuid }}"
+        cluster_ext_id: "{{ cluster.uuid }}"
+      register: result
+      ignore_errors: true
 
     - name: Update linear retention protection policy
       nutanix.ncp.ntnx_protection_policies_v2:
