@@ -197,3 +197,5 @@ action_groups:
     - ntnx_pc_restore_v2
     - ntnx_pc_restore_source_info_v2
     - ntnx_pc_restore_source_v2
+    - ntnx_pc_restorable_domain_managers_info_v2
+    - ntnx_pc_restore_points_info_v2
