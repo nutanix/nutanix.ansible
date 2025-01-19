@@ -299,35 +299,31 @@
   register: backup_result
   ignore_errors: true
 
-- name: If backup target exists status
-  ansible.builtin.assert:
-    that:
-      - backup_result.response is defined
-      - backup_result.response | length > 0
-      - backup_result.response[0].ext_id is defined
-      - backup_result.response[0].location.config.ext_id == cluster.uuid
-    fail_msg: "Backup target cluster exists failed"
-    success_msg: "Backup target cluster exists passed"
+- name: All backup targets external ID
+  ansible.builtin.set_fact:
+    backup_target_ext_ids: "{{ backup_result.response | map(attribute='ext_id') | list }}"
   when:
     - backup_result.response is not none
 
-- name: Delete backup target cluster if exists
+- name: Delete all backup targets
   nutanix.ncp.ntnx_pc_backup_target_v2:
-    ext_id: "{{ backup_result.response.0.ext_id }}"
+    ext_id: "{{ item }}"
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     state: absent
+  loop: "{{ backup_target_ext_ids }}"
   register: result
   ignore_errors: true
   when:
     - backup_result.response is not none
 
-- name: Delete backup target cluster status
+- name: Delete all backup targets status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.response.status == "SUCCEEDED"
-    fail_msg: "Delete backup target cluster failed"
-    success_msg: "Delete backup target cluster passed"
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == backup_target_ext_ids | length
+    fail_msg: "Delete all backup targets failed"
+    success_msg: "Delete all backup targets passed"
   when:
     - backup_result.response is not none
 
