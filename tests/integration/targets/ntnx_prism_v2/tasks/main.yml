@@ -7,5 +7,7 @@
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
   block:
-    - name: Import all_operations.yml
-      ansible.builtin.import_tasks: "all_operations.yml"
+    - name: Import cluster_location.yml
+      ansible.builtin.import_tasks: "cluster_location.yml"
+    - name: Import object_store.yml
+      ansible.builtin.import_tasks: "object_store.yml"
