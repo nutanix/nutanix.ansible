@@ -239,6 +239,10 @@
   register: backup_result
   ignore_errors: true
 
+- name: Initialize backup_target_cluster_ext_id
+  ansible.builtin.set_fact:
+    backup_target_cluster_ext_id: []
+
 - name: Get external ID of the backup target cluster
   ansible.builtin.set_fact:
     backup_target_cluster_ext_id: >-
