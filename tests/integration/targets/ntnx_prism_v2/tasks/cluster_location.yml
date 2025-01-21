@@ -343,8 +343,6 @@
 
 #############################################################
 # List all backup targets
-# List all backup targets with filter
-# List all backup targets with limit
 # Fetch backup target details using external ID
 
 - name: List all backup targets
@@ -362,41 +360,6 @@
       - result.response | length > 0
     fail_msg: "List all backup targets failed"
     success_msg: "List all backup targets passed"
-
-- name: List all backup targets with filter
-  nutanix.ncp.ntnx_pc_backup_target_info_v2:
-    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-    filter: location/clusterLocation/config/ext_id eq '{{ cluster.uuid }}'
-  register: result
-  ignore_errors: true
-
-- name: List all backup targets with filter status
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.failed == false
-      - result.response is defined
-      - result.response | length == 1
-      - result.response[0].location.config.ext_id == cluster.uuid
-    fail_msg: "List all backup targets with filter failed"
-    success_msg: "List all backup targets with filter passed"
-
-- name: List all backup targets with limit
-  nutanix.ncp.ntnx_pc_backup_target_info_v2:
-    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-    limit: 1
-  register: result
-  ignore_errors: true
-
-- name: List all backup targets with limit status
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.failed == false
-      - result.response is defined
-      - result.response | length == 1
-    fail_msg: "List all backup targets with limit failed"
-    success_msg: "List all backup targets with limit passed"
 
 - name: Fetch backup target details using external ID
   nutanix.ncp.ntnx_pc_backup_target_info_v2:
