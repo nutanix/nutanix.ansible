@@ -149,6 +149,8 @@
   ansible.builtin.set_fact:
     backup_target_object_store_ext_id: >-
       {{ backup_result.response
+         | selectattr('location', 'defined')
+         | selectattr('location.provider_config', 'defined')
          | selectattr('location.provider_config.bucket_name', 'defined')
          | map(attribute='ext_id')
          | list }}

@@ -247,7 +247,9 @@
   ansible.builtin.set_fact:
     backup_target_cluster_ext_id: >-
       {{ backup_result.response
-         | selectattr('location.config.ext_id', 'equalto', cluster.uuid)
+         | selectattr('location', 'defined')
+         | selectattr('location.config', 'defined')
+         | selectattr('location.config.ext_id', 'equalto', cluster.uuid | default(''))
          | map(attribute='ext_id')
          | list }}
   when:
