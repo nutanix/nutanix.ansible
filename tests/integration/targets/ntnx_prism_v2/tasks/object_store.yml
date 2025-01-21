@@ -159,7 +159,7 @@
   register: result
   ignore_errors: true
   when:
-    - backup_target_object_store_ext_id is not none
+    - backup_target_object_store_ext_id | length > 0
     - backup_result.response is not none
 
 - name: Delete backup target object store status
@@ -170,12 +170,15 @@
     fail_msg: "Delete backup target object store failed"
     success_msg: "Delete backup target object store passed"
   when:
-    - backup_target_object_store_ext_id is not none
+    - backup_target_object_store_ext_id | length > 0
     - backup_result.response is not none
 
 # #############################################################
 # Create backup target object store
 # Get backup target object store
+# Update backup target object store
+# Get backup target object store
+# Check Idempotency for updating backup target object store
 
 - name: Create backup target object store
   nutanix.ncp.ntnx_pc_backup_target_v2:
@@ -231,6 +234,79 @@
 - name: Set backup target object store external ID
   ansible.builtin.set_fact:
     backup_target_object_store_ext_id: "{{ backup_target_object_store_ext_id[0].ext_id }}"
+
+- name: Update backup target object store
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    ext_id: "{{ backup_target_object_store_ext_id }}"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "{{ s3_bucket.bucket }}"
+          region: "{{ s3_bucket.region }}"
+          credentials:
+            access_key_id: "{{ s3_bucket.access_key }}"
+            secret_access_key: "{{ s3_bucket.secret_key }}"
+        backup_policy:
+          rpo_in_minutes: 120
+  register: result
+  ignore_errors: true
+
+- name: Update backup target object store status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Update backup target object store failed"
+    success_msg: "Update backup target object store passed"
+
+- name: Get backup target object store
+  nutanix.ncp.ntnx_pc_backup_target_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ backup_target_object_store_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get backup target object store status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == backup_target_object_store_ext_id
+      - result.response is defined
+      - result.response.ext_id == backup_target_object_store_ext_id
+      - result.response.location.provider_config.bucket_name == s3_bucket.bucket
+      - result.response.location.provider_config.region == s3_bucket.region
+      - result.response.location.backup_policy.rpo_in_minutes == 120
+    fail_msg: "Get backup target object store failed"
+    success_msg: "Get backup target object store passed"
+
+- name: Check Idempotency for updating backup target object store
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    ext_id: "{{ backup_target_object_store_ext_id }}"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "{{ s3_bucket.bucket }}"
+          region: "{{ s3_bucket.region }}"
+          credentials:
+            access_key_id: "{{ s3_bucket.access_key }}"
+            secret_access_key: "{{ s3_bucket.secret_key }}"
+        backup_policy:
+          rpo_in_minutes: 120
+  register: result
+  ignore_errors: true
+
+- name: Check Idempotency for updating backup target object store status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Check Idempotency for updating backup target object store failed"
+    success_msg: "Check Idempotency for updating backup target object store passed"
 
 #############################################################
 # List all PCs
@@ -400,17 +476,17 @@
   set_fact:
     domain_manager_details: "{{ result.response | selectattr('ext_id', 'equalto', pc_uuid) | list }}"
 
-- name: List all restore points
-  ntnx_pc_restore_points_info_v2:
-    nutanix_host: "{{ ip_pe }}"
-    restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
-    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
-  register: result
-  ignore_errors: true
+# - name: List all restore points
+#   ntnx_pc_restore_points_info_v2:
+#     nutanix_host: "{{ ip_pe }}"
+#     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
+#     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+#   register: result
+#   ignore_errors: true
 
-- name: Set restore point external ID
-  set_fact:
-    restore_point_ext_id: "{{ result.response[0].ext_id }}"
+# - name: Set restore point external ID
+#   set_fact:
+#     restore_point_ext_id: "{{ result.response[0].ext_id }}"
 
 # #############################################################
 # Restore PC

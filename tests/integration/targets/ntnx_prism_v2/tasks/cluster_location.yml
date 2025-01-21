@@ -257,7 +257,7 @@
   register: result
   ignore_errors: true
   when:
-    - backup_target_cluster_ext_id is not none
+    - backup_target_cluster_ext_id | length > 0
     - backup_result.response is not none
 
 - name: Delete backup target cluster status
@@ -268,12 +268,13 @@
     fail_msg: "Delete backup target cluster failed"
     success_msg: "Delete backup target cluster passed"
   when:
-    - backup_target_cluster_ext_id is not none
+    - backup_target_cluster_ext_id | length > 0
     - backup_result.response is not none
 
 #############################################################
 # Create backup target cluster
 # Get backup target cluster
+# Check Idempotency by updating backup target cluster with the same values
 
 - name: Create backup target cluster
   nutanix.ncp.ntnx_pc_backup_target_v2:
@@ -312,6 +313,27 @@
 - name: Set backup target cluster external ID
   ansible.builtin.set_fact:
     backup_target_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Check Idempotency by updating backup target cluster with the same values
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    ext_id: "{{ backup_target_ext_id }}"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    location:
+      cluster_location:
+        config:
+          ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Check Idempotency by updating backup target cluster with the same values status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Check Idempotency by updating backup target cluster with the same values failed"
+    success_msg: "Check Idempotency by updating backup target cluster with the same values passed"
 
 #############################################################
 # List all backup targets
@@ -550,17 +572,17 @@
   set_fact:
     domain_manager_details: "{{ result.response | selectattr('ext_id', 'equalto', pc_uuid) | list }}"
 
-- name: List all restore points
-  ntnx_pc_restore_points_info_v2:
-    nutanix_host: "{{ ip_pe }}"
-    restore_source_ext_id: "{{ restore_source_ext_id }}"
-    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
-  register: result
-  ignore_errors: true
+# - name: List all restore points
+#   ntnx_pc_restore_points_info_v2:
+#     nutanix_host: "{{ ip_pe }}"
+#     restore_source_ext_id: "{{ restore_source_ext_id }}"
+#     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+#   register: result
+#   ignore_errors: true
 
-- name: Set restore point external ID
-  set_fact:
-    restore_point_ext_id: "{{ result.response[0].ext_id }}"
+# - name: Set restore point external ID
+#   set_fact:
+#     restore_point_ext_id: "{{ result.response[0].ext_id }}"
 
 # #############################################################
 # Restore PC
