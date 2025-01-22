@@ -8,28 +8,52 @@
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
     label1: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
     label2: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+    suffix_name: "ansible-category"
+    todelete_categories: []
     todelete: []
 
-- name: List all categories and get category id
-  ntnx_categories_info_v2:
-  register: result
-  ignore_errors: true
+- name: Set ansible keys and values
+  ansible.builtin.set_fact:
+    keys:
+      - "{{random_name}}{{suffix_name}}key1"
+      - "{{random_name}}{{suffix_name}}key2"
+      - "{{random_name}}{{suffix_name}}key3"
+    values:
+      - "{{random_name}}{{suffix_name}}value1"
+      - "{{random_name}}{{suffix_name}}value2"
+      - "{{random_name}}{{suffix_name}}value3"
 
-- name: Status of all categories
+- name: Create categories for protection policies
+  ntnx_categories_v2:
+    key: "{{ keys[item] }}"
+    value: "{{ values[item] }}"
+    description: "ansible-category"
+  register: output
+  ignore_errors: true
+  loop: "{{ range(0, 3) }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Create categories for protection policies status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == False
-      - result.failed == False
-      - result.response | length > 0
-    fail_msg: "Unable to list categories "
-    success_msg: "categories  listed successfully"
+      - output is defined
+      - output.changed == true
+      - output.results | length == 3
+      - output.msg == "All items completed"
+    success_msg: "Categories created successfully"
+    fail_msg: "Categories creation failed"
+
+- name: Save external IDs to the list
+  set_fact:
+    todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
+  with_items: "{{ output.results }}"
 
 - name: Set categories external ids
   ansible.builtin.set_fact:
-    category_ext_id_1: "{{ result.response[0].ext_id }}"
-    category_ext_id_2: "{{ result.response[1].ext_id }}"
-    category_ext_id_3: "{{ result.response[2].ext_id }}"
+    category_ext_id_1: "{{ todelete_categories[0] }}"
+    category_ext_id_2: "{{ todelete_categories[1] }}"
+    category_ext_id_3: "{{ todelete_categories[2] }}"
 
 - name: List all clusters to get prism central external ID
   ntnx_clusters_info_v2:
@@ -295,7 +319,7 @@
 
 - name: Create a Protected VM to be promoted
   ntnx_vms_v2:
-    name: "{{ random_name }}_protected_vm_promote"
+    name: "{{ random_name }}_ansible_protected_vm_promote"
     description: "Protected VM for promotion"
     cluster:
       ext_id: "{{ cluster.uuid }}"
@@ -310,7 +334,7 @@
       - result.changed == true
       - result.failed == false
       - result.response is defined
-      - result.response.name == "{{ random_name }}_protected_vm_promote"
+      - result.response.name == "{{ random_name }}_ansible_protected_vm_promote"
       - result.response.description == "Protected VM for promotion"
       - result.response.cluster.ext_id == cluster.uuid
       - result.response.categories[0].ext_id == "{{ category_ext_id_3 }}"
@@ -323,7 +347,7 @@
 
 - name: Create a Protected VM to be restored
   ntnx_vms_v2:
-    name: "{{ random_name }}_protected_vm_restore"
+    name: "{{ random_name }}_ansible_protected_vm_restore"
     description: "Protected VM for restore"
     cluster:
       ext_id: "{{ cluster.uuid }}"
@@ -338,7 +362,7 @@
       - result.changed == true
       - result.failed == false
       - result.response is defined
-      - result.response.name == "{{ random_name }}_protected_vm_restore"
+      - result.response.name == "{{ random_name }}_ansible_protected_vm_restore"
       - result.response.description == "Protected VM for restore"
       - result.response.cluster.ext_id == cluster.uuid
       - result.response.categories[0].ext_id == "{{ category_ext_id_2 }}"
@@ -458,7 +482,7 @@
       - result.failed == false
       - result.response is defined
       - result.response.ext_id == vm_ext_id_1
-      - result.response.name == "{{ random_name }}_protected_vm_promote"
+      - result.response.name == "{{ random_name }}_ansible_protected_vm_promote"
       - result.response.description == "Protected VM for promotion"
       - result.response.cluster.ext_id == cluster.uuid
       - result.response.categories[0].ext_id == "{{ category_ext_id_3 }}"
@@ -483,7 +507,7 @@
       - result.failed == false
       - result.response is defined
       - result.response.ext_id == vm_ext_id_2
-      - result.response.name == "{{ random_name }}_protected_vm_restore"
+      - result.response.name == "{{ random_name }}_ansible_protected_vm_restore"
       - result.response.description == "Protected VM for restore"
       - result.response.cluster.ext_id == cluster.uuid
       - result.response.categories[0].ext_id == "{{ category_ext_id_2 }}"
@@ -1005,7 +1029,7 @@
 
 - name: Filter only protected VMs
   set_fact:
-    protected_vms: "{{ result.response | selectattr('name', 'search', 'protected_vm_') | list }}"
+    protected_vms: "{{ result.response | selectattr('name', 'search', '{{ random }}_ansible_protected_vm') | list }}"
 
 - name: Extract external ids of protected VMs
   set_fact:
@@ -1042,7 +1066,7 @@
 
 - name: Filter only protected VMs
   set_fact:
-    protected_vms: "{{ result.response | selectattr('name', 'search', 'protected_vm_') | list }}"
+    protected_vms: "{{ result.response | selectattr('name', 'search', '{{ random }}_ansible_protected_vm') | list }}"
 
 - name: Extract external ids of protected VMs
   set_fact:
@@ -1095,3 +1119,22 @@
     fail_msg: "Unable to delete protection policies"
     success_msg: "Protection policies deleted successfully"
   loop: "{{ result.results }}"
+
+########################################################################################
+
+- name: Delete Created categories
+  ntnx_categories_v2:
+    ext_id: "{{item}}"
+    state: absent
+  register: result
+  loop: "{{ todelete_categories }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.results | length == todelete_categories | length
+      - result.msg == "All items completed"
+    fail_msg: "Unable to delete category key & value"
+    success_msg: "Category key & value deleted successfully"
