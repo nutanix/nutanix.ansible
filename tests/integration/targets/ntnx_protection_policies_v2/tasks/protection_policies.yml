@@ -1029,7 +1029,7 @@
 
 - name: Filter only protected VMs
   set_fact:
-    protected_vms: "{{ result.response | selectattr('name', 'search', '{{ random }}_ansible_protected_vm') | list }}"
+    protected_vms: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vm') | list }}"
 
 - name: Extract external ids of protected VMs
   set_fact:
@@ -1066,7 +1066,7 @@
 
 - name: Filter only protected VMs
   set_fact:
-    protected_vms: "{{ result.response | selectattr('name', 'search', '{{ random }}_ansible_protected_vm') | list }}"
+    protected_vms: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vm') | list }}"
 
 - name: Extract external ids of protected VMs
   set_fact:
