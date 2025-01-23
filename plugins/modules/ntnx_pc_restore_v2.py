@@ -678,7 +678,7 @@ def run_module():
         "response": None,
         "ext_id": None,
     }
-
+    restore_domain_manager(module, result)
     module.exit_json(**result)
 
 

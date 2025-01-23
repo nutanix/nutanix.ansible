@@ -1,0 +1,40 @@
+---
+- name: Start ntnx_pc_unregistration_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_pc_unregistration_v2 tests
+
+- name: Generate spec for unregistering a PC
+  nutanix.ncp.ntnx_pc_unregistration_v2:
+    pc_ext_id: "e11acc65-479e-3aa2-9a98-1172e0c8b38a"
+    cluster_ext_id: "b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for unregistering a PC status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.pc_ext_id == "e11acc65-479e-3aa2-9a98-1172e0c8b38a"
+      - result.response.cluster_ext_id == "b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f"
+    fail_msg: "Generate spec for unregistering a PC failed"
+    success_msg: "Generate spec for unregistering a PC passed"
+# - name: Unregister PC
+#   nutanix.ncp.ntnx_pc_unregistration_v2:
+#     pc_ext_id: "{{ pc.ext_id }}"
+#     cluster_ext_id: "{{ cluster_ext_id }}"
+#   register: result
+#   ignore_errors: true
+
+# - name: debug
+#   ansible.builtin.debug:
+#     var: result
+
+# - name: Unregister PC status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.response.ext_id == result.task_ext_id
+#       - result.response.status == "SUCCEEDED"
+#     fail_msg: "Unregister PC failed"
+#     success_msg: "Unregister PC passed"
