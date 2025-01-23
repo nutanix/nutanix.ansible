@@ -11,3 +11,7 @@
       ansible.builtin.import_tasks: "cluster_location.yml"
     - name: Import object_store.yml
       ansible.builtin.import_tasks: "object_store.yml"
+    - name: Import deploy_pc.yml
+      ansible.builtin.import_tasks: "deploy_pc.yml"
+    - name: Import unregister_pcs.yml
+      ansible.builtin.import_tasks: "unregister_pcs.yml"
