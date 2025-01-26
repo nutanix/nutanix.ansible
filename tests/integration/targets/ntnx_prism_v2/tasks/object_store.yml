@@ -238,7 +238,7 @@
 
 - name: Set backup target object store external ID
   ansible.builtin.set_fact:
-    backup_target_object_store_ext_id: "{{ backup_target_object_store_ext_id[0].ext_id }}"
+    backup_target_object_store_ext_id: "{{ backup_target_object_store_ext_id[0] }}"
 
 - name: Update backup target object store
   nutanix.ncp.ntnx_pc_backup_target_v2:

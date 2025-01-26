@@ -204,7 +204,7 @@
 
 - name: Set backup target cluster external ID
   ansible.builtin.set_fact:
-    backup_target_ext_id: "{{ backup_target_cluster_ext_id[0].ext_id }}"
+    backup_target_ext_id: "{{ backup_target_cluster_ext_id[0] }}"
 
 - name: Check Idempotency by updating backup target cluster with the same values
   nutanix.ncp.ntnx_pc_backup_target_v2:
