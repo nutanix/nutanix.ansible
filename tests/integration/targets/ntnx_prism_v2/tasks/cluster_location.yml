@@ -451,6 +451,88 @@
 #############################################################
 # Restore PC
 
+- name: Generate spec for restoring PC using check mode
+  utanix.ncp.ntnx_pc_restore_v2:
+    nutanix_host: "{{ ip_pe }}"
+    ext_id: "{{ restore_point_ext_id }}"
+    restore_source_ext_id: "{{ restore_source_ext_id }}"
+    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+    domain_manger:
+      config:
+        should_enable_lockdown_mode: false
+        build_info:
+          version: "{{ pc_details.response[0].config.build_info.version }}"
+        name: "{{ pc_details.response[0].config.name }}"
+        size: "{{ pc_details.response[0].config.size }}"
+        resource_config:
+          container_ext_ids:
+            - "{{ pc_details.response[0].config.resource_config.container_ext_ids }}"
+      network:
+        external_address:
+          ipv4:
+            value: "{{ pc_details.response[0].network.external_address.ipv4.value }}"
+            prefix_length: 32
+        name_servers:
+          - ipv4:
+              value: "{{ pc_details.response[0].network.name_servers[0].ipv4.value }}"
+              prefix_length: 32
+          - ipv4:
+              value: "{{ pc_details.response[0].network.name_servers[1].ipv4.value }}"
+              prefix_length: 32
+        ntp_servers:
+          - fqdn:
+              value: "{{ pc_details.response[0].network.ntp_servers[0].fqdn.value }}"
+          - fqdn:
+              value: "{{ pc_details.response[0].network.ntp_servers[1].fqdn.value }}"
+          - fqdn:
+              value: "{{ pc_details.response[0].network.ntp_servers[2].fqdn.value }}"
+          - fqdn:
+              value: "{{ pc_details.response[0].network.ntp_servers[3].fqdn.value }}"
+        external_networks:
+          - network_ext_id: "{{ pc_details.response[0].network.external_networks[0].network_ext_id }}"
+            default_gateway:
+              ipv4:
+                value: "{{ pc_details.response[0].network.external_networks[0].default_gateway.ipv4.value }}"
+                prefix_length: 32
+            subnet_mask:
+              ipv4:
+                value: "{{ pc_details.response[0].network.external_networks[0].subnet_mask.ipv4.value }}"
+                prefix_length: 32
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].begin.ipv4.value }}"
+                    prefix_length: 32
+                end:
+                  ipv4:
+                    value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
+                    prefix_length: 32
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate spec for restoring PC using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.domain_manager.config.name == pc_details.response[0].config.name
+      - result.response.domain_manager.config.size == pc_details.response[0].config.size
+      - result.response.domain_manager.config.resource_config.container_ext_ids == pc_details.response[0].config.resource_config.container_ext_ids
+      - result.response.domain_manager.network.external_address.ipv4.value == pc_details.response[0].network.external_address.ipv4.value
+      - result.response.domain_manager.network.name_servers[0].ipv4.value == pc_details.response[0].network.name_servers[0].ipv4.value
+      - result.response.domain_manager.network.name_servers[1].ipv4.value == pc_details.response[0].network.name_servers[1].ipv4.value
+      - result.response.domain_manager.network.ntp_servers[0].fqdn.value == pc_details.response[0].network.ntp_servers[0].fqdn.value
+      - result.response.domain_manager.network.ntp_servers[1].fqdn.value == pc_details.response[0].network.ntp_servers[1].fqdn.value
+      - result.response.domain_manager.network.ntp_servers[2].fqdn.value == pc_details.response[0].network.ntp_servers[2].fqdn.value
+      - result.response.domain_manager.network.ntp_servers[3].fqdn.value == pc_details.response[0].network.ntp_servers[3].fqdn.value
+      - result.response.domain_manager.network.external_networks[0].network_ext_id == pc_details.response[0].network.external_networks[0].network_ext_id
+      - result.response.domain_manager.network.external_networks[0].default_gateway.ipv4.value == pc_details.response[0].network.external_networks[0].default_gateway.ipv4.value
+      - result.response.domain_manager.network.external_networks[0].subnet_mask.ipv4.value == pc_details.response[0].network.external_networks[0].subnet_mask.ipv4.value
+      - result.response.domain_manager.network.external_networks[0].ip_ranges[0].begin.ipv4.value == pc_details.response[0].network.external_networks[0].ip_ranges[0].begin.ipv4.value
+      - result.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value == pc_details.response[0].network.external_networks[0].ip_ranges[0].end.ipv4.value
+    fail_msg: "Generated spec for restoring PC using check mode failed"
+    success_msg: "Generated spec for restoring PC using check mode passed"
+
 - name: Restore PC
   nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
