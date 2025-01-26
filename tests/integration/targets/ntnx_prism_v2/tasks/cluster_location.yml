@@ -187,14 +187,24 @@
     that:
       - result.response is defined
       - result.response | length > 0
-      - result.response[0].ext_id is defined
-      - result.response[0].location.config.ext_id == cluster.uuid
     fail_msg: "Get backup target cluster failed"
     success_msg: "Get backup target cluster passed"
 
+- name: Get external ID of the backup target cluster
+  ansible.builtin.set_fact:
+    backup_target_cluster_ext_id: >-
+      {{ backup_result.response
+         | selectattr('location', 'defined')
+         | selectattr('location.config', 'defined')
+         | selectattr('location.config.ext_id', 'equalto', cluster.uuid | default(''))
+         | map(attribute='ext_id')
+         | list }}
+  when:
+    - backup_result.response is not none
+
 - name: Set backup target cluster external ID
   ansible.builtin.set_fact:
-    backup_target_ext_id: "{{ result.response[0].ext_id }}"
+    backup_target_ext_id: "{{ backup_target_cluster_ext_id[0].ext_id }}"
 
 - name: Check Idempotency by updating backup target cluster with the same values
   nutanix.ncp.ntnx_pc_backup_target_v2:

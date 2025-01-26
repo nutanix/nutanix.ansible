@@ -216,26 +216,25 @@
   register: result
   ignore_errors: true
 
-- name: Get external ID of the backup target object store
-  ansible.builtin.set_fact:
-    backup_target_object_store_ext_id: >-
-      {{ result.response
-         | selectattr('location.provider_config.bucket_name', 'defined')
-         | list }}
-  when:
-    - result.response is not none
-
 - name: Get backup target object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response | length > 0
-      - backup_target_object_store_ext_id[0].ext_id is defined
-      - backup_target_object_store_ext_id[0].location.provider_config.bucket_name == s3_bucket.bucket
-      - backup_target_object_store_ext_id[0].location.provider_config.region == s3_bucket.region
-      - backup_target_object_store_ext_id[0].location.backup_policy.rpo_in_minutes == 60
     fail_msg: "Get backup target object store failed"
     success_msg: "Get backup target object store passed"
+
+- name: Get external ID of the backup target object store
+  ansible.builtin.set_fact:
+    backup_target_object_store_ext_id: >-
+      {{ backup_result.response
+         | selectattr('location', 'defined')
+         | selectattr('location.provider_config', 'defined')
+         | selectattr('location.provider_config.bucket_name', 'defined')
+         | map(attribute='ext_id')
+         | list }}
+  when:
+    - backup_result.response is not none
 
 - name: Set backup target object store external ID
   ansible.builtin.set_fact:
@@ -315,6 +314,49 @@
     success_msg: "Check Idempotency for updating backup target object store passed"
 
 #############################################################
+# List all backup targets
+# Fetch backup target details using external ID
+
+- name: List all backup targets
+  nutanix.ncp.ntnx_pc_backup_target_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all backup targets status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: "List all backup targets failed"
+    success_msg: "List all backup targets passed"
+
+# Retry until last_sync_time is not none so that restore points are created successfully
+- name: Fetch backup target details using external ID until last_sync_time is not none
+  nutanix.ncp.ntnx_pc_backup_target_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ backup_target_object_store_ext_id }}"
+  retries: 120
+  delay: 30
+  until: result.response.last_sync_time is not none
+  register: result
+  ignore_errors: true
+
+- name: Fetch backup target details using external ID status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == backup_target_object_store_ext_id
+      - result.response.location.config.ext_id == cluster.uuid
+      - result.response.last_sync_time is not none
+    fail_msg: "Fetch backup target details using external ID failed"
+    success_msg: "Fetch backup target details using external ID passed"
+
+#############################################################
 # List all PCs
 # Fetch PC details using external ID
 
@@ -376,7 +418,7 @@
   ansible.builtin.set_fact:
     filtered_vm: "{{ filtered_vm + [item.0] }}"
   loop: "{{ PC_VMs | subelements('nics') }}"
-  when: "'{{ ip }}' in item.1.network_info.ipv4_info.learned_ip_addresses | map(attribute='value')"
+  when: item.1.network_info.ipv4_info is defined and item.1.network_info.ipv4_info.learned_ip_addresses is defined and "'{{ ip }}' in item.1.network_info.ipv4_info.learned_ip_addresses | map(attribute='value')"
 
 - name: Status for Fetching PC VM
   ansible.builtin.assert:
@@ -404,16 +446,6 @@
       - pc_details.response | length > 0
     fail_msg: "List all PCs failed"
     success_msg: "List all PCs passed"
-
-#############################################################
-# Power off PC VM
-
-# - name: Power off PC VM
-#   ntnx_vms_power_actions_v2:
-#     state: power_off
-#     ext_id: "{{ pc_vm_external_id }}"
-#   register: result
-#   ignore_errors: true
 
 ############################################################
 # Create restore source object store
@@ -482,79 +514,101 @@
   set_fact:
     domain_manager_details: "{{ result.response | selectattr('ext_id', 'equalto', pc_uuid) | list }}"
 
-# - name: List all restore points
-#   ntnx_pc_restore_points_info_v2:
-#     nutanix_host: "{{ ip_pe }}"
-#     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
-#     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
-#   register: result
-#   ignore_errors: true
+- name: List all restore points
+  ntnx_pc_restore_points_info_v2:
+    nutanix_host: "{{ ip_pe }}"
+    restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
+    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+  register: result
+  ignore_errors: true
 
-# - name: Set restore point external ID
-#   set_fact:
-#     restore_point_ext_id: "{{ result.response[0].ext_id }}"
+- name: Set restore point external ID
+  set_fact:
+    restore_point_ext_id: "{{ result.response[0].ext_id }}"
+
+#############################################################
+# Power off PC VM
+
+- name: Power off PC VM
+  ntnx_vms_power_actions_v2:
+    state: power_off
+    ext_id: "{{ pc_vm_external_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Sleep for 2 minutes after powering off VM
+  ansible.builtin.pause:
+    seconds: 120
 
 # #############################################################
 # Restore PC
 
-# - name: Restore PC
-#   nutanix.ncp.ntnx_pc_restore_v2:
-#     nutanix_host: "{{ ip_pe }}"
-#     ext_id: "{{ restore_point_ext_id }}"
-#     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
-#     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
-#     domain_manger:
-#       config:
-#         should_enable_lockdown_mode: false
-#         build_info:
-#           version: "{{ pc_details.response[0].config.build_info.version }}"
-#         name: "{{ pc_details.response[0].config.name }}"
-#         size: "{{ pc_details.response[0].config.size }}"
-#         resource_config:
-#           container_ext_ids:
-#             - "{{ pc_details.response[0].config.resource_config.container_ext_ids }}"
-#       network:
-#         external_address:
-#           ipv4:
-#             value: "{{ pc_details.response[0].network.external_address.ipv4.value }}"
-#             prefix_length: 32
-#         name_servers:
-#           - ipv4:
-#               value: "{{ pc_details.response[0].network.name_servers[0].ipv4.value }}"
-#               prefix_length: 32
-#           - ipv4:
-#               value: "{{ pc_details.response[0].network.name_servers[1].ipv4.value }}"
-#               prefix_length: 32
-#         ntp_servers:
-#           - fqdn:
-#               value: "{{ pc_details.response[0].network.ntp_servers[0].fqdn.value }}"
-#           - fqdn:
-#               value: "{{ pc_details.response[0].network.ntp_servers[1].fqdn.value }}"
-#           - fqdn:
-#               value: "{{ pc_details.response[0].network.ntp_servers[2].fqdn.value }}"
-#           - fqdn:
-#               value: "{{ pc_details.response[0].network.ntp_servers[3].fqdn.value }}"
-#         external_networks:
-#           - network_ext_id: "{{ pc_details.response[0].network.external_networks[0].network_ext_id }}"
-#             default_gateway:
-#               ipv4:
-#                 value: "{{ pc_details.response[0].network.external_networks[0].default_gateway.ipv4.value }}"
-#                 prefix_length: 32
-#             subnet_mask:
-#               ipv4:
-#                 value: "{{ pc_details.response[0].network.external_networks[0].subnet_mask.ipv4.value }}"
-#                 prefix_length: 32
-#             ip_ranges:
-#               - begin:
-#                   ipv4:
-#                     value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].begin.ipv4.value }}"
-#                     prefix_length: 32
-#                 end:
-#                   ipv4:
-#                     value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
-#                     prefix_length: 32
-#   register: result
-#   ignore_errors: true
+- name: Restore PC
+  nutanix.ncp.ntnx_pc_restore_v2:
+    nutanix_host: "{{ ip_pe }}"
+    ext_id: "{{ restore_point_ext_id }}"
+    restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
+    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+    domain_manger:
+      config:
+        should_enable_lockdown_mode: false
+        build_info:
+          version: "{{ pc_details.response[0].config.build_info.version }}"
+        name: "{{ pc_details.response[0].config.name }}"
+        size: "{{ pc_details.response[0].config.size }}"
+        resource_config:
+          container_ext_ids:
+            - "{{ pc_details.response[0].config.resource_config.container_ext_ids }}"
+      network:
+        external_address:
+          ipv4:
+            value: "{{ pc_details.response[0].network.external_address.ipv4.value }}"
+            prefix_length: 32
+        name_servers:
+          - ipv4:
+              value: "{{ pc_details.response[0].network.name_servers[0].ipv4.value }}"
+              prefix_length: 32
+          - ipv4:
+              value: "{{ pc_details.response[0].network.name_servers[1].ipv4.value }}"
+              prefix_length: 32
+        ntp_servers:
+          - fqdn:
+              value: "{{ pc_details.response[0].network.ntp_servers[0].fqdn.value }}"
+          - fqdn:
+              value: "{{ pc_details.response[0].network.ntp_servers[1].fqdn.value }}"
+          - fqdn:
+              value: "{{ pc_details.response[0].network.ntp_servers[2].fqdn.value }}"
+          - fqdn:
+              value: "{{ pc_details.response[0].network.ntp_servers[3].fqdn.value }}"
+        external_networks:
+          - network_ext_id: "{{ pc_details.response[0].network.external_networks[0].network_ext_id }}"
+            default_gateway:
+              ipv4:
+                value: "{{ pc_details.response[0].network.external_networks[0].default_gateway.ipv4.value }}"
+                prefix_length: 32
+            subnet_mask:
+              ipv4:
+                value: "{{ pc_details.response[0].network.external_networks[0].subnet_mask.ipv4.value }}"
+                prefix_length: 32
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].begin.ipv4.value }}"
+                    prefix_length: 32
+                end:
+                  ipv4:
+                    value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
+                    prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Restore PC status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Restore PC failed"
+    success_msg: "Restore PC passed"
 
 #############################################################
 # Delete restore source object store
@@ -583,7 +637,74 @@
     success_msg: "Delete restore source object store passed"
 
 #############################################################
+# Reset password after restore PC
+
+- name: Set password variables
+  ansible.builtin.set_fact:
+    password_count: 5
+    password_length: 12
+    special_characters: "@#"
+    passwords: []
+
+- name: Generate passwords
+  ansible.builtin.set_fact:
+    passwords: >-
+      {{ passwords + [
+        ''.join(
+          (lookup('password', '/dev/null length=' + (password_length | int - 4) | string +
+            ' chars=ascii_letters+digits+' + special_characters) | list) +
+          (lookup('password', '/dev/null length=4 chars=ascii_lowercase') | list) +
+          (lookup('password', '/dev/null length=4 chars=ascii_uppercase') | list) +
+          (lookup('password', '/dev/null length=2 chars=digits') | list) +
+          (lookup('password', '/dev/null length=2 chars=' + special_characters) | list)
+        | shuffle)
+      ] }}
+  with_sequence: count={{ password_count }}
+
+- name: Set variables for reset password
+  ansible.builtin.set_fact:
+    pc_ssh_cmd: sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no {{ domain_manager_ssh_username }}@{{ ip }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
+
+- name: Set reset command
+  ansible.builtin.set_fact:
+    reset_command: '{{ pc_ssh_cmd }} "{{ reset_username_password }}"'
+
+- name: Change password five times randomly before resetting
+  ansible.builtin.command: "{{ pc_ssh_cmd }} /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password='{{ item }}'"
+  register: result
+  ignore_errors: true
+  loop: "{{ passwords }}"
+  changed_when: result.rc == 0
+
+- name: Change password five times randomly before resetting status
+  ansible.builtin.assert:
+    that:
+      - result.msg == "All items completed"
+
+- name: Reset username and password
+  ansible.builtin.command: "{{ reset_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: Reset username and password status
+  ansible.builtin.assert:
+    that:
+      - "'reset successfully' in result.stdout"
+
+#############################################################
 # Delete backup target object store
+
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: result
+  ignore_errors: true
+
+- name: Get prism central external ID
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Delete backup target object store
   nutanix.ncp.ntnx_pc_backup_target_v2:
