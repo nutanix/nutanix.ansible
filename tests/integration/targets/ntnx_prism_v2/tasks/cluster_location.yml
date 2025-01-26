@@ -242,7 +242,7 @@
   nutanix.ncp.ntnx_pc_backup_target_info_v2:
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     ext_id: "{{ backup_target_ext_id }}"
-  retries: 80
+  retries: 120
   delay: 30
   until: result.response.last_sync_time is not none
   register: result
@@ -322,7 +322,7 @@
   ansible.builtin.set_fact:
     filtered_vm: "{{ filtered_vm + [item.0] }}"
   loop: "{{ PC_VMs | subelements('nics') }}"
-  when: "'{{ ip }}' in item.1.network_info.ipv4_info.learned_ip_addresses | map(attribute='value')"
+  when: item.1.network_info.ipv4_info is defined and item.1.network_info.ipv4_info.learned_ip_addresses is defined and "'{{ ip }}' in item.1.network_info.ipv4_info.learned_ip_addresses | map(attribute='value')"
 
 - name: Status for Fetching PC VM
   ansible.builtin.assert:
@@ -434,6 +434,10 @@
   register: result
   ignore_errors: true
 
+- name: Sleep for 2 minutes after powering off VM
+  ansible.builtin.pause:
+    seconds: 120
+
 #############################################################
 # Restore PC
 
@@ -529,6 +533,63 @@
       - result.response.data.error | length > 0
     fail_msg: "Delete restore source cluster failed"
     success_msg: "Delete restore source cluster passed"
+
+#############################################################
+# Reset password after restore PC
+
+- name: Set password variables
+  ansible.builtin.set_fact:
+    password_count: 5
+    password_length: 12
+    special_characters: "@#"
+    passwords: []
+
+- name: Generate passwords
+  ansible.builtin.set_fact:
+    passwords: >-
+      {{ passwords + [
+        ''.join(
+          (lookup('password', '/dev/null length=' + (password_length | int - 4) | string +
+            ' chars=ascii_letters+digits+' + special_characters) | list) +
+          (lookup('password', '/dev/null length=4 chars=ascii_lowercase') | list) +
+          (lookup('password', '/dev/null length=4 chars=ascii_uppercase') | list) +
+          (lookup('password', '/dev/null length=2 chars=digits') | list) +
+          (lookup('password', '/dev/null length=2 chars=' + special_characters) | list)
+        | shuffle)
+      ] }}
+  with_sequence: count={{ password_count }}
+
+- name: Set variables for reset password
+  ansible.builtin.set_fact:
+    pc_ssh_cmd: sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no {{ domain_manager_ssh_username }}@{{ ip }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
+
+- name: Set reset command
+  ansible.builtin.set_fact:
+    reset_command: '{{ pc_ssh_cmd }} "{{ reset_username_password }}"'
+
+- name: Change password five times randomly before resetting
+  ansible.builtin.command: "{{ pc_ssh_cmd }} /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password='{{ item }}'"
+  register: result
+  ignore_errors: true
+  loop: "{{ passwords }}"
+  changed_when: result.rc == 0
+
+- name: Change password five times randomly before resetting status
+  ansible.builtin.assert:
+    that:
+      - result.msg == "All items completed"
+
+- name: Reset username and password
+  ansible.builtin.command: "{{ reset_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: Reset username and password status
+  ansible.builtin.assert:
+    that:
+      - "'reset successfully' in result.stdout"
 
 #############################################################
 # Delete backup target cluster
