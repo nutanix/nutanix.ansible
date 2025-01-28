@@ -96,6 +96,9 @@ class PrismSpecs:
 
     resource_config_spec = dict(
         container_ext_ids=dict(type="list", elements="str"),
+        data_disk_size_bytes=dict(type="int"),
+        memory_size_bytes=dict(type="int"),
+        num_vcpus=dict(type="int"),
     )
 
     config_spec = dict(

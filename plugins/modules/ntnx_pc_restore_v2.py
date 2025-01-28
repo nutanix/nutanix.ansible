@@ -33,7 +33,7 @@ options:
         description: External ID of the domain manager.
         type: str
         required: True
-    domain_manger:
+    domain_manager:
         description: Domain manager (Prism Central) details.
         type: dict
         required: True
@@ -82,6 +82,18 @@ options:
                                 type: list
                                 required: false
                                 elements: str
+                            data_disk_size_bytes:
+                                description: The size of the data disk in bytes.
+                                type: int
+                                required: false
+                            memory_size_bytes:
+                                description: The size of the memory in bytes.
+                                type: int
+                                required: false
+                            num_vcpus:
+                                description: The number of virtual CPUs.
+                                type: int
+                                required: false
             network:
                 description: Domain manager (Prism Central) network configuration details.
                 type: dict
@@ -609,7 +621,7 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
         restore_source_ext_id=dict(type="str", required=True),
         restorable_domain_manager_ext_id=dict(type="str", required=True),
-        domain_manger=dict(
+        domain_manager=dict(
             type="dict",
             options=prism_specs.prism_spec,
             obj=prism_sdk.DomainManager,
@@ -629,7 +641,9 @@ def restore_domain_manager(module, result):
         "restorable_domain_manager_ext_id"
     )
     ext_id = module.params.get("ext_id")
-
+    result["restore_source_ext_id"] = restore_source_ext_id
+    result["restorable_domain_manager_ext_id"] = restorable_domain_manager_ext_id
+    result["ext_id"] = ext_id
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating restore domain manager spec", **result)

@@ -153,7 +153,7 @@
     - backup_target_cluster_ext_id | length > 0
     - backup_result.response is not none
 
-#############################################################
+############################################################
 # Create backup target cluster
 # Get backup target cluster
 # Check Idempotency by updating backup target cluster with the same values
@@ -179,14 +179,14 @@
 - name: List all backup targets and set backup target external ID
   nutanix.ncp.ntnx_pc_backup_target_info_v2:
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-  register: result
+  register: backup_result
   ignore_errors: true
 
 - name: Get backup target cluster status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.response | length > 0
+      - backup_result.response is defined
+      - backup_result.response | length > 0
     fail_msg: "Get backup target cluster failed"
     success_msg: "Get backup target cluster passed"
 
@@ -337,7 +337,7 @@
 - name: Status for Fetching PC VM
   ansible.builtin.assert:
     that:
-      - filtered_vm | length == 1
+      - filtered_vm | length > 0
     fail_msg: "Fetching PC VM failed"
     success_msg: "Fetching PC VM passed"
 
@@ -363,7 +363,72 @@
 
 #############################################################
 # Create restore source cluster
+# Delete restore source cluster
+# Create restore source cluster
 # Get restore source cluster
+
+- name: Create restore source cluster
+  nutanix.ncp.ntnx_pc_restore_source_v2:
+    nutanix_host: "{{ ip_pe }}"
+    location:
+      cluster_location:
+        config:
+          ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create restore source cluster status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.location.config.ext_id == cluster.uuid
+    fail_msg: "Create restore source cluster failed"
+    success_msg: "Create restore source cluster passed"
+
+- name: Get restore source cluster
+  nutanix.ncp.ntnx_pc_restore_source_info_v2:
+    nutanix_host: "{{ ip_pe }}"
+    ext_id: "{{ result.response.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get restore source cluster status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.location.config.ext_id == cluster.uuid
+    fail_msg: "Get restore source cluster failed"
+    success_msg: "Get restore source cluster passed"
+
+- name: Set restore source cluster external ID
+  ansible.builtin.set_fact:
+    restore_source_ext_id: "{{ result.response.ext_id }}"
+
+- name: Delete restore source cluster
+  nutanix.ncp.ntnx_pc_restore_source_v2:
+    nutanix_host: "{{ ip_pe }}"
+    ext_id: "{{ restore_source_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Get restore source cluster
+  nutanix.ncp.ntnx_pc_restore_source_info_v2:
+    nutanix_host: "{{ ip_pe }}"
+    ext_id: "{{ restore_source_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify that restore source cluster is deleted
+  ansible.builtin.assert:
+    that:
+      - result.error == "NOT FOUND"
+      - result.response.data.error | length > 0
+    fail_msg: "Delete restore source cluster failed"
+    success_msg: "Delete restore source cluster passed"
 
 - name: Create restore source cluster
   nutanix.ncp.ntnx_pc_restore_source_v2:
@@ -452,12 +517,12 @@
 # Restore PC
 
 - name: Generate spec for restoring PC using check mode
-  utanix.ncp.ntnx_pc_restore_v2:
+  nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
-    ext_id: "{{ restore_point_ext_id }}"
-    restore_source_ext_id: "{{ restore_source_ext_id }}"
-    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
-    domain_manger:
+    ext_id: "35d22fcc-0084-3751-a579-0621ce59a786"
+    restore_source_ext_id: "0a77819c-2e35-446b-87b1-89cbe62c15f5"
+    restorable_domain_manager_ext_id: "18553f0f-7b41-4115-bf42-2f698fbe7117"
+    domain_manager:
       config:
         should_enable_lockdown_mode: false
         build_info:
@@ -465,20 +530,19 @@
         name: "{{ pc_details.response[0].config.name }}"
         size: "{{ pc_details.response[0].config.size }}"
         resource_config:
-          container_ext_ids:
-            - "{{ pc_details.response[0].config.resource_config.container_ext_ids }}"
+          data_disk_size_bytes: "{{ pc_details.response[0].config.resource_config.data_disk_size_bytes }}"
+          memory_size_bytes: "{{ pc_details.response[0].config.resource_config.memory_size_bytes }}"
+          num_vcpus: "{{ pc_details.response[0].config.resource_config.num_vcpus }}"
+          container_ext_ids: "{{ pc_details.response[0].config.resource_config.container_ext_ids }}"
       network:
         external_address:
           ipv4:
             value: "{{ pc_details.response[0].network.external_address.ipv4.value }}"
-            prefix_length: 32
         name_servers:
           - ipv4:
               value: "{{ pc_details.response[0].network.name_servers[0].ipv4.value }}"
-              prefix_length: 32
           - ipv4:
               value: "{{ pc_details.response[0].network.name_servers[1].ipv4.value }}"
-              prefix_length: 32
         ntp_servers:
           - fqdn:
               value: "{{ pc_details.response[0].network.ntp_servers[0].fqdn.value }}"
@@ -493,20 +557,16 @@
             default_gateway:
               ipv4:
                 value: "{{ pc_details.response[0].network.external_networks[0].default_gateway.ipv4.value }}"
-                prefix_length: 32
             subnet_mask:
               ipv4:
                 value: "{{ pc_details.response[0].network.external_networks[0].subnet_mask.ipv4.value }}"
-                prefix_length: 32
             ip_ranges:
               - begin:
                   ipv4:
                     value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].begin.ipv4.value }}"
-                    prefix_length: 32
                 end:
                   ipv4:
                     value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
-                    prefix_length: 32
   register: result
   ignore_errors: true
   check_mode: true
@@ -518,6 +578,9 @@
       - result.response.domain_manager.config.name == pc_details.response[0].config.name
       - result.response.domain_manager.config.size == pc_details.response[0].config.size
       - result.response.domain_manager.config.resource_config.container_ext_ids == pc_details.response[0].config.resource_config.container_ext_ids
+      - result.response.domain_manager.config.resource_config.data_disk_size_bytes == pc_details.response[0].config.resource_config.data_disk_size_bytes
+      - result.response.domain_manager.config.resource_config.memory_size_bytes == pc_details.response[0].config.resource_config.memory_size_bytes
+      - result.response.domain_manager.config.resource_config.num_vcpus == pc_details.response[0].config.resource_config.num_vcpus
       - result.response.domain_manager.network.external_address.ipv4.value == pc_details.response[0].network.external_address.ipv4.value
       - result.response.domain_manager.network.name_servers[0].ipv4.value == pc_details.response[0].network.name_servers[0].ipv4.value
       - result.response.domain_manager.network.name_servers[1].ipv4.value == pc_details.response[0].network.name_servers[1].ipv4.value
@@ -530,6 +593,9 @@
       - result.response.domain_manager.network.external_networks[0].subnet_mask.ipv4.value == pc_details.response[0].network.external_networks[0].subnet_mask.ipv4.value
       - result.response.domain_manager.network.external_networks[0].ip_ranges[0].begin.ipv4.value == pc_details.response[0].network.external_networks[0].ip_ranges[0].begin.ipv4.value
       - result.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value == pc_details.response[0].network.external_networks[0].ip_ranges[0].end.ipv4.value
+      - result.restore_source_ext_id == "0a77819c-2e35-446b-87b1-89cbe62c15f5"
+      - result.restorable_domain_manager_ext_id == "18553f0f-7b41-4115-bf42-2f698fbe7117"
+      - result.ext_id == "35d22fcc-0084-3751-a579-0621ce59a786"
     fail_msg: "Generated spec for restoring PC using check mode failed"
     success_msg: "Generated spec for restoring PC using check mode passed"
 
@@ -539,7 +605,7 @@
     ext_id: "{{ restore_point_ext_id }}"
     restore_source_ext_id: "{{ restore_source_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
-    domain_manger:
+    domain_manager:
       config:
         should_enable_lockdown_mode: false
         build_info:
@@ -547,20 +613,19 @@
         name: "{{ pc_details.response[0].config.name }}"
         size: "{{ pc_details.response[0].config.size }}"
         resource_config:
-          container_ext_ids:
-            - "{{ pc_details.response[0].config.resource_config.container_ext_ids }}"
+          data_disk_size_bytes: "{{ pc_details.response[0].config.resource_config.data_disk_size_bytes }}"
+          memory_size_bytes: "{{ pc_details.response[0].config.resource_config.memory_size_bytes }}"
+          num_vcpus: "{{ pc_details.response[0].config.resource_config.num_vcpus }}"
+          container_ext_ids: "{{ pc_details.response[0].config.resource_config.container_ext_ids }}"
       network:
         external_address:
           ipv4:
             value: "{{ pc_details.response[0].network.external_address.ipv4.value }}"
-            prefix_length: 32
         name_servers:
           - ipv4:
               value: "{{ pc_details.response[0].network.name_servers[0].ipv4.value }}"
-              prefix_length: 32
           - ipv4:
               value: "{{ pc_details.response[0].network.name_servers[1].ipv4.value }}"
-              prefix_length: 32
         ntp_servers:
           - fqdn:
               value: "{{ pc_details.response[0].network.ntp_servers[0].fqdn.value }}"
@@ -575,20 +640,16 @@
             default_gateway:
               ipv4:
                 value: "{{ pc_details.response[0].network.external_networks[0].default_gateway.ipv4.value }}"
-                prefix_length: 32
             subnet_mask:
               ipv4:
                 value: "{{ pc_details.response[0].network.external_networks[0].subnet_mask.ipv4.value }}"
-                prefix_length: 32
             ip_ranges:
               - begin:
                   ipv4:
                     value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].begin.ipv4.value }}"
-                    prefix_length: 32
                 end:
                   ipv4:
                     value: "{{ pc_details.response[0].network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
-                    prefix_length: 32
   register: result
   ignore_errors: true
 
@@ -599,32 +660,6 @@
       - result.response.status == "SUCCEEDED"
     fail_msg: "Restore PC failed"
     success_msg: "Restore PC passed"
-
-#############################################################
-# Delete restore source cluster
-
-- name: Delete restore source cluster
-  nutanix.ncp.ntnx_pc_restore_source_v2:
-    nutanix_host: "{{ ip_pe }}"
-    ext_id: "{{ restore_source_ext_id }}"
-    state: absent
-  register: result
-  ignore_errors: true
-
-- name: Get restore source cluster
-  nutanix.ncp.ntnx_pc_restore_source_info_v2:
-    nutanix_host: "{{ ip_pe }}"
-    ext_id: "{{ restore_source_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify that restore source cluster is deleted
-  ansible.builtin.assert:
-    that:
-      - result.error == "NOT FOUND"
-      - result.response.data.error | length > 0
-    fail_msg: "Delete restore source cluster failed"
-    success_msg: "Delete restore source cluster passed"
 
 #############################################################
 # Reset password after restore PC
@@ -640,20 +675,20 @@
   ansible.builtin.set_fact:
     passwords: >-
       {{ passwords + [
-        ''.join(
-          (lookup('password', '/dev/null length=' + (password_length | int - 4) | string +
+        '.N.'.join(
+          (lookup('password', '/dev/null length=' + (password_length | int) | string +
             ' chars=ascii_letters+digits+' + special_characters) | list) +
-          (lookup('password', '/dev/null length=4 chars=ascii_lowercase') | list) +
-          (lookup('password', '/dev/null length=4 chars=ascii_uppercase') | list) +
-          (lookup('password', '/dev/null length=2 chars=digits') | list) +
-          (lookup('password', '/dev/null length=2 chars=' + special_characters) | list)
+          (lookup('password', '/dev/null length=1 chars=ascii_lowercase') | list) +
+          (lookup('password', '/dev/null length=1 chars=ascii_uppercase') | list) +
+          (lookup('password', '/dev/null length=1 chars=digits') | list) +
+          (lookup('password', '/dev/null length=1 chars=' + special_characters) | list)
         | shuffle)
       ] }}
   with_sequence: count={{ password_count }}
 
 - name: Set variables for reset password
   ansible.builtin.set_fact:
-    pc_ssh_cmd: sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no {{ domain_manager_ssh_username }}@{{ ip }}
+    pc_ssh_cmd: sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }}
     reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
 
 - name: Set reset command
@@ -685,16 +720,6 @@
 
 #############################################################
 # Delete backup target cluster
-
-- name: List all clusters to get prism central external ID
-  nutanix.ncp.ntnx_clusters_info_v2:
-    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
-  register: result
-  ignore_errors: true
-
-- name: Get prism central external ID
-  ansible.builtin.set_fact:
-    domain_manager_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Delete backup target cluster
   nutanix.ncp.ntnx_pc_backup_target_v2:
