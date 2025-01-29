@@ -7,9 +7,31 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 DOCUMENTATION = r"""
+module: ntnx_pc_restorable_domain_managers_info_v2
+short_description: Fetch restorable domain managers info
+version_added: 2.1.0
+description: Fetch list of multiple restorable domain managers for a given restore source.
+options:
+    restore_source_ext_id:
+        description:
+            - External ID of the restore source.
+        required: true
+        type: str
+extends_documentation_fragment:
+    - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_operations_v2
+author:
+    - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: Get all restorable domain managers for a given restore source
+  ntnx_pc_restorable_domain_managers_info_v2:
+    nutanix_host: <pe_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    restore_source_ext_id: "d4e44c2b-944c-48b0-8de1-b0adae3d54c6"
+  register: result
 """
 
 RETURN = r"""

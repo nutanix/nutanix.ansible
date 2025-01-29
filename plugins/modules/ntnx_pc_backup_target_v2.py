@@ -99,14 +99,125 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: Create backup target cluster
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    domain_manager_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
+    location:
+      cluster_location:
+        config:
+          ext_id: "00062c47-ac15-ee40-185b-ac1f6b6f97e2"
+  register: result
+
+- name: Update backup target object store
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    ext_id: "00062c47-ac15-ee40-185b-ac1f6b6f97e2"
+    domain_manager_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "mybucket"
+          region: "us-east-1"
+          credentials:
+            access_key_id: "access_key_id"
+            secret_access_key: "secret_access_key"
+        backup_policy:
+          rpo_in_minutes: 120
+  register: result
+
+- name: Delete backup target cluster
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    ext_id: "00062c47-ac15-ee40-185b-ac1f6b6f97e2"
+    domain_manager_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
+    state: absent
+  register: result
 """
 
 RETURN = r"""
+response:
+    description: Task status for the backup target operation.
+    type: dict
+    returned: always
+    {
+        "cluster_ext_ids": [
+            "00062c47-ac15-ee40-185b-ac1f6b6f97e2"
+        ],
+        "completed_time": "2025-01-29T07:35:54.109510+00:00",
+        "completion_details": null,
+        "created_time": "2025-01-29T07:35:49.556281+00:00",
+        "entities_affected": [
+            {
+                "ext_id": "18553f0f-7b41-4115-bf42-2f698fbe7117",
+                "name": "prism_central",
+                "rel": "prism:config:domain_manager"
+            }
+        ],
+        "error_messages": null,
+        "ext_id": "ZXJnb24=:5f63a855-6b6e-4aca-4efb-159a35ce0e52",
+        "is_background_task": false,
+        "is_cancelable": false,
+        "last_updated_time": "2025-01-29T07:35:54.109509+00:00",
+        "legacy_error_message": null,
+        "number_of_entities_affected": 1,
+        "number_of_subtasks": 0,
+        "operation": "kCreateBackupTarget",
+        "operation_description": "Create Backup Target",
+        "owned_by": {
+            "ext_id": "00000000-0000-0000-0000-000000000000",
+            "name": "admin"
+        },
+        "parent_task": null,
+        "progress_percentage": 100,
+        "root_task": null,
+        "started_time": "2025-01-29T07:35:49.569607+00:00",
+        "status": "SUCCEEDED",
+        "sub_steps": null,
+        "sub_tasks": null,
+        "warnings": null
+    }
+
+task_ext_id:
+    description: Task ID for the backup target operation.
+    type: str
+    returned: always
+    sample: "ZXJnb24=:5f63a855-6b6e-4aca-4efb-159a35ce0e52"
+
+ext_id:
+    description: External ID of the backup target.
+    type: str
+    returned: always
+    sample: "00062c47-ac15-ee40-185b-ac1f6b6f97e2"
+
+changed:
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
+
+error:
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: always
+  type: bool
+  sample: false
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
+
 """
 
 import traceback  # noqa: E402

@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-module: ntnx_pc_unregisteration_v2
+module: ntnx_pc_unregistration_v2
 short_description: Unregister a registered remote cluster from the local cluster.
 version_added: 2.1.0
 description:
@@ -21,26 +21,119 @@ options:
         required: False
     pc_ext_id:
         description:
-            - External ID of the remote cluster.
+            - External ID of the local cluster.
         type: str
         required: True
-    cluster_ext_id:
+    ext_id:
         description:
-            - External ID of the local cluster.
+            - External ID of the remote cluster.
         type: str
         required: True
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: Unregister PC
+  nutanix.ncp.ntnx_pc_unregistration_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    ext_id: "86b54161-3214-5874-9632-89afcd365004"
+    pc_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
+  register: result
 """
 
 RETURN = r"""
+response:
+    description: Task response for unregistering the remote cluster.
+    type: dict
+    returned: always
+    sample:
+        {
+            "cluster_ext_ids": [
+                "00062c47-4512-1233-1122-ac1f6b6f97e2"
+            ],
+            "completed_time": "2025-01-29T06:51:25.368280+00:00",
+            "completion_details": null,
+            "created_time": "2025-01-29T06:51:20.378947+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "18553f0f-1232-4333-2222-2f698fbe7117",
+                    "name": "PC_10.44.76.100",
+                    "rel": "prism:management:domain_manager"
+                },
+                {
+                    "ext_id": "86b54161-1221-1233-9875-89afcd365004",
+                    "name": null,
+                    "rel": "prism:management:domain_manager"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:7f0399f6-370c-59f8-b7a3-c50e4b91a6d0",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-01-29T06:51:25.368279+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 2,
+            "number_of_subtasks": 0,
+            "operation": "UnregisterPC",
+            "operation_description": "Unregister Prism Central",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "root_task": null,
+            "started_time": "2025-01-29T06:51:20.392266+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": [
+                {
+                    "name": "Unregistering cluster started"
+                },
+                {
+                    "name": "Precheck completed successfully"
+                },
+                {
+                    "name": "Successfully unconfigured entities"
+                },
+                {
+                    "name": "Successfully revoked trust"
+                },
+                {
+                    "name": "Unregister cluster 86b54161-1221-1233-9875-89afcd365004 completed successfully"
+                }
+            ],
+            "sub_tasks": null,
+            "warnings": null
+        }
+task_ext_id:
+    description: External ID of the task.
+    type: str
+    returned: always
+    sample: "ZXJnb24=:7f0399f6-370c-59f8-b7a3-c50e4b91a6d0"
+
+pc_ext_id:
+    description: External ID of the local cluster.
+    type: str
+    returned: always
+    sample: "18553f0f-8547-4115-9696-2f698fbe7117"
+
+changed:
+    description: This indicates whether the task resulted in any changes
+    type: bool
+    returned: always
+    sample: true
+
+error:
+    description: Error message if any.
+    type: str
+    returned: always
+    sample: null
 """
 
 import traceback  # noqa: E402
@@ -77,13 +170,14 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         pc_ext_id=dict(type="str", required=True),
-        cluster_ext_id=dict(type="str", required=True),
+        ext_id=dict(type="str", required=True),
     )
     return module_args
 
 
 def unregister_cluster(module, domain_manager_api, result):
     pc_ext_id = module.params.get("pc_ext_id")
+    result["pc_ext_id"] = pc_ext_id
     sg = SpecGenerator(module)
     default_spec = prism_sdk.ClusterUnregistrationSpec()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -142,3 +236,11 @@ def run_module():
     domain_manager_api = get_domain_manager_api_instance(module)
     unregister_cluster(module, domain_manager_api, result)
     module.exit_json(**result)
+
+
+def main():
+    run_module()
+
+
+if __name__ == "__main__":
+    main()

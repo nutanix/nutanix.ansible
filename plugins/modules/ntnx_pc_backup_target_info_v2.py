@@ -25,14 +25,76 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: List all backup targets
+  nutanix.ncp.ntnx_pc_backup_target_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    domain_manager_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
+  register: backup_result
+
+- name: Get backup target info
+  nutanix.ncp.ntnx_pc_backup_target_info_v2:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      domain_manager_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
+      ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+  register: backup_result
 """
 
 RETURN = r"""
+response:
+    description:
+        - Response for fetching backup targets info
+        - Backup target info if external ID is provided
+        - List of multiple backup targets info if external ID is not provided
+    type: dict
+    returned: always
+    sample:
+        {
+            "backup_pause_reason": null,
+            "ext_id": "00062c47-ac15-ee40-185b-ac1f6b6f97e2",
+            "is_backup_paused": false,
+            "last_sync_time": null,
+            "links": null,
+            "location": {
+                "config": {
+                    "ext_id": "00062c47-ac15-ee40-185b-ac1f6b6f97e2",
+                    "name": "auto_cluster_prod_e98628bb1f50"
+                }
+            },
+            "tenant_id": null
+        }
+
+ext_id:
+    description: External ID of the backup target
+    returned: always
+    type: str
+    sample: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+
+changed:
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
+
+error:
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: always
+  type: bool
+  sample: false
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
+
 """
 
 import warnings  # noqa: E402

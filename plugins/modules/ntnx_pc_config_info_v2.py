@@ -21,14 +21,66 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: List all PCs
+  nutanix.ncp.ntnx_pc_config_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+  register: result
+
+- name: Fetch PC details using external ID
+  nutanix.ncp.ntnx_pc_config_info_v2:
+    ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+  register: result
+
+- name: List all PCs with filter
+  nutanix.ncp.ntnx_pc_config_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    filter: extId eq '{{ domain_manager_ext_id }}'
+  register: pc_details
 """
 
 RETURN = r"""
+response:
+    description:
+        - Response for fetching PC Configuration info
+        - PC Configuration info if external ID is provided
+        - List of multiple PC Configuration info if external ID is not provided
+    type: dict
+    returned: always
+    sample:
+    {}
+
+ext_id:
+    description: External ID of the PC
+    type: str
+    returned: always
+    sample: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+
+changed:
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
+
+error:
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: always
+  type: bool
+  sample: false
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
+
 """
 
 import warnings  # noqa: E402

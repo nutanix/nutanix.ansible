@@ -574,7 +574,7 @@
 # Set restore point external ID
 
 - name: Get all restorable domain managers
-  ntnx_pc_restorable_domain_managers_info_v2:
+  nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
     nutanix_host: "{{ ip_pe }}"
     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
   register: result
@@ -585,7 +585,7 @@
     domain_manager_details: "{{ result.response | selectattr('ext_id', 'equalto', domain_manager_ext_id) | list }}"
 
 - name: List all restore points
-  ntnx_pc_restore_points_info_v2:
+  nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
