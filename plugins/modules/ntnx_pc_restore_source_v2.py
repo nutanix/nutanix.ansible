@@ -16,6 +16,12 @@ description:
     - The created restore source is intended to be deleted after use.
     - If the restore source is not deleted using the deleteRestoreSource API, then it is auto-deleted after sometime.
 options:
+    ext_id:
+        description:
+            - External ID of the restore source.
+            - Required if C(state=absent).
+        type: str
+        required: False
     state:
         description:
             - If C(present), will create a restore source.
@@ -36,7 +42,7 @@ options:
             - Location of the backup target.
             - For example, a cluster or an object store endpoint, such as AWS s3.
         type: dict
-        required: true
+        required: false
         suboptions:
             cluster_location:
                 description: Location of the cluster.
@@ -93,14 +99,89 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: Create restore source cluster
+  nutanix.ncp.ntnx_pc_restore_source_v2:
+    nutanix_host: <pe_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    location:
+      cluster_location:
+        config:
+          ext_id: "00062c47-1221-3322-5555-ac1f6b6f97e2"
+  register: result
+
+- name: Create restore source object store
+  nutanix.ncp.ntnx_pc_restore_source_v2:
+    nutanix_host: <pe_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "my-bucket"
+          region: "us-east-1"
+          credentials:
+            access_key_id: "access_key_id"
+            secret_access_key: "secret_access_key"
+  register: result
+
+- name: Delete restore source cluster
+  nutanix.ncp.ntnx_pc_restore_source_v2:
+    nutanix_host: <pe_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    ext_id: "00062c47-1221-3322-5555-ac1f6b6f97e2"
+    state: absent
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
+response:
+    description:
+        - Response for create or delete restore source.
+    type: dict
+    returned: always
+    sample:
+        {
+            "ext_id": "11bc64e2-5688-1231-2111-8b39fc2015f3",
+            "links": null,
+            "location": {
+                "config": {
+                    "ext_id": "00062cd6-1222-3333-4444-ac1f6b6f97e2",
+                    "name": null
+                }
+            },
+            "tenant_id": null
+        }
+
+ext_id:
+    description: External ID of the restore source.
+    returned: always
+    type: str
+    sample: "11bc64e2-5688-1231-2111-8b39fc2015f3"
+
+changed:
+    description: This indicates whether the task resulted in any changes
+    returned: always
+    type: bool
+    sample: true
+
+error:
+    description: This field typically holds information about if the task have errors that occurred during the task execution
+    returned: always
+    type: bool
+    sample: false
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
 """
 
 import traceback  # noqa: E402
@@ -110,18 +191,17 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_restore_source  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
     get_etag,
 )
-from ..module_utils.v4.prism.helpers import get_restore_source  # noqa: E402
+from ..module_utils.v4.prism.spec.pc import PrismSpecs as prism_specs  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-
-from ..module_utils.v4.prism.spec.pc import PrismSpecs as prism_specs  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:

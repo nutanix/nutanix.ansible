@@ -39,11 +39,11 @@ EXAMPLES = r"""
 
 - name: Get backup target info
   nutanix.ncp.ntnx_pc_backup_target_info_v2:
-      nutanix_host: <pc_ip>
-      nutanix_username: <user>
-      nutanix_password: <pass>
-      domain_manager_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
-      ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    domain_manager_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
+    ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
   register: backup_result
 """
 
@@ -78,16 +78,16 @@ ext_id:
     sample: "cda893b8-2aee-34bf-817d-d2ee6026790b"
 
 changed:
-  description: This indicates whether the task resulted in any changes
-  returned: always
-  type: bool
-  sample: true
+    description: This indicates whether the task resulted in any changes
+    returned: always
+    type: bool
+    sample: true
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
-  type: bool
-  sample: false
+    description: This field typically holds information about if the task have errors that occurred during the task execution
+    returned: always
+    type: bool
+    sample: false
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -101,11 +101,11 @@ import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_backup_target  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
 )
-from ..module_utils.v4.prism.helpers import get_backup_target  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,

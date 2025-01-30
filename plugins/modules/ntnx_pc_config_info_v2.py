@@ -34,16 +34,11 @@ EXAMPLES = r"""
 
 - name: Fetch PC details using external ID
   nutanix.ncp.ntnx_pc_config_info_v2:
-    ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
-  register: result
-
-- name: List all PCs with filter
-  nutanix.ncp.ntnx_pc_config_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
-    filter: extId eq '{{ domain_manager_ext_id }}'
-  register: pc_details
+    ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+  register: resul
 """
 
 RETURN = r"""
@@ -55,7 +50,140 @@ response:
     type: dict
     returned: always
     sample:
-    {}
+        {
+            "config": {
+                "bootstrap_config": {
+                    "cloud_init_config": null,
+                    "environment_info": {
+                        "provider_type": "NTNX",
+                        "provisioning_type": "NTNX",
+                        "type": "ONPREM"
+                    }
+                },
+                "build_info": {
+                    "version": "pc.2024.3"
+                },
+                "credentials": null,
+                "name": "PC_10.44.76.25",
+                "resource_config": {
+                    "container_ext_ids": [
+                        "6171a26e-7d08-4f10-b6fa-9304b333f6b6"
+                    ],
+                    "data_disk_size_bytes": 536870912000,
+                    "memory_size_bytes": 37580963840,
+                    "num_vcpus": 10
+                },
+                "should_enable_lockdown_mode": null,
+                "size": "SMALL"
+            },
+            "ext_id": "cfddac63-ffdb-4d9c-9a8c-54abf89ce234",
+            "hosting_cluster_ext_id": "00062cd6-e034-fd28-185b-ac1f6b6f97e2",
+            "is_registered_with_hosting_cluster": true,
+            "links": null,
+            "network": {
+                "external_address": {
+                    "ipv4": {
+                        "prefix_length": null,
+                        "value": "10.44.76.25"
+                    },
+                    "ipv6": null
+                },
+                "external_networks": [
+                    {
+                        "default_gateway": {
+                            "fqdn": null,
+                            "ipv4": {
+                                "prefix_length": null,
+                                "value": "10.44.76.1"
+                            },
+                            "ipv6": null
+                        },
+                        "ip_ranges": [
+                            {
+                                "begin": {
+                                    "ipv4": {
+                                        "prefix_length": null,
+                                        "value": "10.44.76.24"
+                                    },
+                                    "ipv6": null
+                                },
+                                "end": {
+                                    "ipv4": {
+                                        "prefix_length": null,
+                                        "value": "10.44.76.24"
+                                    },
+                                    "ipv6": null
+                                }
+                            }
+                        ],
+                        "network_ext_id": "afc34756-bb5e-4df9-a2ec-c82ad628c4ae",
+                        "subnet_mask": {
+                            "fqdn": null,
+                            "ipv4": {
+                                "prefix_length": null,
+                                "value": "255.255.252.0"
+                            },
+                            "ipv6": null
+                        }
+                    }
+                ],
+                "fqdn": null,
+                "internal_networks": null,
+                "name_servers": [
+                    {
+                        "fqdn": null,
+                        "ipv4": {
+                            "prefix_length": null,
+                            "value": "10.40.64.15"
+                        },
+                        "ipv6": null
+                    },
+                    {
+                        "fqdn": null,
+                        "ipv4": {
+                            "prefix_length": null,
+                            "value": "10.40.64.16"
+                        },
+                        "ipv6": null
+                    }
+                ],
+                "ntp_servers": [
+                    {
+                        "fqdn": {
+                            "value": "0.centos.pool.ntp.org"
+                        },
+                        "ipv4": null,
+                        "ipv6": null
+                    },
+                    {
+                        "fqdn": {
+                            "value": "3.centos.pool.ntp.org"
+                        },
+                        "ipv4": null,
+                        "ipv6": null
+                    },
+                    {
+                        "fqdn": {
+                            "value": "2.centos.pool.ntp.org"
+                        },
+                        "ipv4": null,
+                        "ipv6": null
+                    },
+                    {
+                        "fqdn": {
+                            "value": "1.centos.pool.ntp.org"
+                        },
+                        "ipv4": null,
+                        "ipv6": null
+                    }
+                ]
+            },
+            "node_ext_ids": [
+                "e5cc110f-3a4a-4a88-8c89-71aa101adb03"
+            ],
+            "should_enable_high_availability": false,
+            "tenant_id": null
+        }
 
 ext_id:
     description: External ID of the PC
@@ -64,16 +192,16 @@ ext_id:
     sample: "cda893b8-2aee-34bf-817d-d2ee6026790b"
 
 changed:
-  description: This indicates whether the task resulted in any changes
-  returned: always
-  type: bool
-  sample: true
+    description: This indicates whether the task resulted in any changes
+    returned: always
+    type: bool
+    sample: true
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
-  type: bool
-  sample: false
+    description: This field typically holds information about if the task have errors that occurred during the task execution
+    returned: always
+    type: bool
+    sample: false
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -87,11 +215,11 @@ import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_pc_config  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_api_instance,
 )
-from ..module_utils.v4.prism.helpers import get_pc_config  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,

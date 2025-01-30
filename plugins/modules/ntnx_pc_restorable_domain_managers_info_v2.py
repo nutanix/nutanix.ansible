@@ -19,14 +19,14 @@ options:
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
-    - nutanix.ncp.ntnx_operations_v2
+    - nutanix.ncp.ntnx_info_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
 - name: Get all restorable domain managers for a given restore source
-  ntnx_pc_restorable_domain_managers_info_v2:
+  nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
     nutanix_host: <pe_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -35,16 +35,73 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
+response:
+    description: List of restorable domain managers for a given restore source.
+    type: list
+    returned: always
+    sample:
+        [
+            {
+                "config": {
+                    "bootstrap_config": null,
+                    "build_info": null,
+                    "credentials": null,
+                    "name": "PC_10.44.76.25",
+                    "resource_config": null,
+                    "should_enable_lockdown_mode": null,
+                    "size": null
+                },
+                "ext_id": "cfddac63-ffdb-4d9c-9a8c-54abf89ce234",
+                "hosting_cluster_ext_id": null,
+                "is_registered_with_hosting_cluster": null,
+                "links": null,
+                "network": {
+                    "external_address": {
+                        "ipv4": {
+                            "prefix_length": null,
+                            "value": "10.0.0.1"
+                        },
+                        "ipv6": null
+                    },
+                    "external_networks": null,
+                    "fqdn": null,
+                    "internal_networks": null,
+                    "name_servers": null,
+                    "ntp_servers": null
+                },
+                "node_ext_ids": null,
+                "should_enable_high_availability": null,
+                "tenant_id": null
+            }
+        ]
+
+changed:
+    description: This indicates whether the task resulted in any changes
+    returned: always
+    type: bool
+    sample: true
+
+error:
+    description: This field typically holds information about if the task have errors that occurred during the task execution
+    returned: always
+    type: bool
+    sample: false
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
 """
 
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
 )
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -87,7 +144,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[
-            ("ext_id", "filter"),
+            ("restore_source_ext_id", "filter"),
         ],
     )
     remove_param_with_none_value(module.params)

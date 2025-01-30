@@ -58,13 +58,25 @@ options:
                         data disk size of the domain manager (Prism Central).
                     - In the case of a multi-node setup, the sum of resources like number of VCPUs, memory size and data disk size are provided.
                 type: dict
-                required: true
+                required: false
                 suboptions:
                     container_ext_ids:
                         description: The external identifier of the container that will be used to create the domain manager (Prism Central) cluster.
                         type: list
                         required: false
                         elements: str
+                    data_disk_size_bytes:
+                        description: The size of the data disk in bytes.
+                        type: int
+                        required: false
+                    memory_size_bytes:
+                        description: The size of the memory in bytes.
+                        type: int
+                        required: false
+                    num_vcpus:
+                        description: The number of virtual CPUs.
+                        type: int
+                        required: false
     network:
         description: Domain manager (Prism Central) network configuration details.
         type: dict
@@ -293,6 +305,7 @@ options:
                         description: Range of IPs used for Prism Central network setup.
                         type: list
                         elements: dict
+                        required: true
                         suboptions:
                             begin:
                                 description: An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
@@ -460,6 +473,7 @@ options:
                         description: Range of IPs used for Prism Central network setup.
                         type: list
                         elements: dict
+                        required: true
                         suboptions:
                             begin:
                                 description: An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
@@ -540,11 +554,47 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: Deploy PC
+  nutanix.ncp.ntnx_pc_deploy_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    config:
+      name: "pc_name"
+      size: "STARTER"
+      build_info:
+        version: "pc.2024.3"
+    network:
+      external_networks:
+        - default_gateway:
+            ipv4:
+              value: "10.0.0.1"
+          subnet_mask:
+            ipv4:
+              value: "255.255.240.0"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "10.0.0.2"
+              end:
+                ipv4:
+                  value: "10.0.0.3"
+          network_ext_id: "4854f740-1234-9655-7458-942e66b4189e"
+      name_servers:
+        - ipv4:
+            value: "10.0.0.4"
+        - ipv4:
+            value: "10.0.0.5"
+      ntp_servers:
+        - fqdn:
+            value: "2.centos.pool.ntp.org"
+        - fqdn:
+            value: "3.centos.pool.ntp.org"
+  register: result
 """
 
 RETURN = r"""
@@ -557,16 +607,16 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.v4.prism.pc_api_client import (
+from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_api_instance,
-)  # noqa: E402
+)
+from ..module_utils.v4.prism.spec.pc import PrismSpecs as prism_specs  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.prism.spec.pc import PrismSpecs as prism_specs  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:

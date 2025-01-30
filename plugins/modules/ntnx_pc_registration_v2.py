@@ -294,22 +294,28 @@ response:
     }
 
 changed:
-  description: This indicates whether the task resulted in any changes
-  returned: always
-  type: bool
-  sample: true
+    description: This indicates whether the task resulted in any changes
+    returned: always
+    type: bool
+    sample: true
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
-  type: bool
-  sample: false
+    description: This field typically holds information about if the task have errors that occurred during the task execution
+    returned: always
+    type: bool
+    sample: false
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
 
 ext_id:
-  description: The external ID of the prism central cluster.
-  returned: always
-  type: str
-  sample: "00000000-0000-0000-0000-000000000000"
+    description: The external ID of the prism central cluster.
+    returned: always
+    type: str
+    sample: "00000000-0000-0000-0000-000000000000"
 
 task_ext_id:
     description: Task external ID.

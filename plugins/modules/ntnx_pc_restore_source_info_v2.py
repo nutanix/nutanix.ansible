@@ -21,27 +21,72 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: Get restore source cluster
+  nutanix.ncp.ntnx_pc_restore_source_info_v2:
+    nutanix_host: <pe_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
+response:
+    description:
+        - Response for fetching restore source info
+    type: dict
+    returned: always
+    sample:
+        {
+            "ext_id": "11bc64e2-8547-9632-6584-8b39fc2015f3",
+            "links": null,
+            "location": {
+                "config": {
+                    "ext_id": "00062cd6-1232-1122-5433-ac1f6b6f97e2",
+                    "name": null
+                }
+            },
+        }
+ext_id:
+    description:
+        - External ID of the restore source
+    type: str
+    returned: always
+    sample: "11bc64e2-8547-9632-6584-8b39fc2015f3"
+
+changed:
+    description: This indicates whether the task resulted in any changes
+    returned: always
+    type: bool
+    sample: true
+
+error:
+    description: This field typically holds information about if the task have errors that occurred during the task execution
+    returned: always
+    type: bool
+    sample: false
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
 """
 
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_restore_source  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
 )
-from ..module_utils.v4.prism.helpers import get_restore_source  # noqa: E402
-from ..module_utils.v4.utils import (  # noqa: E402
-    strip_internal_attributes,
-)
+from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -63,9 +108,6 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        mutually_exclusive=[
-            ("ext_id", "filter"),
-        ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}

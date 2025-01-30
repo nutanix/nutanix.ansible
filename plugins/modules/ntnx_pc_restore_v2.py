@@ -580,9 +580,174 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Restore PC
+  nutanix.ncp.ntnx_pc_restore_v2:
+    nutanix_host: <pe_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    ext_id: "95148523-1234-5678-9090-ac1f6b6f97e2"
+    restore_source_ext_id: "84125478-6543-2131-5678-ac1f6b6f97e2"
+    restorable_domain_manager_ext_id: "54678987-1222-5678-9090-ac1f6b6f97e2"
+    domain_manager:
+      config:
+        should_enable_lockdown_mode: false
+        build_info:
+          version: "pc.2024.3"
+        name: "PC_10.0.0.2"
+        size: "SMALL"
+        resource_config:
+          data_disk_size_bytes: "536870912000"
+          memory_size_bytes: "37580963840"
+          num_vcpus: "10"
+          container_ext_ids: ["6171a26e-7d08-4f10-b6fa-9304b333f6b6"]
+      network:
+        external_address:
+          ipv4:
+            value: "10.0.0.3"
+        name_servers:
+          - ipv4:
+              value: "10.0.0.5"
+          - ipv4:
+              value: "10.0.0.6"
+        ntp_servers:
+          - fqdn:
+              value: "1.centos.pool.ntp.org"
+          - fqdn:
+              value: "2.centos.pool.ntp.org"
+          - fqdn:
+              value: "3.centos.pool.ntp.org"
+          - fqdn:
+              value: "4.centos.pool.ntp.org"
+        external_networks:
+          - network_ext_id: "54678987-1764-3478-8050-ac1f6b6f97e2"
+            default_gateway:
+              ipv4:
+                value: "10.0.0.0"
+            subnet_mask:
+              ipv4:
+                value: "255.255.252.0"
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "10.1.1.1"
+                end:
+                  ipv4:
+                    value: "10.1.1.1"
+  register: result
 """
 
 RETURN = r"""
+response:
+    description:
+        - Task response for restoring a domain manager from a cluster or object store backup location.
+    type: dict
+    returned: always
+    sample:
+        {
+            "cluster_ext_ids": [
+                "00062cd6-4569-8745-3655-ac1f6b6f97e2"
+            ],
+            "completed_time": "2025-01-30T07:24:37.119256+00:00",
+            "completion_details": null,
+            "created_time": "2025-01-30T05:54:29.372442+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "cfddac63-aaaa-wwww-1qaa-54abf89ce234",
+                    "name": "prism_central",
+                    "rel": "prism:config:domain_manager"
+                },
+                {
+                    "ext_id": "00062cd6-gggg-tred-5433-ac1f6b6f97e2",
+                    "name": null,
+                    "rel": "clustermgmt:config:cluster"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:45697502-d91c-9632-65e7-68f2b6e279bf",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-01-30T07:24:37.119251+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 2,
+            "number_of_subtasks": 4,
+            "operation": "kPcRecovery",
+            "operation_description": "Prism Central Recovery",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "root_task": null,
+            "started_time": "2025-01-30T05:54:29.381981+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:1db87069-dbf8-43b8-7b96-86195e16f1c5",
+                    "href": "https://10.46.136.32:9440/api/prism/v4.0/config/tasks/ZXJnb24=:1db87069-dbf8-43b8-7b96-86195e16f1c5",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:3b5cea6c-933b-4239-4b9a-6730624546a9",
+                    "href": "https://10.46.136.32:9440/api/prism/v4.0/config/tasks/ZXJnb24=:3b5cea6c-933b-4239-4b9a-6730624546a9",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:3c21bde8-606b-4a60-5ce5-aa5b655bd2eb",
+                    "href": "https://10.46.136.32:9440/api/prism/v4.0/config/tasks/ZXJnb24=:3c21bde8-606b-4a60-5ce5-aa5b655bd2eb",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:7c98313d-ac92-4963-7f95-9d434cdd726f",
+                    "href": "https://10.46.136.32:9440/api/prism/v4.0/config/tasks/ZXJnb24=:7c98313d-ac92-4963-7f95-9d434cdd726f",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        }
+
+task_ext_id:
+    description: The external identifier of the task.
+    returned: always
+    type: str
+    sample: ZXJnb24=:45697502-d91c-9632-65e7-68f2b6e279bf
+
+restore_source_ext_id:
+    description: Restore source external identifier.
+    returned: always
+    type: str
+    sample: 84125478-6543-2131-5678-ac1f6b6f97e2
+
+restorable_domain_manager_ext_id:
+    description: Restorable domain manager external identifier.
+    returned: always
+    type: str
+    sample: 54678987-1222-5678-9090-ac1f6b6f97e2
+
+ext_id:
+    description: Restore point extetrnal identifier.
+    returned: always
+    type: str
+    sample: 54678987-1222-5678-9090-ac1f6b6f97e2
+
+changed:
+    description: This indicates whether the task resulted in any changes
+    returned: always
+    type: bool
+    sample: true
+
+error:
+    description: This field typically holds information about if the task have errors that occurred during the task execution
+    returned: always
+    type: bool
+    sample: false
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
 """
 
 import traceback  # noqa: E402
@@ -595,13 +760,13 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
 )
+from ..module_utils.v4.prism.spec.pc import PrismSpecs as prism_specs  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.prism.spec.pc import PrismSpecs as prism_specs  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:

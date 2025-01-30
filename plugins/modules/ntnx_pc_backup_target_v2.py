@@ -42,7 +42,7 @@ options:
             - Location of the backup target.
             - For example, a cluster or an object store endpoint, such as AWS s3.
         type: dict
-        required: true
+        required: false
         suboptions:
             cluster_location:
                 description: Location of the cluster.
@@ -150,43 +150,44 @@ response:
     description: Task status for the backup target operation.
     type: dict
     returned: always
-    {
-        "cluster_ext_ids": [
-            "00062c47-ac15-ee40-185b-ac1f6b6f97e2"
-        ],
-        "completed_time": "2025-01-29T07:35:54.109510+00:00",
-        "completion_details": null,
-        "created_time": "2025-01-29T07:35:49.556281+00:00",
-        "entities_affected": [
-            {
-                "ext_id": "18553f0f-7b41-4115-bf42-2f698fbe7117",
-                "name": "prism_central",
-                "rel": "prism:config:domain_manager"
-            }
-        ],
-        "error_messages": null,
-        "ext_id": "ZXJnb24=:5f63a855-6b6e-4aca-4efb-159a35ce0e52",
-        "is_background_task": false,
-        "is_cancelable": false,
-        "last_updated_time": "2025-01-29T07:35:54.109509+00:00",
-        "legacy_error_message": null,
-        "number_of_entities_affected": 1,
-        "number_of_subtasks": 0,
-        "operation": "kCreateBackupTarget",
-        "operation_description": "Create Backup Target",
-        "owned_by": {
-            "ext_id": "00000000-0000-0000-0000-000000000000",
-            "name": "admin"
-        },
-        "parent_task": null,
-        "progress_percentage": 100,
-        "root_task": null,
-        "started_time": "2025-01-29T07:35:49.569607+00:00",
-        "status": "SUCCEEDED",
-        "sub_steps": null,
-        "sub_tasks": null,
-        "warnings": null
-    }
+    sample:
+        {
+            "cluster_ext_ids": [
+                "00062c47-ac15-ee40-185b-ac1f6b6f97e2"
+            ],
+            "completed_time": "2025-01-29T07:35:54.109510+00:00",
+            "completion_details": null,
+            "created_time": "2025-01-29T07:35:49.556281+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "18553f0f-7b41-4115-bf42-2f698fbe7117",
+                    "name": "prism_central",
+                    "rel": "prism:config:domain_manager"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:5f63a855-6b6e-4aca-4efb-159a35ce0e52",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-01-29T07:35:54.109509+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 0,
+            "operation": "kCreateBackupTarget",
+            "operation_description": "Create Backup Target",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "root_task": null,
+            "started_time": "2025-01-29T07:35:49.569607+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
+        }
 
 task_ext_id:
     description: Task ID for the backup target operation.
@@ -201,23 +202,22 @@ ext_id:
     sample: "00062c47-ac15-ee40-185b-ac1f6b6f97e2"
 
 changed:
-  description: This indicates whether the task resulted in any changes
-  returned: always
-  type: bool
-  sample: true
+    description: This indicates whether the task resulted in any changes
+    returned: always
+    type: bool
+    sample: true
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
-  type: bool
-  sample: false
+    description: This field typically holds information about if the task have errors that occurred during the task execution
+    returned: always
+    type: bool
+    sample: false
 
 failed:
     description: This field typically holds information about if the task have failed
     returned: always
     type: bool
     sample: false
-
 """
 
 import traceback  # noqa: E402
@@ -228,19 +228,18 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_backup_target  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_domain_manager_backup_api_instance,
     get_etag,
 )
+from ..module_utils.v4.prism.spec.pc import PrismSpecs as prism_specs  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
-from ..module_utils.v4.prism.helpers import get_backup_target  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-
-from ..module_utils.v4.prism.spec.pc import PrismSpecs as prism_specs  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
