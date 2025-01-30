@@ -651,8 +651,8 @@
 - name: Set password variables
   ansible.builtin.set_fact:
     password_count: 5
-    password_length: 12
-    special_characters: "@#"
+    password_length: 5
+    special_characters: "@#$"
     passwords: []
 
 - name: Generate passwords
