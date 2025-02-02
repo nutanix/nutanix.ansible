@@ -45,7 +45,7 @@
     fail_msg: "Categories creation failed"
 
 - name: Save external IDs to the list
-  set_fact:
+  ansible.builtin.set_fact:
     todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
   with_items: "{{ output.results }}"
 
@@ -375,7 +375,7 @@
 
 - name: Create Volume group to be promoted
   nutanix.ncp.ntnx_volume_groups_v2:
-    name: "{{ random_name }}_protected_vg_promote"
+    name: "{{ random_name }}_ansible_protected_vg_promote"
     description: "Volume group for promotion"
     cluster_reference: "{{ cluster.uuid }}"
   register: result
@@ -391,7 +391,7 @@
       - result.changed == true
       - result.ext_id == result.response.ext_id
       - result.response.cluster_reference == "{{cluster.uuid}}"
-      - result.response.name == "{{ random_name }}_protected_vg_promote"
+      - result.response.name == "{{ random_name }}_ansible_protected_vg_promote"
       - result.response.description == "Volume group for promotion"
     fail_msg: "Unable to create VG"
     success_msg: "VG created successfully"
@@ -402,7 +402,7 @@
 
 - name: Create Volume group to be restored
   nutanix.ncp.ntnx_volume_groups_v2:
-    name: "{{ random_name }}_protected_vg_restore"
+    name: "{{ random_name }}_ansible_protected_vg_restore"
     description: "Volume group for restore"
     cluster_reference: "{{ cluster.uuid }}"
   register: result
@@ -418,7 +418,7 @@
       - result.changed == true
       - result.ext_id == result.response.ext_id
       - result.response.cluster_reference == "{{cluster.uuid}}"
-      - result.response.name == "{{ random_name }}_protected_vg_restore"
+      - result.response.name == "{{ random_name }}_ansible_protected_vg_restore"
       - result.response.description == "Volume group for restore"
     fail_msg: "Unable to create VG"
     success_msg: "VG created successfully"
@@ -952,11 +952,11 @@
   ignore_errors: true
 
 - name: Filter only protected VGs
-  set_fact:
-    protected_vgs: "{{ result.response | selectattr('name', 'search', 'protected_vg_') | list }}"
+  ansible.builtin.set_fact:
+    protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
 
 - name: Extract external ids of protected VGs
-  set_fact:
+  ansible.builtin.set_fact:
     protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
 
 - name: Delete all Created VGs on local cluster
@@ -989,11 +989,11 @@
   ignore_errors: true
 
 - name: Filter only protected VGs
-  set_fact:
-    protected_vgs: "{{ result.response | selectattr('name', 'search', 'protected_vg_') | list }}"
+  ansible.builtin.set_fact:
+    protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
 
 - name: Extract external ids of protected VGs
-  set_fact:
+  ansible.builtin.set_fact:
     protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
 
 - name: Delete all Created VGs on remote cluster
@@ -1028,11 +1028,11 @@
   ignore_errors: true
 
 - name: Filter only protected VMs
-  set_fact:
+  ansible.builtin.set_fact:
     protected_vms: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vm') | list }}"
 
 - name: Extract external ids of protected VMs
-  set_fact:
+  ansible.builtin.set_fact:
     protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
 
 - name: Delete all Created VMs on local cluster
@@ -1065,11 +1065,11 @@
   ignore_errors: true
 
 - name: Filter only protected VMs
-  set_fact:
+  ansible.builtin.set_fact:
     protected_vms: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vm') | list }}"
 
 - name: Extract external ids of protected VMs
-  set_fact:
+  ansible.builtin.set_fact:
     protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
 
 - name: Delete all Created VMs on remote cluster
