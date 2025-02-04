@@ -479,9 +479,41 @@
   register: result
   ignore_errors: true
 
+- name: List all restore points status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: "List all restore points failed"
+    success_msg: "List all restore points passed"
+
 - name: Set restore point external ID
   set_fact:
     restore_point_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Get restore point using external ID
+  nutanix.ncp.ntnx_pc_restore_points_info_v2:
+    nutanix_host: "{{ ip_pe }}"
+    restore_source_ext_id: "{{ restore_source_ext_id }}"
+    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+    ext_id: "{{ restore_point_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get restore point using external ID status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == restore_point_ext_id
+      - result.response is defined
+      - result.response.domain_manager.config.name == pc_details.response.config.name
+      - result.response.domain_manager.config.size == pc_details.response.config.size
+      - result.response.domain_manager.config.resource_config.container_ext_ids == pc_details.response.config.resource_config.container_ext_ids
+      - result.response.domain_manager.config.resource_config.data_disk_size_bytes == pc_details.response.config.resource_config.data_disk_size_bytes
+      - result.response.domain_manager.config.resource_config.memory_size_bytes == pc_details.response.config.resource_config.memory_size_bytes
+      - result.response.domain_manager.config.resource_config.num_vcpus == pc_details.response.config.resource_config.num_vcpus
+    fail_msg: "Get restore point using external ID failed"
+    success_msg: "Get restore point using external ID passed"
 
 #############################################################
 # Power off PC VM
