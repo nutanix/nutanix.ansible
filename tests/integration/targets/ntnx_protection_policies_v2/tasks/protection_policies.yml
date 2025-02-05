@@ -12,16 +12,292 @@
     todelete_categories: []
     todelete: []
 
+- name: Set prefix name for clusters
+  ansible.builtin.set_fact:
+    prefix_name: ansible_test
+
+- name: Set command split for resetting cluster username and password
+  ansible.builtin.set_fact:
+    pe1_ssh_cmd: sshpass -p '{{ pe_ssh_password }}' ssh -o StrictHostKeyChecking=no {{ pe_ssh_username }}@{{ ip_pe }}
+    pe2_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
+    reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
+    cluster_status: /usr/local/nutanix/cluster/bin/cluster status
+    modify_firewall_cmd_cluster1: /usr/local/nutanix/cluster/bin/modify_firewall -f -r '{{ clusters[0].nodes[0].cvm_ip }}','{{ clusters[0].network.virtual_ip }}' -p 2030,2036,2073,2090,8740 -i eth0
+    modify_firewall_cmd_cluster2: /usr/local/nutanix/cluster/bin/modify_firewall -f -r '{{ ip_pe }}','{{ virtual_ip_pe }}' -p 2030,2036,2073,2090,8740 -i eth0
+
+- name: Set command for resetting cluster username and password
+  ansible.builtin.set_fact:
+    reset_command: '{{ pe2_ssh_cmd }} "{{ reset_username_password }}"'
+    cluster_status_command: '{{ pe2_ssh_cmd }} "{{ cluster_status }}"'
+    modify_firewall_command_cluster1: '{{ pe1_ssh_cmd }} "{{ modify_firewall_cmd_cluster1 }}"'
+    modify_firewall_command_cluster2: '{{ pe2_ssh_cmd }} "{{ modify_firewall_cmd_cluster2 }}"'
+
 - name: Set ansible keys and values
   ansible.builtin.set_fact:
     keys:
       - "{{random_name}}{{suffix_name}}key1"
       - "{{random_name}}{{suffix_name}}key2"
       - "{{random_name}}{{suffix_name}}key3"
+      - "{{random_name}}{{suffix_name}}key4"
     values:
       - "{{random_name}}{{suffix_name}}value1"
       - "{{random_name}}{{suffix_name}}value2"
       - "{{random_name}}{{suffix_name}}value3"
+      - "{{random_name}}{{suffix_name}}value4"
+
+########################################################################################
+# Create cluster for promoting VG
+
+- name: List all clusters to get prism central external ID
+  ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: result
+  ignore_errors: true
+
+- name: Get prism central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ result.response[0].ext_id }}"
+
+- name: Discover unconfigured node
+  ntnx_discover_unconfigured_nodes_v2:
+    address_type: "IPV4"
+    ip_filter_list:
+      - ipv4:
+          value: "{{ clusters[0].nodes[0].cvm_ip }}"
+  register: result
+  ignore_errors: true
+
+- name: Discover unconfigured node status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.ext_id is defined
+      - result.response.response.node_list[0].cvm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+    fail_msg: Discover unconfigured node failed
+    success_msg: Discover unconfigured node passed
+
+- name: Run cluster create prechecks
+  ntnx_clusters_v2:
+    name: "{{ clusters[0].name }}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      authorized_public_key_list:
+        - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
+          key: "{{ clusters[0].config.auth_public_keys[0].key }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+    network:
+      external_address:
+        ipv4:
+          value: "{{ clusters[0].network.virtual_ip }}"
+      external_data_service_ip:
+        ipv4:
+          value: "{{ clusters[0].network.iscsi_ip }}"
+      ntp_server_ip_list:
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[0] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[1] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[2] }}"
+        - fqdn:
+            value: "{{ clusters[0].network.ntp_servers[3] }}"
+      name_server_ip_list:
+        - ipv4:
+            value: "{{ clusters[0].network.dns_servers[0] }}"
+        - ipv4:
+            value: "{{ clusters[0].network.dns_servers[1] }}"
+      smtp_server:
+        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
+        server:
+          ip_address:
+            ipv4:
+              value: "{{ clusters[0].network.smtp_server.ip }}"
+          port: "{{ clusters[0].network.smtp_server.port }}"
+          username: "{{ clusters[0].network.smtp_server.username }}"
+          password: "{{ clusters[0].network.smtp_server.password }}"
+        type: "{{ clusters[0].network.smtp_server.type }}"
+    dryrun: true
+    timeout: 1800
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster create prechecks run
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create prechecks failed
+    success_msg: Cluster create prechecks passed
+
+- name: Create cluster name
+  ansible.builtin.set_fact:
+    cluster_name: "{{random_name}}_{{ prefix_name }}_{{ clusters[0].name }}"
+
+- name: Check if cluster is unconfigured or not
+  ansible.builtin.command: "{{ cluster_status_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: Assert that cluster is unconfigured
+  ansible.builtin.assert:
+    that:
+      - result.rc == 1
+      - result.stderr.find('Cluster is currently unconfigured') != -1
+    fail_msg: Cannot create cluster, cluster is already created
+    success_msg: Cluster is unconfigured
+
+- name: Create cluster with minimum spec
+  ntnx_clusters_v2:
+    name: "{{cluster_name}}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+    network:
+      external_address:
+        ipv4:
+          value: "{{ clusters[0].network.virtual_ip }}"
+    timeout: 1800
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster create task status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create failed
+    success_msg: Cluster create passed
+
+- name: Reset username and password
+  ansible.builtin.command: "{{ reset_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: Run PE PC registration
+  ntnx_pc_registration_v2:
+    ext_id: "{{ prism_central_external_id }}"
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+          credentials:
+            authentication:
+              username: "{{ username }}"
+              password: "{{ password }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify PE PC registration
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.ext_id == prism_central_external_id
+      - result.response.status == 'SUCCEEDED'
+      - result.task_ext_id is defined
+    fail_msg: "PE PC registration failed"
+    success_msg: "PE PC registration passed"
+
+- name: Sleep for 1 minute
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: Fetch cluster using name
+  ntnx_clusters_info_v2:
+    filter: name eq '{{ cluster_name }}'
+  register: result
+  ignore_errors: true
+
+- name: Verify listing
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: Failed verifying PE PC registration
+    success_msg: PE PC registration passed successfully
+
+- name: Set cluster external ID
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Fetch cluster info using external ID
+  ntnx_clusters_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify created cluster's details using cluster info
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == cluster_ext_id
+      - result.response.name == "{{ cluster_name }}"
+      - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+      - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
+      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
+      - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
+      - >
+        result.response.config.fault_tolerance_state.domain_awareness_level ==
+        "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+    fail_msg: Failed verifying cluster creation
+    success_msg: Cluster creation passed successfully
+
+- name: Modify firewall rules for cluster 1
+  ansible.builtin.command: "{{ modify_firewall_command_cluster1 }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: Assert that firewall rules are modified for cluster 1
+  ansible.builtin.assert:
+    that:
+      - result.rc == 0
+      - result.stderr.find('Firewall config updated') != -1
+    fail_msg: Cannot modify firewall rules for cluster 1
+    success_msg: Firewall rules modified for cluster 1
+
+- name: Modify firewall rules for cluster 2
+  ansible.builtin.command: "{{ modify_firewall_command_cluster2 }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+
+- name: Assert that firewall rules are modified for cluster 2
+  ansible.builtin.assert:
+    that:
+      - result.rc == 0
+      - result.stderr.find('Firewall config updated') != -1
+    fail_msg: Cannot modify firewall rules for cluster 2
+    success_msg: Firewall rules modified for cluster 2
+
+########################################################################################
 
 - name: Create categories for protection policies
   ntnx_categories_v2:
@@ -30,7 +306,7 @@
     description: "ansible-category"
   register: output
   ignore_errors: true
-  loop: "{{ range(0, 3) }}"
+  loop: "{{ range(0, 4) }}"
   loop_control:
     label: "{{ item }}"
 
@@ -39,7 +315,7 @@
     that:
       - output is defined
       - output.changed == true
-      - output.results | length == 3
+      - output.results | length == 4
       - output.msg == "All items completed"
     success_msg: "Categories created successfully"
     fail_msg: "Categories creation failed"
@@ -54,6 +330,7 @@
     category_ext_id_1: "{{ todelete_categories[0] }}"
     category_ext_id_2: "{{ todelete_categories[1] }}"
     category_ext_id_3: "{{ todelete_categories[2] }}"
+    category_ext_id_4: "{{ todelete_categories[3] }}"
 
 - name: List all clusters to get prism central external ID
   ntnx_clusters_info_v2:
@@ -261,10 +538,10 @@
 
 ########################################################################################
 
-- name: Create Synchronous replication protection policy
+- name: Create Synchronous replication protection policy for VM
   nutanix.ncp.ntnx_protection_policies_v2:
-    name: "ansible-name-sync-{{random_name}}"
-    description: "ansible-description-sync-{{random_name}}"
+    name: "ansible-name-sync-vm-{{random_name}}"
+    description: "ansible-description-sync-vm-{{random_name}}"
     replication_locations:
       - "{{ replication_location_1 }}"
       - "{{ replication_location_2 }}"
@@ -288,15 +565,15 @@
   register: result
   ignore_errors: true
 
-- name: Status for creating Synchronous replication protection policy
+- name: Status for creating Synchronous replication protection policy for VM
   ansible.builtin.assert:
     that:
       - result.changed == true
       - result.failed == false
       - result.response is defined
       - result.response.ext_id == result.protection_policy_ext_id
-      - result.response.name == "ansible-name-sync-{{random_name}}"
-      - result.response.description == "ansible-description-sync-{{random_name}}"
+      - result.response.name == "ansible-name-sync-vm-{{random_name}}"
+      - result.response.description == "ansible-description-sync-vm-{{random_name}}"
       - result.response.replication_locations[0] == replication_location_1_expected
         or result.response.replication_locations[0] == replication_location_2_expected
       - result.response.replication_locations[1] == replication_location_1_expected
@@ -308,8 +585,64 @@
         or result.response.replication_configurations[1] == replication_configuration_sync_2
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_3}}"
-    success_msg: "Protection policy created successfully"
-    fail_msg: "Protection policy creation failed"
+    success_msg: "Protection policy for VM created successfully"
+    fail_msg: "Protection policy for VM creation failed"
+
+- name: Add retention policy external ID to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response.ext_id] }}"
+
+########################################################################################
+
+- name: Create Synchronous replication protection policy for VG
+  nutanix.ncp.ntnx_protection_policies_v2:
+    name: "ansible-name-sync-vg-{{random_name}}"
+    description: "ansible-description-sync-vg-{{random_name}}"
+    replication_locations:
+      - "{{ replication_location_1_local_clusters }}"
+      - "{{ replication_location_2_local_clusters }}"
+    replication_configurations:
+      - source_location_label: "{{ replication_configuration_sync_local_clusters_1.source_location_label }}"
+        remote_location_label: "{{ replication_configuration_sync_local_clusters_1.remote_location_label }}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: "{{ replication_configuration_sync_local_clusters_1.schedule.recovery_point_objective_time_seconds | int }}"
+          start_time: "{{ replication_configuration_sync_local_clusters_1.schedule.start_time }}"
+          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_local_clusters_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+      - source_location_label: "{{ replication_configuration_sync_local_clusters_2.source_location_label }}"
+        remote_location_label: "{{ replication_configuration_sync_local_clusters_2.remote_location_label }}"
+        schedule:
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: "{{ replication_configuration_sync_local_clusters_2.schedule.recovery_point_objective_time_seconds | int }}"
+          start_time: "{{ replication_configuration_sync_local_clusters_2.schedule.start_time }}"
+          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_local_clusters_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+    category_ids:
+      - "{{category_ext_id_4}}"
+  register: result
+  ignore_errors: true
+
+- name: Status for creating Synchronous replication protection policy for VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == result.protection_policy_ext_id
+      - result.response.name == "ansible-name-sync-vg-{{random_name}}"
+      - result.response.description == "ansible-description-sync-vg-{{random_name}}"
+      - result.response.replication_locations[0] == replication_location_1_local_clusters_expected
+        or result.response.replication_locations[0] == replication_location_2_local_clusters_expected
+      - result.response.replication_locations[1] == replication_location_1_local_clusters_expected
+        or result.response.replication_locations[1] == replication_location_2_local_clusters_expected
+      - result.response.replication_locations[0] != result.response.replication_locations[1]
+      - result.response.replication_configurations[0] == replication_configuration_sync_local_clusters_1
+        or result.response.replication_configurations[0] == replication_configuration_sync_local_clusters_2
+      - result.response.replication_configurations[1] == replication_configuration_sync_local_clusters_1
+        or result.response.replication_configurations[1] == replication_configuration_sync_local_clusters_2
+      - result.response.replication_configurations[0] != result.response.replication_configurations[1]
+      - result.response.category_ids[0] == "{{category_ext_id_4}}"
+    success_msg: "Protection policy for VG created successfully"
+    fail_msg: "Protection policy for VG creation failed"
 
 - name: Add retention policy external ID to todelete list
   ansible.builtin.set_fact:
@@ -431,7 +764,7 @@
   ntnx_volume_groups_categories_v2:
     ext_id: "{{ vg1_uuid }}"
     categories:
-      - ext_id: "{{ category_ext_id_1 }}"
+      - ext_id: "{{ category_ext_id_4 }}"
         entity_type: "CATEGORY"
   register: result
   ignore_errors: true
@@ -576,7 +909,6 @@
 
 - name: Promote VG
   nutanix.ncp.ntnx_promote_protected_resources_v2:
-    nutanix_host: "{{ availability_zone_pc_ip }}"
     ext_id: "{{ vg1_uuid }}"
   register: result
   ignore_errors: true
@@ -947,7 +1279,7 @@
 ########################################################################################
 
 - name: Fetch all VGs on local cluster
-  ntnx_volume_groups_info_v2:
+  nutanix.ncp.ntnx_volume_groups_info_v2:
   register: result
   ignore_errors: true
 
@@ -961,44 +1293,6 @@
 
 - name: Delete all Created VGs on local cluster
   nutanix.ncp.ntnx_volume_groups_v2:
-    state: absent
-    ext_id: "{{ item }}"
-  register: result
-  loop: "{{ protected_vgs_ext_ids }}"
-
-- name: Deletion Status
-  ansible.builtin.assert:
-    that:
-      - item.changed == true
-      - item.failed == false
-      - item.response.status == 'SUCCEEDED'
-      - item.response is defined
-      - item.changed == True
-      - item.failed == False
-      - item.ext_id == "{{ protected_vgs_ext_ids[vgs_index] }}"
-    fail_msg: "Unable to delete VG "
-    success_msg: "VG is deleted successfully "
-  loop: "{{ result.results }}"
-  loop_control:
-    index_var: vgs_index
-
-- name: Fetch all VGs on remote cluster
-  ntnx_volume_groups_info_v2:
-    nutanix_host: "{{ availability_zone_pc_ip }}"
-  register: result
-  ignore_errors: true
-
-- name: Filter only protected VGs
-  ansible.builtin.set_fact:
-    protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
-
-- name: Extract external ids of protected VGs
-  ansible.builtin.set_fact:
-    protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
-
-- name: Delete all Created VGs on remote cluster
-  nutanix.ncp.ntnx_volume_groups_v2:
-    nutanix_host: "{{ availability_zone_pc_ip }}"
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -1119,6 +1413,26 @@
     fail_msg: "Unable to delete protection policies"
     success_msg: "Protection policies deleted successfully"
   loop: "{{ result.results }}"
+
+########################################################################################
+# Destroy cluster
+
+- name: Destroy the cluster for cleanup
+  ntnx_clusters_v2:
+    state: absent
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster deletion
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.status == "SUCCEEDED"
+      - result.ext_id == cluster_ext_id
+    fail_msg: Failed verifying cluster deletion
+    success_msg: Cluster deletion passed successfully
 
 ########################################################################################
 
