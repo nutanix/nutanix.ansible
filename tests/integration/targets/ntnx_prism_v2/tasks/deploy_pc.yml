@@ -135,6 +135,7 @@
 
 - name: Deploy PC
   nutanix.ncp.ntnx_pc_deploy_v2:
+    nutanix_host: "{{ ip_pe_for_deploying_pc }}"
     config:
       name: "{{ random_string }}_pc"
       size: "{{ pc.size }}"
