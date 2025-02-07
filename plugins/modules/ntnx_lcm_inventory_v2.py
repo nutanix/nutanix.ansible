@@ -92,10 +92,12 @@ def get_module_spec():
 
 def lcm_inventory(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
-
     resp = None
     try:
-        resp = api_instance.perform_inventory(X_Cluster_Id=cluster_ext_id)
+        if cluster_ext_id:
+            resp = api_instance.perform_inventory(X_Cluster_Id=cluster_ext_id)
+        else:
+            resp = api_instance.perform_inventory()
     except Exception as e:
         raise_api_exception(
             module=module,
