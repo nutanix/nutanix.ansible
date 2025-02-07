@@ -18,7 +18,7 @@ version_added: 2.0.0
 author:
     - Abhinav Bansal (@abhinavbansal29)
 options:
-    ext_id:
+    cluster_ext_id:
         description:
             - The external ID of the cluster.
         type: str
@@ -38,11 +38,6 @@ response:
     returned: always
     sample:
         {}
-ext_id:
-    description: The external ID of the cluster
-    type: str
-    returned: always
-    sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
 changed:
     description: Whether the module made any changes
     type: bool
@@ -70,7 +65,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
 
     module_args = dict(
-        cluster_ext_id=dict(type="str", required=True),
+        cluster_ext_id=dict(type="str", required=False),
     )
 
     return module_args

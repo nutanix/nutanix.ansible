@@ -134,7 +134,7 @@ def update_lcm_config(module, api_instance, result):
         result["cluster_ext_id"] = cluster_ext_id
 
     current_spec = get_lcm_config(module, api_instance, cluster_ext_id)
-    etag_value = get_etag(current_spec.to_dict())
+    etag_value = get_etag(current_spec)
     if not etag_value:
         module.fail_json(msg="Failed to get etag value from the current lcm config")
 
