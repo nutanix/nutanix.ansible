@@ -560,7 +560,7 @@ author:
 EXAMPLES = r"""
 - name: Deploy PC
   nutanix.ncp.ntnx_pc_deploy_v2:
-    nutanix_host: <pc_ip>
+    nutanix_host: <pe_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     config:
@@ -598,6 +598,80 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
+response:
+    description: Task response for deploy PC operation.
+    returned: always
+    type: dict
+    sample:
+        {
+            "cluster_ext_ids": [
+                "00062db6-57d1-7642-0000-00000000b71a"
+            ],
+            "completed_time": "2025-02-09T15:34:15.092891+00:00",
+            "completion_details": null,
+            "created_time": "2025-02-09T14:44:52.593544+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "00062db6-57d1-7642-0000-00000000b71a",
+                    "name": null,
+                    "rel": "clustermgmt:config:cluster"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:a6c95b0b-4a97-4165-6619-f09ba156bea1",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-02-09T15:34:15.092888+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 1,
+            "number_of_subtasks": 2,
+            "operation": "kPrismCentralDeploymentRequest",
+            "operation_description": "Download and deploy Prism Central",
+            "owned_by": null,
+            "parent_task": null,
+            "progress_percentage": 100,
+            "root_task": null,
+            "started_time": "2025-02-09T14:44:52.602785+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:f9856c8f-d619-42d6-65b3-5651e8825a6c",
+                    "href": "https://10.0.0.1:9440/api/prism/v4.0/config/tasks/ZXJnb24=:f9856c8f-d619-42d6-65b3-5651e8825a6c",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:fdd37a31-ab57-48fd-56dd-47358b910010",
+                    "href": "https://10.0.0.1:9440/api/prism/v4.0/config/tasks/ZXJnb24=:fdd37a31-ab57-48fd-56dd-47358b910010",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        }
+
+task_ext_id:
+    description: Task external ID for deploy PC operation.
+    returned: always
+    type: str
+    sample: "ZXJnb24=:a6c95b0b-4a97-4165-6619-f09ba156bea1"
+
+changed:
+    description: This indicates whether the task resulted in any changes
+    returned: always
+    type: bool
+    sample: true
+
+error:
+    description: This field typically holds information about if the task have errors that occurred during the task execution
+    returned: always
+    type: bool
+    sample: false
+
+failed:
+    description: This field typically holds information about if the task have failed
+    returned: always
+    type: bool
+    sample: false
 """
 
 import traceback  # noqa: E402
