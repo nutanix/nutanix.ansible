@@ -14,6 +14,28 @@
         cluster:
           uuid: "00095bb3-1234-1122-5312-ac1f6b6f97e2"
         ip_pe: "10.0.0.1"
+        ip_pe_for_deploying_pc: "10.0.0.3"
+        pc:
+          name: "test"
+          size: "SMALL"
+          build_info:
+            version: "pc.2024.3"
+          external_networks:
+            network_ext_id: "ba416f8d-00f2-499d-bc4c-19da8d104af9"
+            default_gateway:
+              ipv4: "10.33.232.1"
+            subnet_mask:
+              ipv4: "255.255.252.0"
+            ip_ranges:
+              begin:
+                ipv4: "10.33.232.10"
+              end:
+                ipv4: "10.33.232.10"
+          name_servers:
+            ipv4: ["10.10.10.10", "10.10.10.11"]
+          ntp_servers:
+            fqdn: ["2.centos.pool.ntp.org", "3.centos.pool.ntp.org"]
+        availabilty_zone_pc_uuid: "869aa8a5-5aeb-423f-829d-f932d2656b6c"
 
     - name: List all clusters to get prism central external ID
       nutanix.ncp.ntnx_clusters_info_v2:
@@ -38,12 +60,95 @@
     - name: List all backup targets and set backup target external ID
       nutanix.ncp.ntnx_pc_backup_target_info_v2:
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-      register: result
+      register: backup_result
       ignore_errors: true
+
+    - name: Get external ID of the backup target cluster
+      ansible.builtin.set_fact:
+        backup_target_cluster_ext_id: >-
+          {{ backup_result.response
+             | selectattr('location', 'defined')
+             | selectattr('location.config', 'defined')
+             | selectattr('location.config.ext_id', 'equalto', cluster.uuid | default(''))
+             | map(attribute='ext_id')
+             | list }}
+      when:
+        - backup_result.response is not none
 
     - name: Set backup target cluster external ID
       ansible.builtin.set_fact:
-        backup_target_ext_id: "{{ result.response[0].ext_id }}"
+        backup_target_ext_id: "{{ backup_target_cluster_ext_id[0] }}"
+
+    - name: Check Idempotency by updating backup target cluster with the same values
+      nutanix.ncp.ntnx_pc_backup_target_v2:
+        ext_id: "{{ backup_target_ext_id }}"
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        location:
+          cluster_location:
+            config:
+              ext_id: "{{ cluster.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all backup targets
+      nutanix.ncp.ntnx_pc_backup_target_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    # Retry until last_sync_time is not none so that restore points are created successfully
+    - name: Fetch backup target details using external ID until last_sync_time is not none
+      nutanix.ncp.ntnx_pc_backup_target_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ backup_target_ext_id }}"
+      retries: 120
+      delay: 30
+      until: result.response.last_sync_time is not none
+      register: result
+      ignore_errors: true
+
+    - name: List all PCs
+      nutanix.ncp.ntnx_pc_config_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Fetch PC details using external ID
+      nutanix.ncp.ntnx_pc_config_info_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+      register: pc_details
+      ignore_errors: true
+
+    - name: List all VMs and get PC VM external ID
+      nutanix.ncp.ntnx_vms_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get PC VMs
+      ansible.builtin.set_fact:
+        PC_VMs: >-
+          {{
+            result.response
+            | selectattr('description', 'equalto', 'NutanixPrismCentral')
+          }}
+
+    - name: Set filtered VMs
+      ansible.builtin.set_fact:
+        filtered_vm: []
+
+    - name: Get PC VM to power off
+      ansible.builtin.set_fact:
+        filtered_vm: "{{ filtered_vm + [item.0] }}"
+      loop: "{{ PC_VMs | subelements('nics') }}"
+      ignore_errors: true
+      register: result
+      when:
+        - item.1.network_info.ipv4_info is defined
+        - item.1.network_info.ipv4_info.learned_ip_addresses is defined
+        - "ip in item.1.network_info.ipv4_info.learned_ip_addresses | map(attribute='value')"
+
+    - name: Set PC VM external ID
+      ansible.builtin.set_fact:
+        pc_vm_external_id: "{{ filtered_vm[0].ext_id }}"
 
     - name: Create restore source cluster
       nutanix.ncp.ntnx_pc_restore_source_v2:
@@ -66,38 +171,136 @@
       ansible.builtin.set_fact:
         restore_source_ext_id: "{{ result.response.ext_id }}"
 
-    - name: List all backup targets
-      nutanix.ncp.ntnx_pc_backup_target_info_v2:
-        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-      register: result
-      ignore_errors: true
-
-    - name: List all backup targets with filter
-      nutanix.ncp.ntnx_pc_backup_target_info_v2:
-        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-        filter: location/clusterLocation/config/ext_id eq '{{ cluster.uuid }}'
-      register: result
-      ignore_errors: true
-
-    - name: List all backup targets with limit
-      nutanix.ncp.ntnx_pc_backup_target_info_v2:
-        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-        limit: 1
-      register: result
-      ignore_errors: true
-
-    - name: Fetch backup target details using external ID
-      nutanix.ncp.ntnx_pc_backup_target_info_v2:
-        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-        ext_id: "{{ backup_target_ext_id }}"
-      register: result
-      ignore_errors: true
-
     - name: Delete restore source cluster
       nutanix.ncp.ntnx_pc_restore_source_v2:
         nutanix_host: "{{ ip_pe }}"
         ext_id: "{{ restore_source_ext_id }}"
         state: absent
+      register: result
+      ignore_errors: true
+
+    - name: Get restore source cluster
+      nutanix.ncp.ntnx_pc_restore_source_info_v2:
+        nutanix_host: "{{ ip_pe }}"
+        ext_id: "{{ restore_source_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create restore source cluster
+      nutanix.ncp.ntnx_pc_restore_source_v2:
+        nutanix_host: "{{ ip_pe }}"
+        location:
+          cluster_location:
+            config:
+              ext_id: "{{ cluster.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get restore source cluster
+      nutanix.ncp.ntnx_pc_restore_source_info_v2:
+        nutanix_host: "{{ ip_pe }}"
+        ext_id: "{{ result.response.ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set restore source cluster external ID
+      ansible.builtin.set_fact:
+        restore_source_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Get all restorable domain managers
+      nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
+        nutanix_host: "{{ ip_pe }}"
+        restore_source_ext_id: "{{ restore_source_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get restorable domain manager external ID
+      ansible.builtin.set_fact:
+        domain_manager_details: "{{ result.response | selectattr('ext_id', 'equalto', domain_manager_ext_id) | list }}"
+
+    - name: List all restore points
+      nutanix.ncp.ntnx_pc_restore_points_info_v2:
+        nutanix_host: "{{ ip_pe }}"
+        restore_source_ext_id: "{{ restore_source_ext_id }}"
+        restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set restore point external ID
+      ansible.builtin.set_fact:
+        restore_point_ext_id: "{{ result.response[0].ext_id }}"
+
+    - name: Get restore point using external ID
+      nutanix.ncp.ntnx_pc_restore_points_info_v2:
+        nutanix_host: "{{ ip_pe }}"
+        restore_source_ext_id: "{{ restore_source_ext_id }}"
+        restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+        ext_id: "{{ restore_point_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Power off PC VM
+      nutanix.ncp.ntnx_vms_power_actions_v2:
+        state: power_off
+        ext_id: "{{ pc_vm_external_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Sleep for 2 minutes after powering off VM
+      ansible.builtin.pause:
+        seconds: 120
+
+    - name: Restore PC
+      nutanix.ncp.ntnx_pc_restore_v2:
+        nutanix_host: "{{ ip_pe }}"
+        ext_id: "{{ restore_point_ext_id }}"
+        restore_source_ext_id: "{{ restore_source_ext_id }}"
+        restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+        domain_manager:
+          config:
+            should_enable_lockdown_mode: false
+            build_info:
+              version: "{{ pc_details.response.config.build_info.version }}"
+            name: "{{ pc_details.response.config.name }}"
+            size: "{{ pc_details.response.config.size }}"
+            resource_config:
+              data_disk_size_bytes: "{{ pc_details.response.config.resource_config.data_disk_size_bytes }}"
+              memory_size_bytes: "{{ pc_details.response.config.resource_config.memory_size_bytes }}"
+              num_vcpus: "{{ pc_details.response.config.resource_config.num_vcpus }}"
+              container_ext_ids: "{{ pc_details.response.config.resource_config.container_ext_ids }}"
+          network:
+            external_address:
+              ipv4:
+                value: "{{ pc_details.response.network.external_address.ipv4.value }}"
+            name_servers:
+              - ipv4:
+                  value: "{{ pc_details.response.network.name_servers[0].ipv4.value }}"
+              - ipv4:
+                  value: "{{ pc_details.response.network.name_servers[1].ipv4.value }}"
+            ntp_servers:
+              - fqdn:
+                  value: "{{ pc_details.response.network.ntp_servers[0].fqdn.value }}"
+              - fqdn:
+                  value: "{{ pc_details.response.network.ntp_servers[1].fqdn.value }}"
+              - fqdn:
+                  value: "{{ pc_details.response.network.ntp_servers[2].fqdn.value }}"
+              - fqdn:
+                  value: "{{ pc_details.response.network.ntp_servers[3].fqdn.value }}"
+            external_networks:
+              - network_ext_id: "{{ pc_details.response.network.external_networks[0].network_ext_id }}"
+                default_gateway:
+                  ipv4:
+                    value: "{{ pc_details.response.network.external_networks[0].default_gateway.ipv4.value }}"
+                subnet_mask:
+                  ipv4:
+                    value: "{{ pc_details.response.network.external_networks[0].subnet_mask.ipv4.value }}"
+                ip_ranges:
+                  - begin:
+                      ipv4:
+                        value: "{{ pc_details.response.network.external_networks[0].ip_ranges[0].begin.ipv4.value }}"
+                    end:
+                      ipv4:
+                        value: "{{ pc_details.response.network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
       register: result
       ignore_errors: true
 
@@ -109,30 +312,46 @@
       register: result
       ignore_errors: true
 
-    - name: List all PCs
-      nutanix.ncp.ntnx_pc_config_info_v2:
+    - name: Deploy PC
+      nutanix.ncp.ntnx_pc_deploy_v2:
+        nutanix_host: "{{ ip_pe_for_deploying_pc }}"
+        config:
+          name: "{{ pc.name }}_pc"
+          size: "{{ pc.size }}"
+          build_info:
+            version: "{{ pc.build_info.version }}"
+        network:
+          external_networks:
+            - default_gateway:
+                ipv4:
+                  value: "{{ pc.external_networks.default_gateway.ipv4 }}"
+              subnet_mask:
+                ipv4:
+                  value: "{{ pc.external_networks.subnet_mask.ipv4 }}"
+              ip_ranges:
+                - begin:
+                    ipv4:
+                      value: "{{ pc.external_networks.ip_ranges.begin.ipv4 }}"
+                  end:
+                    ipv4:
+                      value: "{{ pc.external_networks.ip_ranges.end.ipv4 }}"
+              network_ext_id: "{{ pc.external_networks.network_ext_id }}"
+          name_servers:
+            - ipv4:
+                value: "{{ pc.name_servers.ipv4[0] }}"
+            - ipv4:
+                value: "{{ pc.name_servers.ipv4[1] }}"
+          ntp_servers:
+            - fqdn:
+                value: "{{ pc.ntp_servers.fqdn[0] }}"
+            - fqdn:
+                value: "{{ pc.ntp_servers.fqdn[1] }}"
       register: result
       ignore_errors: true
 
-    - name: Set PC external ID and name
-      ansible.builtin.set_fact:
-        pc_external_id: "{{ result.response[0].ext_id }}"
-        pc_name: "{{ result.response[0].config.name }}"
-
-    - name: List all PCs with filter
-      nutanix.ncp.ntnx_pc_config_info_v2:
-        filter: name eq '{{ pc_name }}'
-      register: result
-      ignore_errors: true
-
-    - name: List all PCs with limit
-      nutanix.ncp.ntnx_pc_config_info_v2:
-        limit: 1
-      register: result
-      ignore_errors: true
-
-    - name: Fetch PC details using external ID
-      nutanix.ncp.ntnx_pc_config_info_v2:
-        ext_id: "{{ pc_external_id }}"
+    - name: Unregister PC
+      nutanix.ncp.ntnx_pc_unregistration_v2:
+        ext_id: "{{ availabilty_zone_pc_uuid }}"
+        pc_ext_id: "{{ domain_manager_ext_id }}"
       register: result
       ignore_errors: true

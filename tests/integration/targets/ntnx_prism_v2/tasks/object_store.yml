@@ -397,12 +397,12 @@
 # Get PC details
 
 - name: List all VMs and get PC VM external ID
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
   register: result
   ignore_errors: true
 
 - name: Get PC VMs
-  set_fact:
+  ansible.builtin.set_fact:
     PC_VMs: >-
       {{
         result.response
@@ -410,14 +410,17 @@
       }}
 
 - name: Set filtered VMs
-  set_fact:
+  ansible.builtin.set_fact:
     filtered_vm: []
 
 - name: Get PC VM to power off
   ansible.builtin.set_fact:
     filtered_vm: "{{ filtered_vm + [item.0] }}"
   loop: "{{ PC_VMs | subelements('nics') }}"
-  when: item.1.network_info.ipv4_info is defined and item.1.network_info.ipv4_info.learned_ip_addresses is defined and "'{{ ip }}' in item.1.network_info.ipv4_info.learned_ip_addresses | map(attribute='value')"
+  when:
+    - item.1.network_info.ipv4_info is defined
+    - item.1.network_info.ipv4_info.learned_ip_addresses is defined
+    - "ip in item.1.network_info.ipv4_info.learned_ip_addresses | map(attribute='value')"
 
 - name: Status for Fetching PC VM
   ansible.builtin.assert:
@@ -565,7 +568,7 @@
   ignore_errors: true
 
 - name: Get restorable domain manager external ID
-  set_fact:
+  ansible.builtin.set_fact:
     domain_manager_details: "{{ result.response | selectattr('ext_id', 'equalto', domain_manager_ext_id) | list }}"
 
 - name: List all restore points
@@ -585,7 +588,7 @@
     success_msg: "List all restore points passed"
 
 - name: Set restore point external ID
-  set_fact:
+  ansible.builtin.set_fact:
     restore_point_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Get restore point using external ID
@@ -616,7 +619,7 @@
 # Power off PC VM
 
 - name: Power off PC VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
     state: power_off
     ext_id: "{{ pc_vm_external_id }}"
   register: result
@@ -702,10 +705,18 @@
       - result.response.domain_manager.network.ntp_servers[2].fqdn.value == pc_details.response.network.ntp_servers[2].fqdn.value
       - result.response.domain_manager.network.ntp_servers[3].fqdn.value == pc_details.response.network.ntp_servers[3].fqdn.value
       - result.response.domain_manager.network.external_networks[0].network_ext_id == pc_details.response.network.external_networks[0].network_ext_id
-      - result.response.domain_manager.network.external_networks[0].default_gateway.ipv4.value == pc_details.response.network.external_networks[0].default_gateway.ipv4.value
-      - result.response.domain_manager.network.external_networks[0].subnet_mask.ipv4.value == pc_details.response.network.external_networks[0].subnet_mask.ipv4.value
-      - result.response.domain_manager.network.external_networks[0].ip_ranges[0].begin.ipv4.value == pc_details.response.network.external_networks[0].ip_ranges[0].begin.ipv4.value
-      - result.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value == pc_details.response.network.external_networks[0].ip_ranges[0].end.ipv4.value
+      - >
+        result.response.domain_manager.network.external_networks[0].default_gateway.ipv4.value ==
+        pc_details.response.network.external_networks[0].default_gateway.ipv4.value
+      - >
+        result.response.domain_manager.network.external_networks[0].subnet_mask.ipv4.value ==
+        pc_details.response.network.external_networks[0].subnet_mask.ipv4.value
+      - >
+        result.response.domain_manager.network.external_networks[0].ip_ranges[0].begin.ipv4.value ==
+        pc_details.response.network.external_networks[0].ip_ranges[0].begin.ipv4.value
+      - >
+        result.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value ==
+        pc_details.response.network.external_networks[0].ip_ranges[0].end.ipv4.value
       - result.restore_source_ext_id == "0a77819c-2e35-446b-87b1-89cbe62c15f5"
       - result.restorable_domain_manager_ext_id == "18553f0f-7b41-4115-bf42-2f698fbe7117"
       - result.ext_id == "35d22fcc-0084-3751-a579-0621ce59a786"
@@ -801,7 +812,8 @@
 
 - name: Set variables for reset password
   ansible.builtin.set_fact:
-    pc_ssh_cmd: sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }}
+    pc_ssh_cmd: >-
+      sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }}
     reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
 
 - name: Set reset command
