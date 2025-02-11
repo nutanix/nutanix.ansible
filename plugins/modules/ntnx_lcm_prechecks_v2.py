@@ -16,6 +16,7 @@ description:
 version_added: "2.0.0"
 author:
  - George Ghawali (@george-ghawali)
+ - Abhinav Bansal (@abhinavbansal29)
 options:
     management_server:
         description:
@@ -159,19 +160,22 @@ def get_module_spec():
         management_server=dict(
             type="dict",
             options=management_server_spec,
+            obj=lifecycle_sdk.ManagementServer,
         ),
         entity_update_specs=dict(
             type="list",
             elements="dict",
             options=entity_update_spec,
+            obj=lifecycle_sdk.EntityUpdateSpec,
             required=True,
         ),
         skipped_precheck_flags=dict(
             type="list",
             elements="str",
             choices=["POWER_OFF_UVMS"],
+            obj=lifecycle_sdk.SystemAutoMgmtFlag,
         ),
-        cluster_ext_id=dict(type="str", required=False),
+        cluster_ext_id=dict(type="str"),
     )
 
     return module_args

@@ -93,11 +93,9 @@ def get_module_spec():
 def lcm_inventory(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
     resp = None
+
     try:
-        if cluster_ext_id:
-            resp = api_instance.perform_inventory(X_Cluster_Id=cluster_ext_id)
-        else:
-            resp = api_instance.perform_inventory()
+        resp = api_instance.perform_inventory(X_Cluster_Id=cluster_ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -108,7 +106,7 @@ def lcm_inventory(module, api_instance, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, api_instance, task_ext_id)
+        resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True

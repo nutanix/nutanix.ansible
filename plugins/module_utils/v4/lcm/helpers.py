@@ -25,3 +25,14 @@ def get_lcm_config(module, api_instance, cluster_ext_id):
             exception=e,
             msg="Api Exception raised while fetching LCM config info using cluster external ID",
         )
+
+
+def get_lcm_entity(module, api_instance, ext_id):
+    try:
+        return api_instance.get_entity_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching entity info using external identifier",
+        )
