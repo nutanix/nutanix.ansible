@@ -49,7 +49,7 @@
 # Create cluster for promoting VG
 
 - name: List all clusters to get prism central external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
   register: result
   ignore_errors: true
@@ -59,7 +59,7 @@
     prism_central_external_id: "{{ result.response[0].ext_id }}"
 
 - name: Discover unconfigured node
-  ntnx_discover_unconfigured_nodes_v2:
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
     address_type: "IPV4"
     ip_filter_list:
       - ipv4:
@@ -80,7 +80,7 @@
     success_msg: Discover unconfigured node passed
 
 - name: Run cluster create prechecks
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{ clusters[0].name }}"
     nodes:
       node_list:
@@ -161,7 +161,7 @@
     success_msg: Cluster is unconfigured
 
 - name: Create cluster with minimum spec
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     name: "{{cluster_name}}"
     nodes:
       node_list:
@@ -199,7 +199,7 @@
   changed_when: result.rc != 0
 
 - name: Run PE PC registration
-  ntnx_pc_registration_v2:
+  nutanix.ncp.ntnx_pc_registration_v2:
     ext_id: "{{ prism_central_external_id }}"
     remote_cluster:
       aos_remote_cluster:
@@ -230,7 +230,7 @@
     seconds: 60
 
 - name: Fetch cluster using name
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: name eq '{{ cluster_name }}'
   register: result
   ignore_errors: true
@@ -248,7 +248,7 @@
     cluster_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -300,7 +300,7 @@
 ########################################################################################
 
 - name: Create categories for protection policies
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     key: "{{ keys[item] }}"
     value: "{{ values[item] }}"
     description: "ansible-category"
@@ -333,7 +333,7 @@
     category_ext_id_4: "{{ todelete_categories[3] }}"
 
 - name: List all clusters to get prism central external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
   register: result
   ignore_errors: true
@@ -651,7 +651,7 @@
 ########################################################################################
 
 - name: Create a Protected VM to be promoted
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ random_name }}_ansible_protected_vm_promote"
     description: "Protected VM for promotion"
     cluster:
@@ -679,7 +679,7 @@
     vm_ext_id_1: "{{ result.response.ext_id }}"
 
 - name: Create a Protected VM to be restored
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     name: "{{ random_name }}_ansible_protected_vm_restore"
     description: "Protected VM for restore"
     cluster:
@@ -761,7 +761,7 @@
     vg2_uuid: "{{ result.ext_id }}"
 
 - name: Associate category with first VG
-  ntnx_volume_groups_categories_v2:
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
     ext_id: "{{ vg1_uuid }}"
     categories:
       - ext_id: "{{ category_ext_id_4 }}"
@@ -780,7 +780,7 @@
     fail_msg: "Category association with VG failed"
 
 - name: Associate category with second VG
-  ntnx_volume_groups_categories_v2:
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
     ext_id: "{{ vg2_uuid }}"
     categories:
       - ext_id: "{{ category_ext_id_2 }}"
@@ -800,7 +800,7 @@
 
 # Wait for the first VM to be protected
 - name: Fetch VM using ext_id
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id_1 }}"
   register: result
   until: result.response.protection_type == "RULE_PROTECTED"
@@ -825,7 +825,7 @@
 
 # Wait for the second VM to be protected
 - name: Fetch VM using ext_id
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id_2 }}"
   register: result
   until: result.response.protection_type == "RULE_PROTECTED"
@@ -1317,7 +1317,7 @@
 ########################################################################################
 
 - name: Fetch all VMs on local cluster
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
   register: result
   ignore_errors: true
 
@@ -1330,7 +1330,7 @@
     protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
 
 - name: Delete all Created VMs on local cluster
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
     ext_id: "{{ item }}"
   register: result
@@ -1353,7 +1353,7 @@
     index_var: vms_index
 
 - name: Fetch all VMs on remote cluster
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     nutanix_host: "{{ availability_zone_pc_ip }}"
   register: result
   ignore_errors: true
@@ -1367,7 +1367,7 @@
     protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
 
 - name: Delete all Created VMs on remote cluster
-  ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms_v2:
     nutanix_host: "{{ availability_zone_pc_ip }}"
     state: absent
     ext_id: "{{ item }}"
@@ -1418,7 +1418,7 @@
 # Destroy cluster
 
 - name: Destroy the cluster for cleanup
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     state: absent
     ext_id: "{{ cluster_ext_id }}"
   register: result
@@ -1437,7 +1437,7 @@
 ########################################################################################
 
 - name: Delete Created categories
-  ntnx_categories_v2:
+  nutanix.ncp.ntnx_categories_v2:
     ext_id: "{{item}}"
     state: absent
   register: result
