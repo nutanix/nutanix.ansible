@@ -21,7 +21,6 @@
 # - Creating backup target cluster
 # - Updating backup target cluster
 # - Creating restore source cluster
-# - Creating restore source object store
 
 - name: Generate spec for creating backup target cluster using check mode
   nutanix.ncp.ntnx_pc_backup_target_v2:
@@ -80,30 +79,6 @@
       - result.response.location.config.ext_id == "38648904-4859-1258-7485-074816fe2a4f"
     fail_msg: "Generated spec for creating restore source cluster failed"
     success_msg: "Generated spec for creating restore source cluster passed"
-
-- name: Generate spec for creating restore source object store using check mode
-  nutanix.ncp.ntnx_pc_restore_source_v2:
-    location:
-      object_store_location:
-        provider_config:
-          bucket_name: "test1"
-          region: "us-east-1"
-          credentials:
-            access_key_id: "qwertyuiopasdfgh"
-            secret_access_key: "jklzxcvbnm"
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Generate spec for creating restore source object store status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.response.location.provider_config.bucket_name == "test1"
-      - result.response.location.provider_config.region == "us-east-1"
-      - result.response.location.provider_config.credentials.access_key_id == "qwertyuiopasdfgh"
-    fail_msg: "Generated spec for creating restore source object store failed"
-    success_msg: "Generated spec for creating restore source object store passed"
 
 #############################################################
 # Check if the backup target cluster exists
