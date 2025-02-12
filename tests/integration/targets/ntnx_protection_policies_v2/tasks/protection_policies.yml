@@ -352,28 +352,28 @@
       - "{{ replication_location_1}}"
       - "{{ replication_location_2}}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_linear_1.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_1.remote_location_label }}"
+      - source_location_label: "{{ replication_configuration_linear_1_check_mode.source_location_label }}"
+        remote_location_label: "{{ replication_configuration_linear_1_check_mode.remote_location_label }}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_1.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_1.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "{{ replication_configuration_linear_1_check_mode.schedule.recovery_point_type }}"
+          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_1_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_1.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_1.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_1.schedule.start_time }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
-      - source_location_label: "{{  replication_configuration_linear_2.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_2.remote_location_label }}"
+              local: "{{ replication_configuration_linear_1_check_mode.schedule.retention.local }}"
+              remote: "{{ replication_configuration_linear_1_check_mode.schedule.retention.remote }}"
+          start_time: "{{ replication_configuration_linear_1_check_mode.schedule.start_time }}"
+          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_1_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+      - source_location_label: "{{  replication_configuration_linear_2_check_mode.source_location_label }}"
+        remote_location_label: "{{ replication_configuration_linear_2_check_mode.remote_location_label }}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_2.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_2.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "{{ replication_configuration_linear_2_check_mode.schedule.recovery_point_type }}"
+          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_2_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_2.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_2.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_2.schedule.start_time }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+              local: "{{ replication_configuration_linear_2_check_mode.schedule.retention.local }}"
+              remote: "{{ replication_configuration_linear_2_check_mode.schedule.retention.remote }}"
+          start_time: "{{ replication_configuration_linear_2_check_mode.schedule.start_time }}"
+          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_2_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds }}"
     category_ids:
       - "00000000-0000-0000-0000-000000000000"
   register: result
@@ -392,10 +392,10 @@
         or result.response.replication_locations[0] == replication_location_2_expected
       - result.response.replication_locations[1] == replication_location_1_expected
         or result.response.replication_locations[1] == replication_location_2_expected
-      - result.response.replication_configurations[0] == replication_configuration_linear_1
-        or result.response.replication_configurations[0] == replication_configuration_linear_2
-      - result.response.replication_configurations[1] == replication_configuration_linear_1
-        or result.response.replication_configurations[1] == replication_configuration_linear_2
+      - result.response.replication_configurations[0] == replication_configuration_linear_1_check_mode
+        or result.response.replication_configurations[0] == replication_configuration_linear_2_check_mode
+      - result.response.replication_configurations[1] == replication_configuration_linear_1_check_mode
+        or result.response.replication_configurations[1] == replication_configuration_linear_2_check_mode
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "00000000-0000-0000-0000-000000000000"
@@ -421,7 +421,6 @@
             linear_retention:
               local: "{{ replication_configuration_linear_1.schedule.retention.local }}"
               remote: "{{ replication_configuration_linear_1.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_1.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
       - source_location_label: "{{ replication_configuration_linear_2.source_location_label }}"
         remote_location_label: "{{ replication_configuration_linear_2.remote_location_label }}"
@@ -432,7 +431,6 @@
             linear_retention:
               local: "{{ replication_configuration_linear_2.schedule.retention.local }}"
               remote: "{{ replication_configuration_linear_2.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_2.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
     category_ids:
       - "{{category_ext_id_1}}"
@@ -551,14 +549,12 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: "{{ replication_configuration_sync_1.schedule.recovery_point_objective_time_seconds | int }}"
-          start_time: "{{ replication_configuration_sync_1.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
       - source_location_label: "{{ replication_configuration_sync_2.source_location_label }}"
         remote_location_label: "{{ replication_configuration_sync_2.remote_location_label }}"
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: "{{ replication_configuration_sync_2.schedule.recovery_point_objective_time_seconds | int }}"
-          start_time: "{{ replication_configuration_sync_2.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
     category_ids:
       - "{{category_ext_id_3}}"
@@ -607,14 +603,12 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: "{{ replication_configuration_sync_local_clusters_1.schedule.recovery_point_objective_time_seconds | int }}"
-          start_time: "{{ replication_configuration_sync_local_clusters_1.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_local_clusters_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
       - source_location_label: "{{ replication_configuration_sync_local_clusters_2.source_location_label }}"
         remote_location_label: "{{ replication_configuration_sync_local_clusters_2.remote_location_label }}"
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: "{{ replication_configuration_sync_local_clusters_2.schedule.recovery_point_objective_time_seconds | int }}"
-          start_time: "{{ replication_configuration_sync_local_clusters_2.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_local_clusters_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
     category_ids:
       - "{{category_ext_id_4}}"
@@ -951,31 +945,31 @@
       - "{{ replication_location_1_updated }}"
       - "{{ replication_location_2_updated }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_linear_1_updated.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_1_updated.remote_location_label }}"
+      - source_location_label: "{{ replication_configuration_linear_1_updated_check_mode.source_location_label }}"
+        remote_location_label: "{{ replication_configuration_linear_1_updated_check_mode.remote_location_label }}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_1_updated.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_1_updated.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "{{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_type }}"
+          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_1_updated.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_1_updated.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_1_updated.schedule.start_time }}"
+              local: "{{ replication_configuration_linear_1_updated_check_mode.schedule.retention.local }}"
+              remote: "{{ replication_configuration_linear_1_updated_check_mode.schedule.retention.remote }}"
+          start_time: "{{ replication_configuration_linear_1_updated_check_mode.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds:
-            "{{ replication_configuration_linear_1_updated.schedule.
+            "{{ replication_configuration_linear_1_updated_check_mode.schedule.
             sync_replication_auto_suspend_timeout_seconds }}"
-      - source_location_label: "{{ replication_configuration_linear_2_updated.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_2_updated.remote_location_label }}"
+      - source_location_label: "{{ replication_configuration_linear_2_updated_check_mode.source_location_label }}"
+        remote_location_label: "{{ replication_configuration_linear_2_updated_check_mode.remote_location_label }}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_2_updated.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_2_updated.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "{{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_type }}"
+          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_2_updated.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_2_updated.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_2_updated.schedule.start_time }}"
+              local: "{{ replication_configuration_linear_2_updated_check_mode.schedule.retention.local }}"
+              remote: "{{ replication_configuration_linear_2_updated_check_mode.schedule.retention.remote }}"
+          start_time: "{{ replication_configuration_linear_2_updated_check_mode.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds:
-            "{{ replication_configuration_linear_2_updated.schedule.
+            "{{ replication_configuration_linear_2_updated_check_mode.schedule.
             sync_replication_auto_suspend_timeout_seconds }}"
     category_ids:
       - "{{category_ext_id_1}}"
@@ -997,10 +991,10 @@
       - result.response.replication_locations[1] == replication_location_1_updated_expected
         or result.response.replication_locations[1] == replication_location_2_updated_expected
       - result.response.replication_locations[0] != result.response.replication_locations[1]
-      - result.response.replication_configurations[0] == replication_configuration_linear_1_updated
-        or result.response.replication_configurations[0] == replication_configuration_linear_2_updated
-      - result.response.replication_configurations[1] == replication_configuration_linear_1_updated
-        or result.response.replication_configurations[1] == replication_configuration_linear_2_updated
+      - result.response.replication_configurations[0] == replication_configuration_linear_1_updated_check_mode
+        or result.response.replication_configurations[0] == replication_configuration_linear_2_updated_check_mode
+      - result.response.replication_configurations[1] == replication_configuration_linear_1_updated_check_mode
+        or result.response.replication_configurations[1] == replication_configuration_linear_2_updated_check_mode
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
     success_msg: "Protection policy spec generated successfully"
@@ -1026,7 +1020,6 @@
             linear_retention:
               local: "{{ replication_configuration_linear_1_updated.schedule.retention.local }}"
               remote: "{{ replication_configuration_linear_1_updated.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_1_updated.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds:
             "{{ replication_configuration_linear_1_updated.schedule.
             sync_replication_auto_suspend_timeout_seconds }}"
@@ -1039,7 +1032,6 @@
             linear_retention:
               local: "{{ replication_configuration_linear_2_updated.schedule.retention.local }}"
               remote: "{{ replication_configuration_linear_2_updated.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_2_updated.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds:
             "{{ replication_configuration_linear_2_updated.schedule.
             sync_replication_auto_suspend_timeout_seconds }}"
@@ -1091,7 +1083,6 @@
             linear_retention:
               local: "{{ replication_configuration_linear_1_updated.schedule.retention.local }}"
               remote: "{{ replication_configuration_linear_1_updated.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_1_updated.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds:
             "{{ replication_configuration_linear_1_updated.schedule.
             sync_replication_auto_suspend_timeout_seconds }}"
@@ -1104,7 +1095,6 @@
             linear_retention:
               local: "{{ replication_configuration_linear_2_updated.schedule.retention.local }}"
               remote: "{{ replication_configuration_linear_2_updated.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_2_updated.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds:
             "{{ replication_configuration_linear_2_updated.schedule.
             sync_replication_auto_suspend_timeout_seconds }}"
@@ -1146,7 +1136,6 @@
               remote:
                 snapshot_interval_type: "{{ replication_configuration_auto_1_updated.schedule.retention.remote.snapshot_interval_type }}"
                 frequency: "{{ replication_configuration_auto_1_updated.schedule.retention.remote.frequency }}"
-          start_time: "{{ replication_configuration_auto_1_updated.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_1_updated.schedule.sync_replication_auto_suspend_timeout_seconds }}"
       - source_location_label: "{{ replication_configuration_auto_2_updated.source_location_label }}"
         remote_location_label: "{{ replication_configuration_auto_2_updated.remote_location_label }}"
@@ -1161,7 +1150,6 @@
               remote:
                 snapshot_interval_type: "{{ replication_configuration_auto_2_updated.schedule.retention.remote.snapshot_interval_type }}"
                 frequency: "{{ replication_configuration_auto_2_updated.schedule.retention.remote.frequency }}"
-          start_time: "{{ replication_configuration_auto_2_updated.schedule.start_time }}"
           sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_2_updated.schedule.sync_replication_auto_suspend_timeout_seconds }}"
     category_ids:
       - "{{category_ext_id_2}}"

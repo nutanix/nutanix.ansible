@@ -109,7 +109,19 @@ replication_configuration_linear_1:
     retention:
       local: 1
       remote: 1
-    start_time: "15h:19m"
+    start_time:
+    sync_replication_auto_suspend_timeout_seconds: 300
+
+replication_configuration_linear_1_check_mode:
+  source_location_label: "ansible-label-{{label1}}"
+  remote_location_label: "ansible-label-{{label2}}"
+  schedule:
+    recovery_point_type: "CRASH_CONSISTENT"
+    recovery_point_objective_time_seconds: 3600
+    retention:
+      local: 1
+      remote: 1
+    start_time: "13h:11m"
     sync_replication_auto_suspend_timeout_seconds: 300
 
 replication_configuration_linear_2:
@@ -121,7 +133,19 @@ replication_configuration_linear_2:
     retention:
       local: 1
       remote: 1
-    start_time: "15h:19m"
+    start_time:
+    sync_replication_auto_suspend_timeout_seconds: 300
+
+replication_configuration_linear_2_check_mode:
+  source_location_label: "ansible-label-{{label2}}"
+  remote_location_label: "ansible-label-{{label1}}"
+  schedule:
+    recovery_point_type: "CRASH_CONSISTENT"
+    recovery_point_objective_time_seconds: 3600
+    retention:
+      local: 1
+      remote: 1
+    start_time: "13h:11m"
     sync_replication_auto_suspend_timeout_seconds: 300
 
 replication_configuration_linear_1_updated:
@@ -133,7 +157,19 @@ replication_configuration_linear_1_updated:
     retention:
       local: 2
       remote: 2
-    start_time: "16h:12m"
+    start_time:
+    sync_replication_auto_suspend_timeout_seconds: 90
+
+replication_configuration_linear_1_updated_check_mode:
+  source_location_label: "ansible-label-{{label1}}_updated"
+  remote_location_label: "ansible-label-{{label2}}_updated"
+  schedule:
+    recovery_point_type: "CRASH_CONSISTENT"
+    recovery_point_objective_time_seconds: 7200
+    retention:
+      local: 2
+      remote: 2
+    start_time: "14h:26m"
     sync_replication_auto_suspend_timeout_seconds: 90
 
 replication_configuration_linear_2_updated:
@@ -145,7 +181,19 @@ replication_configuration_linear_2_updated:
     retention:
       local: 2
       remote: 2
-    start_time: "16h:12m"
+    start_time:
+    sync_replication_auto_suspend_timeout_seconds: 90
+
+replication_configuration_linear_2_updated_check_mode:
+  source_location_label: "ansible-label-{{label2}}_updated"
+  remote_location_label: "ansible-label-{{label1}}_updated"
+  schedule:
+    recovery_point_type: "CRASH_CONSISTENT"
+    recovery_point_objective_time_seconds: 7200
+    retention:
+      local: 2
+      remote: 2
+    start_time: "14h:26m"
     sync_replication_auto_suspend_timeout_seconds: 90
 
 replication_configuration_auto_1:
@@ -193,7 +241,7 @@ replication_configuration_auto_1_updated:
       remote:
         snapshot_interval_type: "DAILY"
         frequency: 2
-    start_time: "13h:08m"
+    start_time:
     sync_replication_auto_suspend_timeout_seconds: 90
 
 replication_configuration_auto_2_updated:
@@ -209,7 +257,7 @@ replication_configuration_auto_2_updated:
       remote:
         snapshot_interval_type: "DAILY"
         frequency: 2
-    start_time: "13h:08m"
+    start_time:
     sync_replication_auto_suspend_timeout_seconds: 90
 
 replication_configuration_sync_1:
@@ -219,7 +267,7 @@ replication_configuration_sync_1:
     recovery_point_type: "CRASH_CONSISTENT"
     retention: null
     recovery_point_objective_time_seconds: 0
-    start_time: "17h:11m"
+    start_time:
     sync_replication_auto_suspend_timeout_seconds: 10
 
 replication_configuration_sync_2:
@@ -229,7 +277,7 @@ replication_configuration_sync_2:
     recovery_point_type: "CRASH_CONSISTENT"
     retention: null
     recovery_point_objective_time_seconds: 0
-    start_time: "17h:11m"
+    start_time:
     sync_replication_auto_suspend_timeout_seconds: 10
 
 replication_configuration_sync_local_clusters_1:
@@ -239,7 +287,7 @@ replication_configuration_sync_local_clusters_1:
     recovery_point_type: "CRASH_CONSISTENT"
     retention: null
     recovery_point_objective_time_seconds: 0
-    start_time: "12h:11m"
+    start_time:
     sync_replication_auto_suspend_timeout_seconds: 10
 
 replication_configuration_sync_local_clusters_2:
@@ -249,5 +297,5 @@ replication_configuration_sync_local_clusters_2:
     recovery_point_type: "CRASH_CONSISTENT"
     retention: null
     recovery_point_objective_time_seconds: 0
-    start_time: "12h:11m"
+    start_time:
     sync_replication_auto_suspend_timeout_seconds: 10
