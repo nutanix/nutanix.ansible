@@ -22,8 +22,8 @@
     pe2_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
     reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
     cluster_status: /usr/local/nutanix/cluster/bin/cluster status
-    modify_firewall_cmd_cluster1: /usr/local/nutanix/cluster/bin/modify_firewall -f -r '{{ clusters[0].nodes[0].cvm_ip }}','{{ clusters[0].network.virtual_ip }}' -p 2030,2036,2073,2090,8740 -i eth0
-    modify_firewall_cmd_cluster2: /usr/local/nutanix/cluster/bin/modify_firewall -f -r '{{ ip_pe }}','{{ virtual_ip_pe }}' -p 2030,2036,2073,2090,8740 -i eth0
+    modify_firewall_cmd_cluster1: /usr/local/nutanix/cluster/bin/modify_firewall -f -r {{ clusters[0].nodes[0].cvm_ip }},{{ clusters[0].network.virtual_ip }} -p 2030,2036,2073,2090,8740 -i eth0
+    modify_firewall_cmd_cluster2: /usr/local/nutanix/cluster/bin/modify_firewall -f -r {{ ip_pe }},{{ virtual_ip_pe }} -p 2030,2036,2073,2090,8740 -i eth0
 
 - name: Set command for resetting cluster username and password
   ansible.builtin.set_fact:
