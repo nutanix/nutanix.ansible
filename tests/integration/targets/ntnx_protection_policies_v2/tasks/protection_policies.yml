@@ -1266,6 +1266,46 @@
 
 ########################################################################################
 
+- name: Disassociate category from first VG
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
+    ext_id: "{{ vg1_uuid }}"
+    state: absent
+    categories:
+      - ext_id: "{{ category_ext_id_4 }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Status for disassociating category from first VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Category disassociated from VG successfully"
+    fail_msg: "Category disassociation from VG failed"
+
+- name: Disassociate category from second VG
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
+    ext_id: "{{ vg2_uuid }}"
+    state: absent
+    categories:
+      - ext_id: "{{ category_ext_id_2 }}"
+        entity_type: "CATEGORY"
+  register: result
+  ignore_errors: true
+
+- name: Status for disassociating category from second VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Category disassociated from VG successfully"
+    fail_msg: "Category disassociation from VG failed"
+
 - name: Fetch all VGs on local cluster
   nutanix.ncp.ntnx_volume_groups_info_v2:
   register: result
