@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_lcm_config_info_v2
+module: ntnx_lcm_entities_info_v2
 short_description: Fetch LCM Entities Info
 description:
     - This module fetches LCM Entities Info.
@@ -30,6 +30,13 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Fetch LCM entity using external ID
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    ext_id: "3c196eac-e1d5-1b8a-9b01-c133f6907ca2"
+  register: lcm_entity
 """
 
 RETURN = r"""
@@ -38,7 +45,46 @@ response:
     type: dict
     returned: always
     sample:
-        {}
+        {
+            "available_versions": [
+                {
+                    "available_version_uuid": "f8d6b44a-590d-4116-b19d-32d9b393d690",
+                    "child_entities": null,
+                    "custom_message": null,
+                    "dependencies": null,
+                    "disablement_reason": null,
+                    "group_uuid": null,
+                    "is_enabled": null,
+                    "order": 15,
+                    "release_date": null,
+                    "release_notes": null,
+                    "status": "AVAILABLE",
+                    "version": "4.0.0"
+                }
+            ],
+            "child_entities": null,
+            "cluster_ext_id": "1e9a1996-50e2-485f-a67c-22355cb43055",
+            "device_id": null,
+            "entity_class": "PC CORE CLUSTER",
+            "entity_description": null,
+            "entity_details": null,
+            "entity_model": "Calm Policy Engine",
+            "entity_type": "SOFTWARE",
+            "entity_version": "3.8.0",
+            "ext_id": "3c196eac-e1d5-4c8a-9b01-c133f6907ca2",
+            "group_uuid": null,
+            "hardware_family": null,
+            "hardware_vendor": null,
+            "last_updated_time": "2025-02-16T09:56:57.131022+00:00",
+            "links": null,
+            "location_info": {
+                "location_type": "PC",
+                "uuid": "1e9a1996-50e2-485f-a67c-22355cb43055"
+            },
+            "sub_entities": null,
+            "target_version": "3.8.0",
+            "tenant_id": null
+        }
 changed:
     description: Whether the module made any changes
     type: bool
@@ -56,8 +102,8 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.lcm.api_client import get_entity_api_instance  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.lcm.helpers import get_lcm_entity  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,

@@ -29,15 +29,58 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Perform inventory of LCM
+  nutanix.ncp.ntnx_lcm_inventory_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    cluster_ext_id: "00062e00-87eb-ef15-0000-00000000b71a"
+  register: lcm_inventory
 """
 
 RETURN = r"""
 response:
-    description: The response from the LCM inventory API
+    description: Task response for performing inventory
     type: dict
     returned: always
     sample:
-        {}
+        {
+            "cluster_ext_ids": null,
+            "completed_time": "2025-02-16T10:11:12.512241+00:00",
+            "completion_details": null,
+            "created_time": "2025-02-16T10:08:58.314367+00:00",
+            "entities_affected": null,
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:f26d910f-77fe-41a7-7700-fda504474720",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-02-16T10:11:12.512240+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 0,
+            "number_of_subtasks": 2,
+            "operation": "kLcmRootTask",
+            "operation_description": "Inventory Root Task",
+            "owned_by": null,
+            "parent_task": null,
+            "progress_percentage": 100,
+            "root_task": null,
+            "started_time": "2025-02-16T10:08:58.314367+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:302b65d2-783c-41b0-609d-3a7454e0b491",
+                    "href": "https://10.101.177.78:9440/api/prism/v4.0/config/tasks/ZXJnb24=:302b65d2-783c-41b0-609d-3a7454e0b491",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:30b19489-70ca-44c0-626c-a634e527ea61",
+                    "href": "https://10.101.177.78:9440/api/prism/v4.0/config/tasks/ZXJnb24=:30b19489-70ca-44c0-626c-a634e527ea61",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        }
 task_ext_id:
     description: The task external ID
     type: str
@@ -55,29 +98,16 @@ error:
     sample: false
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.lcm.api_client import get_inventory_api_instance  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -117,11 +147,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_lifecycle_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
 
     remove_param_with_none_value(module.params)
     result = {

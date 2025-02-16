@@ -195,3 +195,4 @@ action_groups:
     - ntnx_lcm_status_v2
     - ntnx_lcm_upgrades_v2
     - ntnx_lcm_entities_info_v2
+    - ntnx_lcm_status_info_v2

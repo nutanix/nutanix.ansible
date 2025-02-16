@@ -8,14 +8,14 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-module: ntnx_lcm_status_v2
+module: ntnx_lcm_status_info_v2
 short_description: Fetch LCM Status
 description: Fetch LCM Status like current version, available version, etc.
 version_added: "2.0.0"
 author:
   - George Ghawali (@george-ghawali)
 options:
-  ext_id:
+  cluster_ext_id:
     description:
       - The external ID of the Nutanix PC Cluster.
     type: str
@@ -26,6 +26,13 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get LCM status
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    cluster_ext_id: "00062e00-87eb-ef15-0000-00000000b71a"
+  register: lcm_status
 """
 
 RETURN = r"""
@@ -37,14 +44,20 @@ response:
   returned: always
   sample:
     {
-      "frameworkVersion":
-        {
-          "currentVersion": "3.1.52092",
-          "availableVersion": "3.0.1.1.53478",
-          "isUpdateNeeded": true,
-        },
-      "inProgressOperation": {},
-      "isCancelIntentSet": false,
+      "ext_id": null,
+      "framework_version": {
+          "available_version": "3.1.56788",
+          "current_version": "3.1.56788",
+          "is_update_needed": false
+      },
+      "in_progress_operation": {
+          "operation_id": null,
+          "operation_type": null
+      },
+      "is_cancel_intent_set": false,
+      "links": null,
+      "tenant_id": null,
+      "upload_task_uuid": null
     }
 changed:
     description:

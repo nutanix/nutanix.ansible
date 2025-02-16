@@ -82,6 +82,22 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Perform LCM prechecks
+  nutanix.ncp.ntnx_lcm_prechecks_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    management_server:
+      ip: "10.0.0.2"
+      username: "admin"
+      password: "password"
+      hypervisor_type: "AHV"
+    entity_update_specs:
+      - entity_uuid: "3c196eac-e1d5-4c8a-9b01-c133f6907ca"
+        to_version: "5.0.0"
+    skipped_precheck_flags: ["POWER_OFF_UVMS"]
+  register: lcm_prechecks
 """
 
 RETURN = r"""
@@ -90,7 +106,38 @@ response:
     type: dict
     returned: always
     sample:
-        {}
+        {
+            "cluster_ext_ids": null,
+            "completed_time": "2025-02-16T10:12:26.000269+00:00",
+            "completion_details": null,
+            "created_time": "2025-02-16T10:11:27.891274+00:00",
+            "entities_affected": null,
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:7b891b72-e645-4676-6259-18d19ea25c91",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-02-16T10:12:26.000267+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 0,
+            "number_of_subtasks": 1,
+            "operation": "kLcmRootTask",
+            "operation_description": "Run Lcm Root Task",
+            "owned_by": null,
+            "parent_task": null,
+            "progress_percentage": 100,
+            "root_task": null,
+            "started_time": "2025-02-16T10:11:27.891274+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:ffc1b1c2-3616-4e55-5eef-41501e45c7b5",
+                    "href": "https://10.101.177.78:9440/api/prism/v4.0/config/tasks/ZXJnb24=:ffc1b1c2-3616-4e55-5eef-41501e45c7b5",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        }
 task_ext_id:
     description: Task external ID.
     type: str

@@ -93,6 +93,22 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Perform LCM upgrades
+  nutanix.ncp.ntnx_lcm_upgrades_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    cluster_ext_id: "00062e00-87eb-ef15-0000-00000000b71a"
+    management_server:
+      ip: "10.0.0.2"
+      username: "admin"
+      password: "password"
+      hypervisor_type: "AHV"
+    entity_update_specs:
+      - entity_uuid: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
+        to_version: "5.0.0"
+    skipped_precheck_flags: ["POWER_OFF_UVMS"]
+  register: lcm_upgrade
 """
 
 RETURN = r"""
@@ -101,7 +117,43 @@ response:
     type: dict
     returned: always
     sample:
-        {}
+        {
+            "cluster_ext_ids": null,
+            "completed_time": "2025-02-16T10:18:32.774591+00:00",
+            "completion_details": null,
+            "created_time": "2025-02-16T10:12:34.300712+00:00",
+            "entities_affected": null,
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:a784c0b7-1038-49cf-40b5-2845231d242f",
+            "is_background_task": false,
+            "is_cancelable": true,
+            "last_updated_time": "2025-02-16T10:18:32.774590+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 0,
+            "number_of_subtasks": 2,
+            "operation": "kLcmRootTask",
+            "operation_description": "Run Lcm Root Task",
+            "owned_by": null,
+            "parent_task": null,
+            "progress_percentage": 100,
+            "root_task": null,
+            "started_time": "2025-02-16T10:12:34.300712+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:470ea415-7469-4b93-5ce7-cdff3ab2f8d7",
+                    "href": "https://10.101.177.78:9440/api/prism/v4.0/config/tasks/ZXJnb24=:470ea415-7469-4b93-5ce7-cdff3ab2f8d7",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:efc40435-e246-45ca-638d-6af7db8c94ba",
+                    "href": "https://10.101.177.78:9440/api/prism/v4.0/config/tasks/ZXJnb24=:efc40435-e246-45ca-638d-6af7db8c94ba",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        }
 task_ext_id:
     description: Task external ID.
     type: str

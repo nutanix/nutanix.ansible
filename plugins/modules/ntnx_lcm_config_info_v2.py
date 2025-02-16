@@ -29,6 +29,13 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Get config of LCM
+  nutanix.ncp.ntnx_lcm_config_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    cluster_ext_id: "00062e00-87eb-ef15-0000-00000000b71a"
+  register: lcm_config_info
 """
 
 RETURN = r"""
@@ -37,7 +44,29 @@ response:
     type: dict
     returned: always
     sample:
-        {}
+        {
+            "auto_inventory_schedule": null,
+            "connectivity_type": "CONNECTED_SITE",
+            "deprecated_software_entities": [
+                "Firmware",
+                "Foundation",
+                "NCC"
+            ],
+            "display_version": "3.1.0.4301",
+            "ext_id": null,
+            "has_module_auto_upgrade_enabled": false,
+            "is_auto_inventory_enabled": false,
+            "is_framework_bundle_uploaded": false,
+            "is_https_enabled": true,
+            "links": null,
+            "supported_software_entities": [
+                "AOS base software",
+                "Prism Central"
+            ],
+            "tenant_id": null,
+            "url": "https://download.nutanix.com/lcm/3.0",
+            "version": "3.1.56788"
+        }
 changed:
     description: Whether the module made any changes
     type: bool

@@ -59,6 +59,17 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
+- name: Update config of LCM
+  nutanix.ncp.ntnx_lcm_config_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    is_auto_inventory_enabled: true
+    is_https_enabled: true
+    has_module_auto_upgrade_enabled: false
+    url: "http://download.nutanix.com/lcm/3.0"
+  register: lcm_config_update
 """
 
 RETURN = r"""
@@ -67,7 +78,29 @@ response:
     type: dict
     returned: always
     sample:
-        {}
+        {
+            "auto_inventory_schedule": "03:00",
+            "connectivity_type": "CONNECTED_SITE",
+            "deprecated_software_entities": [
+                "Firmware",
+                "Foundation",
+                "NCC"
+            ],
+            "display_version": "3.1.0.4301",
+            "ext_id": null,
+            "has_module_auto_upgrade_enabled": true,
+            "is_auto_inventory_enabled": true,
+            "is_framework_bundle_uploaded": false,
+            "is_https_enabled": false,
+            "links": null,
+            "supported_software_entities": [
+                "AOS base software",
+                "Prism Central"
+            ],
+            "tenant_id": null,
+            "url": "http://download.nutanix.com/lcm/3.0",
+            "version": "3.1.56788"
+        }
 cluster_ext_id:
     description: The external ID of the cluster
     type: str
