@@ -4,7 +4,7 @@
     msg: start testing ntnx_lcm_v2
 
 - name: List all clusters to get prism central external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
   register: result
   ignore_errors: true
@@ -111,6 +111,25 @@
       - lcm_config_update.response.has_module_auto_upgrade_enabled == {{ lcm_config_info.response.has_module_auto_upgrade_enabled }}
     fail_msg: "Failed to update LCM config"
     success_msg: "LCM config is updated successfully"
+
+- name: Get LCM status before doing inventory
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: lcm_status
+  ignore_errors: true
+
+- name: Get LCM status status
+  ansible.builtin.assert:
+    that:
+      - lcm_status.response is defined
+      - lcm_status.changed == false
+      - lcm_status.failed == false
+      - lcm_status.response.framework_version.available_version is defined
+      - lcm_status.response.framework_version.current_version is defined
+      - lcm_status.response.in_progress_operation.operation_id == none
+      - lcm_status.response.in_progress_operation.operation_type == none
+    fail_msg: "Failed to get LCM status"
+    success_msg: "LCM status is fetched successfully"
 
 - name: Perform inventory of LCM
   nutanix.ncp.ntnx_lcm_inventory_v2:

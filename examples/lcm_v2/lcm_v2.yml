@@ -30,7 +30,7 @@
         LCM_entity_model_version: "4.0.0"
 
     - name: List all clusters to get prism central external ID
-      ntnx_clusters_info_v2:
+      nutanix.ncp.ntnx_clusters_info_v2:
         filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
       register: result
       ignore_errors: true
@@ -48,10 +48,16 @@
     - name: Update config of LCM
       nutanix.ncp.ntnx_lcm_config_v2:
         cluster_ext_id: "{{ prism_central_external_id }}"
-        is_auto_inventory_enabled: true
-        is_https_enabled: false
-        has_module_auto_upgrade_enabled: true
+        is_auto_inventory_enabled: false
+        is_https_enabled: true
+        has_module_auto_upgrade_enabled: false
       register: lcm_config_update
+      ignore_errors: true
+
+    - name: Get LCM status before doing inventory
+      nutanix.ncp.ntnx_lcm_status_info_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+      register: lcm_status
       ignore_errors: true
 
     - name: Perform inventory of LCM
@@ -100,6 +106,12 @@
           - entity_uuid: "{{ lcm_entity_external_id }}"
             to_version: "{{ LCM_entity_model_version}}"
       register: lcm_prechecks
+      ignore_errors: true
+
+    - name: Get LCM status before doing upgrade
+      nutanix.ncp.ntnx_lcm_status_info_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+      register: lcm_status
       ignore_errors: true
 
     - name: Perform LCM upgrade
