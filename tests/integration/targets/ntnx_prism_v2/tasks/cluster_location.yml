@@ -283,8 +283,6 @@
 #############################################################
 # List all VMs and get PC VM external ID
 # Get PC VM External ID
-# List all PCs
-# Get PC details
 
 - name: List all VMs and get PC VM external ID
   nutanix.ncp.ntnx_vms_info_v2:
