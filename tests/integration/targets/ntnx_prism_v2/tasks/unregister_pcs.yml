@@ -39,7 +39,7 @@
 
 - name: Unregister PC
   nutanix.ncp.ntnx_pc_unregistration_v2:
-    ext_id: "{{ pc_uuid }}"
+    ext_id: "{{ availability_zone_pc_ip }}"
     pc_ext_id: "{{ domain_manager_ext_id }}"
   register: result
   ignore_errors: true
