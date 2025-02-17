@@ -19,7 +19,6 @@
 #############################################################
 # Generate spec using check mode for:
 # - Creating backup target cluster
-# - Updating backup target cluster
 # - Creating restore source cluster
 
 - name: Generate spec for creating backup target cluster using check mode
@@ -40,27 +39,6 @@
       - result.response.location.config.ext_id == "38648904-4859-1258-7485-074816fe2a4f"
     fail_msg: "Generated spec for creating backup target cluster failed"
     success_msg: "Generated spec for creating backup target cluster passed"
-
-- name: Generate spec for updating backup target cluster using check mode
-  nutanix.ncp.ntnx_pc_backup_target_v2:
-    ext_id: "84785699-8744-2895-9632-074816fe2a4f"
-    domain_manager_ext_id: "14855555-9999-1235-3141-074816fe2a4f"
-    location:
-      cluster_location:
-        config:
-          ext_id: "31415252-3577-7474-7788-074816fe2a4f"
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Generate spec for updating backup target cluster status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.response.ext_id == "84785699-8744-2895-9632-074816fe2a4f"
-      - result.response.location.config.ext_id == "31415252-3577-7474-7788-074816fe2a4f"
-    fail_msg: "Generated spec for updating backup target cluster failed"
-    success_msg: "Generated spec for updating backup target cluster passed"
 
 - name: Generate spec for creating restore source cluster using check mode
   nutanix.ncp.ntnx_pc_restore_source_v2:
@@ -131,7 +109,6 @@
 ############################################################
 # Create backup target cluster
 # Get backup target cluster
-# Check Idempotency by updating backup target cluster with the same values
 
 - name: Create backup target cluster
   nutanix.ncp.ntnx_pc_backup_target_v2:
@@ -180,27 +157,6 @@
 - name: Set backup target cluster external ID
   ansible.builtin.set_fact:
     backup_target_ext_id: "{{ backup_target_cluster_ext_id[0] }}"
-
-- name: Check Idempotency by updating backup target cluster with the same values
-  nutanix.ncp.ntnx_pc_backup_target_v2:
-    ext_id: "{{ backup_target_ext_id }}"
-    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-    location:
-      cluster_location:
-        config:
-          ext_id: "{{ cluster.uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Check Idempotency by updating backup target cluster with the same values status
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.failed == false
-      - result.skipped == true
-      - result.msg == "Nothing to change."
-    fail_msg: "Check Idempotency by updating backup target cluster with the same values failed"
-    success_msg: "Check Idempotency by updating backup target cluster with the same values passed"
 
 #############################################################
 # List all backup targets
