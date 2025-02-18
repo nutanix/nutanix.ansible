@@ -10,6 +10,7 @@
 
 # This playbook should be run with local user created in create_local_user_and_entities.yml
 # Tested on PC version 2024.3
+# Disk image: Ubuntu 20.04
 
 - name: Create VM playbook
   hosts: localhost
