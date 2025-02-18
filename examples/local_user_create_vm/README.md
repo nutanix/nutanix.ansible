@@ -1,5 +1,11 @@
 ## Playbook description
-The above playbooks are used for creata a local user with access to certain permissions. Then we can create AHV VM using that local user credentials.
+Below is the flow for playbooks:
+1. Upload image from local to PC.
+2. Create category key-value pair.
+3. Create local user.
+4. Create authorization policy.
+5. Create VM using local user, with image uploaded and guest customization.
+6. Power ON the VM.
 
 Tested with:
 - Nutanix ansible provider: v2.0
