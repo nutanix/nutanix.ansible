@@ -32,9 +32,6 @@ class BaseModule(AnsibleModule):
         validate_certs=dict(
             type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
         ),
-        validate_certs=dict(
-            type="bool", default=True, fallback=(env_fallback, ["VALIDATE_CERTS"])
-        ),
         state=dict(type="str", choices=["present", "absent"], default="present"),
         wait=dict(type="bool", default=True),
         proxy_scheme=dict(type="str", default="http", choices=["http", "https"]),
