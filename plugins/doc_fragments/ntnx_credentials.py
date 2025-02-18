@@ -44,4 +44,23 @@ options:
         - C(validate_certs). If not set then the value of the C(VALIDATE_CERTS), environment variable is used.
     type: bool
     default: true
+  proxy_scheme:
+    description:
+      - Protocol to use to communicate with the proxy server.
+      - Use for modules which use api v4 only.
+    type: str
+    default: http
+    choices:
+      - http
+      - https
+  proxy_host:
+    description:
+      - Proxy host use to connect to C(nutanix_host).
+      - Use for modules which use api v4 only.
+    type: str
+  proxy_port:
+    description:
+      - Proxy port of C(proxy_host).
+      - Use for modules which use api v4 only.
+    type: int
 """

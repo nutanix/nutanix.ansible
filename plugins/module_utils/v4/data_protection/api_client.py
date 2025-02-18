@@ -34,6 +34,9 @@ def get_api_client(module):
     config.username = module.params.get("nutanix_username")
     config.password = module.params.get("nutanix_password")
     config.verify_ssl = module.params.get("validate_certs")
+    config.proxy_scheme = module.params.get("proxy_scheme")
+    config.proxy_host = module.params.get("proxy_host")
+    config.proxy_port = module.params.get("proxy_port")
     client = ntnx_dataprotection_py_client.ApiClient(configuration=config)
 
     cred = "{0}:{1}".format(config.username, config.password)
