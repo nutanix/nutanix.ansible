@@ -1,0 +1,112 @@
+---
+# This playbook create VM
+# 1. Fetch VM image, cluster, subnet, category info
+# 2. Create VM with guest customization and categories attached
+# 3. Power ON the VM
+
+# Pre-requisites:
+# 1. Please provide local user's username and password in the module_defaults section
+# 2. Update cloud init script in cloud_init.yml file
+
+# This playbook should be run with local user created in create_local_user_and_entities.yml
+# Tested on PC version 2024.3
+
+- name: Create VM playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: # Please provide your PC IP (10.1.2.3)
+      nutanix_username: # Please provide local user username created by create_local_user_and_entities.yml (ex. "demo_user")
+      nutanix_password: # Please provide local user password created by create_local_user_and_entities.yml (ex. "password")
+      validate_certs: false
+  tasks:
+    - name: Set suffix
+      set_fact:
+        suffix: "dummy" # this suffix will be added to names of all entities created/fetched below
+    
+    - name:
+      set_fact:
+        image_name: "ubuntu-image-{{suffix}}"
+        cluster_name: "auto_cluster_prod_f6a56cf7a889"
+        subnet_name: "vlan1"
+        category_key: "DemoEnvironment"
+        category_value: "demo_user_{{suffix}}"
+        cloud_init_file_path: "/home/username/scripts/cloud_init.yml" # Please provide full path to cloud init file
+
+    - name: Fetch cluster info with given name
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: name eq '{{ cluster_name }}'
+      register: clusters_info
+
+    - name: Fetch subnet info with given name
+      nutanix.ncp.ntnx_subnets_info_v2:
+        filter: name eq '{{ subnet_name }}'
+      register: subnets_info
+    
+    - name: get vm image info
+      nutanix.ncp.ntnx_images_info_v2:
+        filter: name eq '{{ image_name }}'
+      register: image_info
+    
+    - name: Fetch category key value
+      nutanix.ncp.ntnx_categories_info_v2:
+        filter: key eq '{{ category_key }}' and value eq '{{ category_value }}'
+      register: category_info
+    
+    - name: Read clould init script and encode it
+      set_fact:
+        cloud_init_script: "{{item | b64encode}}"
+      with_file:
+        - "{{ cloud_init_file_path }}"
+
+    - name: Create VM with guest customization and categories attached
+      nutanix.ncp.ntnx_vms_v2:
+        name: "ubuntu-vm-{{suffix}}"
+        description: "ubuntu-vm-{{suffix}}"
+        num_sockets: 1
+        num_cores_per_socket: 1
+        memory_size_bytes: "{{ 4 * 1024 * 1024 * 1024 }}"
+        boot_config:
+          legacy_boot:
+            boot_order:
+              - "DISK"
+              - "CDROM"
+              - "NETWORK"
+        cluster:
+          ext_id: "{{ clusters_info.response[0].ext_id }}"
+        categories:
+          - ext_id: "{{ category_info.response[0].ext_id }}"
+        nics:
+          - network_info:
+              nic_type: "NORMAL_NIC"
+              vlan_mode: "ACCESS"
+              subnet:
+                ext_id: "{{ subnets_info.response[0].ext_id }}"
+              ipv4_config:
+                should_assign_ip: true
+        disks:
+          - backing_info:
+              vm_disk:
+                disk_size_bytes: "{{ 25 * 1024 * 1024 * 1024 }}"
+                data_source:
+                  reference:
+                    image_reference:
+                      image_ext_id: "{{ image_info.response[0].ext_id }}"
+            disk_address:
+              bus_type: SCSI
+              index: 0
+        guest_customization:
+          config:
+            cloudinit:
+              datasource_type: CONFIG_DRIVE_V2
+              cloud_init_script:
+                user_data:
+                  value: "{{ cloud_init_script }}"
+      register: vm_create_result
+
+    - name: Power On the VM
+      nutanix.ncp.ntnx_vms_power_actions_v2:
+        state: power_on
+        ext_id: "{{ vm_create_result.ext_id }}"
+      register: vm_power_on_result
