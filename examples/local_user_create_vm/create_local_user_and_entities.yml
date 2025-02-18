@@ -2,7 +2,7 @@
 # This playbook will setup Prism Central(PC) with required entities
 # 1. Upload local image to PC
 # 2. Create categories that can be attached to the user vm
-# 3. Fetch roles info 
+# 3. Fetch roles info
 # 4. Create local user
 # 5. Fetch cluster and subnet info
 # 6. Assign given role to user and give access to image, cluster, subnet and category
@@ -25,10 +25,10 @@
       validate_certs: false
   tasks:
     - name: Set variables
-      set_fact:
+      ansible.builtin.set_fact:
         suffix: "dummy" # this suffix will be added to names of all entities created below
         image_source: "/home/username/images/image1.qcow2" # Please provide path to local image file
-        role_name: "CreateVMRole" # Please provide role name
+        create_vm_role_name: "CreateVMRole" # Please provide role name
         cluster_name: "auto_cluster_prod_f6a56cf7a889" # Please provide cluster name for giving permission to user
         subnet_name: "vlan1" # Please provide subnet name for giving permission to user
         category_key: "DemoEnvironment" # Please provide category key
@@ -45,8 +45,8 @@
         wait: true
       register: image_create_result
 
-    - name: set category value
-      set_fact:
+    - name: Set category value
+      ansible.builtin.set_fact:
         category_value: "demo_user_{{suffix}}"
 
     - name: Create category key & value
@@ -57,7 +57,7 @@
 
     - name: Fetch roles info with given name
       nutanix.ncp.ntnx_roles_info_v2:
-        filter: displayName eq '{{ role_name }}'
+        filter: displayName eq '{{ create_vm_role_name }}'
       register: roles_info
 
     - name: Create local user

@@ -22,11 +22,11 @@
       validate_certs: false
   tasks:
     - name: Set suffix
-      set_fact:
+      ansible.builtin.set_fact:
         suffix: "dummy" # this suffix will be added to names of all entities created/fetched below
-    
-    - name:
-      set_fact:
+
+    - name: Set variables
+      ansible.builtin.set_fact:
         image_name: "ubuntu-image-{{suffix}}"
         cluster_name: "auto_cluster_prod_f6a56cf7a889"
         subnet_name: "vlan1"
@@ -43,19 +43,19 @@
       nutanix.ncp.ntnx_subnets_info_v2:
         filter: name eq '{{ subnet_name }}'
       register: subnets_info
-    
-    - name: get vm image info
+
+    - name: Get vm image info
       nutanix.ncp.ntnx_images_info_v2:
         filter: name eq '{{ image_name }}'
       register: image_info
-    
+
     - name: Fetch category key value
       nutanix.ncp.ntnx_categories_info_v2:
         filter: key eq '{{ category_key }}' and value eq '{{ category_value }}'
       register: category_info
-    
+
     - name: Read clould init script and encode it
-      set_fact:
+      ansible.builtin.set_fact:
         cloud_init_script: "{{item | b64encode}}"
       with_file:
         - "{{ cloud_init_file_path }}"
