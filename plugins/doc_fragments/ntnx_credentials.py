@@ -47,7 +47,7 @@ options:
   proxy_scheme:
     description:
       - Protocol to use to communicate with the proxy server.
-      - Use for modules which use api v4 only.
+      - Use for modules which use v4 APIs based SDKs.
     type: str
     default: http
     choices:
@@ -56,11 +56,11 @@ options:
   proxy_host:
     description:
       - Proxy host use to connect to C(nutanix_host).
-      - Use for modules which use api v4 only.
+      - Use for modules which use v4 APIs based SDKs.
     type: str
   proxy_port:
     description:
       - Proxy port of C(proxy_host).
-      - Use for modules which use api v4 only.
+      - Use for modules which use v4 APIs based SDKs.
     type: int
 """
