@@ -19,7 +19,6 @@ options:
     description:
       - The external ID of the Nutanix PC Cluster.
     type: str
-    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -105,7 +104,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[
-            ("ext_id", "filter"),
+            ("cluster_ext_id", "filter"),
         ],
     )
 

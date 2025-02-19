@@ -26,8 +26,8 @@
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
-        LCM_entity_model: "Calm Policy Engine"
-        LCM_entity_model_version: "4.0.0"
+        lcm_entity_model: "Calm Policy Engine"
+        lcm_entity_model_version: "4.0.0"
 
     - name: List all clusters to get prism central external ID
       nutanix.ncp.ntnx_clusters_info_v2:
@@ -73,7 +73,7 @@
 
     - name: List all LCM entities details with filter
       nutanix.ncp.ntnx_lcm_entities_info_v2:
-        filter: "entityModel eq '{{ LCM_entity_model }}'"
+        filter: "entityModel eq '{{ lcm_entity_model }}'"
       register: lcm_entities
       ignore_errors: true
 
@@ -104,7 +104,7 @@
         cluster_ext_id: "{{ prism_central_external_id }}"
         entity_update_specs:
           - entity_uuid: "{{ lcm_entity_external_id }}"
-            to_version: "{{ LCM_entity_model_version}}"
+            to_version: "{{ lcm_entity_model_version}}"
       register: lcm_prechecks
       ignore_errors: true
 
@@ -119,6 +119,6 @@
         cluster_ext_id: "{{ prism_central_external_id }}"
         entity_update_specs:
           - entity_uuid: "{{ lcm_entity_external_id }}"
-            to_version: "{{ LCM_entity_model_version }}"
+            to_version: "{{ lcm_entity_model_version }}"
       register: lcm_upgrade
       ignore_errors: true

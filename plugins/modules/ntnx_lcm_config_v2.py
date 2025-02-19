@@ -48,11 +48,13 @@ options:
             - Whether HTTPS is enabled.
         type: bool
         required: false
+        default: false
     has_module_auto_upgrade_enabled:
         description:
             - Whether module auto upgrade is enabled.
         type: bool
         required: false
+        default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
