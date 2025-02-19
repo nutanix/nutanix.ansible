@@ -53,7 +53,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
-    cluster_ext_id: "00062aa9-1234-1122-3333-ac1f6b6f97e2
+    cluster_ext_id: "00062aa9-1234-1122-3333-ac1f6b6f97e2"
   register: result
   ignore_errors: true
 """

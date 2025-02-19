@@ -22,8 +22,12 @@
     pe2_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
     reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
     cluster_status: /usr/local/nutanix/cluster/bin/cluster status
-    modify_firewall_cmd_cluster1: /usr/local/nutanix/cluster/bin/modify_firewall -f -r {{ clusters[0].nodes[0].cvm_ip }},{{ clusters[0].network.virtual_ip }} -p 2030,2036,2073,2090,8740 -i eth0
-    modify_firewall_cmd_cluster2: /usr/local/nutanix/cluster/bin/modify_firewall -f -r {{ ip_pe }},{{ virtual_ip_pe }} -p 2030,2036,2073,2090,8740 -i eth0
+    modify_firewall_cmd_cluster1: >
+      /usr/local/nutanix/cluster/bin/modify_firewall -f -r {{ clusters[0].nodes[0].cvm_ip }},
+      {{ clusters[0].network.virtual_ip }} -p 2030,2036,2073,2090,8740 -i eth0
+    modify_firewall_cmd_cluster2: >
+      /usr/local/nutanix/cluster/bin/modify_firewall -f -r {{ ip_pe }},
+      {{ virtual_ip_pe }} -p 2030,2036,2073,2090,8740 -i eth0
 
 - name: Set command for resetting cluster username and password
   ansible.builtin.set_fact:
@@ -362,7 +366,8 @@
               local: "{{ replication_configuration_linear_1_check_mode.schedule.retention.local }}"
               remote: "{{ replication_configuration_linear_1_check_mode.schedule.retention.remote }}"
           start_time: "{{ replication_configuration_linear_1_check_mode.schedule.start_time }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_1_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+          sync_replication_auto_suspend_timeout_seconds: >
+            "{{ replication_configuration_linear_1_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds }}"
       - source_location_label: "{{  replication_configuration_linear_2_check_mode.source_location_label }}"
         remote_location_label: "{{ replication_configuration_linear_2_check_mode.remote_location_label }}"
         schedule:
@@ -373,7 +378,8 @@
               local: "{{ replication_configuration_linear_2_check_mode.schedule.retention.local }}"
               remote: "{{ replication_configuration_linear_2_check_mode.schedule.retention.remote }}"
           start_time: "{{ replication_configuration_linear_2_check_mode.schedule.start_time }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_2_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+          sync_replication_auto_suspend_timeout_seconds: >
+            "{{ replication_configuration_linear_2_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds }}"
     category_ids:
       - "00000000-0000-0000-0000-000000000000"
   register: result
@@ -603,13 +609,16 @@
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
           recovery_point_objective_time_seconds: "{{ replication_configuration_sync_local_clusters_1.schedule.recovery_point_objective_time_seconds | int }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_local_clusters_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+          sync_replication_auto_suspend_timeout_seconds: >
+            "{{ replication_configuration_sync_local_clusters_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
       - source_location_label: "{{ replication_configuration_sync_local_clusters_2.source_location_label }}"
         remote_location_label: "{{ replication_configuration_sync_local_clusters_2.remote_location_label }}"
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_sync_local_clusters_2.schedule.recovery_point_objective_time_seconds | int }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_local_clusters_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+          recovery_point_objective_time_seconds: >
+            "{{ replication_configuration_sync_local_clusters_2.schedule.recovery_point_objective_time_seconds | int }}"
+          sync_replication_auto_suspend_timeout_seconds: >
+            "{{ replication_configuration_sync_local_clusters_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
     category_ids:
       - "{{category_ext_id_4}}"
   register: result
@@ -949,7 +958,8 @@
         remote_location_label: "{{ replication_configuration_linear_1_updated_check_mode.remote_location_label }}"
         schedule:
           recovery_point_type: "{{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_objective_time_seconds: >
+            "{{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
           retention:
             linear_retention:
               local: "{{ replication_configuration_linear_1_updated_check_mode.schedule.retention.local }}"
@@ -962,7 +972,8 @@
         remote_location_label: "{{ replication_configuration_linear_2_updated_check_mode.remote_location_label }}"
         schedule:
           recovery_point_type: "{{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_objective_time_seconds: >
+            "{{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
           retention:
             linear_retention:
               local: "{{ replication_configuration_linear_2_updated_check_mode.schedule.retention.local }}"
