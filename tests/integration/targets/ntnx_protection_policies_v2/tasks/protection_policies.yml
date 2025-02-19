@@ -93,9 +93,6 @@
               value: "{{ clusters[0].nodes[0].cvm_ip }}"
     config:
       cluster_function: "{{ clusters[0].config.cluster_functions }}"
-      authorized_public_key_list:
-        - name: "{{ clusters[0].config.auth_public_keys[0].name }}"
-          key: "{{ clusters[0].config.auth_public_keys[0].key }}"
       redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
       fault_tolerance_state:
@@ -104,33 +101,6 @@
       external_address:
         ipv4:
           value: "{{ clusters[0].network.virtual_ip }}"
-      external_data_service_ip:
-        ipv4:
-          value: "{{ clusters[0].network.iscsi_ip }}"
-      ntp_server_ip_list:
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[0] }}"
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[1] }}"
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[2] }}"
-        - fqdn:
-            value: "{{ clusters[0].network.ntp_servers[3] }}"
-      name_server_ip_list:
-        - ipv4:
-            value: "{{ clusters[0].network.dns_servers[0] }}"
-        - ipv4:
-            value: "{{ clusters[0].network.dns_servers[1] }}"
-      smtp_server:
-        email_address: "{{ clusters[0].network.smtp_server.email_address }}"
-        server:
-          ip_address:
-            ipv4:
-              value: "{{ clusters[0].network.smtp_server.ip }}"
-          port: "{{ clusters[0].network.smtp_server.port }}"
-          username: "{{ clusters[0].network.smtp_server.username }}"
-          password: "{{ clusters[0].network.smtp_server.password }}"
-        type: "{{ clusters[0].network.smtp_server.type }}"
     dryrun: true
     timeout: 1800
   register: result
