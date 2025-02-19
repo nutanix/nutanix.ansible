@@ -748,7 +748,8 @@
             remote_location_label: "{{ replication_configuration_sync_local_clusters_1.remote_location_label }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
-              recovery_point_objective_time_seconds: "{{ replication_configuration_sync_local_clusters_1.schedule.recovery_point_objective_time_seconds | int }}"
+              recovery_point_objective_time_seconds: >
+                "{{ replication_configuration_sync_local_clusters_1.schedule.recovery_point_objective_time_seconds | int }}"
               sync_replication_auto_suspend_timeout_seconds: >
                 "{{ replication_configuration_sync_local_clusters_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
           - source_location_label: "{{ replication_configuration_sync_local_clusters_2.source_location_label }}"
@@ -1048,7 +1049,8 @@
                   remote:
                     snapshot_interval_type: "{{ replication_configuration_auto_1_updated.schedule.retention.remote.snapshot_interval_type }}"
                     frequency: "{{ replication_configuration_auto_1_updated.schedule.retention.remote.frequency }}"
-              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_1_updated.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+              sync_replication_auto_suspend_timeout_seconds: >
+                "{{ replication_configuration_auto_1_updated.schedule.sync_replication_auto_suspend_timeout_seconds }}"
           - source_location_label: "{{ replication_configuration_auto_2_updated.source_location_label }}"
             remote_location_label: "{{ replication_configuration_auto_2_updated.remote_location_label }}"
             schedule:
@@ -1062,7 +1064,8 @@
                   remote:
                     snapshot_interval_type: "{{ replication_configuration_auto_2_updated.schedule.retention.remote.snapshot_interval_type }}"
                     frequency: "{{ replication_configuration_auto_2_updated.schedule.retention.remote.frequency }}"
-              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_2_updated.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+              sync_replication_auto_suspend_timeout_seconds: >
+                "{{ replication_configuration_auto_2_updated.schedule.sync_replication_auto_suspend_timeout_seconds }}"
         category_ids:
           - "{{category_ext_id_2}}"
       register: result
