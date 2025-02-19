@@ -62,6 +62,9 @@
         desired_cluster_fault_tolerance: CFT_2N_OR_2D
       operation_mode: NORMAL
       encryption_in_transit_status: ENABLED
+      pulse_status:
+        is_enabled: false
+        pii_scrubbing_level: DEFAULT
     network:
       external_address:
         ipv4:
@@ -149,6 +152,9 @@
       - result.response.config.fault_tolerance_state.domain_awareness_level == "DISK"
       - result.response.config.operation_mode == "NORMAL"
       - result.response.config.encryption_in_transit_status == "ENABLED"
+      - result.response.config.fault_tolerance_state.desired_cluster_fault_tolerance == "CFT_2N_OR_2D"
+      - result.response.config.pulse_status.is_enabled == false
+      - result.response.config.pulse_status.pii_scrubbing_level == "DEFAULT"
       - result.response.network.external_address.ipv4.value == "10.0.0.3"
       - result.response.network.external_data_service_ip.ipv4.value == "10.0.0.4"
       - result.response.network.nfs_subnet_whitelist[0] == "vlan.123"
@@ -563,6 +569,9 @@
       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
       fault_tolerance_state:
         domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+      pulse_status:
+        is_enabled: true
+        pii_scrubbing_level: ALL
     network:
       external_address:
         ipv4:
