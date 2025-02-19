@@ -1,4 +1,32 @@
 ---
+# Summary:
+# This playbook will do the following:
+# 1. Create a backup target cluster
+# 2. Get the backup target cluster external ID
+# 3. Check Idempotency by updating the backup target cluster with the same values
+# 4. List all backup targets
+# 5. Fetch backup target details using external ID until last_sync_time is not none
+# 6. List all PCs
+# 7. Fetch PC details using external ID
+# 8. List all VMs and get PC VM external ID
+# 9. Power off PC VM
+# 10. Sleep for 2 minutes after powering off VM
+# 11. Create restore source cluster
+# 12. Get restore source cluster
+# 13. Delete restore source cluster
+# 14. Get restore source cluster
+# 15. Create restore source cluster
+# 16. Get restore source cluster
+# 17. Get all restorable domain managers
+# 18. Get restorable domain manager external ID
+# 19. List all restore points
+# 20. Set restore point external ID
+# 21. Get restore point using external ID
+# 22. Restore PC
+# 23. Delete backup target cluster
+# 24. Deploy PC
+# 25. Unregister PC
+
 - name: Prism playbook
   hosts: localhost
   gather_facts: false
@@ -125,7 +153,7 @@
 
     - name: Get PC VMs
       ansible.builtin.set_fact:
-        PC_VMs: >-
+        pc_vms: >-
           {{
             result.response
             | selectattr('description', 'equalto', 'NutanixPrismCentral')
@@ -138,7 +166,7 @@
     - name: Get PC VM to power off
       ansible.builtin.set_fact:
         filtered_vm: "{{ filtered_vm + [item.0] }}"
-      loop: "{{ PC_VMs | subelements('nics') }}"
+      loop: "{{ pc_vms | subelements('nics') }}"
       ignore_errors: true
       register: result
       when:
