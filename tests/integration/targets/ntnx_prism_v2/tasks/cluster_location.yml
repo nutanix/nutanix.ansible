@@ -247,7 +247,7 @@
 
 - name: Get PC VMs
   ansible.builtin.set_fact:
-    PC_VMs: >-
+    pc_vms: >-
       {{
         result.response
         | selectattr('description', 'equalto', 'NutanixPrismCentral')
@@ -260,7 +260,7 @@
 - name: Get PC VM to power off
   ansible.builtin.set_fact:
     filtered_vm: "{{ filtered_vm + [item.0] }}"
-  loop: "{{ PC_VMs | subelements('nics') }}"
+  loop: "{{ pc_vms | subelements('nics') }}"
   ignore_errors: true
   register: result
   when:
