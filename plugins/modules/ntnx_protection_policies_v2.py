@@ -459,7 +459,7 @@ skipped:
 
 error:
   description: This indicates the error message if any error occurred
-  returned: always
+  returned: When an error occurs
   type: str
 """
 
@@ -743,7 +743,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

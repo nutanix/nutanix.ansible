@@ -211,7 +211,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     protection_policies = get_protection_policies_api_instance(module)
     if module.params.get("ext_id"):
         get_protection_policy_using_ext_id(module, protection_policies, result)
