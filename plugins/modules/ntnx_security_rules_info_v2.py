@@ -169,7 +169,7 @@ changed:
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
-  type: bool
+  type: str
   sample: false
 ext_id:
     description: External id of the network security policy if fetched by ext_id

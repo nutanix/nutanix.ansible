@@ -299,7 +299,7 @@ changed:
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
-  type: bool
+  type: str
   sample: false
 skipped:
     description: This field indicates whether the task was skipped. For example during idempotency checks.
