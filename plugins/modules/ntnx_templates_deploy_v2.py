@@ -357,7 +357,7 @@ changed:
 error:
     description: The error message if the template deployment failed.
     type: str
-    returned: when error occurs
+    returned: when an error occurs
     sample: "Failed to deploy template"
 """
 
@@ -518,7 +518,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

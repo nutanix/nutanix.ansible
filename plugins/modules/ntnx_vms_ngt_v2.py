@@ -156,7 +156,7 @@ changed:
 error:
     description: The error message, if any, encountered during the NGT operation.
     type: str
-    returned: on error
+    returned: when an error occurs
 ext_id:
     description: The external ID of the VM on which the NGT operation was performed.
     type: str
@@ -320,7 +320,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

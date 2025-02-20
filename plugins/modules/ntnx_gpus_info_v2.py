@@ -100,7 +100,7 @@ changed:
 error:
   description: The error message, if any.
   type: str
-  returned: always
+  returned: when an error occurs
 failed:
   description: Indicates whether the task failed.
   type: bool
@@ -164,7 +164,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     gpus = get_vm_api_instance(module)
     if module.params.get("ext_id"):
         get_gpu_by_ext_id(module, gpus, result)

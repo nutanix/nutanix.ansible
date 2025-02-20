@@ -210,9 +210,8 @@ changed:
   sample: true
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
+  returned: when an error occurs
   type: str
-  sample: false
 ext_id:
   description:
           - External ID of the Identity provider.
@@ -430,7 +429,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

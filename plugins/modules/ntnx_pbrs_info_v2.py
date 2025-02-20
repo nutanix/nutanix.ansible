@@ -103,9 +103,8 @@ changed:
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
+  returned: when an error occurs
   type: str
-  sample: false
 """
 
 import warnings  # noqa: E402
@@ -184,7 +183,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     if module.params.get("ext_id"):
         get_pbr(module, result)
     else:

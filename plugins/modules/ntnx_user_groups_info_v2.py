@@ -96,9 +96,8 @@ changed:
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
+  returned: when an error occurs
   type: str
-  sample: false
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -169,7 +168,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     user_groups = get_user_group_api_instance(module)
     if module.params.get("ext_id"):
         get_user_group_by_ext_id(module, user_groups, result)

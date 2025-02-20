@@ -111,9 +111,8 @@ changed:
   sample: true
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
+  returned: when an error occurs
   type: str
-  sample: false
 ext_id:
   description: External Id of the authorization policy
   returned: always
@@ -218,7 +217,7 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
 
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
 
     authorization_policies = get_authorization_policy_api_instance(module)
     if module.params.get("ext_id"):

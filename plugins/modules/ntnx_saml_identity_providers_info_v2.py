@@ -99,9 +99,8 @@ changed:
   sample: true
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
+  returned: when an error occurs
   type: str
-  sample: false
 failed:
     description: This field typically holds information about if the task have failed
     returned: always
@@ -174,7 +173,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     identity_providers = get_identity_provider_api_instance(module)
     if module.params.get("ext_id"):
         get_identity_provider_by_ext_id(module, identity_providers, result)

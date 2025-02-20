@@ -167,7 +167,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     vms = get_vm_api_instance(module)
     if module.params.get("ext_id"):
         get_cd_rom_by_ext_id(module, vms, result)

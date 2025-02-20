@@ -177,7 +177,7 @@ failed:
 error:
   description: Error message
   type: str
-  returned: always
+  returned: when an error occurs
 
 changed:
   description: Indicates if any changes were made during the operation
@@ -260,7 +260,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     if module.params.get("ext_id"):
         get_subnet(module, result)
     else:

@@ -85,7 +85,7 @@ changed:
 error:
     description: The error message, if any.
     type: str
-    returned: on error
+    returned: when an error occurs
     sample: "Failed to update NGT configuration."
 task_ext_id:
 
@@ -198,7 +198,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

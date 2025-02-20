@@ -168,9 +168,8 @@ changed:
   sample: true
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: always
+  returned: when an error occurs
   type: str
-  sample: false
 ext_id:
     description: External id of the network security policy if fetched by ext_id
     returned: always
@@ -256,7 +255,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     if module.params.get("ext_id"):
         get_network_security_policy(module, result)
     else:

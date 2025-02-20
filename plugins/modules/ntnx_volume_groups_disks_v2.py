@@ -208,7 +208,7 @@ task_ext_id:
 error:
     description: The error message if any.
     type: str
-    returned: when error occurs
+    returned: when an error occurs
     sample: "Failed to create volume group disk"
 changed:
     description: Indicates whether the resource has changed.
@@ -394,7 +394,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,

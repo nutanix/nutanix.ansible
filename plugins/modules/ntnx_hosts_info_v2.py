@@ -145,7 +145,7 @@ ext_id:
 error:
     description: Error message if any.
     type: str
-    returned: always
+    returned: when an error occurs
 """
 
 import warnings  # noqa: E402
@@ -222,7 +222,7 @@ def run_module():
     )
 
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     if module.params.get("ext_id") or module.params.get("name"):
         get_host_by_ext_id(module, result)
     else:

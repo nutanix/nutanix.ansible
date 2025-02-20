@@ -100,7 +100,7 @@ response:
 error:
     description: The error message if an error occurred.
     type: str
-    returned: on error
+    returned: when an error occurs
     sample: "failed to associate categories with vm"
 changed:
     description: Whether the state of the vm has changed.
@@ -296,7 +296,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "vm_ext_id": None,
     }

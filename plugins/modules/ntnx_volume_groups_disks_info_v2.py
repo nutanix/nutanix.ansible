@@ -99,7 +99,7 @@ ext_id:
 error:
     description: The error message if any.
     type: str
-    returned: when error occurs
+    returned: when an error occurs
     sample: "Api Exception raised while fetching volume group disk info"
 """
 
@@ -180,7 +180,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     if module.params.get("ext_id"):
         get_vg_disk(module, result)
     else:

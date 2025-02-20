@@ -80,8 +80,7 @@ changed:
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
-    returned: always
-    sample: null
+    returned: when an error occurs
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -133,7 +132,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     recovery_points = get_recovery_point_api_instance(module)
     get_vm_recovery_point_using_vm_rp_ext_id(module, recovery_points, result)
     module.exit_json(**result)

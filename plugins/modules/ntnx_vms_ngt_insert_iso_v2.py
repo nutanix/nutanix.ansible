@@ -64,7 +64,7 @@ changed:
     type: bool
 error:
     description: Error message if an error occurred during the module execution.
-    returned: on error
+    returned: when an error occurs
     type: str
 response:
     description:
@@ -197,7 +197,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

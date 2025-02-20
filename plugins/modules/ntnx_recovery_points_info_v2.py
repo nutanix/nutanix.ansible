@@ -113,7 +113,6 @@ error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
     returned: when an error occurs
-    sample: null
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -195,7 +194,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     recovery_points = get_recovery_point_api_instance(module)
     if module.params.get("ext_id"):
         get_recovery_point_using_ext_id(module, recovery_points, result)
