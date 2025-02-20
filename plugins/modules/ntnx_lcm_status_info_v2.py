@@ -68,7 +68,7 @@ error:
     description:
         - The error message if the module fails.
     type: str
-    returned: always
+    returned: When an error occurs
 """
 
 import warnings  # noqa: E402
@@ -111,7 +111,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
     }
 
