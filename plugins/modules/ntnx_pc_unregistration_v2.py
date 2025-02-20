@@ -132,7 +132,7 @@ changed:
 error:
     description: Error message if any.
     type: str
-    returned: always
+    returned: When an error occurs
     sample: null
 """
 
@@ -229,7 +229,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

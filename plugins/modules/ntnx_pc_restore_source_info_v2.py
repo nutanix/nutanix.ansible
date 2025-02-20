@@ -67,8 +67,8 @@ changed:
 
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
-    returned: always
-    type: bool
+    returned: When an error occurs
+    type: str
     sample: false
 
 failed:
@@ -110,7 +110,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     prism = get_domain_manager_backup_api_instance(module)
     get_restore_source_with_ext_id(module, prism, result)
 

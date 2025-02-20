@@ -85,9 +85,8 @@ changed:
 
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
-    returned: always
-    type: bool
-    sample: false
+    returned: When an error occurs
+    type: str
 
 failed:
     description: This field typically holds information about if the task have failed
@@ -161,7 +160,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     domain_manager_backups_api = get_domain_manager_backup_api_instance(module)
     if module.params.get("ext_id"):
         get_backup_target_with_ext_id(module, domain_manager_backups_api, result)
