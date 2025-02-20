@@ -164,7 +164,7 @@
 
 - name: List all LCM entities details with filter
   nutanix.ncp.ntnx_lcm_entities_info_v2:
-    filter: "entityModel eq '{{ LCM_entity_model }}'"
+    filter: "entityModel eq '{{ lcm_entity_model }}'"
   register: lcm_entities
   ignore_errors: true
 
@@ -175,7 +175,7 @@
       - lcm_entities.changed == false
       - lcm_entities.failed == false
       - lcm_entities.response.data | length == 1
-      - lcm_entities.response.data[0].entity_model == "{{ LCM_entity_model }}"
+      - lcm_entities.response.data[0].entity_model == "{{ lcm_entity_model }}"
     fail_msg: "Failed to list all LCM entities details with filter"
     success_msg: "All LCM entities details with filter are listed successfully"
 
@@ -212,7 +212,7 @@
       - lcm_entity.changed == false
       - lcm_entity.failed == false
       - lcm_entity.response.ext_id == lcm_entity_external_id
-      - lcm_entity.response.entity_model == "{{ LCM_entity_model }}"
+      - lcm_entity.response.entity_model == "{{ lcm_entity_model }}"
       - lcm_entity.response.available_versions | length > 0
     fail_msg: "Failed to fetch LCM entity using external ID"
     success_msg: "LCM entity is fetched successfully using external ID"
@@ -272,7 +272,7 @@
     cluster_ext_id: "{{ prism_central_external_id }}"
     entity_update_specs:
       - entity_uuid: "{{ lcm_entity_external_id }}"
-        to_version: "{{ LCM_entity_model_version}}"
+        to_version: "{{ lcm_entity_model_version}}"
   register: lcm_prechecks
   ignore_errors: true
 
@@ -341,7 +341,7 @@
     cluster_ext_id: "{{ prism_central_external_id }}"
     entity_update_specs:
       - entity_uuid: "{{ lcm_entity_external_id }}"
-        to_version: "{{ LCM_entity_model_version }}"
+        to_version: "{{ lcm_entity_model_version }}"
   register: lcm_upgrade
   ignore_errors: true
 
@@ -368,7 +368,7 @@
       - lcm_entity_after_upgrade.changed == false
       - lcm_entity_after_upgrade.failed == false
       - lcm_entity_after_upgrade.response.ext_id == lcm_entity_external_id
-      - lcm_entity_after_upgrade.response.entity_model == "{{ LCM_entity_model }}"
-      - lcm_entity_after_upgrade.response.entity_version == "{{ LCM_entity_model_version }}"
+      - lcm_entity_after_upgrade.response.entity_model == "{{ lcm_entity_model }}"
+      - lcm_entity_after_upgrade.response.entity_version == "{{ lcm_entity_model_version }}"
     fail_msg: "Failed to fetch LCM entity using external ID"
     success_msg: "LCM entity is fetched successfully using external ID"
