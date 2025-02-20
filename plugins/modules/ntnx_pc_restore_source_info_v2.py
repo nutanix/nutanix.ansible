@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2025, Prem Karat
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
@@ -112,8 +112,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
     prism = get_domain_manager_backup_api_instance(module)
-    if module.params.get("ext_id"):
-        get_restore_source_with_ext_id(module, prism, result)
+    get_restore_source_with_ext_id(module, prism, result)
 
     module.exit_json(**result)
 
