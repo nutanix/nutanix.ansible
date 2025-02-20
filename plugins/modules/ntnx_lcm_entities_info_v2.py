@@ -92,7 +92,7 @@ changed:
     sample: false
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
-    type: bool
+    type: str
     returned: always
     sample: false
 """
