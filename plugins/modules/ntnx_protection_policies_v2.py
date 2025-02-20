@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2025, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -37,7 +37,7 @@ options:
     description:
       - The name of the protection policy.
     type: str
-    required: false
+    required: true
   description:
     description:
       - The description of the protection policy.
@@ -49,7 +49,7 @@ options:
       - You can specify up to 3 replication locations.
     type: list
     elements: dict
-    required: false
+    required: true
     suboptions:
       label:
         description:
@@ -64,7 +64,7 @@ options:
         required: true
       replication_sub_location:
         description:
-          - Specifies the sub location of the replication location.
+          - Specifies the replication sublocations where recovery points can be created or replicated.
         type: dict
         required: false
         suboptions:
@@ -93,16 +93,18 @@ options:
       - Connections from both source-to-target and target-to-source should be specified.
     type: list
     elements: dict
-    required: false
+    required: true
     suboptions:
       source_location_label:
         description:
-          - The label of the source location.
+          - Label of the source location from the replication locations list, where the entity is running.
+          - The location of type MST can not be specified as the replication source.
         type: str
         required: true
       remote_location_label:
         description:
           - The label of the remote location.
+          - Label of the source location from the replication locations list, where the entity will be replicated.
         type: str
         required: false
       schedule:
@@ -122,11 +124,16 @@ options:
           recovery_point_objective_time_seconds:
             description:
               - The Recovery point objective of the schedule in seconds and specified in multiple of 60 seconds.
+              - Only following RPO values can be provided for rollup retention type
+              - Minute(s) -> 1, 2, 3, 4, 5, 6, 10, 12, 15
+              - Hour(s) -> 1, 2, 3, 4, 6, 8, 12
+              - Day(s) -> 1
+              - Week(s) -> 1, 2
             type: int
             required: true
           retention:
             description:
-              - Specifies the retention policy of the schedule.
+              - Specifies the retention policy for the recovery point schedule.
             type: dict
             required: false
             suboptions:
@@ -208,7 +215,7 @@ options:
             required: false
   category_ids:
     description:
-      - Specifies the category ids of the protection policy.
+      - Specifies the list of external identifiers of categories that must be added to the protection policy.
     type: list
     elements: str
     required: false
@@ -582,19 +589,21 @@ def get_module_spec():
     )
     module_args = dict(
         ext_id=dict(type="str"),
-        name=dict(type="str"),
+        name=dict(type="str", required=True),
         description=dict(type="str"),
         replication_locations=dict(
             type="list",
             elements="dict",
             options=replication_locations_spec,
             obj=datapolicies_sdk.ReplicationLocation,
+            required=True,
         ),
         replication_configurations=dict(
             type="list",
             elements="dict",
             options=replication_configurations_spec,
             obj=datapolicies_sdk.ReplicationConfiguration,
+            required=True,
         ),
         category_ids=dict(type="list", elements="str"),
     )

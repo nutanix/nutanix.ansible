@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2025, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,10 +14,11 @@ module: ntnx_restore_protected_resources_v2
 short_description: Module to restore a protected resource in Nutanix Prism Central.
 description:
   - This module can be used to restore a protected resource in Nutanix Prism Central.
+  - Supported only for protected resources that have minutely scheduled protection policies.
 options:
   ext_id:
     description:
-      - The external identifier of a protected VM or volume group used to retrieve the protected resource.
+      - The external identifier of a protected VM or volume group.
     type: str
     required: true
   cluster_ext_id:
@@ -165,7 +166,6 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
         cluster_ext_id=dict(type="str", required=False),
         restore_time=dict(type="str", required=False),
-        wait=dict(type="bool", required=False, default=True),
     )
     return module_args
 

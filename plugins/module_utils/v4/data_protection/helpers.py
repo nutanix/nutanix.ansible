@@ -58,6 +58,8 @@ def get_protected_resource(module, api_instance, ext_id):
     This method will return protected resource info using external ID.
     Args:
         module: Ansible module
+        api_instance: ProtectedResourcesApi instance from ntnx_dataprotection_py_client sdk
+        ext_id (str): protected resource external ID
     Returns:
         protected_resource_info (object): protected resource info
     """
