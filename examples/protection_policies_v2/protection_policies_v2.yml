@@ -90,22 +90,6 @@
               cluster_ext_ids:
                 - "{{ cluster_availability_zone.uuid }}"
 
-        replication_location_1_expected:
-          label: "ansible-label-{{label1}}"
-          domain_manager_ext_id: "{{domain_manager_ext_id}}"
-          is_primary: true
-          replication_sub_location:
-            cluster_ext_ids:
-              - "{{ cluster.uuid }}"
-
-        replication_location_2_expected:
-          label: "ansible-label-{{label2}}"
-          domain_manager_ext_id: "{{availabilty_zone_pc_uuid}}"
-          is_primary: false
-          replication_sub_location:
-            cluster_ext_ids:
-              - "{{ cluster_availability_zone.uuid }}"
-
         replication_location_1_local_clusters:
           label: "ansible-label-local-clusters-{{label1}}"
           domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -124,22 +108,6 @@
               cluster_ext_ids:
                 - "{{ cluster_ext_id }}"
 
-        replication_location_1_local_clusters_expected:
-          label: "ansible-label-local-clusters-{{label1}}"
-          domain_manager_ext_id: "{{domain_manager_ext_id}}"
-          is_primary: true
-          replication_sub_location:
-            cluster_ext_ids:
-              - "{{ cluster.uuid }}"
-
-        replication_location_2_local_clusters_expected:
-          label: "ansible-label-local-clusters-{{label2}}"
-          domain_manager_ext_id: "{{domain_manager_ext_id}}"
-          is_primary: false
-          replication_sub_location:
-            cluster_ext_ids:
-              - "{{ cluster_ext_id }}"
-
         replication_location_1_updated:
           label: "ansible-label-{{label1}}_updated"
           domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -157,22 +125,6 @@
             nutanix_cluster:
               cluster_ext_ids:
                 - "{{ cluster_availability_zone.uuid }}"
-
-        replication_location_1_updated_expected:
-          label: "ansible-label-{{label1}}_updated"
-          domain_manager_ext_id: "{{domain_manager_ext_id}}"
-          is_primary: true
-          replication_sub_location:
-            cluster_ext_ids:
-              - "{{ cluster.uuid }}"
-
-        replication_location_2_updated_expected:
-          label: "ansible-label-{{label2}}_updated"
-          domain_manager_ext_id: "{{availabilty_zone_pc_uuid}}"
-          is_primary: false
-          replication_sub_location:
-            cluster_ext_ids:
-              - "{{ cluster_availability_zone.uuid }}"
 
         replication_configuration_linear_1:
           source_location_label: "ansible-label-{{label1}}"
