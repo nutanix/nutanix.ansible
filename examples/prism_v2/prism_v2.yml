@@ -62,7 +62,7 @@
           name_servers:
             ipv4: ["10.10.10.10", "10.10.10.11"]
           ntp_servers:
-            fqdn: ["2.centos.pool.ntp.org", "3.centos.pool.ntp.org"]
+            fqdn: ["2.example.org", "3.example.org"]
         availabilty_zone_pc_uuid: "869aa8a5-5aeb-423f-829d-f932d2656b6c"
 
     - name: List all clusters to get prism central external ID

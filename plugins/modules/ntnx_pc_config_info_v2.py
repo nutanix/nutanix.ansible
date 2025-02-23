@@ -150,28 +150,28 @@ response:
                 "ntp_servers": [
                     {
                         "fqdn": {
-                            "value": "0.centos.pool.ntp.org"
+                            "value": "0.example.org"
                         },
                         "ipv4": null,
                         "ipv6": null
                     },
                     {
                         "fqdn": {
-                            "value": "3.centos.pool.ntp.org"
+                            "value": "3.example.org"
                         },
                         "ipv4": null,
                         "ipv6": null
                     },
                     {
                         "fqdn": {
-                            "value": "2.centos.pool.ntp.org"
+                            "value": "2.example.org"
                         },
                         "ipv4": null,
                         "ipv6": null
                     },
                     {
                         "fqdn": {
-                            "value": "1.centos.pool.ntp.org"
+                            "value": "1.example.org"
                         },
                         "ipv4": null,
                         "ipv6": null

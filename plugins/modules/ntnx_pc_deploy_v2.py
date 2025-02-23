@@ -591,9 +591,9 @@ EXAMPLES = r"""
             value: "10.0.0.5"
       ntp_servers:
         - fqdn:
-            value: "2.centos.pool.ntp.org"
+            value: "2.example.org"
         - fqdn:
-            value: "3.centos.pool.ntp.org"
+            value: "3.example.org"
   register: result
 """
 

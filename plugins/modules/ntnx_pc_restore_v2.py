@@ -611,13 +611,13 @@ EXAMPLES = r"""
               value: "10.0.0.6"
         ntp_servers:
           - fqdn:
-              value: "1.centos.pool.ntp.org"
+              value: "1.example.org"
           - fqdn:
-              value: "2.centos.pool.ntp.org"
+              value: "2.example.org"
           - fqdn:
-              value: "3.centos.pool.ntp.org"
+              value: "3.example.org"
           - fqdn:
-              value: "4.centos.pool.ntp.org"
+              value: "4.example.org"
         external_networks:
           - network_ext_id: "54678987-1764-3478-8050-ac1f6b6f97e2"
             default_gateway:
