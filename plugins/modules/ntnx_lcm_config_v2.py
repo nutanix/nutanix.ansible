@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
@@ -70,7 +70,7 @@ EXAMPLES = r"""
     is_auto_inventory_enabled: true
     is_https_enabled: true
     has_module_auto_upgrade_enabled: false
-    url: "http://download.nutanix.com/lcm/3.0"
+    url: "http://example.com"
   register: lcm_config_update
 """
 
@@ -100,7 +100,7 @@ response:
                 "Prism Central"
             ],
             "tenant_id": null,
-            "url": "http://download.nutanix.com/lcm/3.0",
+            "url": "http://example.com",
             "version": "3.1.56788"
         }
 cluster_ext_id:
