@@ -211,6 +211,7 @@ options:
           sync_replication_auto_suspend_timeout_seconds:
             description:
               - Specifies the timeout in seconds for the sync replication to auto suspend.
+              - Auto suspend timeout if there is a connection failure between locations for synchronous replication.
             type: int
             required: false
   category_ids:

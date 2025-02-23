@@ -33,7 +33,7 @@ options:
     categories:
         description:
             - List of categories to associate or disassociate with the volume group.
-        required: false
+        required: true
         type: list
         elements: dict
         suboptions:
@@ -264,6 +264,7 @@ def get_module_spec():
             elements="dict",
             options=categories_spec,
             obj=volumes_sdk.EntityReference,
+            required=True,
         ),
     )
 

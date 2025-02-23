@@ -21,17 +21,17 @@ options:
             - The external identifier of the protection policy.
         type: str
 extends_documentation_fragment:
-        - nutanix.ncp.ntnx_credentials
-        - nutanix.ncp.ntnx_info_v2
+    - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_info_v2
 author:
     - George Ghawali (@george-ghawali)
 """
 EXAMPLES = r"""
 - name: Fetch details for a protection policy using External ID
   nutanix.ncp.ntnx_protection_policies_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
+    nutanix_host: "10.0.0.2"
+    nutanix_username: "username"
+    nutanix_password: "password"
     ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
   register: result
 
@@ -55,7 +55,7 @@ RETURN = r"""
 response:
     description:
         - Response for fetching protection policies info
-        - One protection policy info if External ID is provided
+        - Specific protection policy info if External ID is provided
         - List of multiple protection policies info if External ID is not provided
     returned: always
     type: dict

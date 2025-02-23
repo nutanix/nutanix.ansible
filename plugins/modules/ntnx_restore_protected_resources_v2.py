@@ -49,12 +49,13 @@ author:
 EXAMPLES = r"""
 - name: Restore VM
   nutanix.ncp.ntnx_restore_protected_resources_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
+    nutanix_host: "10.2.1.0"
+    nutanix_username: "username"
+    nutanix_password: "password"
     validate_certs: false
     ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
     cluster_ext_id: "00062aa9-1234-1122-3333-ac1f6b6f97e2"
+    restore_time: "2025-01-23T14:30:00-07:00"
   register: result
   ignore_errors: true
 """

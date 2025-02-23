@@ -37,7 +37,7 @@ author:
 EXAMPLES = r"""
 - name: Promote VM
   nutanix.ncp.ntnx_promote_protected_resources_v2:
-    nutanix_host: "{{ availability_zone_pc_ip }}"
+    nutanix_host: "{{ secondary_site_pc_ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
