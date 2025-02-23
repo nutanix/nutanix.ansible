@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Setup Docker
-        uses: docker-practice/actions-setup-docker@master
+        uses: docker/setup-docker-action@v4
       - name: Install ansible
         run: |
           pip install -r tests/integration/requirements.txt
@@ -53,7 +53,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Setup Docker
-        uses: docker-practice/actions-setup-docker@master
+        uses: docker/setup-docker-action@v4
       - name: Install ansible
         run: |
           pip install -r tests/integration/requirements.txt
