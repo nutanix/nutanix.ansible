@@ -263,7 +263,7 @@ skipped:
 error:
     description: The error message, if any.
     type: str
-    returned: always
+    returned: when an error occurs
 """
 
 import traceback  # noqa: E402
@@ -504,7 +504,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

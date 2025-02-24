@@ -124,7 +124,7 @@ failed:
 error:
   description: Error message
   type: str
-  returned: always
+  returned: when an error occurs
 
 changed:
   description: Indicates if any changes were made during the operation
@@ -209,7 +209,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None}
     route_api_instance = get_routes_api_instance(module)
     if module.params.get("ext_id") and module.params.get("route_table_ext_id"):
         get_route(module, route_api_instance, result)

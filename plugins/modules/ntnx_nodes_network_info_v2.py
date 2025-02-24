@@ -426,7 +426,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
     }
     cluster_node_api = get_clusters_api_instance(module)
