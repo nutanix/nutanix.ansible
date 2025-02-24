@@ -831,9 +831,6 @@
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
-
 - name: Status for getting a protected resource
   ansible.builtin.assert:
     that:
@@ -868,8 +865,9 @@
 
 - name: Restore VM
   nutanix.ncp.ntnx_restore_protected_resources_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
     ext_id: "{{ vm_ext_id_2 }}"
-    cluster_ext_id: "{{ cluster.uuid }}"
+    cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
   register: result
   ignore_errors: true
 
@@ -901,8 +899,9 @@
 
 - name: Restore VG
   nutanix.ncp.ntnx_restore_protected_resources_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
     ext_id: "{{ vg2_uuid }}"
-    cluster_ext_id: "{{ cluster.uuid }}"
+    cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
   register: result
   ignore_errors: true
 
@@ -917,6 +916,10 @@
     fail_msg: "VG restore failed"
 
 ########################################################################################
+
+- name: Sleep for 5 minutes until VMs and VGs are promoted and restored
+  ansible.builtin.pause:
+    seconds: 300
 
 - name: Generate spec for updating linear retention protection policy using check mode
   nutanix.ncp.ntnx_protection_policies_v2:
@@ -1303,6 +1306,13 @@
   ansible.builtin.set_fact:
     protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
 
+- name: Assert that VGs are present
+  ansible.builtin.assert:
+    that:
+      - protected_vgs | length == 2
+    fail_msg: "No VGs found"
+    success_msg: "VGs found"
+
 - name: Delete all Created VGs on local cluster
   nutanix.ncp.ntnx_volume_groups_v2:
     state: absent
@@ -1326,6 +1336,44 @@
   loop_control:
     index_var: vgs_index
 
+- name: Fetch all VGs on remote cluster
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+  register: result
+  ignore_errors: true
+
+- name: Filter only protected VGs
+  ansible.builtin.set_fact:
+    protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
+
+- name: Extract external ids of protected VGs
+  ansible.builtin.set_fact:
+    protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
+
+- name: Assert that VG is present
+  ansible.builtin.assert:
+    that:
+      - protected_vgs | length == 1
+    fail_msg: "No VGs found"
+    success_msg: "VGs found"
+
+- name: Delete Created VG on remote cluster
+  nutanix.ncp.ntnx_volume_groups_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    state: absent
+    ext_id: "{{ protected_vgs_ext_ids[0] }}"
+  register: result
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VG "
+    success_msg: "VG is deleted successfully "
+
 ########################################################################################
 
 - name: Fetch all VMs on local cluster
@@ -1340,6 +1388,13 @@
 - name: Extract external ids of protected VMs
   ansible.builtin.set_fact:
     protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
+
+- name: Assert that VMs are present
+  ansible.builtin.assert:
+    that:
+      - protected_vms | length == 2
+    fail_msg: "No VMs found"
+    success_msg: "VMs found"
 
 - name: Delete all Created VMs on local cluster
   nutanix.ncp.ntnx_vms_v2:
@@ -1377,6 +1432,13 @@
 - name: Extract external ids of protected VMs
   ansible.builtin.set_fact:
     protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
+
+- name: Assert that VM is present
+  ansible.builtin.assert:
+    that:
+      - protected_vms | length == 2
+    fail_msg: "No VMs found"
+    success_msg: "VMs found"
 
 - name: Delete all Created VMs on remote cluster
   nutanix.ncp.ntnx_vms_v2:

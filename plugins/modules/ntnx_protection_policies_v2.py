@@ -37,7 +37,7 @@ options:
     description:
       - The name of the protection policy.
     type: str
-    required: true
+    required: false
   description:
     description:
       - The description of the protection policy.
@@ -49,7 +49,7 @@ options:
       - You can specify up to 3 replication locations.
     type: list
     elements: dict
-    required: true
+    required: false
     suboptions:
       label:
         description:
@@ -93,7 +93,7 @@ options:
       - Connections from both source-to-target and target-to-source should be specified.
     type: list
     elements: dict
-    required: true
+    required: false
     suboptions:
       source_location_label:
         description:
@@ -584,27 +584,24 @@ def get_module_spec():
         schedule=dict(
             type="dict",
             options=schedule_spec,
-            required=True,
             obj=datapolicies_sdk.Schedule,
         ),
     )
     module_args = dict(
         ext_id=dict(type="str"),
-        name=dict(type="str", required=True),
+        name=dict(type="str"),
         description=dict(type="str"),
         replication_locations=dict(
             type="list",
             elements="dict",
             options=replication_locations_spec,
             obj=datapolicies_sdk.ReplicationLocation,
-            required=True,
         ),
         replication_configurations=dict(
             type="list",
             elements="dict",
             options=replication_configurations_spec,
             obj=datapolicies_sdk.ReplicationConfiguration,
-            required=True,
         ),
         category_ids=dict(type="list", elements="str"),
     )
