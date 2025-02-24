@@ -86,6 +86,19 @@ This collection requires Python 3.9 or greater
 
 Ansible should be pre-installed. If not, please follow official ansible [install guide](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) .
 
+Installtion can be done as per usage using below methods:
+
+## **1. Install from Ansible Galaxy Portal:**
+
+Published at : https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/
+
+Installation:
+
+```ansible-galaxy collection install nutanix.ncp```
+
+
+## **2. Build and install from code:**
+
 For <font color=royalblue>Developers</font>, please follow [this install guide](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.html) for setting up dev environment.
 
 **1. Clone the GitHub repository to a local directory**
@@ -95,6 +108,10 @@ For <font color=royalblue>Developers</font>, please follow [this install guide](
 **2. Git checkout release version**
 
 ```git checkout <release_version> -b <release_version>```
+
+**3. Install requirements**
+
+```pip install -r requirements.txt```
 
 **3. Build the collection**
 
