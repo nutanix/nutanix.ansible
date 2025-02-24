@@ -1,7 +1,7 @@
 ---
-- name: Start testing ntnx_lcm_v2
+- name: Start testing lcm namespace modules testing
   ansible.builtin.debug:
-    msg: start testing ntnx_lcm_v2
+    msg: start testing lcm namespace modules testing
 
 - name: List all clusters to get prism central external ID
   nutanix.ncp.ntnx_clusters_info_v2:
@@ -15,7 +15,6 @@
 
 - name: Get config of LCM
   nutanix.ncp.ntnx_lcm_config_info_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
   register: lcm_config_info
   ignore_errors: true
 
@@ -30,12 +29,12 @@
 
 - name: Generate spec for updating config of LCM using check mode
   nutanix.ncp.ntnx_lcm_config_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
-    is_auto_inventory_enabled: "{{ not lcm_config_info.response.is_auto_inventory_enabled }}"
-    is_https_enabled: "{{ not lcm_config_info.response.is_https_enabled }}"
-    has_module_auto_upgrade_enabled: "{{ not lcm_config_info.response.has_module_auto_upgrade_enabled }}"
-    url: "{{ lcm_config_info.response.url }}"
-    connectivity_type: "{{ lcm_config_info.response.connectivity_type }}"
+    cluster_ext_id: "00062db4-a450-e685-0fda-cdf9ca935bfd"
+    is_auto_inventory_enabled: "true"
+    is_https_enabled: "false"
+    has_module_auto_upgrade_enabled: "true"
+    url: "https://example.com"
+    connectivity_type: "DARKSITE_DIRECT_UPLOAD"
   check_mode: true
   register: lcm_config_update
   ignore_errors: true
@@ -46,9 +45,11 @@
       - lcm_config_update.response is defined
       - lcm_config_update.changed == false
       - lcm_config_update.failed == false
-      - lcm_config_update.response.is_auto_inventory_enabled == {{ not lcm_config_info.response.is_auto_inventory_enabled }}
-      - lcm_config_update.response.is_https_enabled == {{ not lcm_config_info.response.is_https_enabled }}
-      - lcm_config_update.response.has_module_auto_upgrade_enabled == {{ not lcm_config_info.response.has_module_auto_upgrade_enabled }}
+      - lcm_config_update.response.is_auto_inventory_enabled == true
+      - lcm_config_update.response.is_https_enabled == false
+      - lcm_config_update.response.has_module_auto_upgrade_enabled == true
+      - lcm_config_update.response.url == "https://example.com"
+      - lcm_config_update.response.connectivity_type == "DARKSITE_DIRECT_UPLOAD"
     fail_msg: "Failed to update LCM config"
     success_msg: "LCM config is updated successfully"
 
@@ -238,14 +239,14 @@
 
 - name: Generate spec for LCM prechecks using check mode
   nutanix.ncp.ntnx_lcm_prechecks_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
+    cluster_ext_id: "00062db4-a450-e685-0fda-cdf9ca935bfd"
     management_server:
       ip: "10.0.0.2"
       username: "admin"
       password: "password"
       hypervisor_type: "AHV"
     entity_update_specs:
-      - entity_uuid: "{{ lcm_entity_external_id }}"
+      - entity_uuid: "15570c98-beaf-4633-afd2-b6a306ff1001"
         to_version: "5.0.0"
     skipped_precheck_flags: ["POWER_OFF_UVMS"]
   check_mode: true
@@ -307,14 +308,14 @@
 
 - name: Generate spec for LCM upgrade using check mode
   nutanix.ncp.ntnx_lcm_upgrades_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
+    cluster_ext_id: "00062db4-a450-e685-0fda-cdf9ca935bfd"
     management_server:
       ip: "10.0.0.2"
       username: "admin"
       password: "password"
       hypervisor_type: "AHV"
     entity_update_specs:
-      - entity_uuid: "{{ lcm_entity_external_id }}"
+      - entity_uuid: "15570c98-beaf-4633-afd2-b6a306ff1001"
         to_version: "5.0.0"
     skipped_precheck_flags: ["POWER_OFF_UVMS"]
   check_mode: true

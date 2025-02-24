@@ -85,6 +85,11 @@ response:
             "target_version": "3.8.0",
             "tenant_id": null
         }
+ext_id:
+    description: The external ID of the entity
+    type: str
+    returned: always
+    sample: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
 changed:
     description: Whether the module made any changes
     type: bool
@@ -94,6 +99,7 @@ error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
     returned: When an error occurs
+    sample: "Failed to generate info spec for entities"
 """
 
 import warnings  # noqa: E402

@@ -71,10 +71,6 @@ changed:
     type: bool
     returned: always
     sample: false
-error:
-    description: This field typically holds information about if the task have errors that occurred during the task execution
-    type: str
-    returned: When an error occurs
 """
 
 import warnings  # noqa: E402

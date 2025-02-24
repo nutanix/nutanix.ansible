@@ -20,12 +20,12 @@ author:
 options:
     management_server:
         description:
-            - Management server details.
+            - Cluster management server configuration used while updating clusters with ESX or Hyper-V.
         type: dict
         suboptions:
             hypervisor_type:
                 description:
-                    - Hypervisor type.
+                    - Type of Hypervisor present in the cluster.
                 type: str
                 required: true
                 choices:
@@ -49,19 +49,19 @@ options:
                 required: true
     entity_update_specs:
         description:
-            - List of entity update specs.
+            - List of entity update objects for getting recommendations.
         type: list
         elements: dict
         required: true
         suboptions:
             entity_uuid:
                 description:
-                    - Entity UUID.
+                    - LCM Entity UUID.
                 type: str
                 required: true
             to_version:
                 description:
-                    - To version.
+                    - Version to upgrade to.
                 type: str
                 required: true
     skipped_precheck_flags:
@@ -80,7 +80,7 @@ options:
             - POWER_OFF_UVMS
     max_wait_time_in_secs:
         description:
-            - Maximum wait time in seconds.
+            - Number of seconds LCM waits for the VMs to come up after exiting host maintenance mode.
         type: int
     cluster_ext_id:
         description:
@@ -167,6 +167,7 @@ error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: When an error occurs
   type: str
+  sample: "Failed generating create LCM upgrade Spec"
 """
 
 import traceback  # noqa: E402

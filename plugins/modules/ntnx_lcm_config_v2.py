@@ -24,7 +24,7 @@ options:
         required: false
     url:
         description:
-            - The URL of the cluster.
+            - URL of the LCM repository.
         type: str
         required: false
     is_auto_inventory_enabled:
@@ -34,24 +34,26 @@ options:
         required: false
     auto_inventory_schedule:
         description:
-            - The schedule for auto inventory.
+            - The scheduled time in "%H:%M" 24-hour format of the next inventory execution.
+            - Used when auto_inventory_enabled is set to True.
+            - The default schedule time is 03:00(AM).
         type: str
         required: false
     connectivity_type:
         description:
-            - The connectivity type.
+            - This field indicates whether LCM framework on the cluster is running in connected-site mode or darksite mode.
         type: str
         choices: ["CONNECTED_SITE", "DARKSITE_DIRECT_UPLOAD", "DARKSITE_WEB_SERVER"]
         required: false
     is_https_enabled:
         description:
-            - Whether HTTPS is enabled.
+            - Indicates if the LCM URL has HTTPS enabled.
         type: bool
         required: false
         default: false
     has_module_auto_upgrade_enabled:
         description:
-            - Whether module auto upgrade is enabled.
+            - Indicates if LCM is enabled to auto-upgrade products.
         type: bool
         required: false
         default: false
@@ -117,6 +119,12 @@ error:
     description: This field typically holds information about if the task have errors that occurred during the task execution
     type: str
     returned: When an error occurs
+    sample: "Failed creating query parameters for updating lcm config"
+skipped:
+    description: Indicates if the operation was skipped.
+    type: bool
+    returned: When the operation was skipped
+    sample: false
 """
 
 
@@ -164,8 +172,7 @@ def check_lcm_config_idempotency(old_spec, update_spec):
 
 def update_lcm_config(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
-    if cluster_ext_id:
-        result["cluster_ext_id"] = cluster_ext_id
+    result["cluster_ext_id"] = cluster_ext_id
 
     current_spec = get_lcm_config(module, api_instance, cluster_ext_id)
     etag_value = get_etag(current_spec)

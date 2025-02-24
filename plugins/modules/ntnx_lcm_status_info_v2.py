@@ -9,15 +9,15 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_lcm_status_info_v2
-short_description: Fetch LCM Status
-description: Fetch LCM Status like current version, available version, etc.
-version_added: "2.0.0"
+short_description: Get the LCM framework status.
+description: Get the LCM framework status.
+version_added: "2.1.0"
 author:
   - George Ghawali (@george-ghawali)
 options:
   cluster_ext_id:
     description:
-      - The external ID of the Nutanix PC Cluster.
+      - The external ID of the cluster.
     type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
@@ -64,11 +64,6 @@ changed:
     type: bool
     returned: always
     sample: false
-error:
-    description:
-        - The error message if the module fails.
-    type: str
-    returned: When an error occurs
 """
 
 import warnings  # noqa: E402
