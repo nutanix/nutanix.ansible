@@ -15,6 +15,9 @@ short_description: Module to promote a protected resource in Nutanix Prism Centr
 description:
   - This module can be used to promote a protected resource in Nutanix Prism Central.
   - Supported only for protected resources that have synchronous protection policies.
+  - Promote VM will create new VM in the secondary PC for the given VM external ID
+  - promote VG will create new VG in the second local PE for the given VG external ID
+  - Promote VM uses secondary PC IP where Promote VG uses primary PC IP
 options:
   ext_id:
     description:
