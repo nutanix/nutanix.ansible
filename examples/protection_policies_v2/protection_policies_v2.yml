@@ -1,28 +1,36 @@
 # Summary:
 # This playbook will do the following:
-# 1. Create linear retention protection policy
-# 2. Create auto retention protection policy
-# 3. Create Synchronous replication protection policy
-# 4. Create a Protected VM to be promoted
-# 5. Create a Protected VM to be restored
-# 6. Create Volume group to be promoted
-# 7. Create Volume group to be restored
-# 8. Associate category with first VG
-# 9. Associate category with second VG
-# 10. Wait for the first VM to be protected
-# 11. Wait for the second VM to be protected
-# 12. Sleep for 5 minutes until VMs and VGs are protected
-# 13. Get a protected resource
-# 14. Promote VM
-# 15. Restore VM
-# 16. Promote VG
-# 17. Restore VG
-# 18. Update linear retention protection policy
-# 19. List all protection policies
-# 20. List all protection policies with filter
-# 21. List all protection policies with limit
-# 22. Delete linear protection policy
-# 23. Delete auto protection policy
+# 1. Create a cluster for promoting VG
+# 2. Create categories for protection policies
+# 3. Generate spec for creating protection policy using check mode
+# 4. Create linear retention protection policy
+# 5. Create auto retention protection policy
+# 6. Create Synchronous replication protection policy for VM using category3
+# 7. Create Synchronous replication protection policy for VG using category4
+# 8. Create a Protected VM to be promoted
+# 9. Create a Protected VM to be restored
+# 10. Create Volume group to be promoted
+# 11. Create Volume group to be restored
+# 13. Associate categories with VGs
+# 14. Get a protected resource
+# 15. Promote VM
+# 16. Restore VM
+# 17. Promote VG
+# 18. Restore VG
+# 19. Generate spec for updating protection policy using check mode
+# 20. Update linear retention protection policy
+# 21. Test idempotency by updating protection policy with same values
+# 22. Update auto retention protection policy
+# 23. List all protection policies
+# 23. List all protection policies with filter
+# 23. List all protection policies with limit
+# 23. Fetch protection policy using ext_id
+# 23. Disassociate categories from VGs
+# 23. Delete VGs on local and remote clusters
+# 23. Delete VMs on local and remote clusters
+# 23. Delete protection policies
+# 23. Destroy cluster
+# 24. Delete categories
 
 - name: Protection policies playbook
   hosts: localhost
@@ -42,33 +50,33 @@
         suffix_name: "ansible-category"
         todelete_categories: []
         todelete: []
-        category_ext_id_1: "bbc3555a-5478-1122-4411-bfff196e84e4"
-        category_ext_id_2: "e4bda88f-9632-3322-2233-2c0bb00d923d"
-        category_ext_id_3: "e4bda88f-1234-5678-3246-2c0bb00d923d"
-        category_ext_id_4: "e4bda88f-1234-5678-3246-2c0bb00d923d"
         cluster:
-          uuid: "0005b6b1-3b7b-4b3b-8b3b-3b7b3b7b3b7b"
-        availability_zone_pc_ip: "10.0.0.1"
+          uuid: "00062db4-a450-e685-0fda-cdf9ca935bfd"
+        cluster_availability_zone:
+          uuid: "00062df3-0a98-93d3-0654-e452ba9c0c25"
+        availability_zone_pc_ip: "10.2.0.0"
         clusters:
           - name: "ansible-test-cluster"
             nodes:
-              - cvm_ip: "10.0.0.6"
+              - cvm_ip: "10.0.0.5"
             config:
               cluster_functions: "AOS"
-              redundancy_factor_cluster_crud: 2
+              redundancy_factor_cluster_crud: 1
               cluster_arch: "X86_64"
               fault_tolerance_state:
                 domain_awareness_level_cluster_crud: "DISK"
             network:
-              virtual_ip: "10.0.0.7"
-        availabilty_zone_pc_uuid: "0005b6b1-3b7b-4b3b-8b3b-3b7b3b7b3b7b"
-        pe_ssh_username: "nutanix"
-        pe_ssh_password: "nutanix/4u"
-        ip_pe: "10.30.30.90"
-        virtual_ip_pe: "10.30.30.91"
+              virtual_ip: "10.0.0.6"
+            pe_username: "username" # ssh username for cvm_ip (10.0.0.5)
+            pe_password: "password" # ssh password for cvm_ip (10.0.0.5)
+        availability_zone_pc_uuid: "bd32fb09-8005-4655-a3a8-086b8ec1b1ea"
+        pe_ssh_username: "username" # ssh username for ip_pe (10.1.0.7)
+        pe_ssh_password: "password" # ssh password for ip_pe (10.1.0.7)
+        ip_pe: "10.1.0.7"
+        virtual_ip_pe: "10.1.0.9"
         username: "admin"
-        password: "Nutanix/4u"
-        cluster_ext_id: "0005b6b1-3b7b-4b3b-8b3b-3b7b3b7b3b7b"
+        password: "Nutanix.123"
+        domain_manager_ext_id: "1e9a1996-50e2-485f-a67c-22355cb43055"
 
     - name: Setting Variables
       ansible.builtin.set_fact:
@@ -83,7 +91,7 @@
 
         replication_location_2:
           label: "ansible-label-{{label2}}"
-          domain_manager_ext_id: "{{availabilty_zone_pc_uuid}}"
+          domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
           is_primary: false
           replication_sub_location:
             nutanix_cluster:
@@ -99,15 +107,6 @@
               cluster_ext_ids:
                 - "{{ cluster.uuid }}"
 
-        replication_location_2_local_clusters:
-          label: "ansible-label-local-clusters-{{label2}}"
-          domain_manager_ext_id: "{{domain_manager_ext_id}}"
-          is_primary: false
-          replication_sub_location:
-            nutanix_cluster:
-              cluster_ext_ids:
-                - "{{ cluster_ext_id }}"
-
         replication_location_1_updated:
           label: "ansible-label-{{label1}}_updated"
           domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -119,7 +118,7 @@
 
         replication_location_2_updated:
           label: "ansible-label-{{label2}}_updated"
-          domain_manager_ext_id: "{{availabilty_zone_pc_uuid}}"
+          domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
           is_primary: false
           replication_sub_location:
             nutanix_cluster:
@@ -337,11 +336,11 @@
         reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
         cluster_status: /usr/local/nutanix/cluster/bin/cluster status
         modify_firewall_cmd_cluster1: >
-          /usr/local/nutanix/cluster/bin/modify_firewall -f -r {{ clusters[0].nodes[0].cvm_ip }},
-          {{ clusters[0].network.virtual_ip }} -p 2030,2036,2073,2090,8740 -i eth0
+          /usr/local/nutanix/cluster/bin/modify_firewall -f -r
+          {{ clusters[0].nodes[0].cvm_ip }},{{ clusters[0].network.virtual_ip }} -p 2030,2036,2073,2090,8740 -i eth0
         modify_firewall_cmd_cluster2: >
-          /usr/local/nutanix/cluster/bin/modify_firewall -f -r {{ ip_pe }},
-          {{ virtual_ip_pe }} -p 2030,2036,2073,2090,8740 -i eth0
+          /usr/local/nutanix/cluster/bin/modify_firewall -f -r
+          {{ ip_pe }},{{ virtual_ip_pe }} -p 2030,2036,2073,2090,8740 -i eth0
 
     - name: Set command for resetting cluster username and password
       ansible.builtin.set_fact:
@@ -365,16 +364,6 @@
 
     ########################################################################################
     # Create cluster for promoting VG
-
-    - name: List all clusters to get prism central external ID
-      nutanix.ncp.ntnx_clusters_info_v2:
-        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
-      register: result
-      ignore_errors: true
-
-    - name: Get prism central external ID
-      ansible.builtin.set_fact:
-        prism_central_external_id: "{{ result.response[0].ext_id }}"
 
     - name: Discover unconfigured node
       nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
@@ -412,12 +401,6 @@
       ansible.builtin.set_fact:
         cluster_name: "{{random_name}}_{{ prefix_name }}_{{ clusters[0].name }}"
 
-    - name: Check if cluster is unconfigured or not
-      ansible.builtin.command: "{{ cluster_status_command }}"
-      register: result
-      ignore_errors: true
-      changed_when: result.rc != 0
-
     - name: Create cluster with minimum spec
       nutanix.ncp.ntnx_clusters_v2:
         name: "{{cluster_name}}"
@@ -448,7 +431,7 @@
 
     - name: Run PE PC registration
       nutanix.ncp.ntnx_pc_registration_v2:
-        ext_id: "{{ prism_central_external_id }}"
+        ext_id: "{{ domain_manager_ext_id }}"
         remote_cluster:
           aos_remote_cluster:
             remote_cluster:
@@ -475,6 +458,17 @@
     - name: Set cluster external ID
       ansible.builtin.set_fact:
         cluster_ext_id: "{{ result.response[0].ext_id }}"
+
+    - name: Set replication_location_2_local_clusters
+      ansible.builtin.set_fact:
+        replication_location_2_local_clusters:
+          label: "ansible-label-local-clusters-{{label2}}"
+          domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          is_primary: false
+          replication_sub_location:
+            nutanix_cluster:
+              cluster_ext_ids:
+                - "{{ cluster_ext_id }}"
 
     - name: Fetch cluster info using external ID
       nutanix.ncp.ntnx_clusters_info_v2:
@@ -519,22 +513,12 @@
         category_ext_id_3: "{{ todelete_categories[2] }}"
         category_ext_id_4: "{{ todelete_categories[3] }}"
 
-    - name: List all clusters to get prism central external ID
-      nutanix.ncp.ntnx_clusters_info_v2:
-        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
-      register: result
-      ignore_errors: true
-
-    - name: Get prism central external ID
-      ansible.builtin.set_fact:
-        domain_manager_ext_id: "{{ result.response[0].ext_id }}"
-
     ########################################################################################
 
     - name: Generate spec for creating protection policy using check mode
       nutanix.ncp.ntnx_protection_policies_v2:
-        name: "ansible-name-test-{{random_name}}"
-        description: "ansible-description-test-{{random_name}}"
+        name: "ansible-create-protection-policy-name"
+        description: "ansible-create-protection-policy-description"
         replication_locations:
           - "{{ replication_location_1}}"
           - "{{ replication_location_2}}"
@@ -550,7 +534,7 @@
                   remote: "{{ replication_configuration_linear_1_check_mode.schedule.retention.remote }}"
               start_time: "{{ replication_configuration_linear_1_check_mode.schedule.start_time }}"
               sync_replication_auto_suspend_timeout_seconds: >
-                "{{ replication_configuration_linear_1_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+                {{ replication_configuration_linear_1_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
           - source_location_label: "{{  replication_configuration_linear_2_check_mode.source_location_label }}"
             remote_location_label: "{{ replication_configuration_linear_2_check_mode.remote_location_label }}"
             schedule:
@@ -562,7 +546,7 @@
                   remote: "{{ replication_configuration_linear_2_check_mode.schedule.retention.remote }}"
               start_time: "{{ replication_configuration_linear_2_check_mode.schedule.start_time }}"
               sync_replication_auto_suspend_timeout_seconds: >
-                "{{ replication_configuration_linear_2_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+                {{ replication_configuration_linear_2_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
         category_ids:
           - "00000000-0000-0000-0000-000000000000"
       register: result
@@ -604,7 +588,7 @@
       register: result
       ignore_errors: true
 
-    - name: Add retention policy external ID to todelete list
+    - name: Add linear retention protection policy external ID to todelete list
       ansible.builtin.set_fact:
         todelete: "{{ todelete + [result.response.ext_id] }}"
 
@@ -651,13 +635,13 @@
       register: result
       ignore_errors: true
 
-    - name: Add retention policy external ID to todelete list
+    - name: Add auto retention protection policy external ID to todelete list
       ansible.builtin.set_fact:
         todelete: "{{ todelete + [result.response.ext_id] }}"
 
     ########################################################################################
 
-    - name: Create Synchronous replication protection policy for VM
+    - name: Create Synchronous replication protection policy for VM using category3
       nutanix.ncp.ntnx_protection_policies_v2:
         name: "ansible-name-sync-vm-{{random_name}}"
         description: "ansible-description-sync-vm-{{random_name}}"
@@ -682,13 +666,13 @@
       register: result
       ignore_errors: true
 
-    - name: Add retention policy external ID to todelete list
+    - name: Add synchronous protection policy external ID to todelete list
       ansible.builtin.set_fact:
         todelete: "{{ todelete + [result.response.ext_id] }}"
 
     ########################################################################################
 
-    - name: Create Synchronous replication protection policy for VG
+    - name: Create Synchronous replication protection policy for VG using category4
       nutanix.ncp.ntnx_protection_policies_v2:
         name: "ansible-name-sync-vg-{{random_name}}"
         description: "ansible-description-sync-vg-{{random_name}}"
@@ -703,21 +687,21 @@
               recovery_point_objective_time_seconds: >
                 "{{ replication_configuration_sync_local_clusters_1.schedule.recovery_point_objective_time_seconds | int }}"
               sync_replication_auto_suspend_timeout_seconds: >
-                "{{ replication_configuration_sync_local_clusters_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+                {{ replication_configuration_sync_local_clusters_1.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
           - source_location_label: "{{ replication_configuration_sync_local_clusters_2.source_location_label }}"
             remote_location_label: "{{ replication_configuration_sync_local_clusters_2.remote_location_label }}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
               recovery_point_objective_time_seconds: >
-                "{{ replication_configuration_sync_local_clusters_2.schedule.recovery_point_objective_time_seconds | int }}"
+                {{ replication_configuration_sync_local_clusters_2.schedule.recovery_point_objective_time_seconds | int }}
               sync_replication_auto_suspend_timeout_seconds: >
-                "{{ replication_configuration_sync_local_clusters_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+                {{ replication_configuration_sync_local_clusters_2.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
         category_ids:
           - "{{category_ext_id_4}}"
       register: result
       ignore_errors: true
 
-    - name: Add retention policy external ID to todelete list
+    - name: Add synchronous protection policy external ID to todelete list
       ansible.builtin.set_fact:
         todelete: "{{ todelete + [result.response.ext_id] }}"
 
@@ -726,7 +710,7 @@
     - name: Create a Protected VM to be promoted
       nutanix.ncp.ntnx_vms_v2:
         name: "{{ random_name }}_ansible_protected_vm_promote"
-        description: "Protected VM for promotion"
+        description: "Protected VM for promote"
         cluster:
           ext_id: "{{ cluster.uuid }}"
         categories:
@@ -756,7 +740,7 @@
     - name: Create Volume group to be promoted
       nutanix.ncp.ntnx_volume_groups_v2:
         name: "{{ random_name }}_ansible_protected_vg_promote"
-        description: "Volume group for promotion"
+        description: "Volume group for promote"
         cluster_reference: "{{ cluster.uuid }}"
       register: result
       ignore_errors: true
@@ -834,8 +818,9 @@
 
     - name: Restore VM
       nutanix.ncp.ntnx_restore_protected_resources_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
         ext_id: "{{ vm_ext_id_2 }}"
-        cluster_ext_id: "{{ cluster.uuid }}"
+        cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
       register: result
       ignore_errors: true
 
@@ -847,18 +832,23 @@
 
     - name: Restore VG
       nutanix.ncp.ntnx_restore_protected_resources_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
         ext_id: "{{ vg2_uuid }}"
-        cluster_ext_id: "{{ cluster.uuid }}"
+        cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
       register: result
       ignore_errors: true
 
     ########################################################################################
 
+    - name: Sleep for 5 minutes until VMs and VGs are promoted and restored
+      ansible.builtin.pause:
+        seconds: 300
+
     - name: Generate spec for updating linear retention protection policy using check mode
       nutanix.ncp.ntnx_protection_policies_v2:
         ext_id: "{{ todelete[0] }}"
-        name: "ansible-name-linear-{{random_name}}_updated"
-        description: "ansible-description-linear-{{random_name}}_updated"
+        name: "ansible-update-protection-policy-name"
+        description: "ansible-update-protection-policy-description"
         replication_locations:
           - "{{ replication_location_1_updated }}"
           - "{{ replication_location_2_updated }}"
@@ -868,7 +858,7 @@
             schedule:
               recovery_point_type: "{{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_type }}"
               recovery_point_objective_time_seconds: >
-                "{{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
+                {{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}
               retention:
                 linear_retention:
                   local: "{{ replication_configuration_linear_1_updated_check_mode.schedule.retention.local }}"
@@ -882,7 +872,7 @@
             schedule:
               recovery_point_type: "{{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_type }}"
               recovery_point_objective_time_seconds: >
-                "{{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
+                {{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}
               retention:
                 linear_retention:
                   local: "{{ replication_configuration_linear_2_updated_check_mode.schedule.retention.local }}"
@@ -1096,6 +1086,27 @@
       register: result
       loop: "{{ protected_vgs_ext_ids }}"
 
+    - name: Fetch all VGs on remote cluster
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
+      register: result
+      ignore_errors: true
+
+    - name: Filter only protected VGs
+      ansible.builtin.set_fact:
+        protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
+
+    - name: Extract external ids of protected VGs
+      ansible.builtin.set_fact:
+        protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
+
+    - name: Delete Created VG on remote cluster
+      nutanix.ncp.ntnx_volume_groups_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
+        state: absent
+        ext_id: "{{ protected_vgs_ext_ids[0] }}"
+      register: result
+
     ########################################################################################
 
     - name: Fetch all VMs on local cluster
@@ -1153,6 +1164,10 @@
 
     ########################################################################################
     # Destroy cluster
+
+    - name: Sleep for 5 minutes before destroying the cluster
+      ansible.builtin.pause:
+        seconds: 300
 
     - name: Destroy the cluster for cleanup
       nutanix.ncp.ntnx_clusters_v2:

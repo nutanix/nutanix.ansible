@@ -1,7 +1,7 @@
 ---
-- name: Start Protection Policy related tests
+- name: Start protection policies and data protection tests
   ansible.builtin.debug:
-    msg: Start Protection Policy related tests
+    msg: Start protection policies and data protection tests
 
 - name: Generate random names
   ansible.builtin.set_fact:
@@ -60,7 +60,7 @@
 
 - name: Get prism central external ID
   ansible.builtin.set_fact:
-    prism_central_external_id: "{{ result.response[0].ext_id }}"
+    domain_manager_ext_id: "{{ result.response[0].ext_id }}"
 
 - name: Discover unconfigured node
   nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
@@ -174,7 +174,7 @@
 
 - name: Run PE PC registration
   nutanix.ncp.ntnx_pc_registration_v2:
-    ext_id: "{{ prism_central_external_id }}"
+    ext_id: "{{ domain_manager_ext_id }}"
     remote_cluster:
       aos_remote_cluster:
         remote_cluster:
@@ -193,7 +193,7 @@
     that:
       - result.changed == true
       - result.ext_id is defined
-      - result.ext_id == prism_central_external_id
+      - result.ext_id == domain_manager_ext_id
       - result.response.status == 'SUCCEEDED'
       - result.task_ext_id is defined
     fail_msg: "PE PC registration failed"
@@ -306,22 +306,12 @@
     category_ext_id_3: "{{ todelete_categories[2] }}"
     category_ext_id_4: "{{ todelete_categories[3] }}"
 
-- name: List all clusters to get prism central external ID
-  nutanix.ncp.ntnx_clusters_info_v2:
-    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
-  register: result
-  ignore_errors: true
-
-- name: Get prism central external ID
-  ansible.builtin.set_fact:
-    domain_manager_ext_id: "{{ result.response[0].ext_id }}"
-
 ########################################################################################
 
 - name: Generate spec for creating protection policy using check mode
   nutanix.ncp.ntnx_protection_policies_v2:
-    name: "ansible-name-test-{{random_name}}"
-    description: "ansible-description-test-{{random_name}}"
+    name: "ansible-create-protection-policy-name"
+    description: "ansible-create-protection-policy-description"
     replication_locations:
       - "{{ replication_location_1}}"
       - "{{ replication_location_2}}"
@@ -362,8 +352,8 @@
       - result.changed == false
       - result.failed == false
       - result.response is defined
-      - result.response.name == "ansible-name-test-{{random_name}}"
-      - result.response.description == "ansible-description-test-{{random_name}}"
+      - result.response.name == "ansible-create-protection-policy-name"
+      - result.response.description == "ansible-create-protection-policy-description"
       - result.response.replication_locations[0] == replication_location_1_expected
         or result.response.replication_locations[0] == replication_location_2_expected
       - result.response.replication_locations[1] == replication_location_1_expected
@@ -436,7 +426,7 @@
     success_msg: "Protection policy created successfully"
     fail_msg: "Protection policy creation failed"
 
-- name: Add retention policy external ID to todelete list
+- name: Add linear retention protection policy external ID to todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.response.ext_id] }}"
 
@@ -506,13 +496,13 @@
     success_msg: "Protection policy created successfully"
     fail_msg: "Protection policy creation failed"
 
-- name: Add retention policy external ID to todelete list
+- name: Add auto retention protection policy external ID to todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.response.ext_id] }}"
 
 ########################################################################################
 
-- name: Create Synchronous replication protection policy for VM
+- name: Create Synchronous replication protection policy for VM using category3
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-sync-vm-{{random_name}}"
     description: "ansible-description-sync-vm-{{random_name}}"
@@ -537,7 +527,7 @@
   register: result
   ignore_errors: true
 
-- name: Status for creating Synchronous replication protection policy for VM
+- name: Status for creating Synchronous replication protection policy for VM using category3
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -557,16 +547,16 @@
         or result.response.replication_configurations[1] == replication_configuration_sync_2
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_3}}"
-    success_msg: "Protection policy for VM created successfully"
-    fail_msg: "Protection policy for VM creation failed"
+    success_msg: "Protection policy for VM using category3 created successfully"
+    fail_msg: "Protection policy for VM using category3 creation failed"
 
-- name: Add retention policy external ID to todelete list
+- name: Add synchronous protection policy external ID to todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.response.ext_id] }}"
 
 ########################################################################################
 
-- name: Create Synchronous replication protection policy for VG
+- name: Create Synchronous replication protection policy for VG using category4
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-sync-vg-{{random_name}}"
     description: "ansible-description-sync-vg-{{random_name}}"
@@ -594,7 +584,7 @@
   register: result
   ignore_errors: true
 
-- name: Status for creating Synchronous replication protection policy for VG
+- name: Status for creating Synchronous replication protection policy for VG using category4
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -614,10 +604,10 @@
         or result.response.replication_configurations[1] == replication_configuration_sync_local_clusters_2
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_4}}"
-    success_msg: "Protection policy for VG created successfully"
-    fail_msg: "Protection policy for VG creation failed"
+    success_msg: "Protection policy for VG using category4 created successfully"
+    fail_msg: "Protection policy for VG using category4 creation failed"
 
-- name: Add retention policy external ID to todelete list
+- name: Add synchronous protection policy external ID to todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.response.ext_id] }}"
 
@@ -626,7 +616,7 @@
 - name: Create a Protected VM to be promoted
   nutanix.ncp.ntnx_vms_v2:
     name: "{{ random_name }}_ansible_protected_vm_promote"
-    description: "Protected VM for promotion"
+    description: "Protected VM for promote"
     cluster:
       ext_id: "{{ cluster.uuid }}"
     categories:
@@ -641,7 +631,7 @@
       - result.failed == false
       - result.response is defined
       - result.response.name == "{{ random_name }}_ansible_protected_vm_promote"
-      - result.response.description == "Protected VM for promotion"
+      - result.response.description == "Protected VM for promote"
       - result.response.cluster.ext_id == cluster.uuid
       - result.response.categories[0].ext_id == "{{ category_ext_id_3 }}"
     success_msg: "Protected VM created successfully"
@@ -682,7 +672,7 @@
 - name: Create Volume group to be promoted
   nutanix.ncp.ntnx_volume_groups_v2:
     name: "{{ random_name }}_ansible_protected_vg_promote"
-    description: "Volume group for promotion"
+    description: "Volume group for promote"
     cluster_reference: "{{ cluster.uuid }}"
   register: result
   ignore_errors: true
@@ -698,7 +688,7 @@
       - result.ext_id == result.response.ext_id
       - result.response.cluster_reference == "{{cluster.uuid}}"
       - result.response.name == "{{ random_name }}_ansible_protected_vg_promote"
-      - result.response.description == "Volume group for promotion"
+      - result.response.description == "Volume group for promote"
     fail_msg: "Unable to create VG"
     success_msg: "VG created successfully"
 
@@ -789,7 +779,7 @@
       - result.response is defined
       - result.response.ext_id == vm_ext_id_1
       - result.response.name == "{{ random_name }}_ansible_protected_vm_promote"
-      - result.response.description == "Protected VM for promotion"
+      - result.response.description == "Protected VM for promote"
       - result.response.cluster.ext_id == cluster.uuid
       - result.response.categories[0].ext_id == "{{ category_ext_id_3 }}"
       - result.response.protection_type == "RULE_PROTECTED"
@@ -924,8 +914,8 @@
 - name: Generate spec for updating linear retention protection policy using check mode
   nutanix.ncp.ntnx_protection_policies_v2:
     ext_id: "{{ todelete[0] }}"
-    name: "ansible-name-linear-{{random_name}}_updated"
-    description: "ansible-description-linear-{{random_name}}_updated"
+    name: "ansible-update-protection-policy-name"
+    description: "ansible-update-protection-policy-description"
     replication_locations:
       - "{{ replication_location_1_updated }}"
       - "{{ replication_location_2_updated }}"
@@ -971,8 +961,8 @@
       - result.failed == false
       - result.response is defined
       - result.response.ext_id == "{{ todelete[0] }}"
-      - result.response.name == "ansible-name-linear-{{random_name}}_updated"
-      - result.response.description == "ansible-description-linear-{{random_name}}_updated"
+      - result.response.name == "ansible-update-protection-policy-name"
+      - result.response.description == "ansible-update-protection-policy-description"
       - result.response.replication_locations[0] == replication_location_1_updated_expected
         or result.response.replication_locations[0] == replication_location_2_updated_expected
       - result.response.replication_locations[1] == replication_location_1_updated_expected
@@ -1096,8 +1086,8 @@
       - result.changed == false
       - result.failed == false
       - result.msg == "Nothing to change."
-    success_msg: "Protection policy updated successfully"
-    fail_msg: "Protection policy update failed"
+    success_msg: "Update Protection Policy to test idempotency passed"
+    fail_msg: "Update Protection Policy to test idempotency failed"
 
 ########################################################################################
 
