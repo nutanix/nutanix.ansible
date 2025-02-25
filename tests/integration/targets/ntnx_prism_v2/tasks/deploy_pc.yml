@@ -1,0 +1,180 @@
+---
+- name: Start ntnx_pc_deploy_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_pc_deploy_v2 tests
+
+- name: Generate random strings
+  ansible.builtin.set_fact:
+    random_string: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
+
+# Generate spec using check mode for:
+# - Deploying a PC
+
+- name: Generate spec for deploying a PC using check mode
+  nutanix.ncp.ntnx_pc_deploy_v2:
+    config:
+      name: "test"
+      size: "SMALL"
+      build_info:
+        version: "pc.2024.3"
+      resource_config:
+        container_ext_ids:
+          - "container-1"
+      should_enable_lockdown_mode: true
+    network:
+      external_address:
+        ipv4:
+          value: "10.0.0.1"
+      name_servers:
+        - ipv4:
+            value: "10.0.0.2"
+        - ipv4:
+            value: "10.0.0.3"
+      ntp_servers:
+        - ipv4:
+            value: "10.0.0.4"
+        - ipv4:
+            value: "10.0.0.5"
+      internal_networks:
+        - default_gateway:
+            ipv4:
+              value: "10.0.0.6"
+          subnet_mask:
+            ipv4:
+              value: "10.0.0.7"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "10.0.0.8"
+              end:
+                ipv4:
+                  value: "10.0.0.9"
+        - default_gateway:
+            ipv4:
+              value: "10.0.0.10"
+          subnet_mask:
+            ipv4:
+              value: "10.0.0.11"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "10.0.0.12"
+              end:
+                ipv4:
+                  value: "10.0.0.13"
+      external_networks:
+        - default_gateway:
+            ipv4:
+              value: "10.0.1.0"
+          subnet_mask:
+            ipv4:
+              value: "10.0.2.0"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "10.0.3.0"
+              end:
+                ipv4:
+                  value: "10.0.4.0"
+          network_ext_id: "16f59216-1234-3333-2222-074816fe2a4f"
+        - default_gateway:
+            ipv4:
+              value: "10.0.5.0"
+          subnet_mask:
+            ipv4:
+              value: "10.0.6.0"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "10.0.7.0"
+              end:
+                ipv4:
+                  value: "10.0.8.0"
+          network_ext_id: "16f59216-a071-41b7-aee3-074816fe2a4f"
+    should_enable_high_availability: true
+  delegate_to: localhost
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for deploying a PC status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.config.name == "test"
+      - result.response.config.size == "SMALL"
+      - result.response.config.build_info.version == "pc.2024.3"
+      - result.response.config.resource_config.container_ext_ids == ["container-1"]
+      - result.response.config.should_enable_lockdown_mode == true
+      - result.response.network.external_address.ipv4.value == "10.0.0.1"
+      - result.response.network.name_servers[0].ipv4.value == "10.0.0.2"
+      - result.response.network.name_servers[1].ipv4.value == "10.0.0.3"
+      - result.response.network.ntp_servers[0].ipv4.value == "10.0.0.4"
+      - result.response.network.ntp_servers[1].ipv4.value == "10.0.0.5"
+      - result.response.network.internal_networks[0].default_gateway.ipv4.value == "10.0.0.6"
+      - result.response.network.internal_networks[0].subnet_mask.ipv4.value == "10.0.0.7"
+      - result.response.network.internal_networks[0].ip_ranges[0].begin.ipv4.value == "10.0.0.8"
+      - result.response.network.internal_networks[0].ip_ranges[0].end.ipv4.value == "10.0.0.9"
+      - result.response.network.internal_networks[1].default_gateway.ipv4.value == "10.0.0.10"
+      - result.response.network.internal_networks[1].subnet_mask.ipv4.value == "10.0.0.11"
+      - result.response.network.internal_networks[1].ip_ranges[0].begin.ipv4.value == "10.0.0.12"
+      - result.response.network.internal_networks[1].ip_ranges[0].end.ipv4.value == "10.0.0.13"
+      - result.response.network.external_networks[0].default_gateway.ipv4.value == "10.0.1.0"
+      - result.response.network.external_networks[0].subnet_mask.ipv4.value == "10.0.2.0"
+      - result.response.network.external_networks[0].ip_ranges[0].begin.ipv4.value == "10.0.3.0"
+      - result.response.network.external_networks[0].ip_ranges[0].end.ipv4.value == "10.0.4.0"
+      - result.response.network.external_networks[0].network_ext_id == "16f59216-1234-3333-2222-074816fe2a4f"
+      - result.response.network.external_networks[1].default_gateway.ipv4.value == "10.0.5.0"
+      - result.response.network.external_networks[1].subnet_mask.ipv4.value == "10.0.6.0"
+      - result.response.network.external_networks[1].ip_ranges[0].begin.ipv4.value == "10.0.7.0"
+      - result.response.network.external_networks[1].ip_ranges[0].end.ipv4.value == "10.0.8.0"
+      - result.response.network.external_networks[1].network_ext_id == "16f59216-a071-41b7-aee3-074816fe2a4f"
+      - result.response.should_enable_high_availability == true
+    fail_msg: "Generated spec for deploying a PC failed"
+    success_msg: "Generated spec for deploying a PC passed"
+
+- name: Deploy PC
+  nutanix.ncp.ntnx_pc_deploy_v2:
+    nutanix_host: "{{ ip_pe_for_deploying_pc }}"
+    config:
+      name: "{{ random_string }}_pc"
+      size: "{{ pc.size }}"
+      build_info:
+        version: "{{ pc.build_info.version }}"
+    network:
+      external_networks:
+        - default_gateway:
+            ipv4:
+              value: "{{ pc.external_networks.default_gateway.ipv4 }}"
+          subnet_mask:
+            ipv4:
+              value: "{{ pc.external_networks.subnet_mask.ipv4 }}"
+          ip_ranges:
+            - begin:
+                ipv4:
+                  value: "{{ pc.external_networks.ip_ranges.begin.ipv4 }}"
+              end:
+                ipv4:
+                  value: "{{ pc.external_networks.ip_ranges.end.ipv4 }}"
+          network_ext_id: "{{ pc.external_networks.network_ext_id }}"
+      name_servers:
+        - ipv4:
+            value: "{{ pc.name_servers.ipv4[0] }}"
+        - ipv4:
+            value: "{{ pc.name_servers.ipv4[1] }}"
+      ntp_servers:
+        - fqdn:
+            value: "{{ pc.ntp_servers.fqdn[0] }}"
+        - fqdn:
+            value: "{{ pc.ntp_servers.fqdn[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Deploy PC status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id == result.task_ext_id
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Deploy PC failed"
+    success_msg: "Deploy PC passed"
