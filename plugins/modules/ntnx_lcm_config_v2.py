@@ -105,11 +105,6 @@ response:
             "url": "http://example.com",
             "version": "3.1.56788"
         }
-cluster_ext_id:
-    description: The external ID of the cluster
-    type: str
-    returned: always
-    sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
 changed:
     description: Whether the module made any changes
     type: bool
@@ -172,8 +167,6 @@ def check_lcm_config_idempotency(old_spec, update_spec):
 
 def update_lcm_config(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
-    result["cluster_ext_id"] = cluster_ext_id
-
     current_spec = get_lcm_config(module, api_instance, cluster_ext_id)
     etag_value = get_etag(current_spec)
     if not etag_value:

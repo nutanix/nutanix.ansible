@@ -41,7 +41,6 @@
 
     - name: Get config of LCM
       nutanix.ncp.ntnx_lcm_config_info_v2:
-        cluster_ext_id: "{{ prism_central_external_id }}"
       register: lcm_config_info
       ignore_errors: true
 
@@ -52,12 +51,6 @@
         is_https_enabled: true
         has_module_auto_upgrade_enabled: false
       register: lcm_config_update
-      ignore_errors: true
-
-    - name: Get LCM status before doing inventory
-      nutanix.ncp.ntnx_lcm_status_info_v2:
-        cluster_ext_id: "{{ prism_central_external_id }}"
-      register: lcm_status
       ignore_errors: true
 
     - name: Perform inventory of LCM
@@ -95,28 +88,19 @@
 
     - name: Get LCM status before doing prechecks
       nutanix.ncp.ntnx_lcm_status_info_v2:
-        cluster_ext_id: "{{ prism_central_external_id }}"
       register: lcm_status
       ignore_errors: true
 
     - name: Perform LCM prechecks
       nutanix.ncp.ntnx_lcm_prechecks_v2:
-        cluster_ext_id: "{{ prism_central_external_id }}"
         entity_update_specs:
           - entity_uuid: "{{ lcm_entity_external_id }}"
             to_version: "{{ lcm_entity_model_version}}"
       register: lcm_prechecks
       ignore_errors: true
 
-    - name: Get LCM status before doing upgrade
-      nutanix.ncp.ntnx_lcm_status_info_v2:
-        cluster_ext_id: "{{ prism_central_external_id }}"
-      register: lcm_status
-      ignore_errors: true
-
     - name: Perform LCM upgrade
       nutanix.ncp.ntnx_lcm_upgrades_v2:
-        cluster_ext_id: "{{ prism_central_external_id }}"
         entity_update_specs:
           - entity_uuid: "{{ lcm_entity_external_id }}"
             to_version: "{{ lcm_entity_model_version }}"

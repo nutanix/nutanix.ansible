@@ -55,7 +55,6 @@
 
 - name: Update config of LCM
   nutanix.ncp.ntnx_lcm_config_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
     is_auto_inventory_enabled: "{{ not lcm_config_info.response.is_auto_inventory_enabled }}"
     is_https_enabled: "{{ not lcm_config_info.response.is_https_enabled }}"
     has_module_auto_upgrade_enabled: "{{ not lcm_config_info.response.has_module_auto_upgrade_enabled }}"
@@ -262,7 +261,7 @@
       - lcm_prechecks.response.management_server.ip == "10.0.0.2"
       - lcm_prechecks.response.management_server.username == "admin"
       - lcm_prechecks.response.management_server.hypervisor_type == "AHV"
-      - lcm_prechecks.response.entity_update_specs[0].entity_uuid == lcm_entity_external_id
+      - lcm_prechecks.response.entity_update_specs[0].entity_uuid == "15570c98-beaf-4633-afd2-b6a306ff1001"
       - lcm_prechecks.response.entity_update_specs[0].to_version == "5.0.0"
       - lcm_prechecks.response.skipped_precheck_flags[0] == "POWER_OFF_UVMS"
     fail_msg: "Failed to generate spec for LCM prechecks"
@@ -331,7 +330,7 @@
       - lcm_upgrade.response.management_server.ip == "10.0.0.2"
       - lcm_upgrade.response.management_server.username == "admin"
       - lcm_upgrade.response.management_server.hypervisor_type == "AHV"
-      - lcm_upgrade.response.entity_update_specs[0].entity_uuid == lcm_entity_external_id
+      - lcm_upgrade.response.entity_update_specs[0].entity_uuid == "15570c98-beaf-4633-afd2-b6a306ff1001"
       - lcm_upgrade.response.entity_update_specs[0].to_version == "5.0.0"
       - lcm_upgrade.response.skipped_precheck_flags[0] == "POWER_OFF_UVMS"
     fail_msg: "Failed to generate spec for LCM upgrade"
