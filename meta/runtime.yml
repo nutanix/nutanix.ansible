@@ -188,3 +188,9 @@ action_groups:
     - ntnx_storage_containers_stats_v2
     - ntnx_storage_containers_info_v2
     - ntnx_storage_containers_v2
+    - ntnx_protection_policies_info_v2
+    - ntnx_protection_policies_v2
+    - ntnx_promote_protected_resources_v2
+    - ntnx_restore_protected_resources_v2
+    - ntnx_protected_resources_info_v2
+    - ntnx_volume_groups_categories_v2
