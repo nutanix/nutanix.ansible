@@ -10,7 +10,10 @@ DOCUMENTATION = r"""
 module: ntnx_pc_restorable_domain_managers_info_v2
 short_description: Fetch restorable domain managers info
 version_added: 2.1.0
-description: Fetch list of multiple restorable domain managers for a given restore source.
+description: 
+    - Fetch list of multiple restorable domain managers for a given restore source.
+    - We need to override nutanix_host attribute to provide Prism Element IP.
+    - Lists all the domain managers backed up at the object store/cluster.
 options:
     restore_source_ext_id:
         description:
@@ -22,6 +25,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_info_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -136,7 +140,10 @@ def get_restorable_domain_managers(module, domain_manager_backups_api, result):
             msg="Api Exception raised while fetching restorable domain managers info",
         )
 
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():

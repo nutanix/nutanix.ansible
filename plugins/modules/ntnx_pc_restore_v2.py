@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_pc_restore_v2
-short_description: Restores a domain manager from a cluster or object store backup location.
+short_description: Restores a domain manager(PC) from a cluster or object store backup location based on the selected restore point.
 version_added: 2.1.0
 description:
     - The restore domain manager is a task-driven operation to restore a domain manager
@@ -26,7 +26,7 @@ options:
         type: bool
         required: False
     restore_source_ext_id:
-        description: A unique identifier obtained from the restore source API that corresponds to the details provided for the restore source.
+        description: Restore source external ID from which restore point will be used for restoring prism central
         type: str
         required: True
     restorable_domain_manager_ext_id:
@@ -575,8 +575,8 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""

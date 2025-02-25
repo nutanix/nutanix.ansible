@@ -555,6 +555,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_operations_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""

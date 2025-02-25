@@ -9,10 +9,12 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_pc_unregistration_v2
-short_description: Unregister a registered remote cluster from the local cluster.
+short_description: Unregister a PC-PC setup connected using availability zone.
 version_added: 2.1.0
 description:
-    - Unregister a registered remote cluster from the local cluster.
+    - Unregister a PC-PC setup connected using availability zone.
+    - This module cannot be used to unregister PC-PE.
+    - This module uses PC v4 APIs based SDKs
 options:
     wait:
         description:
@@ -34,6 +36,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_operations_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -192,7 +195,7 @@ def unregister_cluster(module, domain_manager_api, result):
     current_spec = get_pc_config(module, domain_manager_api, pc_ext_id)
     etag_value = get_etag(data=current_spec)
     if not etag_value:
-        module.fail_json(msg="Failed to get etag value for the PC", **result)
+        module.fail_json(msg="Failed fetching etag to unregister.", **result)
 
     resp = None
     try:

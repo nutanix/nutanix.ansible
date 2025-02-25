@@ -12,20 +12,23 @@ short_description: Get PC Configuration info
 version_added: 2.1.0
 description:
     - Fetch specific PC Configuration info using external ID
-    - Fetch list of multiple PC Configuration info if external ID is not provided with optional filters
+    - Fetch list of PC Configuration info if external ID is not provided with optional filters. Length of list is 1.
 options:
     ext_id:
-        description: External ID to fetch specific PC Configuration info
+        description: 
+            - External ID of PC which is not the external ID of PCVM.
+            - To fetch specific PC Configuration info.
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
-- name: List all PCs
+- name: Get PC config without external ID
   nutanix.ncp.ntnx_pc_config_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
@@ -46,7 +49,7 @@ response:
     description:
         - Response for fetching PC Configuration info
         - PC Configuration info if external ID is provided
-        - List of multiple PC Configuration info if external ID is not provided
+        - One PC Configuration info if external ID is not provided as length of array is 1
     type: dict
     returned: always
     sample:
@@ -257,7 +260,10 @@ def get_pc_configs(module, domain_manager_api, result):
             exception=e,
             msg="Api Exception raised while fetching PC Configuration info",
         )
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():

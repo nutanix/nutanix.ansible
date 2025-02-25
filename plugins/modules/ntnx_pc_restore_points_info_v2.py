@@ -13,6 +13,7 @@ version_added: 2.1.0
 description:
     - Fetch specific restore point info for a given restore source.
     - Fetch list of multiple restore points for a given restore source.
+    - We need to override nutanix_host attribute to provide Prism Element IP.
 options:
     restore_source_ext_id:
         description:
@@ -21,7 +22,7 @@ options:
         type: str
     restorable_domain_manager_ext_id:
         description:
-            - External ID of the restorable domain manager.
+            - External ID of the restorable domain manager(PC).
         required: true
         type: str
     ext_id:
@@ -33,6 +34,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_info_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -168,7 +170,10 @@ def get_restore_points(module, domain_manager_backups_api, result):
             msg="Api Exception raised while fetching restore points info",
         )
 
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def get_restore_points_with_ext_id(module, domain_manager_backups_api, result):

@@ -14,7 +14,7 @@ version_added: 2.1.0
 description:
     - Creates or Deletes a restore source pointing to a cluster or object store to restore the domain manager.
     - The created restore source is intended to be deleted after use.
-    - If the restore source is not deleted using the deleteRestoreSource API, then it is auto-deleted after sometime.
+    - If the restore source is not deleted, then it is auto-deleted after sometime.
 options:
     ext_id:
         description:
@@ -100,6 +100,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_operations_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""

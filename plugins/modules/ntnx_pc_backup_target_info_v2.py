@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 DOCUMENTATION = r"""
 module: ntnx_pc_backup_target_info_v2
-short_description: Get backup targets info
+short_description: Get PC backup targets info
 version_added: 2.1.0
 description:
     - Fetch specific backup target info using external ID
@@ -18,7 +18,9 @@ options:
         description: External ID to fetch specific backup target info
         type: str
     domain_manager_ext_id:
-        description: External ID of the domain manager
+        description: 
+            - Domain manager means the PC
+            - External ID of the domain manager (PC)
         type: str
         required: True
 extends_documentation_fragment:
@@ -26,6 +28,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_info_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -148,7 +151,10 @@ def get_backup_targets(module, domain_manager_backups_api, result):
             msg="Api Exception raised while fetching backup targets info",
         )
 
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():

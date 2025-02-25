@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_pc_backup_target_v2
-short_description: Create, Update and Delete a cluster or object store as the backup target.
+short_description: Create, Update and Delete a PC backup target.
 version_added: 2.1.0
 description:
     - Create, Update and Delete a cluster or object store as the backup target.
@@ -30,7 +30,9 @@ options:
         type: bool
         required: false
     domain_manager_ext_id:
-        description: A unique identifier for the domain manager.
+        description: 
+            - Domain manager means the PC.
+            - A external identifier for the domain manager (PC).
         type: str
         required: true
     ext_id:
@@ -62,7 +64,7 @@ options:
                 type: dict
                 suboptions:
                     provider_config:
-                        description: The base model of S3 object store endpoint where domain manager is backed up.
+                        description: The base model of S3 object store endpoint where domain manager needs to be backed up.
                         type: dict
                         required: true
                         suboptions:
@@ -100,6 +102,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_operations_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -380,7 +383,7 @@ def delete_backup_target(module, domain_manager_backups_api, result):
     etag_value = get_etag(data=current_spec)
     if not etag_value:
         return module.fail_json(
-            "Unable to fetch etag for Deleting Backing Target", **result
+            "Unable to fetch etag for deleting Backing Target", **result
         )
 
     resp = None

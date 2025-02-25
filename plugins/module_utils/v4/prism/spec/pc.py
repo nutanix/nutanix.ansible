@@ -1,4 +1,4 @@
-# Copyright: 2021, Ansible Project
+# Copyright: 2025, Ansible Project
 # Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
 from __future__ import absolute_import, division, print_function
 
@@ -20,11 +20,6 @@ except ImportError:
 class PrismSpecs:
     """Module specs related to prism"""
 
-    # cloud_init_script_allowed_types = {
-    #     "user_data": prism_sdk.Userdata,
-    #     "custom_key_values": prism_sdk.CustomKeyValues,
-    # }
-
     location_allowed_types = {
         "cluster_location": prism_sdk.ClusterLocation,
         "object_store_location": prism_sdk.ObjectStoreLocation,
@@ -33,66 +28,6 @@ class PrismSpecs:
     build_info_spec = dict(
         version=dict(type="str"),
     )
-
-    # kvpair_spec = dict(name=dict(type="str"), value=dict(type="raw", no_log=False))
-
-    # custom_key_values_spec = dict(
-    #     key_value_pairs=dict(
-    #         type="list",
-    #         elements="dict",
-    #         options=kvpair_spec,
-    #         obj=prism_sdk.KVPair,
-    #         no_log=False,
-    #     ),
-    # )
-    # user_data = dict(
-    #     value=dict(type="str", required=True),
-    # )
-    # cloud_init_script = dict(
-    #     user_data=dict(type="dict", options=user_data, obj=prism_sdk.Userdata),
-    #     custom_key_values=dict(
-    #         type="dict",
-    #         options=custom_key_values_spec,
-    #         obj=prism_sdk.CustomKeyValues,
-    #         no_log=False,
-    #     ),
-    # )
-
-    # cloud_init_config_spec = dict(
-    #     datasource_type=dict(type="str", choices=["CONFIG_DRIVE_V2"]),
-    #     metadata=dict(type="str"),
-    #     cloud_init_script=dict(
-    #         type="dict",
-    #         options=cloud_init_script,
-    #         obj=cloud_init_script_allowed_types,
-    #         mutually_exclusive=[("user_data", "custom_key_values")],
-    #     ),
-    # )
-    # environment_info_spec = dict(
-    #     type=dict(type="str", choices=["NTNX_CLOUD", "ONPREM"]),
-    #     provider_type=dict(
-    #         type="str", choices=["VSPHERE", "AZURE", "NTNX", "GCP", "AWS"]
-    #     ),
-    #     provisioning_type=dict(type="str", choices=["NATIVE", "NTNX"]),
-    # )
-    # bootstrap_config_spec = dict(
-    #     cloud_init_config=dict(
-    #         type="lsit",
-    #         elements="dict",
-    #         options=cloud_init_config_spec,
-    #         obj=prism_sdk.CloudInit,
-    #     ),
-    #     environment_info=dict(
-    #         type="dict",
-    #         options=environment_info_spec,
-    #         obj=prism_sdk.EnvironmentInfo,
-    #     ),
-    # )
-
-    # credentials_spec = dict(
-    #     username=dict(type="str", required=True),
-    #     password=dict(type="str", required=True, no_log=True),
-    # )
 
     resource_config_spec = dict(
         container_ext_ids=dict(type="list", elements="str"),
@@ -112,15 +47,6 @@ class PrismSpecs:
             choices=["SMALL", "LARGE", "EXTRALARGE", "STARTER"],
             required=True,
         ),
-        # bootstrap_config=dict(
-        #     type="dict", options=bootstrap_config_spec, obj=prism_sdk.BootstrapConfig
-        # ),
-        # credentials=dict(
-        #     type="dict",
-        #     options=credentials_spec,
-        #     obj=prism_sdk.Credentials,
-        #     required=True,
-        # ),
         resource_config=dict(
             type="dict",
             options=resource_config_spec,
