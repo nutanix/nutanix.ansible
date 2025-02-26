@@ -571,7 +571,7 @@
 - name: Get restore point using external ID
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
-    restore_source_ext_id: "{{ restore_source_ext_id }}"
+    restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
     ext_id: "{{ restore_point_ext_id }}"
   register: result
