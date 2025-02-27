@@ -40,7 +40,7 @@ options:
     location:
         description:
             - Location of the backup target.
-            - For example, a cluster or an object store endpoint, such as AWS s3.
+            - For example, a cluster or an object store endpoint.
         type: dict
         required: false
         suboptions:

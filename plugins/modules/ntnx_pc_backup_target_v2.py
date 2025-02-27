@@ -42,7 +42,7 @@ options:
     location:
         description:
             - Location of the backup target.
-            - For example, a cluster or an object store endpoint, such as AWS s3.
+            - For example, a cluster or an object store endpoint.
         type: dict
         required: false
         suboptions:
@@ -343,9 +343,16 @@ def update_backup_target(module, domain_manager_backups_api, result):
         result["error"] = err
         module.fail_json(msg="Failed generating backup target update Spec", **result)
 
-    if check_idempotency(current_spec, update_spec):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
+    skip_idempotency = False
+    if module.params.get("location", {}).get("cluster_location") or module.params.get(
+        "location", {}
+    ).get("object_store_location", {}).get("provider_config", {}).get("credentials"):
+        skip_idempotency = True
+
+    if not skip_idempotency:
+        if check_idempotency(current_spec, update_spec):
+            result["skipped"] = True
+            module.exit_json(msg="Nothing to change.", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
