@@ -30,7 +30,7 @@ options:
         type: bool
         required: false
     domain_manager_ext_id:
-        description: 
+        description:
             - Domain manager means the PC.
             - A external identifier for the domain manager (PC).
         type: str
@@ -116,6 +116,24 @@ EXAMPLES = r"""
       cluster_location:
         config:
           ext_id: "00062c47-ac15-ee40-185b-ac1f6b6f97e2"
+  register: result
+
+- name: Create backup target object store
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    domain_manager_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "bucket_name"
+          region: "us-east-1"
+          credentials:
+            access_key_id: "access_key_id"
+            secret_access_key: "secret_access_key"
+        backup_policy:
+          rpo_in_minutes: 60
   register: result
 
 - name: Update backup target object store
