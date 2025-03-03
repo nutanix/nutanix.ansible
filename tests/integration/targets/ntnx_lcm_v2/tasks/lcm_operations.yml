@@ -29,7 +29,7 @@
 
 - name: Generate spec for updating config of LCM using check mode
   nutanix.ncp.ntnx_lcm_config_v2:
-    cluster_ext_id: "00062db4-a450-e685-0fda-cdf9ca935bfd"
+    cluster_ext_id: "{{ prism_central_external_id }}"
     is_auto_inventory_enabled: "true"
     is_https_enabled: "false"
     has_module_auto_upgrade_enabled: "true"
