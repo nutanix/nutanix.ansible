@@ -443,21 +443,21 @@
     restore_source_ext_id: "{{ restore_source_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
     ext_id: "{{ restore_point_ext_id }}"
-  register: result
+  register: restore_point_details
   ignore_errors: true
 
 - name: Get restore point details using external ID status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.ext_id == restore_point_ext_id
-      - result.response is defined
-      - result.response.domain_manager.config.name == pc_details.response.config.name
-      - result.response.domain_manager.config.size == pc_details.response.config.size
-      - result.response.domain_manager.config.resource_config.container_ext_ids == pc_details.response.config.resource_config.container_ext_ids
-      - result.response.domain_manager.config.resource_config.data_disk_size_bytes == pc_details.response.config.resource_config.data_disk_size_bytes
-      - result.response.domain_manager.config.resource_config.memory_size_bytes == pc_details.response.config.resource_config.memory_size_bytes
-      - result.response.domain_manager.config.resource_config.num_vcpus == pc_details.response.config.resource_config.num_vcpus
+      - restore_point_details.response is defined
+      - restore_point_details.ext_id == restore_point_ext_id
+      - restore_point_details.response is defined
+      - restore_point_details.response.domain_manager.config.name == pc_details.response.config.name
+      - restore_point_details.response.domain_manager.config.size == pc_details.response.config.size
+      - restore_point_details.response.domain_manager.config.resource_config.container_ext_ids == pc_details.response.config.resource_config.container_ext_ids
+      - restore_point_details.response.domain_manager.config.resource_config.data_disk_size_bytes == pc_details.response.config.resource_config.data_disk_size_bytes
+      - restore_point_details.response.domain_manager.config.resource_config.memory_size_bytes == pc_details.response.config.resource_config.memory_size_bytes
+      - restore_point_details.response.domain_manager.config.resource_config.num_vcpus == pc_details.response.config.resource_config.num_vcpus
     fail_msg: "Get restore point details using external ID failed"
     success_msg: "Get restore point details using external ID passed"
 
@@ -539,10 +539,10 @@
       - result.response is defined
       - result.response.domain_manager.config.name == "pc_test"
       - result.response.domain_manager.config.size == "SMALL"
-      - result.response.domain_manager.config.resource_config.data_disk_size_bytes == "536870912000"
-      - result.response.domain_manager.config.resource_config.memory_size_bytes == "35433480192"
-      - result.response.domain_manager.config.resource_config.num_vcpus == "10"
-      - result.response.domain_manager.config.resource_config.container_ext_ids == "e1d2c7ff-37da-4bb4-a3c9-94177611bd8a"
+      - result.response.domain_manager.config.resource_config.data_disk_size_bytes == 536870912000
+      - result.response.domain_manager.config.resource_config.memory_size_bytes == 35433480192
+      - result.response.domain_manager.config.resource_config.num_vcpus == 10
+      - result.response.domain_manager.config.resource_config.container_ext_ids[0] == "e1d2c7ff-37da-4bb4-a3c9-94177611bd8a"
       - result.response.domain_manager.network.external_address.ipv4.value == "10.1.0.10"
       - result.response.domain_manager.network.name_servers[0].ipv4.value == "10.10.1.1"
       - result.response.domain_manager.network.name_servers[1].ipv4.value == "10.10.2.2"
@@ -571,47 +571,15 @@
       config:
         should_enable_lockdown_mode: false
         build_info:
-          version: "{{ pc_details.response.config.build_info.version }}"
-        name: "{{ pc_details.response.config.name }}"
-        size: "{{ pc_details.response.config.size }}"
-        resource_config:
-          data_disk_size_bytes: "{{ pc_details.response.config.resource_config.data_disk_size_bytes }}"
-          memory_size_bytes: "{{ pc_details.response.config.resource_config.memory_size_bytes }}"
-          num_vcpus: "{{ pc_details.response.config.resource_config.num_vcpus }}"
-          container_ext_ids: "{{ pc_details.response.config.resource_config.container_ext_ids }}"
+          version: "{{ restore_point_details.response.domain_manager.config.build_info.version }}"
+        name: "{{ restore_point_details.response.domain_manager.config.name }}"
+        size: "{{ restore_point_details.response.domain_manager.config.size }}"
+        resource_config: "{{ restore_point_details.response.domain_manager.config.resource_config }}"
       network:
-        external_address:
-          ipv4:
-            value: "{{ pc_details.response.network.external_address.ipv4.value }}"
-        name_servers:
-          - ipv4:
-              value: "{{ pc_details.response.network.name_servers[0].ipv4.value }}"
-          - ipv4:
-              value: "{{ pc_details.response.network.name_servers[1].ipv4.value }}"
-        ntp_servers:
-          - fqdn:
-              value: "{{ pc_details.response.network.ntp_servers[0].fqdn.value }}"
-          - fqdn:
-              value: "{{ pc_details.response.network.ntp_servers[1].fqdn.value }}"
-          - fqdn:
-              value: "{{ pc_details.response.network.ntp_servers[2].fqdn.value }}"
-          - fqdn:
-              value: "{{ pc_details.response.network.ntp_servers[3].fqdn.value }}"
-        external_networks:
-          - network_ext_id: "{{ pc_details.response.network.external_networks[0].network_ext_id }}"
-            default_gateway:
-              ipv4:
-                value: "{{ pc_details.response.network.external_networks[0].default_gateway.ipv4.value }}"
-            subnet_mask:
-              ipv4:
-                value: "{{ pc_details.response.network.external_networks[0].subnet_mask.ipv4.value }}"
-            ip_ranges:
-              - begin:
-                  ipv4:
-                    value: "{{ pc_details.response.network.external_networks[0].ip_ranges[0].begin.ipv4.value }}"
-                end:
-                  ipv4:
-                    value: "{{ pc_details.response.network.external_networks[0].ip_ranges[0].end.ipv4.value }}"
+        external_address: "{{ restore_point_details.response.domain_manager.network.external_address }}"
+        name_servers: "{{ restore_point_details.response.domain_manager.network.name_servers }}"
+        ntp_servers: "{{ restore_point_details.response.domain_manager.network.ntp_servers }}"
+        external_networks: "{{ restore_point_details.response.domain_manager.network.external_networks }}"
   register: result
   ignore_errors: true
 
