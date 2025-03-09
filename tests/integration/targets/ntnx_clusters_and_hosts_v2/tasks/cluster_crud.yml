@@ -313,7 +313,7 @@
 
 - name: Create cluster name
   ansible.builtin.set_fact:
-    cluster_name: "{{ prefix_name }}_{{ clusters[0].name }}"
+    cluster_name: "{{ random_name }}_{{ prefix_name }}_{{ clusters[0].name }}"
 
 - name: Check if cluster is unconfigured or not
   ansible.builtin.command: "{{ cluster_status_command }}"
