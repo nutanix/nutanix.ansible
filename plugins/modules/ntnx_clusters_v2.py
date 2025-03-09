@@ -213,13 +213,13 @@ options:
           - DISABLED
       pulse_status:
         description:
-          - The pulse status of the cluster.
-          - Supported only for update cluster.
+          - Flag to enable/disable pulse in cluster.
+          - Supported only in update cluster operation.
         type: dict
         suboptions:
           is_enabled:
             description:
-              - Whether pulse is enabled.
+              - Whether to enable or disable pulse.
             type: bool
           pii_scrubbing_level:
             description:
