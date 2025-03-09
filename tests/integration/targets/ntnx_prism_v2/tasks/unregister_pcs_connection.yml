@@ -1,7 +1,7 @@
 ---
-- name: Start ntnx_pc_unregistration_v2 tests
+- name: Start Unregister PC-PC connection (removing PC as availbility_zone) tests
   ansible.builtin.debug:
-    msg: Start ntnx_pc_unregistration_v2 tests
+    msg: Start Unregister PC-PC connection (removing PC as availbility_zone) tests
 
 #############################################################
 # List all clusters to get prism central external ID

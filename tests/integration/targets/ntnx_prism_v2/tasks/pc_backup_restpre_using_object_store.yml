@@ -1,7 +1,7 @@
 ---
-- name: Start testing for some modules under Prism namespace (cluster location)
+- name: Start testing for modules for PC backup restore using objects store.
   ansible.builtin.debug:
-    msg: Start testing for some modules under Prism namespace (cluster location)
+    msg: Start testing for modules for PC backup restore using objects store.
 
 #############################################################
 # List all clusters to get prism central external ID
@@ -18,179 +18,323 @@
 
 #############################################################
 # Generate spec using check mode for:
-# - Creating backup target cluster
-# - Creating restore source cluster
+# - Creating backup target object store
+# - Updating backup target object store
+# - Creating restore source object store
 
-- name: Generate spec for creating backup target cluster using check mode
+- name: Generate spec for creating backup target object store using check mode
   nutanix.ncp.ntnx_pc_backup_target_v2:
     domain_manager_ext_id: "96325874-8523-9865-1478-074816fe2a4f"
     location:
-      cluster_location:
-        config:
-          ext_id: "38648904-4859-1258-7485-074816fe2a4f"
+      object_store_location:
+        provider_config:
+          bucket_name: "test1"
+          region: "us-east-1"
+          credentials:
+            access_key_id: "qwertyuiopasdfgh"
+            secret_access_key: "jklzxcvbnm"
+        backup_policy:
+          rpo_in_minutes: 60
   check_mode: true
   register: result
   ignore_errors: true
 
-- name: Generate spec for creating backup target cluster status
+- name: Generate spec for creating backup target object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.response.location.config.ext_id == "38648904-4859-1258-7485-074816fe2a4f"
-    fail_msg: "Generated spec for creating backup target cluster failed"
-    success_msg: "Generated spec for creating backup target cluster passed"
+      - result.response.location.provider_config.bucket_name == "test1"
+      - result.response.location.provider_config.region == "us-east-1"
+      - result.response.location.provider_config.credentials.access_key_id == "qwertyuiopasdfgh"
+      - result.response.location.backup_policy.rpo_in_minutes == 60
+    fail_msg: "Generated spec for creating backup target object store failed"
+    success_msg: "Generated spec for creating backup target object store passed"
 
-- name: Generate spec for creating restore source cluster using check mode
+- name: Generate spec for updating backup target object store using check mode
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    ext_id: "84785699-8744-2895-9632-074816fe2a4f"
+    domain_manager_ext_id: "14855555-9999-1235-3141-074816fe2a4f"
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "test2"
+          region: "us-east-2"
+          credentials:
+            access_key_id: "qwertyuiopasdfgh"
+            secret_access_key: "jklzxcvbnm"
+        backup_policy:
+          rpo_in_minutes: 120
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating backup target object store status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id == "84785699-8744-2895-9632-074816fe2a4f"
+      - result.response.location.provider_config.bucket_name == "test2"
+      - result.response.location.provider_config.region == "us-east-2"
+      - result.response.location.provider_config.credentials.access_key_id == "qwertyuiopasdfgh"
+      - result.response.location.backup_policy.rpo_in_minutes == 120
+    fail_msg: "Generated spec for updating backup target object store failed"
+    success_msg: "Generated spec for updating backup target object store passed"
+
+- name: Generate spec for creating restore source object store using check mode
   nutanix.ncp.ntnx_pc_restore_source_v2:
     location:
-      cluster_location:
-        config:
-          ext_id: "38648904-4859-1258-7485-074816fe2a4f"
+      object_store_location:
+        provider_config:
+          bucket_name: "test1"
+          region: "us-east-1"
+          credentials:
+            access_key_id: "qwertyuiopasdfgh"
+            secret_access_key: "jklzxcvbnm"
   check_mode: true
   register: result
   ignore_errors: true
 
-- name: Generate spec for creating restore source cluster status
+- name: Generate spec for creating restore source object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.response.location.config.ext_id == "38648904-4859-1258-7485-074816fe2a4f"
-    fail_msg: "Generated spec for creating restore source cluster failed"
-    success_msg: "Generated spec for creating restore source cluster passed"
+      - result.response.location.provider_config.bucket_name == "test1"
+      - result.response.location.provider_config.region == "us-east-1"
+      - result.response.location.provider_config.credentials.access_key_id == "qwertyuiopasdfgh"
+    fail_msg: "Generated spec for creating restore source object store failed"
+    success_msg: "Generated spec for creating restore source object store passed"
 
 #############################################################
-# Check if the backup target cluster exists
+# Check if the backup target object store exists
 # If it exists, delete it
 
-- name: Check if backup target cluster exists
+- name: Check if backup target object store exists
   nutanix.ncp.ntnx_pc_backup_target_info_v2:
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
   register: backup_result
   ignore_errors: true
 
-- name: Initialize backup_target_cluster_ext_id
+- name: Initialize backup_target_object_store_ext_id
   ansible.builtin.set_fact:
-    backup_target_cluster_ext_id: []
+    backup_target_object_store_ext_id: []
 
-- name: Get external ID of the backup target cluster
+- name: Get external ID of the backup target object store
   ansible.builtin.set_fact:
-    backup_target_cluster_ext_id: >-
+    backup_target_object_store_ext_id: >-
       {{ backup_result.response
          | selectattr('location', 'defined')
-         | selectattr('location.config', 'defined')
-         | selectattr('location.config.ext_id', 'equalto', cluster.uuid | default(''))
+         | selectattr('location.provider_config', 'defined')
+         | selectattr('location.provider_config.bucket_name', 'defined')
          | map(attribute='ext_id')
          | list }}
   when:
     - backup_result.response is not none
 
-- name: Delete backup target cluster
+- name: Delete backup target object store
   nutanix.ncp.ntnx_pc_backup_target_v2:
-    ext_id: "{{ backup_target_cluster_ext_id[0] }}"
+    ext_id: "{{ backup_target_object_store_ext_id[0] }}"
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     state: absent
   register: result
   ignore_errors: true
   when:
-    - backup_target_cluster_ext_id | length > 0
+    - backup_target_object_store_ext_id | length > 0
     - backup_result.response is not none
 
-- name: Delete backup target cluster status
+- name: Delete backup target object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == "SUCCEEDED"
-    fail_msg: "Delete backup target cluster failed"
-    success_msg: "Delete backup target cluster passed"
+    fail_msg: "Delete backup target object store failed"
+    success_msg: "Delete backup target object store passed"
   when:
-    - backup_target_cluster_ext_id | length > 0
+    - backup_target_object_store_ext_id | length > 0
     - backup_result.response is not none
 
-############################################################
-# Create backup target cluster
-# Get backup target cluster
-# Try to update backup target cluster
+#############################################################
+# Create backup target object store
+# List all backup targets and set backup target object store external ID
+# Update backup target object store
+# Get backup target object store
+# Check Idempotency for updating backup target object store
 
-- name: Create backup target cluster
+- name: Create backup target object store
   nutanix.ncp.ntnx_pc_backup_target_v2:
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     location:
-      cluster_location:
-        config:
-          ext_id: "{{ cluster.uuid }}"
+      object_store_location:
+        provider_config:
+          bucket_name: "{{ s3_bucket.bucket }}"
+          region: "{{ s3_bucket.region }}"
+          credentials:
+            access_key_id: "{{ s3_bucket.access_key }}"
+            secret_access_key: "{{ s3_bucket.secret_key }}"
+        backup_policy:
+          rpo_in_minutes: 60
   register: result
   ignore_errors: true
+  no_log: true
 
-- name: Create backup target cluster status
+- name: Create backup target object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == "SUCCEEDED"
-    fail_msg: "Create backup target cluster failed"
-    success_msg: "Create backup target cluster passed"
+    fail_msg: "Create backup target object store failed"
+    success_msg: "Create backup target object store passed"
 
-- name: List all backup targets and set backup target external ID
+- name: List all backup targets and set backup target object store external ID
   nutanix.ncp.ntnx_pc_backup_target_info_v2:
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
   register: backup_result
   ignore_errors: true
 
-- name: Get backup target cluster status
+- name: List all backup targets and set backup target object store external ID status
   ansible.builtin.assert:
     that:
-      - backup_result.changed == false
-      - backup_result.failed == false
       - backup_result.response is defined
       - backup_result.response | length > 0
-    fail_msg: "Get backup target cluster failed"
-    success_msg: "Get backup target cluster passed"
+    fail_msg: "List all backup targets and set backup target object store external ID failed"
+    success_msg: "List all backup targets and set backup target object store external ID passed"
 
-- name: Get external ID of the backup target cluster
+- name: Get external ID of the backup target object store
   ansible.builtin.set_fact:
-    backup_target_cluster_ext_id: >-
+    backup_target_object_store_ext_id: >-
       {{ backup_result.response
          | selectattr('location', 'defined')
-         | selectattr('location.config', 'defined')
-         | selectattr('location.config.ext_id', 'equalto', cluster.uuid | default(''))
+         | selectattr('location.provider_config', 'defined')
+         | selectattr('location.provider_config.bucket_name', 'defined')
          | map(attribute='ext_id')
          | list }}
   when:
     - backup_result.response is not none
 
-- name: Set backup target cluster external ID
+- name: Set backup target object store external ID
   ansible.builtin.set_fact:
-    backup_target_ext_id: "{{ backup_target_cluster_ext_id[0] }}"
+    backup_target_object_store_ext_id: "{{ backup_target_object_store_ext_id[0] }}"
 
-- name: Try to update backup target cluster
+- name: Update backup target object store
   nutanix.ncp.ntnx_pc_backup_target_v2:
-    ext_id: "{{ backup_target_ext_id }}"
+    ext_id: "{{ backup_target_object_store_ext_id }}"
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     location:
-      cluster_location:
-        config:
-          ext_id: "{{ cluster.uuid }}"
+      object_store_location:
+        provider_config:
+          bucket_name: "{{ s3_bucket.bucket }}"
+          region: "{{ s3_bucket.region }}"
+          credentials:
+            access_key_id: "{{ s3_bucket.access_key }}"
+            secret_access_key: "{{ s3_bucket.secret_key }}"
+        backup_policy:
+          rpo_in_minutes: 120
+  register: result
+  ignore_errors: true
+  no_log: true
+
+- name: Update backup target object store status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Update backup target object store failed"
+    success_msg: "Update backup target object store passed"
+
+- name: Check if module skips idempotency checks when credentials are provided as it should always update in that case.
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    ext_id: "{{ backup_target_object_store_ext_id }}"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "{{ s3_bucket.bucket }}"
+          region: "{{ s3_bucket.region }}"
+          credentials:
+            access_key_id: "{{ s3_bucket.access_key }}"
+            secret_access_key: "{{ s3_bucket.secret_key }}"
+        backup_policy:
+          rpo_in_minutes: 120
   register: result
   ignore_errors: true
 
-- name: Update backup target cluster status
+- name: Check if module skips idempotency checks when credentials are provided status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Check if module skips idempotency checks when credentials are provided failed"
+    success_msg: "Check if module skips idempotency checks when credentials are provided passed"
+
+- name: Get backup target object store
+  nutanix.ncp.ntnx_pc_backup_target_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ backup_target_object_store_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get backup target object store status
   ansible.builtin.assert:
     that:
       - result.changed == false
-      - result.failed == true
-      - result.error == "BAD REQUEST"
-      - result.msg == "Failed to update backup target"
-      - result.response.data.error | length > 0
-    fail_msg: "Test failed"
-    success_msg: "Test passed: backup target cluster is not updated"
+      - result.failed == false
+      - result.ext_id == backup_target_object_store_ext_id
+      - result.response is defined
+      - result.response.ext_id == backup_target_object_store_ext_id
+      - result.response.location.provider_config.bucket_name == s3_bucket.bucket
+      - result.response.location.provider_config.region == s3_bucket.region
+      - result.response.location.backup_policy.rpo_in_minutes == 120
+    fail_msg: "Get backup target object store failed"
+    success_msg: "Get backup target object store passed"
+
+- name: Check Idempotency for updating backup target object store
+  nutanix.ncp.ntnx_pc_backup_target_v2:
+    ext_id: "{{ backup_target_object_store_ext_id }}"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    location:
+      object_store_location:
+        provider_config:
+          bucket_name: "{{ s3_bucket.bucket }}"
+          region: "{{ s3_bucket.region }}"
+        backup_policy:
+          rpo_in_minutes: 120
+  register: result
+  ignore_errors: true
+
+- name: Check Idempotency for updating backup target object store status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Check Idempotency for updating backup target object store failed"
+    success_msg: "Check Idempotency for updating backup target object store passed"
 
 #############################################################
+# List all backup targets
 # Fetch backup target details using external ID
+
+- name: List all backup targets
+  nutanix.ncp.ntnx_pc_backup_target_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all backup targets status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: "List all backup targets failed"
+    success_msg: "List all backup targets passed"
 
 # Retry until last_sync_time is not none so that restore points are created successfully
 - name: Fetch backup target details using external ID until last_sync_time is not none
   nutanix.ncp.ntnx_pc_backup_target_info_v2:
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-    ext_id: "{{ backup_target_ext_id }}"
+    ext_id: "{{ backup_target_object_store_ext_id }}"
   retries: 120
   delay: 30
   until: result.response.last_sync_time is not none
@@ -203,8 +347,10 @@
       - result.changed == false
       - result.failed == false
       - result.response is defined
-      - result.response.ext_id == backup_target_ext_id
-      - result.response.location.config.ext_id == cluster.uuid
+      - result.response.ext_id == backup_target_object_store_ext_id
+      - result.response.location.provider_config.bucket_name == s3_bucket.bucket
+      - result.response.location.provider_config.region == s3_bucket.region
+      - result.response.location.backup_policy.rpo_in_minutes == 120
       - result.response.last_sync_time is not none
     fail_msg: "Fetch backup target details using external ID failed"
     success_msg: "Fetch backup target details using external ID passed"
@@ -270,8 +416,6 @@
   ansible.builtin.set_fact:
     filtered_vm: "{{ filtered_vm + [item.0] }}"
   loop: "{{ pc_vms | subelements('nics') }}"
-  ignore_errors: true
-  register: result
   when:
     - item.1.network_info.ipv4_info is defined
     - item.1.network_info.ipv4_info.learned_ip_addresses is defined
@@ -280,7 +424,7 @@
 - name: Status for Fetching PC VM
   ansible.builtin.assert:
     that:
-      - filtered_vm | length > 0
+      - filtered_vm | length == 1
     fail_msg: "Fetching PC VM failed"
     success_msg: "Fetching PC VM passed"
 
@@ -288,128 +432,141 @@
   ansible.builtin.set_fact:
     pc_vm_external_id: "{{ filtered_vm[0].ext_id }}"
 
-#############################################################
-# Create restore source cluster
-# Get restore source cluster to verify it is created successfully
-# Delete restore source cluster
-# Get restore source cluster to verify it is deleted successfully
-# Create restore source cluster
-# Get restore source cluster to verify it is created successfully
+############################################################
+# Create restore source object store
+# Get restore source object store to verify it is created successfully
+# Delete restore source object store
+# Get restore source object store to verify it is deleted successfully
+# Create restore source object store
+# Get restore source object store to verify it is created successfully
 
-- name: Create restore source cluster
+- name: Create restore source object store
   nutanix.ncp.ntnx_pc_restore_source_v2:
     nutanix_host: "{{ ip_pe }}"
     location:
-      cluster_location:
-        config:
-          ext_id: "{{ cluster.uuid }}"
+      object_store_location:
+        provider_config:
+          bucket_name: "{{ s3_bucket.bucket }}"
+          region: "{{ s3_bucket.region }}"
+          credentials:
+            access_key_id: "{{ s3_bucket.access_key }}"
+            secret_access_key: "{{ s3_bucket.secret_key }}"
   register: result
   ignore_errors: true
+  no_log: true
 
-- name: Create restore source cluster status
+- name: Create restore source object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.ext_id is defined
       - result.response.ext_id == result.ext_id
-      - result.response.location.config.ext_id == cluster.uuid
-    fail_msg: "Create restore source cluster failed"
-    success_msg: "Create restore source cluster passed"
+      - result.response.location.provider_config.bucket_name == s3_bucket.bucket
+      - result.response.location.provider_config.region == s3_bucket.region
+    fail_msg: "Create restore source object store failed"
+    success_msg: "Create restore source object store passed"
 
-- name: Get restore source cluster
+- name: Get restore source object store
   nutanix.ncp.ntnx_pc_restore_source_info_v2:
     nutanix_host: "{{ ip_pe }}"
     ext_id: "{{ result.response.ext_id }}"
   register: result
   ignore_errors: true
 
-- name: Get restore source cluster status
+- name: Get restore source object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.ext_id == result.ext_id
-      - result.response.location.config.ext_id == cluster.uuid
-    fail_msg: "Get restore source cluster failed"
-    success_msg: "Get restore source cluster passed"
+      - result.response.location.provider_config.bucket_name == s3_bucket.bucket
+      - result.response.location.provider_config.region == s3_bucket.region
+    fail_msg: "Get restore source object store failed"
+    success_msg: "Get restore source object store passed"
 
-- name: Set restore source cluster external ID
+- name: Set restore source object store external ID
   ansible.builtin.set_fact:
-    restore_source_ext_id: "{{ result.response.ext_id }}"
+    restore_source_object_store_ext_id: "{{ result.response.ext_id }}"
 
-- name: Delete restore source cluster
+- name: Delete restore source object store
   nutanix.ncp.ntnx_pc_restore_source_v2:
     nutanix_host: "{{ ip_pe }}"
-    ext_id: "{{ restore_source_ext_id }}"
+    ext_id: "{{ restore_source_object_store_ext_id }}"
     state: absent
   register: result
   ignore_errors: true
 
-- name: Get restore source cluster
+- name: Get restore source object store
   nutanix.ncp.ntnx_pc_restore_source_info_v2:
     nutanix_host: "{{ ip_pe }}"
-    ext_id: "{{ restore_source_ext_id }}"
+    ext_id: "{{ restore_source_object_store_ext_id }}"
   register: result
   ignore_errors: true
 
-- name: Verify that restore source cluster is deleted
+- name: Verify that restore source object store is deleted
   ansible.builtin.assert:
     that:
       - result.error == "NOT FOUND"
       - result.response.data.error | length > 0
-    fail_msg: "Delete restore source cluster failed"
-    success_msg: "Delete restore source cluster passed"
+    fail_msg: "Delete restore source object store failed"
+    success_msg: "Delete restore source object store passed"
 
-- name: Create restore source cluster
+- name: Create restore source object store
   nutanix.ncp.ntnx_pc_restore_source_v2:
     nutanix_host: "{{ ip_pe }}"
     location:
-      cluster_location:
-        config:
-          ext_id: "{{ cluster.uuid }}"
+      object_store_location:
+        provider_config:
+          bucket_name: "{{ s3_bucket.bucket }}"
+          region: "{{ s3_bucket.region }}"
+          credentials:
+            access_key_id: "{{ s3_bucket.access_key }}"
+            secret_access_key: "{{ s3_bucket.secret_key }}"
   register: result
   ignore_errors: true
+  no_log: true
 
-- name: Create restore source cluster status
+- name: Create restore source object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.ext_id is defined
       - result.response.ext_id == result.ext_id
-      - result.response.location.config.ext_id == cluster.uuid
-    fail_msg: "Create restore source cluster failed"
-    success_msg: "Create restore source cluster passed"
+      - result.response.location.provider_config.bucket_name == s3_bucket.bucket
+      - result.response.location.provider_config.region == s3_bucket.region
+    fail_msg: "Create restore source object store failed"
+    success_msg: "Create restore source object store passed"
 
-- name: Get restore source cluster
+- name: Get restore source object store
   nutanix.ncp.ntnx_pc_restore_source_info_v2:
     nutanix_host: "{{ ip_pe }}"
     ext_id: "{{ result.response.ext_id }}"
   register: result
   ignore_errors: true
 
-- name: Get restore source cluster status
+- name: Get restore source object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.ext_id == result.ext_id
-      - result.response.location.config.ext_id == cluster.uuid
-    fail_msg: "Get restore source cluster failed"
-    success_msg: "Get restore source cluster passed"
+      - result.response.location.provider_config.bucket_name == s3_bucket.bucket
+      - result.response.location.provider_config.region == s3_bucket.region
+    fail_msg: "Get restore source object store failed"
+    success_msg: "Get restore source object store passed"
 
-- name: Set restore source cluster external ID
+- name: Set restore source object store external ID
   ansible.builtin.set_fact:
-    restore_source_ext_id: "{{ result.response.ext_id }}"
+    restore_source_object_store_ext_id: "{{ result.response.ext_id }}"
 
 #############################################################
 # Get all restorable domain managers
 # Get restorable domain manager external ID
 # List all restore points
 # Set restore point external ID
-# Get restore point details using external ID
 
 - name: Get all restorable domain managers
   nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
     nutanix_host: "{{ ip_pe }}"
-    restore_source_ext_id: "{{ restore_source_ext_id }}"
+    restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
   register: result
   ignore_errors: true
 
@@ -420,7 +577,7 @@
 - name: List all restore points
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
-    restore_source_ext_id: "{{ restore_source_ext_id }}"
+    restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
   register: result
   ignore_errors: true
@@ -440,7 +597,7 @@
 - name: Get restore point details using external ID
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
-    restore_source_ext_id: "{{ restore_source_ext_id }}"
+    restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
     ext_id: "{{ restore_point_ext_id }}"
   register: restore_point_details
@@ -458,6 +615,18 @@
       - restore_point_details.response.domain_manager.config.resource_config.data_disk_size_bytes == pc_details.response.config.resource_config.data_disk_size_bytes
       - restore_point_details.response.domain_manager.config.resource_config.memory_size_bytes == pc_details.response.config.resource_config.memory_size_bytes
       - restore_point_details.response.domain_manager.config.resource_config.num_vcpus == pc_details.response.config.resource_config.num_vcpus
+      - restore_point_details.response.domain_manager.network.external_address.ipv4.value == pc_details.response.network.external_address.ipv4.value
+      - restore_point_details.response.domain_manager.network.external_networks[0].network_ext_id == pc_details.response.network.external_networks[0].network_ext_id
+      - restore_point_details.response.domain_manager.network.external_networks[0].default_gateway.ipv4.value == pc_details.response.network.external_networks[0].default_gateway.ipv4.value
+      - restore_point_details.response.domain_manager.network.external_networks[0].subnet_mask.ipv4.value == pc_details.response.network.external_networks[0].subnet_mask.ipv4.value
+      - restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].begin.ipv4.value == pc_details.response.network.external_networks[0].ip_ranges[0].begin.ipv4.value
+      - restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value == pc_details.response.network.external_networks[0].ip_ranges[0].end.ipv4.value
+      - pc_details.response.network.name_servers[0].ipv4.value in restore_point_details.response.domain_manager.network.name_servers | map(attribute='ipv4.value')
+      - pc_details.response.network.name_servers[1].ipv4.value in restore_point_details.response.domain_manager.network.name_servers | map(attribute='ipv4.value')
+      - pc_details.response.network.ntp_servers[0].fqdn.value in restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
+      - pc_details.response.network.ntp_servers[1].fqdn.value in restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
+      - pc_details.response.network.ntp_servers[2].fqdn.value in restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
+      - pc_details.response.network.ntp_servers[3].fqdn.value in restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
     fail_msg: "Get restore point details using external ID failed"
     success_msg: "Get restore point details using external ID passed"
 
@@ -475,7 +644,7 @@
   ansible.builtin.pause:
     seconds: 120
 
-#############################################################
+# #############################################################
 # Restore PC
 
 - name: Generate spec for restoring PC using check mode
@@ -650,20 +819,20 @@
       - "'reset successfully' in result.stdout"
 
 #############################################################
-# Delete backup target cluster
+# Delete backup target object store
 
-- name: Delete backup target cluster
+- name: Delete backup target object store
   nutanix.ncp.ntnx_pc_backup_target_v2:
-    ext_id: "{{ backup_target_ext_id }}"
+    ext_id: "{{ backup_target_object_store_ext_id }}"
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     state: absent
   register: result
   ignore_errors: true
 
-- name: Delete backup target cluster status
+- name: Delete backup target object store status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == "SUCCEEDED"
-    fail_msg: "Delete backup target cluster failed"
-    success_msg: "Delete backup target cluster passed"
+    fail_msg: "Delete backup target object store failed"
+    success_msg: "Delete backup target object store passed"

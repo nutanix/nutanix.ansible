@@ -18,9 +18,11 @@ options:
         description: External ID to fetch specific backup target info
         type: str
     domain_manager_ext_id:
-        description: 
+        description:
             - Domain manager means the PC
             - External ID of the domain manager (PC)
+            - Domain manager external ID can be fetched using this module ntnx_clusters_info_v2
+            - Using ntnx_clusters_info_v2, you can list all clusters and get the one with clusterFunctionType as 'PRISM_CENTRAL'
         type: str
         required: True
 extends_documentation_fragment:
