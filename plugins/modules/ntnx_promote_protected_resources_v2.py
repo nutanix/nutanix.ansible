@@ -15,9 +15,9 @@ short_description: Module to promote a protected resource in Nutanix Prism Centr
 description:
   - This module can be used to promote a protected resource in Nutanix Prism Central.
   - Supported only for protected resources that have synchronous protection policies.
-  - Promote VM will create new VM in the secondary PC for the given VM external ID
-  - promote VG will create new VG in the second local PE for the given VG external ID
-  - Promote VM uses secondary PC IP where Promote VG uses primary PC IP
+  - Promote VM will create new VM in the secondary site (PC) for the given VM external ID.
+  - promote VG will create new VG in the another local cluster registered under same PC for the given VG external ID.
+  - Promote VM uses secondary site PC IP and its credentials in C(nutanix_host) where Promote VG uses primary site PC IP.
 options:
   ext_id:
     description:
@@ -30,6 +30,30 @@ options:
     type: bool
     required: false
     default: True
+  nutanix_host:
+    description:
+      - Remote Prism central hostname or IP address
+      - C(nutanix_host). If not set then the value of the C(NUTANIX_HOST), environment variable is used.
+    type: str
+    required: true
+  nutanix_port:
+    description:
+      - Remote Prism central port
+      - C(nutanix_port). If not set then the value of the C(NUTANIX_PORT), environment variable is used.
+    type: str
+    default: "9440"
+  nutanix_username:
+    description:
+      - Remote Prism central username
+      - C(nutanix_username). If not set then the value of the C(NUTANIX_USERNAME), environment variable is used.
+    type: str
+    required: true
+  nutanix_password:
+    description:
+      - Remote Prism central password
+      - C(nutanix_password). If not set then the value of the C(NUTANIX_PASSWORD), environment variable is used.
+    required: true
+    type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -41,6 +65,16 @@ EXAMPLES = r"""
 - name: Promote VM
   nutanix.ncp.ntnx_promote_protected_resources_v2:
     nutanix_host: "{{ secondary_site_pc_ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+  register: result
+  ignore_errors: true
+
+- name: Promote VG
+  nutanix.ncp.ntnx_promote_protected_resources_v2:
+    nutanix_host: "{{ primary_site_pc_ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false

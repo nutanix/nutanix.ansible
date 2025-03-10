@@ -59,7 +59,9 @@ options:
         required: true
       domain_manager_ext_id:
         description:
-          - The external id of the domain manager.
+          - External ID of the PC
+          - It can be fetched using ntnx_clusters_info_v2 module
+          - To fetch it, use the following filter: C(config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')
         type: str
         required: true
       replication_sub_location:

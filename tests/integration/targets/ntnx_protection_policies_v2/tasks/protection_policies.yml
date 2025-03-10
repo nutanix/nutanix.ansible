@@ -1,3 +1,16 @@
+# Description: This file uses variables from vars/main.yml to create/update protection policies
+# each variable is used as a parameter in the protection policies module
+# instead of defining the variables in the playbook, we are using the variables from vars/main.yml
+# for example, replication_location_1 is used as a parameter in the protection policies module
+# and it contains whole spec (label, domain_manager_ext_id, is_primary, replication_sub_location)
+# and so on for other variables
+
+# Pre-requisites:
+# 1. Variables in vars/main.yml are defined and set correctly
+# 2. These variables from prepare_env/vars/main.yml are defined and set correctly:
+#    - pe_ssh_password, pe_ssh_username, ip_pe, virtual_ip_pe, username, password, clusters, firewall_ports, availability_zone_pc_ip
+#    - cluster, availability_zone_pc_uuid, cluster_availability_zone (These variables are used in vars/main.yml file)
+
 ---
 - name: Start protection policies and data protection tests
   ansible.builtin.debug:
@@ -24,10 +37,12 @@
     cluster_status: /usr/local/nutanix/cluster/bin/cluster status
     modify_firewall_cmd_cluster1: >
       /usr/local/nutanix/cluster/bin/modify_firewall -f -r
-      {{ clusters[0].nodes[0].cvm_ip }},{{ clusters[0].network.virtual_ip }} -p 2030,2036,2073,2090,8740 -i eth0
+      {{ clusters[0].nodes[0].cvm_ip }},{{ clusters[0].network.virtual_ip }} -p
+      {{ firewall_ports[0] }},{{ firewall_ports[1] }},{{ firewall_ports[2] }},{{ firewall_ports[3] }},{{ firewall_ports[4] }} -i eth0
     modify_firewall_cmd_cluster2: >
       /usr/local/nutanix/cluster/bin/modify_firewall -f -r
-      {{ ip_pe }},{{ virtual_ip_pe }} -p 2030,2036,2073,2090,8740 -i eth0
+      {{ ip_pe }},{{ virtual_ip_pe }} -p
+      {{ firewall_ports[0] }},{{ firewall_ports[1] }},{{ firewall_ports[2] }},{{ firewall_ports[3] }},{{ firewall_ports[4] }} -i eth0
 
 - name: Set command for resetting cluster username and password
   ansible.builtin.set_fact:
@@ -171,6 +186,7 @@
   register: result
   ignore_errors: true
   changed_when: result.rc != 0
+  no_log: true
 
 - name: Run PE PC registration
   nutanix.ncp.ntnx_pc_registration_v2:
@@ -742,6 +758,25 @@
     success_msg: "Category associated with VG successfully"
     fail_msg: "Category association with VG failed"
 
+- name: Fetch category info after association
+  nutanix.ncp.ntnx_categories_info_v2:
+    expand: associations
+    filter: "extId eq '{{ category_ext_id_4 }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert that category is associated with VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response[0].ext_id == category_ext_id_4
+      - result.response[0].associations[0].resource_group == "ENTITY"
+      - result.response[0].associations[0].resource_type == "VOLUMEGROUP"
+    success_msg: "Category associated with VG successfully"
+    fail_msg: "Category association with VG failed"
+
 - name: Associate category with second VG
   nutanix.ncp.ntnx_volume_groups_categories_v2:
     ext_id: "{{ vg2_uuid }}"
@@ -758,6 +793,25 @@
       - result.failed == false
       - result.response is defined
       - result.response.status == "SUCCEEDED"
+    success_msg: "Category associated with VG successfully"
+    fail_msg: "Category association with VG failed"
+
+- name: Fetch category info after association
+  nutanix.ncp.ntnx_categories_info_v2:
+    expand: associations
+    filter: "extId eq '{{ category_ext_id_2 }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert that category is associated with VG
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response[0].ext_id == category_ext_id_2
+      - result.response[0].associations[0].resource_group == "ENTITY"
+      - result.response[0].associations[0].resource_type == "VOLUMEGROUP"
     success_msg: "Category associated with VG successfully"
     fail_msg: "Category association with VG failed"
 
@@ -836,7 +890,7 @@
     success_msg: "Protected resource fetched successfully"
     fail_msg: "Protected resource fetch failed"
 
-- name: Promote VM
+- name: Promote VM in secondary site PC
   nutanix.ncp.ntnx_promote_protected_resources_v2:
     nutanix_host: "{{ availability_zone_pc_ip }}"
     ext_id: "{{ vm_ext_id_1 }}"
@@ -853,7 +907,7 @@
     success_msg: "VM promoted successfully"
     fail_msg: "VM promotion failed"
 
-- name: Restore VM
+- name: Restore VM in secondary site PC
   nutanix.ncp.ntnx_restore_protected_resources_v2:
     nutanix_host: "{{ availability_zone_pc_ip }}"
     ext_id: "{{ vm_ext_id_2 }}"
@@ -887,7 +941,7 @@
     success_msg: "VG promoted successfully"
     fail_msg: "VG promotion failed"
 
-- name: Restore VG
+- name: Restore VG in secondary site PC
   nutanix.ncp.ntnx_restore_protected_resources_v2:
     nutanix_host: "{{ availability_zone_pc_ip }}"
     ext_id: "{{ vg2_uuid }}"
@@ -979,7 +1033,7 @@
 
 ########################################################################################
 
-- name: Update linear retention protection policy
+- name: Update linear retention protection policy name, description, labels, and schedule
   nutanix.ncp.ntnx_protection_policies_v2:
     ext_id: "{{ todelete[0] }}"
     name: "ansible-name-linear-{{random_name}}_updated"

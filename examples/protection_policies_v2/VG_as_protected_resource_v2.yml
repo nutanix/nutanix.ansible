@@ -1,0 +1,405 @@
+# Pre-requisites:
+# 1. Ensure that you have cluster (PE) which is not registered to any PC.
+# 2. Register that cluster with your PC. (Now you have two clusters registered with PC)
+# 3. Modify the firewall rules for the two clusters that are registered with PC using the following commands:
+# SSH into the first cluster (PE1) and run the following command:
+# /usr/local/nutanix/cluster/bin/modify_firewall -f -r <PE2_IP>,<PE2_VIP> -p port1,port2,port3,port4,port5 -i eth0
+# SSH into the second cluster (PE2) and run the following command:
+# /usr/local/nutanix/cluster/bin/modify_firewall -f -r <PE1_IP>,<PE1_VIP> -p port1,port2,port3,port4,port5 -i eth0
+
+# Summary:
+# This playbook will do the following:
+# 1. Create two categories.
+# 2. Create two protection policies with auto retention and synchronous replication configurations.
+# 3. Create two volume groups and associate them with the categories.
+# 4. Promote the first volume group and restore the second volume group.
+# 5. Disassociate the categories from the volume groups.
+# 6. Delete the volume groups.
+# 7. Delete the protection policies.
+# 8. Delete the categories.
+
+- name: Protection policies playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Generate random names and set variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "00062f93-af62-1b48-0374-7a4d34c109e2"
+        random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+        label1: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+        label2: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+        suffix_name: "ansible-category"
+        todelete_categories: []
+        todelete: []
+        cluster:
+          uuid: "00062db4-a450-e685-0fda-cdf9ca935bfd"
+        cluster_availability_zone:
+          uuid: "00062df3-0a98-93d3-0654-e452ba9c0c25"
+        availability_zone_pc_ip: "10.2.0.0"
+        availability_zone_pc_uuid: "bd32fb09-8005-4655-a3a8-086b8ec1b1ea"
+        domain_manager_ext_id: "1e9a1996-50e2-485f-a67c-22355cb43055"
+
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        replication_location_1:
+          label: "ansible-label-{{label1}}"
+          domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          is_primary: true
+          replication_sub_location:
+            nutanix_cluster:
+              cluster_ext_ids:
+                - "{{ cluster.uuid }}"
+
+        replication_location_2:
+          label: "ansible-label-{{label2}}"
+          domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+          is_primary: false
+          replication_sub_location:
+            nutanix_cluster:
+              cluster_ext_ids:
+                - "{{ cluster_availability_zone.uuid }}"
+
+        replication_location_1_local_clusters:
+          label: "ansible-label-local-clusters-{{label1}}"
+          domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          is_primary: true
+          replication_sub_location:
+            nutanix_cluster:
+              cluster_ext_ids:
+                - "{{ cluster.uuid }}"
+
+        replication_location_2_local_clusters:
+          label: "ansible-label-local-clusters-{{label2}}"
+          domain_manager_ext_id: "{{domain_manager_ext_id}}"
+          is_primary: false
+          replication_sub_location:
+            nutanix_cluster:
+              cluster_ext_ids:
+                - "{{ cluster_ext_id }}"
+
+        replication_configuration_auto_1:
+          source_location_label: "ansible-label-{{label1}}"
+          remote_location_label: "ansible-label-{{label2}}"
+          schedule:
+            recovery_point_type: "CRASH_CONSISTENT"
+            recovery_point_objective_time_seconds: 60
+            retention:
+              local:
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+              remote:
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+            start_time:
+            sync_replication_auto_suspend_timeout_seconds: 300
+
+        replication_configuration_auto_2:
+          source_location_label: "ansible-label-{{label2}}"
+          remote_location_label: "ansible-label-{{label1}}"
+          schedule:
+            recovery_point_type: "CRASH_CONSISTENT"
+            recovery_point_objective_time_seconds: 60
+            retention:
+              local:
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+              remote:
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+            start_time:
+            sync_replication_auto_suspend_timeout_seconds: 300
+
+        replication_configuration_sync_local_clusters_1:
+          source_location_label: "ansible-label-local-clusters-{{label1}}"
+          remote_location_label: "ansible-label-local-clusters-{{label2}}"
+          schedule:
+            recovery_point_type: "CRASH_CONSISTENT"
+            retention: null
+            recovery_point_objective_time_seconds: 0
+            start_time:
+            sync_replication_auto_suspend_timeout_seconds: 10
+
+        replication_configuration_sync_local_clusters_2:
+          source_location_label: "ansible-label-local-clusters-{{label2}}"
+          remote_location_label: "ansible-label-local-clusters-{{label1}}"
+          schedule:
+            recovery_point_type: "CRASH_CONSISTENT"
+            retention: null
+            recovery_point_objective_time_seconds: 0
+            start_time:
+            sync_replication_auto_suspend_timeout_seconds: 10
+
+    - name: Set ansible keys and values
+      ansible.builtin.set_fact:
+        keys:
+          - "{{random_name}}{{suffix_name}}key1"
+          - "{{random_name}}{{suffix_name}}key2"
+        values:
+          - "{{random_name}}{{suffix_name}}value1"
+          - "{{random_name}}{{suffix_name}}value2"
+
+    ########################################################################################
+
+    - name: Create categories for protection policies
+      nutanix.ncp.ntnx_categories_v2:
+        key: "{{ keys[item] }}"
+        value: "{{ values[item] }}"
+        description: "ansible-category"
+      register: output
+      ignore_errors: true
+      loop: "{{ range(0, 2) }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Save external IDs to the list
+      ansible.builtin.set_fact:
+        todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
+      with_items: "{{ output.results }}"
+
+    - name: Set categories external ids
+      ansible.builtin.set_fact:
+        category_ext_id_1: "{{ todelete_categories[0] }}"
+        category_ext_id_2: "{{ todelete_categories[1] }}"
+
+    ########################################################################################
+
+    - name: Create auto retention protection policy
+      nutanix.ncp.ntnx_protection_policies_v2:
+        name: "ansible-name-auto-{{random_name}}"
+        description: "ansible-description-auto-{{random_name}}"
+        replication_locations:
+          - "{{ replication_location_1 }}"
+          - "{{ replication_location_2 }}"
+        replication_configurations:
+          - source_location_label: "{{ replication_configuration_auto_1.source_location_label }}"
+            remote_location_label: "{{ replication_configuration_auto_1.remote_location_label }}"
+            schedule:
+              recovery_point_type: "{{ replication_configuration_auto_1.schedule.recovery_point_type }}"
+              recovery_point_objective_time_seconds: "{{ replication_configuration_auto_1.schedule.recovery_point_objective_time_seconds | int }}"
+              retention:
+                auto_rollup_retention:
+                  local:
+                    snapshot_interval_type: "{{ replication_configuration_auto_1.schedule.retention.local.snapshot_interval_type }}"
+                    frequency: "{{ replication_configuration_auto_1.schedule.retention.local.frequency }}"
+                  remote:
+                    snapshot_interval_type: "{{ replication_configuration_auto_1.schedule.retention.remote.snapshot_interval_type }}"
+                    frequency: "{{ replication_configuration_auto_1.schedule.retention.remote.frequency }}"
+              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+          - source_location_label: "{{ replication_configuration_auto_2.source_location_label }}"
+            remote_location_label: "{{ replication_configuration_auto_2.remote_location_label }}"
+            schedule:
+              recovery_point_type: "{{ replication_configuration_auto_2.schedule.recovery_point_type }}"
+              recovery_point_objective_time_seconds: "{{ replication_configuration_auto_2.schedule.recovery_point_objective_time_seconds | int }}"
+              retention:
+                auto_rollup_retention:
+                  local:
+                    snapshot_interval_type: "{{ replication_configuration_auto_2.schedule.retention.local.snapshot_interval_type }}"
+                    frequency: "{{ replication_configuration_auto_2.schedule.retention.local.frequency }}"
+                  remote:
+                    snapshot_interval_type: "{{ replication_configuration_auto_2.schedule.retention.remote.snapshot_interval_type }}"
+                    frequency: "{{ replication_configuration_auto_2.schedule.retention.remote.frequency }}"
+              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+        category_ids:
+          - "{{category_ext_id_1}}"
+      register: result
+      ignore_errors: true
+
+    - name: Add auto retention protection policy external ID to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.response.ext_id] }}"
+
+    ########################################################################################
+
+    - name: Create Synchronous replication protection policy for VG using category3
+      nutanix.ncp.ntnx_protection_policies_v2:
+        name: "ansible-name-sync-vg-{{random_name}}"
+        description: "ansible-description-sync-vg-{{random_name}}"
+        replication_locations:
+          - "{{ replication_location_1_local_clusters }}"
+          - "{{ replication_location_2_local_clusters }}"
+        replication_configurations:
+          - source_location_label: "{{ replication_configuration_sync_local_clusters_1.source_location_label }}"
+            remote_location_label: "{{ replication_configuration_sync_local_clusters_1.remote_location_label }}"
+            schedule:
+              recovery_point_type: "CRASH_CONSISTENT"
+              recovery_point_objective_time_seconds: >
+                "{{ replication_configuration_sync_local_clusters_1.schedule.recovery_point_objective_time_seconds | int }}"
+              sync_replication_auto_suspend_timeout_seconds: >
+                {{ replication_configuration_sync_local_clusters_1.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
+          - source_location_label: "{{ replication_configuration_sync_local_clusters_2.source_location_label }}"
+            remote_location_label: "{{ replication_configuration_sync_local_clusters_2.remote_location_label }}"
+            schedule:
+              recovery_point_type: "CRASH_CONSISTENT"
+              recovery_point_objective_time_seconds: >
+                {{ replication_configuration_sync_local_clusters_2.schedule.recovery_point_objective_time_seconds | int }}
+              sync_replication_auto_suspend_timeout_seconds: >
+                {{ replication_configuration_sync_local_clusters_2.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
+        category_ids:
+          - "{{category_ext_id_2}}"
+      register: result
+      ignore_errors: true
+
+    - name: Add synchronous protection policy external ID to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.response.ext_id] }}"
+
+    ########################################################################################
+
+    - name: Create Volume group to be promoted
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "{{ random_name }}_ansible_protected_vg_promote"
+        description: "Volume group for promote"
+        cluster_reference: "{{ cluster.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set VG UUID
+      ansible.builtin.set_fact:
+        vg1_uuid: "{{ result.ext_id }}"
+
+    - name: Create Volume group to be restored
+      nutanix.ncp.ntnx_volume_groups_v2:
+        name: "{{ random_name }}_ansible_protected_vg_restore"
+        description: "Volume group for restore"
+        cluster_reference: "{{ cluster.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set VG UUID
+      ansible.builtin.set_fact:
+        vg2_uuid: "{{ result.ext_id }}"
+
+    - name: Associate category with first VG
+      nutanix.ncp.ntnx_volume_groups_categories_v2:
+        ext_id: "{{ vg1_uuid }}"
+        categories:
+          - ext_id: "{{ category_ext_id_2 }}"
+            entity_type: "CATEGORY"
+      register: result
+      ignore_errors: true
+
+    - name: Associate category with second VG
+      nutanix.ncp.ntnx_volume_groups_categories_v2:
+        ext_id: "{{ vg2_uuid }}"
+        categories:
+          - ext_id: "{{ category_ext_id_1 }}"
+            entity_type: "CATEGORY"
+      register: result
+      ignore_errors: true
+
+    - name: Sleep for 5 minutes until VGs are protected
+      ansible.builtin.pause:
+        seconds: 300
+
+    - name: Get a protected resource
+      nutanix.ncp.ntnx_protected_resources_info_v2:
+        ext_id: "{{ vg1_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Promote VG
+      nutanix.ncp.ntnx_promote_protected_resources_v2:
+        ext_id: "{{ vg1_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Restore VG
+      nutanix.ncp.ntnx_restore_protected_resources_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
+        ext_id: "{{ vg2_uuid }}"
+        cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
+      register: result
+      ignore_errors: true
+
+    ########################################################################################
+
+    - name: Sleep for 5 minutes untiL VGs are promoted and restored
+      ansible.builtin.pause:
+        seconds: 300
+
+    - name: Disassociate category from first VG
+      nutanix.ncp.ntnx_volume_groups_categories_v2:
+        ext_id: "{{ vg1_uuid }}"
+        state: absent
+        categories:
+          - ext_id: "{{ category_ext_id_2 }}"
+            entity_type: "CATEGORY"
+      register: result
+      ignore_errors: true
+
+    - name: Disassociate category from second VG
+      nutanix.ncp.ntnx_volume_groups_categories_v2:
+        ext_id: "{{ vg2_uuid }}"
+        state: absent
+        categories:
+          - ext_id: "{{ category_ext_id_1 }}"
+            entity_type: "CATEGORY"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch all VGs on local cluster
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Filter only protected VGs
+      ansible.builtin.set_fact:
+        protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
+
+    - name: Extract external ids of protected VGs
+      ansible.builtin.set_fact:
+        protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
+
+    - name: Delete all Created VGs on local cluster
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ item }}"
+      register: result
+      loop: "{{ protected_vgs_ext_ids }}"
+
+    - name: Fetch all VGs on remote cluster
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
+      register: result
+      ignore_errors: true
+
+    - name: Filter only protected VGs
+      ansible.builtin.set_fact:
+        protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"
+
+    - name: Extract external ids of protected VGs
+      ansible.builtin.set_fact:
+        protected_vgs_ext_ids: "{{ protected_vgs | map(attribute='ext_id') | list }}"
+
+    - name: Delete Created VG on remote cluster
+      nutanix.ncp.ntnx_volume_groups_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
+        state: absent
+        ext_id: "{{ protected_vgs_ext_ids[0] }}"
+      register: result
+
+    ########################################################################################
+
+    - name: Delete all protection policies
+      nutanix.ncp.ntnx_protection_policies_v2:
+        ext_id: "{{ item }}"
+        state: absent
+      loop: "{{ todelete }}"
+      register: result
+      ignore_errors: true
+
+    ########################################################################################
+
+    - name: Delete Created categories
+      nutanix.ncp.ntnx_categories_v2:
+        ext_id: "{{item}}"
+        state: absent
+      register: result
+      loop: "{{ todelete_categories }}"
+      ignore_errors: true

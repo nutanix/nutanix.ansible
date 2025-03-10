@@ -1,3 +1,8 @@
+# Description: Variables for the ntnx_protection_policies_v2 module tests
+# These variables are used in Create/Update protection policies
+# variables with _expected are used to compare the expected output with the actual output
+# variables with _check_mode are used to test the check mode of the module
+
 replication_location_1:
   label: "ansible-label-{{label1}}"
   domain_manager_ext_id: "{{domain_manager_ext_id}}"
