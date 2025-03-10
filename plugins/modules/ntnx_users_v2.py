@@ -40,7 +40,7 @@ options:
             - Type of the User.
         required: false
         type: str
-        choices: ['LOCAL', 'SAML', 'LDAP', 'EXTERNAL']
+        choices: ['LOCAL', 'SAML', 'LDAP', 'EXTERNAL', 'SERVICE_ACCOUNT']
     display_name:
         description:
             - Display name for the User.
@@ -123,6 +123,17 @@ options:
         type: bool
         required: false
         default: true
+    description:
+        description:
+            - Description of the User.
+        required: false
+        type: str
+    creation_type:
+        description:
+            - The creation mechanism of this entity.
+        required: false
+        type: str
+        choices: ['PREDEFINED', 'SERVICEDEFINED', 'USERDEFINED']
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -286,7 +297,9 @@ def get_module_spec():
         state=dict(type="str", choices=["present"], default="present"),
         ext_id=dict(type="str"),
         username=dict(type="str"),
-        user_type=dict(type="str", choices=["LOCAL", "SAML", "LDAP", "EXTERNAL"]),
+        user_type=dict(
+            type="str", choices=["LOCAL", "SAML", "LDAP", "EXTERNAL", "SERVICE_ACCOUNT"]
+        ),
         display_name=dict(type="str"),
         first_name=dict(type="str"),
         middle_initial=dict(type="str"),
@@ -301,6 +314,10 @@ def get_module_spec():
             type="list", elements="dict", options=kvp_spec, obj=iam_sdk.KVPair
         ),
         status=dict(type="str", choices=["ACTIVE", "INACTIVE"]),
+        description=dict(type="str"),
+        creation_type=dict(
+            type="str", choices=["PREDEFINED", "SERVICEDEFINED", "USERDEFINED"]
+        ),
     )
     return module_args
 

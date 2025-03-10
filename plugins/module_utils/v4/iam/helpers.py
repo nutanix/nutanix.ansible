@@ -146,3 +146,23 @@ def get_directory_service(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching directory service info",
         )
+
+
+def get_requested_key(module, api_instance, ext_id, user_ext_id):
+    """
+    This method will return requested key info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): User api instance
+        ext_id (str): External id of requested key
+    Returns:
+        requested_key_info (dict): Requested key info
+    """
+    try:
+        return api_instance.get_user_key_by_id(userExtId=user_ext_id, extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching requested key info",
+        )
