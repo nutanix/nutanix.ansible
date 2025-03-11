@@ -18,17 +18,18 @@ RETURN = r"""
 """
 import traceback  # noqa: E402
 import warnings  # noqa: E402
-from copy import deepcopy  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
-from ..module_utils.v4.iam.helpers import get_user  # noqa: E402
+from ..module_utils.v4.iam.api_client import (  # noqa: E402
+    get_user_api_instance,
+    get_etag,
+)
+from ..module_utils.v4.iam.helpers import get_requested_key  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    strip_users_empty_attributes,
 )
 
 SDK_IMP_ERROR = None
@@ -50,13 +51,12 @@ def get_module_spec():
     module_args = dict(
         user_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str"),
-        name=dict(type="str", required=True),
+        name=dict(type="str"),
         description=dict(type="str"),
-        key_type=dict(type="str", choices=["API_KEY", "OBJECT_KEY"], required=True),
+        key_type=dict(type="str", choices=["API_KEY", "OBJECT_KEY"]),
         creation_type=dict(
             type="str",
             choices=["PREDEFINED", "SERVICEDEFINED", "USERDEFINED"],
-            required=True,
         ),
         expiry_time=dict(type="str"),
         status=dict(type="str", choices=["REVOKED", "VALID", "EXPIRED"]),
@@ -100,8 +100,14 @@ def delete_user_api_key(module, users_api, result):
     user_ext_id = module.params.get("user_ext_id")
     ext_id = module.params.get("ext_id")
 
+    old_spec = get_requested_key(module, users_api, ext_id, user_ext_id)
+    etag = get_etag(data=old_spec)
+    if not etag:
+        return module.fail_json("Unable to fetch etag for Deletion", **result)
+
+    kwargs = {"if_match": etag}
     try:
-        users_api.delete_user_key(userExtId=user_ext_id, extId=ext_id)
+        users_api.delete_user_key_by_id(userExtId=user_ext_id, extId=ext_id, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -123,6 +129,11 @@ def run_module():
                 "state",
                 "absent",
                 ("ext_id",),
+            ),
+            (
+                "state",
+                "present",
+                ("name", "key_type"),
             ),
         ],
     )
