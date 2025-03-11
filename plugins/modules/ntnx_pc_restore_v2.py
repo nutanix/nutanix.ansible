@@ -14,6 +14,7 @@ version_added: 2.1.0
 description:
     - The restore domain manager is a task-driven operation to restore a domain manager
         from a cluster or object store backup location based on the selected restore point.
+    - Please provide Prism Element IP address here in C(nutanix_host)
 options:
     ext_id:
         description:
@@ -571,6 +572,21 @@ options:
                 type: bool
                 required: false
                 default: false
+    nutanix_host:
+        description:
+            - The IP address of the Nutanix Prism Element.
+        required: true
+        type: str
+    nutanix_username:
+        description:
+            - The username to authenticate with the Nutanix Prism Element.
+        required: true
+        type: str
+    nutanix_password:
+        description:
+            - The password to authenticate with the Nutanix Prism Element.
+        required: true
+        type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2

@@ -15,6 +15,7 @@ description:
     - Creates or Deletes a restore source pointing to a cluster or object store to restore the domain manager.
     - The created restore source is intended to be deleted after use.
     - If the restore source is not deleted, then it is auto-deleted after sometime.
+    - Please provide Prism Element IP address here in C(nutanix_host)
 options:
     ext_id:
         description:
@@ -95,6 +96,21 @@ options:
                                 description: RPO interval in minutes at which the backup will be taken
                                 type: int
                                 required: true
+    nutanix_host:
+        description:
+            - The Nutanix Prism Element IP address.
+        required: true
+        type: str
+    nutanix_username:
+        description:
+            - The username to authenticate with the Nutanix Prism Element.
+        required: true
+        type: str
+    nutanix_password:
+        description:
+            - The password to authenticate with the Nutanix Prism Element.
+        required: true
+        type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2

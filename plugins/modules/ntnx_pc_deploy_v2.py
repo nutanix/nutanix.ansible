@@ -15,6 +15,7 @@ description:
     - Deploys a Prism Central using the provided details
     - Prism Central Size, Network Config are mandatory fields to deploy Prism Central
     - If wait is set to true, the module will wait for the task to complete
+    - Please provide Prism Element IP address here in C(nutanix_host)
 options:
     wait:
         description: Wait for the operation to complete.
@@ -550,6 +551,18 @@ options:
         type: bool
         required: false
         default: false
+    nutanix_host:
+        description: Nutanix Prism Element IP address.
+        type: str
+        required: true
+    nutanix_username:
+        description: The username to authenticate with the Nutanix Prism Element.
+        type: str
+        required: true
+    nutanix_password:
+        description: The password to authenticate with the Nutanix Prism Element.
+        type: str
+        required: true
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
