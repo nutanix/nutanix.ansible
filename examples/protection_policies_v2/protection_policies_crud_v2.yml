@@ -1,7 +1,6 @@
 # Pre-requisites:
-# 1. Ensure that you have cluster (PE) which is not registered to any PC.
-# 2. Register that cluster with your PC. (Now you have two clusters registered with PC)
-# 3. Modify the firewall rules for the two clusters that are registered with PC using the following commands:
+# 1. Ensure that you have more than 1 clusters attached to PC for VG promote.
+# 2. Modify the firewall rules for the two clusters that are registered with PC using the following commands (for promoting VG):
 # SSH into the first cluster (PE1) and run the following command:
 # /usr/local/nutanix/cluster/bin/modify_firewall -f -r <PE2_IP>,<PE2_VIP> -p port1,port2,port3,port4,port5 -i eth0
 # SSH into the second cluster (PE2) and run the following command:

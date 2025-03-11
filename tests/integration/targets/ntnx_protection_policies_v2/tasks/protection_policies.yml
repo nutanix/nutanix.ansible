@@ -1,15 +1,45 @@
-# Description: This file uses variables from vars/main.yml to create/update protection policies
-# each variable is used as a parameter in the protection policies module
-# instead of defining the variables in the playbook, we are using the variables from vars/main.yml
-# for example, replication_location_1 is used as a parameter in the protection policies module
+# Description: This file uses variables from ../../vars/main.yml to create/update protection policies
+# instead of setting attributes values directly in tasks
+# we have declared them as nested attributes in ../../vars.yml so that we can reuse it at multiple places directly.
+# for example, an attribute in further test tasks is set to replication_location_1 ... replication_location_2 ...
 # and it contains whole spec (label, domain_manager_ext_id, is_primary, replication_sub_location)
 # and so on for other variables
 
 # Pre-requisites:
 # 1. Variables in vars/main.yml are defined and set correctly
 # 2. These variables from prepare_env/vars/main.yml are defined and set correctly:
-#    - pe_ssh_password, pe_ssh_username, ip_pe, virtual_ip_pe, username, password, clusters, firewall_ports, availability_zone_pc_ip
-#    - cluster, availability_zone_pc_uuid, cluster_availability_zone (These variables are used in vars/main.yml file)
+#  - pe_ssh_password: "RDMCluster.123"
+#   - pe_ssh_username: "nutanix"
+#   - ip_pe: "10.0.0.1"
+#   - virtual_ip_pe: "10.0.0.2"
+#   - username: "admin"
+#   - password: "Nutanix.123"
+#   - clusters:
+#       - name: "ansible-test-cluster"
+#         pe_username: "admin"
+#         pe_password: "Nutanix.123"
+#         nodes:
+#           - cvm_ip: "10.0.0.3"
+#         network:
+#           virtual_ip: "10.0.0.4"
+#         config:
+#           cluster_functions:
+#             - "PRISM_CENTRAL"
+#           redundancy_factor_cluster_crud: 1
+#           cluster_arch: "HYPERCONVERGED"
+#           fault_tolerance_state:
+#             domain_awareness_level_cluster_crud: "DOMAIN_AWARE"
+#   - firewall_ports:
+#       - 2030
+#       - 2036
+#       - 2073
+#       - 2090
+#       - 8740
+#   - availability_zone_pc_ip: "10.0.0.8"
+#   - availability_zone_pc_uuid: "00000000-0000-0000-0000-000000000000"
+#   - cluster_availability_zone:
+#       - name: "auto_cluster_prod_360f737a18b9"
+#         uuid: "00062ffc-95ad-19e9-185b-ac1f6b6f97e2"
 
 ---
 - name: Start protection policies and data protection tests
@@ -31,8 +61,8 @@
 
 - name: Set command split for resetting cluster username and password
   ansible.builtin.set_fact:
-    pe1_ssh_cmd: sshpass -p '{{ pe_ssh_password }}' ssh -o StrictHostKeyChecking=no {{ pe_ssh_username }}@{{ ip_pe }}
-    pe2_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
+    pe1_ssh_cmd: sshpass -p '{{ pe_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ pe_ssh_username }}@{{ ip_pe }}
+    pe2_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
     reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
     cluster_status: /usr/local/nutanix/cluster/bin/cluster status
     modify_firewall_cmd_cluster1: >
@@ -772,8 +802,8 @@
       - result.failed == false
       - result.response is defined
       - result.response[0].ext_id == category_ext_id_4
-      - result.response[0].associations[0].resource_group == "ENTITY"
-      - result.response[0].associations[0].resource_type == "VOLUMEGROUP"
+      - "'ENTITY' in result.response[0].associations | map(attribute='resource_group') | list"
+      - "'VOLUMEGROUP' in result.response[0].associations | map(attribute='resource_type') | list"
     success_msg: "Category associated with VG successfully"
     fail_msg: "Category association with VG failed"
 
@@ -810,13 +840,13 @@
       - result.failed == false
       - result.response is defined
       - result.response[0].ext_id == category_ext_id_2
-      - result.response[0].associations[0].resource_group == "ENTITY"
-      - result.response[0].associations[0].resource_type == "VOLUMEGROUP"
+      - "'ENTITY' in result.response[0].associations | map(attribute='resource_group') | list"
+      - "'VOLUMEGROUP' in result.response[0].associations | map(attribute='resource_type') | list"
     success_msg: "Category associated with VG successfully"
     fail_msg: "Category association with VG failed"
 
 # Wait for the first VM to be protected
-- name: Fetch VM using ext_id
+- name: Wait for the first VM to be protected by fetching VM using ext_id
   nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id_1 }}"
   register: result
@@ -837,11 +867,11 @@
       - result.response.cluster.ext_id == cluster.uuid
       - result.response.categories[0].ext_id == "{{ category_ext_id_3 }}"
       - result.response.protection_type == "RULE_PROTECTED"
-    success_msg: "VM fetched successfully"
-    fail_msg: "VM fetch failed"
+    success_msg: "VM is protected successfully"
+    fail_msg: "VM protection failed"
 
 # Wait for the second VM to be protected
-- name: Fetch VM using ext_id
+- name: Wait for the second VM to be protected by fetching VM using ext_id
   nutanix.ncp.ntnx_vms_info_v2:
     ext_id: "{{ vm_ext_id_2 }}"
   register: result
@@ -862,8 +892,8 @@
       - result.response.cluster.ext_id == cluster.uuid
       - result.response.categories[0].ext_id == "{{ category_ext_id_2 }}"
       - result.response.protection_type == "RULE_PROTECTED"
-    success_msg: "VM fetched successfully"
-    fail_msg: "VM fetch failed"
+    success_msg: "VM is protected successfully"
+    fail_msg: "VM protection failed"
 
 - name: Sleep for 5 minutes until VMs and VGs are protected
   ansible.builtin.pause:

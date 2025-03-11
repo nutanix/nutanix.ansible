@@ -146,37 +146,49 @@
         name: "ansible-name-auto-{{random_name}}"
         description: "ansible-description-auto-{{random_name}}"
         replication_locations:
-          - "{{ replication_location_1 }}"
-          - "{{ replication_location_2 }}"
+          - label: "ansible-label-{{label1}}"
+            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+            is_primary: true
+            replication_sub_location:
+              nutanix_cluster:
+                cluster_ext_ids:
+                  - "{{ cluster.uuid }}"
+          - label: "ansible-label-{{label2}}"
+            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+            is_primary: false
+            replication_sub_location:
+              nutanix_cluster:
+                cluster_ext_ids:
+                  - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "{{ replication_configuration_auto_1.source_location_label }}"
-            remote_location_label: "{{ replication_configuration_auto_1.remote_location_label }}"
+          - source_location_label: "ansible-label-{{label1}}"
+            remote_location_label: "ansible-label-{{label2}}"
             schedule:
-              recovery_point_type: "{{ replication_configuration_auto_1.schedule.recovery_point_type }}"
-              recovery_point_objective_time_seconds: "{{ replication_configuration_auto_1.schedule.recovery_point_objective_time_seconds | int }}"
+              recovery_point_type: "CRASH_CONSISTENT"
+              recovery_point_objective_time_seconds: 60
               retention:
                 auto_rollup_retention:
                   local:
-                    snapshot_interval_type: "{{ replication_configuration_auto_1.schedule.retention.local.snapshot_interval_type }}"
-                    frequency: "{{ replication_configuration_auto_1.schedule.retention.local.frequency }}"
+                    snapshot_interval_type: "DAILY"
+                    frequency: 1
                   remote:
-                    snapshot_interval_type: "{{ replication_configuration_auto_1.schedule.retention.remote.snapshot_interval_type }}"
-                    frequency: "{{ replication_configuration_auto_1.schedule.retention.remote.frequency }}"
-              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
-          - source_location_label: "{{ replication_configuration_auto_2.source_location_label }}"
-            remote_location_label: "{{ replication_configuration_auto_2.remote_location_label }}"
+                    snapshot_interval_type: "DAILY"
+                    frequency: 1
+              sync_replication_auto_suspend_timeout_seconds: 300
+          - source_location_label: "ansible-label-{{label2}}"
+            remote_location_label: "ansible-label-{{label1}}"
             schedule:
-              recovery_point_type: "{{ replication_configuration_auto_2.schedule.recovery_point_type }}"
-              recovery_point_objective_time_seconds: "{{ replication_configuration_auto_2.schedule.recovery_point_objective_time_seconds | int }}"
+              recovery_point_type: "CRASH_CONSISTENT"
+              recovery_point_objective_time_seconds: 60
               retention:
                 auto_rollup_retention:
                   local:
-                    snapshot_interval_type: "{{ replication_configuration_auto_2.schedule.retention.local.snapshot_interval_type }}"
-                    frequency: "{{ replication_configuration_auto_2.schedule.retention.local.frequency }}"
+                    snapshot_interval_type: "DAILY"
+                    frequency: 1
                   remote:
-                    snapshot_interval_type: "{{ replication_configuration_auto_2.schedule.retention.remote.snapshot_interval_type }}"
-                    frequency: "{{ replication_configuration_auto_2.schedule.retention.remote.frequency }}"
-              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+                    snapshot_interval_type: "DAILY"
+                    frequency: 1
+              sync_replication_auto_suspend_timeout_seconds: 300
         category_ids:
           - "{{category_ext_id_1}}"
       register: result
@@ -193,21 +205,33 @@
         name: "ansible-name-sync-vm-{{random_name}}"
         description: "ansible-description-sync-vm-{{random_name}}"
         replication_locations:
-          - "{{ replication_location_1 }}"
-          - "{{ replication_location_2 }}"
+          - label: "ansible-label-{{label1}}"
+            domain_manager_ext_id: "{{domain_manager_ext_id}}"
+            is_primary: true
+            replication_sub_location:
+              nutanix_cluster:
+                cluster_ext_ids:
+                  - "{{ cluster.uuid }}"
+          - label: "ansible-label-{{label2}}"
+            domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+            is_primary: false
+            replication_sub_location:
+              nutanix_cluster:
+                cluster_ext_ids:
+                  - "{{ cluster_availability_zone.uuid }}"
         replication_configurations:
-          - source_location_label: "{{ replication_configuration_sync_1.source_location_label }}"
-            remote_location_label: "{{ replication_configuration_sync_1.remote_location_label }}"
+          - source_location_label: "ansible-label-{{label1}}"
+            remote_location_label: "ansible-label-{{label2}}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
-              recovery_point_objective_time_seconds: "{{ replication_configuration_sync_1.schedule.recovery_point_objective_time_seconds | int }}"
-              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
-          - source_location_label: "{{ replication_configuration_sync_2.source_location_label }}"
-            remote_location_label: "{{ replication_configuration_sync_2.remote_location_label }}"
+              recovery_point_objective_time_seconds: 0
+              sync_replication_auto_suspend_timeout_seconds: 10
+          - source_location_label: "ansible-label-{{label2}}"
+            remote_location_label: "ansible-label-{{label1}}"
             schedule:
               recovery_point_type: "CRASH_CONSISTENT"
-              recovery_point_objective_time_seconds: "{{ replication_configuration_sync_2.schedule.recovery_point_objective_time_seconds | int }}"
-              sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+              recovery_point_objective_time_seconds: 0
+              sync_replication_auto_suspend_timeout_seconds: 10
         category_ids:
           - "{{category_ext_id_2}}"
       register: result
