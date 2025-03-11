@@ -8,16 +8,16 @@
 # Pre-requisites:
 # 1. Variables in vars/main.yml are defined and set correctly
 # 2. These variables from prepare_env/vars/main.yml are defined and set correctly:
-#  - pe_ssh_password: "RDMCluster.123"
+#   - pe_ssh_password: "password"
 #   - pe_ssh_username: "nutanix"
 #   - ip_pe: "10.0.0.1"
 #   - virtual_ip_pe: "10.0.0.2"
 #   - username: "admin"
-#   - password: "Nutanix.123"
+#   - password: "password"
 #   - clusters:
 #       - name: "ansible-test-cluster"
 #         pe_username: "admin"
-#         pe_password: "Nutanix.123"
+#         pe_password: "password"
 #         nodes:
 #           - cvm_ip: "10.0.0.3"
 #         network:
