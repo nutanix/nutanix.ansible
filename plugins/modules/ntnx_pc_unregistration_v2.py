@@ -23,12 +23,12 @@ options:
         required: False
     pc_ext_id:
         description:
-            - External ID of the current Prism Central.
+            - External ID of the current Prism Central (Primary).
         type: str
         required: True
     ext_id:
         description:
-            - External ID of the Availability Zone Prism Central.
+            - External ID of the Availability Zone Prism Central (Secondary).
         type: str
         required: True
 extends_documentation_fragment:

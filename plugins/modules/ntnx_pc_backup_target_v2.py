@@ -51,7 +51,7 @@ options:
                 type: dict
                 suboptions:
                     config:
-                        description: Configuration of the Cluster reference of the remote cluster to be connected.
+                        description: Configuration of the Cluster reference of the remote cluster which is registered to PC.
                         type: dict
                         required: true
                         suboptions:
