@@ -12,9 +12,22 @@ short_description: Get PC restore source info
 version_added: 2.1.0
 description:
     - Fetch specific restore source info using external ID
+    - Please provide Prism Element IP address here in C(nutanix_host)
 options:
     ext_id:
         description: External ID to fetch specific restore source info
+        type: str
+        required: True
+    nutanix_host:
+        description: The Nutanix Prism Element IP address
+        type: str
+        required: True
+    nutanix_username:
+        description: The username to authenticate with the Nutanix Prism Element
+        type: str
+        required: True
+    nutanix_password:
+        description: The password to authenticate with the Nutanix Prism Element
         type: str
         required: True
 extends_documentation_fragment:

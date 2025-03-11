@@ -12,12 +12,27 @@ short_description: Fetch restorable domain managers info
 version_added: 2.1.0
 description: 
     - Fetch list of multiple restorable domain managers for a given restore source.
-    - We need to override nutanix_host attribute to provide Prism Element IP.
+    - Please provide Prism Element IP address here in C(nutanix_host)
     - Lists all the domain managers backed up at the object store/cluster.
 options:
     restore_source_ext_id:
         description:
             - External ID of the restore source.
+        required: true
+        type: str
+    nutanix_host:
+        description:
+            - The Nutanix Prism Element IP address.
+        required: true
+        type: str
+    nutanix_username:
+        description:
+            - The username to authenticate with the Nutanix Prism Element.
+        required: true
+        type: str
+    nutanix_password:
+        description:
+            - The password to authenticate with the Nutanix Prism Element.
         required: true
         type: str
 extends_documentation_fragment:
