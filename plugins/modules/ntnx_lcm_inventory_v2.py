@@ -34,9 +34,9 @@ extends_documentation_fragment:
 EXAMPLES = r"""
 - name: Perform inventory of LCM
   nutanix.ncp.ntnx_lcm_inventory_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
     cluster_ext_id: "00062e00-87eb-ef15-0000-00000000b71a"
   register: lcm_inventory
 """

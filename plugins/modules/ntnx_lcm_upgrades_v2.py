@@ -97,9 +97,9 @@ extends_documentation_fragment:
 EXAMPLES = r"""
 - name: Perform LCM upgrades
   nutanix.ncp.ntnx_lcm_upgrades_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
     cluster_ext_id: "00062e00-87eb-ef15-0000-00000000b71a"
     management_server:
       ip: "10.0.0.2"

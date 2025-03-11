@@ -86,9 +86,9 @@ extends_documentation_fragment:
 EXAMPLES = r"""
 - name: Perform LCM prechecks
   nutanix.ncp.ntnx_lcm_prechecks_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     management_server:
       ip: "10.0.0.2"

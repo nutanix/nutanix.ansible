@@ -33,9 +33,9 @@ extends_documentation_fragment:
 EXAMPLES = r"""
 - name: Fetch LCM entity using external ID
   nutanix.ncp.ntnx_lcm_entities_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
     ext_id: "3c196eac-e1d5-1b8a-9b01-c133f6907ca2"
   register: lcm_entity
 """
