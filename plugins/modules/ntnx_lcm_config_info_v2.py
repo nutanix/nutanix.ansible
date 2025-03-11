@@ -10,17 +10,20 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_lcm_config_info_v2
-short_description: Fetch LCM Configurations
+short_description: Fetch LCM Configuration
 description:
     - This module fetches LCM configurations.
     - Fetch LCM configurations using cluster external ID.
-version_added: 2.0.0
+version_added: 2.1.0
 author:
     - Abhinav Bansal (@abhinavbansal29)
 options:
     cluster_ext_id:
         description:
             - The external ID of the cluster.
+            - It is used to fetch the LCM configuration on a particular cluster, it gives Prism Central's LCM configuration if nothing passed.
+            - If we give PE cluster's external ID, it will give PE cluster's LCM configuration.
+            - We can get the external ID of the cluster using ntnx_clusters_info_v2 module.
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials

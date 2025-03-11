@@ -18,6 +18,9 @@ options:
   cluster_ext_id:
     description:
       - The external ID of the cluster.
+      - It is used to fetch the LCM status on a particular cluster, it gives Prism Central's LCM status if nothing passed.
+      - If we give PE cluster's external ID, it will give PE cluster's LCM status.
+      - We can get the external ID of the cluster using ntnx_clusters_info_v2 module.
     type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
@@ -38,7 +41,7 @@ RETURN = r"""
 response:
   description:
     - The response from the Nutanix PC LCM Status API.
-    - It contains details like current version, available version, etc.
+    - It contains details like the ongoing operations on the LCM.
   type: dict
   returned: always
   sample:

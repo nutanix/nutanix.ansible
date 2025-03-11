@@ -1,4 +1,9 @@
 ---
+# Pre-requisite:
+# - Ensure that These variables from prepare_env/vars/main.yml are defined and set correctly:
+#   - lcm_entity_model: "Calm Policy Engine"
+#   - lcm_entity_model_version: "4.0.0"
+
 - name: Start testing lcm namespace modules testing
   ansible.builtin.debug:
     msg: start testing lcm namespace modules testing
@@ -133,7 +138,6 @@
 
 - name: Perform inventory of LCM
   nutanix.ncp.ntnx_lcm_inventory_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
   register: lcm_inventory
   ignore_errors: true
 
@@ -269,7 +273,6 @@
 
 - name: Perform LCM prechecks
   nutanix.ncp.ntnx_lcm_prechecks_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
     entity_update_specs:
       - entity_uuid: "{{ lcm_entity_external_id }}"
         to_version: "{{ lcm_entity_model_version}}"

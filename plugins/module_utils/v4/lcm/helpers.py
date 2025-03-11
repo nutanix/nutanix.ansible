@@ -8,7 +8,7 @@ __metaclass__ = type
 from ..utils import raise_api_exception  # noqa: E402
 
 
-def get_lcm_status(module, api_instance, cluster_ext_id):
+def get_lcm_status(module, api_instance, cluster_ext_id=None):
     """
     This method will return LCM status info.
     Args:
@@ -28,7 +28,7 @@ def get_lcm_status(module, api_instance, cluster_ext_id):
         )
 
 
-def get_lcm_config(module, api_instance, cluster_ext_id):
+def get_lcm_config(module, api_instance, cluster_ext_id=None):
     """
     This method will return LCM config info.
     Args:

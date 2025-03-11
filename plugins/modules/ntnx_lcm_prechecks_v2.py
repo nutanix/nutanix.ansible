@@ -13,7 +13,7 @@ module: ntnx_lcm_prechecks_v2
 short_description: Perform LCM Prechecks
 description:
     - This module allows you to perform LCM Prechecks.
-version_added: "2.0.0"
+version_added: "2.1.0"
 author:
  - George Ghawali (@george-ghawali)
  - Abhinav Bansal (@abhinavbansal29)
@@ -74,6 +74,9 @@ options:
     cluster_ext_id:
         description:
             - Cluster external ID.
+            - It is used to perform LCM prechecks on entities on a particular cluster, it performs LCM prechecks on Prism Central entities if nothing passed.
+            - If we give PE cluster's external ID, it will perform LCM prechecks on PE cluster entities.
+            - We can get the external ID of the cluster using ntnx_clusters_info_v2 module.
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials

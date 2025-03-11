@@ -10,16 +10,19 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_lcm_config_v2
-short_description: Update LCM Configurations
+short_description: Update LCM Configuration
 description:
     - This module updates LCM configurations.
-version_added: 2.0.0
+version_added: 2.1.0
 author:
     - Abhinav Bansal (@abhinavbansal29)
 options:
     cluster_ext_id:
         description:
             - The external ID of the cluster.
+            - It is used to update the LCM configuration on a particular cluster, it updates Prism Central's LCM configuration if nothing passed.
+            - If we give PE cluster's external ID, it will update PE cluster's LCM configuration.
+            - We can get the external ID of the cluster using ntnx_clusters_info_v2 module.
         type: str
         required: false
     url:

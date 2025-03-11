@@ -13,6 +13,7 @@
 # 10. Get LCM status before doing prechecks
 # 11. Perform LCM prechecks
 # 12. Perform LCM upgrade
+# Note: cluster_ext_id is used to get/precheck/upgrade the entities on the specific cluster. If we pass the Prism Element cluster ID, it will get the entities on that cluster. Otherwise, it will get the entities on the Prism Central.
 
 - name: LCM playbook
   hosts: localhost
@@ -91,7 +92,7 @@
       register: lcm_status
       ignore_errors: true
 
-    - name: Perform LCM prechecks
+    - name: Perform LCM prechecks for doing certain entities upgrade
       nutanix.ncp.ntnx_lcm_prechecks_v2:
         entity_update_specs:
           - entity_uuid: "{{ lcm_entity_external_id }}"
@@ -99,7 +100,7 @@
       register: lcm_prechecks
       ignore_errors: true
 
-    - name: Perform LCM upgrade
+    - name: Perform LCM upgrade for the given entity chosen in previous tasks
       nutanix.ncp.ntnx_lcm_upgrades_v2:
         entity_update_specs:
           - entity_uuid: "{{ lcm_entity_external_id }}"

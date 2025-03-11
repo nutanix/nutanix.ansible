@@ -13,7 +13,7 @@ module: ntnx_lcm_upgrades_v2
 short_description: Perform LCM upgrades
 description:
     - This module allows you to perform LCM upgrades.
-version_added: "2.0.0"
+version_added: "2.1.0"
 author:
  - George Ghawali (@george-ghawali)
  - Abhinav Bansal (@abhinavbansal29)
@@ -85,6 +85,9 @@ options:
     cluster_ext_id:
         description:
             - Cluster external ID.
+            - It is used to upgrade LCM entities on a particular cluster, it upgrades Prism Central entities if nothing passed.
+            - If we give PE cluster's external ID, it will upgrade PE cluster entities.
+            - We can get the external ID of the cluster using ntnx_clusters_info_v2 module.
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -112,7 +115,9 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description: Response for performing LCM upgrade.
+    description: 
+      - Response for performing LCM upgrade.
+      -  It will be PC task info
     type: dict
     returned: always
     sample:

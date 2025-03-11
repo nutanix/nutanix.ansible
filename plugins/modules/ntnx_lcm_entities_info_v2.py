@@ -14,7 +14,8 @@ short_description: Fetch LCM Entities Info
 description:
     - This module fetches LCM Entities Info.
     - Fetch a particular LCM entity details using external ID.
-version_added: 2.0.0
+    - These are used to get the details/ext_id of the entities after performing LCM inventory.
+version_added: 2.1.0
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
@@ -151,7 +152,10 @@ def get_entities(module, api_instance, result):
             msg="Api Exception raised while fetching LCM entities info",
         )
 
-    result["response"] = strip_internal_attributes(resp.to_dict())
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():

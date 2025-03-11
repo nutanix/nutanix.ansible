@@ -14,13 +14,16 @@ short_description: Perform Inventory
 description:
     - This module performs inventory.
     - Perform inventory using cluster external ID.
-version_added: 2.0.0
+version_added: 2.1.0
 author:
     - Abhinav Bansal (@abhinavbansal29)
 options:
     cluster_ext_id:
         description:
             - The external ID of the cluster.
+            - It is used to perform inventory on a particular cluster, it performs inventory on Prism Central if nothing passed.
+            - If we give PE cluster's external ID, it will perform inventory on PE cluster.
+            - We can get the external ID of the cluster using ntnx_clusters_info_v2 module.
         type: str
         required: false
 extends_documentation_fragment:
