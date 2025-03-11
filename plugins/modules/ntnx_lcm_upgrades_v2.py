@@ -115,7 +115,7 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description: 
+    description:
       - Response for performing LCM upgrade.
       -  It will be PC task info
     type: dict
