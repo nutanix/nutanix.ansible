@@ -15,7 +15,7 @@ description:
     - Fetch list of PC Configuration info if external ID is not provided with optional filters. Length of list is 1.
 options:
     ext_id:
-        description: 
+        description:
             - External ID of PC which is not the external ID of PCVM.
             - To fetch specific PC Configuration info.
         type: str

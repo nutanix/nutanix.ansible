@@ -10,7 +10,7 @@ DOCUMENTATION = r"""
 module: ntnx_pc_restorable_domain_managers_info_v2
 short_description: Fetch restorable domain managers info
 version_added: 2.1.0
-description: 
+description:
     - Fetch list of multiple restorable domain managers for a given restore source.
     - Please provide Prism Element IP address here in C(nutanix_host)
     - Lists all the domain managers backed up at the object store/cluster.
