@@ -30,11 +30,11 @@
 #           fault_tolerance_state:
 #             domain_awareness_level_cluster_crud: "DOMAIN_AWARE"
 #   - firewall_ports:
+#       - 2020
 #       - 2030
-#       - 2036
-#       - 2073
-#       - 2090
-#       - 8740
+#       - 2040
+#       - 2050
+#       - 2060
 #   - availability_zone_pc_ip: "10.0.0.8"
 #   - availability_zone_pc_uuid: "00000000-0000-0000-0000-000000000000"
 #   - cluster_availability_zone:
