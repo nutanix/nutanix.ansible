@@ -34,6 +34,7 @@ options:
     description:
       - Remote Prism central hostname or IP address
       - C(nutanix_host). If not set then the value of the C(NUTANIX_HOST), environment variable is used.
+      - In case of VG it is primary PC but in case of VM it is secondary PC.
     type: str
     required: true
   nutanix_port:
