@@ -109,7 +109,6 @@ error:
     description: Error message if any
     returned: when an error occurs
     type: str
-    sample: null
 task_ext_id:
     description: The external ID of the task
     returned: always
@@ -229,7 +228,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }

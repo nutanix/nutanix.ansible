@@ -130,6 +130,7 @@ changed:
 error:
     description: The error message, if any, encountered.
     type: str
+    returned: when an error occurs
 ext_id:
     description:
         - NIC external ID
@@ -253,7 +254,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
         "vm_ext_id": None,

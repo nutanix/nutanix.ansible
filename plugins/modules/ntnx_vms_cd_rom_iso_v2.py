@@ -220,7 +220,7 @@ response:
 error:
     description: The error message if an error occurred.
     type: str
-    returned: on error
+    returned: when an error occurs
 changed:
     description: Whether the state of the CD ROM has changed.
     type: bool
@@ -390,7 +390,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
         "vm_ext_id": None,
