@@ -4,9 +4,9 @@
 # You need to provide two parameters:
 # 1. ext_id: This is the availability_zone_pc_uuid (Secondary PC UUID)
 # 2. pc_ext_id: This is the domain_manager_ext_id (Primary PC UUID)
-# PC UUID (local or remote) can be fetched using nutanix.ncp.ntnx_clusters_info_v2 module
-# To fetch ext_id, you can use nutanix.ncp.ntnx_clusters_info_v2 with nutanix_host as Remote PC IP
-# To fetch pc_ext_id, you can use nutanix.ncp.ntnx_clusters_info_v2 with nutanix_host as Local PC IP
+# PC UUID (Primary or Secondary) can be fetched using nutanix.ncp.ntnx_clusters_info_v2 module
+# To fetch ext_id, you can use nutanix.ncp.ntnx_clusters_info_v2 with nutanix_host as Secondary PC IP
+# To fetch pc_ext_id, you can use nutanix.ncp.ntnx_clusters_info_v2 with nutanix_host as Primary PC IP
 # you need to provide the filter parameter as "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
 
 - name: Prism playbook
