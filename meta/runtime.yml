@@ -188,3 +188,6 @@ action_groups:
     - ntnx_storage_containers_stats_v2
     - ntnx_storage_containers_info_v2
     - ntnx_storage_containers_v2
+    - ntnx_users_api_key_v2
+    - ntnx_users_api_key_info_v2
+    - ntnx_users_revoke_api_key_v2
