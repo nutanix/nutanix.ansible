@@ -1,3 +1,14 @@
+# Pre-requisite:
+# - Ensure that These variables from prepare_env/vars/main.yml are defined and set correctly:
+#   - cluster:
+#       uuid: 00062fe7-4b68-e710-0000-000000028f57
+#   - ip_pe: "10.0.0.2"
+#   - domain_manager_ssh_username: admin # SSH username for domain manager
+#   - domain_manager_ssh_password: "Nutanix/4u!" # SSH password for domain manager
+#   - username: admin # Prism Central UI username
+#   - password: "Nutanix/4u!" # Prism Central UI password
+#   - ip: "10.0.0.6" # IP address of the Prism Central
+
 ---
 - name: Start testing PC backup restore with cluster as backup store.
   ansible.builtin.debug:
