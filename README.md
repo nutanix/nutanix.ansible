@@ -96,7 +96,7 @@ Installation:
 
 ```ansible-galaxy collection install nutanix.ncp```
 
-Install requirements from repository if dependencies are missing in environment (Ref: https://github.com/nutanix/nutanix.ansible/issues/600):
+Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/main/requirements.txt) from repository if dependencies are missing in environment (Ref: https://github.com/nutanix/nutanix.ansible/issues/600):
 
 ```pip install -r requirements.txt```
 
