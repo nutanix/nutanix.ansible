@@ -162,7 +162,7 @@
       - lcm_entities.response is defined
       - lcm_entities.changed == false
       - lcm_entities.failed == false
-      - lcm_entities.response.data | length > 0
+      - lcm_entities.response | length > 0
     fail_msg: "Failed to list all LCM entities details"
     success_msg: "All LCM entities details are listed successfully"
 
@@ -178,14 +178,14 @@
       - lcm_entities.response is defined
       - lcm_entities.changed == false
       - lcm_entities.failed == false
-      - lcm_entities.response.data | length == 1
-      - lcm_entities.response.data[0].entity_model == "{{ lcm_entity_model }}"
+      - lcm_entities.response | length == 1
+      - lcm_entities.response[0].entity_model == "{{ lcm_entity_model }}"
     fail_msg: "Failed to list all LCM entities details with filter"
     success_msg: "All LCM entities details with filter are listed successfully"
 
 - name: Set LCM entity external ID
   ansible.builtin.set_fact:
-    lcm_entity_external_id: "{{ lcm_entities.response.data[0].ext_id }}"
+    lcm_entity_external_id: "{{ lcm_entities.response[0].ext_id }}"
 
 - name: List all LCM entities details with limit
   nutanix.ncp.ntnx_lcm_entities_info_v2:
@@ -199,7 +199,7 @@
       - lcm_entity.response is defined
       - lcm_entity.changed == false
       - lcm_entity.failed == false
-      - lcm_entity.response.data | length == 1
+      - lcm_entity.response | length == 1
     fail_msg: "Failed to list all LCM entity details with limit"
     success_msg: "All LCM entity details with limit are listed successfully"
 
