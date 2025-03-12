@@ -26,6 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r tests/integration/requirements.txt
+          ansible-galaxy collection install community.general --force
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
