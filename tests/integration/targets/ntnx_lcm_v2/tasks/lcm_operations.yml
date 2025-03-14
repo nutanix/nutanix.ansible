@@ -1,0 +1,377 @@
+---
+# Pre-requisite:
+# - Ensure that These variables from prepare_env/vars/main.yml are defined and set correctly:
+#   - lcm_entity_model: "Calm Policy Engine"
+#   - lcm_entity_model_version: "4.0.0"
+
+- name: Start testing lcm namespace modules testing
+  ansible.builtin.debug:
+    msg: start testing lcm namespace modules testing
+
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: result
+  ignore_errors: true
+
+- name: Get prism central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ result.response[0].ext_id }}"
+
+- name: Get config of LCM
+  nutanix.ncp.ntnx_lcm_config_info_v2:
+  register: lcm_config_info
+  ignore_errors: true
+
+- name: Get config of LCM status
+  ansible.builtin.assert:
+    that:
+      - lcm_config_info.response is defined
+      - lcm_config_info.changed == false
+      - lcm_config_info.failed == false
+    fail_msg: "Failed to get LCM config"
+    success_msg: "LCM config is fetched successfully"
+
+- name: Generate spec for updating config of LCM using check mode
+  nutanix.ncp.ntnx_lcm_config_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    is_auto_inventory_enabled: "true"
+    is_https_enabled: "false"
+    has_module_auto_upgrade_enabled: "true"
+    url: "https://example.com"
+    connectivity_type: "DARKSITE_DIRECT_UPLOAD"
+  check_mode: true
+  register: lcm_config_update
+  ignore_errors: true
+
+- name: Generate spec for updating config of LCM using check mode status
+  ansible.builtin.assert:
+    that:
+      - lcm_config_update.response is defined
+      - lcm_config_update.changed == false
+      - lcm_config_update.failed == false
+      - lcm_config_update.response.is_auto_inventory_enabled == true
+      - lcm_config_update.response.is_https_enabled == false
+      - lcm_config_update.response.has_module_auto_upgrade_enabled == true
+      - lcm_config_update.response.url == "https://example.com"
+      - lcm_config_update.response.connectivity_type == "DARKSITE_DIRECT_UPLOAD"
+    fail_msg: "Failed to update LCM config"
+    success_msg: "LCM config is updated successfully"
+
+- name: Update config of LCM
+  nutanix.ncp.ntnx_lcm_config_v2:
+    is_auto_inventory_enabled: "{{ not lcm_config_info.response.is_auto_inventory_enabled }}"
+    is_https_enabled: "{{ not lcm_config_info.response.is_https_enabled }}"
+    has_module_auto_upgrade_enabled: "{{ not lcm_config_info.response.has_module_auto_upgrade_enabled }}"
+  register: lcm_config_update
+  ignore_errors: true
+
+- name: Update config of LCM status
+  ansible.builtin.assert:
+    that:
+      - lcm_config_update.response is defined
+      - lcm_config_update.changed == true
+      - lcm_config_update.failed == false
+      - lcm_config_update.response.is_auto_inventory_enabled == {{ not lcm_config_info.response.is_auto_inventory_enabled }}
+      - lcm_config_update.response.is_https_enabled == {{ not lcm_config_info.response.is_https_enabled }}
+      - lcm_config_update.response.has_module_auto_upgrade_enabled == {{ not lcm_config_info.response.has_module_auto_upgrade_enabled }}
+    fail_msg: "Failed to update LCM config"
+    success_msg: "LCM config is updated successfully"
+
+- name: Get config of LCM after update
+  nutanix.ncp.ntnx_lcm_config_info_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: lcm_config_info_after_update
+  ignore_errors: true
+
+- name: Get config of LCM status
+  ansible.builtin.assert:
+    that:
+      - lcm_config_info_after_update.response is defined
+      - lcm_config_info_after_update.changed == false
+      - lcm_config_info_after_update.failed == false
+      - lcm_config_info_after_update.response.is_auto_inventory_enabled == {{ not lcm_config_info.response.is_auto_inventory_enabled }}
+      - lcm_config_info_after_update.response.is_https_enabled == {{ not lcm_config_info.response.is_https_enabled }}
+      - lcm_config_info_after_update.response.has_module_auto_upgrade_enabled == {{ not lcm_config_info.response.has_module_auto_upgrade_enabled }}
+    fail_msg: "Failed to get LCM config"
+    success_msg: "LCM config is fetched successfully"
+
+- name: Update config of LCM back to original
+  nutanix.ncp.ntnx_lcm_config_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    is_auto_inventory_enabled: "{{ lcm_config_info.response.is_auto_inventory_enabled }}"
+    is_https_enabled: "{{ lcm_config_info.response.is_https_enabled }}"
+    has_module_auto_upgrade_enabled: "{{ lcm_config_info.response.has_module_auto_upgrade_enabled }}"
+  register: lcm_config_update
+  ignore_errors: true
+
+- name: Update config of LCM back to original status
+  ansible.builtin.assert:
+    that:
+      - lcm_config_update.response is defined
+      - lcm_config_update.changed == true
+      - lcm_config_update.failed == false
+      - lcm_config_update.response.is_auto_inventory_enabled == {{ lcm_config_info.response.is_auto_inventory_enabled }}
+      - lcm_config_update.response.is_https_enabled == {{ lcm_config_info.response.is_https_enabled }}
+      - lcm_config_update.response.has_module_auto_upgrade_enabled == {{ lcm_config_info.response.has_module_auto_upgrade_enabled }}
+    fail_msg: "Failed to update LCM config"
+    success_msg: "LCM config is updated successfully"
+
+- name: Get LCM status before doing inventory
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: lcm_status
+  ignore_errors: true
+
+- name: Get LCM status status
+  ansible.builtin.assert:
+    that:
+      - lcm_status.response is defined
+      - lcm_status.changed == false
+      - lcm_status.failed == false
+      - lcm_status.response.framework_version.available_version is defined
+      - lcm_status.response.framework_version.current_version is defined
+      - lcm_status.response.in_progress_operation.operation_id == none
+      - lcm_status.response.in_progress_operation.operation_type == none
+    fail_msg: "Failed to get LCM status"
+    success_msg: "LCM status is fetched successfully"
+
+- name: Perform inventory of LCM
+  nutanix.ncp.ntnx_lcm_inventory_v2:
+  register: lcm_inventory
+  ignore_errors: true
+
+- name: Perform inventory of LCM status
+  ansible.builtin.assert:
+    that:
+      - lcm_inventory.response is defined
+      - lcm_inventory.changed == true
+      - lcm_inventory.failed == false
+      - lcm_inventory.response.status == "SUCCEEDED"
+    fail_msg: "Failed to perform inventory of LCM"
+    success_msg: "Inventory of LCM is performed successfully"
+
+- name: List all LCM entities details
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+  register: lcm_entities
+  ignore_errors: true
+
+- name: List all LCM entities details status
+  ansible.builtin.assert:
+    that:
+      - lcm_entities.response is defined
+      - lcm_entities.changed == false
+      - lcm_entities.failed == false
+      - lcm_entities.response.data | length > 0
+    fail_msg: "Failed to list all LCM entities details"
+    success_msg: "All LCM entities details are listed successfully"
+
+- name: List all LCM entities details with filter
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    filter: "entityModel eq '{{ lcm_entity_model }}'"
+  register: lcm_entities
+  ignore_errors: true
+
+- name: List all LCM entities details with filter status
+  ansible.builtin.assert:
+    that:
+      - lcm_entities.response is defined
+      - lcm_entities.changed == false
+      - lcm_entities.failed == false
+      - lcm_entities.response.data | length == 1
+      - lcm_entities.response.data[0].entity_model == "{{ lcm_entity_model }}"
+    fail_msg: "Failed to list all LCM entities details with filter"
+    success_msg: "All LCM entities details with filter are listed successfully"
+
+- name: Set LCM entity external ID
+  ansible.builtin.set_fact:
+    lcm_entity_external_id: "{{ lcm_entities.response.data[0].ext_id }}"
+
+- name: List all LCM entities details with limit
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    limit: 1
+  register: lcm_entity
+  ignore_errors: true
+
+- name: List all LCM entity details with limit status
+  ansible.builtin.assert:
+    that:
+      - lcm_entity.response is defined
+      - lcm_entity.changed == false
+      - lcm_entity.failed == false
+      - lcm_entity.response.data | length == 1
+    fail_msg: "Failed to list all LCM entity details with limit"
+    success_msg: "All LCM entity details with limit are listed successfully"
+
+- name: Fetch LCM entity using external ID
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    ext_id: "{{ lcm_entity_external_id }}"
+  register: lcm_entity
+  ignore_errors: true
+
+- name: Fetch LCM entity using external ID status
+  ansible.builtin.assert:
+    that:
+      - lcm_entity.response is defined
+      - lcm_entity.changed == false
+      - lcm_entity.failed == false
+      - lcm_entity.response.ext_id == lcm_entity_external_id
+      - lcm_entity.response.entity_model == "{{ lcm_entity_model }}"
+      - lcm_entity.response.available_versions | length > 0
+    fail_msg: "Failed to fetch LCM entity using external ID"
+    success_msg: "LCM entity is fetched successfully using external ID"
+
+- name: Get LCM status before doing prechecks
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: lcm_status
+  ignore_errors: true
+
+- name: Get LCM status status
+  ansible.builtin.assert:
+    that:
+      - lcm_status.response is defined
+      - lcm_status.changed == false
+      - lcm_status.failed == false
+      - lcm_status.response.framework_version.available_version is defined
+      - lcm_status.response.framework_version.current_version is defined
+      - lcm_status.response.in_progress_operation.operation_id == none
+      - lcm_status.response.in_progress_operation.operation_type == none
+    fail_msg: "Failed to get LCM status"
+    success_msg: "LCM status is fetched successfully"
+
+- name: Generate spec for LCM prechecks using check mode
+  nutanix.ncp.ntnx_lcm_prechecks_v2:
+    cluster_ext_id: "00062db4-a450-e685-0fda-cdf9ca935bfd"
+    management_server:
+      ip: "10.0.0.2"
+      username: "admin"
+      password: "password"
+      hypervisor_type: "AHV"
+    entity_update_specs:
+      - entity_uuid: "15570c98-beaf-4633-afd2-b6a306ff1001"
+        to_version: "5.0.0"
+    skipped_precheck_flags: ["POWER_OFF_UVMS"]
+  check_mode: true
+  register: lcm_prechecks
+  ignore_errors: true
+
+- name: Generate spec for LCM prechecks using check mode status
+  ansible.builtin.assert:
+    that:
+      - lcm_prechecks.response is defined
+      - lcm_prechecks.changed == false
+      - lcm_prechecks.failed == false
+      - lcm_prechecks.response.management_server.ip == "10.0.0.2"
+      - lcm_prechecks.response.management_server.username == "admin"
+      - lcm_prechecks.response.management_server.hypervisor_type == "AHV"
+      - lcm_prechecks.response.entity_update_specs[0].entity_uuid == "15570c98-beaf-4633-afd2-b6a306ff1001"
+      - lcm_prechecks.response.entity_update_specs[0].to_version == "5.0.0"
+      - lcm_prechecks.response.skipped_precheck_flags[0] == "POWER_OFF_UVMS"
+    fail_msg: "Failed to generate spec for LCM prechecks"
+    success_msg: "Spec for LCM prechecks is generated successfully"
+
+- name: Perform LCM prechecks
+  nutanix.ncp.ntnx_lcm_prechecks_v2:
+    entity_update_specs:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_model_version}}"
+  register: lcm_prechecks
+  ignore_errors: true
+
+- name: Perform LCM prechecks status
+  ansible.builtin.assert:
+    that:
+      - lcm_prechecks.response is defined
+      - lcm_prechecks.changed == true
+      - lcm_prechecks.failed == false
+      - lcm_prechecks.response.status == "SUCCEEDED"
+    fail_msg: "Failed to perform LCM prechecks"
+    success_msg: "LCM prechecks are performed successfully"
+
+- name: Get LCM status before doing upgrade
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: lcm_status
+  ignore_errors: true
+
+- name: Get LCM status status
+  ansible.builtin.assert:
+    that:
+      - lcm_status.response is defined
+      - lcm_status.changed == false
+      - lcm_status.failed == false
+      - lcm_status.response.framework_version.available_version is defined
+      - lcm_status.response.framework_version.current_version is defined
+      - lcm_status.response.in_progress_operation.operation_id == none
+      - lcm_status.response.in_progress_operation.operation_type == none
+    fail_msg: "Failed to get LCM status"
+    success_msg: "LCM status is fetched successfully"
+
+- name: Generate spec for LCM upgrade using check mode
+  nutanix.ncp.ntnx_lcm_upgrades_v2:
+    cluster_ext_id: "00062db4-a450-e685-0fda-cdf9ca935bfd"
+    management_server:
+      ip: "10.0.0.2"
+      username: "admin"
+      password: "password"
+      hypervisor_type: "AHV"
+    entity_update_specs:
+      - entity_uuid: "15570c98-beaf-4633-afd2-b6a306ff1001"
+        to_version: "5.0.0"
+    skipped_precheck_flags: ["POWER_OFF_UVMS"]
+  check_mode: true
+  register: lcm_upgrade
+  ignore_errors: true
+
+- name: Generate spec for LCM upgrade using check mode status
+  ansible.builtin.assert:
+    that:
+      - lcm_upgrade.response is defined
+      - lcm_upgrade.changed == false
+      - lcm_upgrade.failed == false
+      - lcm_upgrade.response.management_server.ip == "10.0.0.2"
+      - lcm_upgrade.response.management_server.username == "admin"
+      - lcm_upgrade.response.management_server.hypervisor_type == "AHV"
+      - lcm_upgrade.response.entity_update_specs[0].entity_uuid == "15570c98-beaf-4633-afd2-b6a306ff1001"
+      - lcm_upgrade.response.entity_update_specs[0].to_version == "5.0.0"
+      - lcm_upgrade.response.skipped_precheck_flags[0] == "POWER_OFF_UVMS"
+    fail_msg: "Failed to generate spec for LCM upgrade"
+    success_msg: "Spec for LCM upgrade is generated successfully"
+
+- name: Perform LCM upgrade
+  nutanix.ncp.ntnx_lcm_upgrades_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    entity_update_specs:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_model_version }}"
+  register: lcm_upgrade
+  ignore_errors: true
+
+- name: Perform LCM upgrade status
+  ansible.builtin.assert:
+    that:
+      - lcm_upgrade.response is defined
+      - lcm_upgrade.changed == true
+      - lcm_upgrade.failed == false
+      - lcm_upgrade.response.status == "SUCCEEDED"
+    fail_msg: "Failed to perform LCM upgrade"
+    success_msg: "LCM upgrade is performed successfully"
+
+- name: Fetch LCM entity using external ID after upgrade
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    ext_id: "{{ lcm_entity_external_id }}"
+  register: lcm_entity_after_upgrade
+  ignore_errors: true
+
+- name: Fetch LCM entity using external ID status
+  ansible.builtin.assert:
+    that:
+      - lcm_entity_after_upgrade.response is defined
+      - lcm_entity_after_upgrade.changed == false
+      - lcm_entity_after_upgrade.failed == false
+      - lcm_entity_after_upgrade.response.ext_id == lcm_entity_external_id
+      - lcm_entity_after_upgrade.response.entity_model == "{{ lcm_entity_model }}"
+      - lcm_entity_after_upgrade.response.entity_version == "{{ lcm_entity_model_version }}"
+    fail_msg: "Failed to fetch LCM entity using external ID"
+    success_msg: "LCM entity is fetched successfully using external ID"

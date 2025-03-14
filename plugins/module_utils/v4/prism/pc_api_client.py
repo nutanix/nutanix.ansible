@@ -24,7 +24,7 @@ def get_pc_api_client(module):
     """
     if PRISM_SDK_IMP_ERROR:
         module.fail_json(
-            missing_required_lib("ntnx_prism_py_client"), PRISM_SDK_IMP_ERROR
+            missing_required_lib("ntnx_prism_py_client"), exception=PRISM_SDK_IMP_ERROR
         )
 
     config = ntnx_prism_py_client.Configuration()
@@ -64,3 +64,15 @@ def get_domain_manager_api_instance(module):
     """
     api_client = get_pc_api_client(module)
     return ntnx_prism_py_client.DomainManagerApi(api_client=api_client)
+
+
+def get_domain_manager_backup_api_instance(module):
+    """
+    This method will return domain manager backup api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): domain manager backup api instance
+    """
+    api_client = get_pc_api_client(module)
+    return ntnx_prism_py_client.DomainManagerBackupsApi(api_client=api_client)

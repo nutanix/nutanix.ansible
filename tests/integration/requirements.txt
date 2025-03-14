@@ -17,3 +17,5 @@ ntnx-prism-py-client==4.0.1
 ntnx-vmm-py-client==4.0.1
 ntnx-volumes-py-client==4.0.1
 ntnx-dataprotection-py-client==4.0.1
+ntnx_datapolicies_py_client==4.0.1
+ntnx_lifecycle_py_client==4.0.1
