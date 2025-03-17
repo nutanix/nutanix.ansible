@@ -13,7 +13,8 @@
 # 10. Get LCM status before doing prechecks
 # 11. Perform LCM prechecks
 # 12. Perform LCM upgrade
-# Note: cluster_ext_id is used to get/precheck/upgrade the entities on the specific cluster. If we pass the Prism Element cluster ID, it will get the entities on that cluster. Otherwise, it will get the entities on the Prism Central.
+# Note: cluster_ext_id is used to get/precheck/upgrade the entities on the specific cluster.
+# If we pass the Prism Element cluster ID, it will get the entities on that cluster. Otherwise, it will get the entities on the Prism Central.
 
 - name: LCM playbook
   hosts: localhost

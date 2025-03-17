@@ -466,21 +466,34 @@
       - restore_point_details.response.domain_manager.config.name == pc_details.response.config.name
       - restore_point_details.response.domain_manager.config.size == pc_details.response.config.size
       - restore_point_details.response.domain_manager.config.resource_config.container_ext_ids == pc_details.response.config.resource_config.container_ext_ids
-      - restore_point_details.response.domain_manager.config.resource_config.data_disk_size_bytes == pc_details.response.config.resource_config.data_disk_size_bytes
+      - restore_point_details.response.domain_manager.config.resource_config.data_disk_size_bytes ==
+        pc_details.response.config.resource_config.data_disk_size_bytes
       - restore_point_details.response.domain_manager.config.resource_config.memory_size_bytes == pc_details.response.config.resource_config.memory_size_bytes
       - restore_point_details.response.domain_manager.config.resource_config.num_vcpus == pc_details.response.config.resource_config.num_vcpus
-      - restore_point_details.response.domain_manager.network.external_address.ipv4.value == pc_details.response.network.external_address.ipv4.value
-      - restore_point_details.response.domain_manager.network.external_networks[0].network_ext_id == pc_details.response.network.external_networks[0].network_ext_id
-      - restore_point_details.response.domain_manager.network.external_networks[0].default_gateway.ipv4.value == pc_details.response.network.external_networks[0].default_gateway.ipv4.value
-      - restore_point_details.response.domain_manager.network.external_networks[0].subnet_mask.ipv4.value == pc_details.response.network.external_networks[0].subnet_mask.ipv4.value
-      - restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].begin.ipv4.value == pc_details.response.network.external_networks[0].ip_ranges[0].begin.ipv4.value
-      - restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value == pc_details.response.network.external_networks[0].ip_ranges[0].end.ipv4.value
-      - pc_details.response.network.name_servers[0].ipv4.value in restore_point_details.response.domain_manager.network.name_servers | map(attribute='ipv4.value')
-      - pc_details.response.network.name_servers[1].ipv4.value in restore_point_details.response.domain_manager.network.name_servers | map(attribute='ipv4.value')
-      - pc_details.response.network.ntp_servers[0].fqdn.value in restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
-      - pc_details.response.network.ntp_servers[1].fqdn.value in restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
-      - pc_details.response.network.ntp_servers[2].fqdn.value in restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
-      - pc_details.response.network.ntp_servers[3].fqdn.value in restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
+      - restore_point_details.response.domain_manager.network.external_address.ipv4.value ==
+        pc_details.response.network.external_address.ipv4.value
+      - restore_point_details.response.domain_manager.network.external_networks[0].network_ext_id ==
+        pc_details.response.network.external_networks[0].network_ext_id
+      - restore_point_details.response.domain_manager.network.external_networks[0].default_gateway.ipv4.value ==
+        pc_details.response.network.external_networks[0].default_gateway.ipv4.value
+      - restore_point_details.response.domain_manager.network.external_networks[0].subnet_mask.ipv4.value ==
+        pc_details.response.network.external_networks[0].subnet_mask.ipv4.value
+      - restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].begin.ipv4.value ==
+        pc_details.response.network.external_networks[0].ip_ranges[0].begin.ipv4.value
+      - restore_point_details.response.domain_manager.network.external_networks[0].ip_ranges[0].end.ipv4.value ==
+        pc_details.response.network.external_networks[0].ip_ranges[0].end.ipv4.value
+      - pc_details.response.network.name_servers[0].ipv4.value in
+        restore_point_details.response.domain_manager.network.name_servers | map(attribute='ipv4.value')
+      - pc_details.response.network.name_servers[1].ipv4.value in
+        restore_point_details.response.domain_manager.network.name_servers | map(attribute='ipv4.value')
+      - pc_details.response.network.ntp_servers[0].fqdn.value in
+        restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
+      - pc_details.response.network.ntp_servers[1].fqdn.value in
+        restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
+      - pc_details.response.network.ntp_servers[2].fqdn.value in
+        restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
+      - pc_details.response.network.ntp_servers[3].fqdn.value in
+        restore_point_details.response.domain_manager.network.ntp_servers | map(attribute='fqdn.value')
     fail_msg: "Get restore point details using external ID failed"
     success_msg: "Get restore point details using external ID passed"
 #############################################################
