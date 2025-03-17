@@ -29,13 +29,13 @@ author:
 
 EXAMPLES = r"""
 - name: Get a protected resource
-    nutanix.ncp.ntnx_protected_resources_info_v2:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        ext_id: "8951bad7-1f37-4d3c-98e1-abb7faed05ed"
-    register: result
-    ignore_errors: true
+  nutanix.ncp.ntnx_protected_resources_info_v2:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      ext_id: "8951bad7-1f37-4d3c-98e1-abb7faed05ed"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
