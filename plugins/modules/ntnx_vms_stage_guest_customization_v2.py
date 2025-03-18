@@ -81,6 +81,7 @@ options:
                     datasource_type:
                         description:
                             - The type of the CloudInit datasource.
+                            - Required when using user-data
                         type: str
                         choices:
                             - CONFIG_DRIVE_V2
@@ -101,6 +102,7 @@ options:
                                     value:
                                         description:
                                             - The value of the user data.
+                                            - The value must be base64 encoded.
                                         type: str
                                         required: true
                             custom_key_values:

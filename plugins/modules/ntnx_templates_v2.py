@@ -120,7 +120,9 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                     datasource_type:
-                                                                        description: Type of cloud-init datasource
+                                                                        description:
+                                                                            - Type of cloud-init datasource
+                                                                            - Required when using user_data
                                                                         type: str
                                                                         choices: ["CONFIG_DRIVE_V2"]
                                                                     metadata:
@@ -137,7 +139,9 @@ options:
                                                                                     type: dict
                                                                                     suboptions:
                                                                                         value:
-                                                                                            description: The actual user data script content
+                                                                                            description:
+                                                                                                - The actual user data script content
+                                                                                                - The value must be base64 encoded.
                                                                                             type: str
                                                                                             required: True
                                                                                 custom_key_values:
@@ -352,7 +356,9 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                     datasource_type:
-                                                                        description: Type of cloud-init datasource
+                                                                        description:
+                                                                            - Type of cloud-init datasource
+                                                                            - Required when using user_data
                                                                         type: str
                                                                         choices: ["CONFIG_DRIVE_V2"]
                                                                     metadata:
@@ -369,7 +375,9 @@ options:
                                                                                     type: dict
                                                                                     suboptions:
                                                                                         value:
-                                                                                            description: The actual user data script content
+                                                                                            description:
+                                                                                                - The actual user data script content
+                                                                                                - The value must be base64 encoded.
                                                                                             type: str
                                                                                             required: True
                                                                                 custom_key_values:
@@ -541,7 +549,9 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                     datasource_type:
-                                                                        description: Type of cloud-init datasource
+                                                                        description:
+                                                                            - Type of cloud-init datasource
+                                                                            - Required when using user_data
                                                                         type: str
                                                                         choices: ["CONFIG_DRIVE_V2"]
                                                                     metadata:
@@ -558,7 +568,9 @@ options:
                                                                                     type: dict
                                                                                     suboptions:
                                                                                         value:
-                                                                                            description: The actual user data script content
+                                                                                            description:
+                                                                                                - The actual user data script content
+                                                                                                - The value must be base64 encoded.
                                                                                             type: str
                                                                                             required: True
                                                                                 custom_key_values:

@@ -181,6 +181,7 @@ options:
                             datasource_type:
                                 description:
                                     - The type of the data source.
+                                    - Required when using user_data.
                                 type: str
                                 choices: ["CONFIG_DRIVE_V2"]
                             metadata:
@@ -200,6 +201,7 @@ options:
                                             value:
                                                 description:
                                                     - The value of the user data.
+                                                    - The value must be base64 encoded.
                                                 type: str
                                                 required: true
                                     custom_key_values:
