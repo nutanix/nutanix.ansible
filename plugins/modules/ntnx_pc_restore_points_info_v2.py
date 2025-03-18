@@ -176,7 +176,7 @@ def get_restore_points(module, domain_manager_backups_api, result):
         resp = domain_manager_backups_api.list_restore_points(
             restoreSourceExtId=restore_source_ext_id,
             restorableDomainManagerExtId=restorable_domain_manager_ext_id,
-            **kwargs,
+            **kwargs  # fmt: skip
         )
     except Exception as e:
         raise_api_exception(

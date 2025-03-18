@@ -79,6 +79,7 @@ response:
             "source_site_reference": {
                 "cluster_ext_id": "00062e78-6aad-7a5a-0000-00000000b717",
                 "mgmt_cluster_ext_id": "6fb777a0-14b4-4dec-9216-a8e0153a18ee"
+                }
         }
 
 ext_id:
@@ -106,8 +107,8 @@ failed:
     sample: false
 """
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
     get_protected_resource_api_instance,
 )
@@ -134,7 +135,7 @@ def get_protected_resource_by_id(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

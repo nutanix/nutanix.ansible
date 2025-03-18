@@ -12,10 +12,8 @@ from ansible.module_utils.basic import missing_required_lib
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_datapolicies_py_client as datapolicies_sdk  # noqa: E402
+    import ntnx_datapolicies_py_client
 except ImportError:
-    from module_utils.v4.sdk_mock import mock_sdk as datapolicies_sdk  # noqa: E402
-
     SDK_IMP_ERROR = traceback.format_exc()
 
 
@@ -30,13 +28,13 @@ def get_api_client(module):
             exception=SDK_IMP_ERROR,
         )
 
-    config = datapolicies_sdk.Configuration()
+    config = ntnx_datapolicies_py_client.Configuration()
     config.host = module.params.get("nutanix_host")
     config.port = module.params.get("nutanix_port")
     config.username = module.params.get("nutanix_username")
     config.password = module.params.get("nutanix_password")
     config.verify_ssl = module.params.get("validate_certs")
-    client = datapolicies_sdk.ApiClient(configuration=config)
+    client = ntnx_datapolicies_py_client.ApiClient(configuration=config)
 
     cred = "{0}:{1}".format(config.username, config.password)
     try:
@@ -56,7 +54,7 @@ def get_etag(data):
     Returns:
         str: etag value
     """
-    return datapolicies_sdk.ApiClient.get_etag(data)
+    return ntnx_datapolicies_py_client.ApiClient.get_etag(data)
 
 
 def get_protection_policies_api_instance(module):
@@ -68,4 +66,4 @@ def get_protection_policies_api_instance(module):
         api_instance (object): data policies api instance
     """
     client = get_api_client(module)
-    return datapolicies_sdk.ProtectionPoliciesApi(client)
+    return ntnx_datapolicies_py_client.ProtectionPoliciesApi(client)
