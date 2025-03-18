@@ -107,8 +107,8 @@ failed:
     sample: false
 """
 
-from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
     get_protected_resource_api_instance,
 )
