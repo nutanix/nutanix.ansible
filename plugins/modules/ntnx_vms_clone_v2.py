@@ -385,8 +385,7 @@ options:
                                         suboptions:
                                             value:
                                                 description:
-                                                    - The Vales of the field
-                                                    - The value must be base64 encoded.
+                                                    - base64 encoded cloud init script.
                                                 type: str
                                                 required: true
                                     custom_key_values:

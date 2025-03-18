@@ -200,8 +200,7 @@ options:
                                         suboptions:
                                             value:
                                                 description:
-                                                    - The value of the user data.
-                                                    - The value must be base64 encoded.
+                                                    - base64 encoded cloud init script.
                                                 type: str
                                                 required: true
                                     custom_key_values:
