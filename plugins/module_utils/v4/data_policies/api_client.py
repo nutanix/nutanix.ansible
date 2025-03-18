@@ -10,7 +10,6 @@ from base64 import b64encode
 
 from ansible.module_utils.basic import missing_required_lib
 
-
 SDK_IMP_ERROR = None
 try:
     import ntnx_datapolicies_py_client
