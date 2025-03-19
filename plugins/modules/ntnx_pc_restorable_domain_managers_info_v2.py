@@ -167,7 +167,7 @@ def get_restorable_domain_managers(module, domain_manager_backups_api, result):
         ] = "No restorable domain managers found for the given restore source"
         module.fail_json(
             msg="No restorable domain managers found for the given restore source",
-            **result,  # fmt: skip
+            **result  # fmt: skip
         )
     result["total_available_results"] = total_available_results
 
