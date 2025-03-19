@@ -607,6 +607,7 @@
     nutanix_host: "{{ ip_pe }}"
     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
+    orderby: creationTime desc
   register: result
   ignore_errors: true
 
