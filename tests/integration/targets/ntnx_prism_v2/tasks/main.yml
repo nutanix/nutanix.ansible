@@ -11,7 +11,7 @@
       ansible.builtin.import_tasks: "pc_backup_restore_from_cluster.yml"
     - name: Import pc_backup_restore_using_object_store.yml
       ansible.builtin.import_tasks: "pc_backup_restore_using_object_store.yml"
-    - name: Import deploy_pc.yml
-      ansible.builtin.import_tasks: "deploy_pc.yml"
+    # - name: Import deploy_pc.yml
+    #   ansible.builtin.import_tasks: "deploy_pc.yml"
     - name: Import unregister_pcs_connection.yml
       ansible.builtin.import_tasks: "unregister_pcs_connection.yml"
