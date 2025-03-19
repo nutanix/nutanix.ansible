@@ -579,10 +579,22 @@
 # List all restore points
 # Set restore point external ID
 
+- name: Get total number of restorable domain managers
+  nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
+    nutanix_host: "{{ ip_pe }}"
+    restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Set total number of restorable domain managers
+  ansible.builtin.set_fact:
+    total_restorable_domain_managers: "{{ result.total_available_results }}"
+
 - name: Get all restorable domain managers
   nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
     nutanix_host: "{{ ip_pe }}"
     restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
+    limit: "{{ total_restorable_domain_managers }}"
   register: result
   ignore_errors: true
 
