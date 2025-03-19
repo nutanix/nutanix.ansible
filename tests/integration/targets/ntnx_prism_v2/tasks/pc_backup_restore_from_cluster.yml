@@ -412,9 +412,8 @@
 
 #############################################################
 # Get all restorable domain managers
-# Get restorable domain manager external ID
+# Get restorable domain manager using filter
 # List all restore points
-# Set restore point external ID
 # Get restore point details using external ID
 
 - name: Get all restorable domain managers
@@ -424,15 +423,27 @@
   register: result
   ignore_errors: true
 
-- name: Get restorable domain manager external ID
-  ansible.builtin.set_fact:
-    domain_manager_details: "{{ result.response | selectattr('ext_id', 'equalto', domain_manager_ext_id) | list }}"
+- name: Get all restorable domain managers status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: "Get all restorable domain managers failed"
+    success_msg: "Get all restorable domain managers passed"
+
+- name: Get restorable domain manager using filter
+  nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
+    nutanix_host: "{{ ip_pe }}"
+    restore_source_ext_id: "{{ restore_source_ext_id }}"
+    filter: extId eq {{ domain_manager_ext_id }}
+  register: domain_manager_details
+  ignore_errors: true
 
 - name: List all restore points
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
     restore_source_ext_id: "{{ restore_source_ext_id }}"
-    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+    restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
   register: result
   ignore_errors: true
 
@@ -452,7 +463,7 @@
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
     restore_source_ext_id: "{{ restore_source_ext_id }}"
-    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+    restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
     ext_id: "{{ restore_point_ext_id }}"
   register: restore_point_details
   ignore_errors: true
@@ -601,7 +612,7 @@
     nutanix_host: "{{ ip_pe }}"
     ext_id: "{{ restore_point_ext_id }}"
     restore_source_ext_id: "{{ restore_source_ext_id }}"
-    restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+    restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
     domain_manager:
       config:
         should_enable_lockdown_mode: false
