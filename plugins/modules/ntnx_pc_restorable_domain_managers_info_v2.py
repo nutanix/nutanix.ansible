@@ -160,20 +160,21 @@ def get_restorable_domain_managers(module, domain_manager_backups_api, result):
         .get("metadata")
         .get("total_available_results")
     )
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
 
     if total_available_results == 0:
-        result[
-            "error"
-        ] = "No restorable domain managers found for the given restore source"
+        result["error"] = (
+            "No restorable domain managers found for the given restore source"
+        )
         module.fail_json(
             msg="No restorable domain managers found for the given restore source",
             **result,
         )
     result["total_available_results"] = total_available_results
+
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
