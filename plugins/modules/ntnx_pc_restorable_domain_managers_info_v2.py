@@ -174,9 +174,6 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        mutually_exclusive=[
-            ("restore_source_ext_id", "filter"),
-        ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None}
