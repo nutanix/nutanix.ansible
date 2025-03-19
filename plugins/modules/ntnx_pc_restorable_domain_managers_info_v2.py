@@ -94,6 +94,12 @@ response:
             }
         ]
 
+total_available_results:
+    description: Total number of restorable domain managers available.
+    returned: always
+    type: int
+    sample: 1
+
 changed:
     description: This indicates whether the task resulted in any changes
     returned: always
@@ -154,6 +160,9 @@ def get_restorable_domain_managers(module, domain_manager_backups_api, result):
             exception=e,
             msg="Api Exception raised while fetching restorable domain managers info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
 
     resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
