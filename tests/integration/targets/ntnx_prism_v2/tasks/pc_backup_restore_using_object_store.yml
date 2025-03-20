@@ -771,7 +771,7 @@
   nutanix.ncp.ntnx_pc_restore_v2:
     nutanix_host: "{{ ip_pe }}"
     ext_id: "{{ restore_point_ext_id }}"
-    restore_source_ext_id: "{{ restore_source_ext_id }}"
+    restore_source_ext_id: "{{ restore_source_object_store_ext_id }}"
     restorable_domain_manager_ext_id: "{{ domain_manager_details.response[0].ext_id }}"
     domain_manager:
       config:
