@@ -211,6 +211,23 @@ options:
         choices:
           - ENABLED
           - DISABLED
+      pulse_status:
+        description:
+          - Flag to enable/disable pulse in cluster.
+          - Supported only in update cluster operation.
+        type: dict
+        suboptions:
+          is_enabled:
+            description:
+              - Whether to enable or disable pulse.
+            type: bool
+          pii_scrubbing_level:
+            description:
+              - The PII scrubbing level of the pulse.
+            type: str
+            choices:
+              - ALL
+              - DEFAULT
   network:
     description:
       - The network configuration of the cluster.
