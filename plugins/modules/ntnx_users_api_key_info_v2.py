@@ -9,6 +9,27 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+module: ntnx_users_api_key_info_v2
+short_description: Module to fetch user api keys in Nutanix Prism Central.
+version_added: 2.2.0
+description:
+    - If ext_id is provided, this module will fetch the specific user api key.
+    - If ext_id is not provided, this module will fetch all user api keys.
+options:
+    user_ext_id:
+        description:
+            - The external identifier of the user.
+        type: str
+        required: true
+    ext_id:
+        description:
+            - The external identifier of the user api key.
+        type: str
+extends_documentation_fragment:
+    - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_info_v2
+author:
+    - Abhinav Bansal (@abhinavbansal29)
 """
 EXAMPLES = r"""
 """

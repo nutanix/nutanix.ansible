@@ -9,6 +9,62 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+module: ntnx_users_api_key_v2
+short_description: Module to create/delete key of a requested type for a user in Nutanix Prism Central.
+version_added: 2.2.0
+description:
+    - This module can be used to create or delete a key of a requested type for a user in Nutanix Prism Central.
+    - If state is present, this module will create a key for the user.
+    - If state is absent, this module will delete the key for the user.
+options:
+    user_ext_id:
+        description:
+            - The external identifier of the user.
+        type: str
+        required: true
+    ext_id:
+        description:
+            - The external identifier of the key.
+        type: str
+    name:
+        description:
+            - Identifier for the key in the form of a name.
+        type: str
+    description:
+        description:
+            - Brief description of the key.
+        type: str
+    key_type:
+        description:
+            - The type of the key.
+        type: str
+        choices:
+            - API_KEY
+            - OBJECT_KEY
+    creation_type:
+        description:
+            - The creation mechanism for the key.
+        type: str
+        choices:
+            - PREDEFINED
+            - SERVICEDEFINED
+            - USERDEFINED
+    expiry_time:
+        description:
+            - The time when the key will expire.
+        type: str
+    status:
+        description:
+            - The status of the key.
+        type: str
+        choices:
+            - REVOKED
+            - VALID
+            - EXPIRED
+    assigned_to:
+        description:
+            - External client to whom the given key is allocated.
+        type: str
 """
 
 EXAMPLES = r"""

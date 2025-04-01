@@ -9,6 +9,28 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+module: ntnx_users_revoke_api_key_v2
+short_description: Module to revoke the requested API key for a user in Nutanix Prism Central.
+version_added: 2.2.0
+description:
+    - This module can be used to revoke the requested API key for a user in Nutanix Prism Central.
+    - This module uses PC v4 APIs based SDKs
+options:
+    user_ext_id:
+        description:
+            - The external identifier of the user.
+        type: str
+        required: true
+    ext_id:
+        description:
+            - The external identifier of the key.
+        type: str
+        required: true
+extends_documentation_fragment:
+    - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_info_v2
+author:
+    - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
@@ -16,31 +38,18 @@ EXAMPLES = r"""
 
 RETURN = r"""
 """
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-from copy import deepcopy  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
-from ..module_utils.v4.iam.helpers import get_user  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
-    strip_internal_attributes,
-    strip_users_empty_attributes,
 )
 
 SDK_IMP_ERROR = None
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-try:
-    import ntnx_iam_py_client as iam_sdk  # noqa: E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as iam_sdk  # noqa: E402
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -49,7 +58,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         user_ext_id=dict(type="str", required=True),
-        ext_id=dict(type="str"),
+        ext_id=dict(type="str", required=True),
     )
 
     return module_args
