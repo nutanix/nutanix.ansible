@@ -830,7 +830,7 @@
 - name: Replicate Recovery point
   ntnx_recovery_point_replicate_v2:
     ext_id: "{{ recovery_point_ext_id_5 }}"
-    pc_ext_id: "{{ pc_uuid }}"
+    pc_ext_id: "{{ availability_zone_pc_uuid }}"
     cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
   register: result
   ignore_errors: true
