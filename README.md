@@ -10,14 +10,14 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-NOTE: The latest version of the Nutanix Ansible collection is [v2.0.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.0.0).
+NOTE: The latest version of the Nutanix Ansible collection is [v2.0.1](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.0.1).
 
-### Introducing Nutanix Ansible Collection Version 2.0.0
-We're excited to announce the release of Nutanix Ansible Collection Version 2.0.0! This major update brings significant improvements to your infrastructure management experience:
+### Introducing Nutanix Ansible Collection Version 2.0.1
+We're excited to announce the release of Nutanix Ansible Collection Version 2.0.1! This major update brings significant improvements to your infrastructure management experience:
  
 - Built on the latest v4 APIs/SDKs: Leveraging the power of Nutanix v4 APIs/SDKs, this version offers enhanced functionality and better integration with the latest Nutanix features.
 - Expanded Resource Coverage:  Discover new resources and data sources, enabling you to model and manage a broader spectrum of Nutanix infrastructure components within your Ansible configurations.
-- Version Suffix: To easily distinguish resources and data sources specific to version 2.0.0, they are marked with the *_v2 suffix.
+- Version Suffix: To easily distinguish resources and data sources specific to version 2.0.0 and later, they are marked with the *_v2 suffix.
 
 ## Important Notice 
 Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit 
@@ -37,10 +37,10 @@ Customers not taking advantage of the [Advanced API/SDK Support Program](https:/
 # Version compatibility
 
 ## Ansible
-This collection requires ansible-core>=2.15.0
+This collection requires ansible-core>=2.16.0
 
 ## Python
-This collection requires Python 3.9 or greater
+This collection requires Python 3.10 or greater
 
 ## Releases
 
