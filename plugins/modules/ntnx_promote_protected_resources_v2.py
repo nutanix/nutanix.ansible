@@ -12,6 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_promote_protected_resources_v2
 short_description: Module to promote a protected resource in Nutanix Prism Central.
+version_added: 2.1.0
 description:
   - This module can be used to promote a protected resource in Nutanix Prism Central.
   - Supported only for protected resources that have synchronous protection policies.

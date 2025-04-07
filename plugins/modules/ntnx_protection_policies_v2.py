@@ -12,6 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_protection_policies_v2
 short_description: Create, Update, Delete protection policy in Nutanix Prism Central
+version_added: 2.1.0
 description:
   - This module allows you to create, update, and delete protection policy in Nutanix Prism Central.
   - This module uses PC v4 APIs based SDKs

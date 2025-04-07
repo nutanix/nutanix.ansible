@@ -12,6 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_protection_policies_info_v2
 short_description: Fetch protection policies info in Nutanix Prism Central
+version_added: 2.1.0
 description:
     - This module allows you to fetch protection policies info or specific protection policy in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs

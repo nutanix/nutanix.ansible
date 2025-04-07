@@ -12,6 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_protected_resources_info_v2
 short_description: Module to fetch protected resource in Nutanix Prism Central.
+version_added: 2.1.0
 description:
   - This module can be used to fetch protected resources in Nutanix Prism Central.
 options:
