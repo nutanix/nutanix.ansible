@@ -2,10 +2,6 @@
 
 Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt
 
-**Breaking Changes:**
-
-- nutanix.ncp collection - We are deprecating support for ansible-core==2.15.0 and minimum version to use this collection is ansible-core==2.16.0.
-
 **Bugs:**
 
 - requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
