@@ -37,7 +37,7 @@ Customers not taking advantage of the [Advanced API/SDK Support Program](https:/
 # Version compatibility
 
 ## Ansible
-This collection requires ansible-core>=2.16.0
+This collection requires ansible-core>=2.16.0. This should be done explicitly if ansible-core version is not present or is below the specified version.
 
 ## Python
 This collection requires Python 3.10 or greater
