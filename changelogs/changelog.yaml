@@ -821,3 +821,12 @@ releases:
         name: ntnx_volume_groups_categories_v2
         namespace: ""
     release_date: "2025-04-07"
+  2.1.1:
+    changes:
+      bugfixes:
+        - requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
+      breaking_changes:
+        - nutanix.ncp collection - We are deprecating support for ansible-core==2.15.0
+          and minimum version to use this collection is ansible-core==2.16.0.
+      release_summary: Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt
+    release_date: "2025-04-09"
