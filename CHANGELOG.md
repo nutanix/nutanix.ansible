@@ -1,3 +1,13 @@
+## v2.1.1 (9 April 2025)
+
+Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt
+
+**Bugs:**
+
+- requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v2.1.0...v2.1.1)
+
 ## v2.1.0 (7 April 2025)
 
 Releasing new modules for Prism, Data Protection, Data Policies, LCM and Volumes using PC GA v4 sdks

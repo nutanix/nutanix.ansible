@@ -4,6 +4,19 @@ Nutanix.Ncp Release Notes
 
 .. contents:: Topics
 
+v2.1.1
+======
+
+Release Summary
+---------------
+
+Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt
+
+Bugfixes
+--------
+
+- requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
+
 v2.1.0
 ======
 
