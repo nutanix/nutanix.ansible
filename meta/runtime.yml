@@ -211,3 +211,6 @@ action_groups:
     - ntnx_lcm_upgrades_v2
     - ntnx_lcm_entities_info_v2
     - ntnx_lcm_status_info_v2
+    - ntnx_users_api_key_v2
+    - ntnx_users_api_key_info_v2
+    - ntnx_users_revoke_api_key_v2
