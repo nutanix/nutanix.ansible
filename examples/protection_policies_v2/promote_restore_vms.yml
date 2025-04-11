@@ -35,78 +35,6 @@
         availability_zone_pc_uuid: "bd32fb09-8005-4655-a3a8-086b8ec1b1ea"
         domain_manager_ext_id: "1e9a1996-50e2-485f-a67c-22355cb43055"
 
-    - name: Setting Variables
-      ansible.builtin.set_fact:
-        replication_location_1:
-          label: "ansible-label-{{label1}}"
-          domain_manager_ext_id: "{{domain_manager_ext_id}}"
-          is_primary: true
-          replication_sub_location:
-            nutanix_cluster:
-              cluster_ext_ids:
-                - "{{ cluster.uuid }}"
-
-        replication_location_2:
-          label: "ansible-label-{{label2}}"
-          domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
-          is_primary: false
-          replication_sub_location:
-            nutanix_cluster:
-              cluster_ext_ids:
-                - "{{ cluster_availability_zone.uuid }}"
-
-        replication_configuration_auto_1:
-          source_location_label: "ansible-label-{{label1}}"
-          remote_location_label: "ansible-label-{{label2}}"
-          schedule:
-            recovery_point_type: "CRASH_CONSISTENT"
-            recovery_point_objective_time_seconds: 60
-            retention:
-              local:
-                snapshot_interval_type: "DAILY"
-                frequency: 1
-              remote:
-                snapshot_interval_type: "DAILY"
-                frequency: 1
-            start_time:
-            sync_replication_auto_suspend_timeout_seconds: 300
-
-        replication_configuration_auto_2:
-          source_location_label: "ansible-label-{{label2}}"
-          remote_location_label: "ansible-label-{{label1}}"
-          schedule:
-            recovery_point_type: "CRASH_CONSISTENT"
-            recovery_point_objective_time_seconds: 60
-            retention:
-              local:
-                snapshot_interval_type: "DAILY"
-                frequency: 1
-              remote:
-                snapshot_interval_type: "DAILY"
-                frequency: 1
-            start_time:
-            sync_replication_auto_suspend_timeout_seconds: 300
-
-        replication_configuration_sync_1:
-          source_location_label: "ansible-label-{{label1}}"
-          remote_location_label: "ansible-label-{{label2}}"
-          schedule:
-            recovery_point_type: "CRASH_CONSISTENT"
-            retention: null
-            recovery_point_objective_time_seconds: 0
-            start_time:
-            sync_replication_auto_suspend_timeout_seconds: 10
-
-        replication_configuration_sync_2:
-          source_location_label: "ansible-label-{{label2}}"
-          remote_location_label: "ansible-label-{{label1}}"
-          schedule:
-            recovery_point_type: "CRASH_CONSISTENT"
-            retention: null
-            recovery_point_objective_time_seconds: 0
-            start_time:
-            sync_replication_auto_suspend_timeout_seconds: 10
-
     - name: Set ansible keys and values
       ansible.builtin.set_fact:
         keys:
@@ -124,7 +52,6 @@
         value: "{{ values[item] }}"
         description: "ansible-category"
       register: output
-      ignore_errors: true
       loop: "{{ range(0, 2) }}"
       loop_control:
         label: "{{ item }}"
@@ -192,7 +119,6 @@
         category_ids:
           - "{{category_ext_id_1}}"
       register: result
-      ignore_errors: true
 
     - name: Add auto retention protection policy external ID to todelete list
       ansible.builtin.set_fact:
@@ -235,7 +161,6 @@
         category_ids:
           - "{{category_ext_id_2}}"
       register: result
-      ignore_errors: true
 
     - name: Add synchronous protection policy external ID to todelete list
       ansible.builtin.set_fact:
@@ -252,7 +177,6 @@
         categories:
           - ext_id: "{{ category_ext_id_2 }}"
       register: result
-      ignore_errors: true
 
     - name: Set VM external ID
       ansible.builtin.set_fact:
@@ -267,7 +191,6 @@
         categories:
           - ext_id: "{{ category_ext_id_1 }}"
       register: result
-      ignore_errors: true
 
     - name: Set VM external ID
       ansible.builtin.set_fact:
@@ -281,7 +204,6 @@
       until: result.response.protection_type == "RULE_PROTECTED"
       retries: 60
       delay: 10
-      ignore_errors: true
 
     # Wait for the second VM to be protected
     - name: Fetch VM using ext_id
@@ -291,7 +213,6 @@
       until: result.response.protection_type == "RULE_PROTECTED"
       retries: 60
       delay: 10
-      ignore_errors: true
 
     - name: Sleep for 5 minutes until VMs are protected
       ansible.builtin.pause:
@@ -301,14 +222,12 @@
       nutanix.ncp.ntnx_protected_resources_info_v2:
         ext_id: "{{ vm_ext_id_1 }}"
       register: result
-      ignore_errors: true
 
     - name: Promote VM
       nutanix.ncp.ntnx_promote_protected_resources_v2:
         nutanix_host: "{{ availability_zone_pc_ip }}"
         ext_id: "{{ vm_ext_id_1 }}"
       register: result
-      ignore_errors: true
 
     - name: Restore VM
       nutanix.ncp.ntnx_restore_protected_resources_v2:
@@ -316,7 +235,6 @@
         ext_id: "{{ vm_ext_id_2 }}"
         cluster_ext_id: "{{ cluster_availability_zone.uuid }}"
       register: result
-      ignore_errors: true
 
     ########################################################################################
 
@@ -327,7 +245,6 @@
     - name: Fetch all VMs on local cluster
       nutanix.ncp.ntnx_vms_info_v2:
       register: result
-      ignore_errors: true
 
     - name: Filter only protected VMs
       ansible.builtin.set_fact:
@@ -348,7 +265,6 @@
       nutanix.ncp.ntnx_vms_info_v2:
         nutanix_host: "{{ availability_zone_pc_ip }}"
       register: result
-      ignore_errors: true
 
     - name: Filter only protected VMs
       ansible.builtin.set_fact:
@@ -365,7 +281,6 @@
         ext_id: "{{ item }}"
       register: result
       loop: "{{ protected_vms_ext_ids }}"
-      ignore_errors: true
 
     ########################################################################################
 
@@ -375,7 +290,6 @@
         state: absent
       loop: "{{ todelete }}"
       register: result
-      ignore_errors: true
 
     ########################################################################################
 
@@ -385,4 +299,3 @@
         state: absent
       register: result
       loop: "{{ todelete_categories }}"
-      ignore_errors: true
