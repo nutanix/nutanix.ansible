@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2025, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,6 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_volume_groups_categories_v2
 short_description: Module to associate or disassociate categories with a volume group in Nutanix Prism Central.
+version_added: 2.1.0
 description:
   - This module can be used to associate or disassociate categories with a volume group in Nutanix Prism Central.
 options:
