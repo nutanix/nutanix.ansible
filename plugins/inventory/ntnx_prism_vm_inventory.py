@@ -78,8 +78,8 @@ DOCUMENTATION = r"""
 import json  # noqa: E402
 import tempfile  # noqa: E402
 
-from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 from ansible.errors import AnsibleError  # noqa: E402
+from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
 from ..module_utils.v3.prism import vms  # noqa: E402
 
