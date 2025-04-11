@@ -43,13 +43,10 @@ import warnings  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
-from ..module_utils.v4.utils import (  # noqa: E402
-    raise_api_exception,
-)
+from ..module_utils.v4.utils import raise_api_exception  # noqa: E402
 
 SDK_IMP_ERROR = None
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
-
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")

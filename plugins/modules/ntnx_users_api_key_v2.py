@@ -78,8 +78,8 @@ import warnings  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.iam.api_client import (  # noqa: E402
-    get_user_api_instance,
     get_etag,
+    get_user_api_instance,
 )
 from ..module_utils.v4.iam.helpers import get_requested_key  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
