@@ -65,7 +65,9 @@ DOCUMENTATION = r"""
             env:
                 - name: VALIDATE_CERTS
         filters:
-            description: A list of Jinja2 expressions used to filter the inventory
+            description:
+                - A list of Jinja2 expressions used to filter the inventory
+                - All expressions are combined using an AND operation—each item must match every filter to be included.
             default: []
             elements: str
             type: list
