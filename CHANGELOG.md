@@ -1,3 +1,58 @@
+## v2.1.1 (9 April 2025)
+
+Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt
+
+**Bugs:**
+
+- requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v2.1.0...v2.1.1)
+
+## v2.1.0 (7 April 2025)
+
+Releasing new modules for Prism, Data Protection, Data Policies, LCM and Volumes using PC GA v4 sdks
+
+**Breaking Changes:**
+
+- nutanix.ncp collection - We are deprecating support for ansible-core==2.15.0 and minimum version to use this collection is ansible-core==2.16.0.
+
+**New modules:**
+
+Prism:
+- ntnx_pc_unregistration_v2
+- ntnx_pc_backup_target_info_v2
+- ntnx_pc_backup_target_v2
+- ntnx_pc_config_info_v2
+- ntnx_pc_deploy_v2
+- ntnx_pc_restore_v2
+- ntnx_pc_restore_source_info_v2
+- ntnx_pc_restore_source_v2
+- ntnx_pc_restorable_domain_managers_info_v2
+- ntnx_pc_restore_points_info_v2
+
+Data Policies:
+- ntnx_protection_policies_info_v2
+- ntnx_protection_policies_v2
+
+Data Protection:
+- ntnx_promote_protected_resources_v2
+- ntnx_restore_protected_resources_v2
+- ntnx_protected_resources_info_v2
+
+Volumes:
+- ntnx_volume_groups_categories_v2
+
+LCM:
+- ntnx_lcm_config_info_v2
+- ntnx_lcm_config_v2
+- ntnx_lcm_inventory_v2
+- ntnx_lcm_prechecks_v2
+- ntnx_lcm_upgrades_v2
+- ntnx_lcm_entities_info_v2
+- ntnx_lcm_status_info_v2
+
+**Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v2.0.0...v2.1.0)
+
 ## v2.0.0 (7 Jan 2025)
 
 Releasing new modules using PC GA v4 sdks

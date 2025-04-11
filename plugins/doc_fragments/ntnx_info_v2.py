@@ -15,7 +15,7 @@ class ModuleDocFragment(object):
 options:
   filter:
     description:
-      - The filter in FIQL syntax used for the results
+      - The filter in OData syntax used for the results
     type: str
   page:
     description:

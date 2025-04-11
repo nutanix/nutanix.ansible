@@ -4,6 +4,59 @@ Nutanix.Ncp Release Notes
 
 .. contents:: Topics
 
+v2.1.1
+======
+
+Release Summary
+---------------
+
+Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt
+
+Bugfixes
+--------
+
+- requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
+
+v2.1.0
+======
+
+Release Summary
+---------------
+
+Releasing new modules for Prism, Data Protection, Data Policies, LCM and Volumes using PC GA v4 sdks
+
+Breaking Changes / Porting Guide
+--------------------------------
+
+- nutanix.ncp collection - We are deprecating support for ansible-core==2.15.0 and minimum version to use this collection is ansible-core==2.16.0.
+
+New Modules
+-----------
+
+- ntnx_lcm_config_info_v2 - Fetch LCM Configuration
+- ntnx_lcm_config_v2 - Update LCM Configuration
+- ntnx_lcm_entities_info_v2 - Fetch LCM Entities Info
+- ntnx_lcm_inventory_v2 - Perform Inventory
+- ntnx_lcm_prechecks_v2 - Perform LCM Prechecks
+- ntnx_lcm_status_info_v2 - Get the LCM framework status.
+- ntnx_lcm_upgrades_v2 - Perform LCM upgrades
+- ntnx_pc_backup_target_info_v2 - Get PC backup targets info
+- ntnx_pc_backup_target_v2 - Create, Update and Delete a PC backup target.
+- ntnx_pc_config_info_v2 - Get PC Configuration info
+- ntnx_pc_deploy_v2 - Deploys a Prism Central using the provided details
+- ntnx_pc_restorable_domain_managers_info_v2 - Fetch restorable domain managers info
+- ntnx_pc_restore_points_info_v2 - Fetch pc restore points info
+- ntnx_pc_restore_source_info_v2 - Get PC restore source info
+- ntnx_pc_restore_source_v2 - Creates or Deletes a restore source pointing to a cluster or object store to restore the domain manager.
+- ntnx_pc_restore_v2 - Restores a domain manager(PC) from a cluster or object store backup location based on the selected restore point.
+- ntnx_pc_unregistration_v2 - Unregister a PC-PC setup connected using availability zone.
+- ntnx_promote_protected_resources_v2 - Module to promote a protected resource in Nutanix Prism Central.
+- ntnx_protected_resources_info_v2 - Module to fetch protected resource in Nutanix Prism Central.
+- ntnx_protection_policies_info_v2 - Fetch protection policies info in Nutanix Prism Central
+- ntnx_protection_policies_v2 - Create, Update, Delete protection policy in Nutanix Prism Central
+- ntnx_restore_protected_resources_v2 - Module to restore a protected resource in Nutanix Prism Central.
+- ntnx_volume_groups_categories_v2 - Module to associate or disassociate categories with a volume group in Nutanix Prism Central.
+
 v2.0.0
 ======
 
