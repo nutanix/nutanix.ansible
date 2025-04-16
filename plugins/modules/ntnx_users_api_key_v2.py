@@ -53,24 +53,93 @@ options:
         description:
             - The time when the key will expire.
         type: str
-    status:
-        description:
-            - The status of the key.
-        type: str
-        choices:
-            - REVOKED
-            - VALID
-            - EXPIRED
     assigned_to:
         description:
             - External client to whom the given key is allocated.
         type: str
+extends_documentation_fragment:
+    - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_operations_v2
+author:
+    - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: Create an API key
+  nutanix.ncp.ntnx_users_api_key_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    user_ext_id: "f7e6d5c4-b3a2-4i9h-8g7f-6e5d4c3b2a1k"
+    name: "api_key_1"
+    description: "description_api_key_1"
+    key_type: "API_KEY"
+    expiry_time: "2025-12-31T23:59:59Z"
+  register: result
+
+- name: Delete an API key
+  nutanix.ncp.ntnx_users_api_key_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    user_ext_id: "f7e6d5c4-b3a2-4i9h-8g7f-6e5d4c3b2a1k"
+    ext_id: "9i8h7g6f-5e4d-3c2b-1a0j-k2l3m4n5o6p"
+    state: absent
+  register: result
 """
 
 RETURN = r"""
+    user_ext_id:
+        description:
+            - The external identifier of the user (service account).
+        type: str
+        returned: always
+        sample: "f7e6d5c4-b3a2-4i9h-8g7f-6e5d4c3b2a1k"
+    ext_id:
+        description:
+            - The external identifier of the key.
+        type: str
+        returned: always
+        sample: "9i8h7g6f-5e4d-3c2b-1a0j-k2l3m4n5o6p"
+    changed:
+        description:
+            - Indicates whether the module made any changes.
+        type: bool
+        returned: always
+        sample: true
+    error:
+        description:
+            - Error message if any occurred during the operation.
+        type: str
+        returned: when error occurs
+        sample: "Api Exception raised while creating user api key"
+    response:
+        description:
+            - The response from the API call of creating/deleting a API key.
+        type: dict
+        returned: always
+        sample: {
+                "assigned_to": null,
+                "created_by": "00000000-0000-0000-0000-000000000000",
+                "created_time": "2025-04-16T05:36:16.745708+00:00",
+                "creation_type": "USERDEFINED",
+                "description": "user_test_xoLHTszFziTH_description_api_key_1",
+                "expiry_time": "2025-04-18T05:36:16.126000+00:00",
+                "ext_id": "64008b39-fba5-5aa6-94ca-75c21ce7ced5",
+                "key_details": {
+                    "api_key": "2c8059752b8645b08dc64b9bca98df43"
+                },
+                "key_type": "API_KEY",
+                "last_updated_by": "00000000-0000-0000-0000-000000000000",
+                "last_updated_time": "2025-04-16T05:36:16.745708+00:00",
+                "last_used_time": "2025-04-16T05:36:16.745708+00:00",
+                "links": null,
+                "name": "user_test_xoLHTszFziTH_api_key_1",
+                "status": "VALID",
+                "tenant_id": "59d5de78-a964-5746-8c6e-677c4c7a79df"
+            }
 """
 import traceback  # noqa: E402
 import warnings  # noqa: E402
@@ -115,7 +184,6 @@ def get_module_spec():
             choices=["PREDEFINED", "SERVICEDEFINED", "USERDEFINED"],
         ),
         expiry_time=dict(type="str"),
-        status=dict(type="str", choices=["REVOKED", "VALID", "EXPIRED"]),
         assigned_to=dict(type="str"),
     )
 

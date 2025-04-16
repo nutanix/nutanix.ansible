@@ -28,15 +28,62 @@ options:
         required: true
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
-    - nutanix.ncp.ntnx_info_v2
+    - nutanix.ncp.ntnx_operations_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: Revoke an API key
+  nutanix.ncp.ntnx_users_revoke_api_key_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    user_ext_id: "f7e6d5c4-b3a2-4i9h-8g7f-6e5d4c3b2a1k"
+    ext_id: "9i8h7g6f-5e4d-3c2b-1a0j-k2l3m4n5o6p"
+    state: absent
+  register: result
 """
 
 RETURN = r"""
+    user_ext_id:
+        description:
+            - The external identifier of the user (service account).
+        type: str
+        returned: always
+        sample: "f7e6d5c4-b3a2-4i9h-8g7f-6e5d4c3b2a1k"
+    ext_id:
+        description:
+            - The external identifier of the key.
+        type: str
+        returned: always
+        sample: "9i8h7g6f-5e4d-3c2b-1a0j-k2l3m4n5o6p"
+    changed:
+        description:
+            - Indicates whether the module made any changes.
+        type: bool
+        returned: always
+        sample: true
+    error:
+        description:
+            - Error message if any occurred during the operation.
+        type: str
+        returned: when error occurs
+        sample: "Api Exception raised while revoking user api key"
+    response:
+        description:
+            - The response from the API call of revoking a API key.
+        type: dict
+        returned: always
+        sample: {
+                "changed": true,
+                "error": null,
+                "ext_id": "64008b39-fba5-5aa6-94ca-75c21ce7ced5",
+                "failed": false,
+                "response": null,
+                "user_ext_id": "26065084-741b-55c1-961b-7d164bdaf2f2"
+            }
 """
 import warnings  # noqa: E402
 
