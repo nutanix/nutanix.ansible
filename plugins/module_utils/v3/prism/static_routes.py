@@ -51,7 +51,7 @@ class StaticRoute(Vpc):
         return payload, None
 
     def _build_spec_static_routes(self, payload, inp_static_routes):
-        # since static route list has to be overriden
+        # since static route list has to be overridden
         if payload["spec"]["resources"].get("default_route_nexthop"):
             payload["spec"]["resources"].pop("default_route_nexthop")
         static_routes_list = []

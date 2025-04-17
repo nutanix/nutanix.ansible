@@ -170,7 +170,7 @@ class TimeMachine(NutanixDatabase):
         if err:
             return None, err
 
-        # set destination clusters incase of HA instance
+        # set destination clusters in case of HA instance
         if params.get("clusters"):
             cluster_uuids = []
 

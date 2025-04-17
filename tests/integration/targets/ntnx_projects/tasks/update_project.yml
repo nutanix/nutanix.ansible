@@ -156,7 +156,7 @@
     that:
       - result.changed == false
       - "'Nothing to update' in result.msg"
-    fail_msg: "Project update didnt got skipped for update spec same as existing project"
+    fail_msg: "Project update didn't got skipped for update spec same as existing project"
     success_msg: "Project got skipped successfully for no change in spec"
 
 #################################################################

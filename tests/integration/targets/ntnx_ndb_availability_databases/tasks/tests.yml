@@ -3,7 +3,7 @@
 # This playbook will test below cases:
 #   1. Create HA instance spec with check mode and minimal spec
 #   2. Create HA postgres database instance with multicluster nodes
-#   3. Create HA postgres database instance with static IP and cluster IP assigments
+#   3. Create HA postgres database instance with static IP and cluster IP assignments
 
 - name: Start ndb databases test flow for testing high availability databases
   ansible.builtin.debug:
