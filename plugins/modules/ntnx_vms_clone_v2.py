@@ -231,6 +231,11 @@ options:
                     is_secure_boot_enabled:
                         description: Indicate whether to enable secure boot or not.
                         type: bool
+                    boot_order:
+                        description: Indicates the order of device types in which the VM should try to boot from.
+                        type: list
+                        elements: str
+                        choices: ["CDROM", "NETWORK", "DISK"]
                     nvram_device:
                         description: Configuration for NVRAM to be presented to the VM.
                         type: dict
