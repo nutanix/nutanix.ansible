@@ -281,12 +281,12 @@ def restore_recovery_points(module, result):
         resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
         vms_ext_ids = get_ext_id_from_task_completion_details(
-            resp, name=TASK_CONSTANTS.CompletetionDetailsName.VM_EXT_IDS
+            resp, name=TASK_CONSTANTS.CompletionDetailsName.VM_EXT_IDS
         )
         if vms_ext_ids:
             result["vms_ext_ids"] = vms_ext_ids
         vgs_ext_ids = get_ext_id_from_task_completion_details(
-            resp, name=TASK_CONSTANTS.CompletetionDetailsName.VG_EXT_IDS
+            resp, name=TASK_CONSTANTS.CompletionDetailsName.VG_EXT_IDS
         )
         if vgs_ext_ids:
             result["vgs_ext_ids"] = vgs_ext_ids

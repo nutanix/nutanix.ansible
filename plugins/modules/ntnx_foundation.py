@@ -295,7 +295,7 @@ options:
                                         required: false
                                     other_config:
                                         description:
-                                            - Auxillary lacp configurations. Applicable only for AHV
+                                            - Auxiliary lacp configurations. Applicable only for AHV
                                         type: list
                                         elements: str
                                         required: false
@@ -549,7 +549,7 @@ options:
                                         required: false
                                     other_config:
                                         description:
-                                            - Auxillary lacp configurations. Applicable only for AHV
+                                            - Auxiliary lacp configurations. Applicable only for AHV
                                         type: list
                                         elements: str
                                         required: false

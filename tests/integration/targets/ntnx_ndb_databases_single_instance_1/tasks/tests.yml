@@ -486,7 +486,7 @@
       - result.response.autoTuneStagingDrive == False
       - result.response.timeMachineInfo == expected_time_machine_info
       - result.response.vmIp == "10.10.10.10"
-      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.maintenanceTasks == maintenance_tasks
       - result.response.workingDirectory == "/check"
     fail_msg: Unable to create register database spec
     success_msg: single instance postgres database register spec created successfully

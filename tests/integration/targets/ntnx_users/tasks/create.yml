@@ -21,7 +21,7 @@
       - result.failed == false
       - result.user_uuid ==  None
       - result.response.spec.resources.directory_service_user.directory_service_reference.uuid == "{{directory_service_uuid}}"
-    fail_msg: "fail: user created whil check mode on"
+    fail_msg: "fail: user created while check mode on"
     success_msg: "pass: returned as expected"
 
 #################################################

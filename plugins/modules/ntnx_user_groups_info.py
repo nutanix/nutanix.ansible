@@ -154,7 +154,7 @@ entities:
                                     "name": "qanucalm",
                                     "uuid": "00000000-0000-0000-0000-000000000000"
                                 },
-                                "distinguished_name": "<distinugished-name>"
+                                "distinguished_name": "<distinguished-name>"
                             },
                             "display_name": "name1",
                             "projects_reference_list": [],

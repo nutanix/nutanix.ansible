@@ -72,7 +72,7 @@ options:
           - absent
       subnet:
         description:
-          - Name or UUID of the subnet to which the VM should be connnected
+          - Name or UUID of the subnet to which the VM should be connected
         type: dict
         suboptions:
           name:
