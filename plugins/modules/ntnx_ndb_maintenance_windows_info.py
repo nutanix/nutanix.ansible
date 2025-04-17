@@ -235,8 +235,8 @@ uuid:
   sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
 """
 
-from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.maintenance_window import MaintenanceWindow  # noqa: E402
+from ..module_utils.v3.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.v3.ndb.maintenance_window import MaintenanceWindow  # noqa: E402
 
 
 def get_module_spec():

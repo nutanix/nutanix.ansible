@@ -1,6 +1,6 @@
 - name: Start testing ntnx_permissions_info
   ansible.builtin.debug:
-    msg: start testing ntnx_permissions_info
+    msg: Start testing ntnx_permissions_info
 ##################################################
 
 - name: List all permissions
@@ -20,7 +20,7 @@
 
 ##################################################
 
-- name: Set permission name
+- name: Setting permission name
   ansible.builtin.set_fact:
     test_permission_name: "Create_Playbook"
 
@@ -43,7 +43,7 @@
     fail_msg: "Unable to list permissions using filter"
     success_msg: "permission info obtained successfully"
 
-- name: Set permission uuid
+- name: Setting permission uuid
   ansible.builtin.set_fact:
     test_permission_uuid: "{{result.response.entities.0.metadata.uuid}}"
 
@@ -65,6 +65,7 @@
       - result.response.metadata.kind == "permission"
     fail_msg: "Unable to list permission using uuid"
     success_msg: "permission info obtained successfully"
+
 
 ##################################################
 

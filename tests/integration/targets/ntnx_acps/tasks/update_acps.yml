@@ -1,5 +1,5 @@
 ---
-- name: Set ACP names
+- name: Setting acp name variables
   ansible.builtin.set_fact:
     acp_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
     acp_name_updated: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
@@ -8,7 +8,7 @@
   ntnx_acps:
     state: present
     wait: true
-    name: "{{acp_name}}"
+    name: "{{ acp_name }}"
     role:
       uuid: "{{ acp.role.uuid }}"
   register: setup_acp
@@ -18,14 +18,14 @@
     that:
       - setup_acp.response is defined
       - setup_acp.response.status.state == 'COMPLETE'
-      - setup_acp.response.spec.name == "{{acp_name}}"
+      - setup_acp.response.spec.name == "{{ acp_name }}"
       - setup_acp.response.status.resources.role_reference.uuid == "{{ acp.role.uuid }}"
     fail_msg: "Unable to create ACP for update tests"
     success_msg: "ACP created successfully for update tests"
 
-- name: Add ACP uuid to todelete list
+- name: Set acp uuid to delete later
   ansible.builtin.set_fact:
-    todelete: '{{ todelete + [  setup_acp["response"]["metadata"]["uuid"] ] }}'
+    todelete: '{{ todelete + [setup_acp["response"]["metadata"]["uuid"]] }}'
 
 ############################################# UPDATE TESTS ########################################
 
@@ -33,7 +33,7 @@
   ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
-    name: "{{acp_name}}"
+    name: "{{ acp_name }}"
     role:
       uuid: "{{ acp.role.uuid }}"
   register: result
@@ -53,7 +53,7 @@
   ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
-    name: "{{acp_name_updated}}"
+    name: "{{ acp_name_updated }}"
     desc: "description after update"
     filters:
       - scope_filter:
@@ -74,7 +74,7 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.name == "{{acp_name_updated}}"
+      - result.response.status.name == "{{ acp_name_updated }}"
       - result.response.status.description == 'description after update'
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.operator == "IN"
       - result.response.status.resources.filter_list.context_list.0.entity_filter_expression_list.0.left_hand_side.entity_type == "ALL"
@@ -91,7 +91,7 @@
   ntnx_acps:
     state: present
     acp_uuid: "{{ setup_acp.acp_uuid }}"
-    name: "{{acp_name_updated}}"
+    name: "{{ acp_name_updated }}"
     desc: "description after update"
     filters:
       - scope_filter:

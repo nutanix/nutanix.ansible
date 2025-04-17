@@ -1,4 +1,4 @@
-- name: Start testing ntnx_static_routes_info
+- name: Start testing static routes info tests
   ansible.builtin.debug:
     msg: Start testing static routes info tests
 
@@ -20,23 +20,27 @@
             uuid: "{{ external_nat_subnet.uuid }}"
   register: result
 
-- name: Update static routes list Status
+- name: Create new static routes status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.changed == true
-    fail_msg: "Fail: Unable to update static routes of vpc"
-    success_msg: "Succes: static routes updated successfully"
+    fail_msg: "Fail: Unable to create static routes for vpc"
+    success_msg: "Success: Static routes created"
 
 ###########################################################################################################
+
+- name: Wait 60 seconds for static routes to be created
+  ansible.builtin.pause:
+    seconds: 60
 
 - name: Get all static routes
   ntnx_static_routes_info:
     vpc_uuid: "{{ vpc.uuid }}"
   register: result
 
-- name: Set variables
+- name: Set destination variables
   ansible.builtin.set_fact:
     d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
     d2: "{{ result.response.status.resources.static_routes_list[1].destination }}"

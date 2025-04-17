@@ -1,5 +1,5 @@
 ---
-- name: Set module defaults
+- name: Initializing variables
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
@@ -7,11 +7,11 @@
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
   block:
-    - name: Import "create_acps.yml"
+    - name: Import create_acps.yml
       ansible.builtin.import_tasks: "create_acps.yml"
-    - name: Import "delete_acp.yml"
+    - name: Import delete_acp.yml
       ansible.builtin.import_tasks: "delete_acp.yml"
-    - name: Import "update_acps.yml"
+    - name: Import update_acps.yml
       ansible.builtin.import_tasks: "update_acps.yml"
-    - name: Import "negative_scenarios.yml"
+    - name: Import negative_scenarios.yml
       ansible.builtin.import_tasks: "negative_scenarios.yml"

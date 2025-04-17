@@ -5,22 +5,23 @@
 
 - name: Test getting all hosts
   ntnx_hosts_info:
-  register: hosts
+  register: hosts_info
   ignore_errors: true
 
 - name: Check listing status
   ansible.builtin.assert:
     that:
-      - hosts.response is defined
-      - hosts.failed == false
-      - hosts.changed == false
-      - hosts.response.entities[0].metadata.uuid is defined
+      - hosts_info.response is defined
+      - hosts_info.failed == false
+      - hosts_info.changed == false
+      - hosts_info.response.entities[0].metadata.uuid is defined
     fail_msg: "Unable to list all hosts"
     success_msg: "hosts listed successfully"
 
+
 - name: Test getting particular host using uuid
   ntnx_hosts_info:
-    host_uuid: "{{ hosts.response.entities[0].metadata.uuid }}"
+    host_uuid: '{{ hosts_info.response.entities[0].metadata.uuid }}'
   register: result
 
 - name: Check listing status
@@ -30,9 +31,10 @@
       - result.failed == false
       - result.changed == false
       - result.response.status.state == "COMPLETE"
-      - result.response.metadata.uuid == "{{ hosts.response.entities[0].metadata.uuid }}"
+      - result.response.metadata.uuid == "{{ hosts_info.response.entities[0].metadata.uuid }}"
     fail_msg: "Unable to get particular host"
     success_msg: "host info obtained successfully"
+
 
 - name: List hosts using length, offset, sort order and name sort attribute
   ntnx_hosts_info:

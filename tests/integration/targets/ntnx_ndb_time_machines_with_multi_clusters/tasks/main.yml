@@ -1,11 +1,11 @@
 ---
-- name: Set module defaults
+- name: Ntnx_ndb_time_machines_with_multi_clusters integration tests
   module_defaults:
-      group/nutanix.ncp.ntnx:
-          nutanix_host: "{{ndb_ip}}"
-          nutanix_username: "{{ndb_username}}"
-          nutanix_password: "{{ndb_password}}"
-          validate_certs: false
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ndb_ip }}"
+      nutanix_username: "{{ ndb_username }}"
+      nutanix_password: "{{ ndb_password }}"
+      validate_certs: false
   block:
-      - name: Import "data_access_management_and_snapshots.yml"
-        ansible.builtin.import_tasks: "data_access_management_and_snapshots.yml"
+    - name: Import tasks
+      ansible.builtin.import_tasks: data_access_management_and_snapshots.yml

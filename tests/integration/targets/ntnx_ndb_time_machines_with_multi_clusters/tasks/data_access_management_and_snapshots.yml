@@ -5,11 +5,11 @@
 
 - name: Create data access instance with cluster name and sla name
   ntnx_ndb_time_machine_clusters:
-    time_machine_uuid: "{{time_machine.uuid}}"
+    time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
-      name: "{{cluster.cluster2.name}}"
+      name: "{{ cluster.cluster2.name }}"
     sla:
-      name: "{{sla.name}}"
+      name: "{{ sla.name }}"
   register: out
 
 - name: Check listing status
@@ -25,11 +25,11 @@
 #######################
 - name: Update data access instance with new sla name
   ntnx_ndb_time_machine_clusters:
-    time_machine_uuid: "{{time_machine.uuid}}"
+    time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
-      name: "{{cluster.cluster2.name}}"
+      name: "{{ cluster.cluster2.name }}"
     sla:
-      name: "{{sla2.name}}"
+      name: "{{ sla2.name }}"
   register: result
 
 - name: Check listing status
@@ -46,11 +46,11 @@
 
 - name: Idempotency checks
   ntnx_ndb_time_machine_clusters:
-    time_machine_uuid: "{{time_machine.uuid}}"
+    time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
-      name: "{{cluster.cluster2.name}}"
+      name: "{{ cluster.cluster2.name }}"
     sla:
-      name: "{{sla2.name}}"
+      name: "{{ sla2.name }}"
   register: result
 
 - name: Check idempotency status
@@ -59,8 +59,8 @@
       - result.changed == false
       - result.failed == false
       - "'Nothing to change' in result.msg"
-    fail_msg: "clusters in time machine go updated"
-    success_msg: "update of clusters in time machine skipped due to no state changes"
+    fail_msg: clusters in time machine go updated
+    success_msg: update of clusters in time machine skipped due to no state changes
 
 ############################################## multicluster snapshots and replication tests #########################
 
@@ -69,10 +69,10 @@
 
 - name: Create snapshot on cluster2
   ntnx_ndb_database_snapshots:
-    name: "ansible-created-snapshot-on-{{cluster.cluster2.name}}"
-    time_machine_uuid: "{{time_machine.uuid}}"
+    name: ansible-created-snapshot-on-{{ cluster.cluster2.name }}
+    time_machine_uuid: "{{ time_machine.uuid }}"
     clusters:
-      - name: "{{cluster.cluster2.name}}"
+      - name: "{{ cluster.cluster2.name }}"
   register: result
 
 - name: Check snapshot status
@@ -81,7 +81,7 @@
       - result.response is defined
       - result.snapshot_uuid is defined
       - result.changed == true
-      - result.response.name == "ansible-created-snapshot-on-{{cluster.cluster2.name}}"
+      - result.response.name == "ansible-created-snapshot-on-{{ cluster.cluster2.name }}"
       - result.failed == false
       - result.response.status == "PENDING"
 
@@ -94,23 +94,23 @@
 
 - name: Check the status of post of replication if snapshot is active
   ntnx_ndb_snapshots_info:
-    uuid: "{{result.snapshot_uuid}}"
+    uuid: "{{ result.snapshot_uuid }}"
   register: result
 
 - name: Check snapshot status
   ansible.builtin.assert:
     that:
-      - result.response.name == "ansible-created-snapshot-on-{{cluster.cluster2.name}}"
+      - result.response.name == "ansible-created-snapshot-on-{{ cluster.cluster2.name }}"
       - result.response.status == "ACTIVE"
     fail_msg: "fail: Unable to check snapshot status post internal replication"
     success_msg: "pass: snapshot replicated successfully on secondary cluster"
 
 - name: Create a snapshot on cluster1
   ntnx_ndb_database_snapshots:
-    name: "ansible-created-snapshot-on-{{cluster.cluster1.name}}"
-    time_machine_uuid: "{{time_machine.uuid}}"
+    name: ansible-created-snapshot-on-{{ cluster.cluster1.name }}
+    time_machine_uuid: "{{ time_machine.uuid }}"
     clusters:
-      - uuid: "{{cluster.cluster1.uuid}}"
+      - uuid: "{{ cluster.cluster1.uuid }}"
   register: result
 
 - name: Check snapshot status on cluster2
@@ -119,7 +119,7 @@
       - result.response is defined
       - result.snapshot_uuid is defined
       - result.changed == true
-      - result.response.name == "ansible-created-snapshot-on-{{cluster.cluster1.name}}"
+      - result.response.name == "ansible-created-snapshot-on-{{ cluster.cluster1.name }}"
       - result.failed == false
       - result.response.nxClusterId == cluster.cluster1.uuid
     fail_msg: "fail: Unable to create snapshot on primary cluster"
@@ -127,36 +127,25 @@
 
 - name: Setting snapshot uuid for replication
   ansible.builtin.set_fact:
-    snapshot_uuid: "{{result.snapshot_uuid}}"
+    snapshot_uuid: "{{ result.snapshot_uuid }}"
 
 - name: Create spec for replicating snapshot from cluster1 on cluster2
   check_mode: true
   ntnx_ndb_replicate_database_snapshots:
-    snapshot_uuid: "{{snapshot_uuid}}"
+    snapshot_uuid: "{{ snapshot_uuid }}"
     clusters:
-      - name: "{{cluster.cluster2.name}}"
+      - name: "{{ cluster.cluster2.name }}"
     expiry_days: 20
   register: result
 
-- name: Set expected result
+- name: Setting expected result for snapshot replication
   ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "lcmConfig":
-              {
-                "snapshotLCMConfig":
-                  { "expiryDetails": { "expireInDays": 20 } },
-              },
-            "nxClusterIds": ["{{cluster.cluster2.uuid}}"],
-          },
-        "snapshot_uuid": "{{snapshot_uuid}}",
-      }
-
+      changed: false
+      error:
+      failed: false
+      response: { lcmConfig: { snapshotLCMConfig: { expiryDetails: { expireInDays: 20 } } }, nxClusterIds: ["{{ cluster.cluster2.uuid }}"] }
+      snapshot_uuid: "{{ snapshot_uuid }}"
 - name: Check snapshot replication spec
   ansible.builtin.assert:
     that:
@@ -166,9 +155,9 @@
 
 - name: Replicate snapshot on cluster2
   ntnx_ndb_replicate_database_snapshots:
-    snapshot_uuid: "{{snapshot_uuid}}"
+    snapshot_uuid: "{{ snapshot_uuid }}"
     clusters:
-      - name: "{{cluster.cluster2.name}}"
+      - name: "{{ cluster.cluster2.name }}"
     expiry_days: 20
   register: result
 
@@ -178,17 +167,17 @@
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
-    fail_msg: "snapshot replication failed"
-    success_msg: "snapshot replicated successfully"
+    fail_msg: snapshot replication failed
+    success_msg: snapshot replicated successfully
 
 #######################
 
 - name: Delete time machine
   ntnx_ndb_time_machine_clusters:
     state: absent
-    time_machine_uuid: "{{time_machine.uuid}}"
+    time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
-      uuid: "{{cluster.cluster2.uuid}}"
+      uuid: "{{ cluster.cluster2.uuid }}"
   register: result
 
 - name: Check delete status
@@ -208,11 +197,11 @@
 #####################
 - name: Create data access instance with cluster uuid and sla uuid
   ntnx_ndb_time_machine_clusters:
-    time_machine_uuid: "{{time_machine.uuid}}"
+    time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
-      uuid: "{{cluster.cluster2.uuid}}"
+      uuid: "{{ cluster.cluster2.uuid }}"
     sla:
-      uuid: "{{sla.uuid}}"
+      uuid: "{{ sla.uuid }}"
   register: out
 
 - name: Check listing status
@@ -228,11 +217,11 @@
 #######################
 - name: Update data access instance with sla uuid
   ntnx_ndb_time_machine_clusters:
-    time_machine_uuid: "{{time_machine.uuid}}"
+    time_machine_uuid: "{{ time_machine.uuid }}"
     cluster:
-      uuid: "{{cluster.cluster2.uuid}}"
+      uuid: "{{ cluster.cluster2.uuid }}"
     sla:
-      uuid: "{{sla2.uuid}}"
+      uuid: "{{ sla2.uuid }}"
   register: result
 
 - name: Check listing status
@@ -250,9 +239,9 @@
 - name: Delete time machine
   ntnx_ndb_time_machine_clusters:
     state: absent
-    time_machine_uuid: "{{result.time_machine_uuid}}"
+    time_machine_uuid: "{{ result.time_machine_uuid }}"
     cluster:
-      uuid: "{{cluster.cluster2.uuid}}"
+      uuid: "{{ cluster.cluster2.uuid }}"
   register: result
 
 - name: Check delete status
@@ -264,4 +253,5 @@
       - result.failed == false
     fail_msg: "fail: Unable to remove cluster from time machine"
     success_msg: "pass: cluster from time machine removed successfully"
+
 #######################

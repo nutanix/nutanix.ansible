@@ -1,20 +1,20 @@
-- name: Start testing ntnx_vms_clone
+- name: Start testing VM clone
   ansible.builtin.debug:
     msg: Start testing VM clone
 
 - name: Create Cloud-init Script file
   ansible.builtin.copy:
-    dest: "init_cloud.yml"
     mode: "0644"
+    dest: "init_cloud.yml"
     content: |
       #cloud-config
       chpasswd:
         list: |
           root: "{{ password }}"
-          expire: false
+          expire: False
       fqdn: myNutanixVM
 
-- name: VM with minimum requirements to clone
+- name: VM with minimum requiremnts to clone
   ntnx_vms:
     state: present
     name: integration_test_clone_vm
@@ -34,8 +34,8 @@
     that:
       - vm.response is defined
       - vm.response.status.state == 'COMPLETE'
-    fail_msg: 'Fail: Unable to create VM with minimum requirements to clone '
-    success_msg: 'Succes: VM with minimum requirements created successfully '
+    fail_msg: "Fail: Unable to create VM with minimum requiremnts to clone "
+    success_msg: "Succes: VM with minimum requiremnts created successfully "
 ##############################
 
 - name: Clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
@@ -58,7 +58,7 @@
     fail_msg: "Fail: Unable to clone vm and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off"
     success_msg: "Succes: VM cloned  successfully and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off "
 
-- name: Add vm_uuid to todelete list
+- name: Adding VM uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vm_uuid ] }}"
 ##############################
@@ -80,7 +80,7 @@
     fail_msg: "Fail: Unable to clone vm while it is off "
     success_msg: "Succes: VM cloned  successfully "
 
-- name: Add vm_uuid to todelete list
+- name: Adding VM uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vm_uuid ] }}"
 ###########################################
@@ -123,7 +123,7 @@
     fail_msg: "Fail: Unable to clone vm vm  with script"
     success_msg: "Succes: VM cloned   with script  successfully "
 
-- name: Add vm_uuid to todelete list
+- name: Adding VM uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vm_uuid ] }}"
 ###########################################

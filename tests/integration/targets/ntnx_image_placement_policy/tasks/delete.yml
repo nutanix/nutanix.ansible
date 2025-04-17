@@ -1,7 +1,7 @@
 ---
 - name: Start ntnx_image_placement_policy delete tests
   ansible.builtin.debug:
-    msg: start ntnx_image_placement_policy delete tests
+    msg: Start ntnx_image_placement_policy delete tests
 
 - name: Create image placement policy with minimal spec for delete tests
   ntnx_image_placement_policy:

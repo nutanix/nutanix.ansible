@@ -1,17 +1,17 @@
 ---
 - name: Set module defaults
   module_defaults:
-      group/nutanix.ncp.ntnx:
-          nutanix_host: "{{ ip }}"
-          nutanix_username: "{{ username }}"
-          nutanix_password: "{{ password }}"
-          validate_certs: "{{ validate_certs }}"
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
   block:
-      - name: Import app_rule.yml
-        ansible.builtin.import_tasks: "app_rule.yml"
-      - name: Import isolation_rule.yml
-        ansible.builtin.import_tasks: "isolation_rule.yml"
-      - name: Import quarantine_rule.yml
-        ansible.builtin.import_tasks: "quarantine_rule.yml"
-      - name: Import vdi.yml
-        ansible.builtin.import_tasks: "vdi.yml"
+    - name: Import app_rule.yml
+      ansible.builtin.import_tasks: "app_rule.yml"
+    - name: Import isolation_rule.yml
+      ansible.builtin.import_tasks: "isolation_rule.yml"
+    - name: Import quarantine_rule.yml
+      ansible.builtin.import_tasks: "quarantine_rule.yml"
+    - name: Import vdi.yml
+      ansible.builtin.import_tasks: "vdi.yml"

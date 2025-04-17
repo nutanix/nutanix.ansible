@@ -1,8 +1,8 @@
 ---
-- name: Set module defaults
+- name: Ntnx_foundation_bmc_ipmi_config integration tests
   module_defaults:
-      nutanix.ncp.ntnx_foundation_bmc_ipmi_config:
-          nutanix_host: "{{ foundation_host }}"
+    nutanix.ncp.ntnx_foundation_bmc_ipmi_config:
+      nutanix_host: "{{ foundation_host }}"
   block:
-      - name: Import "configure_ipmi.yml"
-        ansible.builtin.import_tasks: "configure_ipmi.yml"
+    - name: Import Tasks
+      ansible.builtin.import_tasks: configure_ipmi.yml

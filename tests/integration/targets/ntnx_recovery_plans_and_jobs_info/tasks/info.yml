@@ -1,6 +1,6 @@
 - name: Start testing ntnx_recovery_plans_info
   ansible.builtin.debug:
-    msg: start testing ntnx_recovery_plans_info
+    msg: Start testing ntnx_recovery_plans_info
 
 ##################################################
 - name: Create recovery plan with network
@@ -79,11 +79,9 @@
     fail_msg: "Unable to list all recovery plan"
     success_msg: "recovery plans info obtained successfully"
 
-- name: Set test plan name
+- name: Setting recovery plan name and uuid
   ansible.builtin.set_fact:
     test_plan_name: "{{result.response.entities.1.status.name}}"
-- name: Set test plan uuid
-  ansible.builtin.set_fact:
     test_plan_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
 ##################################################
@@ -151,7 +149,7 @@
 
 - name: Start testing ntnx_recovery_plan_jobs_info
   ansible.builtin.debug:
-    msg: start testing ntnx_recovery_plan_jobs_info
+    msg: Start testing ntnx_recovery_plan_jobs_info
 
 - name: Run validation job, eventually will fail due to some tech issues but can be used for info tests.
   ntnx_recovery_plan_jobs:
@@ -202,13 +200,11 @@
     fail_msg: "Unable to list all recovery plan jobs"
     success_msg: "recovery plans jobs info obtained successfully"
 
-- name: Set test job name
+- name: Setting recovery plan job name and uuid
   ansible.builtin.set_fact:
     test_job_name: "{{result.response.entities.1.status.name}}"
-- name: Set test job uuid
-  ansible.builtin.set_fact:
     test_job_uuid: "{{result.response.entities.1.metadata.uuid}}"
-- name: Set test job name
+- name: Setting recovery plan job name
   ansible.builtin.set_fact:
     test_job_name_1: "{{ test_job.error.status.name }}"
 

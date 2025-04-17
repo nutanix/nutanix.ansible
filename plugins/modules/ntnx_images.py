@@ -21,7 +21,9 @@ options:
         - if C(state) is set to C(present) and C(image_uuid) is given then it will update that image.
         - if C(state) is set to C(present) then C(image_uuid), C(source_uri) and C(source_path) are mutually exclusive.
         - if C(state) is set to C(present) then C(image_uuid) or C(name) needs to be set.
-        - If C(state) is set to C(absent) and if the item exists, then item is removed.
+        - >-
+            If C(state) is set to C(absent) and if the item exists, then
+            item is removed.
         choices:
         - present
         - absent
@@ -37,9 +39,7 @@ options:
         required: false
         type: str
     image_uuid:
-        description:
-            - Image uuid
-            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
+        description: Image uuid
         type: str
         required: false
     desc:
@@ -67,7 +67,7 @@ options:
         type: dict
     remove_categories:
         description:
-            - set this flag to remove detach all categories attached to image
+            - set this flag to remove dettach all categories attached to image
             - mutually_exclusive with C(categories)
         type: bool
         required: false
@@ -133,89 +133,89 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: create image from local workstation
-    ntnx_images:
-      state: "present"
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      source_path: "/Users/ubuntu/Downloads/alpine-virt-3.8.1-x86_64.iso"
-      clusters:
-        - name: "temp_cluster"
-      categories:
-        AppFamily:
-          - Backup
-      checksum:
-        checksum_algorithm: SHA_1
-        checksum_value: 44610efd741a3ab4a548a81ea94869bb8b692977
-      name: "ansible-test-with-categories-mapping"
-      desc: "description"
-      image_type: "ISO_IMAGE"
-      version:
-        product_name: "test"
-        product_version: "1.2.0"
-      wait: true
+- name: create image from local workstation
+  ntnx_images:
+    state: "present"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    source_path: "/Users/ubuntu/Downloads/alpine-virt-3.8.1-x86_64.iso"
+    clusters:
+      - name: "temp_cluster"
+    categories:
+      AppFamily:
+        - Backup
+    checksum:
+      checksum_algorithm: SHA_1
+      checksum_value: 44610efd741a3ab4a548a81ea94869bb8b692977
+    name: "ansible-test-with-categories-mapping"
+    desc: "description"
+    image_type: "ISO_IMAGE"
+    version:
+      product_name: "test"
+      product_version: "1.2.0"
+    wait: true
 
-  - name: create image from with source as remote server file location
-    ntnx_images:
-      state: "present"
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      source_uri: "https://cloud-images.ubuntu.com/releases/xenial/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
-      clusters:
-        - name: "temp_cluster"
-      categories:
-        AppFamily:
-          - Backup
-      checksum:
-        checksum_algorithm: SHA_1
-        checksum_value: 44610efd741a3ab4a548a81ea94869bb8b692977
-      name: "ansible-test-with-categories-mapping"
-      desc: "description"
-      image_type: "DISK_IMAGE"
-      version:
-        product_name: "test"
-        product_version: "1.2.0"
-      wait: true
+- name: create image from with source as remote server file location
+  ntnx_images:
+    state: "present"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    source_uri: "https://cloud-images.ubuntu.com/releases/xenial/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
+    clusters:
+      - name: "temp_cluster"
+    categories:
+      AppFamily:
+        - Backup
+    checksum:
+      checksum_algorithm: SHA_1
+      checksum_value: 44610efd741a3ab4a548a81ea94869bb8b692977
+    name: "ansible-test-with-categories-mapping"
+    desc: "description"
+    image_type: "DISK_IMAGE"
+    version:
+      product_name: "test"
+      product_version: "1.2.0"
+    wait: true
 
-  - name: override categories of existing image
-    ntnx_images:
-      state: "present"
-      image_uuid: "<image-uuid>"
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      categories:
-        AppTier:
-          - Default
-        AppFamily:
-          - Backup
-      wait: true
+- name: override categories of existing image
+  ntnx_images:
+    state: "present"
+    image_uuid: "<image-uuid>"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    categories:
+      AppTier:
+        - Default
+      AppFamily:
+        - Backup
+    wait: true
 
-  - name: detach all categories from existing image
-    ntnx_images:
-      state: "present"
-      image_uuid: "00000000-0000-0000-0000-000000000000"
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      remove_categories: true
-      wait: true
+- name: dettach all categories from existing image
+  ntnx_images:
+    state: "present"
+    image_uuid: "00000000-0000-0000-0000-000000000000"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    remove_categories: true
+    wait: true
 
-  - name: delete existing image
-    ntnx_images:
-      state: "absent"
-      image_uuid: "00000000-0000-0000-0000-000000000000"
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      wait: true
+- name: delete existing image
+  ntnx_images:
+    state: "absent"
+    image_uuid: "00000000-0000-0000-0000-000000000000"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    wait: true
 """
 
 RETURN = r"""
@@ -308,8 +308,8 @@ image_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.images import Image  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.images import Image  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

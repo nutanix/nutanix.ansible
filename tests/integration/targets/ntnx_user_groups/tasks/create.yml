@@ -1,7 +1,7 @@
 ---
-- name: Start testing ntnx_user_groups and info
+- name: Start ntnx_user_groups and info tests
   ansible.builtin.debug:
-    msg: start ntnx_user_groups and info tests
+    msg: Start ntnx_user_groups and info tests
 
 - name: Create user  group
   ntnx_user_groups:
@@ -27,7 +27,7 @@
     fail_msg: "Unable to create user  group  "
     success_msg: "user  group created successfully"
 
-- name: Set user group uuid to delete
+- name: Set user group uuid to delete later
   ansible.builtin.set_fact:
     user_group_to_delete: "{{result.user_group_uuid}}"
 
@@ -46,11 +46,9 @@
     fail_msg: "Unable to list all user groups"
     success_msg: "User groups info obtained successfully"
 
-- name: Set user group name
+- name: Setting user group name and uuid
   ansible.builtin.set_fact:
     test_user_group_name: "{{user_groups.response.entities.0.status.resources.display_name}}"
-- name: Set user group uuid
-  ansible.builtin.set_fact:
     test_user_group_uuid: "{{user_groups.response.entities.0.metadata.uuid}}"
 
 ##################################################
@@ -146,17 +144,16 @@
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
-    success_msg: "user  group deleted successfully"
-
+    success_msg: "user  group deletd successfully"
 # - name: create user group with idp
 #   ntnx_user_groups:
 #     idp:
 #       idp_uuid: "{{identity_provider_uuid}}"
-#       group_name: Test_group_987
+#       group_name: test_group_987
 #   register: result
 #   ignore_errors: true
 
-# - name: Check listing status
+# - name: check listing status
 #   ansible.builtin.assert:
 #     that:
 #       - result.response is defined
@@ -168,14 +165,14 @@
 #     fail_msg: "Unable to create user  group with idp  "
 #     success_msg: "user  group with idp created successfully"
 
-# - name: Delete user group
+# - name: delete user group
 #   ntnx_user_groups:
 #     state: absent
 #     user_group_uuid: "{{result.user_group_uuid}}"
 #   register: result
 #   ignore_errors: true
 
-# - name: Check listing status
+# - name: check listing status
 #   ansible.builtin.assert:
 #     that:
 #       - result.response is defined

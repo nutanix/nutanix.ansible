@@ -1,7 +1,7 @@
 ---
-- name: Start testing ntnx_service_groups_info
+- name: Start ntnx_service_groups_info tests
   ansible.builtin.debug:
-    msg: "start ntnx_service_groups_info tests"
+    msg: "Start ntnx_service_groups_info tests"
 
 - name: Test getting all service groups
   ntnx_service_groups_info:

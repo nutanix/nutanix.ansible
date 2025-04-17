@@ -1,28 +1,28 @@
 ---
-- name: Start testing ntnx_karbon_registries_info
+- name: Start ntnx_karbon_registries_info tests
   ansible.builtin.debug:
-    msg: "start ntnx_karbon_registries_info tests"
+    msg: start ntnx_karbon_registries_info tests
 
 - name: Generate random registry_name
   ansible.builtin.set_fact:
-    random_name1: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
-    random_name2: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+    random_name1: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
+    random_name2: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
-- name: Set registry name
+- name: Set registry_name
   ansible.builtin.set_fact:
-    registry_name1: "{{random_name1[0]}}"
-    registry_name2: "{{random_name2[0]}}"
+    registry_name1: "{{ random_name1[0] }}"
+    registry_name2: "{{ random_name2[0] }}"
 
 - name: Create registries for tests
   ntnx_karbon_registries:
-    name: "{{registry_name1}}"
-    url: "{{url}}"
+    name: "{{ registry_name1 }}"
+    url: "{{ url }}"
   register: r1
 
 - name: Create registries for tests
   ntnx_karbon_registries:
-    name: "{{registry_name2}}"
-    url: "{{url}}"
+    name: "{{ registry_name2 }}"
+    url: "{{ url }}"
   register: r2
 
 ################################################################
@@ -38,8 +38,8 @@
       - registries.response | length > 0
       - registries.failed == false
       - registries.changed == false
-    fail_msg: "Unable to list all registries"
-    success_msg: "registries listed successfully"
+    fail_msg: Unable to list all registries
+    success_msg: registries listed successfully
 ################################################################
 - name: Test getting particular register using name
   ntnx_karbon_registries_info:
@@ -53,21 +53,21 @@
       - result.response.uuid == "{{ registries.response[1].uuid }}"
       - result.response.name == "{{ registries.response[1].name }}"
       - result.response.endpoint == "{{ registries.response[1].endpoint }}"
-    fail_msg: "Unable to get particular registry"
-    success_msg: "register info obtained successfully"
+    fail_msg: Unable to get particular registry
+    success_msg: register info obtained successfully
 
 ################################################################
 
 - name: Delete registry entry
   ntnx_karbon_registries:
-    name: "{{registry_name1}}"
+    name: "{{ registry_name1 }}"
     state: absent
   register: result
   ignore_errors: true
 
 - name: Delete registry
   ntnx_karbon_registries:
-    name: "{{registry_name2}}"
+    name: "{{ registry_name2 }}"
     state: absent
   register: result
   ignore_errors: true

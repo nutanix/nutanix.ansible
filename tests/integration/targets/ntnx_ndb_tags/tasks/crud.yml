@@ -1,37 +1,31 @@
 ---
-- name: Start testing ntnx_ndb_tags
+- name: Start ntnx_ndb_tags
   ansible.builtin.debug:
-    msg: "start ntnx_ndb_tags"
+    msg: start ntnx_ndb_tags
 
 - name: Generate random name
   ansible.builtin.set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
-- name: Set tag names
+- name: Define variables for tag name
   ansible.builtin.set_fact:
-    tag_name: "{{random_name[0]}}"
-    tag_name_updated: "{{random_name[0]}}-updated"
+    tag_name: "{{ random_name[0] }}"
+    tag_name_updated: "{{ random_name[0] }}-updated"
 
 ############################# Create tests ########################
 
 - name: Check mode for creation
   check_mode: true
   ntnx_ndb_tags:
-    name: "{{tag_name}}-timemachine"
+    name: "{{ tag_name }}-timemachine"
     desc: tag-created-by-ansible
     tag_value_required: true
     entity_type: TIME_MACHINE
   register: result
 
-- name: Set expected_response
+- name: Define variable for expected response
   ansible.builtin.set_fact:
-    expected_response:
-      {
-        "description": "tag-created-by-ansible",
-        "entityType": "TIME_MACHINE",
-        "name": "{{tag_name}}-timemachine",
-        "required": true,
-      }
+    expected_response: { description: tag-created-by-ansible, entityType: TIME_MACHINE, name: "{{ tag_name }}-timemachine", required: true }
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -40,12 +34,12 @@
       - result.changed == false
       - result.response == expected_response
 
-    fail_msg: "Unable to create spec for tag"
-    success_msg: "Spec generated successfully for tag creation"
+    fail_msg: Unable to create spec for tag
+    success_msg: Spec generated successfully for tag creation
 
 - name: Create tags for clone
   ntnx_ndb_tags:
-    name: "{{tag_name}}-clone"
+    name: "{{ tag_name }}-clone"
     desc: tag-created-by-ansible
     tag_value_required: true
     entity_type: CLONE
@@ -57,21 +51,21 @@
       - result.response is defined
       - result.changed == true
       - result.uuid is defined
-      - result.response.name ==  "{{tag_name}}-clone"
+      - result.response.name ==  "{{ tag_name }}-clone"
       - result.response.entityType == "CLONE"
       - result.response.status == "ENABLED"
       - result.response.description == "tag-created-by-ansible"
       - result.response.required == true
-    fail_msg: "Tag for clone create failed"
-    success_msg: "Tag for clone created successfully"
+    fail_msg: Tag for clone create failed
+    success_msg: Tag for clone created successfully
 
-- name: Set clone tag uuid
+- name: Define variable for clone tag
   ansible.builtin.set_fact:
-    clone_tag_uuid: "{{result.uuid}}"
+    clone_tag_uuid: "{{ result.uuid }}"
 
 - name: Create tags for database server
   ntnx_ndb_tags:
-    name: "{{tag_name}}-database-server"
+    name: "{{ tag_name }}-database-server"
     desc: tag-created-by-ansible
     tag_value_required: true
     entity_type: DATABASE_SERVER
@@ -83,21 +77,21 @@
       - result.response is defined
       - result.changed == true
       - result.uuid is defined
-      - result.response.name ==  "{{tag_name}}-database-server"
+      - result.response.name ==  "{{ tag_name }}-database-server"
       - result.response.entityType == "DATABASE_SERVER"
       - result.response.status == "ENABLED"
       - result.response.description == "tag-created-by-ansible"
       - result.response.required == true
-    fail_msg: "Tag for database server create failed"
-    success_msg: "Tag for clone created successfully"
+    fail_msg: Tag for database server create failed
+    success_msg: Tag for clone created successfully
 
-- name: Set database server tag uuid
+- name: Define variable for database server tag
   ansible.builtin.set_fact:
-    db_server_tag_uuid: "{{result.uuid}}"
+    db_server_tag_uuid: "{{ result.uuid }}"
 
 - name: Create tags for time machine
   ntnx_ndb_tags:
-    name: "{{tag_name}}-time-machine"
+    name: "{{ tag_name }}-time-machine"
     desc: tag-created-by-ansible
     tag_value_required: true
     entity_type: TIME_MACHINE
@@ -109,29 +103,29 @@
       - result.response is defined
       - result.changed == true
       - result.uuid is defined
-      - result.response.name ==  "{{tag_name}}-time-machine"
+      - result.response.name ==  "{{ tag_name }}-time-machine"
       - result.response.entityType == "TIME_MACHINE"
       - result.response.status == "ENABLED"
       - result.response.description == "tag-created-by-ansible"
       - result.response.required == true
-    fail_msg: "Tag for time machine create failed"
-    success_msg: "Tag for time machine created successfully"
+    fail_msg: Tag for time machine create failed
+    success_msg: Tag for time machine created successfully
 
-- name: Set time machine tag uuid
+- name: Define variable for time machine tag
   ansible.builtin.set_fact:
-    time_machine_tag_uuid: "{{result.uuid}}"
+    time_machine_tag_uuid: "{{ result.uuid }}"
 
 - name: Create tags for databases
   ntnx_ndb_tags:
-    name: "{{tag_name}}-database"
+    name: "{{ tag_name }}-database"
     desc: tag-created-by-ansible
     tag_value_required: false
     entity_type: DATABASE
   register: result
 
-- name: Set database tag uuid
+- name: Define variable for database tag
   ansible.builtin.set_fact:
-    database_tag_uuid: "{{result.uuid}}"
+    database_tag_uuid: "{{ result.uuid }}"
 
 - name: Check create status
   ansible.builtin.assert:
@@ -139,24 +133,24 @@
       - result.response is defined
       - result.changed == true
       - result.uuid is defined
-      - result.response.name ==  "{{tag_name}}-database"
+      - result.response.name ==  "{{ tag_name }}-database"
       - result.response.required == false
       - result.response.entityType == "DATABASE"
       - result.response.status == "ENABLED"
-    fail_msg: "Tag create for databases failed"
-    success_msg: "Tag created successfully"
+    fail_msg: Tag create for databases failed
+    success_msg: Tag created successfully
 
 - name: Create another tag for databases
   ntnx_ndb_tags:
-    name: "{{tag_name}}-database2"
+    name: "{{ tag_name }}-database2"
     desc: tag-created-by-ansible
     tag_value_required: false
     entity_type: DATABASE
   register: result
 
-- name: Set database tag uuid
+- name: Define variable for database tag
   ansible.builtin.set_fact:
-    database_tag2_uuid: "{{result.uuid}}"
+    database_tag2_uuid: "{{ result.uuid }}"
 
 - name: Check create status
   ansible.builtin.assert:
@@ -164,12 +158,12 @@
       - result.response is defined
       - result.changed == true
       - result.uuid is defined
-      - result.response.name ==  "{{tag_name}}-database2"
+      - result.response.name ==  "{{ tag_name }}-database2"
       - result.response.required == false
       - result.response.entityType == "DATABASE"
       - result.response.status == "ENABLED"
-    fail_msg: "Tag create for databases failed"
-    success_msg: "Tag created successfully"
+    fail_msg: Tag create for databases failed
+    success_msg: Tag created successfully
 
 ################################# Info Module tests ##########################
 
@@ -184,12 +178,12 @@
       - result.changed == false
       - result.failed == false
       - result.response | length > 1
-    fail_msg: "Fetching all tags failed"
-    success_msg: "All tags obtained successfully"
+    fail_msg: Fetching all tags failed
+    success_msg: All tags obtained successfully
 
 - name: Get tag based on uuid
   ntnx_ndb_tags_info:
-    uuid: "{{database_tag_uuid}}"
+    uuid: "{{ database_tag_uuid }}"
   register: result
 
 - name: Check info status
@@ -199,14 +193,14 @@
       - result.changed == false
       - result.failed == false
       - result.response.entityType == "DATABASE"
-      - result.response.id == "{{database_tag_uuid}}"
-    fail_msg: "get tag based on uuid failed"
-    success_msg: "tag based on uuid obtained successfully"
+      - result.response.id == "{{ database_tag_uuid }}"
+    fail_msg: get tag based on uuid failed
+    success_msg: tag based on uuid obtained successfully
 
 - name: Get all tags based on DATABASE entity type
   ntnx_ndb_tags_info:
     filters:
-      entity_type: "DATABASE"
+      entity_type: DATABASE
   register: result
 
 - name: Check info status
@@ -217,13 +211,13 @@
       - result.failed == false
       - result.response | length > 1
       - result.response[0].entityType == "DATABASE"
-    fail_msg: "get all tags based on DATABASE entity type failed"
-    success_msg: "all tags based on DATABASE entity type obtained successfully"
+    fail_msg: get all tags based on DATABASE entity type failed
+    success_msg: all tags based on DATABASE entity type obtained successfully
 
 - name: Get all tags based on CLONE entity type
   ntnx_ndb_tags_info:
     filters:
-      entity_type: "CLONE"
+      entity_type: CLONE
   register: result
 
 - name: Check info status
@@ -234,13 +228,13 @@
       - result.failed == false
       - result.response | length > 0
       - result.response[0].entityType == "CLONE"
-    fail_msg: "get all tags based on CLONE entity type failed"
-    success_msg: "all tags based on CLONE entity type obtained successfully"
+    fail_msg: get all tags based on CLONE entity type failed
+    success_msg: all tags based on CLONE entity type obtained successfully
 
 - name: Get all tags based on TIME_MACHINE entity type
   ntnx_ndb_tags_info:
     filters:
-      entity_type: "TIME_MACHINE"
+      entity_type: TIME_MACHINE
   register: result
 
 - name: Check info status
@@ -251,13 +245,13 @@
       - result.failed == false
       - result.response | length > 0
       - result.response[0].entityType == "TIME_MACHINE"
-    fail_msg: "get all tags based on TIME_MACHINE entity type failed"
-    success_msg: "all tags based on TIME_MACHINE entity type obtained successfully"
+    fail_msg: get all tags based on TIME_MACHINE entity type failed
+    success_msg: all tags based on TIME_MACHINE entity type obtained successfully
 
 - name: Get all tags based on DATABASE_SERVER entity type
   ntnx_ndb_tags_info:
     filters:
-      entity_type: "DATABASE_SERVER"
+      entity_type: DATABASE_SERVER
   register: result
 
 - name: Check info status
@@ -268,14 +262,14 @@
       - result.failed == false
       - result.response | length > 0
       - result.response[0].entityType == "DATABASE_SERVER"
-    fail_msg: "get all tags based on DATABASE_SERVER entity type failed"
-    success_msg: "all tags based on DATABASE_SERVER entity type obtained successfully"
+    fail_msg: get all tags based on DATABASE_SERVER entity type failed
+    success_msg: all tags based on DATABASE_SERVER entity type obtained successfully
 
 - name: Get tag based on DATABASE entity type and name
   ntnx_ndb_tags_info:
     filters:
-      entity_type: "DATABASE"
-    name: "{{tag_name}}-database2"
+      entity_type: DATABASE
+    name: "{{ tag_name }}-database2"
   register: result
 
 - name: Check info status
@@ -285,22 +279,22 @@
       - result.changed == false
       - result.failed == false
       - result.response.entityType == "DATABASE"
-      - result.response.name == "{{tag_name}}-database2"
-    fail_msg: "get tag based on DATABASE entity type and name failed"
-    success_msg: "tags based on DATABASE entity type and name obtained successfully"
+      - result.response.name == "{{ tag_name }}-database2"
+    fail_msg: get tag based on DATABASE entity type and name failed
+    success_msg: tags based on DATABASE entity type and name obtained successfully
 ################################## Update tests ########################
 
-- name: Set database tag uuid
+- name: Define variable for tag update
   ansible.builtin.set_fact:
-    tag_uuid: "{{database_tag_uuid}}"
+    tag_uuid: "{{ database_tag_uuid }}"
 
 - name: Update tag
   ntnx_ndb_tags:
-    uuid: "{{tag_uuid}}"
-    name: "{{tag_name_updated}}"
+    uuid: "{{ tag_uuid }}"
+    name: "{{ tag_name_updated }}"
     desc: tag-created-by-ansible-updated
     tag_value_required: true
-    status: "DEPRECATED"
+    status: DEPRECATED
   register: result
 
 - name: Check update status
@@ -309,20 +303,20 @@
       - result.response is defined
       - result.changed == true
       - result.uuid is defined
-      - result.response.name == "{{tag_name_updated}}"
+      - result.response.name == "{{ tag_name_updated }}"
       - result.response.required == true
       - result.response.entityType == "DATABASE"
       - result.response.status == "DEPRECATED"
-    fail_msg: "tag update failed"
-    success_msg: "tag updated successfully"
+    fail_msg: tag update failed
+    success_msg: tag updated successfully
 
 - name: Idempotency checks
   ntnx_ndb_tags:
-    uuid: "{{tag_uuid}}"
-    name: "{{tag_name_updated}}"
+    uuid: "{{ tag_uuid }}"
+    name: "{{ tag_name_updated }}"
     desc: tag-created-by-ansible-updated
     tag_value_required: true
-    status: "DEPRECATED"
+    status: DEPRECATED
   register: result
 
 - name: Check idempotency status
@@ -331,14 +325,14 @@
       - result.changed == false
       - result.failed == false
       - "'Nothing to change' in result.msg"
-    fail_msg: "tag got updated"
-    success_msg: "tag update skipped due to no state changes"
+    fail_msg: tag got updated
+    success_msg: tag update skipped due to no state changes
 
 - name: Enable tag
   ntnx_ndb_tags:
-    uuid: "{{tag_uuid}}"
+    uuid: "{{ tag_uuid }}"
     tag_value_required: true
-    status: "ENABLED"
+    status: ENABLED
   register: result
 
 - name: Check status changes
@@ -346,17 +340,17 @@
     that:
       - result.response is defined
       - result.changed == true
-      - result.uuid == "{{tag_uuid}}"
+      - result.uuid == "{{ tag_uuid }}"
       - result.response.status == "ENABLED"
-    fail_msg: "Enabling tag failed"
-    success_msg: "Tag enabled successfully"
+    fail_msg: Enabling tag failed
+    success_msg: Tag enabled successfully
 
 ############################################################### delete tests ########################################
 
 - name: Delete the database based tag
   ntnx_ndb_tags:
-    state: "absent"
-    uuid: "{{database_tag_uuid}}"
+    state: absent
+    uuid: "{{ database_tag_uuid }}"
   register: result
 
 - name: Check delete status
@@ -365,13 +359,13 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-    fail_msg: "Unable to delete tag"
-    success_msg: "tag deleted successfully"
+    fail_msg: Unable to delete tag
+    success_msg: tag deleted successfully
 
 - name: Delete the database based tag
   ntnx_ndb_tags:
-    state: "absent"
-    uuid: "{{database_tag2_uuid}}"
+    state: absent
+    uuid: "{{ database_tag2_uuid }}"
   register: result
 
 - name: Check delete status
@@ -380,13 +374,13 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-    fail_msg: "Unable to delete tag"
-    success_msg: "tag deleted successfully"
+    fail_msg: Unable to delete tag
+    success_msg: tag deleted successfully
 
 - name: Delete the clone tag
   ntnx_ndb_tags:
-    state: "absent"
-    uuid: "{{clone_tag_uuid}}"
+    state: absent
+    uuid: "{{ clone_tag_uuid }}"
   register: result
 
 - name: Check delete status
@@ -395,13 +389,13 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-    fail_msg: "Unable to delete tag"
-    success_msg: "tag deleted successfully"
+    fail_msg: Unable to delete tag
+    success_msg: tag deleted successfully
 
 - name: Delete the time machine based tag
   ntnx_ndb_tags:
-    state: "absent"
-    uuid: "{{time_machine_tag_uuid}}"
+    state: absent
+    uuid: "{{ time_machine_tag_uuid }}"
   register: result
 
 - name: Check delete status
@@ -410,13 +404,13 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-    fail_msg: "Unable to delete tag"
-    success_msg: "tag deleted successfully"
+    fail_msg: Unable to delete tag
+    success_msg: tag deleted successfully
 
 - name: Delete the database server based tag
   ntnx_ndb_tags:
-    state: "absent"
-    uuid: "{{db_server_tag_uuid}}"
+    state: absent
+    uuid: "{{ db_server_tag_uuid }}"
   register: result
 
 - name: Check delete status
@@ -425,5 +419,5 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-    fail_msg: "Unable to delete tag"
-    success_msg: "tag deleted successfully"
+    fail_msg: Unable to delete tag
+    success_msg: tag deleted successfully

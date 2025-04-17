@@ -1,7 +1,7 @@
 ---
 - name: Start ntnx_address_groups create tests
   ansible.builtin.debug:
-    msg: start ntnx_address_groups create tests
+    msg: Start ntnx_address_groups create tests
 
 - name: Generate random project_name
   ansible.builtin.set_fact:
@@ -33,7 +33,7 @@
     that:
       - result.response is defined
       - result.address_group_uuid is defined
-      - result.changed == True
+      - result.changed == true
       - result.response.name == "{{ag1}}"
       - result.response.description == "test-ansible-group-1-desc"
       - result.response.ip_address_block_list[0].ip == "10.1.1.0"
@@ -44,7 +44,7 @@
     fail_msg: "Unable to create address group"
     success_msg: "Address group created susccessfully"
 
-- name: Set address group uuid to delete
+- name: Setting address group uuid to delete variable
   ansible.builtin.set_fact:
     todelete: '{{ result["address_group_uuid"] }}'
 
@@ -109,4 +109,4 @@
 
 - name: Reset todelete list
   ansible.builtin.set_fact:
-    todelete: []
+    todelete: ""

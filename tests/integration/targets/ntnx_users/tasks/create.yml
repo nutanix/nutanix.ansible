@@ -1,7 +1,7 @@
 ---
-- name: Start testing ntnx_users
+- name: Start ntnx_users tests
   ansible.builtin.debug:
-    msg: "start ntnx_users  tests"
+    msg: "Start ntnx_users tests"
 ##################################################
 - name: Create local user  with check mode
   ntnx_users:
@@ -45,7 +45,7 @@
     fail_msg: "fail"
     success_msg: "pass"
 
-- name: Add user uuid to todelete list
+- name: Adding user uuid to todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
@@ -94,13 +94,13 @@
     fail_msg: "fail"
     success_msg: "pass"
 
-- name: Add user uuid to todelete list
+- name: Adding user uuid to todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.user_uuid ] }}"
 #################################################
 - name: Create local user  not in the directory_service
   ntnx_users:
-    principal_name: Wrong_name
+    principal_name: wrong_name
     directory_service_uuid: "{{directory_service_uuid}}"
     project:
       uuid: "{{project.uuid}}"
@@ -121,14 +121,14 @@
     fail_msg: "Fail: create wrong user"
     success_msg: "Pass: Returned as expected"
 #################################################
-# - name: Create idp user
+# - name: create idp user
 #   ntnx_users:
 #     identity_provider_uuid: "{{identity_provider_uuid}}"
 #     username: testing_user
 #   register: result
 #   ignore_errors: true
 
-# - name: Check listing status
+# - name: check listing status
 #   ansible.builtin.assert:
 #     that:
 #       - result.response is defined

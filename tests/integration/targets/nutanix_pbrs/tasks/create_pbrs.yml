@@ -31,7 +31,7 @@
     success_msg: " PBR with vpc name with source network and destination external with reroute action and  udp port rangelist created successfully "
 
 - name: Adding PBR to delete list
-  ansible.builtin.ansible.builtin.set_fact:
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ################################################################################################################################
 - name: Create PBR with vpc name, any source, any destination, any protocol and deny action
@@ -60,7 +60,7 @@
     success_msg: " PBR with vpc name, any source, any destination, any protocol and deny action created successfully "
 
 - name: Adding PBR to delete list
-  ansible.builtin.ansible.builtin.set_fact:
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ###############################################################################################
 - name: Create PBR with vpc uuid, any source, external destination and allow action with protocol number
@@ -89,7 +89,7 @@
     success_msg: " Create PBR with vpc uuid, any source, external destination and allow action with protocol number created successfully "
 
 - name: Adding PBR to delete list
-  ansible.builtin.ansible.builtin.set_fact:
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 #######################################################################################################
 - name: Create PBR with vpc name with source external and destination network with reroute action and tcp port rangelist
@@ -122,7 +122,7 @@
     success_msg: " PBR with vpc name with source external and destination network with reroute action and tcp port rangelist created successfully "
 
 - name: Adding PBR to delete list
-  ansible.builtin.ansible.builtin.set_fact:
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##########################################################################################################
 - name: Create PBR with vpc name with source external and destination network with reroute action and any tcp port rangelist
@@ -155,7 +155,7 @@
     success_msg: " PBR with vpc name with source external and destination network with reroute action and any tcp ports rangelist created successfully "
 
 - name: Adding PBR to delete list
-  ansible.builtin.ansible.builtin.set_fact:
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ###########################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and udp port rangelist
@@ -188,7 +188,7 @@
     success_msg: " PBR with vpc name with source network and destination external with reroute action and udp port rangelist created successfully "
 
 - name: Adding PBR to delete list
-  ansible.builtin.ansible.builtin.set_fact:
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##############################################################################################################
 - name: Create PBR with vpc name, custom source network, external destination, reroute action and any udp ports
@@ -222,7 +222,7 @@
     success_msg: " PBR with vpc name with source network and destination external with reroute action and any udp ports created successfully "
 
 - name: Adding PBR to delete list
-  ansible.builtin.ansible.builtin.set_fact:
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##################################################################################################################
 - name: Create PBR with vpc name, source network, external destination, with reroute action and icmp
@@ -248,7 +248,7 @@
   ignore_errors: true
 
 - name: Adding PBR to delete list
-  ansible.builtin.ansible.builtin.set_fact:
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.pbr_uuid ] }}"
 ##################################################################################################################
 - name: Delete all created pbrs

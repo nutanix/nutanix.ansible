@@ -5,16 +5,16 @@
 
 - name: Create Dhcp ndb vlan with static Configuration
   ntnx_ndb_vlans:
-    name: "{{ndb_vlan.name}}"
+    name: "{{ ndb_vlan.name }}"
     vlan_type: DHCP
-    gateway: "{{ndb_vlan.gateway}}"
-    subnet_mask: "{{ndb_vlan.subnet_mask}}"
+    gateway: "{{ ndb_vlan.gateway }}"
+    subnet_mask: "{{ ndb_vlan.subnet_mask }}"
     ip_pools:
       - start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
         end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
-    primary_dns: "{{ndb_vlan.primary_dns}}"
-    secondary_dns: "{{ndb_vlan.secondary_dns}}"
-    dns_domain: "{{ndb_vlan.dns_domain}}"
+    primary_dns: "{{ ndb_vlan.primary_dns }}"
+    secondary_dns: "{{ ndb_vlan.secondary_dns }}"
+    dns_domain: "{{ ndb_vlan.dns_domain }}"
   register: result
   ignore_errors: true
   no_log: true
@@ -30,9 +30,9 @@
 # ###############################
 - name: Create static ndb vlan with missing Configuration
   ntnx_ndb_vlans:
-    name: "{{ndb_vlan.name}}"
+    name: "{{ ndb_vlan.name }}"
     vlan_type: Static
-    gateway: "{{ndb_vlan.gateway}}"
+    gateway: "{{ ndb_vlan.gateway }}"
   register: result
   ignore_errors: true
   no_log: true
@@ -49,10 +49,10 @@
 ###########
 - name: Create Dhcp ndb vlan
   ntnx_ndb_vlans:
-    name: "{{ndb_vlan.name}}"
+    name: "{{ ndb_vlan.name }}"
     vlan_type: DHCP
     cluster:
-      uuid: "{{cluster.cluster2.uuid}}"
+      uuid: "{{ cluster.cluster2.uuid }}"
   register: result
   ignore_errors: true
   no_log: true
@@ -64,30 +64,30 @@
       - result.changed == true
       - result.vlan_uuid is defined
       - result.failed == false
-      - result.response.name == "{{ndb_vlan.name}}"
+      - result.response.name == "{{ ndb_vlan.name }}"
       - result.response.type == "DHCP"
       - result.response.managed == false
-      - result.response.clusterId == "{{cluster.cluster2.uuid}}"
+      - result.response.clusterId == "{{ cluster.cluster2.uuid }}"
     fail_msg: "fail: Unable to create Dhcp ndb vlan"
     success_msg: "pass: create Dhcp ndb vlan finished successfully"
 
-- name: Add vlan_uuid to todelete list
+- name: Define variable todelete
   ansible.builtin.set_fact:
-    todelete: "{{ todelete + [  result.vlan_uuid ] }}"
+    todelete: "{{ todelete + [result.vlan_uuid] }}"
 ######################
 - name: Update dhcp ndb vlan with static Configuration
   ntnx_ndb_vlans:
-    vlan_uuid: "{{result.vlan_uuid}}"
-    gateway: "{{ndb_vlan.gateway}}"
-    subnet_mask: "{{ndb_vlan.subnet_mask}}"
+    vlan_uuid: "{{ result.vlan_uuid }}"
+    gateway: "{{ ndb_vlan.gateway }}"
+    subnet_mask: "{{ ndb_vlan.subnet_mask }}"
     ip_pools:
       - start_ip: "{{ndb_vlan.ip_pools.0.start_ip}}"
         end_ip: "{{ndb_vlan.ip_pools.0.end_ip}}"
       - start_ip: "{{ndb_vlan.ip_pools.1.start_ip}}"
         end_ip: "{{ndb_vlan.ip_pools.1.end_ip}}"
-    primary_dns: "{{ndb_vlan.primary_dns}}"
-    secondary_dns: "{{ndb_vlan.secondary_dns}}"
-    dns_domain: "{{ndb_vlan.dns_domain}}"
+    primary_dns: "{{ ndb_vlan.primary_dns }}"
+    secondary_dns: "{{ ndb_vlan.secondary_dns }}"
+    dns_domain: "{{ ndb_vlan.dns_domain }}"
   register: result
   ignore_errors: true
   no_log: true
@@ -118,9 +118,9 @@
       - result.changed is defined
       - result.changed == true
       - result.msg == "All items completed"
-    fail_msg: "unable to delete all created vlan's"
-    success_msg: "All vlan'sdeleted successfully"
+    fail_msg: unable to delete all created vlan's
+    success_msg: All vlan'sdeleted successfully
 
-- name: Reset todelete list
+- name: Define variable todelete
   ansible.builtin.set_fact:
     todelete: []

@@ -9,5 +9,5 @@
   block:
     - name: Import create_pbrs.yml
       ansible.builtin.import_tasks: "create_pbrs.yml"
-    - name: Import negative_scenarios.yml
+    - name: Import delete_pbrs.yml
       ansible.builtin.import_tasks: "negative_scenarios.yml"

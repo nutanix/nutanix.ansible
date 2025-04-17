@@ -1,6 +1,6 @@
 - name: Start testing ntnx_roles_info
   ansible.builtin.debug:
-    msg: start testing ntnx_roles_info
+    msg: Start testing ntnx_roles_info
 ##################################################
 
 - name: List roles
@@ -18,11 +18,9 @@
     fail_msg: "Unable to list all roles"
     success_msg: "roles info obtained successfully"
 
-- name: Set test role name variable
+- name: Setting role variables
   ansible.builtin.set_fact:
     test_role_name: "{{result.response.entities.1.status.name}}"
-- name: Set test role uuid variable
-  ansible.builtin.set_fact:
     test_role_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
 ##################################################

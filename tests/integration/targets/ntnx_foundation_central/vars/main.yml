@@ -1,1 +1,2 @@
-cluster_name: Test_cluster
+---
+cluster_name: test_cluster

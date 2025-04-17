@@ -1,9 +1,9 @@
 ---
 - name: Start ntnx_acps_info tests
   ansible.builtin.debug:
-    msg: "start ntnx_acps_info tests"
+    msg: "Start ntnx_acps_info tests"
 
-- name: Generate random acp_name
+- name: Generate random acp name
   ansible.builtin.set_fact:
     acp_name: "{{ query('community.general.random_string', upper=false, numbers=false, special=false)[0] }}"
 
@@ -16,7 +16,7 @@
       uuid: "{{ acp.role.uuid }}"
   register: acps
 
-- name: Add ACP uuid to todelete list
+- name: Adding acp to delete later
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  acps["response"]["metadata"]["uuid"] ] }}'
 

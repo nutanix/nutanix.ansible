@@ -5,15 +5,15 @@
 
 - name: Configure ipmi
   ntnx_foundation_bmc_ipmi_config:
-    ipmi_user: "{{bmc.ipmi_user}}"
-    ipmi_password: "{{bmc.ipmi_password}}"
-    ipmi_netmask: "{{bmc.ipmi_netmask}}"
-    ipmi_gateway: "{{bmc.ipmi_gateway}}"
+    ipmi_user: "{{ bmc.ipmi_user }}"
+    ipmi_password: "{{ bmc.ipmi_password }}"
+    ipmi_netmask: "{{ bmc.ipmi_netmask }}"
+    ipmi_gateway: "{{ bmc.ipmi_gateway }}"
     timeout: 100
     blocks:
       - nodes:
-          - ipmi_mac: "{{bmc.ipmi_mac}}"
-            ipmi_ip: "{{bmc.ipmi_ip}}"
+          - ipmi_mac: "{{ bmc.ipmi_mac }}"
+            ipmi_ip: "{{ bmc.ipmi_ip }}"
   register: result
 
 - name: Creation Status
@@ -24,5 +24,5 @@
       - result.changed==true
       - result.response.blocks.0.nodes.0.ipmi_configure_successful==true
       - result.response.blocks.0.nodes.0.ipmi_message is defined
-    fail_msg: "bmc ipmi configure was failed with error result.error"
-    success_msg: "bmc ipmi configure was successful"
+    fail_msg: bmc ipmi configure was failed with error result.error
+    success_msg: bmc ipmi configure was successfull

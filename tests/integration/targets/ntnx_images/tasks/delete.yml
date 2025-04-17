@@ -1,14 +1,14 @@
 ---
-- name: Start testing ntnx_images delete
+- name: Start ntnx_images delete tests
   ansible.builtin.debug:
-    msg: start ntnx_image delete tests
+    msg: Start ntnx_image delete tests
 
 - name: Create image with minimal spec and source uri for delete tests
   ntnx_images:
     state: present
     image_type: DISK_IMAGE
     source_uri: "{{ disk_image.url }}"
-    name: Integration-test-image-with-uri
+    name: integration-test-image-with-uri
     wait: true
   register: result
 

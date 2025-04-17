@@ -14,12 +14,12 @@
       - clones.failed == false
       - clones.changed == false
       - clones.response | length > 0
-    fail_msg: "Unable to list all era clones"
-    success_msg: "era clones listed successfully"
+    fail_msg: Unable to list all era clones
+    success_msg: era clones listed successfully
 ################################################################
 - name: Get era clones using it's name
   ntnx_ndb_clones_info:
-    name: "{{clones.response[0].name}}"
+    name: "{{ clones.response[0].name }}"
   register: result
 
 - name: Check listing status
@@ -28,13 +28,13 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name == "{{clones.response[0].name}}"
+      - result.response.name == "{{ clones.response[0].name }}"
     fail_msg: "Unable to get era clones using it's name  "
-    success_msg: "get  era clones using it's name  successfully"
+    success_msg: get  era clones using it's name  successfully
 ################################################################
 - name: List clones use id
   ntnx_ndb_clones_info:
-    uuid: "{{clones.response[0].id}}"
+    uuid: "{{ clones.response[0].id }}"
   register: result
 
 - name: Check listing status
@@ -43,14 +43,14 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name == "{{clones.response[0].name}}"
+      - result.response.name == "{{ clones.response[0].name }}"
     fail_msg: "Unable to get era clones using it's id  "
-    success_msg: "get  era clones using it's id  successfully"
+    success_msg: get  era clones using it's id  successfully
 ################################################################
 
 - name: Get era clones with incorrect name
   ntnx_ndb_clones_info:
-    name: "abcd"
+    name: abcd
   register: result
   no_log: true
   ignore_errors: true
@@ -61,5 +61,5 @@
       - result.error is defined
       - result.failed == true
       - result.changed == false
-    fail_msg: "module didn't errored out correctly when incorrect name is given"
-    success_msg: "module errored out correctly when incorrect name is given"
+    fail_msg: module didn't errored out correctly when incorrect name is given
+    success_msg: module errored out correctly when incorrect name is given

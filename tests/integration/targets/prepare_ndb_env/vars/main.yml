@@ -1,184 +1,184 @@
-# details for setup to be used in tests
-ndb_ip: "NDB_HOST_IP"
-ndb_username: "NDB_USERNAME"
-ndb_password: "NDB_PASSWORD"
+# # details for setup to be used in tests
+# ndb_ip: "NDB_HOST_IP"
+# ndb_username: "NDB_USERNAME"
+# ndb_password: "NDB_PASSWORD"
 
-# network profile for various ndb tests. All vars are related to NDB setup.
-network_profile:
-  name: "TEST_NETWORK_PROFILE_NAME"
-  uuid: "TEST_NETWORK_PROFILE_UUID"
-  single:
-    cluster:
-      name: "TEST_CLUSTER_NAME"
-    vlan_name: "TEST_VLAN_NAME"
-  HA:
-    cluster1:
-      name: "TEST_CLUSTER1_NAME"
-      vlan_name: "TEST_VLAN_NAME"
-      vlan_name2: "TEST_VLAN_NAME"
-    cluster2:
-      name: "TEST_CLUSTER2_NAME"
-      vlan_name: "TEST_VLAN_NAME"
-      vlan_name2: "TEST_VLAN_NAME"
+# # network profile for various ndb tests. All vars are related to NDB setup.
+# network_profile:
+#   name: "TEST_NETWORK_PROFILE_NAME"
+#   uuid: "TEST_NETWORK_PROFILE_UUID"
+#   single:
+#     cluster:
+#       name: "TEST_CLUSTER_NAME"
+#     vlan_name: "TEST_VLAN_NAME"
+#   HA:
+#     cluster1:
+#       name: "TEST_CLUSTER1_NAME"
+#       vlan_name: "TEST_VLAN_NAME"
+#       vlan_name2: "TEST_VLAN_NAME"
+#     cluster2:
+#       name: "TEST_CLUSTER2_NAME"
+#       vlan_name: "TEST_VLAN_NAME"
+#       vlan_name2: "TEST_VLAN_NAME"
 
-# profiles for single node postgres database instances
-software_profile:
-  name: "TEST_SOFTWARE_PROFILE_NAME"
-  uuid: "TEST_SOFTWARE_PROFILE_UUID"
-  latest_version_id: "TEST_LATEST_VERSION_ID"
+# # profiles for single node postgres database instances
+# software_profile:
+#   name: "TEST_SOFTWARE_PROFILE_NAME"
+#   uuid: "TEST_SOFTWARE_PROFILE_UUID"
+#   latest_version_id: "TEST_LATEST_VERSION_ID"
 
-compute_profile:
-  name: "TEST_COMPUTE_PROFILE_NAME"
-  uuid: "TEST_COMPUTE_PROFILE_UUID"
+# compute_profile:
+#   name: "TEST_COMPUTE_PROFILE_NAME"
+#   uuid: "TEST_COMPUTE_PROFILE_UUID"
 
-db_params_profile:
-  name: "TEST_DB_PARAMS_PROFILE_NAME"
-  uuid: "TEST_DB_PARAMS_PROFILE_UUID"
+# db_params_profile:
+#   name: "TEST_DB_PARAMS_PROFILE_NAME"
+#   uuid: "TEST_DB_PARAMS_PROFILE_UUID"
 
-static_network_profile:
-  name: "TEST_STATIC_NETWORK_PROFILE_NAME"
-  uuid: "TEST_STATIC_NETWORK_PROFILE_UUID"
+# static_network_profile:
+#   name: "TEST_STATIC_NETWORK_PROFILE_NAME"
+#   uuid: "TEST_STATIC_NETWORK_PROFILE_UUID"
 
-# for postgres HA related tests, requires different profiles then single node ones.
-postgres_ha_profiles:
-  static_network_profile:
-    name: "TEST_STATIC_HA_STATIC_NAME"
-    uuid: "TEST_STATIC_HA_STATIC_UUID"
+# # for postgres HA related tests, requires different profiles then single node ones.
+# postgres_ha_profiles:
+#   static_network_profile:
+#     name: "TEST_STATIC_HA_STATIC_NAME"
+#     uuid: "TEST_STATIC_HA_STATIC_UUID"
 
-  multicluster_network_profile:
-    name: "TEST_HA_MULTICLUSTER_NAME"
-    uuid: "TEST_HA_MULTICLUSTER_UUID"
+#   multicluster_network_profile:
+#     name: "TEST_HA_MULTICLUSTER_NAME"
+#     uuid: "TEST_HA_MULTICLUSTER_UUID"
 
-  software_profile:
-    name: "TEST_POSTGRES_SOFTWARE_PROFILE_NAME"
-    uuid: "TEST_POSTGRES_SOFTWARE_PROFILE_UUID"
-    latest_version_id: "TEST_LATEST_VERSION_ID"
+#   software_profile:
+#     name: "TEST_POSTGRES_SOFTWARE_PROFILE_NAME"
+#     uuid: "TEST_POSTGRES_SOFTWARE_PROFILE_UUID"
+#     latest_version_id: "TEST_LATEST_VERSION_ID"
 
-  compute_profile:
-    name: "TEST_COMPUTE_PROFILE_NAME"
-    uuid: "TEST_COMPUTE_PROFILE_UUID"
+#   compute_profile:
+#     name: "TEST_COMPUTE_PROFILE_NAME"
+#     uuid: "TEST_COMPUTE_PROFILE_UUID"
 
-  db_params_profile:
-    name: "TEST_POSTGRES_HA_PARAMS_NAME"
-    uuid: "TEST_POSTGRES_HA_PARAMS_UUID"
+#   db_params_profile:
+#     name: "TEST_POSTGRES_HA_PARAMS_NAME"
+#     uuid: "TEST_POSTGRES_HA_PARAMS_UUID"
 
-public_ssh_key: "TEST_PUBLIC_SSH_KEY"
+# public_ssh_key: "TEST_PUBLIC_SSH_KEY"
 
-# reference for existing maintenance window to be added in certain entities like database instance, etc.
-maintenance:
-  window_name: "TEST_MAINTENANCE_WINDOW_NAME"
-  window_uuid: "TEST_MAINTENANCE_WINDOW_UUID"
+# # reference for existing maintenance window to be added in certain entities like database instance, etc.
+# maintenance:
+#   window_name: "TEST_MAINTENANCE_WINDOW_NAME"
+#   window_uuid: "TEST_MAINTENANCE_WINDOW_UUID"
 
-# reference for existing sla to be used in certain entities like database instance, etc.
-sla:
-  name: "TEST_SLA_NAME"
-  uuid: "TEST_SLA_UUID"
+# # reference for existing sla to be used in certain entities like database instance, etc.
+# sla:
+#   name: "TEST_SLA_NAME"
+#   uuid: "TEST_SLA_UUID"
 
-# reference for existing sla to be used in certain entities like database instance, etc.
-sla2:
-  name: "TEST_SLA2_NAME"
-  uuid: "TEST_SLA2_UUID"
+# # reference for existing sla to be used in certain entities like database instance, etc.
+# sla2:
+#   name: "TEST_SLA2_NAME"
+#   uuid: "TEST_SLA2_UUID"
 
-# reference for clusters for various tests
-# cluster3 here is used for clusters crud tests
-cluster:
-  cluster1:
-    name: "TEST_CLUSTER1_NAME"
-    uuid: "TEST_CLUSTER1_UUID"
-  cluster2:
-    name: "TEST_CLUSTER2_NAME"
-    uuid: "TEST_CLUSTER2_UUID"
-  cluster3:
-    name: "TEST_CLUSTER3_NAME"
-    uuid: ""
-    desc: "TEST_CLUSTER3_DESC"
-    name_prefix: "TEST_CLUSTER3_NAME_PREFIX"
-    cluster_ip: "TEST_CLUSTER3_IP"
-    update_cluster_ip: "TEST_UPDATE_CLUSTER_IP"
-    cluster_credentials:
-      username: "TEST_CLUSTER_CREDENTIALS_USERNAME"
-      password: "TEST_CLUSTER_CREDENTIALS_PASSWORD"
-    agent_network:
-      dns_servers:
-        - "TEST_DNS_SERVER_1"
-        - "TEST_DNS_SERVER_2"
-      ntp_servers:
-        - "TEST_NTP_SERVER_1"
-        - "TEST_NTP_SERVER_2"
-        - "TEST_NTP_SERVER_3"
-        - "TEST_NTP_SERVER_4"
-      vlan_access:
-        prism_vlan:
-          vlan_name: "TEST_PRISM_VLAN_NAME"
-          vlan_type: "TEST_VLAN_TYPE"
-          static_ip: "TEST_STATIC_IP"
-          gateway: "TEST_GATEWAY"
-          subnet_mask: "TEST_SUBNET_MASK"
-    storage_container: "TEST_STORAGE_CONTAINER"
+# # reference for clusters for various tests
+# # cluster3 here is used for clusters crud tests
+# cluster:
+#   cluster1:
+#     name: "TEST_CLUSTER1_NAME"
+#     uuid: "TEST_CLUSTER1_UUID"
+#   cluster2:
+#     name: "TEST_CLUSTER2_NAME"
+#     uuid: "TEST_CLUSTER2_UUID"
+#   cluster3:
+#     name: "TEST_CLUSTER3_NAME"
+#     uuid: ""
+#     desc: "TEST_CLUSTER3_DESC"
+#     name_prefix: "TEST_CLUSTER3_NAME_PREFIX"
+#     cluster_ip: "TEST_CLUSTER3_IP"
+#     update_cluster_ip: "TEST_UPDATE_CLUSTER_IP"
+#     cluster_credentials:
+#       username: "TEST_CLUSTER_CREDENTIALS_USERNAME"
+#       password: "TEST_CLUSTER_CREDENTIALS_PASSWORD"
+#     agent_network:
+#       dns_servers:
+#         - "TEST_DNS_SERVER_1"
+#         - "TEST_DNS_SERVER_2"
+#       ntp_servers:
+#         - "TEST_NTP_SERVER_1"
+#         - "TEST_NTP_SERVER_2"
+#         - "TEST_NTP_SERVER_3"
+#         - "TEST_NTP_SERVER_4"
+#       vlan_access:
+#         prism_vlan:
+#           vlan_name: "TEST_PRISM_VLAN_NAME"
+#           vlan_type: "TEST_VLAN_TYPE"
+#           static_ip: "TEST_STATIC_IP"
+#           gateway: "TEST_GATEWAY"
+#           subnet_mask: "TEST_SUBNET_MASK"
+#     storage_container: "TEST_STORAGE_CONTAINER"
 
-# free IPs from cluster.cluster1 for HA related tests
-cluster_ips:
-  ip1: "TEST_IP_1"
-  ip2: "TEST_IP_2"
-  ip3: "TEST_IP_3"
-  ip4: "TEST_IP_4"
-  ip5: "TEST_IP_5"
-  vip: "TEST_VIP"
+# # free IPs from cluster.cluster1 for HA related tests
+# cluster_ips:
+#   ip1: "TEST_IP_1"
+#   ip2: "TEST_IP_2"
+#   ip3: "TEST_IP_3"
+#   ip4: "TEST_IP_4"
+#   ip5: "TEST_IP_5"
+#   vip: "TEST_VIP"
 
-# for new db server vms
-vm_password: "TEST_VM_PASSWORD"
-vm_username: "TEST_VM_USERNAME"
+# # for new db server vms
+# vm_password: "TEST_VM_PASSWORD"
+# vm_username: "TEST_VM_USERNAME"
 
-# existing db server VM reference for software profile tests
-db_server_vm:
-  name: "TEST_DB_SERVER_VM_NAME"
-  uuid: "TEST_DB_SERVER_VM_UUID"
+# # exitsing db server VM reference for software profile tests
+# db_server_vm:
+#   name: "TEST_DB_SERVER_VM_NAME"
+#   uuid: "TEST_DB_SERVER_VM_UUID"
 
-# existing tags for various entities
-entity_tags:
-  db_server_vm:
-    name: "TEST_DB_SERVER_VM_TAGS_NAME"
-    uuid: "TEST_DB_SERVER_VM_TAGS_UUID"
-  databases:
-    name: "TEST_DATABASES_NAME"
-    uuid: "TEST_DATABASES_UUID"
-  clones:
-    name: "TEST_CLONES_NAME"
-    uuid: "TEST_CLONES_UUID"
+# # existing tags for various entities
+# tags:
+#   db_server_vm:
+#     name: "TEST_DB_SERVER_VM_TAGS_NAME"
+#     uuid: "TEST_DB_SERVER_VM_TAGS_UUID"
+#   databases:
+#     name: "TEST_DATABASES_NAME"
+#     uuid: "TEST_DATABASES_UUID"
+#   clones:
+#     name: "TEST_CLONES_NAME"
+#     uuid: "TEST_CLONES_UUID"
 
-# existing time machine info for data access management and snapshot related tests
-time_machine:
-  name: "TEST_TIME_MACHINE_NAME"
-  uuid: "TEST_TIME_MACHINE_UUID"
-  snapshot_uuid: ""
+# # existing time machine info for data access management and snapshot related tests
+# time_machine:
+#   name: "TEST_TIME_MACHINE_NAME"
+#   uuid: "TEST_TIME_MACHINE_UUID"
+#   snapshot_uuid: ""
 
-# for brownfield import of vms
-postgres:
-  software_home: "/usr/pgsql-10.4"
+# # for brownfield import of vms
+# postgres:
+#   software_home: "/usr/pgsql-10.4"
 
-# ip for creating database vm using static network
-vm_ip: "TEST_VM_IP"
+# # ip for creating database vm using static network
+# vm_ip: "TEST_VM_IP"
 
-# info for vlan related tests
-ndb_vlan:
-  name: "TEST_VLAN_IN_CLUSTER"
-  ip_pools:
-    - start_ip: "TEST_START_IP_1"
-      end_ip: "TEST_END_IP_1"
-    - start_ip: "TEST_START_IP_2"
-      end_ip: "TEST_END_IP_2"
-    - start_ip: "TEST_START_IP_3"
-      end_ip: "TEST_END_IP_3"
-    - start_ip: "TEST_START_IP_4"
-      end_ip: "TEST_END_IP_4"
-  gateway: "TEST_GATEWAY"
-  subnet_mask: "TEST_SUBNET_MASK"
-  primary_dns: "TEST_PRIMARY_DNS"
-  secondary_dns: "TEST_SECONDARY_DNS"
-  dns_domain: "TEST_DNS_DOMAIN"
-  updated_gateway: "TEST_UPDATED_GATEWAY"
-  updated_subnet_mask: "TEST_UPDATED_SUBNET_MASK"
-  updated_primary_dns: "TEST_UPDATED_PRIMARY_DNS"
-  updated_secondary_dns: "TEST_UPDATED_SECONDARY_DNS"
+# # info for vlan related tests
+# ndb_vlan:
+#   name: "TEST_VLAN_IN_CLUSTER"
+#   ip_pools:
+#     - start_ip: "TEST_START_IP_1"
+#       end_ip: "TEST_END_IP_1"
+#     - start_ip: "TEST_START_IP_2"
+#       end_ip: "TEST_END_IP_2"
+#     - start_ip: "TEST_START_IP_3"
+#       end_ip: "TEST_END_IP_3"
+#     - start_ip: "TEST_START_IP_4"
+#       end_ip: "TEST_END_IP_4"
+#   gateway: "TEST_GATEWAY"
+#   subnet_mask: "TEST_SUBNET_MASK"
+#   primary_dns: "TEST_PRIMARY_DNS"
+#   secondary_dns: "TEST_SECONDARY_DNS"
+#   dns_domain: "TEST_DNS_DOMAIN"
+#   updated_gateway: "TEST_UPDATED_GATEWAY"
+#   updated_subnet_mask: "TEST_UPDATED_SUBNET_MASK"
+#   updated_primary_dns: "TEST_UPDATED_PRIMARY_DNS"
+#   updated_secondary_dns: "TEST_UPDATED_SECONDARY_DNS"
 
-todelete: []
+# todelete: []

@@ -1,7 +1,7 @@
-- name: Create VM with minimum requirements to update
+- name: Create VM with minimum requiremnts to update
   ntnx_vms:
     state: present
-    name: Update vm
+    name: update vm
     cluster:
       name: "{{ cluster.name }}"
     vcpus: 4
@@ -43,8 +43,8 @@
       - vm.response.status.state == 'COMPLETE'
       - vm.vm_uuid
       - vm.task_uuid
-    fail_msg: ' Unable to create VM with minimum requirements '
-    success_msg: ' VM with minimum requirements created successfully '
+    fail_msg: " Unable to create VM with minimum requiremnts "
+    success_msg: " VM with minimum requiremnts created successfully "
 
 - name: Update vm without change any value
   ntnx_vms:
@@ -78,7 +78,7 @@
 - name: Update Status
   ansible.builtin.assert:
     that:
-      - result.failed == True
+      - result.failed == true
       - result.changed == false
       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
     fail_msg: "Fail : decrease the value for  vcpus while while vm is on "
@@ -94,7 +94,7 @@
 - name: Update Status
   ansible.builtin.assert:
     that:
-      - result.failed == True
+      - result.failed == true
       - result.changed == false
       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
     fail_msg: "Fail : decrease the value for  memory_gb while while vm is on "
@@ -110,7 +110,7 @@
 - name: Update Status
   ansible.builtin.assert:
     that:
-      - result.failed == True
+      - result.failed == true
       - result.changed == false
       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
     fail_msg: "Fail : decrease the value for  cores_per_vcpu while while vm is on "
@@ -120,7 +120,7 @@
   ansible.builtin.debug:
     msg: Start negative update scenarios tests for disks
 
-############ negative test : Decrease size
+############ negative test : Decrase size
 - name: Update VM by decreasing the size of the disk that contains the image with SCSI bus type
   ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
@@ -242,7 +242,7 @@
     fail_msg: " Fail: decreasing the size of the IDE disk"
     success_msg: " Success: returned error as expected "
 ################
-- name: Update VM by change the bus type of ide disk
+- name: Update VM by change ths bus type of ide disk
   ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
@@ -256,11 +256,11 @@
   ansible.builtin.assert:
     that:
       - result.msg == ' parameters are mutually exclusive: uuid|bus found in disks '
-      - result.failed == True
-    success_msg: ' Success: returned error as expected '
-    fail_msg: ' Fail: Update VM by change the bus type of ide disk successfully '
+      - result.failed == true
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail: Update VM by change ths bus type of ide disk sucessfuly "
 ############
-- name: Update VM by adding IDE disk while vm is on
+- name: Update VM by adding  IDE disk while vm is on
   ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
     disks:
@@ -273,7 +273,7 @@
 - name: Update Status
   ansible.builtin.assert:
     that:
-      - result.failed == True
+      - result.failed == true
       - result.changed == false
       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
     fail_msg: "Fail : update vm by add ide disk while vm is on  "
@@ -292,7 +292,7 @@
 - name: Update Status
   ansible.builtin.assert:
     that:
-      - result.failed == True
+      - result.failed == true
       - result.changed == false
       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
     fail_msg: "Fail : update vm by add SATA disk while vm is on  "
@@ -309,7 +309,7 @@
 - name: Update Status
   ansible.builtin.assert:
     that:
-      - result.failed == True
+      - result.failed == true
       - result.changed == false
       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
     fail_msg: "Fail : update vm by by removing IDE disks while vm is on   "
@@ -327,7 +327,7 @@
 - name: Update Status
   ansible.builtin.assert:
     that:
-      - result.failed == True
+      - result.failed == true
       - result.changed == false
       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
     fail_msg: "Fail : update vm by by removing IDE disks while vm is on   "
@@ -345,7 +345,7 @@
 - name: Update Status
   ansible.builtin.assert:
     that:
-      - result.failed == True
+      - result.failed == true
       - result.changed == false
       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
     fail_msg: "Fail : update vm by by removing PCI disks while vm is on   "
@@ -363,7 +363,7 @@
 - name: Update Status
   ansible.builtin.assert:
     that:
-      - result.failed == True
+      - result.failed == true
       - result.changed == false
       - result.msg == "To make these changes, the VM should be restarted, but 'force_power_off' is False"
     fail_msg: "Fail : update vm by by removing SATA disks while vm is on   "

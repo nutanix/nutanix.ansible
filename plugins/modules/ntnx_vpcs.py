@@ -62,51 +62,50 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create min VPC
+  ntnx_vpcs:
+    validate_certs: false
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: MinVPC
+    external_subnets:
+      - subnet_name: "{{ external_subnet.name }}"
 
-  - name: Create min VPC
-    ntnx_vpcs:
-      validate_certs: False
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: MinVPC
-      external_subnets:
-        - subnet_name: "{{ external_subnet.name }}"
+- name: Create VPC with dns_servers
+  ntnx_vpcs:
+    validate_certs: false
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: vpc_with_dns_servers
+    dns_servers: "{{ dns_servers }}"
 
-  - name: Create VPC with dns_servers
-    ntnx_vpcs:
-      validate_certs: False
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: vpc_with_dns_servers
-      dns_servers: "{{ dns_servers }}"
+- name: Create VPC with all specfactions
+  ntnx_vpcs:
+    validate_certs: false
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: vpc_with_add_specfactions
+    external_subnets:
+      - subnet_name: "{{ external_subnet.name }}"
+    dns_servers: "{{ dns_servers }}"
+    routable_ips:
+      - network_ip: "{{ routable_ips.network_ip }}"
+        network_prefix: "{{ routable_ips.network_prefix }}"
 
-  - name: Create VPC with all specfactions
-    ntnx_vpcs:
-      validate_certs: False
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      name: vpc_with_add_specfactions
-      external_subnets:
-        - subnet_name: "{{ external_subnet.name }}"
-      dns_servers: "{{ dns_servers }}"
-      routable_ips:
-        - network_ip: "{{ routable_ips.network_ip }}"
-          network_prefix:  "{{ routable_ips.network_prefix }}"
-
-  - name: Delete VPC
-    ntnx_vpcs:
-      state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      vpc_uuid: "{{ vpc_uuid }}"
+- name: Delete VPC
+  ntnx_vpcs:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    vpc_uuid: "{{ vpc_uuid }}"
 """
 
 RETURN = r"""
@@ -201,9 +200,9 @@ task_uuid:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.vpcs import Vpc  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.vpcs import Vpc  # noqa: E402
 
 
 def get_module_spec():

@@ -1,6 +1,6 @@
 - name: Create app security rule with inbound and outbound list
   ntnx_security_rules:
-    name: Test_app_rule
+    name: test_app_rule
     app_rule:
       target_group:
         categories:
@@ -52,7 +52,7 @@
             ip: 192.168.1.0
           description: test description
         - address:
-            name: Dest
+            name: dest
       outbounds:
         - categories:
             AppFamily:
@@ -67,6 +67,7 @@
     policy_hitlog: true
   register: result
   ignore_errors: true
+
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -127,7 +128,7 @@
     success_msg: "pass : delete app security rule successfully"
 - name: Create app security rule with allow all inbound and outbound list
   ntnx_security_rules:
-    name: Test_app_rule
+    name: test_app_rule
     app_rule:
       target_group:
         categories:

@@ -1,8 +1,8 @@
-- name: Reset todelete list
+- name: Initialize todelete list
   ansible.builtin.set_fact:
     todelete: []
 
-- name: Creat another VM with same name
+- name: Creat anohter VM with same name
   ntnx_vms:
     name: "{{ vm.name }}"
     cluster:
@@ -16,10 +16,10 @@
     that:
       - output.response is defined
       - output.response.status.state == 'COMPLETE'
-    fail_msg: ' Unable to create VM with minimum requirements '
-    success_msg: ' VM with minimum requirements created successfully '
+    fail_msg: " Unable to create VM with minimum requiremnts "
+    success_msg: " VM with minimum requiremnts created successfully "
 
-- name: Add VM to todelete list
+- name: Adding VM uuid to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  output["response"]["metadata"]["uuid"] ] }}'
   when: output.response.status.state == 'COMPLETE'

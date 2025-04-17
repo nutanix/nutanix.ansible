@@ -1,7 +1,7 @@
 ---
-- name: Start ntnx_address_groups delete tests
+- name: Start ntnx_address_groups create tests
   ansible.builtin.debug:
-    msg: start ntnx_address_groups delete tests
+    msg: Start ntnx_address_groups delete tests
 
 - name: Generate random project_name
   ansible.builtin.set_fact:
@@ -14,6 +14,7 @@
 - name: Set address group names
   ansible.builtin.set_fact:
     ag1: "{{random_name}}{{suffix_name}}1"
+
 
 - name: Create address group
   ntnx_address_groups:
@@ -29,7 +30,7 @@
   ansible.builtin.assert:
     that:
       - test_ag.response is defined
-      - test_ag.changed == True
+      - test_ag.changed == true
     fail_msg: "Unable to create address group"
     success_msg: "address group created susccessfully"
 
@@ -45,7 +46,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == True
+      - result.changed == true
 
     fail_msg: "address group delete failed"
     success_msg: "address group deleted successfully"

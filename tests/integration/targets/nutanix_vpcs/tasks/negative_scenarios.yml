@@ -1,4 +1,5 @@
-- name: Start Negative Testing
+---
+- name: Started Negative Creation Cases
   ansible.builtin.debug:
     msg: "Started Negative Creation Cases"
 
@@ -13,7 +14,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
       - result.msg=="Failed generating vpc spec"
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail VPC created successfully with unknown subnet name "
@@ -29,7 +30,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
       - result.status_code=="500"
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail VPC created successfully with unknown subnet name "
@@ -49,7 +50,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
       - result.status_code=="500"
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail VPC created successfully with unknown subnet name "
@@ -76,6 +77,6 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail deleting vpc with missing  uuid "

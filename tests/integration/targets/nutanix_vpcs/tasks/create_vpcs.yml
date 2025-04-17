@@ -28,7 +28,7 @@
     fail_msg: " Unable to create Min vpc with external subnet uuid "
     success_msg: " Min vpc with external subnet uuid created successfully "
 
-- name: Add VPC to todelete list
+- name: Adding vpc uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################
@@ -40,7 +40,7 @@
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- name: Reset todelete list
+- name: Remove all vpcs from todelete list
   ansible.builtin.set_fact:
     todelete: []
 ##########################################################
@@ -62,7 +62,7 @@
     fail_msg: " Unable to create vpc with routable_ips "
     success_msg: " VPC with routable ips created successfully "
 
-- name: Add VPC to todelete list
+- name: Adding vpc uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################
@@ -86,7 +86,7 @@
     fail_msg: " Unable to create vpc with routable_ips and external subnet "
     success_msg: " VPC with routable ips and external subnet created successfully "
 
-- name: Add VPC to todelete list
+- name: Adding vpc uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################
@@ -99,7 +99,7 @@
   register: result
   ignore_errors: true
 
-- name: Add VPC to todelete list
+- name: Adding vpc uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################
@@ -111,7 +111,7 @@
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- name: Reset todelete list
+- name: Remove all vpcs from todelete list
   ansible.builtin.set_fact:
     todelete: []
 ##########################################################
@@ -136,7 +136,7 @@
     fail_msg: " Unable to create vpc all specfactions "
     success_msg: " VPC with all specfactions created successfully "
 
-- name: Add VPC to todelete list
+- name: Adding vpc uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.vpc_uuid ] }}"
 ##########################################################

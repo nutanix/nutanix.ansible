@@ -2,10 +2,11 @@
 - name: Prepare the environment
   hosts: localhost
   gather_facts: false
+
   tasks:
     - name: Include var file
       ansible.builtin.include_vars: ../vars/main.yml
-    - name: Set facts
+    - name: Set environment variables
       ansible.builtin.set_fact:
         ip: "{{lookup('env', 'NUTANIX_HOST')  }}"
         username: "{{lookup('env', 'NUTANIX_USERNAME')  }}"
@@ -29,19 +30,19 @@
         validate_certs: false
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"
-        name: "{{external_nat_subnets.name}}"
+        name: "{{external_nat_subnets[0].name}}"
         external_subnet:
-          vlan_id: "{{external_nat_subnets.vlan_id}}"
+          vlan_id: "{{external_nat_subnets[0].vlan_id}}"
           enable_nat: true
           cluster:
             name: "{{ cluster.name }}"
           ipam:
-            network_ip: "{{ external_nat_subnets.network_ip }}"
-            network_prefix: "{{ external_nat_subnets.network_prefix }}"
-            gateway_ip: "{{ external_nat_subnets.gateway_ip_address }}"
+            network_ip: "{{ external_nat_subnets[0].network_ip }}"
+            network_prefix: "{{ external_nat_subnets[0].network_prefix }}"
+            gateway_ip: "{{ external_nat_subnets[0].gateway_ip_address }}"
             ip_pools:
-              - start_ip: "{{ external_nat_subnets.dhcp.start_address }}"
-                end_ip: "{{ external_nat_subnets.dhcp.end_address }}"
+              - start_ip: "{{ external_nat_subnets[0].dhcp.start_address }}"
+                end_ip: "{{ external_nat_subnets[0].dhcp.end_address }}"
       register: result
     - name: Insert external subnet configuration block to vars
       ansible.builtin.blockinfile:
@@ -49,7 +50,7 @@
         marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 1"
         block: |
           external_nat_subnet:
-            name: "{{external_nat_subnets.name}}"
+            name: "{{external_nat_subnets[0].name}}"
             uuid: "{{result.subnet_uuid}}"
 
     - name: Create min VPC with external_subnet uuid
@@ -86,7 +87,7 @@
         vlan_subnet:
           vlan_id: 373
           virtual_switch:
-            name: Vs0
+            name: vs0
           cluster:
             name: "{{ cluster.name }}"
           ipam:
@@ -164,50 +165,60 @@
             name: "{{vm_name}}"
             uuid: "{{result.vm_uuid}}"
 
-    #   # - name: Create VM with static subnet for dr tests
-    #   #   nutanix.ncp.ntnx_vms:
-    #   #     state: present
-    #   #     nutanix_host: "{{ ip }}"
-    #   #     nutanix_username: "{{ username }}"
-    #   #     nutanix_password: "{{ password }}"
-    #   #     validate_certs: false
-    #   #     name: "{{dr_vm_name}}"
-    #   #     categories:
-    #   #       Environment:
-    #   #         - Staging
-    #   #         - Testing
-    #   #     cluster:
-    #   #       uuid: "{{ cluster.uuid }}"
-    #   #     networks:
-    #   #         - is_connected: true
-    #   #           subnet:
-    #   #             name: "{{static_subnet_name}}"
-    #   #     vcpus: 1
-    #   #     cores_per_vcpu: 1
-    #   #     memory_gb: 1
-    #   #   register: result
+    # - name: create VM with static subnet for dr tests
+    #   nutanix.ncp.ntnx_vms:
+    #     state: present
+    #     nutanix_host: "{{ ip }}"
+    #     nutanix_username: "{{ username }}"
+    #     nutanix_password: "{{ password }}"
+    #     validate_certs: false
+    #     name: "{{dr_vm_name}}"
+    #     categories:
+    #       Environment:
+    #         - Staging
+    #         - Testing
+    #     cluster:
+    #       uuid: "{{ cluster.uuid }}"
+    #     networks:
+    #         - is_connected: true
+    #           subnet:
+    #             name: "{{static_subnet_name}}"
+    #     vcpus: 1
+    #     cores_per_vcpu: 1
+    #     memory_gb: 1
+    #   register: result
 
-    #   # - name: Insert vm configuration block to var file
-    #   #   ansible.builtin.blockinfile:
-    #   #     path: ../vars/main.yml
-    #   #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
-    #   #     block: |
-    #   #         dr_vm:
-    #   #           name: "{{dr_vm_name}}"
-    #   #           uuid: "{{result.vm_uuid}}"
+    # - name: Insert vm configuration block to var file
+    #   ansible.builtin.blockinfile:
+    #     path: ../vars/main.yml
+    #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
+    #     block: |
+    #         dr_vm:
+    #           name: "{{dr_vm_name}}"
+    #           uuid: "{{result.vm_uuid}}"
 
     - name: Downloading disk image for image related tests
       ansible.builtin.get_url:
         mode: "0644"
         url: "{{ disk_image.url }}"
         dest: "{{ disk_image.dest }}"
+    #   # - name: create address group for network security policy related tests
+    #   #   nutanix.ncp.ntnx_address_groups:
+    #   #     state: present
+    #   #     name: dest
+    #   #     desc: dest
+    #   #     subnets:
+    #   #       - network_ip: "10.1.1.0"
+    #   #         network_prefix: 24
 
-  # - name: Create address group for network security policy related tests
-  #   nutanix.ncp.ntnx_address_groups:
-  #     state: present
-  #     name: Dest
-  #     desc: dest
-  #     subnets:
-  #       - network_ip: "10.1.1.0"
-  #         network_prefix: 24
-  #   ignore_errors: true
+    - name: Downloading xml content for saml tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ xml_content.url }}"
+        dest: "{{ xml_content.dest }}"
+
+    - name: Downloading unattendxml file for windows tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ unattendxml.url }}"
+        dest: "{{ unattendxml.dest }}"

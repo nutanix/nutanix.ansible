@@ -1,5 +1,5 @@
 ---
-- name: Set module defaults
+- name: Initializing variables
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
@@ -7,5 +7,5 @@
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
   block:
-    - name: Import "list_subnets.yml"
+    - name: Import list_subnets.yml
       ansible.builtin.import_tasks: "list_subnets.yml"

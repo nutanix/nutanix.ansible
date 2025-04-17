@@ -1,14 +1,14 @@
 ---
 - name: Start ntnx_roles delete tests
   ansible.builtin.debug:
-    msg: start ntnx_roles delete tests
+    msg: Start ntnx_roles delete tests
 
 - name: Get Some permissions for test
   ntnx_permissions_info:
     length: 3
   register: result
 
-- name: Set test permission uuid
+- name: Setting permission variables
   ansible.builtin.set_fact:
     test_permission_1_uuid: "{{ result.response.entities[0].metadata.uuid }}"
 

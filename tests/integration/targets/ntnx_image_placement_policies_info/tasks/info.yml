@@ -1,7 +1,7 @@
 ---
-- name: Start testing ntnx_image_placement_policies_info
+- name: Start ntnx_image_placement_policies_info tests
   ansible.builtin.debug:
-    msg: "start ntnx_image_placement_policies_info tests"
+    msg: "Start ntnx_image_placement_policies_info tests"
 
 - name: Create image placement policy
   ntnx_image_placement_policy:
@@ -27,11 +27,11 @@
         - Default
   register: policy_2
 
-- name: Add policies to delete list
+- name: Adding policies to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  policy_1["response"]["metadata"]["uuid"] ] }}'
 
-- name: Add policies to delete list
+- name: Adding policies to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  policy_2["response"]["metadata"]["uuid"] ] }}'
 

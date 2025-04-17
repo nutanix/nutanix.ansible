@@ -3,7 +3,7 @@
   ansible.builtin.debug:
     msg: Start testing protection policies crud tests
 
-######################### CREATE Protection Policy tests ##########################
+############################################ CREATE Protection Policy tests #########################
 - name: Create protection rule with synchronous schedule and check mode
   check_mode: true
   ntnx_protection_rules:
@@ -174,27 +174,18 @@
       - result.response.status.resources.availability_zone_connectivity_list[0]["source_availability_zone_index"] == 0
       - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["snapshot_type"] == "CRASH_CONSISTENT"
       - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 3600
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]
-        ["local_snapshot_retention_policy"]["num_snapshots"] == 1
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]
-        ["remote_snapshot_retention_policy"]["rollup_retention_policy"]["snapshot_interval_type"] == "HOURLY"
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]
-        ["remote_snapshot_retention_policy"]["rollup_retention_policy"]["multiple"] == 2
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]
-        ["snapshot_type"] == "CRASH_CONSISTENT"
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]
-        ["recovery_point_objective_secs"] == 3600
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]
-        ["local_snapshot_retention_policy"]["num_snapshots"] == 2
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]
-        ["remote_snapshot_retention_policy"]["num_snapshots"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[0]\
+        ["snapshot_schedule_list"][0]["local_snapshot_retention_policy"]["num_snapshots"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[0]\
+        ["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["rollup_retention_policy"]["snapshot_interval_type"] == "HOURLY"
+      - result.response.status.resources.availability_zone_connectivity_list[0]\
+        ["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["rollup_retention_policy"]["multiple"] == 2
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["snapshot_type"] == "CRASH_CONSISTENT"
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 3600
+      - result.response.status.resources.availability_zone_connectivity_list[1]\
+        ["snapshot_schedule_list"][0]["local_snapshot_retention_policy"]["num_snapshots"] == 2
+      - result.response.status.resources.availability_zone_connectivity_list[1]\
+        ["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["num_snapshots"] == 1
       - result.response.status.resources.availability_zone_connectivity_list[1]["destination_availability_zone_index"] == 0
       - result.response.status.resources.availability_zone_connectivity_list[1]["source_availability_zone_index"] == 1
 
@@ -255,46 +246,30 @@
       - result.response.status.description == "test-ansible-desc-updated"
       - result.response.status.name == "test-ansible-updated"
       - result.response.status.resources.ordered_availability_zone_list[0]["availability_zone_url"] == "{{dr.primary_az_url}}"
-      - >
-        result.response.status.resources.ordered_availability_zone_list[1]
-        ["availability_zone_url"] == "{{dr.recovery_az_url}}"
+      - result.response.status.resources.ordered_availability_zone_list[1]["availability_zone_url"] == "{{dr.recovery_az_url}}"
       - result.response.status.resources.category_filter.params["Environment"] == ["Production"]
       - result.response.status.resources.availability_zone_connectivity_list[0]["destination_availability_zone_index"] == 1
       - result.response.status.resources.availability_zone_connectivity_list[0]["source_availability_zone_index"] == 0
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]
-        ["snapshot_type"] == "APPLICATION_CONSISTENT"
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]
-        ["recovery_point_objective_secs"] == 172800
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]
-        ["local_snapshot_retention_policy"]["num_snapshots"] == 1
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]
-        ["remote_snapshot_retention_policy"]["rollup_retention_policy"]["snapshot_interval_type"] == "YEARLY"
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]
-        ["remote_snapshot_retention_policy"]["rollup_retention_policy"]["multiple"] == 2
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]
-        ["snapshot_type"] == "APPLICATION_CONSISTENT"
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]
-        ["recovery_point_objective_secs"] == 172800
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]
-        ["local_snapshot_retention_policy"]["num_snapshots"] == 1
-      - >
-        result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]
-        ["remote_snapshot_retention_policy"]["num_snapshots"] == 2
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["snapshot_type"] == "APPLICATION_CONSISTENT"
+      - result.response.status.resources.availability_zone_connectivity_list[0]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 172800
+      - result.response.status.resources.availability_zone_connectivity_list[0]\
+        ["snapshot_schedule_list"][0]["local_snapshot_retention_policy"]["num_snapshots"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[0]\
+        ["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["rollup_retention_policy"]["snapshot_interval_type"] == "YEARLY"
+      - result.response.status.resources.availability_zone_connectivity_list[0]\
+        ["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["rollup_retention_policy"]["multiple"] == 2
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["snapshot_type"] == "APPLICATION_CONSISTENT"
+      - result.response.status.resources.availability_zone_connectivity_list[1]["snapshot_schedule_list"][0]["recovery_point_objective_secs"] == 172800
+      - result.response.status.resources.availability_zone_connectivity_list[1]\
+        ["snapshot_schedule_list"][0]["local_snapshot_retention_policy"]["num_snapshots"] == 1
+      - result.response.status.resources.availability_zone_connectivity_list[1]\
+        ["snapshot_schedule_list"][0]["remote_snapshot_retention_policy"]["num_snapshots"] == 2
       - result.response.status.resources.availability_zone_connectivity_list[1]["destination_availability_zone_index"] == 0
       - result.response.status.resources.availability_zone_connectivity_list[1]["source_availability_zone_index"] == 1
-
     fail_msg: "Unable to update protection rule with asynchronous schedule"
     success_msg: "Protection policy with with asynchronous schedule updated successfully"
 
-##################################################################################################################################################################
+####################################################################################
 
 - name: Idempotency Check
   ntnx_protection_rules:
@@ -348,7 +323,7 @@
     fail_msg: "Idempotency check failed"
     success_msg: "Idempotency check passed"
 
-##################################################################################################################################################################
+####################################################################################
 
 - name: Check Mode while update
   check_mode: true

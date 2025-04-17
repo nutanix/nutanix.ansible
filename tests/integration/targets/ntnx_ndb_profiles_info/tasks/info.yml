@@ -15,8 +15,8 @@
       - profiles.failed == false
       - profiles.changed == false
       - profiles.response | length > 0
-    fail_msg: "Unable to list all NDB profile"
-    success_msg: "NDB profiles listed successfully"
+    fail_msg: Unable to list all NDB profile
+    success_msg: NDB profiles listed successfully
 ################################################################
 - name: List profiles with postgres database engine
   ntnx_ndb_profiles_info:
@@ -32,8 +32,8 @@
       - result.failed == false
       - result.changed == false
       - result.response[0].engineType == "postgres_database"
-    fail_msg: "Unable to list all NDB profile with postgres database engine"
-    success_msg: "NDB profiles with postgres database engine listed successfully"
+    fail_msg: Unable to list all NDB profile with postgres database engine
+    success_msg: NDB profiles with postgres database engine listed successfully
 ################################################################
 - name: List Database_Parameter profiles
   ntnx_ndb_profiles_info:
@@ -49,8 +49,8 @@
       - result.failed == false
       - result.changed == false
       - result.response[0].type == "Database_Parameter"
-    fail_msg: "Unable to list all Database_Parameter NDB profile"
-    success_msg: "Database_Parameter NDB profiles listed successfully"
+    fail_msg: Unable to list all Database_Parameter NDB profile
+    success_msg: Database_Parameter NDB profiles listed successfully
 ################################################################
 - name: List Network profiles
   ntnx_ndb_profiles_info:
@@ -66,13 +66,13 @@
       - result.failed == false
       - result.changed == false
       - result.response[0].type == "Network"
-    fail_msg: "Unable to list all Network NDB profile"
-    success_msg: "Network NDB profiles listed successfully"
+    fail_msg: Unable to list all Network NDB profile
+    success_msg: Network NDB profiles listed successfully
 
 ################################################################
 - name: Get network profile with available IPs
   ntnx_ndb_profiles_info:
-    name: "{{static_network_profile.name}}"
+    name: "{{ static_network_profile.name }}"
     include_available_ips: true
   register: result
   ignore_errors: true
@@ -84,14 +84,14 @@
       - result.failed == false
       - result.changed == false
       - result.response.available_ips | length > 0
-      - result.response.id == "{{static_network_profile.uuid}}"
+      - result.response.id == "{{ static_network_profile.uuid }}"
 
-    fail_msg: "Unable to list network profile with available IPs"
-    success_msg: "Network NDB profiles along with available IPs obtained successfully"
+    fail_msg: Unable to list network profile with available IPs
+    success_msg: Network NDB profiles along with available IPs obtained successfully
 
 - name: Get network profile with available IPs
   ntnx_ndb_profiles_info:
-    uuid: "{{static_network_profile.uuid}}"
+    uuid: "{{ static_network_profile.uuid }}"
     include_available_ips: true
   register: result
   ignore_errors: true
@@ -103,9 +103,9 @@
       - result.failed == false
       - result.changed == false
       - result.response.available_ips | length > 0
-      - result.response.id == "{{static_network_profile.uuid}}"
-    fail_msg: "Unable to list network profile with available IPs"
-    success_msg: "Network NDB profiles along with available IPs obtained successfully"
+      - result.response.id == "{{ static_network_profile.uuid }}"
+    fail_msg: Unable to list network profile with available IPs
+    success_msg: Network NDB profiles along with available IPs obtained successfully
 ################################################################
 - name: List Compute profiles
   ntnx_ndb_profiles_info:
@@ -121,8 +121,8 @@
       - result.failed == false
       - result.changed == false
       - result.response[0].type == "Compute"
-    fail_msg: "Unable to list all Compute NDB profile"
-    success_msg: "Compute NDB profiles listed successfully"
+    fail_msg: Unable to list all Compute NDB profile
+    success_msg: Compute NDB profiles listed successfully
 ################################################################
 - name: List Software profiles
   ntnx_ndb_profiles_info:
@@ -138,12 +138,12 @@
       - result.failed == false
       - result.changed == false
       - result.response[0].type == "Software"
-    fail_msg: "Unable to list all Software NDB profile"
-    success_msg: "Software NDB profiles listed successfully"
+    fail_msg: Unable to list all Software NDB profile
+    success_msg: Software NDB profiles listed successfully
 ################################################################
 - name: Get NDB profile using NDB profile name
   ntnx_ndb_profiles_info:
-    name: "{{profiles.response[0].name}}"
+    name: "{{ profiles.response[0].name }}"
   register: result
   ignore_errors: true
 
@@ -153,13 +153,13 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.id == "{{profiles.response[0].id}}"
-    fail_msg: "Unable to get NDB profile using NDB profile name"
-    success_msg: "get NDB profile using NDB profile name finished successfully"
+      - result.response.id == "{{ profiles.response[0].id }}"
+    fail_msg: Unable to get NDB profile using NDB profile name
+    success_msg: get NDB profile using NDB profile name finished successfully
 ################################################################
 - name: List profiles
   ntnx_ndb_profiles_info:
-    uuid: "{{profiles.response[0].id}}"
+    uuid: "{{ profiles.response[0].id }}"
     latest_version: true
   register: result
   ignore_errors: true
@@ -170,14 +170,14 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name == "{{profiles.response[0].name}}"
-    fail_msg: "Unable to get NDB profile using NDB profile id"
-    success_msg: "get NDB profile using NDB profile id finished successfully"
+      - result.response.name == "{{ profiles.response[0].name }}"
+    fail_msg: Unable to get NDB profile using NDB profile id
+    success_msg: get NDB profile using NDB profile id finished successfully
 ################################################################
 
 - name: Get NDB profiles with incorrect name
   ntnx_ndb_profiles_info:
-    name: "abcd"
+    name: abcd
   register: result
   no_log: true
   ignore_errors: true
@@ -188,5 +188,5 @@
       - result.error is defined
       - result.failed == true
       - result.changed == false
-    fail_msg: "module didn't errored out correctly when incorrect name is given"
-    success_msg: "module errored out correctly when incorrect name is given"
+    fail_msg: module didn't errored out correctly when incorrect name is given
+    success_msg: module errored out correctly when incorrect name is given

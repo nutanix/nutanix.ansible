@@ -1,12 +1,12 @@
 ---
-- name: Set module defaults
+- name: Ntnx_ndb_software_profiles integration tests
   module_defaults:
-      group/nutanix.ncp.ntnx:
-          nutanix_host: "{{ ndb_ip }}"
-          nutanix_username: "{{ ndb_username }}"
-          nutanix_password: "{{ ndb_password }}"
-          validate_certs: false
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ndb_ip }}"
+      nutanix_username: "{{ ndb_username }}"
+      nutanix_password: "{{ ndb_password }}"
+      validate_certs: false
 
   block:
-      - name: Import "crud.yml"
-        ansible.builtin.import_tasks: "crud.yml"
+    - name: Import tasks
+      ansible.builtin.import_tasks: crud.yml

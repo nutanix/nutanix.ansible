@@ -44,7 +44,7 @@
 #   register: result
 #   ignore_errors: true
 
-# - name: Check listing status
+# - name: check listing status
 #   ansible.builtin.assert:
 #     that:
 #       - result.response is defined

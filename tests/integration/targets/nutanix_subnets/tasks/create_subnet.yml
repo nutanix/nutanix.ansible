@@ -20,7 +20,7 @@
     fail_msg: " Unable to create VLAN subnet without IPAM "
     success_msg: " VLAN subnet without IPAM created successfully "
 
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
@@ -50,7 +50,7 @@
     fail_msg: " Unable to create VLAN subnet with IPAM "
     success_msg: " VLAN subnet with IPAM created successfully "
 
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
@@ -82,7 +82,7 @@
     fail_msg: " Unable to create VLAN subnet with IPAM and IP pools"
     success_msg: " VLAN subnet with IPAM and IP pools created successfully "
 
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 
@@ -94,7 +94,7 @@
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- name: Reset todelete list
+- name: Remove all subnets from delete list
   ansible.builtin.set_fact:
     todelete: []
 #################################################################
@@ -126,7 +126,7 @@
     fail_msg: " Unable to create VLAN subnet with IPAM and IP pools and cluster uuid "
     success_msg: " VLAN subnet with IPAM and IP pools and cluster uuid created successfully "
 
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 
@@ -138,7 +138,7 @@
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- name: Reset todelete list
+- name: Remove all subnets from delete list
   ansible.builtin.set_fact:
     todelete: []
 #################################################################
@@ -177,7 +177,7 @@
     fail_msg: " Unable to create VLAN subnet with IPAM, IP pools and DHCP "
     success_msg: " VLAN subnet with IPAM, IP pools and DHCP created successfully "
 
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
@@ -218,7 +218,7 @@
     fail_msg: " Unable to create VLAN subnet with IPAM, multiple IP pools and DHCP "
     success_msg: " VLAN subnet with IPAM, multiple IP pools and DHCP created successfully "
 
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
@@ -251,7 +251,7 @@
     fail_msg: " Unable to create External subnet without NAT  "
     success_msg: " External subnet without NAT  created successfully "
 
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
@@ -284,7 +284,7 @@
     fail_msg: " Unable to create External subnet with NAT  "
     success_msg: " External subnet with NAT  created successfully "
 
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
@@ -310,7 +310,7 @@
     fail_msg: " Unable to create Overlay Subnet with minimum requirements "
     success_msg: " Overlay Subnet with minimum requirements created successfully "
 
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
@@ -322,7 +322,7 @@
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- name: Reset todelete list
+- name: Remove all subnets from delete list
   ansible.builtin.set_fact:
     todelete: []
 #################################################################
@@ -356,7 +356,7 @@
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create Overlay Subnet with IP_pools and DHCP "
     success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 #################################################################
@@ -368,7 +368,7 @@
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- name: Reset todelete list
+- name: Remove all subnets from delete list
   ansible.builtin.set_fact:
     todelete: []
 #################################################################
@@ -401,7 +401,7 @@
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create Overlay Subnet with IP_pools and DHCP with vpc uuid "
     success_msg: " Overlay Subnet with IP_pools and DHCP with vpc uuid created successfully "
-- name: Add subnet_uuid to todelete list
+- name: Adding subnet uuid to delete subnets list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.subnet_uuid ] }}"
 

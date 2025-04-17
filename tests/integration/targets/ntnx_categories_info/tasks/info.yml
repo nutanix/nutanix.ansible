@@ -21,7 +21,7 @@
 #####################################################################################################
 - name: Set category name and values
   ansible.builtin.set_fact:
-    category_name: Test-catAA
+    category_name: test-catAA
     values:
       - "value-a"
       - "value-b"

@@ -1,6 +1,6 @@
-- name: Start ntnx_protection_rules_info tests
+- name: Start testing ntnx_protection_rules_info
   ansible.builtin.debug:
-    msg: start testing ntnx_protection_rules_info
+    msg: Start testing ntnx_protection_rules_info
 
 ##################################################
 - name: Create protection rule with async schedule
@@ -101,11 +101,9 @@
     fail_msg: "Unable to list all protection rules"
     success_msg: "protection rule info obtained successfully"
 
-- name: Set rule name
+- name: Set test rule name and uuid
   ansible.builtin.set_fact:
     test_rule_name: "{{result.response.entities.1.status.name}}"
-- name: Set rule uuid
-  ansible.builtin.set_fact:
     test_rule_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
 ##################################################

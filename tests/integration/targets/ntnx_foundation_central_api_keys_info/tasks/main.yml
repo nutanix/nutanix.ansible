@@ -1,17 +1,17 @@
 ---
-- name: Set module defaults
+- name: Ntnx_foundation_central_api_keys_info integration tests
   module_defaults:
-      nutanix.ncp.ntnx_foundation_central_api_keys:
-          nutanix_host: "{{ ip }}"
-          nutanix_username: "{{ username }}"
-          nutanix_password: "{{ password }}"
-          validate_certs: false
+    nutanix.ncp.ntnx_foundation_central_api_keys:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
 
-      nutanix.ncp.ntnx_foundation_central_api_keys_info:
-          nutanix_host: "{{ ip }}"
-          nutanix_username: "{{ username }}"
-          nutanix_password: "{{ password }}"
-          validate_certs: false
+    nutanix.ncp.ntnx_foundation_central_api_keys_info:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
   block:
-      - name: Import "key_info.yml"
-        ansible.builtin.import_tasks: "key_info.yml"
+    - name: Import Tasks
+      ansible.builtin.import_tasks: key_info.yml

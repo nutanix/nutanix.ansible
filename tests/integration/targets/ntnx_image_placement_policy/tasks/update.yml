@@ -1,7 +1,7 @@
 ---
 - name: Start ntnx_image_placement_policy update tests
   ansible.builtin.debug:
-    msg: start ntnx_image_placement_policy update tests
+    msg: Start ntnx_image_placement_policy update tests
 
 - name: Create image placement policy with minimal spec for update tests
   ntnx_image_placement_policy:
@@ -29,7 +29,7 @@
     fail_msg: "Unable to create image placement policy with minimal spec"
     success_msg: "Image placement policy with minimal spec created successfully"
 
-- name: Add policy to delete list
+- name: Adding policy to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  setup_policy["response"]["metadata"]["uuid"] ] }}'
 
@@ -126,7 +126,7 @@
     policy_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: true
+  ignore_errors: false
 
 - name: Reset todelete list
   ansible.builtin.set_fact:

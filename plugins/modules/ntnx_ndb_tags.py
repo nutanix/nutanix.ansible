@@ -59,7 +59,7 @@ EXAMPLES = r"""
   ntnx_ndb_tags:
     name: "{{tag_name}}-clone"
     desc: tag-created-by-ansible
-    tag_value_required: False
+    tag_value_required: false
     entity_type: CLONE
   register: result
 
@@ -67,7 +67,7 @@ EXAMPLES = r"""
   ntnx_ndb_tags:
     name: "{{tag_name}}-tm"
     desc: tag-created-by-ansible
-    tag_value_required: True
+    tag_value_required: true
     entity_type: TIME_MACHINE
   register: result
 
@@ -101,9 +101,9 @@ uuid:
 
 """
 
-from ..module_utils.ndb.base_info_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.tags import Tag  # noqa: E402
 from ..module_utils.utils import strip_extra_attrs  # noqa: E402
+from ..module_utils.v3.ndb.base_info_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.tags import Tag  # noqa: E402
 
 
 def get_module_spec():

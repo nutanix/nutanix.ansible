@@ -1,12 +1,12 @@
 ---
-- name: Set module defaults
+- name: Ntnx_ndb_database_clones integration test
   module_defaults:
-      group/nutanix.ncp.ntnx:
-          nutanix_host: "{{ ndb_ip }}"
-          nutanix_username: "{{ ndb_username }}"
-          nutanix_password: "{{ ndb_password }}"
-          validate_certs: false
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ndb_ip }}"
+      nutanix_username: "{{ ndb_username }}"
+      nutanix_password: "{{ ndb_password }}"
+      validate_certs: false
 
   block:
-      - name: Import "clones.yml"
-        ansible.builtin.import_tasks: "clones.yml"
+    - name: Import tasks
+      ansible.builtin.import_tasks: clones.yml

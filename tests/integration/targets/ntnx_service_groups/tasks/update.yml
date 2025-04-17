@@ -1,7 +1,8 @@
 ---
+
 - name: Create tcp service group
   ntnx_service_groups:
-    name: tcp_service_group
+    name: tcp_srvive_group
     desc: desc
     service_details:
       tcp:
@@ -24,7 +25,7 @@
     fail_msg: "Fail: Unable to create tcp service group  "
     success_msg: "Pass: tcp service group  created successfully"
 
-- name: Add service_group_uuid to todelete list
+- name: Adding service group uuid to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  service_group.service_group_uuid ] }}"
 ################################################################
@@ -44,7 +45,7 @@
 
 - name: Getting particular service_group using uuid
   ntnx_service_groups_info:
-    service_group_uuid: "{{ result.service_group_uuid }}"
+    service_group_uuid: '{{ result.service_group_uuid }}'
   register: result
   ignore_errors: true
 

@@ -1,46 +1,46 @@
 ---
-- name: Start testing ntnx_ndb_db_server_vms, ntnx_ndb_register_db_server_vm, ntnx_ndb_db_servers_info and ntnx_ndb_maintenance_tasks
+- name: "Start ntnx_ndb_db_server_vms, ntnx_ndb_register_db_server_vm, ntnx_ndb_db_servers_info and ntnx_ndb_maintenance_tasks tests. Approx Time: < 30 mins"
   ansible.builtin.debug:
     msg: "start ntnx_ndb_db_server_vms, ntnx_ndb_register_db_server_vm, ntnx_ndb_db_servers_info and ntnx_ndb_maintenance_tasks tests. Approx Time: < 30 mins"
 
 - name: Generate random name
   ansible.builtin.set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
-- name: Set vm names
+- name: Define variables
   ansible.builtin.set_fact:
-    vm1_name: "{{random_name[0]}}"
-    vm1_name_updated: "{{random_name[0]}}-updated"
+    vm1_name: "{{ random_name[0] }}"
+    vm1_name_updated: "{{ random_name[0] }}-updated"
 
 ################################### DB server VM Provision tests #############################
 - name: Create ndb vm using time machine and check mode
   check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
-    name: "ansible-created-vm1-from-time-machine"
-    desc: "ansible-created-vm1-from-time-machine-time-machine"
+    name: ansible-created-vm1-from-time-machine
+    desc: ansible-created-vm1-from-time-machine-time-machine
     time_machine:
-      uuid: "test_uuid"
-      snapshot_uuid: "test_snapshot_uuid"
+      uuid: test_uuid
+      snapshot_uuid: test_snapshot_uuid
     compute_profile:
-      uuid: "test_compute_uuid"
+      uuid: test_compute_uuid
     network_profile:
-      uuid: "test_network_uuid"
+      uuid: test_network_uuid
     cluster:
-      uuid: "test_cluster_uuid"
-    password: "test_password"
-    pub_ssh_key: "test_public_key"
-    database_type: "postgres_database"
+      uuid: test_cluster_uuid
+    password: test_password
+    pub_ssh_key: test_public_key
+    database_type: postgres_database
     automated_patching:
       maintenance_window:
-        uuid: "test_window_uuid"
+        uuid: test_window_uuid
       tasks:
-        - type: "OS_PATCHING"
-          pre_task_cmd: "ls"
-          post_task_cmd: "ls -a"
-        - type: "DB_PATCHING"
-          pre_task_cmd: "ls -l"
-          post_task_cmd: "ls -F"
+        - type: OS_PATCHING
+          pre_task_cmd: ls
+          post_task_cmd: ls -a
+        - type: DB_PATCHING
+          pre_task_cmd: ls -l
+          post_task_cmd: ls -F
 
   register: check_mode_result
 
@@ -48,7 +48,7 @@
 # {% raw %}
 - name: Create action_arguments map
   ansible.builtin.set_fact:
-    action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
+    action_arguments: "{{ action_arguments | default({}) | combine({item['name']: item['value']}) }}"
   loop: "{{check_mode_result.response.actionArguments}}"
   no_log: true
 # {% endraw %}
@@ -56,101 +56,53 @@
 - name: Set mainetance_tasks
   ansible.builtin.set_fact:
     mainetance_tasks:
-      {
-        "maintenanceWindowId": "test_window_uuid",
-        "tasks":
-          [
-            {
-              "payload":
-                {
-                  "prePostCommand":
-                    { "postCommand": "ls -a", "preCommand": "ls" },
-                },
-              "taskType": "OS_PATCHING",
-            },
-            {
-              "payload":
-                {
-                  "prePostCommand":
-                    { "postCommand": "ls -F", "preCommand": "ls -l" },
-                },
-              "taskType": "DB_PATCHING",
-            },
-          ],
-      }
+      maintenanceWindowId: test_window_uuid
+      tasks:
+        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
+        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
 
 - name: Set expected result
   ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "actionArguments":
-              [
-                {
-                  "name": "vm_name",
-                  "value": "ansible-created-vm1-from-time-machine",
-                },
-                {
-                  "name": "client_public_key",
-                  "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
-                },
-              ],
-            "computeProfileId": "test_compute_uuid",
-            "databaseType": "postgres_database",
-            "description": "ansible-created-vm1-from-time-machine-time-machine",
-            "latestSnapshot": false,
-            "maintenanceTasks":
-              {
-                "maintenanceWindowId": "test_window_uuid",
-                "tasks":
-                  [
-                    {
-                      "payload":
-                        {
-                          "prePostCommand":
-                            { "postCommand": "ls -a", "preCommand": "ls" },
-                        },
-                      "taskType": "OS_PATCHING",
-                    },
-                    {
-                      "payload":
-                        {
-                          "prePostCommand":
-                            { "postCommand": "ls -F", "preCommand": "ls -l" },
-                        },
-                      "taskType": "DB_PATCHING",
-                    },
-                  ],
-              },
-            "networkProfileId": "test_network_uuid",
-            "nxClusterId": "test_cluster_uuid",
-            "snapshotId": "test_snapshot_uuid",
-            "softwareProfileId": "",
-            "softwareProfileVersionId": "",
-            "timeMachineId": "test_uuid",
-            "timeZone": "Asia/Calcutta",
-            "vmPassword": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
-          },
-        "uuid": null,
-      }
+      changed: false
+      error:
+      failed: false
+      response:
+        actionArguments:
+          - { name: vm_name, value: ansible-created-vm1-from-time-machine }
+          - { name: client_public_key, value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER }
+        computeProfileId: test_compute_uuid
+        databaseType: postgres_database
+        description: ansible-created-vm1-from-time-machine-time-machine
+        latestSnapshot: false
+        maintenanceTasks:
+          maintenanceWindowId: test_window_uuid
+          tasks:
+            - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
+            - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        networkProfileId: test_network_uuid
+        nxClusterId: test_cluster_uuid
+        snapshotId: test_snapshot_uuid
+        softwareProfileId: ""
+        softwareProfileVersionId: ""
+        timeMachineId: test_uuid
+        timeZone: Asia/Calcutta
+        vmPassword: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER
+      uuid:
 
 - name: Check mode Status
   ansible.builtin.assert:
     that:
       - check_mode_result ==  expected_result
-    fail_msg: "Unable to generate create db server vm spec with time machine as source"
-    success_msg: "DB server VM spec created successfully"
+    fail_msg: Unable to generate create db server vm spec with time machine as source
+    success_msg: DB server VM spec created successfully
 
 - name: Create spec for db server vm using software profile and names of profile
   check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     name: "{{ vm1_name }}"
-    desc: "ansible-created-vm1-desc"
+    desc: ansible-created-vm1-desc
     software_profile:
       name: "{{ software_profile.name }}"
     compute_profile:
@@ -161,86 +113,57 @@
       name: "{{ cluster.cluster1.name }}"
     password: "{{ vm_password }}"
     pub_ssh_key: "{{ public_ssh_key }}"
-    time_zone: "UTC"
-    database_type: "postgres_database"
+    time_zone: UTC
+    database_type: postgres_database
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
       tasks:
-        - type: "OS_PATCHING"
-          pre_task_cmd: "ls"
-          post_task_cmd: "ls -a"
-        - type: "DB_PATCHING"
-          pre_task_cmd: "ls -l"
-          post_task_cmd: "ls -F"
+        - type: OS_PATCHING
+          pre_task_cmd: ls
+          post_task_cmd: ls -a
+        - type: DB_PATCHING
+          pre_task_cmd: ls -l
+          post_task_cmd: ls -F
   register: result
 
 - name: Set expected result
   ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "actionArguments":
-              [
-                { "name": "vm_name", "value": "{{ vm1_name }}" },
-                {
-                  "name": "client_public_key",
-                  "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
-                },
-              ],
-            "computeProfileId": "{{ compute_profile.uuid }}",
-            "databaseType": "postgres_database",
-            "description": "ansible-created-vm1-desc",
-            "latestSnapshot": false,
-            "maintenanceTasks":
-              {
-                "maintenanceWindowId": "{{ maintenance.window_uuid }}",
-                "tasks":
-                  [
-                    {
-                      "payload":
-                        {
-                          "prePostCommand":
-                            { "postCommand": "ls -a", "preCommand": "ls" },
-                        },
-                      "taskType": "OS_PATCHING",
-                    },
-                    {
-                      "payload":
-                        {
-                          "prePostCommand":
-                            { "postCommand": "ls -F", "preCommand": "ls -l" },
-                        },
-                      "taskType": "DB_PATCHING",
-                    },
-                  ],
-              },
-            "networkProfileId": "{{ network_profile.uuid }}",
-            "nxClusterId": "{{ cluster.cluster1.uuid }}",
-            "softwareProfileId": "{{ software_profile.uuid }}",
-            "softwareProfileVersionId": "{{ software_profile.latest_version_id }}",
-            "timeZone": "UTC",
-            "vmPassword": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
-          },
-        "uuid": null,
-      }
+      changed: false
+      error:
+      failed: false
+      response:
+        actionArguments: [{ name: vm_name, value: "{{ vm1_name }}" }, { name: client_public_key, value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER }]
+        computeProfileId: "{{ compute_profile.uuid }}"
+        databaseType: postgres_database
+        description: ansible-created-vm1-desc
+        latestSnapshot: false
+        maintenanceTasks:
+          maintenanceWindowId: "{{ maintenance.window_uuid }}"
+          tasks:
+            - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
+            - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        networkProfileId: "{{ network_profile.uuid }}"
+        nxClusterId: "{{ cluster.cluster1.uuid }}"
+        softwareProfileId: "{{ software_profile.uuid }}"
+        softwareProfileVersionId: "{{ software_profile.latest_version_id }}"
+        timeZone: UTC
+        vmPassword: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER
+      uuid:
 
 - name: Check mode Status
   ansible.builtin.assert:
     that:
       - result ==  expected_result
-    fail_msg: "Unable to generate create db server vm spec with time machine as source and given names of profile"
-    success_msg: "DB server VM spec created successfully"
+    fail_msg: Unable to generate create db server vm spec with time machine as source and given names of profile
+    success_msg: DB server VM spec created successfully
 
 - name: Create db server vm using software profile
   ntnx_ndb_db_server_vms:
     wait: true
     name: "{{ vm1_name }}"
-    desc: "ansible-created-vm1-desc"
+    desc: ansible-created-vm1-desc
     software_profile:
       name: "{{ software_profile.name }}"
     compute_profile:
@@ -251,25 +174,25 @@
       name: "{{ cluster.cluster1.name }}"
     password: "{{ vm_password }}"
     pub_ssh_key: "{{ public_ssh_key }}"
-    time_zone: "UTC"
-    database_type: "postgres_database"
+    time_zone: UTC
+    database_type: postgres_database
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
       tasks:
-        - type: "OS_PATCHING"
-          pre_task_cmd: "ls"
-          post_task_cmd: "ls -a"
-        - type: "DB_PATCHING"
-          pre_task_cmd: "ls -l"
-          post_task_cmd: "ls -F"
+        - type: OS_PATCHING
+          pre_task_cmd: ls
+          post_task_cmd: ls -a
+        - type: DB_PATCHING
+          pre_task_cmd: ls -l
+          post_task_cmd: ls -F
   register: result
 
 # skip jekyll/Liquid syntax check
 # {% raw %}
 - name: Create properties map
   ansible.builtin.set_fact:
-    properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+    properties: "{{ properties | default({}) | combine({item['name']: item['value']}) }}"
   loop: "{{result.response.properties}}"
   no_log: true
 # {% endraw %}
@@ -288,14 +211,14 @@
       - result.response.vmTimeZone == "UTC"
       - result.response.nxClusterId == cluster.cluster1.uuid
 
-    fail_msg: "Unable to create db server vm using software profile"
-    success_msg: "DB server VM created successfully"
+    fail_msg: Unable to create db server vm using software profile
+    success_msg: DB server VM created successfully
 
-- name: Set db server vm uuid
+- name: Set db server uuid
   ansible.builtin.set_fact:
     db_server_uuid: "{{ result.uuid }}"
 
-- name: Set db server vm ip
+- name: Set vm ip
   ansible.builtin.set_fact:
     vm_ip: "{{ result.response.ipAddresses[0] }}"
 
@@ -304,14 +227,14 @@
 - name: Update db server vm name, desc, credentials, tags
   ntnx_ndb_db_server_vms:
     wait: true
-    uuid: "{{db_server_uuid}}"
-    name: "{{vm1_name_updated}}"
-    desc: "ansible-created-vm1-updated-desc"
+    uuid: "{{ db_server_uuid }}"
+    name: "{{ vm1_name_updated }}"
+    desc: ansible-created-vm1-updated-desc
     reset_name_in_ntnx_cluster: true
     reset_desc_in_ntnx_cluster: true
     update_credentials:
-      - username: "{{vm_username}}"
-        password: "{{vm_password}}"
+      - username: "{{ vm_username }}"
+        password: "{{ vm_password }}"
     tags:
       ansible-db-server-vms: ansible-updated
   register: result
@@ -327,21 +250,21 @@
       - result.response.description == "ansible-created-vm1-updated-desc"
       - result.response.ipAddresses | length > 0
       - result.response.vmClusterName == vm1_name_updated
-      - result.response.tags[0].tagName == entity_tags.db_server_vm.name
-      - result.response.tags[0].tagId == entity_tags.db_server_vm.uuid
+      - result.response.tags[0].tagName == tags.db_server_vm.name
+      - result.response.tags[0].tagId == tags.db_server_vm.uuid
       - result.response.tags[0].value == "ansible-updated"
 
-    fail_msg: "Unable to update db server vm"
-    success_msg: "DB server VM updated successfully"
+    fail_msg: Unable to update db server vm
+    success_msg: DB server VM updated successfully
 
 - name: Check idempotency
   ntnx_ndb_db_server_vms:
     wait: true
-    uuid: "{{db_server_uuid}}"
-    name: "{{vm1_name_updated}}"
-    desc: "ansible-created-vm1-updated-desc"
+    uuid: "{{ db_server_uuid }}"
+    name: "{{ vm1_name_updated }}"
+    desc: ansible-created-vm1-updated-desc
     tags:
-      ansible-db-server-vms: "ansible-updated"
+      ansible-db-server-vms: ansible-updated
   register: result
 
 - name: Check idempotency status
@@ -350,17 +273,17 @@
       - result.changed == false
       - result.failed == false
       - "'Nothing to change' in result.msg"
-    fail_msg: "db server vm got updated"
-    success_msg: "db server vm update skipped successfully due to no changes in state"
+    fail_msg: db server vm got updated
+    success_msg: db server vm update skipped successfully due to no changes in state
 
 - name: Update db server vm name with check mode and check defaults
   check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
-    uuid: "{{db_server_uuid}}"
+    uuid: "{{ db_server_uuid }}"
     update_credentials:
-      - username: "user"
-        password: "pass"
+      - username: user
+        password: pass
   register: result
 
 - name: Check mode Status
@@ -375,8 +298,8 @@
       - result.response.resetDescriptionInNxCluster == False
       - result.response.resetTags == False
 
-    fail_msg: "Unable to generate check mode spec for update"
-    success_msg: "DB server VM update spec generated successfully"
+    fail_msg: Unable to generate check mode spec for update
+    success_msg: DB server VM update spec generated successfully
 
 ################################################################ Info module tests #############################################################
 
@@ -391,8 +314,8 @@
       - db_servers.failed == false
       - db_servers.changed == false
       - db_servers.response | length > 0
-    fail_msg: "Unable to list all NDB db_servers"
-    success_msg: "NDB db_servers listed successfully"
+    fail_msg: Unable to list all NDB db_servers
+    success_msg: NDB db_servers listed successfully
 ################################################################
 - name: Get NDB db_servers using it's name
   ntnx_ndb_db_servers_info:
@@ -400,7 +323,7 @@
       load_metrics: true
       load_databases: true
       value_type: name
-      value: "{{db_servers.response[0].name}}"
+      value: "{{ db_servers.response[0].name }}"
   register: result
 
 - name: Check listing status
@@ -409,12 +332,12 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response[0].id == "{{db_servers.response[0].id}}"
+      - result.response[0].id == "{{ db_servers.response[0].id }}"
       - result.response[0].databases is defined
-      - result.response[0].name == "{{db_servers.response[0].name}}"
+      - result.response[0].name == "{{ db_servers.response[0].name }}"
       - result.response[0].metric is defined
     fail_msg: "Unable to get NDB db_servers using it's name and filters "
-    success_msg: "get NDB db_server using it's name and filters finished successfully"
+    success_msg: get NDB db_server using it's name and filters finished successfully
 
 ################################################################
 
@@ -424,7 +347,7 @@
       load_metrics: true
       load_databases: true
       value_type: name
-      value: "xxxxxxxxxxxxxx"
+      value: xxxxxxxxxxxxxx
   register: result
 
 - name: Check listing status
@@ -435,14 +358,14 @@
       - result.changed == false
       - result.response | length == 0
 
-    fail_msg: "listing ndb db servers using incorrect name didn't failed"
-    success_msg: "Got empty response for incorrect name successfully"
+    fail_msg: listing ndb db servers using incorrect name didn't failed
+    success_msg: Got empty response for incorrect name successfully
 ################################################################
 - name: Get NDB db_servers using it's ip
   ntnx_ndb_db_servers_info:
     filters:
       value_type: ip
-      value: "{{db_servers.response[0].ipAddresses[0]}}"
+      value: "{{ db_servers.response[0].ipAddresses[0] }}"
   register: result
 
 - name: Check listing status
@@ -451,14 +374,14 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response[0].id == "{{db_servers.response[0].id}}"
-      - result.response[0].ipAddresses[0] == "{{db_servers.response[0].ipAddresses[0]}}"
+      - result.response[0].id == "{{ db_servers.response[0].id }}"
+      - result.response[0].ipAddresses[0] == "{{ db_servers.response[0].ipAddresses[0] }}"
     fail_msg: "Unable to get NDB db_servers using it's ip "
-    success_msg: "get NDB db_server using it's ip finished successfully"
+    success_msg: get NDB db_server using it's ip finished successfully
 ################################################################
 - name: Get NDB db_servers using it's name
   ntnx_ndb_db_servers_info:
-    name: "{{db_servers.response[0].name}}"
+    name: "{{ db_servers.response[0].name }}"
   register: result
 
 - name: Check listing status
@@ -467,14 +390,14 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.id == "{{db_servers.response[0].id}}"
-      - result.response.ipAddresses[0] == "{{db_servers.response[0].ipAddresses[0]}}"
+      - result.response.id == "{{ db_servers.response[0].id }}"
+      - result.response.ipAddresses[0] == "{{ db_servers.response[0].ipAddresses[0] }}"
     fail_msg: "Unable to get NDB db_servers using it's name "
-    success_msg: "get NDB db_server using it's name finished successfully"
+    success_msg: get NDB db_server using it's name finished successfully
 ################################################################
 - name: Get NDB db_servers using it's id
   ntnx_ndb_db_servers_info:
-    uuid: "{{db_servers.response[0].id}}"
+    uuid: "{{ db_servers.response[0].id }}"
   register: result
 
 - name: Check listing status
@@ -483,14 +406,14 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name == "{{db_servers.response[0].name}}"
-      - result.response.ipAddresses[0] == "{{db_servers.response[0].ipAddresses[0]}}"
+      - result.response.name == "{{ db_servers.response[0].name }}"
+      - result.response.ipAddresses[0] == "{{ db_servers.response[0].ipAddresses[0] }}"
     fail_msg: "Unable to get NDB db_servers using it's id "
-    success_msg: "get NDB db_server using it's id finished successfully"
+    success_msg: get NDB db_server using it's id finished successfully
 ################################################################
 - name: Get NDB db_servers using ip
   ntnx_ndb_db_servers_info:
-    server_ip: "{{db_servers.response[0].ipAddresses[0]}}"
+    server_ip: "{{ db_servers.response[0].ipAddresses[0] }}"
   register: result
 
 - name: Check listing status
@@ -499,16 +422,16 @@
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name == "{{db_servers.response[0].name}}"
-      - result.response.id == "{{db_servers.response[0].id}}"
+      - result.response.name == "{{ db_servers.response[0].name }}"
+      - result.response.id == "{{ db_servers.response[0].id }}"
     fail_msg: "Unable to get NDB db_servers using it's ip "
-    success_msg: "get NDB db_server using it's ip finished successfully"
+    success_msg: get NDB db_server using it's ip finished successfully
 
 ################################################################
 
 - name: Get NDB db_servers with incorrect name
   ntnx_ndb_db_servers_info:
-    name: "abcd"
+    name: abcd
   register: result
   no_log: true
   ignore_errors: true
@@ -519,8 +442,8 @@
       - result.error is defined
       - result.failed == true
       - result.changed == false
-    fail_msg: "module didn't errored out correctly when incorrect name is given"
-    success_msg: "module errored out correctly when incorrect name is given"
+    fail_msg: module didn't errored out correctly when incorrect name is given
+    success_msg: module errored out correctly when incorrect name is given
 
 ################################### maintenance tasks update tests #############################
 
@@ -528,115 +451,84 @@
   check_mode: true
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
-      - name: "{{vm1_name_updated}}"
-      - uuid: "test_vm_1"
+      - name: "{{ vm1_name_updated }}"
+      - uuid: test_vm_1
     db_server_clusters:
-      - uuid: "test_cluter_1"
-      - uuid: "test_cluter_2"
+      - uuid: test_cluter_1
+      - uuid: test_cluter_2
     maintenance_window:
-      name: "{{maintenance.window_name}}"
+      name: "{{ maintenance.window_name }}"
     tasks:
-      - type: "OS_PATCHING"
-        pre_task_cmd: "ls -a"
-        post_task_cmd: "ls"
-      - type: "DB_PATCHING"
-        pre_task_cmd: "ls -a"
-        post_task_cmd: "ls"
+      - type: OS_PATCHING
+        pre_task_cmd: ls -a
+        post_task_cmd: ls
+      - type: DB_PATCHING
+        pre_task_cmd: ls -a
+        post_task_cmd: ls
   register: result
 
 - name: Set expected result
   ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "entities":
-              {
-                "ERA_DBSERVER": ["{{db_server_uuid}}", "test_vm_1"],
-                "ERA_DBSERVER_CLUSTER": ["test_cluter_1", "test_cluter_2"],
-              },
-            "maintenanceWindowId": "{{maintenance.window_uuid}}",
-            "tasks":
-              [
-                {
-                  "payload":
-                    {
-                      "prePostCommand":
-                        { "postCommand": "ls", "preCommand": "ls -a" },
-                    },
-                  "taskType": "OS_PATCHING",
-                },
-                {
-                  "payload":
-                    {
-                      "prePostCommand":
-                        { "postCommand": "ls", "preCommand": "ls -a" },
-                    },
-                  "taskType": "DB_PATCHING",
-                },
-              ],
-          },
-        "uuid": "{{maintenance.window_uuid}}",
-      }
+      changed: false
+      error:
+      failed: false
+      response:
+        entities: { ERA_DBSERVER: ["{{ db_server_uuid }}", test_vm_1], ERA_DBSERVER_CLUSTER: [test_cluter_1, test_cluter_2] }
+        maintenanceWindowId: "{{ maintenance.window_uuid }}"
+        tasks:
+          - { payload: { prePostCommand: { postCommand: ls, preCommand: ls -a } }, taskType: OS_PATCHING }
+          - { payload: { prePostCommand: { postCommand: ls, preCommand: ls -a } }, taskType: DB_PATCHING }
+      uuid: "{{ maintenance.window_uuid }}"
 
 - name: Check mode status
   ansible.builtin.assert:
     that:
       - result == expected_result
 
-    fail_msg: "Unable to create spec for adding maintenance tasks for db server vm"
-    success_msg: "spec for adding maintenance tasks for db server vm created successfully"
+    fail_msg: Unable to create spec for adding maintenance tasks for db server vm
+    success_msg: spec for adding maintenance tasks for db server vm created successfully
 
 - name: Create spec for removing maintenance window tasks from above created vm
   check_mode: true
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
-      - uuid: "{{db_server_uuid}}"
+      - uuid: "{{ db_server_uuid }}"
     maintenance_window:
-      uuid: "{{maintenance.window_uuid}}"
+      uuid: "{{ maintenance.window_uuid }}"
     tasks: []
   register: result
 
 - name: Set expected result
   ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "entities": { "ERA_DBSERVER": ["{{db_server_uuid}}"] },
-            "maintenanceWindowId": "{{maintenance.window_uuid}}",
-            "tasks": [],
-          },
-        "uuid": "{{maintenance.window_uuid}}",
-      }
+      changed: false
+      error:
+      failed: false
+      response: { entities: { ERA_DBSERVER: ["{{ db_server_uuid }}"] }, maintenanceWindowId: "{{ maintenance.window_uuid }}", tasks: [] }
+      uuid: "{{ maintenance.window_uuid }}"
 
 - name: Check mode status
   ansible.builtin.assert:
     that:
       - result == expected_result
 
-    fail_msg: "Unable to create spec for removing maintenance tasks for db server vm"
-    success_msg: "spec for removing maintenance tasks for db server vm created successfully"
+    fail_msg: Unable to create spec for removing maintenance tasks for db server vm
+    success_msg: spec for removing maintenance tasks for db server vm created successfully
 
 - name: Db server vm already contains some tasks so remove maintenance window tasks from above created vm
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
-      - uuid: "{{db_server_uuid}}"
+      - uuid: "{{ db_server_uuid }}"
     maintenance_window:
-      uuid: "{{maintenance.window_uuid}}"
+      uuid: "{{ maintenance.window_uuid }}"
     tasks: []
   register: result
 
-- name: Set variables
+- name: Define variables
   ansible.builtin.set_fact:
     tasks_list: []
-    entity_tasks_associations: "{{result.response.entityTaskAssoc}}"
+    entity_tasks_associations: "{{ result.response.entityTaskAssoc }}"
 
 - name: Entity_tasks_associations can be null so converting it to list
   ansible.builtin.set_fact:
@@ -645,8 +537,8 @@
 
 - name: Creating list of tasks associated to db server vm
   ansible.builtin.set_fact:
-    tasks_list: "{{ (tasks_list | default([])) | union([item]) }}"
-  loop: "{{entity_tasks_associations}}"
+    tasks_list: "{{ tasks_list | default([]) | union([item]) }}"
+  loop: "{{ entity_tasks_associations }}"
   when: item['entity']['id'] == db_server_uuid
   no_log: true
 
@@ -655,33 +547,33 @@
     that:
       - result.changed == true
       - result.failed == false
-      - tasks_list | length == 0
+      - tasks | length == 0
 
-    fail_msg: "Unable to remove maintenance tasks for given db server vm"
-    success_msg: "maintenance tasks for given db server vm removed successfully"
+    fail_msg: Unable to remove maintenance tasks for given db server vm
+    success_msg: maintenance tasks for given db server vm removed successfully
 
-- name: Add maintenance window task for vm
+- name: Add maitenance window task for vm
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
-      - name: "{{vm1_name_updated}}"
+      - name: "{{ vm1_name_updated }}"
     maintenance_window:
-      name: "{{maintenance.window_name}}"
+      name: "{{ maintenance.window_name }}"
     tasks:
-      - type: "OS_PATCHING"
-        pre_task_cmd: "ls -a"
-        post_task_cmd: "ls"
-      - type: "DB_PATCHING"
-        pre_task_cmd: "ls -a"
-        post_task_cmd: "ls"
+      - type: OS_PATCHING
+        pre_task_cmd: ls -a
+        post_task_cmd: ls
+      - type: DB_PATCHING
+        pre_task_cmd: ls -a
+        post_task_cmd: ls
   register: result
 
-- name: Reset tasks variable
+- name: Set tasks fact
   ansible.builtin.set_fact:
     tasks_list: []
 
-- name: Set entity_tasks_associations
+- name: Define variable for entity tasks associations
   ansible.builtin.set_fact:
-    entity_tasks_associations: "{{result.response.entityTaskAssoc}}"
+    entity_tasks_associations: "{{ result.response.entityTaskAssoc }}"
 
 - name: Entity_tasks_associations can be null so converting it to list
   ansible.builtin.set_fact:
@@ -690,7 +582,7 @@
 
 - name: Creating list of tasks associated with db server vm
   ansible.builtin.set_fact:
-    tasks_list: "{{ tasks_list | default([]) | union ([item]) }}"
+    tasks_list: "{{ tasks_list | default([]) | union([item]) }}"
   loop: "{{entity_tasks_associations}}"
   when: item['entity']['id'] == db_server_uuid
   no_log: true
@@ -700,17 +592,17 @@
     that:
       - result.changed == true
       - result.failed == false
-      - tasks_list | length == 2
+      - tasks | length == 2
 
-    fail_msg: "Unable to add maintenance tasks for given db server vm"
-    success_msg: "maintenance tasks for given db server vm added successfully"
+    fail_msg: Unable to add maintenance tasks for given db server vm
+    success_msg: maintenance tasks for given db server vm added successfully
 
 - name: Remove maintenance window tasks from above created vm
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
-      - uuid: "{{db_server_uuid}}"
+      - uuid: "{{ db_server_uuid }}"
     maintenance_window:
-      uuid: "{{maintenance.window_uuid}}"
+      uuid: "{{ maintenance.window_uuid }}"
     tasks: []
   register: result
 
@@ -720,17 +612,17 @@
       - result.changed == true
       - result.failed == false
 
-    fail_msg: "Unable to remove maintenance tasks for given db server vm"
-    success_msg: "maintenance tasks for given db server vm removed successfully"
+    fail_msg: Unable to remove maintenance tasks for given db server vm
+    success_msg: maintenance tasks for given db server vm removed successfully
 
 ################################### DB server VM unregistration tests #############################
 
 - name: Generate check mode spec for unregister with default values
   check_mode: true
   ntnx_ndb_db_server_vms:
-    state: "absent"
+    state: absent
     wait: true
-    uuid: "{{db_server_uuid}}"
+    uuid: "{{ db_server_uuid }}"
   register: result
 
 - name: Check mode Status
@@ -744,14 +636,14 @@
       - result.response.softRemove == False
       - result.response.remove == True
 
-    fail_msg: "Unable to generate check mode spec for unregister"
-    success_msg: "DB server VM unregister spec generated successfully"
+    fail_msg: Unable to generate check mode spec for unregister
+    success_msg: DB server VM unregister spec generated successfully
 
-- name: Generate check mode spec for delete vm with vgs and snapshots
+- name: Genereate check mode spec for delete vm with vgs and snapshots
   check_mode: true
   ntnx_ndb_db_server_vms:
-    state: "absent"
-    uuid: "{{db_server_uuid}}"
+    state: absent
+    uuid: "{{ db_server_uuid }}"
     delete_from_cluster: true
     delete_vgs: true
     delete_vm_snapshots: true
@@ -768,14 +660,14 @@
       - result.response.softRemove == False
       - result.response.remove == False
 
-    fail_msg: "Unable to generate check mode spec for unregister"
-    success_msg: "DB server VM update spec generated successfully"
+    fail_msg: Unable to generate check mode spec for unregister
+    success_msg: DB server VM update spec generated successfully
 
 - name: Unregister vm
   ntnx_ndb_db_server_vms:
-    state: "absent"
+    state: absent
     wait: true
-    uuid: "{{db_server_uuid}}"
+    uuid: "{{ db_server_uuid }}"
     delete_from_cluster: false
     soft_remove: true
     delete_vgs: true
@@ -788,37 +680,37 @@
       - result.response is defined
       - result.changed == True
 
-    fail_msg: "Unable to soft remove db server vm"
-    success_msg: "DB server VM removed successfully"
+    fail_msg: Unable to soft remove db server vm
+    success_msg: DB server VM removed successfully
 
 ################################### DB server VM Registration tests #############################
 
-- name: Generate spec for registration of the previous unregistered vm using check mode
+- name: Generate spec for registeration of the previous unregistered vm using check mode
   check_mode: true
   ntnx_ndb_register_db_server_vm:
-    ip: "{{vm_ip}}"
-    desc: "register-vm-desc"
+    ip: "{{ vm_ip }}"
+    desc: register-vm-desc
     reset_desc_in_ntnx_cluster: true
     cluster:
-      name: "{{cluster.cluster1.name}}"
+      name: "{{ cluster.cluster1.name }}"
     postgres:
-      software_path: "{{postgres.software_home}}"
-    private_ssh_key: "check-key"
-    username: "{{vm_username}}"
+      software_path: "{{ postgres.software_home }}"
+    private_ssh_key: check-key
+    username: "{{ vm_username }}"
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
       tasks:
-        - type: "OS_PATCHING"
-          pre_task_cmd: "ls"
-          post_task_cmd: "ls -a"
-        - type: "DB_PATCHING"
-          pre_task_cmd: "ls -l"
-          post_task_cmd: "ls -F"
-    working_directory: "/check"
+        - type: OS_PATCHING
+          pre_task_cmd: ls
+          post_task_cmd: ls -a
+        - type: DB_PATCHING
+          pre_task_cmd: ls -l
+          post_task_cmd: ls -F
+    working_directory: /check
   register: result
 
-- name: Reset action_arguments
+- name: Create action_arguments map
   ansible.builtin.set_fact:
     action_arguments: {}
 
@@ -826,37 +718,19 @@
 # {% raw %}
 - name: Create action_arguments map
   ansible.builtin.set_fact:
-    action_arguments: "{{ action_arguments | default({}) | combine ({ item['name'] : item['value'] }) }}"
+    action_arguments: "{{ action_arguments | default({}) | combine({item['name']: item['value']}) }}"
   loop: "{{result.response.actionArguments}}"
   no_log: true
 
 # {% endraw %}
 
-- name: Set maintenance_tasks
+- name: Define variables for maintenance tasks
   ansible.builtin.set_fact:
     maintenance_tasks:
-      {
-        "maintenanceWindowId": "{{maintenance.window_uuid}}",
-        "tasks":
-          [
-            {
-              "payload":
-                {
-                  "prePostCommand":
-                    { "postCommand": "ls -a", "preCommand": "ls" },
-                },
-              "taskType": "OS_PATCHING",
-            },
-            {
-              "payload":
-                {
-                  "prePostCommand":
-                    { "postCommand": "ls -F", "preCommand": "ls -l" },
-                },
-              "taskType": "DB_PATCHING",
-            },
-          ],
-      }
+      maintenanceWindowId: "{{ maintenance.window_uuid }}"
+      tasks:
+        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
+        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -873,30 +747,30 @@
       - action_arguments["postgres_software_home"] == postgres.software_home
       - result.response.maintenanceTasks == maintenance_tasks
 
-    fail_msg: "Unable to create spec for db server vm registration"
-    success_msg: "DB server VM registration spec generated successfully"
+    fail_msg: Unable to create spec for db server vm registration
+    success_msg: DB server VM registration spec generated successfully
 
 - name: Register the previous unregistered vm
   ntnx_ndb_register_db_server_vm:
-    ip: "{{vm_ip}}"
-    desc: "register-vm-desc"
+    ip: "{{ vm_ip }}"
+    desc: register-vm-desc
     cluster:
-      name: "{{cluster.cluster1.name}}"
+      name: "{{ cluster.cluster1.name }}"
     postgres:
       listener_port: 5432
-      software_path: "{{postgres.software_home}}"
-    username: "{{vm_username}}"
-    password: "{{vm_password}}"
+      software_path: "{{ postgres.software_home }}"
+    username: "{{ vm_username }}"
+    password: "{{ vm_password }}"
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
       tasks:
-        - type: "OS_PATCHING"
-          pre_task_cmd: "ls"
-          post_task_cmd: "ls -a"
-        - type: "DB_PATCHING"
-          pre_task_cmd: "ls -l"
-          post_task_cmd: "ls -F"
+        - type: OS_PATCHING
+          pre_task_cmd: ls
+          post_task_cmd: ls -a
+        - type: DB_PATCHING
+          pre_task_cmd: ls -l
+          post_task_cmd: ls -F
 
   register: result
 
@@ -904,7 +778,7 @@
 # {% raw %}
 - name: Create properties map
   ansible.builtin.set_fact:
-    properties1: "{{ properties1 | default({}) | combine ({ item['name'] : item['value'] }) }}"
+    properties1: "{{ properties1 | default({}) | combine({item['name']: item['value']}) }}"
   loop: "{{result.response.properties}}"
   no_log: true
 # {% endraw %}
@@ -920,27 +794,27 @@
       - result.response.description == "register-vm-desc"
       - result.response.ipAddresses | length > 0
       - result.response.ipAddresses[0] == vm_ip
-      - properties1["era_user"] == "{{vm_username}}"
+      - properties1["era_user"] == "{{ vm_username }}"
       - properties1["listener_port"] == "5432"
       - properties1["postgres_software_home"] == postgres.software_home
       - properties1["working_dir"] == "/tmp"
       - properties1["application_type"] == "postgres_database"
       - result.response.nxClusterId == cluster.cluster1.uuid
 
-    fail_msg: "Unable to create db server vm using software profile"
-    success_msg: "DB server VM created successfully"
+    fail_msg: Unable to create db server vm using software profile
+    success_msg: DB server VM created successfully
 
-- name: Set db server vm uuid
+- name: Define variable for db server uuid
   ansible.builtin.set_fact:
-    db_server_uuid: "{{result.uuid}}"
+    db_server_uuid: "{{ result.uuid }}"
 
 ################################### DB server VM Delete test #############################
 
 - name: Unregister db server vm
   ntnx_ndb_db_server_vms:
-    state: "absent"
+    state: absent
     wait: true
-    uuid: "{{db_server_uuid}}"
+    uuid: "{{ db_server_uuid }}"
     delete_from_cluster: false
     delete_vgs: true
     delete_vm_snapshots: true
@@ -953,5 +827,5 @@
       - result.changed == True
       - result.response.status == "5"
 
-    fail_msg: "Unable to delete db server vm"
-    success_msg: "DB server VM deleted successfully"
+    fail_msg: Unable to delete db server vm
+    success_msg: DB server VM deleted successfully

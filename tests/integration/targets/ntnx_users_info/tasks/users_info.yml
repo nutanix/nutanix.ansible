@@ -1,6 +1,6 @@
 - name: Start testing ntnx_users_info
   ansible.builtin.debug:
-    msg: start testing ntnx_users_info
+    msg: Start testing ntnx_users_info
 ##################################################
 
 - name: List all users
@@ -16,11 +16,9 @@
     fail_msg: "Unable to list all users"
     success_msg: "User info obtained successfully"
 
-- name: Set user name
+- name: Setting user name and uuid
   ansible.builtin.set_fact:
     test_user_name: "{{users.response.entities.2.status.name}}"
-- name: Set user uuid
-  ansible.builtin.set_fact:
     test_user_uuid: "{{users.response.entities.2.metadata.uuid}}"
 
 ##################################################

@@ -1,13 +1,13 @@
 ---
-- name: Set module defaults
+- name: Ntnx_karbon_registries integration tests
   module_defaults:
-      group/nutanix.ncp.ntnx:
-          nutanix_host: "{{ ip }}"
-          nutanix_username: "{{ username }}"
-          nutanix_password: "{{ password }}"
-          validate_certs: "{{ validate_certs }}"
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
   block:
-      - name: Import "create.yml"
-        ansible.builtin.import_tasks: "create.yml"
-      - name: Import "negative_scenarios.yml"
-        ansible.builtin.import_tasks: "negative_scenarios.yml"
+    - name: Import Tasks
+      ansible.builtin.import_tasks: create.yml
+    - name: Import Tasks
+      ansible.builtin.import_tasks: negativ_scenarios.yml

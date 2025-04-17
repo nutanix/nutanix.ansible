@@ -1,5 +1,5 @@
 ---
-- name: Set module defaults
+- name: Initializing variables
   module_defaults:
       group/nutanix.ncp.ntnx:
           nutanix_host: "{{ ip }}"

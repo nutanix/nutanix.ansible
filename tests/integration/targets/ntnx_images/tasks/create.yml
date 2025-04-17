@@ -1,14 +1,14 @@
 ---
-- name: Start testing ntnx_images
+- name: Start ntnx_image create tests
   ansible.builtin.debug:
-    msg: start ntnx_image create tests
+    msg: Start ntnx_image create tests
 
 - name: Create image with minimal spec and source uri
   ntnx_images:
     state: present
     image_type: DISK_IMAGE
     source_uri: "{{ disk_image.url }}"
-    name: Integration-test-image-with-uri
+    name: integration-test-image-with-uri
     wait: true
   register: result
 
@@ -18,12 +18,12 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.response.status.resources.image_type == "DISK_IMAGE"
-      - result.response.status.name == 'Integration-test-image-with-uri'
+      - result.response.status.name == 'integration-test-image-with-uri'
       - result.response.status.resources.source_uri == "{{ disk_image.url }}"
     fail_msg: "Unable to create image using source_uri"
     success_msg: "Image with given source_uri created successfully"
 
-- name: Add image to delete list
+- name: Adding image to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
@@ -32,7 +32,7 @@
 - name: Create image with all spec and using local image upload
   ntnx_images:
     state: present
-    name: Integration-test-image-with-upload
+    name: integration-test-image-with-upload
     desc: "uploaded image during integration test"
     source_path: "{{ disk_image.dest }}"
     image_type: "DISK_IMAGE"
@@ -67,7 +67,7 @@
     fail_msg: "Unable to create image and upload local image with all specification"
     success_msg: "Image with given local path created successfully"
 
-- name: Add image to delete list
+- name: Adding image to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
@@ -77,7 +77,7 @@
   check_mode: true
   ntnx_images:
     state: present
-    name: Integration-test-image
+    name: integration-test-image
     desc: "uploaded image during integration test"
     source_uri: "{{ disk_image.url }}"
     image_type: "DISK_IMAGE"
@@ -104,7 +104,7 @@
       - result.changed == false
       - result.failed == false
       - result.response.metadata is defined
-      - result.response.spec.name == 'Integration-test-image'
+      - result.response.spec.name == 'integration-test-image'
       - result.response.spec.resources.source_uri == "{{ disk_image.url }}"
       - result.response.metadata.categories_mapping['AppType'] == ['Default']
       - result.response.metadata.categories_mapping['Environment'] == ['Dev']
@@ -122,7 +122,7 @@
     state: present
     source_uri: "www.google.com"
     image_type: "DISK_IMAGE"
-    name: Integration-test-image-with-uri
+    name: integration-test-image-with-uri
     wait: true
   register: result
   ignore_errors: true

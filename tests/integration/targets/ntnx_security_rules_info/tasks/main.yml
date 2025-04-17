@@ -1,3 +1,4 @@
+---
 - name: Set module defaults
   module_defaults:
     group/nutanix.ncp.ntnx:

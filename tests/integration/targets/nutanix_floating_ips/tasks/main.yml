@@ -9,5 +9,5 @@
   block:
     - name: Import create_floating_ips.yml
       ansible.builtin.import_tasks: "create_floating_ips.yml"
-    - name: Import negative_scenarios.yml
+    - name: Import delete_floating_ips.yml
       ansible.builtin.import_tasks: "negative_scenarios.yml"

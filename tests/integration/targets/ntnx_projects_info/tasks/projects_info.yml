@@ -1,4 +1,4 @@
-- name: Start ntnx_project update tests
+- name: Start ntnx_project_info tests
   ansible.builtin.debug:
     msg: "Start ntnx_project_info tests"
 
@@ -27,17 +27,17 @@
     collaboration: true
     role_mappings:
       - role:
-          name: "{{test_roles[0]}}"
+          name: "{{role_mappings[0]}}"
         user:
           uuid: "{{users[0]}}"
   register: project_2
   ignore_errors: true
 
-- name: Add project uuid to delete list
+- name: Adding project uuid to todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  project_1.project_uuid ] }}"
 
-- name: Add project uuid to delete list
+- name: Adding project uuid to todelete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  project_2.project_uuid ] }}"
 
@@ -148,7 +148,7 @@
     project_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: true
+  ignore_errors: false
 
 - name: Reset todelete list
   ansible.builtin.set_fact:

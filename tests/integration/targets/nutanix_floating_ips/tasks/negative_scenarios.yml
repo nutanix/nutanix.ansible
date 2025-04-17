@@ -1,4 +1,4 @@
-- name: Start testing ntnx_floating_ips
+- name: Started Negative Creation Cases
   ansible.builtin.debug:
     msg: "Started Negative Creation Cases"
 - name: Create floating ip with unknown external subnet name
@@ -12,7 +12,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
       - result.msg=="Failed generating floating_ip spec"
     success_msg: " Success: returned error as expected "
 #################################################################
@@ -45,7 +45,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
       - result.msg=="Failed generating floating_ip spec"
     success_msg: " Success: returned error as expected "
 ###############################################################

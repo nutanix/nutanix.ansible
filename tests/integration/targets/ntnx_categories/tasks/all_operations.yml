@@ -3,14 +3,14 @@
   ansible.builtin.debug:
     msg: Start testing ntnx_categories
 
-- name: Set category key and values
+- name: Set category name and values
   ansible.builtin.set_fact:
     first_category:
-      name: Test-catA1
+      name: test-catA1
       desc: first test description
       update_desc: updated test description
     second_category:
-      name: Test-catB1
+      name: test-catB1
     values:
       - "value-a"
       - "value-b"

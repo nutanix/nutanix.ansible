@@ -1,7 +1,7 @@
 ---
 - name: Start ntnx_image_placement_policy create tests
   ansible.builtin.debug:
-    msg: start ntnx_image_placement_policy create tests
+    msg: Start ntnx_image_placement_policy create tests
 
 - name: Create image placement policy with minimal spec
   ntnx_image_placement_policy:
@@ -28,7 +28,7 @@
     fail_msg: "Unable to create image placement policy with minimal spec"
     success_msg: "Image placement policy with minimal spec created successfully"
 
-- name: Add policy to delete list
+- name: Add policy to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
@@ -63,7 +63,7 @@
     fail_msg: "Unable to create image placement policy with all specifications"
     success_msg: "Image placement policy with all specifications created successfully"
 
-- name: Add policy to delete list
+- name: Add policy to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 

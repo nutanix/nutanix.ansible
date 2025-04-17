@@ -1,10 +1,10 @@
-- name: Start ntnx_address_groups_info tests
+- name: Start testing ntnx_address_groups_info
   ansible.builtin.debug:
-    msg: start testing ntnx_address_groups_info
+    msg: Start testing ntnx_address_groups_info
 
 - name: Create address groups for tests
   ntnx_address_groups:
-    name: Test-address-groups-info-1
+    name: test-address-groups-info-1
     subnets:
       - network_ip: "10.0.2.0"
         network_prefix: 24
@@ -12,7 +12,7 @@
 
 - name: Create address groups for tests
   ntnx_address_groups:
-    name: Test-address-groups-info-2
+    name: test-address-groups-info-2
     subnets:
       - network_ip: "10.0.3.1"
         network_prefix: 32
@@ -34,11 +34,9 @@
     fail_msg: "Unable to list all address groups"
     success_msg: " address groups info obtained successfully"
 
-- name: Set address group name
+- name: Set address group name and uuid for further tests
   ansible.builtin.set_fact:
     test_address_groups_name: "{{result.response.entities.1.address_group.name}}"
-- name: Set address group uuid
-  ansible.builtin.set_fact:
     test_address_groups_uuid: "{{result.response.entities.1.uuid}}"
 
 ##################################################

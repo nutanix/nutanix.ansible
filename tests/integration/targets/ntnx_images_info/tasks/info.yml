@@ -1,7 +1,7 @@
 ---
-- name: Start testing ntnx_images_info
+- name: Start ntnx_images_info tests
   ansible.builtin.debug:
-    msg: "start ntnx_images_info tests"
+    msg: "Start ntnx_images_info tests"
 
 - name: Test getting all images
   ntnx_images_info:
@@ -39,7 +39,7 @@
 
 - name: Test getting particular image using uuid
   ntnx_images_info:
-    image_uuid: "{{ result.response.entities[0].metadata.uuid }}"
+    image_uuid: '{{ result.response.entities[0].metadata.uuid }}'
   register: result
 
 - name: Check listing status
