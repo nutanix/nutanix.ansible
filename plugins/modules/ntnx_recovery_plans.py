@@ -14,7 +14,9 @@ version_added: 1.5.0
 description: 'Create, Update, Delete Recovery Plan'
 options:
   plan_uuid:
-    description: recovery_plan uuid
+    description:
+        - recovery_plan uuid
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
     required: false
   name:
@@ -139,7 +141,7 @@ options:
                 type: str
                 required: true
               gateway_ip:
-                description: gateway ip of subnet incase of IPAM
+                description: gateway ip of subnet in case of IPAM
                 type: str
                 required: false
               prefix:
@@ -187,7 +189,7 @@ options:
                 type: str
                 required: true
               gateway_ip:
-                description: gateway ip of subnet incase of IPAM
+                description: gateway ip of subnet in case of IPAM
                 type: str
                 required: false
               prefix:
@@ -244,7 +246,7 @@ options:
                 type: str
                 required: true
               gateway_ip:
-                description: gateway ip of subnet incase of IPAM
+                description: gateway ip of subnet in case of IPAM
                 type: str
                 required: false
               prefix:
@@ -292,7 +294,7 @@ options:
                 type: str
                 required: true
               gateway_ip:
-                description: gateway ip of subnet incase of IPAM
+                description: gateway ip of subnet in case of IPAM
                 type: str
                 required: false
               prefix:
@@ -1042,7 +1044,7 @@ def check_recovery_plan_idempotency(old_spec, update_spec):
         if config not in old_ip_assignments:
             return False
 
-    # comparing availibility zones
+    # comparing availability zones
     if (
         old_spec["spec"]["resources"]["parameters"]["availability_zone_list"]
         != update_spec["spec"]["resources"]["parameters"]["availability_zone_list"]

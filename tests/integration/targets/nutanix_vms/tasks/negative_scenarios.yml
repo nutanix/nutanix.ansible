@@ -1,4 +1,4 @@
-- name: Started Negative Creation Cases
+- name: Start Negative Testing
   ansible.builtin.debug:
     msg: "Started Negative Creation Cases"
 
@@ -8,7 +8,7 @@
     name: Unknown project name
     timezone: "UTC"
     project:
-      name: project
+      name: Project
     cluster:
       uuid: "{{ cluster.uuid }}"
     disks:
@@ -24,7 +24,7 @@
   ansible.builtin.assert:
     that:
       - result.msg == "Failed generating VM Spec"
-      - result.failed == true
+      - result.failed == True
       - result.failed is defined
       - result.error == "Project project not found."
     success_msg: " Success: returned error as expected "
@@ -55,7 +55,7 @@
   ansible.builtin.assert:
     that:
       - result.msg == "Unsupported operation: Unable to create disk, 'size_gb' is required for using storage container."
-      - result.failed == true
+      - result.failed == True
       - result.failed is defined
     success_msg: " Success: returned error as expected "
 ##################################################################################
@@ -79,7 +79,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.failed == true
+      - result.failed == True
       - result.response.state == 'ERROR'
       - result.status_code == 422
       - result.error == "HTTP Error 422: UNPROCESSABLE ENTITY"
@@ -106,7 +106,7 @@
   ansible.builtin.assert:
     that:
       - result.msg == "Failed generating VM Spec"
-      - result.failed == true
+      - result.failed == True
       - result.response is defined
       - result.error == "Cluster auto_cluster not found."
     success_msg: " Success: returned error as expected "
@@ -133,7 +133,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.failed == true
+      - result.failed == True
       - result.msg == "Failed generating VM Spec"
       - result.error == "Subnet vlan.8000 not found."
     success_msg: " Success: returned error as expected "
@@ -160,7 +160,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.failed == true
+      - result.failed == True
       - result.error == "HTTP Error 422: UNPROCESSABLE ENTITY"
       - result.response.state == 'ERROR'
       - result.status_code == 422
@@ -170,7 +170,7 @@
 - name: Unknow Image name
   ntnx_vms:
     state: present
-    name: unknown image_vm
+    name: Unknown image_vm
     timezone: "UTC"
     cluster:
       name: "{{ cluster.name }}"
@@ -187,7 +187,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.failed == true
+      - result.failed == True
       - result.response.state == 'ERROR'
       - result.status_code == 422
     success_msg: " Success: returned error as expected "
@@ -214,7 +214,7 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.failed == true
+      - result.failed == True
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail VM created successfully with invalid argument for size_gb "
 #############################################################################################
@@ -251,14 +251,14 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.failed == true
+      - result.failed == True
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail: VM created successfully with image size is less than actual "
 #################################################################################
 - name: Unknow storage container name
   ntnx_vms:
     state: present
-    name: unknown storage container
+    name: Unknown storage container
     timezone: "UTC"
     cluster:
       name: "{{ cluster.name }}"
@@ -275,7 +275,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.failed == true
+      - result.failed == True
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail VM created successfully with unknown storage container name "
 #################################################################################
@@ -290,7 +290,7 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.failed == true
+      - result.failed == True
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail deleting VM with unknown uuid "
 #################################################################################
@@ -303,6 +303,6 @@
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.failed == true
+      - result.failed == True
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail deleting VM with missing uuid "
