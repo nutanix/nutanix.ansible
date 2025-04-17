@@ -1,5 +1,5 @@
 ---
-requires_ansible: ">=2.15.0"
+requires_ansible: ">=2.16.0"
 action_groups:
   ntnx:
     - ntnx_acps
@@ -188,3 +188,26 @@ action_groups:
     - ntnx_storage_containers_stats_v2
     - ntnx_storage_containers_info_v2
     - ntnx_storage_containers_v2
+    - ntnx_pc_unregistration_v2
+    - ntnx_pc_backup_target_info_v2
+    - ntnx_pc_backup_target_v2
+    - ntnx_pc_config_info_v2
+    - ntnx_pc_deploy_v2
+    - ntnx_pc_restore_v2
+    - ntnx_pc_restore_source_info_v2
+    - ntnx_pc_restore_source_v2
+    - ntnx_pc_restorable_domain_managers_info_v2
+    - ntnx_pc_restore_points_info_v2
+    - ntnx_protection_policies_info_v2
+    - ntnx_protection_policies_v2
+    - ntnx_promote_protected_resources_v2
+    - ntnx_restore_protected_resources_v2
+    - ntnx_protected_resources_info_v2
+    - ntnx_volume_groups_categories_v2
+    - ntnx_lcm_config_info_v2
+    - ntnx_lcm_config_v2
+    - ntnx_lcm_inventory_v2
+    - ntnx_lcm_prechecks_v2
+    - ntnx_lcm_upgrades_v2
+    - ntnx_lcm_entities_info_v2
+    - ntnx_lcm_status_info_v2
