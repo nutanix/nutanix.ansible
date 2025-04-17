@@ -17,7 +17,7 @@ options:
   source:
     description:
       - local full path of installer file where the ansible playbook runs
-      - mandatory incase of upload i.e. state=present
+      - mandatory in case of upload i.e. state=present
     type: str
     required: false
   filename:

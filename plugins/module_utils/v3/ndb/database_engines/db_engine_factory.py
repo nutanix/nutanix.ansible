@@ -20,7 +20,7 @@ def get_engine_type(module):
         if type in module.params:
             return type, None
 
-    return None, "Input doesn't conatains config for allowed engine types of databases"
+    return None, "Input doesn't contains config for allowed engine types of databases"
 
 
 def create_db_engine(module, engine_type=None, db_architecture=None):

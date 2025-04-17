@@ -35,7 +35,7 @@ options:
                 type: bool
             load_dbserver_cluster:
                 description:
-                    - load db serverv cluster in response
+                    - load db server cluster in response
                 type: bool
             order_by_dbserver_cluster:
                 description:

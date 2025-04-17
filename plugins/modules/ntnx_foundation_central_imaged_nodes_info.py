@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central_imaged_nodes_info
-short_description: Nutanix module which returns the imaged nodes within the Foudation Central
+short_description: Nutanix module which returns the imaged nodes within the Foundation Central
 version_added: 1.1.0
 description: 'List all the imaged nodes created in Foundation Central.'
 options:

@@ -115,7 +115,7 @@ class PostgresSingleInstance(Postgres):
             spec = {"name": key, "value": config.get(key, value)}
             action_arguments.append(spec)
 
-        # handle scenariors where display names are diff
+        # handle scenarios where display names are diff
         action_arguments.append(
             {"name": "database_names", "value": config.get("db_name")}
         )
@@ -212,7 +212,7 @@ class PostgresHAInstance(Postgres):
             spec = {"name": key, "value": config.get(key, default)}
             action_arguments.append(spec)
 
-        # handle scenariors where display names are different
+        # handle scenarios where display names are different
         action_arguments.append(
             {"name": "database_names", "value": config.get("db_name")}
         )

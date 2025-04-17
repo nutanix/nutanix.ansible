@@ -27,6 +27,7 @@ options:
     uuid:
         description:
             - uuid of database server vm for updating or deleting vm
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
     desc:
         description:
@@ -110,7 +111,7 @@ options:
                 type: str
             version_uuid:
                 description:
-                    - version UUID for softwware profile
+                    - version UUID for software profile
                     - if not given then latest version will be used
                 type: str
     time_machine:
