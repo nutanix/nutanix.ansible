@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -14,6 +15,7 @@ short_description: Manage disks for Nutanix AHV VMs
 version_added: "2.0.0"
 description:
     - This module allows you to manage disks for Nutanix AHV VMs.
+    - This module uses PC v4 APIs based SDKs
 options:
     state:
         description:
@@ -170,7 +172,6 @@ options:
         type: bool
         default: true
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -179,7 +180,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Create a disk for a VM
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -203,7 +204,7 @@ EXAMPLES = r"""
     wait: true
 
 - name: Update a disk's storage container and size for a VM
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -218,7 +219,7 @@ EXAMPLES = r"""
     wait: true
 
 - name: Delete a disk from a VM
-  ntnx_vms_disks_v2:
+  nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd6"
     ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd7"
     state: absent

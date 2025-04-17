@@ -8,6 +8,7 @@
     mode: "0644"
     url: "{{ image_url }}"
     dest: "{{ source }}"
+  no_log: true
 
 - name: Image upload with nos installer_type
   ntnx_foundation_image_upload:
@@ -18,6 +19,7 @@
     timeout: 1800
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -35,6 +37,7 @@
     installer_type: nos
   register: result
   ignore_errors: true
+  no_log: true
 
 - name: Creation Status
   ansible.builtin.assert:

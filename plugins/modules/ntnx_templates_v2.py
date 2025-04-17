@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,6 +13,7 @@ module: ntnx_templates_v2
 short_description: Manage Nutanix AHV template resources
 description:
     - This module allows you to create, update, and delete Nutanix AHV templates.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     state:
@@ -118,7 +120,9 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                     datasource_type:
-                                                                        description: Type of cloud-init datasource
+                                                                        description:
+                                                                            - Type of cloud-init datasource
+                                                                            - Required when using user_data
                                                                         type: str
                                                                         choices: ["CONFIG_DRIVE_V2"]
                                                                     metadata:
@@ -135,7 +139,8 @@ options:
                                                                                     type: dict
                                                                                     suboptions:
                                                                                         value:
-                                                                                            description: The actual user data script content
+                                                                                            description:
+                                                                                                - base64 encoded cloud init script.
                                                                                             type: str
                                                                                             required: True
                                                                                 custom_key_values:
@@ -350,7 +355,9 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                     datasource_type:
-                                                                        description: Type of cloud-init datasource
+                                                                        description:
+                                                                            - Type of cloud-init datasource
+                                                                            - Required when using user_data
                                                                         type: str
                                                                         choices: ["CONFIG_DRIVE_V2"]
                                                                     metadata:
@@ -367,7 +374,8 @@ options:
                                                                                     type: dict
                                                                                     suboptions:
                                                                                         value:
-                                                                                            description: The actual user data script content
+                                                                                            description:
+                                                                                                - base64 encoded cloud init script.
                                                                                             type: str
                                                                                             required: True
                                                                                 custom_key_values:
@@ -539,7 +547,9 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                     datasource_type:
-                                                                        description: Type of cloud-init datasource
+                                                                        description:
+                                                                            - Type of cloud-init datasource
+                                                                            - Required when using user_data
                                                                         type: str
                                                                         choices: ["CONFIG_DRIVE_V2"]
                                                                     metadata:
@@ -556,7 +566,8 @@ options:
                                                                                     type: dict
                                                                                     suboptions:
                                                                                         value:
-                                                                                            description: The actual user data script content
+                                                                                            description:
+                                                                                                - base64 encoded cloud init script.
                                                                                             type: str
                                                                                             required: True
                                                                                 custom_key_values:
@@ -1141,14 +1152,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
 - name: Create new template  from a vm
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     ext_id: "{{ template1_ext_id }}"
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -1162,7 +1172,7 @@ EXAMPLES = r"""
           ext_id: "{{ vm_uuid }}"
 
 - name: Update template description & name
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -1181,7 +1191,7 @@ EXAMPLES = r"""
           name: "new_vm_name"
 
 - name: Delete Template
-  ntnx_templates_v2:
+  nutanix.ncp.ntnx_templates_v2:
     ext_id: "{{ template1_ext_id }}"
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

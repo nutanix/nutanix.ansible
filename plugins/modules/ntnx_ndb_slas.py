@@ -193,7 +193,7 @@ def update_sla(module, result):
     if spec == sla:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
-
+    spec["id"] = uuid
     resp = _sla.update(data=spec, uuid=uuid)
     result["response"] = resp
     result["sla_uuid"] = uuid

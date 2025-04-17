@@ -1,5 +1,6 @@
-# Copyright: 2021, Ansible Project
-# Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause )
+# Copyright: (c) 2024, Nutanix
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -199,6 +200,15 @@ class ClusterSpecs:
             choices=["CFT_1N_OR_1D", "CFT_2N_OR_2D", "CFT_1N_AND_1D", "CFT_0N_AND_0D"],
         ),
     )
+
+    pulse_spec = dict(
+        is_enabled=dict(type="bool"),
+        pii_scrubbing_level=dict(
+            type="str",
+            choices=["ALL", "DEFAULT"],
+        ),
+    )
+
     cluster_config = dict(
         cluster_function=dict(
             type="list", elements="str", choices=["AOS", "ONE_NODE", "TWO_NODE"]
@@ -224,6 +234,9 @@ class ClusterSpecs:
             ],
         ),
         encryption_in_transit_status=dict(type="str", choices=["ENABLED", "DISABLED"]),
+        pulse_status=dict(
+            type="dict", options=pulse_spec, obj=clusters_sdk.PulseStatus
+        ),
     )
 
     cluster = dict(

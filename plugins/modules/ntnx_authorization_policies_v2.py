@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,6 +14,7 @@ module: ntnx_authorization_policies_v2
 short_description: Manage Nutanix PC IAM authorization policies
 description:
     - This module allows you to create, update, and delete authorization policies in Nutanix PC.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     state:
@@ -75,7 +77,6 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
-  - Prem Karat (@premkarat)
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
   - Pradeepsingh Bhati (@bhati-pradeep)
@@ -385,10 +386,8 @@ def update_authorization_policy(module, result):
 
     if getattr(resp.data, "severity", None) == "ERROR":
         result["error"] = resp.data.message
-        module.fail_json(
-            msg="Failed to update authorization policy",
-            **result,
-        )
+        msg = "Failed to update authorization policy"
+        module.fail_json(msg=msg, **result)
 
     resp = get_authorization_policy(module, authorization_policies, ext_id=ext_id)
     result["response"] = strip_internal_attributes(resp.to_dict())

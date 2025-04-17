@@ -27,7 +27,9 @@
 
 - name: Set command split for resetting cluster username and password
   ansible.builtin.set_fact:
-    pe_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
+    pe_ssh_cmd:
+      sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+      {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
     reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
     cluster_status: /usr/local/nutanix/cluster/bin/cluster status
 
@@ -149,6 +151,7 @@
       - result.response.config.fault_tolerance_state.domain_awareness_level == "DISK"
       - result.response.config.operation_mode == "NORMAL"
       - result.response.config.encryption_in_transit_status == "ENABLED"
+      - result.response.config.fault_tolerance_state.desired_cluster_fault_tolerance == "CFT_2N_OR_2D"
       - result.response.network.external_address.ipv4.value == "10.0.0.3"
       - result.response.network.external_data_service_ip.ipv4.value == "10.0.0.4"
       - result.response.network.nfs_subnet_whitelist[0] == "vlan.123"
@@ -313,7 +316,7 @@
 
 - name: Create cluster name
   ansible.builtin.set_fact:
-    cluster_name: "{{ prefix_name }}_{{ clusters[0].name }}"
+    cluster_name: "{{ random_name }}_{{ prefix_name }}_{{ clusters[0].name }}"
 
 - name: Check if cluster is unconfigured or not
   ansible.builtin.command: "{{ cluster_status_command }}"
@@ -503,7 +506,9 @@
       - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
       - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
       - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
-      - result.response.config.fault_tolerance_state.domain_awareness_level == "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+      - >
+        result.response.config.fault_tolerance_state.domain_awareness_level ==
+        "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
     fail_msg: Failed verifying cluster creation
     success_msg: Cluster creation passed successfully
 
@@ -677,7 +682,9 @@
       - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
       - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
       - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
-      - result.response.config.fault_tolerance_state.domain_awareness_level == "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+      - >
+        result.response.config.fault_tolerance_state.domain_awareness_level ==
+        "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
       - result.response.network.external_address.ipv4.value == "{{ clusters[0].network.virtual_ip }}"
       - unique_ntp_servers | length == 4
       - unique_dns_servers | length == 2
@@ -730,7 +737,10 @@
       redundancy_factor: 2
       cluster_arch: X86_64
       fault_tolerance_state:
-        domain_awareness_level: RACK
+        domain_awareness_level: DISK
+      pulse_status:
+        is_enabled: true
+        pii_scrubbing_level: DEFAULT
   register: result
   ignore_errors: true
 
@@ -757,6 +767,10 @@
       - result.response.config.authorized_public_key_list[0].name == "key1"
       - result.response.config.authorized_public_key_list[0].key == "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQ6"
       - result.response.config.redundancy_factor == 2
+      - result.response.config.cluster_arch == "X86_64"
+      - result.response.config.fault_tolerance_state.domain_awareness_level == "DISK"
+      - result.response.config.pulse_status.is_enabled == true
+      - result.response.config.pulse_status.pii_scrubbing_level == "DEFAULT"
     fail_msg: Cluster update spec is not generated as expected
     success_msg: Cluster update spec is generated as expected
 
@@ -790,12 +804,15 @@
   ansible.builtin.set_fact:
     updated_auth_public_keys: "{{ auth_public_keys + [new_auth_public_key] }}"
 
-- name: Update cluster basic configuration, add auth public keys
+- name: Update cluster basic configuration, add auth public keys, and enable pulse
   ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
     config:
       authorized_public_key_list: "{{ updated_auth_public_keys }}"
+      pulse_status:
+        is_enabled: true
+        pii_scrubbing_level: ALL
     timeout: 1200
   register: result
   ignore_errors: true
@@ -838,14 +855,19 @@
       - cluster_info.response.config.authorized_public_key_list == updated_auth_public_keys
       - cluster_info.response.network.ntp_server_ip_list | length == 4
       - cluster_info.response.network.name_server_ip_list | length == 2
+      - cluster_info.response.config.pulse_status.is_enabled == true
+      - cluster_info.response.config.pulse_status.pii_scrubbing_level == "ALL"
     fail_msg: Cluster update failed
     success_msg: Cluster update passed
 
 ############################################# Update cluster ntp servers, dns servers and smtp servers ##############################################
 
-- name: Update ntp servers, dns servers and smtp servers in cluster
+- name: Update ntp servers, dns servers and smtp servers in cluster, and disable pulse
   ntnx_clusters_v2:
     ext_id: "{{ cluster_ext_id }}"
+    config:
+      pulse_status:
+        is_enabled: false
     network:
       external_data_service_ip:
         ipv4:
@@ -907,6 +929,7 @@
       - result.response.network.smtp_server.server.username == "{{ clusters[0].network.smtp_server.username }}"
       - result.response.network.smtp_server.type == "STARTTLS"
       - result.response.config.authorized_public_key_list | length == updated_auth_public_keys | length
+      - result.response.config.pulse_status.is_enabled == false
     fail_msg: Cluster updated data verification failed
     success_msg: Fetched cluster info and verified updated attribute successfully
 
@@ -915,6 +938,9 @@
   ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
+    config:
+      pulse_status:
+        is_enabled: false
     network:
       external_data_service_ip:
         ipv4:

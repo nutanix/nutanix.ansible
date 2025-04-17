@@ -269,7 +269,7 @@
     fail_msg: "Unable to update protection rule with asynchronous schedule"
     success_msg: "Protection policy with with asynchronous schedule updated successfully"
 
-##################################################################################################################################################################
+####################################################################################
 
 - name: Idempotency Check
   ntnx_protection_rules:

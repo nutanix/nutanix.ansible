@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,6 +14,7 @@ module: ntnx_clusters_v2
 short_description: Manage Nutanix clusters in Prism Central
 description:
   - This module allows you to create, update, and destroy Nutanix clusters using Prism Central.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   state:
@@ -209,6 +211,23 @@ options:
         choices:
           - ENABLED
           - DISABLED
+      pulse_status:
+        description:
+          - Flag to enable/disable pulse in cluster.
+          - Supported only in update cluster operation.
+        type: dict
+        suboptions:
+          is_enabled:
+            description:
+              - Whether to enable or disable pulse.
+            type: bool
+          pii_scrubbing_level:
+            description:
+              - The PII scrubbing level of the pulse.
+            type: str
+            choices:
+              - ALL
+              - DEFAULT
   network:
     description:
       - The network configuration of the cluster.
@@ -747,13 +766,12 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
 author:
-  - Prem Karat (@premkarat)
   - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
 - name: Create cluster
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -771,7 +789,7 @@ EXAMPLES = r"""
         domain_awareness_level: "DISK"
 
 - name: Create cluster with network configuration
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -803,7 +821,7 @@ EXAMPLES = r"""
     timeout: 1800
 
 - name: Update cluster
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -822,7 +840,7 @@ EXAMPLES = r"""
         domain_awareness_level: "DISK"
 
 - name: Destroy cluster
-  ntnx_clusters_v2:
+  nutanix.ncp.ntnx_clusters_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

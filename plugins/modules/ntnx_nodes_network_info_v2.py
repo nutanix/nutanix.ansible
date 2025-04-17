@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,6 +13,7 @@ module: ntnx_nodes_network_info_v2
 short_description: Get netowrk information for uncofigured cluster nodes
 description:
   - This module allows you to Get netowrk information for uncofigured cluster nodes.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   cluster_ext_id:
@@ -178,15 +180,107 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
+- name: Get network information for uncofigured cluster nodes
+  nutanix.ncp.ntnx_nodes_network_info_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    cluster_ext_id: 00061de6-1234-4321-1122-ac1f6b6f97e2
+    node_list:
+      - cvm_ip:
+          ipv4:
+            value: "10.0.0.1"
+        hypervisor_ip:
+          ipv4:
+            value: "10.0.0.2"
+    request_type: "expand_cluster"
 """
 
 RETURN = r"""
+response:
+    description:
+        - Response for getting network information for uncofigured cluster nodes.
+    type: dict
+    returned: always
+    sample:
+      {
+        "ext_id": "54fbdaf3-972d-4d1c-4413-005a9fe1fc1d",
+        "links": null,
+        "response": {
+            "network_info": {
+                "hci": [
+                    {
+                        "hypervisor_type": "AHV",
+                        "name": "br0",
+                        "networks": [
+                            "Management"
+                        ]
+                    }
+                ],
+                "so": [
+                    {
+                        "hypervisor_type": "AHV",
+                        "name": "br0",
+                        "networks": [
+                            "Management"
+                        ]
+                    }
+                ]
+            },
+            "uplinks": [
+                {
+                    "cvm_ip": {
+                        "ipv4": {
+                            "prefix_length": 32,
+                            "value": "10.39.6.77"
+                        },
+                        "ipv6": null
+                    },
+                    "uplink_list": [
+                        {
+                            "mac": "00:e0:ed:36:41:a8",
+                            "name": "eth2"
+                        },
+                        {
+                            "mac": "0c:c4:7a:c7:c2:0b",
+                            "name": "eth1"
+                        },
+                        {
+                            "mac": "00:e0:ed:36:41:a9",
+                            "name": "eth3"
+                        },
+                        {
+                            "mac": "0c:c4:7a:c7:c2:0a",
+                            "name": "eth0"
+                        }
+                    ]
+                }
+            ],
+            "warnings": null
+        },
+        "task_response_type": "NETWORKING_DETAILS",
+        "tenant_id": null
+      }
+error:
+    description: The error message if an error occurs.
+    type: str
+    returned: when an error occurs
+
+cluster_ext_id:
+    description: The external ID of the cluster.
+    type: str
+    returned: always
+
+task_ext_id:
+    description: The external ID of the task.
+    type: str
+    returned: always
+
 """
 
 
@@ -288,10 +382,8 @@ def get_nodes_network_information(module, cluster_node_api, result):
     spec, err = sg.generate_spec(default_spec)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating spec for getting network information for cluster nodes",
-            **result,
-        )
+        msg = "Failed generating spec for getting network information for cluster nodes"
+        module.fail_json(msg=msg, **result)
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
     if module.check_mode:

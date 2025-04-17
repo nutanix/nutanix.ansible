@@ -180,19 +180,8 @@
       latestSnapshot: false
       lcmConfig:
         databaseLCMConfig:
-          expiryDetails:
-            {
-              deleteDatabase: true,
-              expireInDays: 2,
-              expiryDateTimezone: Asia/Calcutta,
-              remindBeforeInDays: 1,
-            }
-          refreshDetails:
-            {
-              refreshDateTimezone: Asia/Calcutta,
-              refreshInDays: 2,
-              refreshTime: "12:00:00",
-            }
+          expiryDetails: { deleteDatabase: true, expireInDays: 2, expiryDateTimezone: Asia/Calcutta, remindBeforeInDays: 1 }
+          refreshDetails: { refreshDateTimezone: Asia/Calcutta, refreshInDays: 2, refreshTime: "12:00:00" }
       name: "{{ clone_db1 }}"
       networkProfileId: "{{ network_profile.uuid }}"
       nodeCount: 1
@@ -205,14 +194,7 @@
       nxClusterId: "{{ cluster.cluster1.uuid }}"
       snapshotId:
       sshPublicKey: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER
-      tags:
-        [
-          {
-            tagId: "{{ tags.clones.uuid }}",
-            tagName: ansible-clones,
-            value: ansible-test-db-clones,
-          },
-        ]
+      tags: [{ tagId: "{{ tags.clones.uuid }}", tagName: ansible-clones, value: ansible-test-db-clones }]
       timeMachineId: "{{ time_machine_uuid }}"
       timeZone: UTC
       userPitrTimestamp: "2023-02-04 07:29:36"

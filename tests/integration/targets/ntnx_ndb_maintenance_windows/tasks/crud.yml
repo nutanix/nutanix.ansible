@@ -35,14 +35,7 @@
       response:
         description: ansible-created-window
         name: "{{ window1_name }}"
-        schedule:
-          {
-            dayOfWeek: TUESDAY,
-            duration: 2,
-            recurrence: WEEKLY,
-            startTime: "11:00:00",
-            weekOfMonth: !!null "",
-          }
+        schedule: { dayOfWeek: TUESDAY, duration: 2, recurrence: WEEKLY, startTime: "11:00:00", weekOfMonth: !!null "" }
         timezone: Asia/Calcutta
       uuid:
 

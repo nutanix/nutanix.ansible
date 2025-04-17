@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_subnets_v2
 short_description: subnets module which supports Create, Update, Delete subnets
 version_added: 2.0.0
-description: "Create, Update, Delete subnets"
+description:
+  - Create, Update, Delete subnets
+  - This module uses PC v4 APIs based SDKs
 notes:
   - For updating IPAM config using C(ip_config), provide all details again. Module will not fetch existing IPAM config.
   - For subnet create and delete, module will return tasks status in response after operation.
@@ -370,7 +373,6 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
  - George Ghawali (@george-ghawali)
@@ -378,7 +380,7 @@ author:
 
 EXAMPLES = r"""
 - name: VLAN subnet with IPAM IP pools
-  ntnx_subnets_v2:
+  nutanix.ncp.ntnx_subnets_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -407,7 +409,7 @@ EXAMPLES = r"""
                 prefix_length: 24
 
 - name: External subnet with NAT
-  ntnx_subnets_v2:
+  nutanix.ncp.ntnx_subnets_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -442,7 +444,7 @@ EXAMPLES = r"""
                 prefix_length: 27
 
 - name: Overlay Subnet with IP_pools
-  ntnx_subnets_v2:
+  nutanix.ncp.ntnx_subnets_v2:
     state: present
     nutanix_host: "{{ ip }}"
     validate_certs: false
@@ -469,7 +471,7 @@ EXAMPLES = r"""
                 prefix_length: 24
 
 - name: Delete subnets
-  ntnx_subnets_v2:
+  nutanix.ncp.ntnx_subnets_v2:
     state: absent
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

@@ -216,3 +216,9 @@
         mode: "0644"
         url: "{{ xml_content.url }}"
         dest: "{{ xml_content.dest }}"
+
+    - name: Downloading unattendxml file for windows tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ unattendxml.url }}"
+        dest: "{{ unattendxml.dest }}"

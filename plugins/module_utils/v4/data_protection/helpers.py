@@ -1,3 +1,6 @@
+# Copyright: (c) 2024, Nutanix
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -35,7 +38,7 @@ def get_recovery_point(module, api_instance, ext_id):
     This method will return recovery point info using external ID.
     Args:
         module: Ansible module
-        api_instance: AddressGroupsApi instance from ntnx_dataprotection_py_client sdk
+        api_instance: RecoveryPointsApi instance from ntnx_dataprotection_py_client sdk
         ext_id (str): top level recovery point external ID
     Returns:
         recovery_point_info (object): recovery point info
@@ -47,4 +50,24 @@ def get_recovery_point(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching recovery point info using ext_id",
+        )
+
+
+def get_protected_resource(module, api_instance, ext_id):
+    """
+    This method will return protected resource info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ProtectedResourcesApi instance from ntnx_dataprotection_py_client sdk
+        ext_id (str): protected resource external ID
+    Returns:
+        protected_resource_info (object): protected resource info
+    """
+    try:
+        return api_instance.get_protected_resource_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching protected resource info using ext_id",
         )

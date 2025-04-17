@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,6 +14,7 @@ module: ntnx_vms_power_actions_v2
 short_description: Perform power actions on Nutanix VMs
 description:
     - This module allows you to perform power actions on Nutanix VMs, such as powering on, powering off, resetting, and more.
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:
@@ -64,13 +65,12 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - George Ghawali (@george-ghawali)
 """
 EXAMPLES = r"""
 
 - name: Power on a VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -81,7 +81,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Power off a VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -92,7 +92,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Reset a VM
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -103,7 +103,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Shutdown a VM using ACPI
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -114,7 +114,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Shutdown a VM using NGT
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -125,7 +125,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Reboot a VM using ACPI
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -136,7 +136,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Reboot a VM using NGT
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"
@@ -150,7 +150,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Power on a VM with guest power state transition configuration
-  ntnx_vms_power_actions_v2:
+  nutanix.ncp.ntnx_vms_power_actions_v2:
       nutanix_host: "{{ ip }}"
       validate_certs: false
       nutanix_username: "{{ username }}"

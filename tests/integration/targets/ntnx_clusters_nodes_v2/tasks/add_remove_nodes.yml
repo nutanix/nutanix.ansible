@@ -7,7 +7,9 @@
   ansible.builtin.set_fact:
     node_indices: [0, 1, 2, 3]
     prefix_name: ansible_cluster_test
-    pe_ssh_cmd: sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
+    pe_ssh_cmd:
+      sshpass -p '{{ clusters[0].pe_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+      {{ clusters[0].pe_username }}@{{ clusters[0].nodes[0].cvm_ip }}
     reset_username_password: /home/nutanix/prism/cli/ncli user reset-password user-name={{ username }} password={{ password }}
 
 - name: Set cluster name and reset command
@@ -259,7 +261,7 @@
 
 - name: Check if each cluster node is unconfigured
   ansible.builtin.command:
-    'sshpass -p "{{ clusters[0].pe_password }}" ssh -o StrictHostKeyChecking=no \
+    'sshpass -p "{{ clusters[0].pe_password }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     {{ clusters[0].pe_username }}@{{ clusters[0].nodes[item].cvm_ip }} "/usr/local/nutanix/cluster/bin/cluster status"'
   loop: "{{ node_indices }}"
   register: results
@@ -485,7 +487,9 @@
       - result.response.config.cluster_function[0] == "{{ clusters[0].config.cluster_functions[0] }}"
       - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_expanding
       - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
-      - result.response.config.fault_tolerance_state.domain_awareness_level == "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_expanding }}"
+      - >
+        result.response.config.fault_tolerance_state.domain_awareness_level ==
+        "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_expanding }}"
     fail_msg: Failed verifying cluster creation
     success_msg: Cluster creation passed successfully
 

@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,9 +14,9 @@ short_description: Fetch information about Nutanix VM's CD ROM
 description:
   - This module fetches information about Nutanix VM's CD ROM.
   - The module can fetch information about all CD ROMs or a specific CD ROM.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     ext_id:
@@ -35,7 +36,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch information about all CD ROMs of a vm
-  ntnx_vms_cd_rom_info_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -43,7 +44,7 @@ EXAMPLES = r"""
     vm_ext_id: 530567f3-abda-4913-b5d0-0ab6758ec16e
 
 - name: Fetch information about a specific CD ROM
-  ntnx_vms_cd_rom_info_v2:
+  nutanix.ncp.ntnx_vms_cd_rom_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

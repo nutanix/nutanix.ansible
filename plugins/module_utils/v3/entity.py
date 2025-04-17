@@ -172,7 +172,7 @@ class Entity(object):
         no_response=False,
         timeout=30,
         method="GET",
-        **kwargs,
+        **kwargs  # fmt: skip
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -185,7 +185,7 @@ class Entity(object):
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
-            **kwargs,
+            **kwargs  # fmt: skip
         )
 
     def update(
@@ -198,7 +198,7 @@ class Entity(object):
         no_response=False,
         timeout=30,
         method="PUT",
-        **kwargs,
+        **kwargs  # fmt: skip
     ):
         url = self.base_url + "/{0}".format(uuid) if uuid else self.base_url
         if endpoint:
@@ -212,7 +212,7 @@ class Entity(object):
             raise_error=raise_error,
             no_response=no_response,
             timeout=timeout,
-            **kwargs,
+            **kwargs  # fmt: skip
         )
 
     # source is the file path of resource where ansible yaml runs
@@ -458,7 +458,7 @@ class Entity(object):
         raise_error=True,
         no_response=False,
         timeout=30,
-        **kwargs,
+        **kwargs  # fmt: skip
     ):
         # only jsonify if content-type supports, added to avoid incase of form-url-encodeded type data
         if self.headers["Content-Type"] == "application/json" and data is not None:

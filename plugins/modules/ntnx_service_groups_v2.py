@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -19,6 +20,7 @@ options:
       - State of the service group, whether to create, update or delete.
       - present -> Create service group if external ID is not provided, Update service group if external ID is provided.
       - absent -> Delete service group with the given external ID.
+      - This module uses PC v4 APIs based SDKs
     type: str
     required: false
     choices: ['present', 'absent']
@@ -90,7 +92,6 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
  - George Ghawali (@george-ghawali)
@@ -98,7 +99,7 @@ author:
 
 EXAMPLES = r"""
 - name: create tcp service group
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -116,7 +117,7 @@ EXAMPLES = r"""
         end_port: 99
 
 - name: create udp service group
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -134,7 +135,7 @@ EXAMPLES = r"""
         end_port: 99
 
 - name: create icmp with service group
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -148,7 +149,7 @@ EXAMPLES = r"""
         type: 2
 
 - name: Delete all created service groups
-  ntnx_service_groups_v2:
+  nutanix.ncp.ntnx_service_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

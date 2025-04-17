@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -15,6 +16,7 @@ version_added: 2.0.0
 description:
     - Fetch specific recovery point info using external ID
     - Fetch list of multiple recovery points info if external ID is not provided with optional filters
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:
@@ -24,13 +26,12 @@ extends_documentation_fragment:
         - nutanix.ncp.ntnx_credentials
         - nutanix.ncp.ntnx_info_v2
 author:
-    - Prem Karat (@premkarat)
     - Abhinav Bansal (@abhinavbansal29)
     - Pradeepsingh Bhati (@bhati-pradeep)
 """
 EXAMPLES = r"""
 - name: Fetch recovery point using external id
-  ntnx_recovery_points_info_v2:
+  nutanix.ncp.ntnx_recovery_points_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -38,14 +39,14 @@ EXAMPLES = r"""
   register: result
 
 - name: List all recovery points
-  ntnx_recovery_points_info_v2:
+  nutanix.ncp.ntnx_recovery_points_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
   register: result
 
 - name: Fetch details for a Recovery Point using Filters
-  ntnx_recovery_points_info_v2:
+  nutanix.ncp.ntnx_recovery_points_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

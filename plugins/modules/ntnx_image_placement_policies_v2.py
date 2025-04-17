@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,6 +14,7 @@ short_description: Manage image placement policies in Nutanix Prism Central
 description:
     - This module allows you to create, update, and delete image placement policies in Nutanix Prism Central.
     - This module allows you to suspend and resume image placement policies in Nutanix Prism Central.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
@@ -126,7 +127,7 @@ notes:
 
 EXAMPLES = r"""
 - name: Create an image placement policy
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -149,7 +150,7 @@ EXAMPLES = r"""
     wait: true
 
 - name: Delete an image placement policy
-  ntnx_image_placement_policies_v2:
+  nutanix.ncp.ntnx_image_placement_policies_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -389,10 +390,8 @@ def update_policy_state(module, result, policies, ext_id):
     policy = get_policy(module, policies, ext_id)
     etag = get_etag(data=policy)
     if not etag:
-        return module.fail_json(
-            "unable to fetch etag for updating Placement Policy enforcement state",
-            **result,
-        )
+        msg = "unable to fetch etag for updating Placement Policy enforcement state"
+        return module.fail_json(msg, **result)
 
     kwargs = {"if_match": etag}
     resp = None

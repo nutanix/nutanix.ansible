@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -10,14 +11,15 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_storage_containers_stats_v2
-short_description: Retrieve stats about Nutanix storage container from PC
+short_description: Retrieve stats about Nutanix storage continer from PC
 version_added: 2.0.0
 description:
     - Get Stats for a Storage Container
+    - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:
-      - The external ID of the storage container.
+      - The external ID of the storage continer.
     type: str
     required: true
   start_time:
@@ -55,14 +57,13 @@ options:
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
 - name: Fetch storage container stats during time interval
-  ntnx_storage_containers_stats_v2:
+  nutanix.ncp.ntnx_storage_containers_stats_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -72,7 +73,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch storage container stats with all attributes
-  ntnx_storage_containers_stats_v2:
+  nutanix.ncp.ntnx_storage_containers_stats_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

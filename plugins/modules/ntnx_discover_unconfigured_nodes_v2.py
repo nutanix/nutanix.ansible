@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,6 +13,7 @@ module: ntnx_discover_unconfigured_nodes_v2
 short_description: Discover unconfigured nodes from Nutanix Prism Central
 description:
   - Discover unconfigured nodes from Nutanix Prism Central.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
   address_type:
@@ -84,14 +86,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
 - name: Discover unconfigured node
-  ntnx_discover_unconfigured_nodes_v2:
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -238,7 +239,7 @@ def discover_unconfigured_cluster_node(module, cluster_node_api, result):
             result["error"] = err
             module.fail_json(
                 msg="Failed generating spec for fetching prism central cluster",
-                **result,
+                **result  # fmt: skip
             )
         try:
             pc_cluster = cluster_node_api.list_clusters(**kwargs)

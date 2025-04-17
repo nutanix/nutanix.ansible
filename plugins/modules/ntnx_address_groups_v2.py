@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -10,9 +11,11 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_address_groups_v2
-short_description: "Create, Update, Delete address groups"
+short_description: Create, Update, Delete address groups
 version_added: 2.0.0
-description: "Create, Update, Delete address groups"
+description:
+    - Create, Update, Delete address groups
+    - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:
@@ -70,7 +73,6 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
  - George Ghawali (@george-ghawali)
@@ -78,7 +80,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create address group
-  ntnx_address_groups_v2:
+  nutanix.ncp.ntnx_address_groups_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -92,7 +94,7 @@ EXAMPLES = r"""
         prefix_length: 32
 
 - name: delete address group
-  ntnx_address_groups_v2:
+  nutanix.ncp.ntnx_address_groups_v2:
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

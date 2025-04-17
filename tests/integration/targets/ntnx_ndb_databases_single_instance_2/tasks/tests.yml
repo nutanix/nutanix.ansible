@@ -207,29 +207,15 @@
 
 - name: Set expected time machine info
   ansible.builtin.set_fact:
-    expected_time_machine_info:
-      {
-        autoTuneLogDrive: true,
-        description: TM-desc,
-        name: TM1,
-        schedule: {},
-        slaId: "{{ sla.uuid }}",
-      }
+    expected_time_machine_info: { autoTuneLogDrive: true, description: TM-desc, name: TM1, schedule: {}, slaId: "{{ sla.uuid }}"}
 
 - name: Set maintenance tasks
   ansible.builtin.set_fact:
-    maintenance_tasks:
+    mainetance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - {
-            payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-            taskType: OS_PATCHING,
-          }
-        - {
-            payload:
-              { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-            taskType: DB_PATCHING,
-          }
+        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
+        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
 
 - name: Check mode status
   ansible.builtin.assert:

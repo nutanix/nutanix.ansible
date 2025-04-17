@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,7 +13,9 @@ DOCUMENTATION = r"""
 module: ntnx_pbrs_v2
 short_description: Module for create, update and delete of Policy based routing.
 version_added: 2.0.0
-description: "Create, Update, Delete Routing Policies"
+description:
+  - Create, Update, Delete Routing Policies
+  - This module uses PC v4 APIs based SDKs
 options:
   state:
     description:
@@ -377,14 +380,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
 - name: Create PBR with vpc, custom source network, external destination, reroute action and udp port rangelist
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -427,7 +429,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Create a routing policy for a VPC to permit certain source for certain destination
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -459,7 +461,7 @@ EXAMPLES = r"""
 
 
 - name: Create PBR with vpc, any source, any destination, any protocol and deny action
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -481,7 +483,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Update PBR name ,description, priority
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     state: present
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
     priority: "156"
@@ -491,7 +493,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete created pbr
-  ntnx_pbrs_v2:
+  nutanix.ncp.ntnx_pbrs_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -810,10 +812,8 @@ def get_routing_policy_ext_id(module, result, api_instance, vpc_ext_id, priority
     kwargs, err = sg.get_info_spec(attr=params)
     if err:
         result["error"] = err
-        module.fail_json(
-            msg="Failed generating spec for fetching routing policy using priority and vpc_ext_id",
-            **result,
-        )
+        msg = "Failed generating spec for fetching routing policy using priority and vpc_ext_id"
+        module.fail_json(msg=msg, **result)
 
     try:
         resp = api_instance.list_routing_policies(**kwargs)
@@ -832,10 +832,8 @@ def get_routing_policy_ext_id(module, result, api_instance, vpc_ext_id, priority
 
 def create_pbr(module, result):
     if not module.params.get("vpc_ext_id") and module.params.get("priority"):
-        module.fail_json(
-            msg="vpc_ext_id and priority are required for creating routing policy",
-            **result,
-        )
+        msg = "vpc_ext_id and priority are required for creating routing policy"
+        module.fail_json(msg=msg, **result)
 
     pbrs = get_routing_policies_api_instance(module)
 

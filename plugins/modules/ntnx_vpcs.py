@@ -83,14 +83,14 @@ EXAMPLES = r"""
     name: vpc_with_dns_servers
     dns_servers: "{{ dns_servers }}"
 
-- name: Create VPC with all specifications
+- name: Create VPC with all specfactions
   ntnx_vpcs:
     validate_certs: false
     state: present
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    name: vpc_with_add_specifications
+    name: vpc_with_add_specfactions
     external_subnets:
       - subnet_name: "{{ external_subnet.name }}"
     dns_servers: "{{ dns_servers }}"

@@ -1,3 +1,6 @@
+# Copyright: (c) 2024, Nutanix
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -64,3 +67,15 @@ def get_recovery_point_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_dataprotection_py_client.RecoveryPointsApi(client)
+
+
+def get_protected_resource_api_instance(module):
+    """
+    This method will return data protection api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): data protection api instance
+    """
+    client = get_api_client(module)
+    return ntnx_dataprotection_py_client.ProtectedResourcesApi(client)

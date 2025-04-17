@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -17,6 +18,7 @@ description:
     - It will fetch specific authorization policy if external ID is provided
     - It will fetch multiple authorization policies if external ID is not provided
     - Use filters to fetch specific authorization policies
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:
@@ -27,13 +29,12 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
 - name: Get 10 auth policies
-  ntnx_authorization_policies_info_v2:
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
     nutanix_host: "{{ nutanix_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -42,7 +43,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Get specific auth policy
-  ntnx_authorization_policies_info_v2:
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
     nutanix_host: "{{ nutanix_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -51,7 +52,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Fetch using filters
-  ntnx_authorization_policies_info_v2:
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
     nutanix_host: "{{ nutanix_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

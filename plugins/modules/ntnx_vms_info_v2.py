@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,9 +14,9 @@ short_description: Fetch information about Nutanix AHV based PC VMs
 description:
   - This module fetches information about Nutanix AHV based PC VMs
   - The module can fetch information about all VMs or a specific AHV based PC VMs
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     ext_id:
@@ -30,14 +31,14 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch information about all vms
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
 
 - name: Fetch information about a specific vm
-  ntnx_vms_info_v2:
+  nutanix.ncp.ntnx_vms_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

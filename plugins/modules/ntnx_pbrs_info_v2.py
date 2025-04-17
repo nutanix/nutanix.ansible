@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -16,6 +17,7 @@ description:
     - Fetch a single or list of all routing policies
     - if ext_id is provided, it will return the routing policy info
     - if ext_id is not provided, it will return the list of all routing policies
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description:
@@ -25,24 +27,23 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
 - name: List all pbrs
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
   register: result
   ignore_errors: true
 
 - name: List pbrs using name filter criteria
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     filter: "name eq 'test_policy_name'"
   register: result
   ignore_errors: true
 
 - name: List pbrs using ext_id
-  ntnx_pbrs_info_v2:
+  nutanix.ncp.ntnx_pbrs_info_v2:
     ext_id: '47ca25c3-9d27-4b94-b6b1-dfa5b25660b4'
   register: result
   ignore_errors: true

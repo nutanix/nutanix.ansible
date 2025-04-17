@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -10,46 +11,46 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_storage_containers_info_v2
-short_description: Retrieve information about Nutanix storage container from PC
+short_description: Retrieve information about Nutanix storage continer from PC
 version_added: 2.0.0
 description:
-    - This module retrieves information about Nutanix storage container from PC.
-    - Fetch particular storage container info using external ID
-    - Fetch multiple storage containers info with/without using filters, limit, etc.
+    - This module retrieves information about Nutanix storage continer from PC.
+    - Fetch particular storage continer info using external ID
+    - Fetch multiple storage continers info with/without using filters, limit, etc.
+    - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:
-      - The external ID of the storage container.
-      - If not provided, multiple storage container info will be fetched.
+      - The external ID of the storage continer.
+      - If not provided, multiple storage continer info will be fetched.
     type: str
     required: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaabishtawi)
  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
-- name: fetch storage container info using external ID
-  ntnx_storage_containerss_info_v2:
+- name: fetch storage continer info using external ID
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
     ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
   register: result
 
-- name: fetch all storage container info
-  ntnx_storage_containerss_info_v2:
+- name: fetch all storage continer info
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
   register: result
 
-- name: fetch all storage container info with filter
-  ntnx_storage_containerss_info_v2:
+- name: fetch all storage continer info with filter
+  nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

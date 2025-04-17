@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,6 +13,7 @@ module: ntnx_templates_deploy_v2
 short_description: Deploy Nutanix templates
 description:
     - This module allows you to deploy Nutanix templates.
+    - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
     ext_id:
@@ -205,7 +207,9 @@ options:
                                     type: dict
                                     suboptions:
                                             datasource_type:
-                                                description: Type of cloud-init datasource
+                                                description:
+                                                    - Type of cloud-init datasource
+                                                    - Required when using user_data
                                                 type: str
                                                 choices: ["CONFIG_DRIVE_V2"]
                                             metadata:
@@ -222,7 +226,8 @@ options:
                                                             type: dict
                                                             suboptions:
                                                                 value:
-                                                                    description: The actual user data script content
+                                                                    description:
+                                                                        - base64 encoded cloud init script.
                                                                     type: str
                                                                     required: True
                                                         custom_key_values:
@@ -253,14 +258,13 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
- - Prem Karat (@premkarat)
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
 """
 
 EXAMPLES = r"""
 - name: Deploy VM
-  ntnx_templates_deploy_v2:
+  nutanix.ncp.ntnx_templates_deploy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -270,7 +274,7 @@ EXAMPLES = r"""
     cluster_reference: "{{cluster.uuid}}"
 
 - name: Deploy vm and override config
-  ntnx_templates_deploy_v2:
+  nutanix.ncp.ntnx_templates_deploy_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -472,7 +476,10 @@ def deploy_template(module, result):
         version_ext_id = module.params.get("version_id")
         result[
             "msg"
-        ] = f"Template ({ext_id}) with given version ({version_ext_id}) will be deployed."
+        ] = "Template ({0}) with given version ({1}) will be deployed.".format(
+            ext_id,
+            version_ext_id  # fmt: skip
+        )
         return
 
     etag = get_etag(data=current_spec)

@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -12,6 +13,7 @@ module: ntnx_vms_serial_port_v2
 version_added: "2.0.0"
 description:
     - This module allows you to manage serial port for Nutanix AHV VMs.
+    - This module uses PC v4 APIs based SDKs
 short_description: VM Serial Port module which supports VM serial port CRUD states
 options:
     state:
@@ -49,7 +51,6 @@ options:
             - Indicates whether the serial port is connected or not.
         type: bool
 author:
- - Prem Karat (@premkarat)
  - Alaa Bishtawi (@alaa-bish)
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -58,7 +59,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Create Serial Port
-  ntnx_vms_serial_port_v2:
+  nutanix.ncp.ntnx_vms_serial_port_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -69,7 +70,7 @@ EXAMPLES = r"""
     is_connected: true
 
 - name: Update Serial Port connection status
-  ntnx_vms_serial_port_v2:
+  nutanix.ncp.ntnx_vms_serial_port_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -80,7 +81,7 @@ EXAMPLES = r"""
     is_connected: false
 
 - name: Delete Serial Port
-  ntnx_vms_serial_port_v2:
+  nutanix.ncp.ntnx_vms_serial_port_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

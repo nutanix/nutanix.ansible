@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -16,6 +17,7 @@ description:
     - This module retrieves information about Nutanix clusters from PC.
     - Fetch particular cluster info using external ID
     - Fetch multiple clusters info with/without using filters, limit, etc.
+    - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:
@@ -27,13 +29,12 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_info_v2
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 """
 
 EXAMPLES = r"""
 - name: fetch cluster info using external ID
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -41,14 +42,14 @@ EXAMPLES = r"""
   register: result
 
 - name: fetch all clusters info
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
   register: result
 
 - name: fetch all clusters info with filter
-  ntnx_clusters_info_v2:
+  nutanix.ncp.ntnx_clusters_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

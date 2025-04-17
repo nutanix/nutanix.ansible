@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -13,9 +14,9 @@ short_description: Fetch information about Nutanix VM's serial ports
 description:
   - This module fetches information about Nutanix VM's serial ports.
   - The module can fetch information about all serial ports or a specific serial ports.
+  - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 author:
- - Prem Karat (@premkarat)
  - Pradeepsingh Bhati (@bhati-pradeep)
 options:
     ext_id:
@@ -35,7 +36,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch information about all serial ports of a vm
-  ntnx_vms_serial_port_info_v2:
+  nutanix.ncp.ntnx_vms_serial_port_info_v2:
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"
@@ -43,7 +44,7 @@ EXAMPLES = r"""
         vm_ext_id: 00000-00000-000000-000000
 
 - name: Fetch information about a specific serial port
-  ntnx_vms_serial_port_info_v2:
+  nutanix.ncp.ntnx_vms_serial_port_info_v2:
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"
         nutanix_password: "{{ password }}"

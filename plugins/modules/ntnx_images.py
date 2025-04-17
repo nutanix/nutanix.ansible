@@ -196,7 +196,7 @@ EXAMPLES = r"""
         - Backup
     wait: true
 
-- name: detach all categories from existing image
+- name: dettach all categories from existing image
   ntnx_images:
     state: "present"
     image_uuid: "00000000-0000-0000-0000-000000000000"

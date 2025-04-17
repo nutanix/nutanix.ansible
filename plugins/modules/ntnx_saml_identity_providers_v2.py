@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Prem Karat
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -11,7 +12,9 @@ DOCUMENTATION = r"""
 module: ntnx_saml_identity_providers_v2
 short_description: Manage SAML identity providers in Nutanix PC
 version_added: "2.0.0"
-description: "Create, Update, Delete SAML identity providers in Nutanix PC"
+description:
+  - Create, Update, Delete SAML identity providers in Nutanix PC
+  - This module uses PC v4 APIs based SDKs
 options:
   ext_id:
     description:
@@ -119,7 +122,6 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
 author:
-  - Prem Karat (@premkarat)
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
 """
@@ -127,7 +129,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create identity provider
-  ntnx_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -143,7 +145,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 - name: Update identity provider
-  ntnx_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     ext_id: "59d5de78-a964-5746-8c6e-677c4c7a79df"
     name: "ansible-saml"
     username_attribute: "new_name2"
@@ -155,7 +157,7 @@ EXAMPLES = r"""
     validate_certs: false
     state: present
 - name: Delete identity provider
-  ntnx_identity_providers_v2:
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

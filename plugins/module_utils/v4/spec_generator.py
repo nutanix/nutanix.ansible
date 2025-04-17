@@ -1,5 +1,6 @@
-# This file is part of Ansible
+# Copyright: (c) 2024, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -114,13 +115,13 @@ class SpecGenerator(object):
         if attr.get("name"):
             _filter = attr.get("filter")
             if _filter:
-                _filter += f"""and name eq '{attr["name"]}'"""
+                _filter += "and name eq '{0}'".format(attr["name"])
             else:
-                _filter = f"""name eq '{attr["name"]}'"""
+                _filter = "name eq '{0}'".format(attr["name"])
             attr["filter"] = _filter
         for key, val in attr.items():
             if key in all_params:
-                spec[f"_{key}"] = val
+                spec["_{0}".format(key)] = val
         return spec, None
 
     def get_stats_spec(self, attr=None):
