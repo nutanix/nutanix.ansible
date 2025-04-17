@@ -181,7 +181,6 @@ options:
                             datasource_type:
                                 description:
                                     - The type of the data source.
-                                    - Required when using user_data.
                                 type: str
                                 choices: ["CONFIG_DRIVE_V2"]
                             metadata:
@@ -200,7 +199,7 @@ options:
                                         suboptions:
                                             value:
                                                 description:
-                                                    - base64 encoded cloud init script.
+                                                    - The value of the user data.
                                                 type: str
                                                 required: true
                                     custom_key_values:

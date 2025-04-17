@@ -133,8 +133,9 @@ changed:
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: When an error occurs
-  type: str
+  returned: always
+  type: bool
+  sample: false
 
 ext_id:
     description:
@@ -211,7 +212,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None}
+    result = {"changed": False, "error": None, "response": None}
     if module.params.get("ext_id"):
         get_vpc_by_ext_id(module, result)
     else:

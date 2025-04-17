@@ -200,15 +200,6 @@ class ClusterSpecs:
             choices=["CFT_1N_OR_1D", "CFT_2N_OR_2D", "CFT_1N_AND_1D", "CFT_0N_AND_0D"],
         ),
     )
-
-    pulse_spec = dict(
-        is_enabled=dict(type="bool"),
-        pii_scrubbing_level=dict(
-            type="str",
-            choices=["ALL", "DEFAULT"],
-        ),
-    )
-
     cluster_config = dict(
         cluster_function=dict(
             type="list", elements="str", choices=["AOS", "ONE_NODE", "TWO_NODE"]
@@ -234,9 +225,6 @@ class ClusterSpecs:
             ],
         ),
         encryption_in_transit_status=dict(type="str", choices=["ENABLED", "DISABLED"]),
-        pulse_status=dict(
-            type="dict", options=pulse_spec, obj=clusters_sdk.PulseStatus
-        ),
     )
 
     cluster = dict(

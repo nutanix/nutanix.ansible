@@ -47,4 +47,3 @@ class Tasks:
         RECOVERY_POINT = "recoveryPointExtId"
         VM_EXT_IDS = "vmExtIds"
         VG_EXT_IDS = "volumeGroupExtIds"
-        PROTECTION_POLICY = "protectionPolicyExtId"
