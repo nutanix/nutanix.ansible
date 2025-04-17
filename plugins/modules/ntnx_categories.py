@@ -56,7 +56,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "present"
     name: "{{first_category.name}}"
     desc: "{{first_category.desc}}"
@@ -66,7 +66,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "present"
     name: "{{first_category.name}}"
     desc: "{{first_category.update_desc}}"
@@ -74,12 +74,12 @@ EXAMPLES = r"""
       - "{{values.0}}"
       - "{{values.1}}"
   register: result
-- name: update existing category by deleting some values
+- name: Update existing category by deleting some values
   ntnx_categories:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "absent"
     name: "{{first_category.name}}"
     desc: "{{first_category.update_desc}}"
@@ -91,7 +91,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "absent"
     name: "{{first_category.name}}"
     remove_values: true
@@ -101,7 +101,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "absent"
     name: "{{first_category.name}}"
   register: result
@@ -110,7 +110,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     state: "present"
     name: "{{second_category.name}}"
     desc: test description
@@ -155,7 +155,7 @@ category_values:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.categories import CategoryKey, CategoryValue  # noqa: E402
+from ..module_utils.v3.prism.categories import CategoryKey, CategoryValue  # noqa: E402
 
 
 def get_module_spec():

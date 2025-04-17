@@ -2,8 +2,6 @@
 - name: ACP playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,10 +10,9 @@
       validate_certs: false
 
   tasks:
-
     - name: Create ACP with all specfactions
-      ntnx_acps:
-        validate_certs: False
+      nutanix.ncp.ntnx_acps:
+        validate_certs: false
         state: present
         nutanix_host: "{{ IP }}"
         nutanix_username: "{{ username }}"
@@ -41,7 +38,7 @@
                 collection: ALL
 
     - name: Delete ACP
-      ntnx_acps:
+      nutanix.ncp.ntnx_acps:
         state: absent
         acp_uuid: "{{ acp_uuid }}"
       register: result

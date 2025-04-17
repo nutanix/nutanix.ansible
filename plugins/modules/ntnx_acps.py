@@ -119,7 +119,7 @@ author:
 EXAMPLES = r"""
 - name: Create min ACP
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -131,7 +131,7 @@ EXAMPLES = r"""
 
 - name: Create ACP with user reference
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -144,7 +144,7 @@ EXAMPLES = r"""
 
 - name: Create ACP with user ad user group reference
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -159,7 +159,7 @@ EXAMPLES = r"""
 
 - name: Create ACP with all specfactions
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -305,9 +305,9 @@ task_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.acps import ACP  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.prism.acps import ACP  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

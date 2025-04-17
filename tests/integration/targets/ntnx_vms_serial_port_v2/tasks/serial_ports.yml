@@ -1,0 +1,170 @@
+---
+- name: Create, Update, Fetch and Delete Serial Ports
+  ansible.builtin.debug:
+    msg: "Create, Update, Fetch and Delete Serial Ports"
+- name: Initialize todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: VM with minimum requirements
+  ntnx_vms:
+    state: present
+    name: MinReqVM
+    cluster:
+      name: "{{ cluster.name }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.status.state == 'COMPLETE'
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
+
+- name: Set VM ext_id
+  ansible.builtin.set_fact:
+    vm_ext_id: '{{ result["response"]["metadata"]["uuid"] }}'
+  when: result.response.status.state == 'COMPLETE'
+
+- name: Create Serial Port
+  ntnx_vms_serial_port_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    state: present
+    index: 0
+    is_connected: true
+  register: result
+  ignore_errors: true
+
+- name: Serial Port Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.ext_id is defined
+      - result.vm_ext_id == '{{ vm_ext_id }}'
+      - result.response.is_connected == true
+      - result.response.index == 0
+      - result.ext_id is defined
+    fail_msg: " Unable to create Serial Port "
+    success_msg: " Serial Port created successfully "
+
+- name: Fetch information about all serial ports of a vm
+  ntnx_vms_serial_port_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Serial Port Info Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].is_connected == true
+      - result.response[0].index == 0
+      - result.vm_ext_id == '{{ vm_ext_id }}'
+    fail_msg: " Unable to fetch information about all serial ports of a vm "
+    success_msg: " Information about all serial ports of a vm fetched successfully "
+- name: Add ext_id to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [ result.response.0.ext_id  ] }}"
+
+- name: Update Serial Port connection status
+  ntnx_vms_serial_port_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ result.response.0.ext_id }}"
+    state: present
+    is_connected: false
+  register: result
+  ignore_errors: true
+
+- name: Serial Port Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.ext_id is defined
+      - result.vm_ext_id == '{{ vm_ext_id }}'
+      - result.response.is_connected == false
+    fail_msg: " Unable to Update Serial Port connection status "
+    success_msg: " Serial Port connection status updated successfully "
+
+- name: Fetch information about a specific serial port
+  ntnx_vms_serial_port_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{result.response.ext_id}}"
+  register: result
+  ignore_errors: true
+
+- name: Serial Port Info Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.is_connected == false
+      - result.response.index == 0
+      - result.vm_ext_id == '{{ vm_ext_id }}'
+    fail_msg: " Unable to fetch information about a specific serial port "
+    success_msg: " Information about a specific serial port fetched successfully "
+
+- name: Update Serial Port index
+  ntnx_vms_serial_port_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ result.response.ext_id }}"
+    state: present
+    index: 2
+  register: result
+  ignore_errors: true
+
+- name: Serial Port Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.ext_id is defined
+      - result.vm_ext_id == '{{ vm_ext_id }}'
+      - result.response.is_connected == false
+      - result.response.index == 2
+      - result.task_ext_id is defined
+    fail_msg: " Unable to create Serial Port "
+    success_msg: " Serial Port created successfully "
+
+- name: Delete Serial Port
+  ntnx_vms_serial_port_v2:
+    state: absent
+    ext_id: "{{item}}"
+    vm_ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: false
+  loop: "{{ todelete }}"
+
+- name: Serial Port Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+    fail_msg: " Unable to delete Serial Port "
+    success_msg: " Serial Port deleted successfully "
+
+- name: Fetch information about all serial ports of a vm
+  ntnx_vms_serial_port_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Serial Port Info Status
+  ansible.builtin.assert:
+    that:
+      - result.response == None
+      - result.vm_ext_id == '{{ vm_ext_id }}'
+    fail_msg: " Unable to fetch information about all serial ports of a vm "
+    success_msg: " Information about all serial ports of a vm fetched successfully "
+
+- name: Delete Created VM
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_ext_id }}"
+  register: result

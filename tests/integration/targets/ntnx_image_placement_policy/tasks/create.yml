@@ -1,6 +1,7 @@
 ---
-- debug:
-    msg: start ntnx_image_placement_policy create tests
+- name: Start ntnx_image_placement_policy create tests
+  ansible.builtin.debug:
+    msg: Start ntnx_image_placement_policy create tests
 
 - name: Create image placement policy with minimal spec
   ntnx_image_placement_policy:
@@ -15,7 +16,7 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -27,7 +28,8 @@
     fail_msg: "Unable to create image placement policy with minimal spec"
     success_msg: "Image placement policy with minimal spec created successfully"
 
-- set_fact:
+- name: Add policy to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 ################################################################################################################
@@ -52,7 +54,7 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -61,13 +63,14 @@
     fail_msg: "Unable to create image placement policy with all specifications"
     success_msg: "Image placement policy with all specifications created successfully"
 
-- set_fact:
+- name: Add policy to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 ################################################################################################################
 
 - name: Create image placement policy in check mode
-  check_mode: yes
+  check_mode: true
   ntnx_image_placement_policy:
     name: "test_policy_3"
     desc: "test_policy_3_desc"
@@ -82,7 +85,7 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -105,7 +108,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -113,9 +116,9 @@
     fail_msg: "Image placement policy didn't failed with incorrect category"
     success_msg: "Image placement policy with incorrect category errored out successfully"
 
-##################################################CLEANUP#######################################################
+################################################## CLEANUP #######################################################
 
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_image_placement_policy:
     state: absent
     policy_uuid: "{{ item }}"
@@ -123,5 +126,6 @@
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

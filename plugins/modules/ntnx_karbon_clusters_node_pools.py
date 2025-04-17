@@ -98,8 +98,8 @@ EXAMPLES = r"""
   ntnx_karbon_clusters_node_pools:
     node_subnet:
       uuid: "<uuid>"
-    node_pool_name:  "node_pool_name"
-    cluster_name:  "cluster_name"
+    node_pool_name: "node_pool_name"
+    cluster_name: "cluster_name"
     pool_config:
       num_instances: 2
       cpu: 4
@@ -110,14 +110,14 @@ EXAMPLES = r"""
 
 - name: update pool by increasing cpu,memory_gb,num_instances and add labels
   ntnx_karbon_clusters_node_pools:
-    wait: True
-    node_pool_name:  "node_name"
-    cluster_name:  "cluster_name"
+    wait: true
+    node_pool_name: "node_name"
+    cluster_name: "cluster_name"
     pool_config:
-        cpu: 6
-        memory_gb: 10
-        disk_gb: 150
-        num_instances: 4
+      cpu: 6
+      memory_gb: 10
+      disk_gb: 150
+      num_instances: 4
     add_labels:
       property1: "test-property1"
   register: result
@@ -168,8 +168,8 @@ node_pool_name:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.karbon.node_pools import NodePool  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.karbon.node_pools import NodePool  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():
