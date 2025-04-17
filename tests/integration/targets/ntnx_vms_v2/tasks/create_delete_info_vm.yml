@@ -111,7 +111,7 @@
 
 - name: Creation Status
   ansible.builtin.assert:
-    that:plugins/module_utils/v4/vmm/spec/vms.py
+    that:
       - result.response is defined
       - result.changed == False
       - result.failed == False
