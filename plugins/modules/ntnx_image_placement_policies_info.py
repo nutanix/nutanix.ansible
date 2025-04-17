@@ -224,11 +224,11 @@ entities:
 """
 
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.image_placement_policy import (  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.prism.image_placement_policy import (  # noqa: E402
     ImagePlacementPolicy,
 )
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

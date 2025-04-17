@@ -214,8 +214,8 @@ task_uuid:
 
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.vms import VM  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.vms import VM  # noqa: E402
 
 
 def get_module_spec():

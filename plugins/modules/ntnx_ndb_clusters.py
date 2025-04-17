@@ -301,9 +301,9 @@ cluster_uuid:
 import time  # noqa: E402
 
 from ..module_utils import utils  # noqa: E402
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.clusters import Cluster  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.clusters import Cluster  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
 
 
 def get_module_spec():

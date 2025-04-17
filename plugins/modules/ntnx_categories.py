@@ -74,7 +74,7 @@ EXAMPLES = r"""
       - "{{values.0}}"
       - "{{values.1}}"
   register: result
-- name: update existing category by deleting some values
+- name: Update existing category by deleting some values
   ntnx_categories:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -155,7 +155,7 @@ category_values:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.categories import CategoryKey, CategoryValue  # noqa: E402
+from ..module_utils.v3.prism.categories import CategoryKey, CategoryValue  # noqa: E402
 
 
 def get_module_spec():

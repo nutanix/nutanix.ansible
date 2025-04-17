@@ -1,0 +1,78 @@
+---
+- name: Start testing quarantine security rules
+  ansible.builtin.debug:
+    msg: Start testing quarantine security rules
+
+- name: Generate random names for security rules creation
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set prefix name
+  ansible.builtin.set_fact:
+    prefix: ansible-nsr-
+
+- name: Set security rules name
+  ansible.builtin.set_fact:
+    rule_name_1: "{{ prefix }}{{ random_name }}1"
+
+################################################ Create tests ################################################
+
+- name: Generate spec for quarantine rule using check mode
+  ntnx_security_rules_v2:
+    name: "{{ rule_name_1 }}"
+    description: Ansible created rule
+    type: QUARANTINE
+    policy_state: SAVE
+    scope: ALL_VLAN
+    is_hitlog_enabled: true
+    rules:
+      - description: Deny all outbound traffic
+        type: QUARANTINE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - category1
+            dest_allow_spec: NONE
+      - description: Deny all inbound traffic
+        type: QUARANTINE
+        spec:
+          application_rule_spec:
+            secured_group_category_references:
+              - category1
+            src_allow_spec: NONE
+      - description: Deny intragroup traffic
+        type: INTRA_GROUP
+        spec:
+          intra_entity_group_rule_spec:
+            secured_group_category_references:
+              - category1
+            secured_group_action: DENY
+  register: result
+  check_mode: true
+
+- name: Verify spec for quarantine rule
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.name == "{{ rule_name_1 }}"
+      - result.response.description == "Ansible created rule"
+      - result.response.type == "QUARANTINE"
+      - result.response.state == "SAVE"
+      - result.response.scope == "ALL_VLAN"
+      - result.response.is_hitlog_enabled == true
+      - result.response.rules | length == 3
+      - result.response.rules[0].description == "Deny all outbound traffic"
+      - result.response.rules[0].type == "QUARANTINE"
+      - result.response.rules[0].spec.secured_group_category_references[0] == "category1"
+      - result.response.rules[0].spec.dest_allow_spec == "NONE"
+      - result.response.rules[1].description == "Deny all inbound traffic"
+      - result.response.rules[1].type == "QUARANTINE"
+      - result.response.rules[1].spec.secured_group_category_references[0] == "category1"
+      - result.response.rules[1].spec.src_allow_spec == "NONE"
+      - result.response.rules[2].description == "Deny intragroup traffic"
+      - result.response.rules[2].type == "INTRA_GROUP"
+      - result.response.rules[2].spec.secured_group_category_references[0] == "category1"
+      - result.response.rules[2].spec.secured_group_action == "DENY"
+    fail_msg: Failed to create security rule create spec
+    success_msg: Successfully created spec for creating security rule

@@ -151,9 +151,12 @@ time_machine_uuid:
 
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
-from ..module_utils.ndb.time_machines import TimeMachine, get_cluster_uuid  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
+from ..module_utils.v3.ndb.time_machines import (  # noqa: E402
+    TimeMachine,
+    get_cluster_uuid,
+)
 
 
 def get_module_spec():

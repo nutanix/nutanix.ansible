@@ -188,48 +188,46 @@ EXAMPLES = r"""
 - name: create  DEV cluster with Flannel network provider
   ntnx_karbon_clusters:
     cluster:
-      uuid: "00000000-0000-0000-0000-000000000000"
+      uuid: 00000000-0000-0000-0000-000000000000
     name: test-module21
-    k8s_version: "1.19.8-0"
-    host_os: "ntnx-1.0"
+    k8s_version: 1.19.8-0
+    host_os: ntnx-1.0
     node_subnet:
-      name: "vlan.800"
+      name: vlan.800
     cluster_type: DEV
     cni:
       node_cidr_mask_size: 24
-      service_ipv4_cidr: "172.19.0.0/16"
-      pod_ipv4_cidr: "172.20.0.0/16"
+      service_ipv4_cidr: 172.19.0.0/16
+      pod_ipv4_cidr: 172.20.0.0/16
       network_provider: Flannel
     storage_class:
-      nutanix_cluster_password: "{{nutanix_cluster_password}}"
-      nutanix_cluster_username: "{{nutanix_cluster_username}}"
+      nutanix_cluster_password: '{{nutanix_cluster_password}}'
+      nutanix_cluster_username: '{{nutanix_cluster_username}}'
       default_storage_class: true
       name: test-storage-class
       reclaim_policy: Delete
-      storage_container: "default-container-48394901932577"
+      storage_container: default-container-48394901932577
       file_system: ext4
       flash_mode: false
   register: result
-
 - name: delete cluster
   ntnx_karbon_clusters:
     state: absent
-    name: "{{cluster_name}"
+    name: '{{cluster_name}'
   register: result
-
 - name: create  DEV cluster with Calico network provider
   ntnx_karbon_clusters:
     cluster:
       name: auto_cluster_prod_f34ce3677ecf
     name: test-module21
-    k8s_version: "1.19.8-0"
-    host_os: "ntnx-1.0"
+    k8s_version: 1.19.8-0
+    host_os: ntnx-1.0
     node_subnet:
-      uuid: "00000000-0000-0000-0000-000000000000"
+      uuid: 00000000-0000-0000-0000-000000000000
     cni:
       node_cidr_mask_size: 24
-      service_ipv4_cidr: "172.19.0.0/16"
-      pod_ipv4_cidr: "172.20.0.0/16"
+      service_ipv4_cidr: 172.19.0.0/16
+      pod_ipv4_cidr: 172.20.0.0/16
       network_provider: Calico
     custom_node_configs:
       etcd:
@@ -248,41 +246,40 @@ EXAMPLES = r"""
         memory_gb: 8
         disk_gb: 120
     storage_class:
-      nutanix_cluster_password: "{{nutanix_cluster_password}}"
-      nutanix_cluster_username: "{{nutanix_cluster_username}}"
+      nutanix_cluster_password: '{{nutanix_cluster_password}}'
+      nutanix_cluster_username: '{{nutanix_cluster_username}}'
       default_storage_class: true
       name: test-storage-class
       reclaim_policy: Retain
-      storage_container: "default-container-48394901932577"
+      storage_container: default-container-48394901932577
       file_system: xfs
       flash_mode: true
   register: result
-
 - name: create prod cluster
   ntnx_karbon_clusters:
     cluster:
-      uuid: "{{cluster.uuid}}"
-    name: "{{karbon_name}}"
-    k8s_version: "{{k8s_version}}"
-    host_os: "{{host_os}}"
+      uuid: '{{cluster.uuid}}'
+    name: '{{karbon_name}}'
+    k8s_version: '{{k8s_version}}'
+    host_os: '{{host_os}}'
     node_subnet:
-      name: "{{node_subnet.name}}"
+      name: '{{node_subnet.name}}'
     cluster_type: PROD
     cni:
       node_cidr_mask_size: 24
-      service_ipv4_cidr: "172.19.0.0/16"
-      pod_ipv4_cidr: "172.20.0.0/16"
+      service_ipv4_cidr: 172.19.0.0/16
+      pod_ipv4_cidr: 172.20.0.0/16
       network_provider: Flannel
     storage_class:
-      nutanix_cluster_password: "{{nutanix_cluster_password}}"
-      nutanix_cluster_username: "{{nutanix_cluster_username}}"
+      nutanix_cluster_password: '{{nutanix_cluster_password}}'
+      nutanix_cluster_username: '{{nutanix_cluster_username}}'
       default_storage_class: true
       name: test-storage-class
       reclaim_policy: Delete
-      storage_container: "{{storage_container.name}}"
+      storage_container: '{{storage_container.name}}'
       file_system: ext4
       flash_mode: false
-    control_plane_virtual_ip: "{{control_plane_virtual_ip}}"
+    control_plane_virtual_ip: '{{control_plane_virtual_ip}}'
     custom_node_configs:
       etcd:
         num_instances: 1
@@ -371,8 +368,8 @@ worker_config:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.karbon.clusters import Cluster  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.karbon.clusters import Cluster  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

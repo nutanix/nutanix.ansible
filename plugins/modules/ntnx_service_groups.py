@@ -144,8 +144,8 @@ kind:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.service_groups import ServiceGroup  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.prism.service_groups import ServiceGroup  # noqa: E402
 
 
 def get_module_spec():

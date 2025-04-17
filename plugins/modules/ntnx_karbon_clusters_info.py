@@ -158,8 +158,8 @@ username:
     sample: admin
 """
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.karbon.clusters import Cluster  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.karbon.clusters import Cluster  # noqa: E402
 
 
 def get_module_spec():

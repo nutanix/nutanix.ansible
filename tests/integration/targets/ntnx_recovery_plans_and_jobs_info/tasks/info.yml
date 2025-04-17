@@ -1,5 +1,6 @@
-- debug:
-    msg: start testing ntnx_recovery_plans_info
+- name: Start testing ntnx_recovery_plans_info
+  ansible.builtin.debug:
+    msg: Start testing ntnx_recovery_plans_info
 
 ##################################################
 - name: Create recovery plan with network
@@ -67,10 +68,10 @@
 - name: List all Recovery plans
   ntnx_recovery_plans_info:
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.metadata.total_matches > 0
@@ -78,9 +79,9 @@
     fail_msg: "Unable to list all recovery plan"
     success_msg: "recovery plans info obtained successfully"
 
-- set_fact:
+- name: Setting recovery plan name and uuid
+  ansible.builtin.set_fact:
     test_plan_name: "{{result.response.entities.1.status.name}}"
-- set_fact:
     test_plan_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
 ##################################################
@@ -89,10 +90,10 @@
   ntnx_recovery_plans_info:
     plan_uuid: "{{ test_plan_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -111,10 +112,10 @@
     filter:
       name: "{{ test_plan_name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -132,10 +133,10 @@
     length: 1
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -146,8 +147,9 @@
 
 ################################################## Recovery plan jobs info test #########################################################
 
-- debug:
-    msg: start testing ntnx_recovery_plan_jobs_info
+- name: Start testing ntnx_recovery_plan_jobs_info
+  ansible.builtin.debug:
+    msg: Start testing ntnx_recovery_plan_jobs_info
 
 - name: Run validation job, eventually will fail due to some tech issues but can be used for info tests.
   ntnx_recovery_plan_jobs:
@@ -161,6 +163,7 @@
     recovery_site:
       url: "{{dr.recovery_az_url}}"
     action: VALIDATE
+  register: result
   ignore_errors: true
   no_log: true
 
@@ -186,10 +189,10 @@
   ntnx_recovery_plan_jobs_info:
     nutanix_host: "{{recovery_site_ip}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.metadata.total_matches > 0
@@ -197,11 +200,12 @@
     fail_msg: "Unable to list all recovery plan jobs"
     success_msg: "recovery plans jobs info obtained successfully"
 
-- set_fact:
+- name: Setting recovery plan job name and uuid
+  ansible.builtin.set_fact:
     test_job_name: "{{result.response.entities.1.status.name}}"
-- set_fact:
     test_job_uuid: "{{result.response.entities.1.metadata.uuid}}"
-- set_fact:
+- name: Setting recovery plan job name
+  ansible.builtin.set_fact:
     test_job_name_1: "{{ test_job.error.status.name }}"
 
 ##################################################
@@ -211,10 +215,10 @@
     nutanix_host: "{{recovery_site_ip}}"
     job_uuid: "{{ test_job_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -233,10 +237,10 @@
     filter:
       name: "{{ test_job_name_1 }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -255,10 +259,10 @@
     length: 2
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -267,19 +271,18 @@
     fail_msg: "Unable to list recovery plan jobs using length and offset"
     success_msg: "recovery plan jobs listed successfully using length and offset"
 
-
 ################################################## Delete recovery plans #########################################################
 
 - name: Delete created recovery plans
   ntnx_recovery_plans:
     state: absent
-    wait: True
+    wait: true
     plan_uuid: "{{ recovery_plan1.plan_uuid }}"
   register: result
 
 - name: Delete created recovery plans
   ntnx_recovery_plans:
     state: absent
-    wait: True
+    wait: true
     plan_uuid: "{{ recovery_plan2.plan_uuid }}"
   register: result

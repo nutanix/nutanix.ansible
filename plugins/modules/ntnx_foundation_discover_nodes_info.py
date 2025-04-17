@@ -36,16 +36,16 @@ author:
 EXAMPLES = r"""
 - name: Discover nodes
   ntnx_foundation_discover_nodes_info:
-    nutanix_host: "{{ ip }}"
+    nutanix_host: '{{ ip }}'
 
 - name: Discover all nodes
   ntnx_foundation_discover_nodes_info:
-    nutanix_host: "{{ ip }}"
+    nutanix_host: '{{ ip }}'
     include_configured: true
 
 - name: Discover nodes and include network info
   ntnx_foundation_discover_nodes_info:
-    nutanix_host: "{{ ip }}"
+    nutanix_host: '{{ ip }}'
     include_network_details: true
 """
 
@@ -75,9 +75,9 @@ blocks:
     },
   ]
 """
-from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
-from ..module_utils.foundation.node_discovery import NodeDiscovery  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.v3.foundation.node_discovery import NodeDiscovery  # noqa: E402
 
 
 def get_module_spec():

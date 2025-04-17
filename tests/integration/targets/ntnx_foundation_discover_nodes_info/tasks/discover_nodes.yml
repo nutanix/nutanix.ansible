@@ -1,5 +1,6 @@
 ---
-- debug:
+- name: Start testing ntnx_foundation_discover_nodes_info
+  ansible.builtin.debug:
     msg: start testing ntnx_foundation_discover_nodes_info
 
 - name: Discover nodes
@@ -7,11 +8,12 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.blocks is defined
       - result.failed==false
       - result.changed==false
+      - result.blocks | length > 0
       - result.blocks.0.nodes.0.configured==false
       - result.blocks.0.nodes.0.ipv6_address is defined
     fail_msg: " Fail : unable to Discover nodes "
@@ -23,11 +25,12 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.blocks is defined
       - result.failed==false
       - result.changed==false
+      - result.blocks | length > 0
       - result.blocks.0.nodes.0.ipv6_address is defined
     fail_msg: " Fail : unable to discover all nodes "
     success_msg: "Success: Discover all nodes finished successfully "
@@ -38,7 +41,7 @@
 #   register: result
 
 # - name: Creation Status
-#   assert:
+#   ansible.builtin.assert:
 #     that:
 #       - result.blocks is defined
 #       - result.failed==false

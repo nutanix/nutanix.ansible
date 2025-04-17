@@ -1,0 +1,12 @@
+---
+- name: Clean up the environment
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Include var file
+      ansible.builtin.include_vars: ../vars/main.yml
+    # - name: Delete files
+    #   file:
+    #     path: "{{ source }}"
+    #     state: absent
+    #   ignore_errors: true

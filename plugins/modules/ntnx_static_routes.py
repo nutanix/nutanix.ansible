@@ -271,12 +271,12 @@ vpc_uuid:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.static_routes import StaticRoute  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
     remove_param_with_none_value,
     strip_extra_attrs,
 )
+from ..module_utils.v3.prism.static_routes import StaticRoute  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

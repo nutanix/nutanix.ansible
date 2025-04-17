@@ -1,8 +1,10 @@
 ---
-- debug:
+- name: Start testing ntnx_categories
+  ansible.builtin.debug:
     msg: Start testing ntnx_categories
 
-- set_fact:
+- name: Set category name and values
+  ansible.builtin.set_fact:
     first_category:
       name: test-catA1
       desc: first test description
@@ -10,9 +12,9 @@
     second_category:
       name: test-catB1
     values:
-        - 'value-a'
-        - 'value-b'
-        - 'value-c'
+      - "value-a"
+      - "value-b"
+      - "value-c"
 
 - name: Create only category key with description
   ntnx_categories:
@@ -23,7 +25,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -45,9 +47,8 @@
   register: result
   ignore_errors: true
 
-
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -59,7 +60,7 @@
     fail_msg: "Unable to Add values to existing category key having no values & Update description"
     success_msg: "Add values to existing category key having no values & Update description finished successfully"
 #################
-- name: update existing category with same values
+- name: Update existing category with same values
   ntnx_categories:
     state: "present"
     name: "{{first_category.name}}"
@@ -71,7 +72,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -79,7 +80,7 @@
     fail_msg: "Fail: existing category update with wrong values"
     success_msg: "Passed: Nothing to update as expected "
   #################
-- name: update existing category by deleting some values
+- name: Update existing category by deleting some values
   ntnx_categories:
     state: "absent"
     name: "{{first_category.name}}"
@@ -89,14 +90,14 @@
   register: result
   ignore_errors: true
 
-- name: get modified category
+- name: Get modified category
   ntnx_categories_info:
     name: "{{first_category.name}}"
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -106,7 +107,7 @@
     fail_msg: "Fail: unable to update existing category by deleting some values "
     success_msg: "Passed: update existing category by deleting some values finished successfully"
 #################
-- name: update existing category by deleting all values
+- name: Update existing category by deleting all values
   ntnx_categories:
     state: "absent"
     name: "{{first_category.name}}"
@@ -114,15 +115,14 @@
   register: result
   ignore_errors: true
 
-- name: get modified category
+- name: Get modified category
   ntnx_categories_info:
     name: "{{first_category.name}}"
   register: result
   ignore_errors: true
 
-
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -138,14 +138,14 @@
   register: result
   ignore_errors: true
 
-- name: search deleted category
+- name: Search deleted category
   ntnx_categories_info:
     name: "{{first_category.name}}"
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -167,7 +167,7 @@
   check_mode: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -191,7 +191,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -202,7 +202,7 @@
     fail_msg: "Unable to Create category key and value together"
     success_msg: "Create category key and value together finished successfully"
 #################
-- name: delete the category
+- name: Delete the category
   ntnx_categories:
     state: "absent"
     name: "{{second_category.name}}"
@@ -210,7 +210,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true

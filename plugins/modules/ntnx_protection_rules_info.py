@@ -44,6 +44,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
   register: result
+  ignore_errors: true
 
 - name: List protection rule using uuid criteria
   ntnx_protection_rules_info:
@@ -226,9 +227,9 @@ rule_info:
             }
 """
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.protection_rules import ProtectionRule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.prism.protection_rules import ProtectionRule  # noqa: E402
 
 
 def get_module_spec():

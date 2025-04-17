@@ -101,9 +101,9 @@ uuid:
 
 """
 
-from ..module_utils.ndb.base_info_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.tags import Tag  # noqa: E402
 from ..module_utils.utils import strip_extra_attrs  # noqa: E402
+from ..module_utils.v3.ndb.base_info_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.tags import Tag  # noqa: E402
 
 
 def get_module_spec():

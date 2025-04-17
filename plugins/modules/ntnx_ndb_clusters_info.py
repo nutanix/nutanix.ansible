@@ -172,8 +172,8 @@ response:
 
 """
 
-from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.clusters import Cluster  # noqa: E402
+from ..module_utils.v3.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.v3.ndb.clusters import Cluster  # noqa: E402
 
 
 def get_module_spec():

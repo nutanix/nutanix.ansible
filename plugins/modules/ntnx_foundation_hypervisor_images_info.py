@@ -39,11 +39,11 @@ hypervisor_images:
     "package2",
   ]
 """
-from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
-from ..module_utils.foundation.enumerate_hypervisor_isos import (  # noqa: E402
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.v3.foundation.enumerate_hypervisor_isos import (  # noqa: E402
     EnumerateHypervisorIsos,
 )
-from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 
 def get_module_spec():

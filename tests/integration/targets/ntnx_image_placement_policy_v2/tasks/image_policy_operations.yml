@@ -1,0 +1,554 @@
+---
+- name: Start testing ntnx_image_placement_policies_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_image_placement_policies_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM and images names
+  ansible.builtin.set_fact:
+    image_name: "{{ random_name }}_image_test"
+
+- name: List all categories and choose the first one
+  ntnx_categories_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of all categories
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 0
+    fail_msg: "Unable to list categories "
+    success_msg: categories  listed successfully
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    category_ext_id: '{{ result["response"][0]["ext_id"] }}'
+    category_ext_id1: '{{ result["response"][1]["ext_id"] }}'
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+##################################################################################
+
+- name: Create an image placement policy - check mode is enabled
+  ntnx_image_placement_policies_v2:
+    state: present
+    name: "{{ image_name }}1"
+    description: "{{ image_name }}1_description"
+    placement_type: SOFT
+    image_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    enforcement_state: ACTIVE
+    wait: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  false
+      - result.failed ==  false
+      - result.response.cluster_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.image_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.image_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.enforcement_state == "ACTIVE"
+      - result.response.name == '{{ image_name }}1'
+      - result.response.description == "{{ image_name }}1_description"
+    fail_msg: Create image replacement policy check mode failed
+    success_msg: Create image replacement policy check mode passed
+
+###########################################################################################
+
+- name: Create an image placement policy with minimal spec
+  ntnx_image_placement_policies_v2:
+    state: present
+    name: "{{ image_name }}2"
+    placement_type: SOFT
+    image_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  true
+      - result.failed ==  false
+      - result.response.cluster_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.image_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.image_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.enforcement_state == "ACTIVE"
+      - result.response.name == '{{ image_name }}2'
+    fail_msg: Create image replacement policy with minimal spec failed
+    success_msg: Create image replacement policy with minimal spec passed
+
+- name: Add to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["response"]["ext_id"]] }}'
+
+###########################################################################################
+
+- name: Create an image placement policy with all possible attributes
+  ntnx_image_placement_policies_v2:
+    state: present
+    name: "{{ image_name }}3"
+    description: "{{ image_name }}3_description"
+    placement_type: SOFT
+    image_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    enforcement_state: ACTIVE
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  true
+      - result.failed ==  false
+      - result.response.cluster_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.image_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.image_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.enforcement_state == "ACTIVE"
+      - result.response.name == "{{ image_name }}3"
+      - result.response.description == "{{ image_name }}3_description"
+    fail_msg: Create image replacement policy with all possible attributes failed
+    success_msg: Create image replacement policy with all possible attributes passed
+
+- name: Add to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["response"]["ext_id"]] }}'
+
+###########################################################################################
+
+- name: Create an image placement policy with suspended enforcement state
+  ntnx_image_placement_policies_v2:
+    state: present
+    name: "{{ image_name }}4"
+    description: "{{ image_name }}4_description"
+    placement_type: SOFT
+    image_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    enforcement_state: SUSPENDED
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  true
+      - result.failed ==  false
+      - result.response.cluster_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.image_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.image_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.enforcement_state == "SUSPENDED"
+      - result.response.name == "{{ image_name }}4"
+      - result.response.description == "{{ image_name }}4_description"
+    fail_msg: Create image replacement policy with suspended enforcement state failed
+    success_msg: Create image replacement policy with suspended enforcement state passed
+
+- name: Add to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["response"]["ext_id"]] }}'
+
+##########################################################################################
+
+- name: Update an existing image placement policy - check mode is enabled
+  ntnx_image_placement_policies_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ image_name }}5"
+    description: "{{ image_name }}5_description"
+    placement_type: SOFT
+    image_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_ext_id }}"
+    enforcement_state: ACTIVE
+    wait: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  false
+      - result.failed ==  false
+      - result.response.cluster_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.image_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.image_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.enforcement_state == "ACTIVE"
+      - result.response.name == "{{ image_name }}5"
+      - result.response.description == "{{ image_name }}5_description"
+    fail_msg: Update image replacement policy check mode failed
+    success_msg: Update image replacement policy check mode passed
+
+##########################################################################################
+
+- name: Update an existing image placement policy
+  ntnx_image_placement_policies_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ image_name }}5"
+    description: "{{ image_name }}5_description"
+    placement_type: SOFT
+    image_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_ext_id1 }}"
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_ext_id1 }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  true
+      - result.failed ==  false
+      - result.response.cluster_entity_filter.category_ext_ids[0] == "{{ category_ext_id1 }}"
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.image_entity_filter.category_ext_ids[0] == "{{ category_ext_id1 }}"
+      - result.response.image_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.enforcement_state == "ACTIVE"
+      - result.response.name == "{{ image_name }}5"
+      - result.response.description == "{{ image_name }}5_description"
+    fail_msg: Update image replacement policy failed
+    success_msg: Update image replacement policy passed
+
+# ###########################################################################################
+
+- name: Check for idempotency by updating the same policy
+  ntnx_image_placement_policies_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ image_name }}5"
+    description: "{{ image_name }}5_description"
+    placement_type: SOFT
+    image_entity_filter:
+      type: CATEGORIES_MATCH_ALL
+      category_ext_ids:
+        - "{{ category_ext_id1 }}"
+    cluster_entity_filter:
+      type: CATEGORIES_MATCH_ANY
+      category_ext_ids:
+        - "{{ category_ext_id1 }}"
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  false
+      - result.failed ==  false
+      - result.msg == "Nothing to change."
+      - result.ext_id == "{{ todelete[1] }}"
+    fail_msg: Check for idempotency by updating the same policy failed
+    success_msg: Check for idempotency by updating the same policy passed
+
+# ###########################################################################################
+
+- name: Update enforcement state in an existing policy
+  ntnx_image_placement_policies_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    enforcement_state: SUSPENDED
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  true
+      - result.failed ==  false
+      - result.response.enforcement_state == "SUSPENDED"
+    fail_msg: Update enforcement state in an existing policy failed
+    success_msg: Update enforcement state in an existing policy passed
+
+###########################################################################################
+
+- name: Check for idempotency by updating enforcement state to the same value
+  ntnx_image_placement_policies_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    enforcement_state: SUSPENDED
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  false
+      - result.failed ==  false
+      - result.msg == "Nothing to change."
+      - result.ext_id == "{{ todelete[1] }}"
+    fail_msg: Check for idempotency by updating enforcement state to the same value failed
+    success_msg: Check for idempotency by updating enforcement state to the same value passed
+
+###########################################################################################
+
+- name: Suspend an existing policy - check mode is enabled
+  ntnx_image_placement_policies_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    enforcement_state: SUSPENDED
+    wait: true
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Suspend Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  false
+      - result.failed ==  false
+      - result.response.cluster_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.image_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.image_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.enforcement_state == "SUSPENDED"
+    fail_msg: Suspend an existing policy check mode failed
+    success_msg: Suspend an existing policy check mode passed
+
+# ###########################################################################################
+
+- name: Suspend an existing policy
+  ntnx_image_placement_policies_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    enforcement_state: SUSPENDED
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Suspend Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  true
+      - result.failed ==  false
+      - result.response.cluster_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.image_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.image_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.enforcement_state == "SUSPENDED"
+
+    fail_msg: Suspend an existing policy failed
+    success_msg: Suspend an existing policy passed
+
+###########################################################################################
+
+- name: Resume an existing policy
+
+  ntnx_image_placement_policies_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    enforcement_state: ACTIVE
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Resume Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  true
+      - result.failed ==  false
+      - result.response.cluster_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.cluster_entity_filter.type == "CATEGORIES_MATCH_ANY"
+      - result.response.image_entity_filter.category_ext_ids[0] == "{{ category_ext_id }}"
+      - result.response.image_entity_filter.type == "CATEGORIES_MATCH_ALL"
+      - result.response.enforcement_state == "ACTIVE"
+    fail_msg: Resume an existing policy failed
+    success_msg: Resume an existing policy passed
+
+###########################################################################################
+
+- name: Resume policy that does not exist
+  ntnx_image_placement_policies_v2:
+    state: present
+    ext_id: 12345678-1234-1234-1234-123456789123
+    enforcement_state: ACTIVE
+    wait: true
+  register: result
+  ignore_errors: true
+
+- name: Resume Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+      - result.status == 404
+      - result.changed == false
+    fail_msg: Resume policy that does not exist failed
+    success_msg: Resume policy that does not exist passed
+
+###############################################################################
+
+- name: Get an existing image placement policy
+  ntnx_image_placement_policies_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Get Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed ==  false
+      - result.failed ==  false
+      - result.response.ext_id == "{{ todelete[0] }}"
+    fail_msg: Get an existing image placement policy failed
+    success_msg: Get an existing image placement policy passed
+
+################################################################################
+
+- name: Retrieve all policies
+  ntnx_image_placement_policies_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Reading Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+    fail_msg: Retrieve all policies failed
+    success_msg: Retrieve all policies passed
+
+################################################################################
+
+- name: Retrieve all policies and filter for name
+  ntnx_image_placement_policies_info_v2:
+    filter: name eq '{{ image_name }}5'
+  register: result
+  ignore_errors: true
+
+- name: Reading Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].name == "{{ image_name }}5"
+    fail_msg: Retrieve all policies and filter for name failed
+    success_msg: Retrieve all policies and filter for name passed
+
+################################################################################
+
+- name: Retrieve all policies with limit 1
+  ntnx_image_placement_policies_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Reading Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: Retrieve all policies with limit 1 failed
+    success_msg: Retrieve all policies with limit 1 passed
+
+################################################################################
+
+- name: Retrieve all policies with limit 2
+  ntnx_image_placement_policies_info_v2:
+    limit: 2
+  register: result
+  ignore_errors: true
+
+- name: Reading Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 2
+    fail_msg: Retrieve all policies with limit 2 failed
+    success_msg: Retrieve all policies with limit 2 passed
+
+################################################################################
+
+- name: Delete policies
+  ntnx_image_placement_policies_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+    fail_msg: Delete policies failed
+    success_msg: Delete policies passed
+  loop: "{{ result.results }}"

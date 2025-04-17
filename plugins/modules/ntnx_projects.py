@@ -356,17 +356,17 @@ project_uuid:
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.idempotence_identifiers import (  # noqa: E402
-    IdempotenceIdenitifiers,
-)
-from ..module_utils.prism.projects import Project  # noqa: E402
-from ..module_utils.prism.projects_internal import ProjectsInternal  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
     extract_uuids_from_references_list,
     remove_param_with_none_value,
     strip_extra_attrs,
 )
+from ..module_utils.v3.prism.idempotence_identifiers import (  # noqa: E402
+    IdempotenceIdenitifiers,
+)
+from ..module_utils.v3.prism.projects import Project  # noqa: E402
+from ..module_utils.v3.prism.projects_internal import ProjectsInternal  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

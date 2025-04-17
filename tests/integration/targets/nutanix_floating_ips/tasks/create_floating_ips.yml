@@ -2,20 +2,21 @@
 - name: Create floating ip with external subnet uuid
   ntnx_floating_ips:
     state: present
-    wait: True
+    wait: true
     external_subnet:
       uuid: "{{ external_nat_subnet.uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create floating ip with external subnet uuid "
     success_msg: " Floating ip with external subnet uuid created successfully "
 
-- set_fact:
+- name: Adding floating ip to delete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ##############################################################
 - name: Create floating ip with vpc name and external subnet uuid
@@ -24,20 +25,21 @@
     external_subnet:
       uuid: "{{external_nat_subnet.uuid}}"
     vpc:
-       name: "{{ vpc.name }}"
+      name: "{{ vpc.name }}"
     private_ip: "{{ private_ip }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create floating ip with vpc "
     success_msg: " Floating ip with vpc name and external subnet uuid created successfully "
 
-- set_fact:
+- name: Adding floating ip to delete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ##########################################################
 - name: Delete all created floating ips
@@ -47,7 +49,8 @@
   register: result
   loop: "{{ todelete }}"
 
-- set_fact:
+- name: Removing all floating ips from delete list
+  ansible.builtin.set_fact:
     todelete: []
 ###########################################################
 - name: Create floating ip with external subnet name
@@ -57,17 +60,18 @@
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create floating ip with external subnet name "
     success_msg: " Floating ip with external subnet name created successfully "
 
-- set_fact:
+- name: Adding floating ip to delete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ############################################################
 - name: Create floating ip with vpc uuid and external subnet name
@@ -76,20 +80,21 @@
     external_subnet:
       name: "{{ external_nat_subnet.name }}"
     vpc:
-       uuid: "{{ vpc.uuid }}"
+      uuid: "{{ vpc.uuid }}"
     private_ip: "{{ private_ip }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create floating ip with vpc uuid and external subnet name "
     success_msg: " Floating ip with vpc uuid and external subnet name created successfully "
 
-- set_fact:
+- name: Adding floating ip to delete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ############################################################
 - name: Delete all created floating ips
@@ -98,9 +103,10 @@
     fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- name: Removing all floating ips from delete list
+  ansible.builtin.set_fact:
     todelete: []
 #########################################################
 - name: Create floating ip with external subnet and vm name
@@ -110,18 +116,19 @@
       name: "{{ external_nat_subnet.name }}"
     vm:
       name: "{{ vm.name }}"
-  ignore_errors: True
+  ignore_errors: true
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create floating ip with vm"
     success_msg: " Floating ip with external subnet and vm created successfully "
 
-- set_fact:
+- name: Adding floating ip to delete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 #########################################################
 - name: Delete all created floating ips
@@ -130,9 +137,10 @@
     fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- name: Removing all floating ips from delete list
+  ansible.builtin.set_fact:
     todelete: []
 #########################################################
 - name: Create floating ip with external subnet and vm uuid
@@ -142,18 +150,19 @@
       name: "{{ external_nat_subnet.name }}"
     vm:
       uuid: "{{ vm.uuid }}"
-  ignore_errors: True
+  ignore_errors: true
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create floating ip with vm"
     success_msg: " Floating ip with external subnet and vm created successfully "
 
-- set_fact:
+- name: Adding floating ip to delete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.fip_uuid ] }}"
 ##########################################################
 - name: Delete all created floating ips
@@ -162,4 +171,4 @@
     fip_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true

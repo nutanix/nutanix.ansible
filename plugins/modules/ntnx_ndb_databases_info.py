@@ -703,9 +703,9 @@ response:
 
 """
 
-from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.database_instances import DatabaseInstance  # noqa: E402
 from ..module_utils.utils import format_filters_map  # noqa: E402
+from ..module_utils.v3.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.v3.ndb.database_instances import DatabaseInstance  # noqa: E402
 
 
 def get_module_spec():

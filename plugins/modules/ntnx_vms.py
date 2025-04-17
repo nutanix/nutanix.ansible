@@ -289,6 +289,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     vm_uuid: '{{ vm_uuid }}'
+
 - name: update vm by  values for memory, vcpus and cores_per_vcpu, timezone
   ntnx_vms:
     vm_uuid: "{{ vm.vm_uuid }}"
@@ -746,10 +747,10 @@ from copy import deepcopy  # noqa: E402
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.spec.vms import DefaultVMSpec  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.vms import VM  # noqa: E402
-from ..module_utils.utils import check_for_idempotency  # noqa: E402
+from ..module_utils.v3.prism.spec.vms import DefaultVMSpec  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.vms import VM  # noqa: E402
+from ..module_utils.v3.utils import check_for_idempotency  # noqa: E402
 
 
 def get_module_spec():

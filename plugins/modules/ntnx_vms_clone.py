@@ -32,11 +32,11 @@ author:
 EXAMPLES = r"""
 - name: clone vm  with check mode
   ntnx_vms_clone:
-    src_vm_uuid: "{{ vm.vm_uuid }}"
-    networks:
-      - is_connected: false
-        subnet:
-          name: "{{ network.dhcp.name }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      networks:
+          - is_connected: false
+            subnet:
+                name: "{{ network.dhcp.name }}"
   check_mode: true
 
 - name: clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
@@ -52,22 +52,22 @@ EXAMPLES = r"""
 
 - name: clone vm and add network
   ntnx_vms_clone:
-    src_vm_uuid: "{{ vm.vm_uuid }}"
-    networks:
-      - is_connected: true
-        subnet:
-          uuid: "{{ network.dhcp.uuid }}"
-      - is_connected: true
-        subnet:
-          uuid: "{{ static.uuid }}"
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      networks:
+          - is_connected: true
+            subnet:
+                uuid: "{{ network.dhcp.uuid }}"
+          - is_connected: true
+            subnet:
+                uuid: "{{ static.uuid }}"
 
 - name: clone vm  with script
   ntnx_vms_clone:
-    src_vm_uuid: "{{ vm.vm_uuid }}"
-    guest_customization:
-      type: "cloud_init"
-      script_path: "./cloud_init.yml"
-      is_overridable: true
+      src_vm_uuid: "{{ vm.vm_uuid }}"
+      guest_customization:
+          type: "cloud_init"
+          script_path: "./cloud_init.yml"
+          is_overridable: true
 """
 
 RETURN = r"""
@@ -270,9 +270,9 @@ from copy import deepcopy  # noqa: E402
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.spec.vms import DefaultVMSpec  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.vms import VM  # noqa: E402
+from ..module_utils.v3.prism.spec.vms import DefaultVMSpec  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.vms import VM  # noqa: E402
 
 
 def get_module_spec():

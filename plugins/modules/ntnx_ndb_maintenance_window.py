@@ -132,9 +132,9 @@ uuid:
 
 """
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.maintenance_window import MaintenanceWindow  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.maintenance_window import MaintenanceWindow  # noqa: E402
 
 
 def get_module_spec():

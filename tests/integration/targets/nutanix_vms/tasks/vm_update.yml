@@ -1,14 +1,14 @@
 # ########################### UPDATE_VM ################################
 
-- name: create VM with minimum requirements to update
+- name: Create VM with minimum requiremnts to update
   ntnx_vms:
     state: present
     name: update vm
     cluster:
       name: "{{ cluster.name }}"
     categories:
-        Environment:
-          - Production
+      Environment:
+        - Production
     vcpus: 5
     cores_per_vcpu: 5
     memory_gb: 5
@@ -17,16 +17,16 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: ' Unable to create VM with minimum requirements '
-    success_msg: ' VM with minimum requirements created successfully '
+    fail_msg: " Unable to create VM with minimum requiremnts "
+    success_msg: " VM with minimum requiremnts created successfully "
 ####################################################################
-- name: update vm by set owner by uuid
+- name: Update vm by set owner by uuid
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     owner:
@@ -35,7 +35,7 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
@@ -44,14 +44,15 @@
       - result.response.metadata.owner_reference.name == "{{ vm_owner.name }}"
       - result.response.metadata.owner_reference.uuid == "{{ vm_owner.uuid }}"
       - result.response.metadata.owner_reference.kind == "user"
-    fail_msg: ' Unable to update vm by setting owner '
-    success_msg: ' VM updated successfully by setting owner '
+    fail_msg: " Unable to update vm by setting owner "
+    success_msg: " VM updated successfully by setting owner "
 ####################################################################
 
-- debug:
+- name: Start update tests for memory vcpus cores_per_vcpu
+  ansible.builtin.debug:
     msg: Start update tests for memory vcpus cores_per_vcpu
 
-- name: decrease values for memory, vcpus and corespervcpu with force_power_off
+- name: Decrease values for memory, vcpus and corespervcpu with force_power_off
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     vcpus: 2
@@ -63,16 +64,16 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by decrease the values for memory, vcpus and corespervcpu with force_power_off '
-    success_msg: ' VM updated successfully by decrease the values for memory, vcpus and corespervcpu with force_power_off '
+    fail_msg: " Unable to update vm by decrease the values for memory, vcpus and corespervcpu with force_power_off "
+    success_msg: " VM updated successfully by decrease the values for memory, vcpus and corespervcpu with force_power_off "
 
-- name: increase values for memory, vcpus and corespervcpu
+- name: Increase values for memory, vcpus and corespervcpu
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     vcpus: 4
@@ -81,16 +82,16 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increase values for memory, vcpus '
-    success_msg: ' VM updated successfully by increase values for memory, vcpus  '
+    fail_msg: " Unable to update vm by increase values for memory, vcpus "
+    success_msg: " VM updated successfully by increase values for memory, vcpus  "
 
-- name: increase values for corespervcpu with force_power_off
+- name: Increase values for corespervcpu with force_power_off
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     cores_per_vcpu: 4
@@ -99,32 +100,33 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increase values for  corespervcpu with force_power_off'
-    success_msg: ' VM updated successfully by increase values for  corespervcpu with force_power_off '
+    fail_msg: " Unable to update vm by increase values for  corespervcpu with force_power_off"
+    success_msg: " VM updated successfully by increase values for  corespervcpu with force_power_off "
 
 ####################################################################
-- debug:
+- name: Start update tests for vm categoies
+  ansible.builtin.debug:
     msg: Start update tests for vm categories
 
-- name: update categories
+- name: Update categories
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     categories:
-        Environment:
-          - Dev
-        AppType:
-          - Default
+      Environment:
+        - Dev
+      AppType:
+        - Default
   register: result
   ignore_errors: true
 
 - name: Assert categories Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
@@ -132,10 +134,10 @@
       - result.response.status.state == "COMPLETE"
       - result.response.metadata.categories_mapping["Environment"] == ["Dev"]
       - result.response.metadata.categories_mapping["AppType"] == ["Default"]
-    fail_msg: ' Unable to update categories attached to vm'
-    success_msg: ' VM categories updated successfully '
+    fail_msg: " Unable to update categories attached to vm"
+    success_msg: " VM categories updated successfully "
 
-- name: remove all categories attached to vm
+- name: Remove all categoies attached to vm
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
     remove_categories: true
@@ -143,20 +145,21 @@
   ignore_errors: true
 
 - name: Assert categories Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
       - result.response.metadata.categories_mapping == {}
-    fail_msg: ' Unable to remove all categories attached to vm'
-    success_msg: ' All VM categories removed successfully '
+    fail_msg: " Unable to remove all categories attached to vm"
+    success_msg: " All VM categories removed successfully "
 
 ###################################################################
-- debug:
+- name: Start update tests for disks
+  ansible.builtin.debug:
     msg: Start update tests for disks
-##### CRUD operation for SCSI disks
+##### CRUD opperation for SCSI disks
 - name: Update VM by adding  SCSI disks
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
@@ -178,14 +181,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding SCSI  disks '
-    success_msg: ' VM updated successfully by adding SCSI    disks '
+    fail_msg: " Unable to update vm by adding SCSI  disks "
+    success_msg: " VM updated successfully by adding SCSI    disks "
 
 - name: Update VM by increasing the size of the SCSI disks
   ntnx_vms:
@@ -204,14 +207,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increasing the size of the SCSI  disks  '
-    success_msg: ' VM updated successfully by increasing the size of the SCSI  disks '
+    fail_msg: " Unable to update vm by increasing the size of the SCSI  disks  "
+    success_msg: " VM updated successfully by increasing the size of the SCSI  disks "
 
 - name: Update VM by removing SCSI disks
   ntnx_vms:
@@ -227,16 +230,16 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by removing SCSI disks '
-    success_msg: ' VM updated successfully by removing SCSI disks '
+    fail_msg: " Unable to update vm by removing SCSI disks "
+    success_msg: " VM updated successfully by removing SCSI disks "
 #######
-##### CRUD operation for PCI disks
+##### CRUD opperation for PCI disks
 - name: Update VM by adding  PCI disks
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
@@ -248,14 +251,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding PCI  disks '
-    success_msg: ' VM updated successfully by adding PCI  disks '
+    fail_msg: " Unable to update vm by adding PCI  disks "
+    success_msg: " VM updated successfully by adding PCI  disks "
 
 - name: Update VM by increasing the size of the PCI disks
   ntnx_vms:
@@ -268,14 +271,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increasing the size of the PCI  disks  '
-    success_msg: ' VM updated successfully by increasing the size of the PCI  disks '
+    fail_msg: " Unable to update vm by increasing the size of the PCI  disks  "
+    success_msg: " VM updated successfully by increasing the size of the PCI  disks "
 
 - name: Update VM by removing PCI disks with force_power_off
   ntnx_vms:
@@ -288,15 +291,15 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by removing PCI disks with force_power_off '
-    success_msg: ' VM updated successfully by removing PCI disks with force_power_off '
-##### CRUD operation for IDE disks
+    fail_msg: " Unable to update vm by removing PCI disks with force_power_off "
+    success_msg: " VM updated successfully by removing PCI disks with force_power_off "
+##### CRUD opperation for IDE disks
 - name: Update VM by adding  IDE disks with force_power_off
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
@@ -306,20 +309,20 @@
         size_gb: 1
       - type: "CDROM"
         bus: "IDE"
-        empty_cdrom: True
+        empty_cdrom: true
     force_power_off: true
   register: result
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding IDE  disks with force_power_off '
-    success_msg: ' VM updated successfully by adding IDE disks with force_power_off '
+    fail_msg: " Unable to update vm by adding IDE  disks with force_power_off "
+    success_msg: " VM updated successfully by adding IDE disks with force_power_off "
 
 - name: Update VM by increasing the size of the IDE disks with force_power_off
   ntnx_vms:
@@ -333,14 +336,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increasing the size of the IDE  disks with force_power_off '
-    success_msg: ' VM updated successfully by increasing the size of the IDE  disks with force_power_off '
+    fail_msg: " Unable to update vm by increasing the size of the IDE  disks with force_power_off "
+    success_msg: " VM updated successfully by increasing the size of the IDE  disks with force_power_off "
 
 - name: Update VM by removing IDE disks with force_power_off
   ntnx_vms:
@@ -355,16 +358,16 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by removing IDE disks with force_power_off'
-    success_msg: ' VM updated successfully by removing IDE disks with force_power_off'
+    fail_msg: " Unable to update vm by removing IDE disks with force_power_off"
+    success_msg: " VM updated successfully by removing IDE disks with force_power_off"
 #######
-##### CRUD operation for SATA disks
+##### CRUD opperation for SATA disks
 - name: Update VM by adding  SATA disks with force_power_off
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
@@ -377,14 +380,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding SATA  disks with force_power_off'
-    success_msg: ' VM updated successfully by adding SATA    disks with force_power_off'
+    fail_msg: " Unable to update vm by adding SATA  disks with force_power_off"
+    success_msg: " VM updated successfully by adding SATA    disks with force_power_off"
 
 - name: Update VM by increasing the size of the SATA disks with force_power_off
   ntnx_vms:
@@ -398,14 +401,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by increasing the size of the SATA  disks with force_power_off '
-    success_msg: ' VM updated successfully by increasing the size of the SATA  disks with force_power_off'
+    fail_msg: " Unable to update vm by increasing the size of the SATA  disks with force_power_off "
+    success_msg: " VM updated successfully by increasing the size of the SATA  disks with force_power_off"
 
 - name: Update VM by removing SATA disks with force_power_off
   ntnx_vms:
@@ -418,17 +421,18 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by removing SATA disks with force_power_off'
-    success_msg: ' VM updated successfully by removing SATA disks with force_power_off '
+    fail_msg: " Unable to update vm by removing SATA disks with force_power_off"
+    success_msg: " VM updated successfully by removing SATA disks with force_power_off "
 
 # ####################################################################
-- debug:
+- name: Start update tests for network
+  ansible.builtin.debug:
     msg: Start update tests for network
 
 - name: Update VM by adding subnets
@@ -446,14 +450,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by adding subnets '
-    success_msg: ' VM updated successfully by adding subnets'
+    fail_msg: " Unable to update vm by adding subnets "
+    success_msg: " VM updated successfully by adding subnets"
 
 - name: Update VM by editing a subnet is_connected
   ntnx_vms:
@@ -468,14 +472,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.vm_uuid
       - result.task_uuid
       - result.response.status.state == "COMPLETE"
-    fail_msg: ' Unable to update vm by editing a subnet '
-    success_msg: ' VM updated successfully by editing a subnet '
+    fail_msg: " Unable to update vm by editing a subnet "
+    success_msg: " VM updated successfully by editing a subnet "
 
 - name: Update VM by change the private ip for subnet
   ntnx_vms:
@@ -490,14 +494,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: ' Unable to update vm by editing private_ip for subnet '
-    success_msg: ' VM updated successfully by editing private_ip for subnet'
+    fail_msg: " Unable to update vm by editing private_ip for subnet "
+    success_msg: " VM updated successfully by editing private_ip for subnet"
 
 - name: Update VM by change vlan subnet
   ntnx_vms:
@@ -516,14 +520,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: ' Unable to update vm by editing a subnet vlan '
-    success_msg: ' VM updated successfully by editing a subnet vlan '
+    fail_msg: " Unable to update vm by editing a subnet vlan "
+    success_msg: " VM updated successfully by editing a subnet vlan "
 
 - name: Update VM by deleting a subnet
   ntnx_vms:
@@ -537,14 +541,14 @@
   ignore_errors: true
 
 - name: Update Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: ' Unable to update vm by deleting a subnet '
-    success_msg: ' VM updated successfully by deleting a subnet '
+    fail_msg: " Unable to update vm by deleting a subnet "
+    success_msg: " VM updated successfully by deleting a subnet "
 # ####################################################################
 
 - name: Update VM by deleting it
@@ -554,11 +558,12 @@
   register: result
   ignore_errors: true
 
-- assert:
+- name: Delete Status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == 'SUCCEEDED'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: 'Fail: Unable to delete created vm '
-    success_msg: 'Success: Vm deleted sucessfully'
+    fail_msg: "Fail: Unable to delete created vm "
+    success_msg: "Success: Vm deleted sucessfully"

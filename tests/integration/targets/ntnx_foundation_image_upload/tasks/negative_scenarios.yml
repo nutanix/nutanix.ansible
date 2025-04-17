@@ -1,15 +1,16 @@
+---
 - name: Image upload with wrong installer_type
   ntnx_foundation_image_upload:
     state: present
     source: "{{ source }}"
-    filename: "integration-test-ntnx-package.tar.gz"
+    filename: integration-test-ntnx-package.tar.gz
     installer_type: wrong installler type
     timeout: 3600
   register: result
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.failed==true
       - result.changed==false
