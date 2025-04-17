@@ -1,5 +1,6 @@
 - name: Create Cloud-init Script file
-  copy:
+  ansible.builtin.copy:
+    mode: "0644"
     dest: "cloud_init.yml"
     content: |
       #cloud-config
@@ -32,14 +33,15 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Unable to Create VM with none values  "
     success_msg: "VM with none values created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 # ##################################################################################
 - name: VM with owner name
@@ -64,7 +66,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -74,7 +76,8 @@
     fail_msg: "Unable to Create VM with owner"
     success_msg: "VM with owner created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 ##################################################################################
 - name: VM with ubuntu image and different specifications
@@ -92,7 +95,7 @@
     cluster:
       name: "{{ cluster.name }}"
     networks:
-      - is_connected: True
+      - is_connected: true
         subnet:
           name: "{{ network.dhcp.name }}"
     disks:
@@ -107,11 +110,11 @@
     guest_customization:
       type: "cloud_init"
       script_path: "./cloud_init.yml"
-      is_overridable: True
+      is_overridable: true
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -120,7 +123,8 @@
     fail_msg: "Unable to Create VM with Ubuntu image and different specifications  "
     success_msg: "VM with Ubuntu image and different specifications created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 #########################################################################################
@@ -141,18 +145,19 @@
     guest_customization:
       type: "cloud_init"
       script_path: "./cloud_init.yml"
-      is_overridable: True
+      is_overridable: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Unable to create VM with CentOS-7-cloud-init image"
     success_msg: "VM with CentOS-7-cloud-init image created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 #################################################################################
@@ -172,18 +177,19 @@
     guest_customization:
       type: "cloud_init"
       script_path: "./cloud_init.yml"
-      is_overridable: True
+      is_overridable: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Unable to create VM with CentOS-7-cloud-init image"
     success_msg: "VM with CentOS-7-cloud-init image created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 
@@ -193,7 +199,8 @@
     vm_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []
 #################################################################################
 - name: VM with Cluster, Network, Universal time zone, one Disk
@@ -205,7 +212,7 @@
     cluster:
       name: "{{ cluster.name }}"
     networks:
-      - is_connected: False
+      - is_connected: false
         subnet:
           uuid: "{{ network.dhcp.uuid }}"
     disks:
@@ -214,14 +221,15 @@
         bus: "PCI"
   register: result
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Unable to create VM with Cluster , Network, Universal time zone, one Disk"
     success_msg: "VM with Cluster , Network, Universal time zone, one Disk created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 ########################################################################################
@@ -241,16 +249,17 @@
         bus: "SCSI"
     memory_gb: 2
   register: result
-  ignore_errors: True
+  ignore_errors: true
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Unable to create VM with Cluster, different Disks, Memory size"
     success_msg: "VM with Cluster, different Disks, Memory size created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 #####################################################################################
@@ -265,23 +274,24 @@
     disks:
       - type: "CDROM"
         bus: "SATA"
-        empty_cdrom: True
+        empty_cdrom: true
       - type: "CDROM"
         bus: "IDE"
-        empty_cdrom: True
+        empty_cdrom: true
     cores_per_vcpu: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Unable to Create VM with Cluster, different CDROMs "
     success_msg: "VM with Cluster, different CDROMs created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
 - name: Delete all Created VMs
@@ -290,13 +300,14 @@
     vm_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []
 ####################################################################################
 - name: VM with all specification
   ntnx_vms:
     state: present
-    wait: True
+    wait: true
     name: "All specification"
     timezone: "GMT"
     cluster:
@@ -316,7 +327,7 @@
         bus: "SCSI"
       - type: "CDROM"
         bus: "IDE"
-        empty_cdrom: True
+        empty_cdrom: true
     boot_config:
       boot_type: "UEFI"
       boot_order:
@@ -327,17 +338,18 @@
     cores_per_vcpu: 2
     memory_gb: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create VM with all specification "
     success_msg: " VM with all specification created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 ##################################################################################################
@@ -356,18 +368,19 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create VM with managed subnet "
     success_msg: " VM with with managed subnet created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 ###################################################################################################
-- name: VM with minimum requirements
+- name: VM with minimum requiremnts
   ntnx_vms:
     state: present
     name: MinReqVM
@@ -377,14 +390,15 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with minimum requirements "
-    success_msg: " VM with minimum requirements created successfully "
+    fail_msg: " Unable to create VM with minimum requiremnts "
+    success_msg: " VM with minimum requiremnts created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 
@@ -394,7 +408,8 @@
     vm_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []
 ##################################################################################################
 - name: VM with unmanaged vlan
@@ -423,14 +438,15 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create VM with unmanaged vlan "
     success_msg: " VM with unmanaged vlan created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 
@@ -440,7 +456,8 @@
     vm_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []
 ######################################################################################
 - name: VM with managed and unmanaged network
@@ -470,10 +487,10 @@
         bus: PCI
       - type: CDROM
         bus: SATA
-        empty_cdrom: True
+        empty_cdrom: true
       - type: CDROM
         bus: IDE
-        empty_cdrom: True
+        empty_cdrom: true
     boot_config:
       boot_type: UEFI
       boot_order:
@@ -487,18 +504,19 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create VM with managed and unmanaged network "
     success_msg: " VM with managed and unmanaged network created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 #########################################################################################
-- name: VM with different disk types and different sizes with UEFI boot type
+- name: VM with diffrent disk types and diffrent sizes with UEFI boot type
   ntnx_vms:
     state: present
     name: VM with UEFI boot type
@@ -539,14 +557,15 @@
   register: result
 ################################################################################
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with different disk types and different sizes with UEFI boot type "
-    success_msg: " VM with different disk types and different sizes with UEFI boot type created successfully "
+    fail_msg: " Unable to create VM with diffrent disk types and diffrent sizes with UEFI boot type "
+    success_msg: " VM with diffrent disk types and diffrent sizes with UEFI boot type created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 
@@ -557,7 +576,8 @@
   register: result
   loop: "{{ todelete }}"
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []
 ####################################################################################
 - name: VM with storage container
@@ -582,14 +602,15 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with storage container "
+    fail_msg: " Unable to create VM withstorage container "
     success_msg: " VM with storage container created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
   when: result.response.status.state == 'COMPLETE'
 ####################################################################################

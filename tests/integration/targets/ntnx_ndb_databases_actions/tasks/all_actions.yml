@@ -9,37 +9,39 @@
 #   6. Scale database
 #   7. Add/Remove linked databases
 
-- debug:
-    msg: "start ndb database day2 actions tests"
+- name: Start ndb database day2 actions tests
+  ansible.builtin.debug:
+    msg: start ndb database day2 actions tests
 
 - name: Generate random name
-  set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
-- set_fact:
-    db1_name: "{{random_name[0]}}"
-    vm1_name: "{{random_name[0]}}-vm"
-    tm1: "{{random_name[0]}}-time-machine"
-    snapshot_name: "{{random_name[0]}}-snapshot"
+- name: Define variables
+  ansible.builtin.set_fact:
+    db1_name: "{{ random_name[0] }}"
+    vm1_name: "{{ random_name[0] }}-vm"
+    tm1: "{{ random_name[0] }}-time-machine"
+    snapshot_name: "{{ random_name[0] }}-snapshot"
 
 ############################################ setup db ###########################################
 
-- name: create single instance postgres database on new db server vm
+- name: Create single instance postgres database on new db server vm
   ntnx_ndb_databases:
     wait: true
-    name: "{{db1_name}}"
-    desc: "ansible-created-db-desc"
+    name: "{{ db1_name }}"
+    desc: ansible-created-db-desc
 
     db_params_profile:
-      name: "{{db_params_profile.name}}"
+      name: "{{ db_params_profile.name }}"
 
     db_vm:
       create_new_server:
         name: "{{ vm1_name }}-db"
-        desc: "vm for db server"
+        desc: vm for db server
         password: "{{ vm_password }}"
         cluster:
-          name: "{{cluster.cluster1.name}}"
+          name: "{{ cluster.cluster1.name }}"
         software_profile:
           name: "{{ software_profile.name }}"
         network_profile:
@@ -53,10 +55,10 @@
       db_name: testAnsible1
       db_password: "{{ vm_password }}"
       db_size: 200
-      type: "single"
+      type: single
 
     time_machine:
-      name: "{{tm1}}"
+      name: "{{ tm1 }}"
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
@@ -70,495 +72,452 @@
 
   register: result
 
-- set_fact:
-    db_uuid: "{{result.db_uuid}}"
+- name: Set db uuid
+  ansible.builtin.set_fact:
+    db_uuid: "{{ result.db_uuid }}"
 
-- set_fact:
-    time_machine_uuid: "{{result.response.timeMachineId}}"
+- name: Set time machine uuid
+  ansible.builtin.set_fact:
+    time_machine_uuid: "{{ result.response.timeMachineId }}"
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
       - result.db_uuid is defined
       - result.changed == true
 
-    fail_msg: "Unable to create single instance postgres database"
-    success_msg: "single instance postgres database created successfully"
+    fail_msg: Unable to create single instance postgres database
+    success_msg: single instance postgres database created successfully
 
-- set_fact:
-    db_server_uuid: "{{result.response.databaseNodes[0].dbserverId}}"
+- name: Set db server uuid
+  ansible.builtin.set_fact:
+    db_server_uuid: "{{ result.response.databaseNodes[0].dbserverId }}"
 
 ############################################ snapshots test ###########################################
 
-- name: create snapshot create spec
-  check_mode: yes
+- name: Create snapshot create spec
+  check_mode: true
   ntnx_ndb_database_snapshots:
-    name: "{{snapshot_name}}"
-    time_machine_uuid: "{{time_machine_uuid}}"
+    name: "{{ snapshot_name }}"
+    time_machine_uuid: "{{ time_machine_uuid }}"
     clusters:
-      - name: "{{cluster.cluster1.name}}"
-      - uuid: "test_uuid2"
-      - uuid: "test_uuid3"
+      - name: "{{ cluster.cluster1.name }}"
+      - uuid: test_uuid2
+      - uuid: test_uuid3
     expiry_days: 4
   register: result
 
-- set_fact:
+- name: Set expected response
+  ansible.builtin.set_fact:
     expected_response:
-      {
-        "changed": false,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "lcmConfig":
-              {
-                "snapshotLCMConfig": { "expiryDetails": { "expireInDays": 4 } },
-              },
-            "name": "{{snapshot_name}}",
-            "replicateToClusterIds":
-              ["{{cluster.cluster1.uuid}}", "test_uuid2", "test_uuid3"],
-          },
-        "snapshot_uuid": null,
-      }
+      changed: false
+      error:
+      failed: false
+      response:
+        lcmConfig: { snapshotLCMConfig: { expiryDetails: { expireInDays: 4 } } }
+        name: "{{ snapshot_name }}"
+        replicateToClusterIds: ["{{ cluster.cluster1.uuid }}", test_uuid2, test_uuid3]
+      snapshot_uuid:
 
 - name: Check mode status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == False
       - result.response == expected_response.response
 
-    fail_msg: "Unable to create snapshot create spec"
-    success_msg: "Snapshot create spec generated successfully using check mode"
+    fail_msg: Unable to create snapshot create spec
+    success_msg: Snapshot create spec generated successfully using check mode
 
-- name: create snapshot with minimal spec
+- name: Create snapshot with minimal spec
   ntnx_ndb_database_snapshots:
-    name: "{{snapshot_name}}1"
-    time_machine_uuid: "{{time_machine_uuid}}"
+    name: "{{ snapshot_name }}1"
+    time_machine_uuid: "{{ time_machine_uuid }}"
   register: result
 
-- name: snapshot create status
-  assert:
+- name: Snapshot create status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.snapshot_uuid is defined
-      - result.response.name == "{{snapshot_name}}1"
+      - result.response.name == "{{ snapshot_name }}1"
       - result.response.timeMachineId == time_machine_uuid
-    fail_msg: "Unable to create snapshot"
-    success_msg: "Snapshot created successfully"
+    fail_msg: Unable to create snapshot
+    success_msg: Snapshot created successfully
 
-- name: create snapshot with expiry
+- name: Create snapshot with expiry
   ntnx_ndb_database_snapshots:
-    name: "{{snapshot_name}}2"
-    time_machine_uuid: "{{time_machine_uuid}}"
+    name: "{{ snapshot_name }}2"
+    time_machine_uuid: "{{ time_machine_uuid }}"
     expiry_days: 4
   register: result
 
-- set_fact:
-    snapshot_uuid: "{{result.snapshot_uuid}}"
+- name: Set snapshot uuid
+  ansible.builtin.set_fact:
+    snapshot_uuid: "{{ result.snapshot_uuid }}"
 
-- name: snapshot create status
-  assert:
+- name: Snapshot create status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.snapshot_uuid is defined
-      - result.response.name == "{{snapshot_name}}2"
+      - result.response.name == "{{ snapshot_name }}2"
       - result.response.timeMachineId == time_machine_uuid
       - result.response.lcmConfig.expiryDetails.expireInDays == 4
-    fail_msg: "Unable to create snapshot with expiry config"
-    success_msg: "Snapshot with expiry config created successfully"
+    fail_msg: Unable to create snapshot with expiry config
+    success_msg: Snapshot with expiry config created successfully
 
-- name: rename snapshot
+- name: Rename snapshot
   ntnx_ndb_database_snapshots:
-    snapshot_uuid: "{{snapshot_uuid}}"
-    name: "{{snapshot_name}}2-updated"
+    snapshot_uuid: "{{ snapshot_uuid }}"
+    name: "{{ snapshot_name }}2-updated"
   register: result
 
-- name: check rename status
-  assert:
+- name: Check rename status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.snapshot_uuid is defined
-      - result.response.name == "{{snapshot_name}}2-updated"
+      - result.response.name == "{{ snapshot_name }}2-updated"
 
-    fail_msg: "Unable to rename snapshot"
-    success_msg: "Snapshot renamed successfully"
+    fail_msg: Unable to rename snapshot
+    success_msg: Snapshot renamed successfully
 
-- name: update expiry
+- name: Update expiry
   ntnx_ndb_database_snapshots:
-    snapshot_uuid: "{{snapshot_uuid}}"
+    snapshot_uuid: "{{ snapshot_uuid }}"
     expiry_days: 5
   register: result
 
-- name: snapshot expiry update status
-  assert:
+- name: Snapshot expiry update status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.snapshot_uuid is defined
       - result.response.lcmConfig.expiryDetails.expireInDays == 5
 
-    fail_msg: "Unable to update snapshot expiry"
-    success_msg: "snapshot expiry updated successfully"
+    fail_msg: Unable to update snapshot expiry
+    success_msg: snapshot expiry updated successfully
 
-- name: remove expiry schedule
+- name: Remove expiry schedule
   ntnx_ndb_database_snapshots:
-    snapshot_uuid: "{{snapshot_uuid}}"
+    snapshot_uuid: "{{ snapshot_uuid }}"
     remove_expiry: true
   register: result
 
-- name: snapshot expiry update status
-  assert:
+- name: Snapshot expiry update status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.snapshot_uuid is defined
       - result.response.lcmConfig == None
 
-    fail_msg: "Unable to remove snapshot expiry schedule"
-    success_msg: "snapshot expiry schedule removed successfully"
+    fail_msg: Unable to remove snapshot expiry schedule
+    success_msg: snapshot expiry schedule removed successfully
 
 - name: Add expiry schedule and rename
   ntnx_ndb_database_snapshots:
-    snapshot_uuid: "{{snapshot_uuid}}"
-    name: "{{snapshot_name}}2"
+    snapshot_uuid: "{{ snapshot_uuid }}"
+    name: "{{ snapshot_name }}2"
     expiry_days: 6
   register: result
 
-- name: snapshot update status
-  assert:
+- name: Snapshot update status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.snapshot_uuid is defined
-      - result.response.name == "{{snapshot_name}}2"
+      - result.response.name == "{{ snapshot_name }}2"
       - result.response.timeMachineId == time_machine_uuid
       - result.response.lcmConfig.expiryDetails.expireInDays == 6
 
-    fail_msg: "Unable to add expiry schedule and rename it"
-    success_msg: "Snapshot updated successfully"
+    fail_msg: Unable to add expiry schedule and rename it
+    success_msg: Snapshot updated successfully
 
 - name: Idempotency check
   ntnx_ndb_database_snapshots:
-    snapshot_uuid: "{{snapshot_uuid}}"
+    snapshot_uuid: "{{ snapshot_uuid }}"
     expiry_days: 6
   register: result
 
-- name: check idempotency status
-  assert:
+- name: Check idempotency status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
       - "'Nothing to change' in result.msg"
-    fail_msg: "snapshot got updated"
-    success_msg: "snapshot update got skipped due to no state changes"
+    fail_msg: snapshot got updated
+    success_msg: snapshot update got skipped due to no state changes
 
 ############################################ log catchup ######################################
 
-- name: create spec for log catchup
-  check_mode: yes
+- name: Create spec for log catchup
+  check_mode: true
   ntnx_ndb_database_log_catchup:
-    time_machine_uuid: "{{time_machine_uuid}}"
+    time_machine_uuid: "{{ time_machine_uuid }}"
   register: result
 
-- set_fact:
+- name: Set expected response
+  ansible.builtin.set_fact:
     expected_response:
-      {
-        "changed": false,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "actionArguments":
-              [
-                { "name": "preRestoreLogCatchup", "value": false },
-                { "name": "switch_log", "value": true },
-              ],
-            "forRestore": false,
-          },
-      }
-
+      changed: false
+      error:
+      failed: false
+      response: { actionArguments: [{ name: preRestoreLogCatchup, value: false }, { name: switch_log, value: true }], forRestore: false }
 - name: Check mode status
-  assert:
+  ansible.builtin.assert:
     that:
       - result == expected_response
-    fail_msg: "Unable to create log catchup spec"
-    success_msg: "log catchup spec created successfully"
+    fail_msg: Unable to create log catcup spec
+    success_msg: log catchup spec created successfully
 
-- name: create spec for log catchup for restore
-  check_mode: yes
+- name: Create spec for log catchup for restore
+  check_mode: true
   ntnx_ndb_database_log_catchup:
-    time_machine_uuid: "{{time_machine_uuid}}"
+    time_machine_uuid: "{{ time_machine_uuid }}"
     for_restore: true
   register: result
 
-- set_fact:
+- name: Set expected response
+  ansible.builtin.set_fact:
     expected_response:
-      {
-        "changed": false,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "actionArguments":
-              [
-                { "name": "preRestoreLogCatchup", "value": True },
-                { "name": "switch_log", "value": true },
-              ],
-            "forRestore": true,
-          },
-      }
+      changed: false
+      error:
+      failed: false
+      response: { actionArguments: [{ name: preRestoreLogCatchup, value: true }, { name: switch_log, value: true }], forRestore: true }
+
 
 - name: Check mode status
-  assert:
+  ansible.builtin.assert:
     that:
       - result == expected_response
-    fail_msg: "Unable to create log catchup spec"
-    success_msg: "log catchup spec created successfully"
+    fail_msg: Unable to create log catcup spec
+    success_msg: log catchup spec created successfully
 
-- name: perform log catchup
+- name: Perform log catchup
   ntnx_ndb_database_log_catchup:
-    time_machine_uuid: "{{time_machine_uuid}}"
+    time_machine_uuid: "{{ time_machine_uuid }}"
     for_restore: true
 
   register: result
 
-- name: verify log catchup status
-  assert:
+- name: Verify log catchup status
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
-    fail_msg: "database log catchup failed"
-    success_msg: "database log catchup completed successfully"
+    fail_msg: database log catchup failed
+    success_msg: database log catchup completed successfully
 
 ########################################### restore ###########################################
 
-- name: create restore database spec using pitr timestamp
-  check_mode: yes
+- name: Create restore database spec using pitr timestamp
+  check_mode: true
   ntnx_ndb_database_restore:
-    db_uuid: "{{db_uuid}}"
+    db_uuid: "{{ db_uuid }}"
     pitr_timestamp: "2023-01-02 11:02:22"
-    timezone: "UTC"
+    timezone: UTC
   register: result
 
-- set_fact:
+- name: Set expected result
+  ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "db_uuid": null,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "actionArguments": [{ "name": "sameLocation", "value": true }],
-            "latestSnapshot": null,
-            "snapshotId": null,
-            "timeZone": "UTC",
-            "userPitrTimestamp": "2023-01-02 11:02:22",
-          },
-      }
+      changed: false
+      db_uuid:
+      error:
+      failed: false
+      response:
+        actionArguments: [{ name: sameLocation, value: true }]
+        latestSnapshot:
+        snapshotId:
+        timeZone: UTC
+        userPitrTimestamp: "2023-01-02 11:02:22"
 
 - name: Check mode status
-  assert:
+  ansible.builtin.assert:
     that:
       - result == expected_result
-    fail_msg: "Unable to create restore using pitr timestamp spec"
-    success_msg: "Spec for database restore using pitr timestamp created successfully"
+    fail_msg: Unable to create restore using pitr timestamp spec
+    success_msg: Spec for databas restore using pitr timetsmap created successfully
 
-- name: create restore database spec with latest snapshot
-  check_mode: yes
+- name: Create restore database spec with latest snapshot
+  check_mode: true
   ntnx_ndb_database_restore:
-    db_uuid: "{{db_uuid}}"
+    db_uuid: "{{ db_uuid }}"
   register: result
 
-- set_fact:
+- name: Set expected result
+  ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "db_uuid": null,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "actionArguments": [{ "name": "sameLocation", "value": true }],
-            "latestSnapshot": true,
-            "snapshotId": null,
-            "timeZone": null,
-            "userPitrTimestamp": null,
-          },
-      }
+      changed: false
+      db_uuid:
+      error:
+      failed: false
+      response:
+        actionArguments: [{ name: sameLocation, value: true }]
+        latestSnapshot: true
+        snapshotId:
+        timeZone:
+        userPitrTimestamp:
+
 
 - name: Check mode status
-  assert:
+  ansible.builtin.assert:
     that:
       - result == expected_result
-    fail_msg: "Unable to create restore using latest snapshot spec"
-    success_msg: "Spec for database restore using latest snapshot created successfully"
+    fail_msg: Unable to create restore using latest snapshot spec
+    success_msg: Spec for databas restore using latest snapshot created successfully
 
-- name: create restore database spec using snapshot uuid
-  check_mode: yes
+- name: Create restore database spec using snapshot uuid
+  check_mode: true
   ntnx_ndb_database_restore:
-    db_uuid: "{{db_uuid}}"
-    snapshot_uuid: "{{snapshot_uuid}}"
+    db_uuid: "{{ db_uuid }}"
+    snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
 
-- set_fact:
+- name: Set expected result
+  ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "db_uuid": null,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "actionArguments": [{ "name": "sameLocation", "value": true }],
-            "latestSnapshot": null,
-            "snapshotId": "{{snapshot_uuid}}",
-            "timeZone": null,
-            "userPitrTimestamp": null,
-          },
-      }
+      changed: false
+      db_uuid:
+      error:
+      failed: false
+      response:
+        actionArguments: [{ name: sameLocation, value: true }]
+        latestSnapshot:
+        snapshotId: "{{ snapshot_uuid }}"
+        timeZone:
+        userPitrTimestamp:
 
 - name: Check mode status
-  assert:
+  ansible.builtin.assert:
     that:
       - result == expected_result
-    fail_msg: "Unable to create restore using snapshot uuid spec"
-    success_msg: "Spec for database restore using snapshot uuid created successfully"
+    fail_msg: Unable to create restore using snapshot uuid spec
+    success_msg: Spec for databas restore using snapshot uuid created successfully
 
-- name: perform restore using latest snapshot
+- name: Perform restore using latest snapshot
   ntnx_ndb_database_restore:
-    db_uuid: "{{db_uuid}}"
-    snapshot_uuid: "{{snapshot_uuid}}"
+    db_uuid: "{{ db_uuid }}"
+    snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
 
-- name: restore status
-  assert:
+- name: Restore status
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
-    fail_msg: "Unable to restore database using latest snapshot"
-    success_msg: "database restored successfully using latest snapshot"
+    fail_msg: Unable to restore database using latest snapshot
+    success_msg: database restored successfully using latest snapshot
 
-- name: perform restore using snapshot uuid
+- name: Perform restore using snapshot uuid
   ntnx_ndb_database_restore:
-    db_uuid: "{{db_uuid}}"
-    snapshot_uuid: "{{snapshot_uuid}}"
+    db_uuid: "{{ db_uuid }}"
+    snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
 
-- name: restore status
-  assert:
+- name: Restore status
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
-    fail_msg: "Unable to restore database using snapshot uuid"
-    success_msg: "database restored successfully using snapshot uuid"
+    fail_msg: Unable to restore database using snapshot uuid
+    success_msg: database restored successfully using snapshot uuid
 
 ########################################### scaling ###########################################
 
-- name: create spec for scaling
-  check_mode: yes
+- name: Create spec for scaling
+  check_mode: true
   ntnx_ndb_database_scale:
-    db_uuid: "{{db_uuid}}"
+    db_uuid: "{{ db_uuid }}"
     storage_gb: 10
-    pre_update_cmd: "ls"
-    post_update_cmd: "ls -a"
+    pre_update_cmd: ls
+    post_update_cmd: ls -a
 
   register: result
 
-- set_fact:
+- name: Set expected result
+  ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "db_uuid": null,
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "actionArguments":
-              [
-                { "name": "working_dir", "value": "/tmp" },
-                { "name": "data_storage_size", "value": 10 },
-                { "name": "pre_script_cmd", "value": "ls" },
-                { "name": "post_script_cmd", "value": "ls -a" },
-              ],
-            "applicationType": "postgres_database",
-          },
-      }
+      changed: false
+      db_uuid:
+      error:
+      failed: false
+      response:
+        actionArguments:
+          - { name: working_dir, value: /tmp }
+          - { name: data_storage_size, value: 10 }
+          - { name: pre_script_cmd, value: ls }
+          - { name: post_script_cmd, value: ls -a }
+        applicationType: postgres_database
 
 - name: Check mode status
-  assert:
+  ansible.builtin.assert:
     that:
       - result == expected_result
-    fail_msg: "Unable to create database scaling spec"
-    success_msg: "Spec for database scaling with pre post commands created successfully"
+    fail_msg: Unable to create database scaling spec
+    success_msg: Spec for database scaling with pre post commands created successfully
 
-- name: extend database storage for scaling database
+- name: Extend database storage for scaling database
   ntnx_ndb_database_scale:
-    db_uuid: "{{db_uuid}}"
+    db_uuid: "{{ db_uuid }}"
     storage_gb: 2
-    pre_update_cmd: "ls"
-    post_update_cmd: "ls -a"
+    pre_update_cmd: ls
+    post_update_cmd: ls -a
 
   register: result
 
-- name: database scaling status
-  assert:
+- name: Database scaling status
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
-    fail_msg: "Unable to extend database storage (scale)"
-    success_msg: "database storage extended (scaling) successfully"
+    fail_msg: Unable to extend database storage (scale)
+    success_msg: database storage extended (scaling) successfully
 
 ############################################ add / remove linked databases ###########################################
 
-- name: create databases in database instance
-  check_mode: yes
+- name: Create databases in database instance
+  check_mode: true
   ntnx_ndb_linked_databases:
-    db_instance_uuid: "{{db_uuid}}"
+    db_instance_uuid: "{{ db_uuid }}"
     databases:
       - test1
       - test2
       - test3
   register: result
 
-- set_fact:
+- name: Set expected result
+  ansible.builtin.set_fact:
     expected_result:
-      {
-        "changed": false,
-        "db_instance_uuid": "{{db_uuid}}",
-        "error": null,
-        "failed": false,
-        "response":
-          {
-            "databases":
-              [
-                { "databaseName": "test1" },
-                { "databaseName": "test2" },
-                { "databaseName": "test3" },
-              ],
-          },
-      }
+      changed: false
+      db_instance_uuid: "{{ db_uuid }}"
+      error:
+      failed: false
+      response: { databases: [databaseName: test1, databaseName: test2, databaseName: test3] }
 
 - name: Check mode status
-  assert:
+  ansible.builtin.assert:
     that:
       - result == expected_result
-    fail_msg: "Unable to create spec for adding databases in database instance"
-    success_msg: "Spec for adding databases in database instance created successfully"
+    fail_msg: Unable to create spec for adding databases in database instance
+    success_msg: Spec for adding databases in database instance created successfully
 
-- name: add databases in database instance
+- name: Add databases in database instance
   ntnx_ndb_linked_databases:
-    db_instance_uuid: "{{db_uuid}}"
+    db_instance_uuid: "{{ db_uuid }}"
     databases:
       - test1
       - test2
@@ -566,66 +525,66 @@
 
 # {% raw %}
 
-- name: create linked databases to its uuid map
-  set_fact:
-    linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
+- name: Create linked databases to its uuid map
+  ansible.builtin.set_fact:
+    linked_databases: "{{ linked_databases | default({}) | combine({item['name']: item['id']}) }}"
   loop: "{{result.response}}"
   no_log: true
 
 # {% endraw %}
 
-- name: check linked database update status
-  assert:
+- name: Check linked database update status
+  ansible.builtin.assert:
     that:
       - result.changed == true
       - result.db_instance_uuid is defined
       - "'test1' in linked_databases"
       - "'test2' in linked_databases"
-    fail_msg: "Unable to add database to database instance"
-    success_msg: "databases added to database instance successfully"
+    fail_msg: Unable to add database to database instance
+    success_msg: databases added to database instance successfully
 
-- name: remove databases in database instance
+- name: Remove databases in database instance
   ntnx_ndb_linked_databases:
-    state: "absent"
-    db_instance_uuid: "{{db_uuid}}"
-    database_uuid: "{{linked_databases.test1}}"
+    state: absent
+    db_instance_uuid: "{{ db_uuid }}"
+    database_uuid: "{{ linked_databases.test1 }}"
   register: result
 
 # {% raw %}
 
-- name: create linked database map
-  set_fact:
-    linked_databases: "{{ linked_databases | default({}) | combine ({ item['name'] : item['id'] }) }}"
+- name: Create linked database map
+  ansible.builtin.set_fact:
+    linked_databases: "{{ linked_databases | default({}) | combine({item['name']: item['id']}) }}"
   loop: "{{result.response}}"
   no_log: true
 
 # {% endraw %}
 
-- name: check linked database update status
-  assert:
+- name: Check linked database update status
+  ansible.builtin.assert:
     that:
       - result.changed == true
       - result.db_instance_uuid is defined
       - "'test2' in linked_databases"
-    fail_msg: "Unable to remove database from database instance"
-    success_msg: "linked database from database instance removed successfully"
+    fail_msg: Unable to remove database from database instance
+    success_msg: linked database from database instance removed successfully
 
 ############################################ cleanup ###########################################
 
-- name: delete database created earlier
+- name: Delete database created earlier
   ntnx_ndb_databases:
-    state: "absent"
-    db_uuid: "{{db_uuid}}"
+    state: absent
+    db_uuid: "{{ db_uuid }}"
     delete_db_server_vms: true
-    delete_time_machine: True
+    delete_time_machine: true
   register: result
 
-- name: verify status of delete of database along with time machine and db server vm delete
-  assert:
+- name: Verify status of delete of database along with time machine and db server vm delete
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
       - result.response.db_server_vms_delete_status.status == "5"
-    fail_msg: "database delete failed"
-    success_msg: "database deleted successfully"
+    fail_msg: database delete failed
+    success_msg: database deleted successfully

@@ -1,13 +1,15 @@
 ---
-- debug:
-    msg: start ntnx_roles create tests
+- name: Start ntnx_roles create tests
+  ansible.builtin.debug:
+    msg: Start ntnx_roles create tests
 
 - name: Get Some permissions for test
   ntnx_permissions_info:
     length: 3
   register: result
 
-- set_fact:
+- name: Setting permission variables
+  ansible.builtin.set_fact:
     test_permission_1_name: "{{ result.response.entities[0].status.name }}"
     test_permission_1_uuid: "{{ result.response.entities[0].metadata.uuid }}"
     test_permission_2_name: "{{ result.response.entities[1].status.name }}"
@@ -28,25 +30,30 @@
     wait: true
   register: result
 
-- set_fact:
+- name: Set permission variables
+  ansible.builtin.set_fact:
     p1: "{{ result.response.status.resources.permission_reference_list[0].uuid }}"
     p2: "{{ result.response.status.resources.permission_reference_list[1].uuid }}"
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.role_uuid is defined
       - result.response.status.state == 'COMPLETE'
-      - result.changed == True
+      - result.changed == true
       - result.response.status.name == "test-ansible-role-1"
       - result.response.status.description == "test-ansible-role-1-desc"
-      - ("{{ p1 }}" == "{{ test_permission_1_uuid }}" and "{{ p2 }}" == "{{ test_permission_2_uuid }}") or ("{{ p2 }}" == "{{ test_permission_1_uuid }}" and "{{ p1 }}" == "{{ test_permission_2_uuid }}")
-
+      - >
+        (
+          ("{{ p1 }}" == "{{ test_permission_1_uuid }}" and "{{ p2 }}" == "{{ test_permission_2_uuid }}") or
+          ("{{ p2 }}" == "{{ test_permission_1_uuid }}" and "{{ p1 }}" == "{{ test_permission_2_uuid }}")
+        )
     fail_msg: "Unable to create roles with certain permissions"
-    success_msg: "Roles with given permissions created successfully"
+    success_msg: "Roles with given permissions created susccessfully"
 
-- set_fact:
+- name: Set role uuid to delete later
+  ansible.builtin.set_fact:
     todelete: '{{ result["response"]["metadata"]["uuid"] }}'
 
 ###################################################################################################
@@ -60,10 +67,10 @@
       - uuid: "{{ test_permission_2_uuid }}"
     wait: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.msg == "Role with given name already exists"
       - result.changed == False
@@ -73,7 +80,7 @@
 
 ###################################################################################################
 - name: Check mode test
-  check_mode: yes
+  check_mode: true
   ntnx_roles:
     state: present
     name: test-ansible-role-2
@@ -85,7 +92,7 @@
   register: result
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -99,12 +106,13 @@
 
 ###################################################################################################
 
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_roles:
     state: absent
     role_uuid: "{{ todelete }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- name: Reset todelete variable
+  ansible.builtin.set_fact:
     todelete: []

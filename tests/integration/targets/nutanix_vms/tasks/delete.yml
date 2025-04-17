@@ -1,5 +1,5 @@
 ---
-- name: VM with minimum requirements
+- name: VM with minimum requiremnts
   ntnx_vms:
     state: present
     name: MinReqVM
@@ -9,12 +9,12 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with minimum requirements "
-    success_msg: " VM with minimum requirements created successfully "
+    fail_msg: " Unable to create VM with minimum requiremnts "
+    success_msg: " VM with minimum requiremnts created successfully "
 
 - name: Delete VM
   ntnx_vms:
@@ -22,8 +22,8 @@
     state: absent
   register: result
 
-- name: assert when status not complete
-  assert:
+- name: Assert when status not complete
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == 'SUCCEEDED'

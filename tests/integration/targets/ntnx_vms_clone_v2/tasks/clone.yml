@@ -1,0 +1,228 @@
+---
+- name: Start ntnx_vms_clone_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vms_clone_v2 tests
+
+- name: Set random name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Create VM to use it for cloning
+  ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+    fail_msg: "Unable to Create VM  "
+    success_msg: "VM is created successfully "
+
+- name: Set VM attributes
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+    vm_name: '{{ result["response"]["name"] }}'
+    vm_num_threads_per_core: '{{ result["response"]["num_threads_per_core"] }}'
+    vm_num_sockets: '{{ result["response"]["num_sockets"] }}'
+    vm_num_cores_per_socket: '{{ result["response"]["num_cores_per_socket"] }}'
+    vm_power_state: '{{ result["response"]["power_state"] }}'
+    vm_machine_type: '{{ result["response"]["machine_type"] }}'
+    todelete: '{{ todelete + [  result["ext_id"] ] }}'
+
+##################################################################################
+
+- name: Clone VM - check mode is enabled
+  ntnx_vms_clone_v2:
+    ext_id: "{{ vm_uuid }}"
+    name: "{{ vm_name }}_clone"
+    num_sockets: 2
+    num_cores_per_socket: 2
+    num_threads_per_core: 2
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Clone VM - check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == '{{ vm_name }}_clone'
+      - result.response.num_sockets == 2
+      - result.response.num_cores_per_socket == 2
+      - result.response.num_threads_per_core == 2
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: "Clone VM - check mode is enabled failed"
+    success_msg: "Clone VM - check mode is enabled passed"
+
+#################################################################################
+
+- name: Clone VM with same attributes values
+  ntnx_vms_clone_v2:
+    ext_id: "{{ vm_uuid }}"
+    name: "{{ vm_name }}_clone1"
+  register: result
+  ignore_errors: true
+
+- name: Adding VM to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [  result["response"]["ext_id"] ] }}'
+
+- name: Clone VM with same attributes values status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response.name == '{{ vm_name }}_clone1'
+      - result.response.num_sockets == {{ vm_num_sockets }}
+      - result.response.num_cores_per_socket == {{ vm_num_cores_per_socket }}
+      - result.response.num_threads_per_core == {{ vm_num_threads_per_core }}
+      - result.response.power_state == "{{ vm_power_state }}"
+      - result.response.machine_type == "{{ vm_machine_type }}"
+    fail_msg: "Unable to clone VM"
+    success_msg: "VM cloned successfully"
+
+#################################################################################
+
+- name: Clone VM with different attributes values
+  ntnx_vms_clone_v2:
+    ext_id: "{{ vm_uuid }}"
+    name: "{{ vm_name }}_clone2"
+    num_sockets: 2
+    num_cores_per_socket: 2
+    num_threads_per_core: 2
+  register: result
+  ignore_errors: true
+
+- name: Adding VM to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [  result["response"]["ext_id"] ] }}'
+
+- name: Clone VM with different attributes values status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response.name == '{{ vm_name }}_clone2'
+      - result.response.num_sockets == 2
+      - result.response.num_cores_per_socket == 2
+      - result.response.num_threads_per_core == 2
+      - result.response.power_state == "{{ vm_power_state }}"
+      - result.response.machine_type == "{{ vm_machine_type }}"
+    fail_msg: "Unable to clone VM"
+    success_msg: "VM cloned successfully"
+
+##################################################################################
+
+- name: Clone VM with guest customization
+  ntnx_vms_clone_v2:
+    ext_id: "{{ vm_uuid }}"
+    name: "{{ vm_name }}_clone3"
+    guest_customization:
+      config:
+        cloudinit:
+          datasource_type: CONFIG_DRIVE_V2
+          cloud_init_script:
+            user_data:
+              value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+  register: result
+  ignore_errors: true
+
+- name: Adding VM to delete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [  result["response"]["ext_id"] ] }}'
+
+- name: Clone VM with guest customization status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response.name == '{{ vm_name }}_clone3'
+      - result.response.power_state == "{{ vm_power_state }}"
+      - result.response.machine_type == "{{ vm_machine_type }}"
+      - result.response.cd_roms[0].iso_type == "GUEST_CUSTOMIZATION"
+    fail_msg: "Unable to clone VM"
+    success_msg: "VM cloned successfully"
+
+##################################################################################
+
+- name: Clone VM - check mode is enabled
+  ntnx_vms_clone_v2:
+    ext_id: "{{ vm_uuid }}"
+    name: "{{ vm_name }}_clone2"
+    num_sockets: 4
+    num_cores_per_socket: 4
+    num_threads_per_core: 4
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Clone VM with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == '{{ vm_name }}_clone2'
+      - result.response.num_sockets == 4
+      - result.response.num_cores_per_socket == 4
+      - result.response.num_threads_per_core == 4
+      - result.vm_ext_id == "{{ vm_uuid }}"
+    fail_msg: "Clone VM - check mode is enabled failed"
+    success_msg: "Clone VM - check mode is enabled passed"
+
+##################################################################################
+
+- name: Clone VM that does not exist
+  ntnx_vms_clone_v2:
+    ext_id: "12345678-1234-1234-1234-123456789123"
+    name: "{{ vm_name }}_clone4"
+    num_sockets: 2
+    num_cores_per_socket: 2
+    num_threads_per_core: 2
+  register: result
+  ignore_errors: true
+
+- name: Cloning VM that does not exist status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.status == 404
+    fail_msg: "Clone VM that does not exist failed"
+    success_msg: "Clone VM that does not exist passed"
+
+##################################################################################
+
+- name: Delete all VMs
+  ntnx_vms:
+    state: absent
+    vm_uuid: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "
+  loop: "{{ result.results }}"

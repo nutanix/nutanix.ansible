@@ -1,7 +1,8 @@
-- set_fact:
+- name: Initialize todelete list
+  ansible.builtin.set_fact:
     todelete: []
 
-- name: Create another VM with same name
+- name: Creat anohter VM with same name
   ntnx_vms:
     name: "{{ vm.name }}"
     cluster:
@@ -11,14 +12,15 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - output.response is defined
       - output.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with minimum requirements "
-    success_msg: " VM with minimum requirements created successfully "
+    fail_msg: " Unable to create VM with minimum requiremnts "
+    success_msg: " VM with minimum requiremnts created successfully "
 
-- set_fact:
+- name: Adding VM uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: '{{ todelete + [  output["response"]["metadata"]["uuid"] ] }}'
   when: output.response.status.state == 'COMPLETE'
 ##################################################
@@ -26,10 +28,10 @@
   ntnx_vms_info:
     filter_string: vm_name=={{vm.name}};power_state==off
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.entities[0].metadata.uuid == '{{output["response"]["metadata"]["uuid"]}}'
@@ -44,10 +46,10 @@
       vm_name: "{{ vm.name }}"
       power_state: "on"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list vms "
@@ -59,10 +61,10 @@
     offset: 1
   register: result
   check_mode: true
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list vms "
@@ -74,10 +76,10 @@
     sort_attribute: "vm_name"
     kind: vm
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list vms "
@@ -89,5 +91,6 @@
     vm_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

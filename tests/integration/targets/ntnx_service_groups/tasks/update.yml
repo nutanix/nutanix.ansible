@@ -1,7 +1,8 @@
 ---
-- name: create tcp service group
+
+- name: Create tcp service group
   ntnx_service_groups:
-    name: tcp_service_group
+    name: tcp_srvive_group
     desc: desc
     service_details:
       tcp:
@@ -13,8 +14,8 @@
   register: service_group
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - service_group.response is defined
       - service_group.failed == false
@@ -24,10 +25,11 @@
     fail_msg: "Fail: Unable to create tcp service group  "
     success_msg: "Pass: tcp service group  created successfully"
 
-- set_fact:
+- name: Adding service group uuid to delete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  service_group.service_group_uuid ] }}"
 ################################################################
-- name: update tcp service group name and description and other protocols
+- name: Update tcp service group name and description and other protocols
   ntnx_service_groups:
     service_group_uuid: "{{service_group.service_group_uuid}}"
     name: updated_name
@@ -41,14 +43,14 @@
   register: result
   ignore_errors: true
 
-- name: getting particular service_group using uuid
+- name: Getting particular service_group using uuid
   ntnx_service_groups_info:
-    service_group_uuid: "{{ result.service_group_uuid }}"
+    service_group_uuid: '{{ result.service_group_uuid }}'
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -64,7 +66,7 @@
     fail_msg: "Fail: Unable to update tcp service group  "
     success_msg: "Pass: tcp service group  update successfully"
 ################################################################
-- name: update tcp service group with same values
+- name: Update tcp service group with same values
   ntnx_service_groups:
     service_group_uuid: "{{service_group.service_group_uuid}}"
     name: updated_name
@@ -78,8 +80,8 @@
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -93,10 +95,10 @@
     service_group_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.changed is defined
       - result.changed == true

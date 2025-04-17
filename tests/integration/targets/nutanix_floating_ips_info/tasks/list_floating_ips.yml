@@ -4,10 +4,10 @@
       floating_ip: "10.0.1.2"
     kind: floating_ip
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list floating_ips "
@@ -19,10 +19,10 @@
     offset: 0
   check_mode: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list floating_ips "
@@ -33,10 +33,10 @@
     sort_order: "ASCENDING"
     sort_attribute: "floating_ip"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list floating_ips "

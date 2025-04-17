@@ -1,5 +1,5 @@
 - name: >-
-    create isolation security rule with first_entity_filter and
+    Create isolation security rule with first_entity_filter and
     second_entity_filter with check mode
   ntnx_security_rules:
     name: test_isolation_rule
@@ -19,7 +19,7 @@
   check_mode: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -31,7 +31,7 @@
       pass: create isolation security rule with first_entity_filter and
       second_entity_filter successfully with check mode
 - name: >-
-    create isolation security rule with first_entity_filter and
+    Create isolation security rule with first_entity_filter and
     second_entity_filter
   ntnx_security_rules:
     name: test_isolation_rule
@@ -51,7 +51,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -62,7 +62,7 @@
       pass: create isolation security rule with first_entity_filter and
       second_entity_filter successfully
 
-- name: update isolation security rule action with check_mode
+- name: Update isoloation security rule action with check_mode
   ntnx_security_rules:
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
     isolation_rule:
@@ -72,18 +72,18 @@
   check_mode: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - output.response is defined
       - output.failed == false
       - output.changed == false
       - output.response.spec.name=="test_isolation_rule"
       - output.security_rule_uuid is none
-    fail_msg: " fail: unable to update isolation security rule action with check_mode"
+    fail_msg: " fail: unable to update isoloation security rule action with check_mode"
     success_msg: >-
-      pass: update isolation security rule action with check_mode successfully
+      pass: update isoloation security rule action with check_mode successfully
 
-- name: update isolation security rule action
+- name: Update isoloation security rule action
   ntnx_security_rules:
     security_rule_uuid: "{{ result.security_rule_uuid}}"
     isolation_rule:
@@ -92,7 +92,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -101,7 +101,7 @@
       - result.response.spec.resources.isolation_rule.action == "APPLY"
     fail_msg: " fail: unable to update isolation rule action  "
     success_msg: "pass : update isolation rule action successfully"
-- name: update isolation security with same values
+- name: Update isoloation security with same values
   ntnx_security_rules:
     security_rule_uuid: "{{result.security_rule_uuid}}"
     isolation_rule:
@@ -109,14 +109,14 @@
   register: output
   ignore_errors: true
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg == "Nothing to change"
     fail_msg: " fail: unable to update isolation rule action  "
     success_msg: "pass : update isolation rule action successfully"
-- name: delete isolation rule
+- name: Delete isolation rule
   ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.security_rule_uuid }}"
@@ -124,7 +124,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false

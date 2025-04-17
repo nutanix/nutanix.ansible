@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_service_groups
-short_description: service_groups module which supports service_groups CRUD operations
+short_description: service_groups module which suports service_groups CRUD operations
 version_added: 1.4.0
 description: 'Create, Update, Delete service_group'
 options:
@@ -18,7 +18,9 @@ options:
     description:
       - Specify state of service_groups
       - If C(state) is set to C(present) then service_groups is created.
-      - If C(state) is set to C(absent) and if the service_groups exists, then service_groups is removed.
+      - >-
+        If C(state) is set to C(absent) and if the service_groups exists, then
+        service_groups is removed.
     choices:
       - present
       - absent
@@ -34,9 +36,7 @@ options:
     required: False
     type: str
   service_group_uuid:
-    description:
-        - service_group UUID
-        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
+    description: service_group UUID
     type: str
   desc:
     description: service_groups description
@@ -83,8 +83,8 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
-    name: app_service_group
+    validate_certs: false
+    name: app_srvive_group
     desc: desc
     service_details:
       tcp:
@@ -93,7 +93,7 @@ EXAMPLES = r"""
         - "10-50"
         - "60-90"
         - "99"
-      any_icmp: True
+      any_icmp: true
   register: result
 
 - name: create  service group with icmp
@@ -101,8 +101,8 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
-    name: icmp_service_group
+    validate_certs: false
+    name: icmp_srvive_group
     desc: desc
     service_details:
       icmp:
@@ -117,7 +117,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     service_group_uuid: "{{service_group_uuid}}"
     name: updated_name
     desc: updated_desc
@@ -144,8 +144,8 @@ kind:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.service_groups import ServiceGroup  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.prism.service_groups import ServiceGroup  # noqa: E402
 
 
 def get_module_spec():

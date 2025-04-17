@@ -1,15 +1,16 @@
 ---
 - name: Generate random name
-  set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
-- set_fact:
-    acp1_name: "{{random_name[0]}}1"
+- name: Set acp name
+  ansible.builtin.set_fact:
+    acp1_name: "{{ random_name[0] }}1"
 
-- name: Create ACP with all specifications
+- name: Create ACP with all specfactions
   ntnx_acps:
     state: present
-    name: "{{acp1_name}}"
+    name: "{{ acp1_name }}"
     role:
       uuid: "{{ acp.role.uuid }}"
     user_uuids:
@@ -29,10 +30,10 @@
             rhs:
               collection: ALL
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -45,8 +46,8 @@
       - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.operator == "IN"
       - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.left_hand_side == "PROJECT"
       - result.response.status.resources.filter_list.context_list.0.scope_filter_expression_list.0.right_hand_side.uuid_list.0 == "{{ project.uuid }}"
-    fail_msg: " Unable to Create ACP all specifications "
-    success_msg: " ACP with all specifications created successfully "
+    fail_msg: " Unable to Create ACP all specfactions "
+    success_msg: " ACP with all specfactions created successfully "
 
 - name: Delete acp
   ntnx_acps:
@@ -56,11 +57,11 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == 'SUCCEEDED'
       - result.failed == false
       - result.changed == true
-    fail_msg: " Unable to delete ACP with all specifications "
+    fail_msg: " Unable to delete ACP with all specfactions "
     success_msg: " ACP has been deleted successfully "

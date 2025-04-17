@@ -1,13 +1,15 @@
 ---
-- debug:
-    msg: start ntnx_roles update tests
+- name: Start ntnx_roles update tests
+  ansible.builtin.debug:
+    msg: Start ntnx_roles update tests
 
 - name: Get Some permissions for test
   ntnx_permissions_info:
     length: 3
   register: result
 
-- set_fact:
+- name: Setting permission variables
+  ansible.builtin.set_fact:
     test_permission_1_name: "{{ result.response.entities[0].status.name }}"
     test_permission_1_uuid: "{{ result.response.entities[0].metadata.uuid }}"
     test_permission_2_name: "{{ result.response.entities[1].status.name }}"
@@ -29,12 +31,12 @@
   register: test_role
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - test_role.response is defined
-      - test_role.changed == True
+      - test_role.changed == true
     fail_msg: "Unable to create roles with certain permissions"
-    success_msg: "Roles with given permissions created successfully"
+    success_msg: "Roles with given permissions created susccessfully"
 
 ###################################################################################################
 
@@ -50,19 +52,19 @@
   register: result
 
 - name: Update status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.role_uuid is defined
       - result.response.status.state == 'COMPLETE'
-      - result.changed == True
+      - result.changed == true
       - result.response.status.name == "test-ansible-role-3-updated"
       - result.response.status.description == "test-ansible-role-3-desc-updated"
       - result.response.status.resources.permission_reference_list[0]["uuid"] == "{{ test_permission_3_uuid }}"
       - result.response.status.resources.permission_reference_list | length == 1
 
     fail_msg: "Unable to update role"
-    success_msg: "Roles with given permissions updated successfully"
+    success_msg: "Roles with given permissions updated susccessfully"
 
 ###################################################################################################
 
@@ -77,8 +79,8 @@
     wait: true
   register: result
 
-- name: idempotency check status
-  assert:
+- name: Idempotency check status
+  ansible.builtin.assert:
     that:
       - result.changed == False
       - result.failed == False
@@ -90,7 +92,7 @@
 ###################################################################################################
 
 - name: Check mode test
-  check_mode: yes
+  check_mode: true
   ntnx_roles:
     state: present
     role_uuid: "{{test_role.role_uuid}}"
@@ -101,8 +103,8 @@
     wait: true
   register: result
 
-- name: check mode Status
-  assert:
+- name: Check mode Status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -116,9 +118,9 @@
 
 ###################################################################################################
 
-- name: cleanup created entities
+- name: Cleanup created entities
   ntnx_roles:
     state: absent
     role_uuid: "{{ test_role.role_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true

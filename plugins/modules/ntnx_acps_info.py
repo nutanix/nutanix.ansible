@@ -39,28 +39,28 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List acp using name filter criteria
-    ntnx_acps_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        name: "{{ acp.name }}"
-      kind: access_control_policy
-    register: result
+- name: List acp using name filter criteria
+  ntnx_acps_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      name: "{{ acp.name }}"
+    kind: access_control_policy
+  register: result
 
-  - name: List acp using length, offset, sort order and name sort attribute
-    ntnx_acps_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 1
-      offset: 1
-      sort_order: "ASCENDING"
-      sort_attribute: "name"
-    register: result
+- name: List acp using length, offset, sort order and name sort attribute
+  ntnx_acps_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    length: 1
+    offset: 1
+    sort_order: "ASCENDING"
+    sort_attribute: "name"
+  register: result
 """
 RETURN = r"""
 api_version:
@@ -193,9 +193,9 @@ entities:
             }
 """
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.acps import ACP  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.prism.acps import ACP  # noqa: E402
 
 
 def get_module_spec():

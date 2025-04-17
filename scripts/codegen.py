@@ -83,8 +83,8 @@ RETURN = r"""
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.MNAME import CNAME  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.MNAME import CNAME  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 
 

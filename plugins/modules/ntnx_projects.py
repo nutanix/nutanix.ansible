@@ -27,7 +27,8 @@ options:
     project_uuid:
         description:
             - This field can be used for update and delete of project
-            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
+            - if C(project_uuid) and C(state)==present will update the project
+            - if C(project_uuid) and C(state)==absent will delete the project
         type: str
         required: false
     desc:
@@ -237,7 +238,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     name: "test-ansible-project-1"
     desc: desc-123
     subnets:
@@ -356,17 +357,17 @@ project_uuid:
 from copy import deepcopy  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.idempotence_identifiers import (  # noqa: E402
-    IdempotenceIdentifiers,
-)
-from ..module_utils.prism.projects import Project  # noqa: E402
-from ..module_utils.prism.projects_internal import ProjectsInternal  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
     extract_uuids_from_references_list,
     remove_param_with_none_value,
     strip_extra_attrs,
 )
+from ..module_utils.v3.prism.idempotence_identifiers import (  # noqa: E402
+    IdempotenceIdenitifiers,
+)
+from ..module_utils.v3.prism.projects import Project  # noqa: E402
+from ..module_utils.v3.prism.projects_internal import ProjectsInternal  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():
@@ -485,7 +486,7 @@ def create_project(module, result):
     if module.params.get("role_mappings"):
 
         # generate new uuid for project
-        ii = IdempotenceIdentifiers(module)
+        ii = IdempotenceIdenitifiers(module)
         uuids = ii.get_idempotent_uuids()
         projects = ProjectsInternal(module, uuid=uuids[0])
 

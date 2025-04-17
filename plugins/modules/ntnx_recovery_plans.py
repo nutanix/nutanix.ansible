@@ -475,7 +475,7 @@ EXAMPLES = r"""
             name: "{{dr.recovery_site_network}}"
 
 - name: Update stage categories
-  check_mode: yes
+  check_mode: true
   ntnx_recovery_plans:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -505,10 +505,9 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    wait: True
+    wait: true
     plan_uuid: "{{ recovery_plan2.plan_uuid }}"
   register: result
-
 """
 
 RETURN = r"""
@@ -876,8 +875,8 @@ plan_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.recovery_plans import RecoveryPlan  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.recovery_plans import RecoveryPlan  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 # TO-DO: Test floating IP assignments

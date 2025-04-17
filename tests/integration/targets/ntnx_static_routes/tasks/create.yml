@@ -1,4 +1,5 @@
-- debug:
+- name: Start testing static routes update tests
+  ansible.builtin.debug:
     msg: Start testing static routes update tests
 
 - name: Add default static route and external nat static route to the vpc route table
@@ -17,31 +18,48 @@
         next_hop:
           external_subnet_ref:
             uuid: "{{ external_nat_subnet.uuid }}"
-    wait: True
+    wait: true
   register: result
 
-- set_fact:
+- name: Set destination variables
+  ansible.builtin.set_fact:
     d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
     d2: "{{ result.response.status.resources.static_routes_list[1].destination }}"
 
 - name: Update static routes list Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.changed == true
-      - result.response.status.resources.static_routes_list[0]["is_active"] == true
       - ("{{d1}}" == "10.2.2.0/24" and "{{d2}}" == "10.2.3.0/24") or ("{{d2}}" == "10.2.2.0/24" and "{{d1}}" == "10.2.3.0/24")
       - result.response.status.resources.static_routes_list[0]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
-      - result.response.status.resources.static_routes_list[1]["is_active"] == true
       - result.response.status.resources.static_routes_list[1]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
-      - result.response.status.resources.default_route["is_active"] == true
       - result.response.status.resources.default_route["destination"] == "0.0.0.0/0"
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
 
     fail_msg: "Fail: Unable to update static routes of vpc"
-    success_msg: "Success: static routes updated successfully"
+    success_msg: "Succes: static routes updated successfully"
 
+- name: Wait 1 minute for static routes to be become active
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: Get all static routes
+  ntnx_static_routes_info:
+    vpc_uuid: "{{ vpc.uuid }}"
+  register: result
+
+- name: Set destination variables
+  ansible.builtin.set_fact:
+    d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
+    d2: "{{ result.response.status.resources.static_routes_list[1].destination }}"
+
+- name: Check info module response
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
 ###########################################################################################################
 
 - name: Idempotency check
@@ -62,8 +80,8 @@
             uuid: "{{ external_nat_subnet.uuid }}"
   register: result
 
-- name: check idempotency status
-  assert:
+- name: Check idempotency status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
@@ -84,20 +102,41 @@
   register: result
 
 - name: Update static routes list Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
       - result.changed == true
-      - result.response.status.resources.static_routes_list[0]["is_active"] == true
       - result.response.status.resources.static_routes_list[0]["destination"] == "10.2.4.0/24"
       - result.response.status.resources.static_routes_list[0]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
     fail_msg: "Static routes overriding failed"
-    success_msg: "Static routes overridden successfully"
+    success_msg: "Static routes overriden successfully"
+
+- name: Wait 1 minute for static routes to be become active
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: Get all static routes
+  ntnx_static_routes_info:
+    vpc_uuid: "{{ vpc.uuid }}"
+  register: result
+
+- name: Set destination variable
+  ansible.builtin.set_fact:
+    d1: "{{ result.response.status.resources.static_routes_list[0].destination }}"
+
+- name: Check info module response
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.status.resources.static_routes_list[0]["is_active"] == true
+      - result.response.status.resources.static_routes_list[0]["destination"] == "10.2.4.0/24"
+      - result.response.status.resources.static_routes_list[0]["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
 
 ###########################################################################################################
 
-- name: Negative scenario of creating multiple default routes
+- name: Netgative scenario of cretaing multiple default routes
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     static_routes:
@@ -113,7 +152,7 @@
   ignore_errors: true
 
 - name: Update static routes list Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == true
@@ -121,14 +160,14 @@
     success_msg: "Static routes update failed successfully"
 
 ###########################################################################################################
-- name: remove all routes
+- name: Remove all routes
   ntnx_static_routes:
     vpc_uuid: "{{ vpc.uuid }}"
     remove_all_routes: true
   register: result
 
 - name: Remove all routes status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'

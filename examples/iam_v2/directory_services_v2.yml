@@ -1,0 +1,150 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create ACTIVE_DIRECTORY service
+# 2. Update ACTIVE_DIRECTORY service
+# 3. Fetch ACTIVE_DIRECTORY service info using ext id
+# 4. List all directory services
+# 5. List all directory services with filter
+# 6. Delete ACTIVE_DIRECTORY service
+
+- name: Directory Services playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        active_directory:
+          name: "active_directory"
+          url: "https://example.com"
+          url2: "https://example2.com"
+          domain_name: "example.com"
+          domain_name_updated: "example2.com"
+          username: "admin"
+          username_updated: "admin2"
+          password: "password"
+          password_updated: "password2"
+          white_listed_groups:
+            - "group1"
+            - "group2"
+          directory_service_ext_id: "12345678-1234-1234-1234-123456789012"
+        open_ldap:
+          name: "open_ldap"
+          url: "https://example3.com"
+          url2: "https://example4.com"
+          domain_name: "example3.com"
+          domain_name_updated: "example4.com"
+          username: "admin3"
+          username_updated: "admin4"
+          password: "password3"
+          password_updated: "password4"
+          white_listed_groups:
+            - "group3"
+            - "group4"
+          directory_service_ext_id: "51485478-3699-9999-8585-123456789012"
+
+    - name: Create ACTIVE_DIRECTORY service
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        name: "{{ active_directory.name }}"
+        url: "{{ active_directory.url }}"
+        directory_type: active_directory
+        domain_name: "{{ active_directory.domain_name }}"
+        service_account:
+          username: "{{ active_directory.username }}"
+          password: "{{ active_directory.password }}"
+        white_listed_groups:
+          - "{{ active_directory.white_listed_groups[0] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create OPEN_LDAP service
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        name: "{{ open_ldap.name }}"
+        url: "{{ open_ldap.url }}"
+        directory_type: open_ldap
+        domain_name: "{{ open_ldap.domain_name }}"
+        service_account:
+          username: "{{ open_ldap.username }}"
+          password: "{{ open_ldap.password }}"
+        white_listed_groups:
+          - "{{ open_ldap.white_listed_groups[0] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update ACTIVE_DIRECTORY service
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        ext_id: "{{ active_directory.directory_service_ext_id }}"
+        name: "{{ active_directory.name }}_updated"
+        url: "{{ active_directory.url2 }}"
+        directory_type: active_directory
+        domain_name: "{{ active_directory.domain_name_updated }}"
+        service_account:
+          username: "{{ active_directory.username_updated }}"
+          password: "{{ active_directory.password_updated }}"
+        group_search_type: RECURSIVE
+        white_listed_groups:
+          - "{{ active_directory.white_listed_groups[1] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update OPEN_LDAP service
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        ext_id: "{{ open_ldap.directory_service_ext_id }}"
+        name: "{{ open_ldap.name }}_updated"
+        url: "{{ open_ldap.url2 }}"
+        directory_type: open_ldap
+        domain_name: "{{ open_ldap.domain_name_updated }}"
+        service_account:
+          username: "{{ open_ldap.username_updated }}"
+          password: "{{ open_ldap.password_updated }}"
+        group_search_type: RECURSIVE
+        white_listed_groups:
+          - "{{ open_ldap.white_listed_groups[1] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch active directory service info using ext id
+      nutanix.ncp.ntnx_directory_services_info_v2:
+        ext_id: "{{ active_directory.directory_service_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch open ldap service info using ext id
+      nutanix.ncp.ntnx_directory_services_info_v2:
+        ext_id: "{{ open_ldap.directory_service_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all directory services
+      nutanix.ncp.ntnx_directory_services_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all directory services with filter
+      nutanix.ncp.ntnx_directory_services_info_v2:
+        filter: name eq '{{ active_directory.name }}'
+      register: result
+      ignore_errors: true
+
+    - name: List all directory services with filter
+      nutanix.ncp.ntnx_directory_services_info_v2:
+        filter: name eq '{{ open_ldap.name }}'
+      register: result
+      ignore_errors: true
+
+    - name: Delete directory service
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: absent
+        ext_id: "{{ active_directory.directory_service_ext_id }}"
+      register: result
+      ignore_errors: true

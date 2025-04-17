@@ -1,7 +1,9 @@
-- debug:
+---
+- name: Started Negative Creation Cases
+  ansible.builtin.debug:
     msg: "Started Negative Creation Cases"
 
-- name: Unknown virtual switch name
+- name: Unknow virtual switch name
   ntnx_subnets:
     state: present
     name: VLAN subnet without IPAM
@@ -12,16 +14,16 @@
       cluster:
         uuid: "{{ cluster.uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
       - result.msg=="Failed generating subnet spec"
     success_msg: " Success: returned error as expected "
 ###############################################################
-- name: Unknown virtual switch uuid
+- name: Unknow virtual switch uuid
   ntnx_subnets:
     state: present
     name: VLAN subnet with IPAM
@@ -39,9 +41,9 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
     success_msg: " Success: returned error as expected "
 ###############################################################
 - name: Unknown Cluster
@@ -65,20 +67,20 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
     success_msg: " Success: returned error as expected "
 ###############################################################
 - name: Delete subnet with unknown uuid
   ntnx_subnets:
     state: absent
     subnet_uuid: 5
-  register: result
+  register: resultt
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
-      - result.failed==True
+      - result.failed==true
     success_msg: " Success: returned error as expected "
