@@ -323,6 +323,9 @@ class VmSpecs:
         nvram_device=dict(
             type="dict", options=nvram_device_spec, obj=vmm_sdk.NvramDevice
         ),
+        boot_order=dict(
+            type="list", elements="str", choices=["CDROM", "NETWORK", "DISK"]
+        ),
     )
 
     boot_config_spec = dict(
