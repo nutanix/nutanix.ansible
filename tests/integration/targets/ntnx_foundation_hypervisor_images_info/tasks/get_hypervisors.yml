@@ -24,4 +24,4 @@
       - result.failed==false
       - result.changed==false
     fail_msg: " Fail : unable to get hypervisor_images_info "
-    success_msg: "Succes: got hypervisor_images_info successfully "
+    success_msg: "Success: got hypervisor_images_info successfully "

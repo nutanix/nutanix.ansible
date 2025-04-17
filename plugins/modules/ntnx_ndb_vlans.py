@@ -19,6 +19,7 @@ options:
   vlan_uuid:
     description:
       - uuid for update or delete of vlan
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   name:
     description:
@@ -27,7 +28,7 @@ options:
     type: str
   vlan_type:
     description:
-      - wheather the vlan is mannaged or no
+      - whether the vlan is managed or not
       - update allowed
     type: str
     choices: ["DHCP", "Static"]

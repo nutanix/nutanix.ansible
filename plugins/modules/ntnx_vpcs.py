@@ -107,7 +107,6 @@ EXAMPLES = r"""
     validate_certs: false
     vpc_uuid: "{{ vpc_uuid }}"
 """
-
 RETURN = r"""
 api_version:
   description: API Version of the Nutanix v3 API framework.

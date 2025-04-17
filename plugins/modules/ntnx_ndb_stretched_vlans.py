@@ -17,6 +17,7 @@ options:
   stretched_vlan_uuid:
     description:
       - uuid for update or delete of stretched vlan
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   vlans:
     description:
