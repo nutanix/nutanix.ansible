@@ -87,6 +87,10 @@
           index: 3
     boot_config:
       uefi_boot:
+        boot_order:
+          - NETWORK
+          - DISK
+          - CDROM
         nvram_device:
           backing_storage_info:
             disk_size_bytes: 26843545600
@@ -158,6 +162,9 @@
       - result.response.boot_config.nvram_device.backing_storage_info.storage_container.ext_id == "{{ storage_container.uuid }}"
       - result.response.boot_config.nvram_device.backing_storage_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
       - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
+      - result.response.boot_config.boot_order[0] == "NETWORK"
+      - result.response.boot_config.boot_order[1] == "DISK"
+      - result.response.boot_config.boot_order[2] == "CDROM"
     fail_msg: " Unable to create VM with full requirements "
     success_msg: Returned as expected
 ########################################################################
@@ -231,6 +238,12 @@
       is_apc_enabled: false
     vtpm_config:
       is_vtpm_enabled: false
+    boot_config:
+      uefi_boot:
+        boot_order:
+          - DISK
+          - CDROM
+          - NETWORK
   register: result
   ignore_errors: true
 
@@ -260,6 +273,9 @@
       - result.response.is_agent_vm == false
       - result.response.apc_config.is_apc_enabled == false
       - result.response.vtpm_config.is_vtpm_enabled == false
+      - result.response.boot_config.boot_order[0] == "DISK"
+      - result.response.boot_config.boot_order[1] == "CDROM"
+      - result.response.boot_config.boot_order[2] == "NETWORK"
     fail_msg: " Unable to create VM with full requirements "
     success_msg: " VM with full requirements created successfully "
 
