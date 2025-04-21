@@ -14,7 +14,8 @@ short_description: Module to fetch user api keys in Nutanix Prism Central.
 version_added: 2.2.0
 description:
     - If ext_id is provided, this module will fetch the specific user api key.
-    - If ext_id is not provided, this module will fetch all user api keys.
+    - If ext_id is not provided, this module will fetch multiple user api keys with/without filters, limit, etc.
+    - This modules uses PC v4 APIs based SDKs.
 options:
     user_ext_id:
         description:
@@ -92,7 +93,7 @@ ext_id:
 
 response:
     description:
-        - The response when user api key info is fetched.
+        - The response of fetching API keys info.
     type: dict
     returned: always
     sample: [

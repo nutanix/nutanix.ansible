@@ -9,4 +9,3 @@
   block:
     - name: Import service_account_operations.yml
       ansible.builtin.import_tasks: service_account_operations.yml
-      ignore_errors: true

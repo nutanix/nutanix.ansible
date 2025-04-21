@@ -155,6 +155,7 @@ def get_requested_key(module, api_instance, ext_id, user_ext_id):
         module (object): Ansible module object
         api_instance (object): User api instance
         ext_id (str): External id of requested key
+        user_ext_id (str): External id of user
     Returns:
         requested_key_info (dict): Requested key info
     """

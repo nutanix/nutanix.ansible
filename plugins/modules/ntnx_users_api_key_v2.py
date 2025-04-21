@@ -16,6 +16,7 @@ description:
     - This module can be used to create or delete a key of a requested type for a user in Nutanix Prism Central.
     - If state is present, this module will create a key for the user.
     - If state is absent, this module will delete the key for the user.
+    - This modules uses PC v4 APIs based SDKs.
 options:
     user_ext_id:
         description:
@@ -25,10 +26,12 @@ options:
     ext_id:
         description:
             - The external identifier of the key.
+            - Required in case of deleting the key.
         type: str
     name:
         description:
             - Identifier for the key in the form of a name.
+            - Required in case of creating new key.
         type: str
     description:
         description:
@@ -37,6 +40,7 @@ options:
     key_type:
         description:
             - The type of the key.
+            - Required in case of creating new key.
         type: str
         choices:
             - API_KEY
@@ -117,7 +121,7 @@ RETURN = r"""
         sample: "Api Exception raised while creating user api key"
     response:
         description:
-            - The response from the API call of creating/deleting a API key.
+            - The response from the API call of creating/deleting an user API key.
         type: dict
         returned: always
         sample: {
@@ -227,7 +231,7 @@ def delete_user_api_key(module, users_api, result):
     old_spec = get_requested_key(module, users_api, ext_id, user_ext_id)
     etag = get_etag(data=old_spec)
     if not etag:
-        return module.fail_json("Unable to fetch etag for Deletion", **result)
+        return module.fail_json("Unable to fetch etag for deleting user API key", **result)
 
     kwargs = {"if_match": etag}
     try:

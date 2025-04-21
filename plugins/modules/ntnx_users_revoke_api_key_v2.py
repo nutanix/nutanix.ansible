@@ -42,7 +42,6 @@ EXAMPLES = r"""
     validate_certs: false
     user_ext_id: "f7e6d5c4-b3a2-4i9h-8g7f-6e5d4c3b2a1k"
     ext_id: "9i8h7g6f-5e4d-3c2b-1a0j-k2l3m4n5o6p"
-    state: absent
   register: result
 """
 
@@ -73,7 +72,7 @@ RETURN = r"""
         sample: "Api Exception raised while revoking user api key"
     response:
         description:
-            - The response from the API call of revoking a API key.
+            - The response from the API call of revoking a user API key.
         type: dict
         returned: always
         sample: {
@@ -129,7 +128,7 @@ def revoke_user_api_key(module, users_api, result):
 def run_module():
     module = BaseModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=True,
+        supports_check_mode=False,
     )
     if SDK_IMP_ERROR:
         module.fail_json(
