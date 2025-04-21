@@ -231,7 +231,9 @@ def delete_user_api_key(module, users_api, result):
     old_spec = get_requested_key(module, users_api, ext_id, user_ext_id)
     etag = get_etag(data=old_spec)
     if not etag:
-        return module.fail_json("Unable to fetch etag for deleting user API key", **result)
+        return module.fail_json(
+            "Unable to fetch etag for deleting user API key", **result
+        )
 
     kwargs = {"if_match": etag}
     try:
