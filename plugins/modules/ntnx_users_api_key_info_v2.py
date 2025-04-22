@@ -41,6 +41,15 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     user_ext_id: "f7e6d5c4-b3a2-4i9h-8g7f-6e5d4c3b2a1k"
+  register: result
+
+- name: List all API keys with filter
+  nutanix.ncp.ntnx_users_api_key_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    user_ext_id: "f7e6d5c4-b3a2-4i9h-8g7f-6e5d4c3b2a1k"
     filter: "name eq 'api_key_1'"
   register: result
 
