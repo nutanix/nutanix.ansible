@@ -233,7 +233,7 @@ class NetworkProfile(Profile):
                 cluster_name = clusters_uuid_name_map[cluster_uuid]
 
             if not cluster_name:
-                return None, "Pleae provide uuid or name for getting cluster info"
+                return None, "Please provide uuid or name for getting cluster info"
 
             properties_map["CLUSTER_NAME_" + str(i)] = cluster_name
             properties_map["CLUSTER_ID_" + str(i)] = clusters_name_uuid_map[
@@ -252,7 +252,7 @@ class SoftwareProfile(Profile):
         self.build_spec_methods.update(
             {
                 "software": self._build_spec_profile,
-                "clusters": self._build_spec_clusters_availibilty,
+                "clusters": self._build_spec_clusters_availability,
             }
         )
         payload, err = super().get_create_profile_spec(
@@ -269,7 +269,7 @@ class SoftwareProfile(Profile):
     def get_update_profile_spec(self, old_spec=None, params=None, **kwargs):
 
         self.build_spec_methods.update(
-            {"clusters": self._build_spec_clusters_availibilty}
+            {"clusters": self._build_spec_clusters_availability}
         )
         payload, err = super().get_update_profile_spec(old_spec, params, **kwargs)
         if err:
@@ -374,7 +374,7 @@ class SoftwareProfile(Profile):
         payload["properties"] = properties
         return payload, None
 
-    def _build_spec_clusters_availibilty(self, payload, clusters):
+    def _build_spec_clusters_availability(self, payload, clusters):
         _clusters = Cluster(self.module)
         spec = []
         clusters_name_uuid_map = _clusters.get_all_clusters_name_uuid_map()
@@ -485,7 +485,7 @@ def get_profile_type(module):
         if type in module.params:
             return type, None
 
-    return None, "Input doesn't conatains config for allowed profile types of databases"
+    return None, "Input doesn't contain config for allowed profile types of databases"
 
 
 def get_profile_type_obj(module, profile_type=None):  # -> tuple[Profile, str]:

@@ -82,7 +82,7 @@ def extract_uuids_from_references_list(reference_lists):
 
 def list_to_string(lst):
     """
-    This routine create comma seperated string from list of strings
+    This routine create comma separated string from list of strings
     """
     return ",".join(lst)
 

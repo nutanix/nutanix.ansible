@@ -497,7 +497,8 @@ class VM(Prism):
                 if error:
                     return None, error
 
-                disk["data_source_reference"]["uuid"] = uuid
+                disk.setdefault("data_source_reference", {})["uuid"] = uuid
+                disk.setdefault("data_source_reference", {})["kind"] = "image"
 
         if (
             not disk.get("storage_config", {})

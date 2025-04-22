@@ -363,7 +363,7 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-respone:
+response:
   description: Sample response when only Imaging is done.
   returned: always
   type: dict

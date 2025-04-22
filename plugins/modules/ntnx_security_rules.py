@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_security_rules
-short_description: security_rule module which suports security_rule CRUD operations
+short_description: security_rule module which supports security_rule CRUD operations
 version_added: 1.3.0
 description: 'Create, Update, Delete security_rule'
 options:
@@ -62,7 +62,9 @@ options:
     required: false
     type: str
   security_rule_uuid:
-    description: security_rule UUID
+    description:
+        - security_rule UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   allow_ipv6_traffic:
     description: Allow traffic from ipv6

@@ -15,7 +15,9 @@ version_added: 1.0.0
 description: 'Create, Update, Delete floating_ips'
 options:
   fip_uuid:
-    description: floating_ip UUID
+    description:
+        - floating_ip UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   external_subnet:
     description: A subnet with external connectivity
@@ -80,7 +82,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      uuid: "{{external_subnet.subnet_uuiid}}"
+      uuid: "{{external_subnet.subnet_uuid}}"
 
 - name: create Floating IP with vpc Name with external subnet uuid
   ntnx_floating_ips:
@@ -90,7 +92,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     external_subnet:
-      uuid: "{{external_subnet.subnet_uuiid}}"
+      uuid: "{{external_subnet.subnet_uuid}}"
     vpc:
       name: "{{vpc.vpc_name}}"
     private_ip: "{{private_ip}}"

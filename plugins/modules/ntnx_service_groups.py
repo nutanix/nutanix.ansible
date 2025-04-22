@@ -10,7 +10,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_service_groups
-short_description: service_groups module which suports service_groups CRUD operations
+short_description: service_groups module which supports service_groups CRUD operations
 version_added: 1.4.0
 description: 'Create, Update, Delete service_group'
 options:

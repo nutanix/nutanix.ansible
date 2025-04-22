@@ -639,7 +639,7 @@
     fail_msg: Unable to generate check mode spec for unregister
     success_msg: DB server VM unregister spec generated successfully
 
-- name: Genereate check mode spec for delete vm with vgs and snapshots
+- name: Generate check mode spec for delete vm with vgs and snapshots
   check_mode: true
   ntnx_ndb_db_server_vms:
     state: absent
@@ -685,7 +685,7 @@
 
 ################################### DB server VM Registration tests #############################
 
-- name: Generate spec for registeration of the previous unregistered vm using check mode
+- name: Generate spec for registration of the previous unregistered vm using check mode
   check_mode: true
   ntnx_ndb_register_db_server_vm:
     ip: "{{ vm_ip }}"

@@ -107,7 +107,7 @@
     fail_msg: "Unable to create protection rule with synchronous schedule"
     success_msg: "Protection policy with with synchronous schedule created successfully"
 
-- name: Delete created protection policy inorder to avoid conflict in further tests
+- name: Delete created protection policy in order to avoid conflict in further tests
   ntnx_protection_rules:
     state: absent
     wait: true
@@ -323,7 +323,7 @@
     fail_msg: "Idempotency check failed"
     success_msg: "Idempotency check passed"
 
-####################################################################################
+##################################################################################################################################################################
 
 - name: Check Mode while update
   check_mode: true

@@ -24,7 +24,7 @@ options:
         type: str
       version_id:
         description:
-            - vrsion uuid
+            - version uuid
         type: str
       latest_version:
         description:

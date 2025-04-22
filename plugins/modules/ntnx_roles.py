@@ -30,6 +30,7 @@ options:
         description:
             - uuid of the role
             - only required while updating or deleting
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         required: false
         type: str
     desc:
@@ -79,7 +80,7 @@ EXAMPLES = r"""
     name: test-ansible-role-1
     desc: test-ansible-role-1-desc
     permissions:
-      - name: "<permision-1-name>"
+      - name: "<permission-1-name>"
       - uuid: "<permission-2-uuid>"
       - uuid: "<permission-3-uuid>"
     wait: true

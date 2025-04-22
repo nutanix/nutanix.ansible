@@ -1,6 +1,6 @@
 ---
-# Here we will be deploying high availibility postgres database with static IPs assigned
-# to vms and virtul IP for HA proxy
+# Here we will be deploying high availability postgres database with static IPs assigned
+# to vms and virtual IP for HA proxy
 - name: Create stretched vlan
   hosts: localhost
   gather_facts: false

@@ -17,11 +17,12 @@ description:
     - currently, compute, network, database parameters and software profiles are supported
     - only software profile supports versions operations
     - version related operations can be configured under "software"
-    - only software profile supports multi cluster availibility
+    - only software profile supports multi cluster availability
 options:
       profile_uuid:
         description:
             - uuid of profile for delete or update
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       name:
         description:
@@ -278,14 +279,14 @@ options:
                                 type: int
                             autovacuum:
                                 description:
-                                    - on/off autovaccum
+                                    - on/off autovacuum
                                     - default is on
                                 type: str
                                 choices: ["on", "off"]
                             checkpoint_completion_target:
                                 description:
                                     - checkpoint completion target
-                                    - deafult is 0.5
+                                    - default is 0.5
                                 type: float
                             autovacuum_freeze_max_age:
                                 description:
@@ -304,13 +305,13 @@ options:
                                 type: float
                             autovacuum_work_mem:
                                 description:
-                                    - autovacum work memory in KB
+                                    - autovacuum work memory in KB
                                     - default is -1
                                 type: int
                             autovacuum_max_workers:
                                 description:
                                     - autovacuum max workers
-                                    - deafult is 3
+                                    - default is 3
                                 type: int
                             autovacuum_vacuum_cost_delay:
                                 description:
@@ -929,7 +930,7 @@ def check_profile_idempotency(old_spec, new_spec):
         if len(new_clusters) != len(old_clusters):
             return False
 
-        # update if availibility of cluster is required
+        # update if availability of cluster is required
         for cluster in new_clusters:
             if cluster not in old_clusters:
                 return False
@@ -1081,7 +1082,7 @@ def create_profile(module, result):
     result["response"] = resp
     uuid = resp.get("id")
 
-    # incase there is process of replication triggered, operation info is recieved
+    # in case there is process of replication triggered, operation info is received
     if profile_type == "software" and not uuid:
         uuid = resp.get("entityId")
 

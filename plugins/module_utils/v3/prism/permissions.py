@@ -28,7 +28,7 @@ class Permission(Prism):
             if entity["spec"]["name"] == value:
                 return entity["metadata"]["uuid"]
 
-        # Incase there are more entities to check
+        # In case there are more entities to check
         while resp["total_matches"] > resp["length"] + resp["offset"]:
             filter_spec["length"] = self.entities_limitation
             filter_spec["offset"] = filter_spec["offset"] + self.entities_limitation

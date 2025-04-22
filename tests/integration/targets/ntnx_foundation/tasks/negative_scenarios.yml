@@ -87,4 +87,4 @@
       - "result.msg=='value of hypervisor must be one of: kvm, hyperv, xen, esx, ahv, got: \
         phoenix found in blocks -> nodes -> discovery_mode -> discovery_override'"
     fail_msg: " Fail : Image nodes with wrong hypervisor done successfully "
-    success_msg: "Succes: unable to image node with wrong hypervisor"
+    success_msg: "Success: unable to image node with wrong hypervisor"
