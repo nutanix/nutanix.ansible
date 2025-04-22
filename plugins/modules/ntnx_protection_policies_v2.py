@@ -642,7 +642,7 @@ def create_protection_policy(module, protection_policies, result):
         resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
         protection_policy_ext_id = get_ext_id_from_task_completion_details(
-            resp, name=TASK_CONSTANTS.CompletetionDetailsName.PROTECTION_POLICY
+            resp, name=TASK_CONSTANTS.CompletionDetailsName.PROTECTION_POLICY
         )
         if protection_policy_ext_id:
             result["protection_policy_ext_id"] = protection_policy_ext_id

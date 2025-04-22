@@ -42,7 +42,7 @@
       - result.response.ip_address_block_list[1].prefix_length == 32
 
     fail_msg: "Unable to create address group"
-    success_msg: "Address group created susccessfully"
+    success_msg: "Address group created successfully"
 
 - name: Setting address group uuid to delete variable
   ansible.builtin.set_fact:

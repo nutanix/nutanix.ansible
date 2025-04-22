@@ -10,7 +10,7 @@
       validate_certs: false
 
   tasks:
-    - name: Create ACP with all specfactions
+    - name: Create ACP with all specifications
       nutanix.ncp.ntnx_acps:
         validate_certs: false
         state: present

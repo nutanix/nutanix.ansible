@@ -17,7 +17,7 @@
       - nodes.response.imaged_nodes is defined
       - nodes.response.metadata.length > 0
     fail_msg: "fail: unable to get all imaged nodes   "
-    success_msg: "succes:  get all imaged nodes sucessfully  "
+    success_msg: "Success:  get all imaged nodes successfully  "
 
 - name: Get node by uuid
   ntnx_foundation_central_imaged_nodes_info:
@@ -33,7 +33,7 @@
       - result.response is defined
       - result.response.node_serial == nodes.response.imaged_nodes.0.node_serial
     fail_msg: "fail: unable to get node by uuid"
-    success_msg: "succes:  get node by uuid successfully "
+    success_msg: "Success:  get node by uuid successfully "
 
 - name: Get imaged node using custom filter
   ntnx_foundation_central_imaged_nodes_info:
@@ -50,6 +50,5 @@
       - result.response.imaged_nodes.0.imaged_node_uuid == nodes.response.imaged_nodes.0.imaged_node_uuid
       - result.response.metadata.length <=1
     fail_msg: "fail: unable to get imaged node using custom filter "
-    success_msg: "succes: get imaged node using custom filter sucessfully"
-
+    success_msg: "Success: get imaged node using custom filter successfully"
 # still offset and length and filter

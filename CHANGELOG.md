@@ -172,26 +172,23 @@ Data Protection:
 
 ## v1.9.2 (30 May 2024)
 
-
 **Breaking Changes:**
 
 - nutanix.ncp collection - Due to all versions of ansible-core less than v2.15.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.15.0
-                            [[\#479](https://github.com/nutanix/nutanix.ansible/issues/479)]
+  [[\#479](https://github.com/nutanix/nutanix.ansible/issues/479)]
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.9.1...v1.9.2)
 
-
 ## v1.9.1 (09 November 2023)
-
 
 **Improvements:**
 
 - docs - [Imprv] add doc regarding running integration tests locally [[\#435](https://github.com/nutanix/nutanix.ansible/issues/435)]
-- info modules - [Imprv] add examples for custom_filter  [[\#416](https://github.com/nutanix/nutanix.ansible/issues/416)]
+- info modules - [Imprv] add examples for custom_filter [[\#416](https://github.com/nutanix/nutanix.ansible/issues/416)]
 - ndb clones - [Imprv] Enable database clones and clone refresh using latest snapshot flag [[\#391](https://github.com/nutanix/nutanix.ansible/issues/391)]
 - ndb clones - [Imprv] add examples for NDB database clone under examples folder [[\#386](https://github.com/nutanix/nutanix.ansible/issues/386)]
 - ntnx_prism_vm_inventory - Add support for PC Categories [[\#405](https://github.com/nutanix/nutanix.ansible/issues/405)]
-- ntnx_prism_vm_inventory - [Imprv] add examples for dynamic inventory using ntnx_prism_vm_inventory  [[\#401](https://github.com/nutanix/nutanix.ansible/issues/401)]
+- ntnx_prism_vm_inventory - [Imprv] add examples for dynamic inventory using ntnx_prism_vm_inventory [[\#401](https://github.com/nutanix/nutanix.ansible/issues/401)]
 - ntnx_vms - [Imprv] add possibility to specify / modify vm user ownership and project [[\#378](https://github.com/nutanix/nutanix.ansible/issues/378)]
 - ntnx_vms - owner association upon vm creation module [[\#359](https://github.com/nutanix/nutanix.ansible/issues/359)]
 - ntnx_vms_info - [Imprv] add examples with guest customization for module ntnx_vms [[\#395](https://github.com/nutanix/nutanix.ansible/issues/395)]
@@ -209,7 +206,6 @@ Data Protection:
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.9.0...v1.9.1)
 
 ## v1.9.0 (11 July 2023)
-
 
 **Improvements:**
 
@@ -231,45 +227,44 @@ Data Protection:
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.8.0...v1.9.0)
 
-
 ## v1.8.0 (28 Feb 2023)
 
 **Features**
 
 **Nutanix Database Service (Formerly Era)**
 
-  - Ansible module for clusters info
-  - Ansible module for clusters
-  - Ansible module for vlans
-  - Ansible module for vlans info
-  - Ansible module for stretched vlans
-  - Ansible module for profiles
-  - Ansible module for profiles info
-  - Ansible module for slas
-  - Ansible module for slas info
-  - Ansible module for tags
-  - Ansible module for database instances
-  - Ansible module for database instance registration
-  - Ansible module for database instances info
-  - Ansible module for database server vms
-  - Ansible module for database server vms info
-  - Ansible module for database server vm registration
-  - Ansible module for time machine clusters
-  - Ansible module for time machines info
-  - Ansible module for authorization of database server vm with time machines
-  - Ansible module for database clones
-  - Ansible module for database clones info
-  - Ansible module for database clones refresh
-  - Ansible module for snapshots info
-  - Ansible module for database snapshots
-  - Ansible module for replicating database snapshots
-  - Ansible module for log catchups
-  - Ansible module for database restore
-  - Ansible module for database scale
-  - Ansible module for linked databases
-  - Ansible module for maintenance windows
-  - Ansible module for maintenance windows info
-  - Ansible module for maintenance tasks
+- Ansible module for clusters info
+- Ansible module for clusters
+- Ansible module for vlans
+- Ansible module for vlans info
+- Ansible module for stretched vlans
+- Ansible module for profiles
+- Ansible module for profiles info
+- Ansible module for slas
+- Ansible module for slas info
+- Ansible module for tags
+- Ansible module for database instances
+- Ansible module for database instance registration
+- Ansible module for database instances info
+- Ansible module for database server vms
+- Ansible module for database server vms info
+- Ansible module for database server vm registration
+- Ansible module for time machine clusters
+- Ansible module for time machines info
+- Ansible module for authorization of database server vm with time machines
+- Ansible module for database clones
+- Ansible module for database clones info
+- Ansible module for database clones refresh
+- Ansible module for snapshots info
+- Ansible module for database snapshots
+- Ansible module for replicating database snapshots
+- Ansible module for log catchups
+- Ansible module for database restore
+- Ansible module for database scale
+- Ansible module for linked databases
+- Ansible module for maintenance windows
+- Ansible module for maintenance windows info
+- Ansible module for maintenance tasks
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.7.0...v1.8.0)
 
@@ -278,6 +273,7 @@ Data Protection:
 **Features**
 
 **Nutanix Database Service (Era)**
+
 - Ansible module for Single Instance Databases
 - Ansible info module for Database Instances
 - Ansible info module for NDB Clusters
@@ -292,21 +288,23 @@ Data Protection:
 ## v1.7.0 (30 Sep 2022)
 
 **Feature:**
+
 - ntnx_projects - [Feat] Add capability to configure role mappings with collaboration on/off in ntnx_projects [\#252](https://github.com/nutanix/nutanix.ansible/issues/252)
 
 **Bugs:**
+
 - ntnx_projects - [Bug] Clusters and subnets configured in project are not visible in new projects UI [\#283](https://github.com/nutanix/nutanix.ansible/issues/283)
 - ntnx_vms - Subnet Name --> UUID Lookup should be PE Cluster Aware [\#260](https://github.com/nutanix/nutanix.ansible/issues/260)
 - nutanix.ncp.ntnx_prism_vm_inventory - [Bug] Inventory does not fetch more than 500 Entities [\#228](https://github.com/nutanix/nutanix.ansible/issues/228)
 
 **Improvements:**
+
 - examples - [Imprv] Add version related notes to examples [\#279](https://github.com/nutanix/nutanix.ansible/issues/279)
 - examples - [Imprv] Fix IaaS example [\#250](https://github.com/nutanix/nutanix.ansible/issues/250)
 - examples - [Imprv] add examples of Images and Static Routes Module [\#256](https://github.com/nutanix/nutanix.ansible/issues/256)
 - ntnx_projects - [Imprv] add vpcs and overlay subnets configure capability to module ntnx_projects [\#289](https://github.com/nutanix/nutanix.ansible/issues/289)
 - ntnx_vms - [Imprv] add functionality to set network mac_address to module ntnx_vms [\#201](https://github.com/nutanix/nutanix.ansible/issues/201)
 - nutanix.ncp.ntnx_prism_vm_inventory - [Imprv] add functionality constructed to module inventory [\#235](https://github.com/nutanix/nutanix.ansible/issues/235)
-
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.6.0...v1.7.0)
 
@@ -315,6 +313,7 @@ Data Protection:
 **Features**
 
 **Karbon**
+
 - Ansible module for Karbon Clusters
 - Ansible info module for Karbon Clusters (with kubeconfig and ssh config)
 - Ansible module for Karbon Private Registry
@@ -327,6 +326,7 @@ Data Protection:
 **Features**
 
 **Prism Central Disaster Recovery**
+
 - Ansible module for Protection Rules
 - Ansible info module for Protection Rules
 - Ansible module for Recovery Plans
@@ -341,6 +341,7 @@ Data Protection:
 **Features**
 
 **Prism Central**
+
 - Ansible module for Access Control Policy (ACPs)
 - Ansible info module for Access Control Policy (ACPs)
 - Ansible module for Projects
@@ -362,6 +363,7 @@ Data Protection:
 - Ansible info module for Clusters
 
 **Bugs**
+
 - Fix examples of info modules [\#226](https://github.com/nutanix/nutanix.ansible/issues/226)
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.3.0...v1.4.0)
@@ -371,6 +373,7 @@ Data Protection:
 **Features**
 
 **Prism Central**
+
 - Ansible module for Image Management
 - Ansible info module for Image Management
 - Ansible module for Image Placement Policy
@@ -385,6 +388,7 @@ Data Protection:
 **Features**
 
 **Prism Central**
+
 - Ansible info module for VM
 - Ansible info module for VPC
 - Ansible info module for PBR
@@ -406,6 +410,7 @@ Data Protection:
 - Ansible info module for Imaged Nodes
 
 **Foundation**:
+
 - Ansible module for Foundation
 - Ansible module for BMC IPMI Configuration
 - Ansible info module for AOS Packages
@@ -415,6 +420,7 @@ Data Protection:
 - Ansible info module for node network
 
 **Automation**:
+
 - Integration tests for Foundation modules
 - Integration tests for Foundation Central modules
 
@@ -440,7 +446,6 @@ Data Protection:
 - Ansible module for image upload
 - Ansible info module for node network
 
-
 ## v1.0.0 (2nd Mar 2022)
 
 **Improvements**
@@ -453,9 +458,7 @@ Data Protection:
 - Creating a VM based on a disk_image without specifying the size_gb #127
 - icmp "any" code value in module PBR #138
 
-
 **Full Changelog** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.0.0-beta.2...v1.0.0)
-
 
 ## v1.0.0-beta.2 (22 Feb 2022)
 
@@ -485,7 +488,6 @@ Data Protection:
 - clean up pbrs.py [\#113](https://github.com/nutanix/nutanix.ansible/pull/113)
 
 **Full Changelog:** [here](https://github.com/nutanix/nutanix.ansible/compare/v1.0.0-beta.1...v1.0.0-beta.2)
-
 
 ## v1.0.0-beta.1 (28 Jan 2022)
 

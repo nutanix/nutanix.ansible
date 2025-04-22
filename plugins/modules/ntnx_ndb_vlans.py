@@ -28,7 +28,7 @@ options:
     type: str
   vlan_type:
     description:
-      - whether the vlan is managed or not
+      - Wether the vlan is managed or not
       - update allowed
     type: str
     choices: ["DHCP", "Static"]

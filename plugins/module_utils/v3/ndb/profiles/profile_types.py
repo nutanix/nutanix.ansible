@@ -485,7 +485,7 @@ def get_profile_type(module):
         if type in module.params:
             return type, None
 
-    return None, "Input doesn't contains config for allowed profile types of databases"
+    return None, "Input doesn't contain config for allowed profile types of databases"
 
 
 def get_profile_type_obj(module, profile_type=None):  # -> tuple[Profile, str]:

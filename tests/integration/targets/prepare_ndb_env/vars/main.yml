@@ -129,7 +129,7 @@
 # vm_password: "TEST_VM_PASSWORD"
 # vm_username: "TEST_VM_USERNAME"
 
-# # exitsing db server VM reference for software profile tests
+# # existing db server VM reference for software profile tests
 # db_server_vm:
 #   name: "TEST_DB_SERVER_VM_NAME"
 #   uuid: "TEST_DB_SERVER_VM_UUID"

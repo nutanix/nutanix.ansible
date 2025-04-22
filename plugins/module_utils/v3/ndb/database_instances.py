@@ -281,7 +281,7 @@ class DatabaseInstance(NutanixDatabase):
 
         return (
             None,
-            "Input doesn't contains config for allowed engine types of databases",
+            "Input doesn't contain config for allowed engine types of databases",
         )
 
     def get_db_engine_spec(self, payload, params=None, **kwargs):

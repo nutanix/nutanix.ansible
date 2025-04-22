@@ -51,7 +51,7 @@ class BaseModule(AnsibleModule):
 
     def strip_extra_attributes(self, argument_spec):
         """
-        This recursive method checks argument spec and remove extra spec definations which are not allowed in ansible
+        This recursive method checks argument spec and remove extra spec definitions which are not allowed in ansible
         """
         for spec in argument_spec.values():
             for k in self.unsupported_spec_keys:

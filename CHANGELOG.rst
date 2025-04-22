@@ -257,7 +257,7 @@ New Modules
 - ntnx_ndb_register_database - module for database instance registration
 - ntnx_ndb_register_db_server_vm - module for registration of database server vm
 - ntnx_ndb_replicate_database_snapshots - module for replicating database snapshots across clusters of time machine
-- ntnx_ndb_slas - moudle for creating, updating and deleting slas
+- ntnx_ndb_slas - module for creating, updating and deleting slas
 - ntnx_ndb_slas_info - info module for ndb slas
 - ntnx_ndb_snapshots_info - info module for ndb snapshots info
 - ntnx_ndb_stretched_vlans - Module for create, update and delete of stretched vlan.
