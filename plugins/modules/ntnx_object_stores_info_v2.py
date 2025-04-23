@@ -102,7 +102,7 @@ def get_object_stores(module, object_stores_api, result):
         result["error"] = err
         module.fail_json(msg="Failed generating object stores info Spec", **result)
     try:
-        resp = object_stores_api.list_object_stores(**kwargs)
+        resp = object_stores_api.list_objectstores(**kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,

@@ -59,7 +59,7 @@ class ObjectsSpecs:
     )
 
     object_store_spec = dict(
-        name=dict(type="str", required=True),
+        name=dict(type="str"),
         metadata=dict(type="dict", options=metadata_spec, obj=objects_sdk.Metadata),
         description=dict(type="str"),
         deployment_version=dict(type="str"),
@@ -85,7 +85,22 @@ class ObjectsSpecs:
             options=public_network_ips_spec,
             obj=objects_sdk.IPAddress,
         ),
-        total_capacity_gib=dict(type="int"),
+        total_capacity_gi_b=dict(type="int"),
+        object_state=dict(
+            type="str",
+            choices=[
+                "DEPLOYING_OBJECT_STORE",
+                "OBJECT_STORE_DEPLOYMENT_FAILED",
+                "DELETING_OBJECT_STORE",
+                "OBJECT_STORE_OPERATION_FAILED",
+                "UNDEPLOYED_OBJECT_STORE",
+                "OBJECT_STORE_OPERATION_PENDING",
+                "OBJECT_STORE_AVAILABLE",
+                "OBJECT_STORE_CERT_CREATION_FAILED",
+                "CREATING_OBJECT_STORE_CERT",
+                "OBJECT_STORE_DELETION_FAILED",
+            ],
+        ),
     )
 
     @classmethod

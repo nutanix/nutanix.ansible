@@ -16,7 +16,7 @@ def get_object_store(module, object_stores_api, ext_id):
         object_store_info (object): object store info
     """
     try:
-        return object_stores_api.get_object_store_by_id(extId=ext_id).data
+        return object_stores_api.get_objectstore_by_id(extId=ext_id).data
     except Exception as e:
         raise_api_exception(
             module=module,

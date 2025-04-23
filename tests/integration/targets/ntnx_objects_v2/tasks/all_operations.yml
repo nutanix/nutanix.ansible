@@ -1,0 +1,265 @@
+---
+- name: Start ntnx_objects_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_objects_v2 tests
+
+- name: Generate spec for creating object store with check mode
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    metadata:
+      owner_reference_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+      owner_user_name: "owner_user_name"
+      project_reference_id: "123e4567-e89b-12d3-a456-426614174000"
+      project_name: "project_name"
+      category_ids:
+        - "bbc3555a-133b-5348-9764-bfff196e84e4"
+        - "ac587354-7894-3625-5178-bfff18523654"
+    description: "object store test"
+    deployment_version: "5.1.1"
+    domain: "test.domain.nutanix.com"
+    region: "us-west-1"
+    num_worker_nodes: 3
+    cluster_ext_id: "00063125-0d92-06e0-185b-ac1f6b6f97e2"
+    storage_network_reference: "13870980-c370-4aa3-846b-f6cb864f61e5"
+    storage_network_vip:
+      ipv4:
+        value: "10.30.30.10"
+    storage_network_dns_ip:
+      ipv4:
+        value: "10.30.30.11"
+    public_network_reference: "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
+    public_network_ips:
+      - ipv4:
+          value: "10.30.30.12"
+      - ipv4:
+          value: "10.30.30.13"
+    total_capacity_gi_b: 21474836480
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for creating object store with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response.cluster_ext_id == "00063125-0d92-06e0-185b-ac1f6b6f97e2"
+      - result.response.name == "ansible-object"
+      - result.response.metadata.owner_reference_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+      - result.response.metadata.owner_user_name == "owner_user_name"
+      - result.response.metadata.project_reference_id == "123e4567-e89b-12d3-a456-426614174000"
+      - result.response.metadata.project_name == "project_name"
+      - result.response.metadata.category_ids == ["bbc3555a-133b-5348-9764-bfff196e84e4", "ac587354-7894-3625-5178-bfff18523654"]
+      - result.response.description == "object store test"
+      - result.response.deployment_version == "5.1.1"
+      - result.response.domain == "test.domain.nutanix.com"
+      - result.response.region == "us-west-1"
+      - result.response.num_worker_nodes == 3
+      - result.response.storage_network_reference == "13870980-c370-4aa3-846b-f6cb864f61e5"
+      - result.response.storage_network_vip.ipv4.value == "10.30.30.10"
+      - result.response.storage_network_dns_ip.ipv4.value == "10.30.30.11"
+      - result.response.public_network_reference == "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
+      - result.response.public_network_ips[0].ipv4.value == "10.30.30.12"
+      - result.response.public_network_ips[1].ipv4.value == "10.30.30.13"
+      - result.response.total_capacity_gi_b == 21474836480
+    success_msg: "Spec for creating object store is generated successfully with check mode"
+    fail_msg: "Spec for creating object store is not generated successfully with check mode"
+
+- name: Create draft object store with one worker node
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    description: "object store test"
+    domain: "{{ objects.domain }}"
+    num_worker_nodes: "{{ objects.num_worker_nodes }}"
+    storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
+    storage_network_vip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[0] }}"
+    storage_network_dns_ip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[1] }}"
+    public_network_reference: "{{ objects.public_network_reference.uuid }}"
+    public_network_ips:
+      - ipv4:
+          value: "{{ objects.public_network_reference.IPs[0] }}"
+    total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
+    object_state: UNDEPLOYED_OBJECT_STORE
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Create draft object store with one worker node status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "ansible-object"
+      - result.response.description == "object store test"
+      - result.response.domain == "{{ objects.domain }}"
+      - result.response.num_worker_nodes == {{ objects.num_worker_nodes }}
+      - result.response.storage_network_reference == "{{ objects.storage_network_reference.uuid }}"
+      - result.response.storage_network_vip.ipv4.value == "{{ objects.storage_network_reference.IPs[0] }}"
+      - result.response.storage_network_dns_ip.ipv4.value == "{{ objects.storage_network_reference.IPs[1] }}"
+      - result.response.public_network_reference == "{{ objects.public_network_reference.uuid }}"
+      - result.response.public_network_ips[0].ipv4.value == "{{ objects.public_network_reference.IPs[0] }}"
+      - result.response.total_capacity_gi_b == {{ objects.total_capacity_gi_b }}
+      - result.response.state == "UNDEPLOYED_OBJECT_STORE"
+    success_msg: "Object store draft is created successfully"
+    fail_msg: "Object store draft is not created successfully"
+
+- name: Delete draft object store with one worker node
+  nutanix.ncp.ntnx_object_stores_v2:
+    state: absent
+    ext_id: "{{ result.response.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Delete draft object store with one worker node status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Object store draft is deleted successfully"
+    fail_msg: "Object store draft is not deleted successfully"
+
+- name: Deploy object store with one worker node
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    description: "object store test"
+    domain: "{{ objects.domain }}"
+    num_worker_nodes: "{{ objects.num_worker_nodes }}"
+    storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
+    storage_network_vip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[0] }}"
+    storage_network_dns_ip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[1] }}"
+    public_network_reference: "{{ objects.public_network_reference.uuid }}"
+    public_network_ips:
+      - ipv4:
+          value: "{{ objects.public_network_reference.IPs[0] }}"
+    total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Deploy object store with one worker node status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "ansible-object"
+      - result.response.description == "object store test"
+      - result.response.domain == "{{ objects.domain }}"
+      - result.response.num_worker_nodes == {{ objects.num_worker_nodes }}
+      - result.response.storage_network_reference == "{{ objects.storage_network_reference.uuid }}"
+      - result.response.storage_network_vip.ipv4.value == "{{ objects.storage_network_reference.IPs[0] }}"
+      - result.response.storage_network_dns_ip.ipv4.value == "{{ objects.storage_network_reference.IPs[1] }}"
+      - result.response.public_network_reference == "{{ objects.public_network_reference.uuid }}"
+      - result.response.public_network_ips[0].ipv4.value == "{{ objects.public_network_reference.IPs[0] }}"
+      - result.response.total_capacity_gi_b == {{ objects.total_capacity_gi_b }}
+      - result.response.state == "OBJECT_STORE_AVAILABLE"
+    success_msg: "Object store is deployed successfully"
+    fail_msg: "Object store is not deployed successfully"
+
+- name: List all object stores
+  nutanix.ncp.ntnx_object_stores_info_v2:
+  register: result
+
+- ansible.builtin.debug:
+    var: result
+
+- name: List all object stores status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response | length > 0
+    success_msg: "Object stores are listed successfully"
+    fail_msg: "Object stores are not listed successfully"
+
+- name: Set object store name and external ID
+  ansible.builtin.set_fact:
+    object_store_name: "{{ result.response[0].name }}"
+    object_store_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: List all object stores with filter
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    filter: name eq '{{ object_store_name }}'
+  register: result
+
+- ansible.builtin.debug:
+    var: result
+
+- name: List object stores with filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ object_store_name }}"
+    success_msg: "Object stores are listed successfully with filter"
+    fail_msg: "Object stores are not listed successfully with filter"
+
+- name: List object stores with limit
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    limit: 1
+    page: 0
+  register: result
+
+- ansible.builtin.debug:
+    var: result
+
+- name: List object stores with limit status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "Object stores are listed successfully with limit"
+    fail_msg: "Object stores are not listed successfully with limit"
+
+- name: Fetch object store details using external ID
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    ext_id: "{{ object_store_ext_id }}"
+  register: result
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Fetch object store details using external ID status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response.ext_id == "{{ object_store_ext_id }}"
+    success_msg: "Object store details are fetched successfully using external ID"
+    fail_msg: "Object store details are not fetched successfully using external ID"
+

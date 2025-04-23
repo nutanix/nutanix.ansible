@@ -223,7 +223,7 @@ options:
                             - Prefix length of the IPv6 address.
                         type: int
                         default: 128
-    total_capacity_gib:
+    total_capacity_gi_b:
         description:
             - Total capacity in GiB of the object store.
         type: int
@@ -297,7 +297,11 @@ from ..module_utils.v4.objects.api_client import (  # noqa: E402
 from ..module_utils.v4.objects.spec.objects import (
     ObjectsSpecs as objects_specs,
 )  # noqa: E402
-from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
+from ..module_utils.v4.prism.tasks import (  # noqa: E402
+    get_entity_ext_id_from_task,
+    wait_for_completion,
+)
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -333,6 +337,10 @@ def create_object_store(module, object_stores_api, result):
         object_stores_api (object): ObjectStoresApi instance
         result (dict): Result object
     """
+    if "object_state" in module.params:
+        module.params["state"] = module.params["object_state"]
+    else:
+        del module.params["state"]
     sg = SpecGenerator(module)
     default_spec = objects_sdk.ObjectStore()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -343,9 +351,8 @@ def create_object_store(module, object_stores_api, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
-
     try:
-        resp = object_stores_api.create_object_store(body=spec)
+        resp = object_stores_api.create_objectstore(body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -358,6 +365,14 @@ def create_object_store(module, object_stores_api, result):
     if task_ext_id and module.params.get("wait"):
         task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
+        ext_id = get_entity_ext_id_from_task(
+            task_status, rel=TASK_CONSTANTS.RelEntityType.OBJECTS
+        )
+        if ext_id:
+            resp = get_object_store(module, object_stores_api, ext_id)
+            result["ext_id"] = ext_id
+            result["response"] = strip_internal_attributes(resp.to_dict())
+
     result["changed"] = True
 
 
@@ -417,7 +432,7 @@ def update_object_store(module, object_stores_api, result):
 
     resp = None
     try:
-        resp = object_stores_api.update_object_store_by_id(
+        resp = object_stores_api.update_objectstore_by_id(
             extId=ext_id, body=update_spec, ifMatch=etag_value
         )
     except Exception as e:
@@ -430,8 +445,9 @@ def update_object_store(module, object_stores_api, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
+        wait_for_completion(module, task_ext_id)
+        resp = get_object_store(module, object_stores_api, ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
 
@@ -452,12 +468,11 @@ def delete_object_store(module, object_stores_api, result):
         return module.fail_json(
             "Unable to fetch etag for deleting Object Store", **result
         )
+    kwargs = {"if_match": etag_value}
 
     resp = None
     try:
-        resp = object_stores_api.delete_object_store_by_id(
-            extId=ext_id, ifMatch=etag_value
-        )
+        resp = object_stores_api.delete_objectstore_by_id(extId=ext_id, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
