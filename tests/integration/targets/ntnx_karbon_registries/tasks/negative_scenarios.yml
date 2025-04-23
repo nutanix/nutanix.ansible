@@ -1,12 +1,12 @@
 ---
-- name: Negative test cases for ntnx_karbon_registries
+- name: Start negative test cases for ntnx_karbon_registries
   ansible.builtin.debug:
     msg: Start negative test cases for ntnx_karbon_registries
 
 - name: Create registry with wrong port number
   ntnx_karbon_registries:
-    name: test_regitry
-    url: "{{ url }}"
+    name: Test regitry
+    url: "{{url}}"
     port: 501
   register: result
   ignore_errors: true
@@ -17,5 +17,5 @@
       - result.response is defined
       - result.failed == true
       - result.changed == false
-    fail_msg: "Fail:  create registery with wrong port number finished successfully"
+    fail_msg: "Fail:  create registry with wrong port number finished successfully"
     success_msg: "Pass: Returned as expected "

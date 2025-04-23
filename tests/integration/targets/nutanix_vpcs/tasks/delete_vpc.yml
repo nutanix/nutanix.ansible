@@ -2,7 +2,7 @@
 - name: Create VPC with all specfactions
   ntnx_vpcs:
     state: present
-    name: vpc_with_add_specfactions
+    name: Vpc_with_add_specfactions
     external_subnets:
       - subnet_name: "{{ external_nat_subnet.name }}"
     dns_servers: "{{ dns_servers }}"

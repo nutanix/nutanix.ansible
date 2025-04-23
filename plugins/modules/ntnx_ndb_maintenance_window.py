@@ -20,7 +20,7 @@ options:
     uuid:
         description:
             - uuid of maintenance window
-            - should be used for update or delete
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
     desc:
         description:
@@ -42,7 +42,7 @@ options:
                 type: int
             start_time:
                 description:
-                    - start time of maintenance in formate 'hh:mm:ss'
+                    - start time of maintenance in format 'hh:mm:ss'
                 type: str
             timezone:
                 description:
@@ -51,11 +51,11 @@ options:
                 type: str
             week_of_month:
                 description:
-                    - week of month for maitenance
+                    - week of month for maintenance
                 type: str
             day_of_week:
                 description:
-                    - day of week for maitenance
+                    - day of week for maintenance
                 type: str
 
 extends_documentation_fragment:
