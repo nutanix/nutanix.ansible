@@ -17,7 +17,7 @@ options:
   state:
     description:
       - Specify state
-      - If C(state) is set to C(present) then the operation will be create the item
+      - If C(state) is set to C(present) then the operation will create the item
       - >-
         If C(state) is set to C(absent) and if the item exists, then
         item is removed.
