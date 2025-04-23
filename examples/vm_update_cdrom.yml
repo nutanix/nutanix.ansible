@@ -12,8 +12,9 @@
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
-        vm_uuid: ""
-        disk_uuid: ""
+        cluster:
+          name: "auto_cluster_prod_f6bee16a73c4"
+        iso_image_name: "Nutanix-VirtIO"
 
     - name: Create VM with empty CD ROM
       nutanix.ncp.ntnx_vms:
