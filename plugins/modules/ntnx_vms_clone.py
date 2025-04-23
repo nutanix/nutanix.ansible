@@ -41,14 +41,14 @@ EXAMPLES = r"""
 
 - name: clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
   ntnx_vms_clone:
-      src_vm_uuid: "{{ vm.vm_uuid }}"
-      vcpus: 2
-      cores_per_vcpu: 2
-      memory_gb: 2
-      name: cloned vm
-      desc: cloned vm
-      timezone: GMT
-      force_power_off: true
+    src_vm_uuid: "{{ vm.vm_uuid }}"
+    vcpus: 2
+    cores_per_vcpu: 2
+    memory_gb: 2
+    name: cloned vm
+    desc: cloned vm
+    timezone: GMT
+    force_power_off: true
 
 - name: clone vm and add network
   ntnx_vms_clone:

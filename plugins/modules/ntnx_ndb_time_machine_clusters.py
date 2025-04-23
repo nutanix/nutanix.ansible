@@ -70,7 +70,6 @@ author:
 """
 
 EXAMPLES = r"""
-
 - name: create data access instance with cluster name and sla name
   ntnx_ndb_time_machine_clusters:
     nutanix_host: <pc_ip>
@@ -109,7 +108,6 @@ EXAMPLES = r"""
       uuid: "<cluster-uuid>"
   register: result
 """
-
 RETURN = r"""
 response:
   description: An intentful representation of a TM status

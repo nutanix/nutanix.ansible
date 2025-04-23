@@ -36,30 +36,30 @@ author:
 EXAMPLES = r"""
 - name: Test getting all categories
   ntnx_categories_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: false
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: Test getting the category with filter by it's name
   ntnx_categories_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: false
-      filter:
-          name: "{{category_name}}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      name: "{{category_name}}"
   register: result
 
 - name: Test getting the category  by it's name
   ntnx_categories_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: false
-      name: "{{category_name}}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    name: "{{category_name}}"
   register: result
 """
 RETURN = r"""

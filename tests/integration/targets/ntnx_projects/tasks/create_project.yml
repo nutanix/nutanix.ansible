@@ -141,7 +141,7 @@
     todelete: "{{ todelete + [  result.project_uuid ] }}"
 
 #################################################################
-- name: Create Project with alredy existing project name
+- name: Create Project with already existing project name
   ntnx_projects:
     name: "{{ project.name }}"
   register: result

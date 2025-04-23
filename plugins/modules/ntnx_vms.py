@@ -17,14 +17,14 @@ options:
   state:
     description:
       - Specify state
-      - If C(state) is set to C(present) then the opperation will be  create the item
+      - If C(state) is set to C(present) then the operation will create the item
       - >-
         If C(state) is set to C(absent) and if the item exists, then
         item is removed.
-      - If C(state) is set to C(power_on) then the opperation will be  power on the VM
-      - If C(state) is set to C(power_off) then the opperation will be  power off the VM
-      - If C(state) is set to C(soft_shutdown) then the opperation will be  soft shutdown  the VM
-      - If C(state) is set to C(hard_poweroff) then the opperation will be  hard poweroff  the VM
+      - If C(state) is set to C(power_on) then the operation will power on the VM
+      - If C(state) is set to C(power_off) then the operation will power off the VM
+      - If C(state) is set to C(soft_shutdown) then the operation will shutdown the VM
+      - If C(state) is set to C(hard_poweroff) then the operation will hard poweroff the VM
     choices:
       - present
       - absent
@@ -38,13 +38,15 @@ options:
     description: Wait for the  CRUD operation to complete.
     type: bool
     required: false
-    default: True
+    default: true
   desc:
     description: A description for VM.
     required: false
     type: str
   vm_uuid:
-    description: VM UUID
+    description:
+        - VM UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   remove_categories:
     description:
@@ -98,7 +100,7 @@ options:
         suboptions:
           name:
             description:
-              - Storage containter Name
+              - Storage container Name
               - Mutually exclusive with C(uuid)
             type: str
           uuid:
@@ -927,9 +929,9 @@ def update_vm(module, result):
             wait_for_task_completion(module, result, False)
             response_state = result["response"].get("status")
             if response_state == "FAILED":
-                result[
-                    "warning"
-                ] = "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
+                result["warning"] = (
+                    "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
+                )
 
             resp = vm.read(vm_uuid)
             result["response"] = resp
