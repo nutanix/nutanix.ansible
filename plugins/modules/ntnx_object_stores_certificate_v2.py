@@ -72,6 +72,7 @@ failed:
     sample: false
 """
 
+from pathlib import Path
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
@@ -111,6 +112,11 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         object_store_ext_id=dict(type="str", required=True),
+        path=dict(
+            type="str",
+            required=True,
+            description="Path to a JSON file containing certificate details.",
+        ),
     )
     return module_args
 
@@ -124,22 +130,20 @@ def create_certificate(module, object_stores_api, result):
         result (dict): Result object
     """
     object_store_ext_id = module.params.get("object_store_ext_id")
-    sg = SpecGenerator(module)
-    default_spec = objects_sdk.Certificate()
-    spec, err = sg.generate_spec(obj=default_spec)
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed generating SSL certificate create Spec", **result)
+    path = module.params.get("path")
+    path = Path(path)
 
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
+    current_spec = get_object_store(module, object_stores_api, object_store_ext_id)
+    etag_value = get_etag(data=current_spec)
+    if not etag_value:
+        return module.fail_json(
+            "Unable to fetch etag for creating certificate", **result
+        )
+    kwargs = {"if_match": etag_value}
     try:
         resp = object_stores_api.create_certificate(
-            objectStoreExtId=object_store_ext_id
+            objectStoreExtId=object_store_ext_id, path=path, **kwargs
         )
-
     except Exception as e:
         raise_api_exception(
             module=module,
