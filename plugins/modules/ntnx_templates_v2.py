@@ -646,6 +646,14 @@ options:
                                 description: UEFI boot configuration
                                 type: dict
                                 suboptions:
+                                    boot_order:
+                                        description:
+                                            - Indicates the order of device types in which the VM should try to boot from.
+                                                If the boot device order is not provided the system will
+                                                decide an appropriate boot device order.
+                                        type: list
+                                        elements: str
+                                        choices: ["CDROM", "NETWORK", "DISK"]
                                     is_secure_boot_enabled:
                                         description: Indicate whether to enable secure boot or not.
                                         type: bool
