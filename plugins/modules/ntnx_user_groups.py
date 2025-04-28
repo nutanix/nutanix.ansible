@@ -95,7 +95,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     distinguished_name: "<distinguished-name>"
     project:
       uuid: "{{project_uuid}}"
@@ -110,7 +110,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     idp:
       idp_uuid: "{{idp_uuid}}"
       group_name: "{{group_name}}"
@@ -189,8 +189,8 @@ user_group_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.user_groups import UserGroup  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.user_groups import UserGroup  # noqa: E402
 
 
 def get_module_spec():

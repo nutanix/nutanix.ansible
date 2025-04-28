@@ -3,8 +3,6 @@
 - name: VM update playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,8 +10,8 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
-  - name: Setting Variables
-    set_fact:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
         cluster_name: ""
         script_path: ""
         subnet_name: ""
@@ -26,56 +24,56 @@
         remove_disk_uuid: ""
         subnet_uuid: ""
 
-  - name: Update VM
-    ntnx_vms:
-      vm_uuid: "{{ vm_uuid }}"
-      name: updated
-      desc: updated
-      categories:
-        AppType:
-          - Apache_Spark
-      disks:
-        - type: "DISK"
-          clone_image:
-            name: "{{ image_name }}"
-          bus: "SCSI"
-          size_gb: 20
-        - type: DISK
-          size_gb: 3
-          bus: PCI
-        - type: DISK
-          size_gb: 1
-          bus: SCSI
-          storage_container:
-            uuid: "{{ storage_container_uuid }}"
-      networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network_dhcp_uuid }}"
-        - is_connected: false
-          subnet:
-            uuid: "{{ static.uuid }}"
-          private_ip: "{{ network_static_ip }}"
-    register: result
+    - name: Update VM
+      nutanix.ncp.ntnx_vms:
+        vm_uuid: "{{ vm_uuid }}"
+        name: updated
+        desc: updated
+        categories:
+          AppType:
+            - Apache_Spark
+        disks:
+          - type: "DISK"
+            clone_image:
+              name: "{{ image_name }}"
+            bus: "SCSI"
+            size_gb: 20
+          - type: DISK
+            size_gb: 3
+            bus: PCI
+          - type: DISK
+            size_gb: 1
+            bus: SCSI
+            storage_container:
+              uuid: "{{ storage_container_uuid }}"
+        networks:
+          - is_connected: true
+            subnet:
+              uuid: "{{ network_dhcp_uuid }}"
+          - is_connected: false
+            subnet:
+              uuid: "{{ static.uuid }}"
+            private_ip: "{{ network_static_ip }}"
+      register: result
 
-  - name: Update VM by deleting and editing disks and subnets
-    ntnx_vms:
-      vm_uuid: "{{ vm_uuid }}"
-      name: update diks
-      desc: update disks
-      disks:
-        - type: "DISK"
-          uuid: "{{ disk_uuid }}"
-          size_gb: 30
-        - state: absent
-          uuid: "{{ remove_disk_uuid }}"
-      networks:
-        - state: absent
-          uuid: "{{ subnet_uuid }}"
-    register: result
+    - name: Update VM by deleting and editing disks and subnets
+      nutanix.ncp.ntnx_vms:
+        vm_uuid: "{{ vm_uuid }}"
+        name: update diks
+        desc: update disks
+        disks:
+          - type: "DISK"
+            uuid: "{{ disk_uuid }}"
+            size_gb: 30
+          - state: absent
+            uuid: "{{ remove_disk_uuid }}"
+        networks:
+          - state: absent
+            uuid: "{{ subnet_uuid }}"
+      register: result
 
-  - name: Update VM by deleting it
-    ntnx_vms:
-      state: absent
-      vm_uuid: "{{ vm_uuid }}"
-    register: result
+    - name: Update VM by deleting it
+      nutanix.ncp.ntnx_vms:
+        state: absent
+        vm_uuid: "{{ vm_uuid }}"
+      register: result

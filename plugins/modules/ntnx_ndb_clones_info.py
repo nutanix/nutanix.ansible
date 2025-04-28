@@ -55,7 +55,6 @@ EXAMPLES = r"""
     validate_certs: false
     uuid: "<uuid of clone>"
   register: result
-
 """
 RETURN = r"""
 response:
@@ -301,8 +300,8 @@ response:
 
 """
 
-from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.database_clones import DatabaseClone  # noqa: E402
+from ..module_utils.v3.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.v3.ndb.database_clones import DatabaseClone  # noqa: E402
 
 
 def get_module_spec():

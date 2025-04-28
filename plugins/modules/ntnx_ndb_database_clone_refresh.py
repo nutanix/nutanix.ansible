@@ -45,7 +45,7 @@ author:
 """
 EXAMPLES = r"""
 - name: create spec for refresh clone to a pitr timestamp
-  check_mode: yes
+  check_mode: true
   ntnx_ndb_database_clone_refresh:
     uuid: "{{clone_uuid}}"
     pitr_timestamp: "2023-02-04 07:29:36"
@@ -57,7 +57,6 @@ EXAMPLES = r"""
     uuid: "{{clone_uuid}}"
     snapshot_uuid: "{{snapshot_uuid}}"
   register: result
-
 """
 RETURN = r"""
 response:
@@ -292,10 +291,10 @@ uuid:
 """
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.database_clones import DatabaseClone  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.database_clones import DatabaseClone  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
 
 
 def get_module_spec():

@@ -147,10 +147,10 @@ snapshot_uuid:
 """
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
-from ..module_utils.ndb.snapshots import Snapshot  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
+from ..module_utils.v3.ndb.snapshots import Snapshot  # noqa: E402
 
 # Notes:
 # 1. Snapshot replication to one cluster at a time is supported currently

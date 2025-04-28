@@ -111,12 +111,12 @@ sla_uuid:
   sample: "be524e70-60ad-4a8c-a0ee-8d72f954d7e6"
 """
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.slas import SLA  # noqa: E402
 from ..module_utils.utils import (  # noqa: E402
     remove_param_with_none_value,
     strip_extra_attrs,
 )
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.slas import SLA  # noqa: E402
 
 
 def get_module_spec():
@@ -193,7 +193,7 @@ def update_sla(module, result):
     if spec == sla:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
-
+    spec["id"] = uuid
     resp = _sla.update(data=spec, uuid=uuid)
     result["response"] = resp
     result["sla_uuid"] = uuid

@@ -1,0 +1,291 @@
+---
+- name: Start ntnx_address_groups_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_address_groups_v2 tests
+
+- name: Generate random project_name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set suffix_name
+  ansible.builtin.set_fact:
+    suffix_name: ansible-ag
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    ag1: "{{ random_name }}{{ suffix_name }}1"
+    ag2: "{{ random_name }}{{ suffix_name }}2"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Create address group with check mode enabled
+  ntnx_address_groups_v2:
+    state: present
+    name: "{{ ag1 }}"
+    description: test-ansible-address-group-2-desc
+    ipv4_addresses:
+      - value: 10.1.1.0
+        prefix_length: 24
+      - value: 10.1.2.2
+        prefix_length: 32
+    ip_ranges:
+      - start_ip: 10.2.1.0
+        end_ip: 10.2.2.0
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create address group with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.name == "{{ ag1 }}"
+      - result.response.description == "test-ansible-address-group-2-desc"
+      - result.response.ipv4_addresses[0].value == "10.1.1.0"
+      - result.response.ipv4_addresses[1].value == "10.1.2.2"
+      - result.response.ipv4_addresses[0].prefix_length == 24
+      - result.response.ipv4_addresses[1].prefix_length == 32
+      - result.response.ip_ranges[0].start_ip == "10.2.1.0"
+      - result.response.ip_ranges[0].end_ip == "10.2.2.0"
+
+    fail_msg: Create address group with check mode enabled failed
+    success_msg: Create address group with check mode enabled passed
+
+###################################################################################################
+
+- name: Create address group
+  ntnx_address_groups_v2:
+    state: present
+    name: "{{ ag2 }}"
+    description: test-ansible-group-1-desc
+    ipv4_addresses:
+      - value: 10.1.1.0
+        prefix_length: 24
+      - value: 10.1.2.2
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Create address group Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id == result.response.ext_id
+      - result.changed == True
+      - result.failed == False
+      - result.response.name == "{{ ag2 }}"
+      - result.response.description == "test-ansible-group-1-desc"
+      - result.response.ipv4_addresses[0].value == "10.1.1.0"
+      - result.response.ipv4_addresses[1].value == "10.1.2.2"
+      - result.response.ipv4_addresses[0].prefix_length == 24
+      - result.response.ipv4_addresses[1].prefix_length == 32
+      - result.task_ext_id is defined
+
+    fail_msg: Unable to create address group
+    success_msg: Address group created successfully
+
+- name: Set external id to delete
+  ansible.builtin.set_fact:
+    todelete: '{{ result["ext_id"] }}'
+
+###################################################################################################
+
+- name: Update address group with check mode enabled
+  ntnx_address_groups_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    name: "{{ ag1 }}"
+    description: test-ansible-group-2-desc
+    ipv4_addresses:
+      - value: 10.2.1.0
+        prefix_length: 24
+      - value: 10.2.2.1
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update address group with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == False
+      - result.response.name == "{{ ag1 }}"
+      - result.response.description == "test-ansible-group-2-desc"
+      - result.response.ipv4_addresses[0].value == "10.2.1.0"
+      - result.response.ipv4_addresses[1].value == "10.2.2.1"
+      - result.response.ipv4_addresses[0].prefix_length == 24
+      - result.response.ipv4_addresses[1].prefix_length == 32
+
+    fail_msg: Update address group with check mode enabled failed
+    success_msg: Update address group with check mode enabled passed
+
+###################################################################################################
+
+- name: Update address group
+  ntnx_address_groups_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    name: "{{ ag1 }}"
+    description: test-ansible-group-3-desc
+    ipv4_addresses:
+      - value: 10.1.4.1
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Update address group status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.changed == True
+      - result.response.name == "{{ ag1 }}"
+      - result.response.description == "test-ansible-group-3-desc"
+      - result.response.ipv4_addresses[0].value == "10.1.4.1"
+      - result.response.ipv4_addresses[0].prefix_length == 32
+      - result.response.ipv4_addresses | length == 1
+
+    fail_msg: Unable to update address group
+    success_msg: Address group updated successfully
+
+###################################################################################################
+
+- name: Test idempotency by updating address group with same values
+  ntnx_address_groups_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    name: "{{ ag1 }}"
+    description: test-ansible-group-3-desc
+    ipv4_addresses:
+      - value: 10.1.4.1
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Idempotency check status
+  ansible.builtin.assert:
+    that:
+      - result.changed == False
+      - result.failed == False
+      - result.msg == "Nothing to change."
+
+    fail_msg: Idempotency check failed
+    success_msg: Idempotency check passed
+
+###################################################################################################
+
+- name: Check if address group with existing name fails or not
+  ntnx_address_groups_v2:
+    state: present
+    name: "{{ ag1 }}"
+    ipv4_addresses:
+      - value: 10.1.1.0
+        prefix_length: 24
+  register: result
+  ignore_errors: true
+
+- name: Check if address group with existing name fails or not Status
+  ansible.builtin.assert:
+    that:
+      - result.msg == "Task Failed"
+      - result.changed == false
+      - result.failed == true
+
+    fail_msg: Was able to create address group with existing address group name
+    success_msg: Address group with existing address group name failed successfully
+
+###################################################################################################
+
+- name: List all address groups
+  ntnx_address_groups_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all address groups Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+    fail_msg: Unable to list all address groups
+    success_msg: address groups info obtained successfully
+
+###################################################################################################
+
+- name: List address groups using external id
+  ntnx_address_groups_info_v2:
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: List address groups using external id Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ todelete }}"
+      - result.response.name == "{{ ag1 }}"
+      - result.response.ext_id == "{{ todelete }}"
+    fail_msg: Unable to list address groups using external id
+    success_msg: address groups info obtained successfully
+
+###################################################################################################
+
+- name: List address groups using limit
+  ntnx_address_groups_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List address groups using limit Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: "Unable to list address groups using limit "
+    success_msg: "address groups listed successfully using limit "
+
+###################################################################################################
+
+- name: List address groups using filter
+  ntnx_address_groups_info_v2:
+    filter: name eq '{{ ag1 }}'
+  register: result
+  ignore_errors: true
+
+- name: List address groups using filter Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+      - result.response[0].name == "{{ ag1 }}"
+      - result.response[0].description == "test-ansible-group-3-desc"
+      - result.response[0].ext_id == "{{ todelete }}"
+    fail_msg: "Unable to list address groups using filter "
+    success_msg: "address groups listed successfully using filter "
+
+###################################################################################################
+
+- name: Delete address group
+  ntnx_address_groups_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Reset todelete variable
+  ansible.builtin.set_fact:
+    todelete: []

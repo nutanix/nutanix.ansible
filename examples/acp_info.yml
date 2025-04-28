@@ -2,8 +2,6 @@
 - name: ACP_Info playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,20 +10,19 @@
       validate_certs: false
 
   tasks:
-
     - name: List ACPs using ascending, sorting and name filter
-      ntnx_floating_ips_info:
+      nutanix.ncp.ntnx_acps_info:
         filter:
           name: "{{ acp_name }}"
         kind: access_control_policy
         sort_order: "ASCENDING"
         sort_attribute: "name"
       register: result
-      ignore_errors: True
+      ignore_errors: true
 
     - name: List ACPs using length and offset
-      ntnx_floating_ips_info:
+      nutanix.ncp.ntnx_acps_info:
         length: 3
         offset: 0
       register: result
-      ignore_errors: True
+      ignore_errors: true
