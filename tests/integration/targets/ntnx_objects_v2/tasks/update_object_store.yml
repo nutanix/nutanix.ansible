@@ -1,0 +1,240 @@
+---
+- name: Start ntnx_objects_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_objects_v2 tests
+
+- name: Define SSH command and service manager restart command
+  ansible.builtin.set_fact:
+    pc_ssh_command:
+      sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+      {{ domain_manager_ssh_username }}@{{ ip }}
+    restart_service_manager_command: docker exec aoss_service_manager sh -c \"supervisorctl restart ossui:objectstores\"
+
+- name: Set SSH command to restart service manager
+  ansible.builtin.set_fact:
+    restart_command: '{{ pc_ssh_command }} "{{ restart_service_manager_command }}"'
+
+- ansible.builtin.debug:
+    var: restart_command
+
+- name: Generate spec for updating object store with check mode
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    ext_id: "00e7603f-15ec-4ff2-7b18-5934ad97f667"
+    metadata:
+      owner_reference_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+      owner_user_name: "owner_user_name"
+      project_reference_id: "123e4567-e89b-12d3-a456-426614174000"
+      project_name: "project_name"
+      category_ids:
+        - "bbc3555a-133b-5348-9764-bfff196e84e4"
+        - "ac587354-7894-3625-5178-bfff18523654"
+    description: "object store test"
+    deployment_version: "5.1.1"
+    domain: "test.domain.nutanix.com"
+    region: "us-west-1"
+    num_worker_nodes: 3
+    cluster_ext_id: "00063125-0d92-06e0-185b-ac1f6b6f97e2"
+    storage_network_reference: "13870980-c370-4aa3-846b-f6cb864f61e5"
+    storage_network_vip:
+      ipv4:
+        value: "10.30.30.10"
+    storage_network_dns_ip:
+      ipv4:
+        value: "10.30.30.11"
+    public_network_reference: "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
+    public_network_ips:
+      - ipv4:
+          value: "10.30.30.12"
+      - ipv4:
+          value: "10.30.30.13"
+    total_capacity_gi_b: 21474836480
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for updating object store with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response.cluster_ext_id == "00063125-0d92-06e0-185b-ac1f6b6f97e2"
+      - result.response.name == "ansible-object"
+      - result.response.ext_id == "00e7603f-15ec-4ff2-7b18-5934ad97f667"
+      - result.response.metadata.owner_reference_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+      - result.response.metadata.owner_user_name == "owner_user_name"
+      - result.response.metadata.project_reference_id == "123e4567-e89b-12d3-a456-426614174000"
+      - result.response.metadata.project_name == "project_name"
+      - result.response.metadata.category_ids == ["bbc3555a-133b-5348-9764-bfff196e84e4", "ac587354-7894-3625-5178-bfff18523654"]
+      - result.response.description == "object store test"
+      - result.response.deployment_version == "5.1.1"
+      - result.response.domain == "test.domain.nutanix.com"
+      - result.response.region == "us-west-1"
+      - result.response.num_worker_nodes == 3
+      - result.response.storage_network_reference == "13870980-c370-4aa3-846b-f6cb864f61e5"
+      - result.response.storage_network_vip.ipv4.value == "10.30.30.10"
+      - result.response.storage_network_dns_ip.ipv4.value == "10.30.30.11"
+      - result.response.public_network_reference == "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
+      - result.response.public_network_ips[0].ipv4.value == "10.30.30.12"
+      - result.response.public_network_ips[1].ipv4.value == "10.30.30.13"
+      - result.response.total_capacity_gi_b == 21474836480
+    success_msg: "Spec for updating object store is generated successfully with check mode"
+    fail_msg: "Spec for updating object store is not generated successfully with check mode"
+
+- name: Deploy object store with one worker node
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    description: "object store test"
+    domain: "{{ objects.domain }}"
+    num_worker_nodes: "{{ objects.num_worker_nodes }}"
+    storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
+    storage_network_vip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[0] }}"
+    storage_network_dns_ip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[1] }}"
+    public_network_reference: "{{ objects.public_network_reference.uuid }}"
+    public_network_ips:
+      - ipv4:
+          value: "{{ objects.public_network_reference.IPs[0] }}"
+    total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
+    wait: false
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Set task external ID
+  ansible.builtin.set_fact:
+    task_ext_id: "{{ result.response.ext_id }}"
+
+- name: Fetch task details until progress percentage is above 30
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port }}/api/prism/v4.0.b1/config/tasks/{{ task_ext_id }}"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    headers:
+      Accept: "application/json"
+  register: result
+  until: result.json.data.progressPercentage | int > 30
+  retries: 720
+  delay: 10
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Restart service manager 5 times with a 10-second delay between each attempt
+  ansible.builtin.command: "{{ restart_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+  until: result.rc == 0
+  loop: "{{ range(1, 6) | list }}"
+  loop_control:
+    pause: 10
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Set stdout for all attempts
+  ansible.builtin.set_fact:
+    stdout: "{{ result.results | map(attribute='stdout') | list | unique}}"
+
+- ansible.builtin.debug:
+    var: stdout
+
+- name: Restart service manager status
+  ansible.builtin.assert:
+    that:
+      - result.msg == "All items completed"
+      - result.results | length == 5
+      - stdout | length == 1
+      - "'ossui:objectstores: stopped' in stdout[0]"
+      - "'ossui:objectstores: started' in stdout[0]"
+    success_msg: "Service manager is restarted successfully"
+    fail_msg: "Service manager is not restarted successfully"
+
+- name: Sleep for 1 minute
+  ansible.builtin.pause:
+    seconds: 60
+
+- name: List all object stores with filter
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    filter: name eq 'ansible-object'
+  register: result
+
+- name: Assert that object store has failed
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response[0].name == "ansible-object"
+      - result.response[0].state == "OBJECT_STORE_DEPLOYMENT_FAILED"
+    success_msg: "Object store is in failed state"
+    fail_msg: "Object store is not in failed state"
+
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id: "{{ result.response[0].ext_id }}"
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Deploy object store with one worker node using update operation
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    ext_id: "{{ object_store_ext_id }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    description: "object store test"
+    domain: "{{ objects.domain }}"
+    num_worker_nodes: "{{ objects.num_worker_nodes }}"
+    storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
+    storage_network_vip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[0] }}"
+    storage_network_dns_ip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[1] }}"
+    public_network_reference: "{{ objects.public_network_reference.uuid }}"
+    public_network_ips:
+      - ipv4:
+          value: "{{ objects.public_network_reference.IPs[0] }}"
+    total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Deploy object store with one worker node using update operation status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "ansible-object"
+      - result.response.ext_id == "{{ object_store_ext_id }}"
+      - result.response.description == "object store test"
+      - result.response.domain == "{{ objects.domain }}"
+      - result.response.num_worker_nodes == {{ objects.num_worker_nodes }}
+      - result.response.storage_network_reference == "{{ objects.storage_network_reference.uuid }}"
+      - result.response.storage_network_vip.ipv4.value == "{{ objects.storage_network_reference.IPs[0] }}"
+      - result.response.storage_network_dns_ip.ipv4.value == "{{ objects.storage_network_reference.IPs[1] }}"
+      - result.response.public_network_reference == "{{ objects.public_network_reference.uuid }}"
+      - result.response.public_network_ips[0].ipv4.value == "{{ objects.public_network_reference.IPs[0] }}"
+      - result.response.total_capacity_gi_b == {{ objects.total_capacity_gi_b }}
+      - result.response.state == "OBJECT_STORE_AVAILABLE"
+    success_msg: "Object store is deployed successfully using update operation"
+    fail_msg: "Object store is not deployed successfully using update operation"
