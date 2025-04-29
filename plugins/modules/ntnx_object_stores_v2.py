@@ -368,6 +368,7 @@ def create_object_store(module, object_stores_api, result):
         ext_id = get_entity_ext_id_from_task(
             task_status, rel=TASK_CONSTANTS.RelEntityType.OBJECTS
         )
+        object_stores_api = get_objects_api_instance(module)
         if ext_id:
             resp = get_object_store(module, object_stores_api, ext_id)
             result["ext_id"] = ext_id
@@ -446,6 +447,7 @@ def update_object_store(module, object_stores_api, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
+        object_stores_api = get_objects_api_instance(module)
         resp = get_object_store(module, object_stores_api, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
