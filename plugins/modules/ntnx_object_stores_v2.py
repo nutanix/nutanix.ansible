@@ -377,12 +377,6 @@ def create_object_store(module, object_stores_api, result):
     result["changed"] = True
 
 
-def check_idempotency(current_spec, update_spec):
-    if current_spec != update_spec:
-        return False
-    return True
-
-
 def update_object_store(module, object_stores_api, result):
     """
     This method will update object store.
@@ -392,6 +386,10 @@ def update_object_store(module, object_stores_api, result):
         result (dict): Result object
     """
     ext_id = module.params.get("ext_id")
+    if "object_state" in module.params:
+        module.params["state"] = module.params["object_state"]
+    else:
+        del module.params["state"]
     sg = SpecGenerator(module)
     default_spec = objects_sdk.ObjectStore()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -415,17 +413,6 @@ def update_object_store(module, object_stores_api, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating object store update Spec", **result)
-
-    skip_idempotency = False
-    if module.params.get("location", {}).get("cluster_location") or module.params.get(
-        "location", {}
-    ).get("object_store_location", {}).get("provider_config", {}).get("credentials"):
-        skip_idempotency = True
-
-    if not skip_idempotency:
-        if check_idempotency(current_spec, update_spec):
-            result["skipped"] = True
-            module.exit_json(msg="Nothing to change.", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())

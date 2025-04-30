@@ -3,20 +3,6 @@
   ansible.builtin.debug:
     msg: Start ntnx_objects_v2 tests
 
-- name: Define SSH command and service manager restart command
-  ansible.builtin.set_fact:
-    pc_ssh_command:
-      sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-      {{ domain_manager_ssh_username }}@{{ ip }}
-    restart_service_manager_command: docker exec aoss_service_manager sh -c \"supervisorctl restart ossui:objectstores\"
-
-- name: Set SSH command to restart service manager
-  ansible.builtin.set_fact:
-    restart_command: '{{ pc_ssh_command }} "{{ restart_service_manager_command }}"'
-
-- ansible.builtin.debug:
-    var: restart_command
-
 - name: Generate spec for updating object store with check mode
   nutanix.ncp.ntnx_object_stores_v2:
     name: "ansible-object"
@@ -85,6 +71,28 @@
     success_msg: "Spec for updating object store is generated successfully with check mode"
     fail_msg: "Spec for updating object store is not generated successfully with check mode"
 
+- name: Backup the original buckets_tools_template.yaml file
+  ansible.builtin.shell: |
+    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }} << EOF
+    docker exec aoss_service_manager sh -c "
+      cd /home/nutanix/config/poseidon_master &&
+      cp buckets_tools_template.yaml buckets_tools_template_backup.yml
+    "
+    EOF
+  register: result
+  ignore_errors: true
+
+- name: Modify the image tag in buckets_tools_template.yaml
+  ansible.builtin.shell: |
+    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }} << EOF
+    docker exec aoss_service_manager sh -c "
+      cd /home/nutanix/config/poseidon_master &&
+      sed -i -E 's|(image: .+/[^:]+:)[^ ]+|\1invalid-version|' buckets_tools_template.yaml
+    "
+    EOF
+  register: result
+  ignore_errors: true
+
 - name: Deploy object store with one worker node
   nutanix.ncp.ntnx_object_stores_v2:
     name: "ansible-object"
@@ -104,69 +112,21 @@
       - ipv4:
           value: "{{ objects.public_network_reference.IPs[0] }}"
     total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
-    wait: false
   register: result
   ignore_errors: true
 
 - ansible.builtin.debug:
     var: result
 
-- name: Set task external ID
-  ansible.builtin.set_fact:
-    task_ext_id: "{{ result.response.ext_id }}"
-
-- name: Fetch task details until progress percentage is above 30
-  ansible.builtin.uri:
-    url: "https://{{ ip }}:{{ port }}/api/prism/v4.0.b1/config/tasks/{{ task_ext_id }}"
-    method: GET
-    user: "{{ username }}"
-    password: "{{ password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    headers:
-      Accept: "application/json"
-  register: result
-  until: result.json.data.progressPercentage | int > 30
-  retries: 720
-  delay: 10
-
-- ansible.builtin.debug:
-    var: result
-
-- name: Restart service manager 5 times with a 10-second delay between each attempt
-  ansible.builtin.command: "{{ restart_command }}"
-  register: result
-  ignore_errors: true
-  changed_when: result.rc != 0
-  until: result.rc == 0
-  loop: "{{ range(1, 6) | list }}"
-  loop_control:
-    pause: 10
-
-- ansible.builtin.debug:
-    var: result
-
-- name: Set stdout for all attempts
-  ansible.builtin.set_fact:
-    stdout: "{{ result.results | map(attribute='stdout') | list | unique}}"
-
-- ansible.builtin.debug:
-    var: stdout
-
-- name: Restart service manager status
+# Deployment should fail due to invalid image tag
+- name: Deploy object store with one worker node status
   ansible.builtin.assert:
     that:
-      - result.msg == "All items completed"
-      - result.results | length == 5
-      - stdout | length == 1
-      - "'ossui:objectstores: stopped' in stdout[0]"
-      - "'ossui:objectstores: started' in stdout[0]"
-    success_msg: "Service manager is restarted successfully"
-    fail_msg: "Service manager is not restarted successfully"
-
-- name: Sleep for 1 minute
-  ansible.builtin.pause:
-    seconds: 60
+      - result.failed is true
+      - result.response is defined
+      - result.response.status == "FAILED"
+    success_msg: "Object store is deployed successfully"
+    fail_msg: "Object store is not deployed successfully"
 
 - name: List all object stores with filter
   nutanix.ncp.ntnx_object_stores_info_v2:
@@ -185,6 +145,17 @@
 - name: Set object store external ID
   ansible.builtin.set_fact:
     object_store_ext_id: "{{ result.response[0].ext_id }}"
+  ignore_errors: true
+
+- name: Restore the original buckets_tools_template.yaml file
+  ansible.builtin.shell: |
+    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }} << EOF
+    docker exec aoss_service_manager sh -c "
+      cd /home/nutanix/config/poseidon_master &&
+      mv buckets_tools_template_backup.yml buckets_tools_template.yaml
+    "
+    EOF
+  register: result
   ignore_errors: true
 
 - ansible.builtin.debug:
@@ -238,3 +209,48 @@
       - result.response.state == "OBJECT_STORE_AVAILABLE"
     success_msg: "Object store is deployed successfully using update operation"
     fail_msg: "Object store is not deployed successfully using update operation"
+
+- name: Delete bucket in object store
+  ansible.builtin.uri:
+    url: "{{ delete_bucket_api }}"
+    method: DELETE
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+  register: result
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Delete bucket status
+  ansible.builtin.assert:
+    that:
+      - result.failed is false
+      - result.status == 200 or result.status == 202
+    success_msg: "Bucket is deleted successfully"
+    fail_msg: "Bucket is not deleted successfully"
+
+- name: Delete object store
+  nutanix.ncp.ntnx_object_stores_v2:
+    ext_id: "{{ object_store_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Delete object store status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Object store is deleted successfully"
+    fail_msg: "Object store is not deleted successfully"

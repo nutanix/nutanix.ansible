@@ -297,3 +297,48 @@
       - result.response.ext_id == "{{ object_store_ext_id }}"
     success_msg: "Object store details are fetched successfully using external ID"
     fail_msg: "Object store details are not fetched successfully using external ID"
+
+- name: Delete bucket in object store
+  ansible.builtin.uri:
+    url: "{{ delete_bucket_api }}"
+    method: DELETE
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+  register: result
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Delete bucket status
+  ansible.builtin.assert:
+    that:
+      - result.failed is false
+      - result.status == 200 or result.status == 202
+    success_msg: "Bucket is deleted successfully"
+    fail_msg: "Bucket is not deleted successfully"
+
+- name: Delete object store
+  nutanix.ncp.ntnx_object_stores_v2:
+    ext_id: "{{ object_store_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result
+
+- name: Delete object store status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Object store is deleted successfully"
+    fail_msg: "Object store is not deleted successfully"
