@@ -1,7 +1,7 @@
 ---
-- name: Start ntnx_objects_v2 tests
+- name: Start update objects tests
   ansible.builtin.debug:
-    msg: Start ntnx_objects_v2 tests
+    msg: Start update objects tests
 
 - name: Generate spec for updating object store with check mode
   nutanix.ncp.ntnx_object_stores_v2:
@@ -39,9 +39,6 @@
   check_mode: true
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: result
-
 - name: Generate spec for updating object store with check mode status
   ansible.builtin.assert:
     that:
@@ -73,7 +70,8 @@
 
 - name: Backup the original buckets_tools_template.yaml file
   ansible.builtin.shell: |
-    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }} << EOF
+    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    {{ domain_manager_ssh_username }}@{{ ip }} << EOF
     docker exec aoss_service_manager sh -c "
       cd /home/nutanix/config/poseidon_master &&
       cp buckets_tools_template.yaml buckets_tools_template_backup.yml
@@ -81,10 +79,12 @@
     EOF
   register: result
   ignore_errors: true
+  changed_when: false
 
 - name: Modify the image tag in buckets_tools_template.yaml
   ansible.builtin.shell: |
-    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }} << EOF
+    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    {{ domain_manager_ssh_username }}@{{ ip }} << EOF
     docker exec aoss_service_manager sh -c "
       cd /home/nutanix/config/poseidon_master &&
       sed -i -E 's|(image: .+/[^:]+:)[^ ]+|\1invalid-version|' buckets_tools_template.yaml
@@ -92,8 +92,9 @@
     EOF
   register: result
   ignore_errors: true
+  changed_when: false
 
-- name: Deploy object store with one worker node
+- name: Deploy object store with one worker node with invalid image tag
   nutanix.ncp.ntnx_object_stores_v2:
     name: "ansible-object"
     cluster_ext_id: "{{ cluster.uuid }}"
@@ -115,18 +116,15 @@
   register: result
   ignore_errors: true
 
-- ansible.builtin.debug:
-    var: result
-
 # Deployment should fail due to invalid image tag
-- name: Deploy object store with one worker node status
+- name: Deploy object store with one worker node with invalid image tag status
   ansible.builtin.assert:
     that:
       - result.failed is true
       - result.response is defined
       - result.response.status == "FAILED"
-    success_msg: "Object store is deployed successfully"
-    fail_msg: "Object store is not deployed successfully"
+    success_msg: "Object store deployment failed as expected"
+    fail_msg: "Object store deployment did not fail as expected"
 
 - name: List all object stores with filter
   nutanix.ncp.ntnx_object_stores_info_v2:
@@ -145,11 +143,11 @@
 - name: Set object store external ID
   ansible.builtin.set_fact:
     object_store_ext_id: "{{ result.response[0].ext_id }}"
-  ignore_errors: true
 
 - name: Restore the original buckets_tools_template.yaml file
   ansible.builtin.shell: |
-    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {{ domain_manager_ssh_username }}@{{ ip }} << EOF
+    sshpass -p '{{ domain_manager_ssh_password }}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    {{ domain_manager_ssh_username }}@{{ ip }} << EOF
     docker exec aoss_service_manager sh -c "
       cd /home/nutanix/config/poseidon_master &&
       mv buckets_tools_template_backup.yml buckets_tools_template.yaml
@@ -157,9 +155,7 @@
     EOF
   register: result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: result
+  changed_when: false
 
 - name: Deploy object store with one worker node using update operation
   nutanix.ncp.ntnx_object_stores_v2:
@@ -183,9 +179,6 @@
     total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
   register: result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: result
 
 - name: Deploy object store with one worker node using update operation status
   ansible.builtin.assert:
@@ -216,15 +209,12 @@
     method: DELETE
     user: "{{ username }}"
     password: "{{ password }}"
-    force_basic_auth: yes
-    validate_certs: no
+    force_basic_auth: true
+    validate_certs: false
     headers:
       Accept: "application/json"
     status_code: [200, 202]
   register: result
-
-- ansible.builtin.debug:
-    var: result
 
 - name: Delete bucket status
   ansible.builtin.assert:
@@ -240,9 +230,6 @@
     state: absent
   register: result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: result
 
 - name: Delete object store status
   ansible.builtin.assert:

@@ -19,6 +19,11 @@ options:
             - External ID of the object store to which the SSL certificate will be added.
         type: str
         required: true
+    path:
+        description:
+            - Path to a JSON file containing certificate details.
+        type: str
+        required: true
     wait:
         description:
             - Wait for the task to complete.
@@ -33,6 +38,12 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create certificate for an object store
+  nutanix.ncp.ntnx_object_stores_certificate_v2:
+    object_store_ext_id: "6dd6df38-5d5c-40a8-561f-10862416c1c0"
+    path: "/tmp/certificate_details.json"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -41,6 +52,61 @@ response:
     type: dict
     returned: always
     sample:
+        {
+            "cluster_ext_ids": [
+                "000633ea-e256-b6a1-185b-ac1f6b6f97e2"
+            ],
+            "completed_time": "2025-05-04T12:04:05.735594+00:00",
+            "completion_details": null,
+            "created_time": "2025-05-04T12:02:23.891449+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "62f80159-be3b-49aa-4701-9e1e32b9c828",
+                    "name": "ansible-object",
+                    "rel": "objects:config:object-store"
+                },
+                {
+                    "ext_id": "b18822e9-b417-4834-6191-986010a4ee06",
+                    "name": null,
+                    "rel": "objects:config:object-store:certificate"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:a0d744cf-9686-560a-b80b-c878fdbb711d",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2025-05-04T12:04:05.735593+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 2,
+            "number_of_subtasks": 0,
+            "operation": "replace_certs_object_store",
+            "operation_description": "Create Object store certificate",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "root_task": null,
+            "started_time": "2025-05-04T12:02:23.921955+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": [
+                {
+                    "name": "Replace certs object store 62f80159-be3b-49aa-4701-9e1e32b9c828: Running prechecks"
+                },
+                {
+                    "name": "Replace certs object store ansible-object: Deploying oc app"
+                },
+                {
+                    "name": "Replace certs object store ansible-object: Deploying oc app"
+                },
+                {
+                    "name": "Replace certs object store ansible-object: Running Object store health checks"
+                }
+            ],
+            "sub_tasks": null,
+            "warnings": null
+        }
 
 task_ext_id:
     description: Task ID for Creating SSL certificate for the object store.
@@ -72,38 +138,21 @@ failed:
     sample: false
 """
 
-from pathlib import Path
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-from copy import deepcopy  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.v4.objects.helpers import get_object_store  # noqa: E402
 from ..module_utils.v4.objects.api_client import (  # noqa: E402
-    get_objects_api_instance,
     get_etag,
+    get_objects_api_instance,
 )
-from ..module_utils.v4.objects.spec.objects import (
-    ObjectsSpecs as objects_specs,
-)  # noqa: E402
+from ..module_utils.v4.objects.helpers import get_object_store  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_objects_py_client as objects_sdk  # noqa: E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as objects_sdk  # noqa: E402
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -115,7 +164,6 @@ def get_module_spec():
         path=dict(
             type="str",
             required=True,
-            description="Path to a JSON file containing certificate details.",
         ),
     )
     return module_args
@@ -164,10 +212,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_objects_py_client"), exception=SDK_IMP_ERROR
-        )
 
     remove_param_with_none_value(module.params)
     result = {

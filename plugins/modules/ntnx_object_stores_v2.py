@@ -35,7 +35,7 @@ options:
         description:
             - Name of the object store.
         type: str
-        required: true
+        required: false
     metadata:
         description:
             - Metadata of the object store.
@@ -242,14 +242,113 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create Object Store
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    cluster_ext_id: "000633ea-e256-b6a1-185b-ac1f6b6f97e2"
+    description: "object store test"
+    domain: "domain.example.nutanix.com"
+    num_worker_nodes: "1"
+    storage_network_reference: "313c37c1-6f1d-4520-9245-528e3162af5c"
+    storage_network_vip:
+      ipv4:
+        value: "10.10.10.124"
+    storage_network_dns_ip:
+      ipv4:
+        value: "10.10.10.125"
+    public_network_reference: "313c37c1-6f1d-4520-9245-528e3162af5c"
+    public_network_ips:
+      - ipv4:
+          value: "10.10.10.126"
+    total_capacity_gi_b: "21474836480"
+  register: result
+  ignore_errors: true
+
+- name: Create Object Store
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    ext_id: "6dd6df38-5d5c-40a8-561f-10862416c1c0"
+    cluster_ext_id: "000633ea-e256-b6a1-185b-ac1f6b6f97e2"
+    description: "object store test"
+    domain: "domain.example.nutanix.com"
+    num_worker_nodes: "1"
+    storage_network_reference: "313c37c1-6f1d-4520-9245-528e3162af5c"
+    storage_network_vip:
+      ipv4:
+        value: "10.10.10.124"
+    storage_network_dns_ip:
+      ipv4:
+        value: "10.10.10.125"
+    public_network_reference: "313c37c1-6f1d-4520-9245-528e3162af5c"
+    public_network_ips:
+      - ipv4:
+          value: "10.10.10.126"
+    total_capacity_gi_b: "21474836480"
+  register: result
+  ignore_errors: true
+
+- name: Delete object store
+  nutanix.ncp.ntnx_object_stores_v2:
+    ext_id: "6dd6df38-5d5c-40a8-561f-10862416c1c0"
+    state: absent
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
-    description: Task status for the object store operation
+    description:
+        - Response for creating, updating or deleting object store
+        - Object store details if created or updated
+        - Task details if deleted
     type: dict
     returned: always
     sample:
+        {
+            "certificate_ext_ids": [
+                "1f2e1e77-890b-4e0d-4ab4-5c0904a16320"
+            ],
+            "cluster_ext_id": "000633ea-e256-b6a1-185b-ac1f6b6f97e2",
+            "creation_time": "2025-05-04T11:30:10+00:00",
+            "deployment_version": "5.1.1.1",
+            "description": "object store test",
+            "domain": "example.nutanix.com",
+            "ext_id": "62f80159-be3b-49aa-4701-9e1e32b9c828",
+            "last_update_time": "2025-05-04T11:30:10+00:00",
+            "links": null,
+            "metadata": null,
+            "name": "ansible-object",
+            "num_worker_nodes": 1,
+            "public_network_ips": [
+                {
+                    "ipv4": {
+                        "prefix_length": 32,
+                        "value": "10.10.10.123"
+                    },
+                    "ipv6": null
+                }
+            ],
+            "public_network_reference": "313c37c1-6f1d-4520-9245-528e3162af5c",
+            "region": null,
+            "state": "OBJECT_STORE_AVAILABLE",
+            "storage_network_dns_ip": {
+                "ipv4": {
+                    "prefix_length": 32,
+                    "value": "10.10.10.125"
+                },
+                "ipv6": null
+            },
+            "storage_network_reference": "313c37c1-6f1d-4520-9245-528e3162af5c",
+            "storage_network_vip": {
+                "ipv4": {
+                    "prefix_length": 32,
+                    "value": "10.10.10.124"
+                },
+                "ipv6": null
+            },
+            "tenant_id": null,
+            "total_capacity_gi_b": 21474836480
+        }
 
 task_ext_id:
     description: Task ID for the object store operation.
@@ -289,19 +388,19 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.v4.objects.helpers import get_object_store  # noqa: E402
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.objects.api_client import (  # noqa: E402
-    get_objects_api_instance,
     get_etag,
+    get_objects_api_instance,
 )
-from ..module_utils.v4.objects.spec.objects import (
+from ..module_utils.v4.objects.helpers import get_object_store  # noqa: E402
+from ..module_utils.v4.objects.spec.objects import (  # noqa: E402
     ObjectsSpecs as objects_specs,
-)  # noqa: E402
+)
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
     wait_for_completion,
 )
-from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -337,10 +436,7 @@ def create_object_store(module, object_stores_api, result):
         object_stores_api (object): ObjectStoresApi instance
         result (dict): Result object
     """
-    if "object_state" in module.params:
-        module.params["state"] = module.params["object_state"]
-    else:
-        del module.params["state"]
+    del module.params["state"]
     sg = SpecGenerator(module)
     default_spec = objects_sdk.ObjectStore()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -386,10 +482,7 @@ def update_object_store(module, object_stores_api, result):
         result (dict): Result object
     """
     ext_id = module.params.get("ext_id")
-    if "object_state" in module.params:
-        module.params["state"] = module.params["object_state"]
-    else:
-        del module.params["state"]
+    del module.params["state"]
     sg = SpecGenerator(module)
     default_spec = objects_sdk.ObjectStore()
     spec, err = sg.generate_spec(obj=default_spec)

@@ -29,6 +29,17 @@ author:
 """
 
 EXAMPLES = r"""
+- name: List all certificates for an object store
+  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+  register: result
+  ignore_errors: true
+
+- name: Fetch certificate details using external ID
+  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    ext_id: "f3197423-f486-4037-6037-95442e58484e"
+  register: result
 """
 
 RETURN = r"""
@@ -40,6 +51,26 @@ response:
     type: dict
     returned: always
     sample:
+        {
+            "alternate_fqdns": null,
+            "alternate_ips": [
+                {
+                    "ipv4": {
+                        "prefix_length": 32,
+                        "value": "10.44.77.123"
+                    },
+                    "ipv6": null
+                }
+            ],
+            "ca": null,
+            "ext_id": "b18822e9-b417-4834-6191-986010a4ee06",
+            "links": null,
+            "metadata": null,
+            "private_key": null,
+            "public_cert": null,
+            "should_generate": false,
+            "tenant_id": null
+        }
 
 ext_id:
     description: External ID of the object store certificate
@@ -70,10 +101,8 @@ import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v4.objects.api_client import get_objects_api_instance  # noqa: E402
 from ..module_utils.v4.objects.helpers import get_object_store_certificate  # noqa: E402
-from ..module_utils.v4.objects.api_client import (  # noqa: E402
-    get_objects_api_instance,
-)
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,

@@ -25,6 +25,20 @@ author:
 """
 
 EXAMPLES = r"""
+- name: List all object stores
+  nutanix.ncp.ntnx_object_stores_info_v2:
+  register: result
+
+- name: List all object stores with filter
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    filter: name eq '<object_store_name>'
+  register: result
+
+- name: List object stores with limit
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    limit: 1
+    page: 0
+  register: result
 """
 
 RETURN = r"""
@@ -36,6 +50,51 @@ response:
     type: dict
     returned: always
     sample:
+        {
+            "certificate_ext_ids": [
+                "b18822e9-b417-4834-6191-986010a4ee06"
+            ],
+            "cluster_ext_id": "000633ea-e256-b6a1-185b-ac1f6b6f97e2",
+            "creation_time": "2025-05-04T11:30:10+00:00",
+            "deployment_version": "5.1.1.1",
+            "description": "object store test",
+            "domain": "msp.pc-fjci.nutanix.com",
+            "ext_id": "62f80159-be3b-49aa-4701-9e1e32b9c828",
+            "last_update_time": "2025-05-04T11:30:10+00:00",
+            "links": null,
+            "metadata": null,
+            "name": "ansible-object",
+            "num_worker_nodes": 1,
+            "public_network_ips": [
+                {
+                    "ipv4": {
+                        "prefix_length": 32,
+                        "value": "10.10.10.123"
+                    },
+                    "ipv6": null
+                }
+            ],
+            "public_network_reference": "313c37c1-6f1d-4520-9245-528e3162af5c",
+            "region": null,
+            "state": "OBJECT_STORE_AVAILABLE",
+            "storage_network_dns_ip": {
+                "ipv4": {
+                    "prefix_length": 32,
+                    "value": "10.10.10.125"
+                },
+                "ipv6": null
+            },
+            "storage_network_reference": "313c37c1-6f1d-4520-9245-528e3162af5c",
+            "storage_network_vip": {
+                "ipv4": {
+                    "prefix_length": 32,
+                    "value": "10.10.10.124"
+                },
+                "ipv6": null
+            },
+            "tenant_id": null,
+            "total_capacity_gi_b": 21474836480
+        }
 
 ext_id:
     description: External ID of the object store
@@ -66,10 +125,8 @@ import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v4.objects.api_client import get_objects_api_instance  # noqa: E402
 from ..module_utils.v4.objects.helpers import get_object_store  # noqa: E402
-from ..module_utils.v4.objects.api_client import (  # noqa: E402
-    get_objects_api_instance,
-)
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,

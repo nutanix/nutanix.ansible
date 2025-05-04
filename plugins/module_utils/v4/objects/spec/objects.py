@@ -86,21 +86,6 @@ class ObjectsSpecs:
             obj=objects_sdk.IPAddress,
         ),
         total_capacity_gi_b=dict(type="int"),
-        object_state=dict(
-            type="str",
-            choices=[
-                "DEPLOYING_OBJECT_STORE",
-                "OBJECT_STORE_DEPLOYMENT_FAILED",
-                "DELETING_OBJECT_STORE",
-                "OBJECT_STORE_OPERATION_FAILED",
-                "UNDEPLOYED_OBJECT_STORE",
-                "OBJECT_STORE_OPERATION_PENDING",
-                "OBJECT_STORE_AVAILABLE",
-                "OBJECT_STORE_CERT_CREATION_FAILED",
-                "CREATING_OBJECT_STORE_CERT",
-                "OBJECT_STORE_DELETION_FAILED",
-            ],
-        ),
     )
 
     @classmethod
