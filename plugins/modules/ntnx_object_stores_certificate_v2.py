@@ -138,7 +138,7 @@ failed:
     sample: false
 """
 
-import traceback
+import traceback  # noqa: E402
 import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
