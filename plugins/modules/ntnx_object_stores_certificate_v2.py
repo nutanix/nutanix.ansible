@@ -194,7 +194,7 @@ def create_certificate(module, object_stores_api, result):
     if not path.is_file():
         return module.fail_json(
             "Path to the JSON file which contains the public certificates, private key, and CA certificate or chain is invalid",
-            **result,
+            **result # fmt: skip
         )
     current_spec = get_object_store(module, object_stores_api, object_store_ext_id)
     etag_value = get_etag(data=current_spec)
