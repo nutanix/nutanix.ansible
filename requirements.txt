@@ -18,4 +18,5 @@ ntnx-volumes-py-client>=4.0.1
 ntnx-dataprotection-py-client>=4.0.1
 ntnx_datapolicies_py_client>=4.0.1
 ntnx_lifecycle_py_client>=4.0.1
-pathlib>=1.0.1
+ntnx-objects-py-client>=4.0.1
+pathlib2>=2.3.7
