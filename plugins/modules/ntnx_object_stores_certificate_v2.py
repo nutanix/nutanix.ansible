@@ -139,6 +139,7 @@ failed:
 """
 
 import warnings  # noqa: E402
+
 from pathlib2 import Path  # noqa: E402
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
