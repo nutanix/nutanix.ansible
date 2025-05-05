@@ -82,6 +82,7 @@ from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
 
 from ..module_utils.v3.prism import vms  # noqa: E402
+import sys
 
 
 class Mock_Module:
@@ -98,6 +99,13 @@ class Mock_Module:
 
     def jsonify(self, data):
         return json.dumps(data)
+    
+    def fail_json(self, msg, **kwargs):
+        """Fail with a message"""
+        kwargs["failed"] = True
+        kwargs["msg"] = msg
+        print("\n%s" % self.jsonify(kwargs))
+        sys.exit(1)
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
