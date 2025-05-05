@@ -211,3 +211,7 @@ action_groups:
     - ntnx_lcm_upgrades_v2
     - ntnx_lcm_entities_info_v2
     - ntnx_lcm_status_info_v2
+    - ntnx_object_stores_v2
+    - ntnx_object_stores_info_v2
+    - ntnx_object_stores_certificate_v2
+    - ntnx_object_stores_certificate_info_v2
