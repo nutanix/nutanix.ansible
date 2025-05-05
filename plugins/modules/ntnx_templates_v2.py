@@ -648,7 +648,7 @@ options:
                                 suboptions:
                                     boot_device:
                                         description:
-                                            - The boot device for UEFI boot.
+                                            - The boot device settings for UEFI boot.
                                         type: dict
                                         suboptions:
                                             boot_device_disk:
