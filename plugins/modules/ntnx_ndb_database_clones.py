@@ -311,7 +311,7 @@ EXAMPLES = r"""
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
-      delete_database: True
+      delete_database: true
 
     refresh_schedule:
       days: 2
@@ -355,7 +355,7 @@ EXAMPLES = r"""
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
-      delete_database: True
+      delete_database: true
 
     refresh_schedule:
       days: 2
@@ -365,7 +365,6 @@ EXAMPLES = r"""
     tags:
       ansible-clones: ansible-test-db-clones
   register: result
-
 """
 
 RETURN = r"""
@@ -602,13 +601,13 @@ uuid:
 
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.database_clones import DatabaseClone  # noqa: E402
-from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
-from ..module_utils.ndb.tags import Tag  # noqa: E402
-from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.database_clones import DatabaseClone  # noqa: E402
+from ..module_utils.v3.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
+from ..module_utils.v3.ndb.tags import Tag  # noqa: E402
+from ..module_utils.v3.ndb.time_machines import TimeMachine  # noqa: E402
 
 
 def get_module_spec():

@@ -1,309 +1,308 @@
-  - debug:
-      msg: "Started Negative Creation Cases"
+- name: Started Negative Creation Cases
+  ansible.builtin.debug:
+    msg: "Started Negative Creation Cases"
 
-  - name: Unknown project name
-    ntnx_vms:
-      state: present
-      name: Unknown project name
-      timezone: "UTC"
-      project:
-        name: project
-      cluster:
-        uuid: "{{ cluster.uuid }}"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          clone_image:
-            name:  "{{ centos }}"
-          bus: "SCSI"
-    register: result
-    ignore_errors: True
+- name: Unknown project name
+  ntnx_vms:
+    state: present
+    name: Unknown project name
+    timezone: "UTC"
+    project:
+      name: project
+    cluster:
+      uuid: "{{ cluster.uuid }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        clone_image:
+          name: "{{ centos }}"
+        bus: "SCSI"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.msg == "Failed generating VM Spec"
-        - result.failed == True
-        - result.failed is defined
-        - result.error == "Project project not found."
-      success_msg: ' Success: returned error as expected '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.msg == "Failed generating VM Spec"
+      - result.failed == true
+      - result.failed is defined
+      - result.error == "Project project not found."
+    success_msg: " Success: returned error as expected "
 #############################################################
-  - name: Check if error is produced when disk size is not given for storage container
-    check_mode: yes
-    ntnx_vms:
-      state: present
-      name: VM with storage container
-      timezone: GMT
-      cluster:
-        name: "{{ cluster.name }}"
-      categories:
-        AppType:
-          - Apache_Spark
-      disks:
-        - type: DISK
-          bus: SCSI
-          storage_container:
-            name: "{{ storage_container.name }}"
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-    register: result
-    ignore_errors: True
+- name: Check if error is produced when disk size is not given for storage container
+  check_mode: true
+  ntnx_vms:
+    state: present
+    name: VM with storage container
+    timezone: GMT
+    cluster:
+      name: "{{ cluster.name }}"
+    categories:
+      AppType:
+        - Apache_Spark
+    disks:
+      - type: DISK
+        bus: SCSI
+        storage_container:
+          name: "{{ storage_container.name }}"
+    vcpus: 1
+    cores_per_vcpu: 1
+    memory_gb: 1
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.msg == "Unsupported operation: Unable to create disk, 'size_gb' is required for using storage container."
-        - result.failed == True
-        - result.failed is defined
-      success_msg: ' Success: returned error as expected '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.msg == "Unsupported operation: Unable to create disk, 'size_gb' is required for using storage container."
+      - result.failed == true
+      - result.failed is defined
+    success_msg: " Success: returned error as expected "
 ##################################################################################
-  - name: Unknown Cluster
-    ntnx_vms:
-      state: present
-      name: Unknown Cluster
-      timezone: "UTC"
-      cluster:
-        uuid: "auto_cluster_1aa888141361"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          clone_image:
-            name:  "{{ centos }}"
-          bus: "SCSI"
-    register: result
-    ignore_errors: True
+- name: Unknown Cluster
+  ntnx_vms:
+    state: present
+    name: Unknown Cluster
+    timezone: "UTC"
+    cluster:
+      uuid: "auto_cluster_1aa888141361"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        clone_image:
+          name: "{{ centos }}"
+        bus: "SCSI"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.failed == True
-        - result.response.state == 'ERROR'
-        - result.status_code == 422
-        - result.error == "HTTP Error 422: UNPROCESSABLE ENTITY"
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail Vm created successfully with unknown cluster '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+      - result.response.state == 'ERROR'
+      - result.status_code == 422
+      - result.error == "HTTP Error 422: UNPROCESSABLE ENTITY"
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail Vm created successfully with unknown cluster "
 ################################################################################
-  - name: Unknown Cluster name
-    ntnx_vms:
-      state: present
-      name: Unknown Cluster
-      timezone: "UTC"
-      cluster:
-        name: "auto_cluster"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          clone_image:
-            name:  "{{ centos }}"
-          bus: "SCSI"
-    register: result
-    ignore_errors: True
+- name: Unknown Cluster name
+  ntnx_vms:
+    state: present
+    name: Unknown Cluster
+    timezone: "UTC"
+    cluster:
+      name: "auto_cluster"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        clone_image:
+          name: "{{ centos }}"
+        bus: "SCSI"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.msg == "Failed generating VM Spec"
-        - result.failed == True
-        - result.response is defined
-        - result.error == "Cluster auto_cluster not found."
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail Vm created successfully with unknown cluster '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.msg == "Failed generating VM Spec"
+      - result.failed == true
+      - result.response is defined
+      - result.error == "Cluster auto_cluster not found."
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail Vm created successfully with unknown cluster "
 ###################################################################################
-  - name: Unknown Network name
-    ntnx_vms:
-      state: present
-      name: Unknown Network
-      desc: "Unknown network"
-      categories:
-        AppType:
-          - "Apache_Spark"
-      cluster:
-        name: "{{ cluster.name }}"
-      networks:
-        - is_connected: True
-          subnet:
-            name: "vlan.8000"
-    register: result
-    ignore_errors: True
+- name: Unknown Network name
+  ntnx_vms:
+    state: present
+    name: Unknown Network
+    desc: "Unknown network"
+    categories:
+      AppType:
+        - "Apache_Spark"
+    cluster:
+      name: "{{ cluster.name }}"
+    networks:
+      - is_connected: true
+        subnet:
+          name: "vlan.8000"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.failed == True
-        - result.msg == "Failed generating VM Spec"
-        - result.error == "Subnet vlan.8000 not found."
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail VM created successfully with unknown network name '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+      - result.msg == "Failed generating VM Spec"
+      - result.error == "Subnet vlan.8000 not found."
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail VM created successfully with unknown network name "
 ###################################################################################
-  - name: Unknown Network uuid
-    ntnx_vms:
-      state: present
-      name: Unknown Network
-      desc: "Unknown network"
-      categories:
-        AppType:
-          - "Apache_Spark"
-      cluster:
-        name: "{{ cluster.name }}"
-      networks:
-        - is_connected: True
-          subnet:
-            uuid: "8000"
-    register: result
-    ignore_errors: True
+- name: Unknown Network uuid
+  ntnx_vms:
+    state: present
+    name: Unknown Network
+    desc: "Unknown network"
+    categories:
+      AppType:
+        - "Apache_Spark"
+    cluster:
+      name: "{{ cluster.name }}"
+    networks:
+      - is_connected: true
+        subnet:
+          uuid: "8000"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.failed == True
-        - result.error == "HTTP Error 422: UNPROCESSABLE ENTITY"
-        - result.response.state == 'ERROR'
-        - result.status_code == 422
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail VM created successfully with unknown network name '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+      - result.error == "HTTP Error 422: UNPROCESSABLE ENTITY"
+      - result.response.state == 'ERROR'
+      - result.status_code == 422
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail VM created successfully with unknown network name "
 ###################################################################################
-  - name: Unknow Image name
-    ntnx_vms:
-      state: present
-      name: unknown image_vm
-      timezone: "UTC"
-      cluster:
-        name: "{{ cluster.name }}"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          clone_image:
-            name: "centos-7-cloudinit"
-          bus: "SCSI"
-    register: result
-    ignore_errors: True
+- name: Unknow Image name
+  ntnx_vms:
+    state: present
+    name: unknown image_vm
+    timezone: "UTC"
+    cluster:
+      name: "{{ cluster.name }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        clone_image:
+          name: "centos-7-cloudinit"
+        bus: "SCSI"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.failed == True
-        - result.response.state == 'ERROR'
-        - result.status_code == 422
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail VM created successfully with not existed image '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+      - result.response.state == 'ERROR'
+      - result.status_code == 422
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail VM created successfully with not existed image "
 ########################################################################################
-  - name: Wrong disk size value
-    ntnx_vms:
-      state: present
-      name: "Wrong disk size value"
-      timezone: "UTC"
-      cluster:
-        name: "{{ cluster.name }}"
-      networks:
-        - is_connected: True
-          subnet:
-            name: "{{ network.dhcp.name }}"
-      disks:
-        - type: "DISK"
-          size_gb: 10g
-          bus: "PCI"
-    register: result
-    ignore_errors: True
+- name: Wrong disk size value
+  ntnx_vms:
+    state: present
+    name: "Wrong disk size value"
+    timezone: "UTC"
+    cluster:
+      name: "{{ cluster.name }}"
+    networks:
+      - is_connected: true
+        subnet:
+          name: "{{ network.dhcp.name }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10g
+        bus: "PCI"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed == True
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail VM created successfully with invalid argument for size_gb '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail VM created successfully with invalid argument for size_gb "
 #############################################################################################
-  - name: Image size less than actual
-    ntnx_vms:
-      state: present
-      name: "image size less than actual"
-      categories:
-        AppType:
-          - "Apache_Spark"
-      cluster:
-        name: "{{ cluster.name }}"
-      networks:
-        - is_connected: True
-          subnet:
-            name: "{{ network.dhcp.name }}"
-      disks:
-        - type: "DISK"
-          size_gb: 2 #must be 20
-          bus: "SATA"
-          clone_image:
-            name: "{{ centos }}"
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-      guest_customization:
-        type: "cloud_init"
-        script_path: "cloud_init.yml"
-        is_overridable: True
-    register: result
-    ignore_errors: True
+- name: Image size less than actual
+  ntnx_vms:
+    state: present
+    name: "image size less than actual"
+    categories:
+      AppType:
+        - "Apache_Spark"
+    cluster:
+      name: "{{ cluster.name }}"
+    networks:
+      - is_connected: true
+        subnet:
+          name: "{{ network.dhcp.name }}"
+    disks:
+      - type: "DISK"
+        size_gb: 2 # must be 20
+        bus: "SATA"
+        clone_image:
+          name: "{{ centos }}"
+    vcpus: 1
+    cores_per_vcpu: 1
+    memory_gb: 1
+    guest_customization:
+      type: "cloud_init"
+      script_path: "cloud_init.yml"
+      is_overridable: true
+  register: result
+  ignore_errors: true
 
-
-
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.failed == True
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail: VM created successfully with image size is less than actual '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail: VM created successfully with image size is less than actual "
 #################################################################################
-  - name: Unknow storage container name
-    ntnx_vms:
-      state: present
-      name: unknown storage container
-      timezone: "UTC"
-      cluster:
-        name: "{{ cluster.name }}"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          storage_container:
-            name: "storage"
-          bus: "SCSI"
-    register: result
-    ignore_errors: True
+- name: Unknow storage container name
+  ntnx_vms:
+    state: present
+    name: unknown storage container
+    timezone: "UTC"
+    cluster:
+      name: "{{ cluster.name }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        storage_container:
+          name: "storage"
+        bus: "SCSI"
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.failed == True
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail VM created successfully with unknown storage container name '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail VM created successfully with unknown storage container name "
 #################################################################################
-  - name: Delete vm with unknown uuid
-    ntnx_vms:
-      state: absent
-      vm_uuid: 5
-    register: result
-    ignore_errors: True
+- name: Delete vm with unknown uuid
+  ntnx_vms:
+    state: absent
+    vm_uuid: 5
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.response is defined
-        - result.failed == True
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail deleting VM with unknown uuid '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == true
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail deleting VM with unknown uuid "
 #################################################################################
-  - name: Delete vm with missing uuid
-    ntnx_vms:
-      state: absent
-    register: result
-    ignore_errors: True
+- name: Delete vm with missing uuid
+  ntnx_vms:
+    state: absent
+  register: result
+  ignore_errors: true
 
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed == True
-      success_msg: ' Success: returned error as expected '
-      fail_msg: ' Fail deleting VM with missing uuid '
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    success_msg: " Success: returned error as expected "
+    fail_msg: " Fail deleting VM with missing uuid "

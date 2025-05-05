@@ -166,7 +166,6 @@ EXAMPLES = r"""
     state: "present"
     action: CLEANUP
   register: result
-
 """
 
 RETURN = r"""
@@ -419,8 +418,8 @@ import time  # noqa: E402
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.recovery_plan_jobs import RecoveryPlanJob  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.recovery_plan_jobs import RecoveryPlanJob  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 # TO-DO: Add floating IP assignment spec

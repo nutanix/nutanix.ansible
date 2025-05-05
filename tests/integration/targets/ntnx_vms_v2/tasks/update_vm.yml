@@ -1,0 +1,292 @@
+---
+- name: Start ntnx_vms_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vms_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set VM and nics names
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_test"
+
+- name: Create VM
+  ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    description: "Test VM"
+    num_sockets: 1
+    num_threads_per_core: 1
+    num_cores_per_socket: 1
+    num_numa_nodes: 1
+    memory_size_bytes: 2147483648
+    machine_type: "PC"
+    is_vcpu_hard_pinning_enabled: false
+    is_cpu_passthrough_enabled: true
+    is_memory_overcommit_enabled: false
+    is_gpu_console_enabled: false
+    is_branding_enabled: false
+    is_vga_console_enabled: true
+    is_agent_vm: false
+    enabled_cpu_features:
+      - "HARDWARE_VIRTUALIZATION"
+
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "Test VM"
+      - result.response.num_sockets == 1
+      - result.response.num_threads_per_core == 1
+      - result.response.num_cores_per_socket == 1
+      - result.response.num_numa_nodes == 1
+      - result.response.memory_size_bytes == 2147483648
+      - result.response.machine_type == "PC"
+      - result.response.is_vcpu_hard_pinning_enabled == false
+      - result.response.is_cpu_passthrough_enabled == true
+      - result.response.is_memory_overcommit_enabled == false
+      - result.response.is_gpu_console_enabled == false
+      - result.response.is_branding_enabled == false
+      - result.response.is_vga_console_enabled == true
+      - result.response.is_agent_vm == false
+      - result.response.enabled_cpu_features[0] == "HARDWARE_VIRTUALIZATION"
+    fail_msg: "Unable to Create VM "
+    success_msg: "VM is created successfully "
+
+- name: Set vm_uuid
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+
+################################################################################
+
+- name: Fetch VM details after Creating VM
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VM details after Creating VM Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "Test VM"
+      - result.response.num_sockets == 1
+      - result.response.num_threads_per_core == 1
+      - result.response.num_cores_per_socket == 1
+      - result.response.num_numa_nodes == 1
+      - result.response.memory_size_bytes == 2147483648
+      - result.response.machine_type == "PC"
+      - result.response.is_vcpu_hard_pinning_enabled == false
+      - result.response.is_cpu_passthrough_enabled == true
+      - result.response.is_memory_overcommit_enabled == false
+      - result.response.is_gpu_console_enabled == false
+      - result.response.is_branding_enabled == false
+      - result.response.is_vga_console_enabled == true
+      - result.response.is_agent_vm == false
+      - result.response.enabled_cpu_features[0] == "HARDWARE_VIRTUALIZATION"
+    fail_msg: "Fetch VM details after Creating VM failed "
+    success_msg: "Fetch VM details after Creating VM passed "
+
+################################################################################
+
+- name: Update VM with all attributes with check mode enabled
+  ntnx_vms_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    name: "{{ vm_name }}_updated"
+    description: "Test VM updated"
+    num_sockets: 4
+    num_threads_per_core: 4
+    num_cores_per_socket: 4
+    num_numa_nodes: 4
+    memory_size_bytes: 8589934592
+    machine_type: "Q35"
+    is_vcpu_hard_pinning_enabled: true
+    is_cpu_passthrough_enabled: false
+    is_memory_overcommit_enabled: true
+    is_gpu_console_enabled: true
+    is_branding_enabled: true
+    is_vga_console_enabled: true
+    is_agent_vm: true
+    enabled_cpu_features: HARDWARE_VIRTUALIZATION
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update VM with all attributes with check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ vm_name }}_updated"
+      - result.response.description == "Test VM updated"
+      - result.response.num_sockets == 4
+      - result.response.num_threads_per_core == 4
+      - result.response.num_cores_per_socket == 4
+      - result.response.num_numa_nodes == 4
+      - result.response.memory_size_bytes == 8589934592
+      - result.response.machine_type == "Q35"
+      - result.response.is_vcpu_hard_pinning_enabled == true
+      - result.response.is_cpu_passthrough_enabled == false
+      - result.response.is_memory_overcommit_enabled == true
+      - result.response.is_gpu_console_enabled == true
+      - result.response.is_branding_enabled == true
+      - result.response.is_vga_console_enabled == true
+      - result.response.is_agent_vm == true
+      - result.response.enabled_cpu_features[0] == "HARDWARE_VIRTUALIZATION"
+    fail_msg: "Update VM with all attributes with check mode enabled failed "
+    success_msg: "Update VM with all attributes with check mode enabled passed "
+
+################################################################################
+
+- name: Update VM with all attributes
+  ntnx_vms_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    name: "{{ vm_name }}_updated"
+    description: "Test VM updated"
+    num_sockets: 2
+    num_threads_per_core: 2
+    num_cores_per_socket: 2
+    num_numa_nodes: 2
+    memory_size_bytes: 4294967296
+    machine_type: "Q35"
+    is_vcpu_hard_pinning_enabled: true
+    is_cpu_passthrough_enabled: false
+    is_memory_overcommit_enabled: false
+    is_gpu_console_enabled: false
+    is_branding_enabled: true
+    is_vga_console_enabled: false
+    is_agent_vm: true
+    enabled_cpu_features: HARDWARE_VIRTUALIZATION
+  register: result
+  ignore_errors: true
+
+- name: Update VM with all attributes Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ vm_name }}_updated"
+      - result.response.description == "Test VM updated"
+      - result.response.num_sockets == 2
+      - result.response.num_threads_per_core == 2
+      - result.response.num_cores_per_socket == 2
+      - result.response.num_numa_nodes == 2
+      - result.response.memory_size_bytes == 4294967296
+      - result.response.machine_type == "Q35"
+      - result.response.is_vcpu_hard_pinning_enabled == true
+      - result.response.is_cpu_passthrough_enabled == false
+      - result.response.is_memory_overcommit_enabled == false
+      - result.response.is_gpu_console_enabled == false
+      - result.response.is_branding_enabled == true
+      - result.response.is_vga_console_enabled == false
+      - result.response.is_agent_vm == true
+      - result.response.enabled_cpu_features[0] == "HARDWARE_VIRTUALIZATION"
+    fail_msg: "Update VM with all attributes failed "
+    success_msg: "Update VM with all attributes passed "
+
+################################################################################
+
+- name: Update VM with all attributes to test idempotency
+  ntnx_vms_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    name: "{{ vm_name }}_updated"
+    description: "Test VM updated"
+    num_sockets: 2
+    num_threads_per_core: 2
+    num_cores_per_socket: 2
+    num_numa_nodes: 2
+    memory_size_bytes: 4294967296
+    machine_type: "Q35"
+    is_vcpu_hard_pinning_enabled: true
+    is_cpu_passthrough_enabled: false
+    is_memory_overcommit_enabled: false
+    is_gpu_console_enabled: false
+    is_branding_enabled: true
+    is_vga_console_enabled: false
+    is_agent_vm: true
+    enabled_cpu_features: HARDWARE_VIRTUALIZATION
+  register: result
+  ignore_errors: true
+
+- name: Update VM with all attributes to test idempotency Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.msg == "Nothing to change."
+    fail_msg: "Update VM with all attributes to test idempotency failed "
+    success_msg: "Update VM with all attributes to test idempotency passed "
+
+################################################################################
+
+- name: Fetch VM details after Updating VM attributes
+  ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VM details after Updating VM attributes Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ vm_name }}_updated"
+      - result.response.description == "Test VM updated"
+      - result.response.num_sockets == 2
+      - result.response.num_threads_per_core == 2
+      - result.response.num_cores_per_socket == 2
+      - result.response.num_numa_nodes == 2
+      - result.response.memory_size_bytes == 4294967296
+      - result.response.machine_type == "Q35"
+      - result.response.is_vcpu_hard_pinning_enabled == true
+      - result.response.is_cpu_passthrough_enabled == false
+      - result.response.is_memory_overcommit_enabled == false
+      - result.response.is_gpu_console_enabled == false
+      - result.response.is_branding_enabled == true
+      - result.response.is_vga_console_enabled == false
+      - result.response.is_agent_vm == true
+      - result.response.enabled_cpu_features[0] == "HARDWARE_VIRTUALIZATION"
+    fail_msg: "Fetch VM details after Updating VM attributes failed "
+    success_msg: "Fetch VM details after Updating VM attributes passed "
+
+################################################################################
+
+- name: Delete the VM
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == 'SUCCEEDED'
+      - result.ext_id == "{{ vm_uuid }}"
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "

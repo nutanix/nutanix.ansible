@@ -1,5 +1,5 @@
-- name:
-  debug:
+- name: Start ntnx_project delete tests
+  ansible.builtin.debug:
     msg: "Start ntnx_project delete tests"
 
 - name: Create Project for delete
@@ -9,7 +9,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -22,10 +22,10 @@
     project_uuid: "{{ result.project_uuid }}"
     wait: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Delete Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == 'SUCCEEDED'

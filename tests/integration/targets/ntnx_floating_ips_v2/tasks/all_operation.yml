@@ -1,0 +1,383 @@
+---
+- name: Start testing ntnx_floating_ips_v2 ntnx_floating_ips_info_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_floating_ips_v2 ntnx_floating_ips_info_v2
+
+- name: Generate random floating ip name
+  ansible.builtin.set_fact:
+    fip1_name: "{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
+    fip2_name: "{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
+    fip3_name: "{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
+
+- name: Fetch vm nic reference for tests
+  ntnx_vms_info:
+    vm_uuid: "{{ vm.uuid }}"
+  register: result
+
+- name: Define variable
+  ansible.builtin.set_fact:
+    vm_nic_reference: "{{ result.response.status.resources.nic_list[0].uuid }}"
+
+- name: Fetch categories for assigning
+  ntnx_categories_info_v2:
+  register: result
+
+- name: Define variable
+  ansible.builtin.set_fact:
+    category_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+##############################################################
+- name: Create floating ip with external subnet uuid with check mode
+  ntnx_floating_ips_v2:
+    state: present
+    name: "{{ fip1_name }}"
+    external_subnet_reference: "{{ external_nat_subnet.uuid }}"
+    floating_ip:
+      ipv4:
+        value: "{{ external_nat_subnets[0].floating_ip }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ fip1_name }}"
+      - result.response.floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
+      - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+    fail_msg: " Unable to create floating ip with external subnet uuid with check mode"
+    success_msg: " Floating ip with external subnet uuid created successfully with check mode"
+##############################################################
+- name: Create floating ip with external subnet uuid
+  ntnx_floating_ips_v2:
+    state: present
+    name: "{{ fip1_name }}"
+    external_subnet_reference: "{{ external_nat_subnet.uuid }}"
+    metadata:
+      project_reference_id: "{{ project.uuid }}"
+      owner_reference_id: "{{ users[0] }}"
+      category_ids:
+        - "{{ category_ext_id }}"
+    floating_ip:
+      ipv4:
+        value: "{{ external_nat_subnets[0].floating_ip }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ fip1_name }}"
+      - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response.metadata.owner_reference_id == "{{ users[0] }}"
+      - result.response.metadata.category_ids[0] == "{{ category_ext_id }}"
+      - result.response.floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
+    fail_msg: " Unable to create floating ip with external subnet uuid "
+    success_msg: " Floating ip with external subnet uuid created successfully "
+
+- name: Fetch the created floating IP
+  ntnx_floating_ips_info_v2:
+    filter: name eq '{{ fip1_name }}'
+  register: result
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.changed == false
+      - result.failed == false
+      - result.response[0].name == "{{ fip1_name }}"
+      - result.response[0].external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response[0].metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response[0].metadata.owner_reference_id == "{{ users[0] }}"
+      - result.response[0].metadata.category_ids[0] == "{{ category_ext_id }}"
+      - result.response[0].floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
+
+    fail_msg: " Unable to create floating ip with external subnet uuid "
+    success_msg: " Floating ip with external subnet uuid created successfully "
+
+- name: Define variable
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response[0].ext_id] }}"
+
+- name: Get floating_ips using ext_id
+  ntnx_floating_ips_info_v2:
+    ext_id: "{{ result.response[0].ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.name == "{{ fip1_name }}"
+      - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+
+    fail_msg: " Unable to list fips "
+    success_msg: " fips listed successfully "
+
+##############################################################
+- name: Check idempotency
+  ntnx_floating_ips_v2:
+    state: present
+    name: "{{ fip1_name }}"
+    external_subnet_reference: "{{ external_nat_subnet.uuid }}"
+    ext_id: "{{ result.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Idempotency Status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.msg == "Nothing to change."
+    fail_msg: " Unable to check idempotency "
+    success_msg: " Idempotency check finished successfully "
+##############################################################
+- name: Create floating ip with vpc uuid and private ip association
+  ntnx_floating_ips_v2:
+    state: present
+    external_subnet_reference: "{{ external_nat_subnet.uuid }}"
+    name: "{{ fip2_name }}"
+    association:
+      private_ip_association:
+        private_ip:
+          ipv4:
+            value: "{{ overlay_subnet.private_ip }}"
+        vpc_reference: "{{ vpc.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ fip2_name }}"
+      - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response.association.private_ip.ipv4.value == "{{ overlay_subnet.private_ip }}"
+      - result.response.association.vpc_reference == "{{ vpc.uuid }}"
+
+    fail_msg: " Unable to create floating ip with vpc "
+    success_msg: " Floating ip with vpc uuid and external subnet uuid created successfully "
+
+- name: Fetch the created floating IP
+  ntnx_floating_ips_info_v2:
+    filter: name eq '{{ fip2_name }}'
+  register: result
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ fip2_name }}"
+      - result.response[0].external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response[0].association.private_ip.ipv4.value == "{{ overlay_subnet.private_ip }}"
+      - result.response[0].association.vpc_reference == "{{ vpc.uuid }}"
+    fail_msg: " Unable to create floating ip with vpc "
+    success_msg: " Floating ip with vpc uuid and external subnet uuid created successfully "
+
+- name: Define variable
+  ansible.builtin.set_fact:
+    fip_ext_id: "{{ result.response[0].ext_id }}"
+- name: Define variable
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response[0].ext_id] }}"
+##########################################################
+- name: Update floating ip name with check mode
+  ntnx_floating_ips_v2:
+    state: present
+    name: "{{ fip2_name }}_updated"
+    ext_id: "{{ fip_ext_id }}"
+    association:
+      private_ip_association:
+        private_ip:
+          ipv4:
+            value: "{{ overlay_subnet.private_ip1 }}"
+        vpc_reference: "{{ vpc.uuid }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ result.ext_id }}"
+      - result.response.name == "{{ fip2_name }}_updated"
+      - result.response.association.private_ip.ipv4.value == "{{ overlay_subnet.private_ip1 }}"
+      - result.response.association.vpc_reference == "{{ vpc.uuid }}"
+    fail_msg: " Unable to update floating ip name with check mode"
+    success_msg: " Floating ip name updated successfully with check mode "
+
+##########################################################
+- name: Update floating ip name and private IP
+  ntnx_floating_ips_v2:
+    state: present
+    name: "{{ fip2_name }}_updated"
+    ext_id: "{{ fip_ext_id }}"
+    association:
+      private_ip_association:
+        private_ip:
+          ipv4:
+            value: "{{ overlay_subnet.private_ip1 }}"
+        vpc_reference: "{{ vpc.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ result.ext_id }}"
+      - result.response.name == "{{ fip2_name }}_updated"
+      - result.response.association.private_ip.ipv4.value == "{{ overlay_subnet.private_ip1 }}"
+      - result.response.association.vpc_reference == "{{ vpc.uuid }}"
+    fail_msg: " Unable to update floating ip"
+    success_msg: " Floating ip name updated successfully"
+
+########################################################
+- name: Create floating ip with vm nic reference association
+  ntnx_floating_ips_v2:
+    state: present
+    external_subnet_reference: "{{ external_nat_subnet.uuid }}"
+    association:
+      vm_nic_association:
+        vm_nic_reference: "{{ vm_nic_reference }}"
+    name: "{{ fip3_name }}"
+  ignore_errors: true
+  register: result
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ fip3_name }}"
+      - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response.association.vm_nic_reference == "{{ vm_nic_reference }}"
+    fail_msg: " Unable to create floating ip with vm nic reference "
+    success_msg: " Floating ip with external uuid and vm nic reference created successfully "
+
+- name: Fetch the created floating IP
+  ntnx_floating_ips_info_v2:
+    filter: name eq '{{ fip3_name }}'
+  register: result
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ fip3_name }}"
+      - result.changed == false
+      - result.response[0].external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response[0].association.vm_nic_reference == "{{ vm_nic_reference }}"
+    fail_msg: " Unable to create floating ip with vm"
+    success_msg: " Floating ip with external uuid and vm created successfully "
+
+- name: Define variable
+  ansible.builtin.set_fact:
+    fip_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Define variable
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.response[0].ext_id] }}"
+
+# using dummy reference here for generating spec only
+- name: Generate update spec for floating ip with vm nic reference
+  ntnx_floating_ips_v2:
+    state: present
+    ext_id: "{{ fip_ext_id }}"
+    external_subnet_reference: "{{ external_nat_subnet.uuid }}"
+    association:
+      vm_nic_association:
+        vm_nic_reference: e96b0997-8b1a-4554-881b-f59dd689b3de
+    name: "{{ fip3_name }}"
+  check_mode: true
+  ignore_errors: true
+  register: result
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == result.response.ext_id
+      - result.response.name == "{{ fip3_name }}"
+      - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response.association.vm_nic_reference == "e96b0997-8b1a-4554-881b-f59dd689b3de"
+    fail_msg: " Unable to create floating ip with vm"
+    success_msg: " Floating ip with external uuid and vm created successfully "
+
+##############################################################
+- name: List Floating_ips
+  ntnx_floating_ips_info_v2:
+  register: fips
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - fips.response is defined
+      - fips.response | length >= 1
+    fail_msg: " Unable to list vpcs "
+    success_msg: " Floating_ips listed successfully "
+##############################################################
+- name: List floating_ips using limit
+  ntnx_floating_ips_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: " Unable to list floating_ips "
+    success_msg: " Floating_ips listed successfully "
+#############################################################
+- name: Get floating_ips using ext_id
+  ntnx_floating_ips_info_v2:
+    ext_id: "{{ fips.response.1.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.name == fips.response.1.name
+    fail_msg: " Unable to list fips "
+    success_msg: " fips listed successfully "
+#########################################################
+- name: Delete all created floating ips
+  ntnx_floating_ips_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Define variable
+  ansible.builtin.set_fact:
+    todelete: []
+#########################################################

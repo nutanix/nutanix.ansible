@@ -1,11 +1,12 @@
-- debug:
-    msg: start testing ntnx_protection_rules_info
+- name: Start testing ntnx_protection_rules_info
+  ansible.builtin.debug:
+    msg: Start testing ntnx_protection_rules_info
 
 ##################################################
 - name: Create protection rule with async schedule
   ntnx_protection_rules:
     state: present
-    wait: True
+    wait: true
     name: test-ansible-info-1
     desc: test-ansible-desc-1
     protected_categories:
@@ -15,7 +16,7 @@
       availability_zone_url: "{{dr.primary_az_url}}"
     schedules:
       - source:
-            availability_zone_url: "{{dr.primary_az_url}}"
+          availability_zone_url: "{{dr.primary_az_url}}"
         destination:
           availability_zone_url: "{{dr.recovery_az_url}}"
         protection_type: ASYNC
@@ -46,7 +47,7 @@
 - name: Create protection rule with async schedule
   ntnx_protection_rules:
     state: present
-    wait: True
+    wait: true
     name: test-ansible-info-2
     desc: test-ansible-desc-2
     protected_categories:
@@ -56,7 +57,7 @@
       availability_zone_url: "{{dr.primary_az_url}}"
     schedules:
       - source:
-            availability_zone_url: "{{dr.primary_az_url}}"
+          availability_zone_url: "{{dr.primary_az_url}}"
         destination:
           availability_zone_url: "{{dr.recovery_az_url}}"
         protection_type: ASYNC
@@ -89,10 +90,10 @@
 - name: List all Protection rules
   ntnx_protection_rules_info:
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.metadata.total_matches > 0
@@ -100,9 +101,9 @@
     fail_msg: "Unable to list all protection rules"
     success_msg: "protection rule info obtained successfully"
 
-- set_fact:
+- name: Set test rule name and uuid
+  ansible.builtin.set_fact:
     test_rule_name: "{{result.response.entities.1.status.name}}"
-- set_fact:
     test_rule_uuid: "{{result.response.entities.1.metadata.uuid}}"
 
 ##################################################
@@ -111,10 +112,10 @@
   ntnx_protection_rules_info:
     rule_uuid: "{{ test_rule_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -133,10 +134,10 @@
     filter:
       name: "{{ test_rule_name }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -154,10 +155,10 @@
     length: 1
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == false
@@ -171,13 +172,13 @@
 - name: Delete created protection policy
   ntnx_protection_rules:
     state: absent
-    wait: True
+    wait: true
     rule_uuid: "{{ rule_1.rule_uuid }}"
   register: result
 
 - name: Delete created protection policy
   ntnx_protection_rules:
     state: absent
-    wait: True
+    wait: true
     rule_uuid: "{{ rule_2.rule_uuid }}"
   register: result

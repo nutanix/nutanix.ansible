@@ -1,9 +1,11 @@
 ---
-- module_defaults:
+- name: Initializing variables
+  module_defaults:
     group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: "{{ validate_certs }}"
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
   block:
-    - import_tasks: "list_floating_ips.yml"
+    - name: Import list_floating_ips.yml
+      ansible.builtin.import_tasks: "list_floating_ips.yml"

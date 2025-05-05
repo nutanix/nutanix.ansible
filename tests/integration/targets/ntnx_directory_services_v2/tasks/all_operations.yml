@@ -1,0 +1,391 @@
+---
+- name: Start ntnx_directory_services_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_directory_services_v2 tests
+
+- name: Generate random category key & value
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    directory_service: "{{ random_name }}ansible-ag"
+    todelete: ""
+
+- name: Create ACTIVE_DIRECTORY service with check_mode
+  ntnx_directory_services_v2:
+    state: present
+    name: "{{ directory_service }}"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Status of ACTIVE_DIRECTORY service creation in check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.name == "{{ directory_service }}"
+      - result.response.domain_name == "{{ active_directory.domain_name }}"
+      - result.response.directory_type == "ACTIVE_DIRECTORY"
+      - result.response.url == "{{ active_directory.url }}"
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+    fail_msg: Unable to create ACTIVE_DIRECTORY service in check mode
+    success_msg: ACTIVE_DIRECTORY service created successfully in check mode
+
+########################################################################
+
+- name: Create OpenLDAP service with check_mode
+  ntnx_directory_services_v2:
+    state: present
+    name: "{{ directory_service }}_name"
+    url: "{{ directory_service }}_url"
+    directory_type: OPEN_LDAP
+    domain_name: "{{ directory_service }}_domain_name"
+    service_account:
+      username: "{{ directory_service }}_username"
+      password: "{{ directory_service }}_password"
+    open_ldap_configuration:
+      user_configuration:
+        user_object_class: inetOrgPerson
+        user_search_base: ou=users,dc=example,dc=com
+        username_attribute: uid
+      user_group_configuration:
+        group_object_class: groupOfNames
+        group_search_base: ou=groups,dc=example,dc=com
+        group_member_attribute: member
+        group_member_attribute_value: uid
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create OpenLDAP service with check_mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.name == "{{ directory_service }}_name"
+      - result.response.domain_name == "{{ directory_service }}_domain_name"
+      - result.response.directory_type == "OPEN_LDAP"
+      - result.response.url == "{{ directory_service }}_url"
+      - result.response.service_account.username == "{{ directory_service }}_username"
+      - result.response.service_account.password is defined
+      - result.response.open_ldap_configuration.user_configuration.user_object_class == "inetOrgPerson"
+      - result.response.open_ldap_configuration.user_configuration.user_search_base == "ou=users,dc=example,dc=com"
+      - result.response.open_ldap_configuration.user_configuration.username_attribute == "uid"
+      - result.response.open_ldap_configuration.user_group_configuration.group_object_class == "groupOfNames"
+      - result.response.open_ldap_configuration.user_group_configuration.group_search_base == "ou=groups,dc=example,dc=com"
+      - result.response.open_ldap_configuration.user_group_configuration.group_member_attribute == "member"
+      - result.response.open_ldap_configuration.user_group_configuration.group_member_attribute_value == "uid"
+    fail_msg: Unable to create OPEN_LDAP service in check mode
+    success_msg: OPEN_LDAP service created successfully in check mode
+
+########################################################################
+
+- name: Create ACTIVE_DIRECTORY service
+  ntnx_directory_services_v2:
+    state: present
+    name: "{{ directory_service }}"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    white_listed_groups:
+      - "{{ white_listed_groups[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of ACTIVE_DIRECTORY service creation
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == False
+      - result.response.name == "{{ directory_service }}"
+      - result.response.directory_type == "ACTIVE_DIRECTORY"
+      - result.response.url == "{{ active_directory.url }}"
+      - result.response.domain_name == "{{ active_directory.domain_name }}"
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+      - result.response.ext_id is defined
+      - result.ext_id is defined
+      - result.response.ext_id == result.ext_id
+    fail_msg: "Unable to create ACTIVE_DIRECTORY service "
+    success_msg: "ACTIVE_DIRECTORY service created successfully  "
+
+- name: Adding directory_service external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ result.response.ext_id }}"
+
+########################################################################
+
+- name: Create directory service that already exists
+  ntnx_directory_services_v2:
+    state: present
+    name: "{{ directory_service }}"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    white_listed_groups:
+      - "{{ white_listed_groups[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of ACTIVE_DIRECTORY service creation
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == True
+      - result.response.data.error | length > 0
+      - result.status == 409
+    fail_msg: "Unable to create ACTIVE_DIRECTORY service "
+    success_msg: "ACTIVE_DIRECTORY service created successfully "
+
+########################################################################
+
+- name: Update directory service with all attributes
+  ntnx_directory_services_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    name: "{{ directory_service }}"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    group_search_type: RECURSIVE
+    white_listed_groups:
+      - "{{ white_listed_groups[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of updating ACTIVE_DIRECTORY service with all attributes
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == False
+      - result.ext_id == "{{ todelete }}"
+      - result.response.name == "{{ directory_service }}"
+      - result.response.directory_type == "ACTIVE_DIRECTORY"
+      - result.response.url == "{{ active_directory.url }}"
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+      - result.response.group_search_type == "RECURSIVE"
+      - result.response.white_listed_groups[0] == "{{ white_listed_groups[1] }}"
+    fail_msg: Unable to update ACTIVE_DIRECTORY service with all attributes
+    success_msg: "ACTIVE_DIRECTORY service with all attributes is updated successfully "
+
+########################################################################
+
+- name: Update group search type and white listed groups in directory service
+  ntnx_directory_services_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    group_search_type: NON_RECURSIVE
+    white_listed_groups:
+      - "{{ white_listed_groups[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Update group search type and white listed groups in directory service status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == False
+      - result.ext_id == "{{ todelete }}"
+      - result.response.group_search_type == "NON_RECURSIVE"
+      - result.response.white_listed_groups[0] == "{{ white_listed_groups[0] }}"
+    fail_msg: "update group search type and white listed groups in directory service failed "
+    success_msg: "update group search type and white listed groups in directory service passed "
+
+########################################################################
+
+- name: Verify if idempotency checks are skipped if password is provided
+  ntnx_directory_services_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    name: "{{ directory_service }}"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    group_search_type: NON_RECURSIVE
+    white_listed_groups:
+      - "{{ white_listed_groups[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Test idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.name == "{{ directory_service }}"
+      - result.response.directory_type == "ACTIVE_DIRECTORY"
+      - result.response.url == "{{ active_directory.url }}"
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+      - result.response.group_search_type == "NON_RECURSIVE"
+      - result.response.white_listed_groups[0] == "{{ white_listed_groups[1] }}"
+    fail_msg: "Verify if idempotency checks are skipped if password is provided failed "
+    success_msg: "Verify if idempotency checks are skipped if password is provided passed "
+
+########################################################################
+
+- name: Verify if module is idempotent if same config is provided
+  ntnx_directory_services_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    name: "{{ directory_service }}"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+    group_search_type: NON_RECURSIVE
+    white_listed_groups:
+      - "{{ white_listed_groups[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Test idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.ext_id == "{{ todelete }}"
+      - result.msg == "Nothing to change."
+    fail_msg: "Verify if module is idempotent if same config is provided failed "
+    success_msg: "Verify if module is idempotent if same config is provided passed "
+
+########################################################################
+
+- name: Fetch directory service info using ext id
+  ntnx_directory_services_info_v2:
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch directory service info using ext id status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.ext_id == "{{ todelete }}"
+      - result.response.name == "{{ directory_service }}"
+      - result.response.directory_type == "ACTIVE_DIRECTORY"
+      - result.response.url == "{{ active_directory.url }}"
+      - result.response.domain_name == "{{ active_directory.domain_name }}"
+      - result.response.service_account.username == "{{ active_directory.username }}"
+      - result.response.service_account.password is defined
+      - result.response.group_search_type == "NON_RECURSIVE"
+      - result.response.white_listed_groups[0] == "{{ white_listed_groups[1] }}"
+    fail_msg: Unable to fetch directory service using ext id
+    success_msg: directory service fetched using ext id successfully
+
+########################################################################
+
+- name: List all directory services
+  ntnx_directory_services_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all directory services status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length > 0
+    fail_msg: Unable to list all directory services
+    success_msg: All directory services listed successfully
+
+########################################################################
+
+- name: List all directory services with filter
+  ntnx_directory_services_info_v2:
+    filter: name eq '{{ directory_service }}'
+  register: result
+  ignore_errors: true
+
+- name: List all directory services with filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length == 1
+      - result.response[0].name == "{{ directory_service }}"
+    fail_msg: Unable to list all directory services with filter
+    success_msg: All directory services listed with filter successfully
+
+########################################################################
+
+- name: List all directory services with limit
+  ntnx_directory_services_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all directory services with limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response | length == 1
+    fail_msg: Unable to list all directory services with limit
+    success_msg: All directory services listed with limit successfully
+
+########################################################################
+
+- name: Delete directory service
+  ntnx_directory_services_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Output of delete directory service
+  ansible.builtin.set_fact:
+    msg: "Directory Service with ext_id: {{ todelete }} deleted successfully"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == True
+      - result.failed == False
+      - result.ext_id == "{{ todelete }}"
+      - result.msg == "{{ msg }}"
+    fail_msg: Unable to delete directory service
+    success_msg: directory service is deleted successfully
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
