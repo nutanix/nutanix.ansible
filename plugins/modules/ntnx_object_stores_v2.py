@@ -483,17 +483,6 @@ def update_object_store(module, object_stores_api, result):
     """
     ext_id = module.params.get("ext_id")
     del module.params["state"]
-    sg = SpecGenerator(module)
-    default_spec = objects_sdk.ObjectStore()
-    spec, err = sg.generate_spec(obj=default_spec)
-
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed generating update object store spec", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
 
     current_spec = get_object_store(module, object_stores_api, ext_id)
     etag_value = get_etag(data=current_spec)
@@ -501,7 +490,7 @@ def update_object_store(module, object_stores_api, result):
         return module.fail_json(
             "Unable to fetch etag for Updating Object Store", **result
         )
-
+    sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
     if err:
         result["error"] = err

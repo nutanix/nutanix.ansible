@@ -1,37 +1,19 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Deploy an object store with one worker node with invalid image tag so that the deployment fails.
-# 2. List all object stores with filter to get the external ID of the failed object store.
-# 3. Deploy the object store again using the update operation with the same parameters as the failed deployment.
-# 4. Delete the bucket in the object store.
-# 5. Delete the object store.
-
-# Manual steps before running this playbook:
-# 1. SSH to the PC VM
-# 2. Get into the docker container: `docker exec -it aoss_service_manager sh`
-# 3. Get into the poseidon_master directory: `cd /home/nutanix/config/poseidon_master`
-# 4. Backup the buckets_tools_template.yaml file: `cp buckets_tools_template.yaml buckets_tools_template_backup.yml`
-# 5. Edit the buckets_tools_template.yaml file and change the image tag to an invalid one.
-# 6. Save the file and exit the container.
-# 7. Run the playbook: `ansible-playbook update_objects_v2.yml`
-# 8. When deplyment fails, playbook will pause and ask you to restore the original buckets_tools_template.yaml file.
-# 9. SSH to the PC VM and run: `docker exec -it aoss_service_manager sh`
-# 10. Get into the poseidon_master directory: `cd /home/nutanix/config/poseidon_master`
-# 11. Restore the original buckets_tools_template.yaml file: `mv buckets_tools_template_backup.yml buckets_tools_template.yaml`
-# 12. Exit the container.
-# 13. Press Enter to continue the playbook.
-# 14. The playbook will continue and deploy the object store again using the update operation.
-# 15. Note that it will take more than an hour for the object store deployment to be failed when the image tag is invalid.
+# 1. Deploy an object store with one worker node using update operation
+# 2. Delete the bucket in the object store
+# 3. Delete the object store
+# Note: You can use the update operation to deploy an object store that has failed, so that it will be redeployed again with the same specifications.
 
 - name: Update objects playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: 10.44.76.15
-      nutanix_username: admin
-      nutanix_password: Nutanix.123
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
       validate_certs: false
   tasks:
     - name: Setting Variables
@@ -57,48 +39,6 @@
         api_port: 9440
         username: admin
         password: Nutanix.123
-
-    - name: Deploy object store with one worker node with invalid image tag
-      nutanix.ncp.ntnx_object_stores_v2:
-        name: "ansible-object"
-        cluster_ext_id: "{{ cluster.uuid }}"
-        description: "object store test"
-        domain: "{{ objects.domain }}"
-        num_worker_nodes: "{{ objects.num_worker_nodes }}"
-        storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
-        storage_network_vip:
-          ipv4:
-            value: "{{ objects.storage_network_reference.IPs[0] }}"
-        storage_network_dns_ip:
-          ipv4:
-            value: "{{ objects.storage_network_reference.IPs[1] }}"
-        public_network_reference: "{{ objects.public_network_reference.uuid }}"
-        public_network_ips:
-          - ipv4:
-              value: "{{ objects.public_network_reference.IPs[0] }}"
-        total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
-      register: result
-      ignore_errors: true
-
-    - name: List all object stores with filter
-      nutanix.ncp.ntnx_object_stores_info_v2:
-        filter: name eq 'ansible-object'
-      register: result
-
-    - name: Set object store external ID
-      ansible.builtin.set_fact:
-        object_store_ext_id: "{{ result.response[0].ext_id }}"
-
-    - name: Waiting for user interaction
-      ansible.builtin.pause:
-        prompt:
-          "Please restore the original buckets_tools_template.yaml file and change the image tag to a valid one.
-          \n SSH to the PC VM and run: docker exec -it aoss_service_manager sh
-          \n cd /home/nutanix/config/poseidon_master
-          \n mv buckets_tools_template_backup.yml buckets_tools_template.yaml
-          \n Exit the container
-          \n When the above steps are done, Press Enter to continue..."
-      register: result
 
     - name: Deploy object store with one worker node using update operation
       nutanix.ncp.ntnx_object_stores_v2:
