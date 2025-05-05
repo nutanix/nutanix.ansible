@@ -140,7 +140,10 @@ failed:
 
 import warnings  # noqa: E402
 
-from pathlib import Path  # noqa: E402
+try:
+    from pathlib import Path
+except ImportError:
+    Path = None
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -180,8 +183,17 @@ def create_certificate(module, object_stores_api, result):
     """
     object_store_ext_id = module.params.get("object_store_ext_id")
     path = module.params.get("path")
-    path = Path(path)
-
+    if Path is not None:
+        path = Path(path)
+        if not path.is_file():
+            return module.fail_json(
+                msg="Path to the certificate file is invalid", **result
+            )
+    else:
+        return module.fail_json(
+            msg="Path to the certificate file is invalid, please install pathlib",
+            **result,
+        )
     current_spec = get_object_store(module, object_stores_api, object_store_ext_id)
     etag_value = get_etag(data=current_spec)
     if not etag_value:

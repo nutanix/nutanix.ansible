@@ -18,6 +18,7 @@
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
+        object_store_ext_id: "a079c1ed-d091-46c5-4df8-7eaa2ba86d9b"
         cluster:
           name: "auto_cluster_prod_f660be0f6925"
           uuid: "000633ea-e256-b6a1-185b-ac1f6b6f97e2"
