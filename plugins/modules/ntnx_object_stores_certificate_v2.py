@@ -138,12 +138,18 @@ failed:
     sample: false
 """
 
+import traceback
 import warnings  # noqa: E402
+from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
+SDK_IMP_ERROR = None
 try:
-    from pathlib import Path
+    import pathlib as pathlib  # noqa: E402
 except ImportError:
-    Path = None
+
+    from ..module_utils.v4.sdk_mock import mock_sdk as pathlib  # noqa: E402
+
+    SDK_IMP_ERROR = traceback.format_exc()
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -183,15 +189,10 @@ def create_certificate(module, object_stores_api, result):
     """
     object_store_ext_id = module.params.get("object_store_ext_id")
     path = module.params.get("path")
-    if Path is not None:
-        path = Path(path)
-        if not path.is_file():
-            return module.fail_json(
-                msg="Path to the certificate file is invalid", **result
-            )
-    else:
+    path = pathlib.Path(path)
+    if not path.is_file():
         return module.fail_json(
-            msg="Path to the certificate file is invalid, please install pathlib",
+            msg="Path to the JSON file which contains the public certificates, private key, and CA certificate or chain is invalid",
             **result,
         )
     current_spec = get_object_store(module, object_stores_api, object_store_ext_id)
@@ -225,7 +226,8 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
-
+    if SDK_IMP_ERROR:
+        module.fail_json(msg=missing_required_lib("pathlib"), exception=SDK_IMP_ERROR)
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
