@@ -230,7 +230,7 @@ options:
                 suboptions:
                     boot_device:
                         description:
-                            - The boot device for legacy boot.
+                            - The boot device for UEFI boot.
                         type: dict
                         suboptions:
                             boot_device_disk:
@@ -242,7 +242,9 @@ options:
                                         type: dict
                                         suboptions:
                                             bus_type:
-                                                description: Bus type for the device. The acceptable values are SCSI, IDE, PCI, SATA, SPAPR (only PPC).
+                                                description: 
+                                                    - Bus type for the device. 
+                                                    - The acceptable values are SCSI, IDE, PCI, SATA, SPAPR (only PPC).
                                                 type: str
                                                 choices: ["SCSI", "IDE", "PCI", "SATA", "SPAPR"]
                                                 required: true
