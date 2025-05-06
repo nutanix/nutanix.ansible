@@ -351,11 +351,13 @@
   vars:
     query: "[?device_properties.device_type == 'CDROM'].uuid"
   ignore_errors: true
+  register: result
 
 - name: Get number of disks attached to VM
   ansible.builtin.set_fact:
     disk_count: "{{ result.response.spec.resources.disk_list | length }}"
   ignore_errors: true
+  register: result
 
 - name: Update VM by cloning image into CD ROM
   ntnx_vms:
