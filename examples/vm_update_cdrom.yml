@@ -1,0 +1,42 @@
+########################### UPDATE_VM_CDROM ################################
+---
+- name: Create a VM with empty CD ROM and Update that disk with image
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster:
+          name: "auto_cluster_prod_f660be0f6925"
+        iso_image_name: "Nutanix-VirtIO"
+
+    - name: Create VM with empty CD ROM
+      nutanix.ncp.ntnx_vms:
+        name: "VM with empty CD ROM"
+        cluster:
+          name: "{{ cluster.name }}"
+        categories:
+          Environment:
+            - Production
+        disks:
+          - type: "CDROM"
+            bus: "IDE"
+            empty_cdrom: true
+      register: result
+
+    - name: Update VM by cloning image into CD ROM
+      nutanix.ncp.ntnx_vms:
+        vm_uuid: "{{ result.vm_uuid }}"
+        name: "VM with CD ROM updated"
+        disks:
+          - type: "CDROM"
+            uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+            clone_image:
+              name: "{{ iso_image_name }}"
+      register: result
