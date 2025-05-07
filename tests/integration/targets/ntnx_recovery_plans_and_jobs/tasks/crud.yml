@@ -655,7 +655,25 @@
     fail_msg: "Cleanup job failed"
     success_msg: "Cleanup job run successfully"
 
-################################## Delete Recovery Plan Test########################################
+############################################################### Delete Recovery Plan Test###########################################################################################
+- name: Delete Recovery plan with check mode
+  ntnx_recovery_plans:
+    state: absent
+    plan_uuid: "{{ recovery_plan.plan_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Recovery plan with uuid:{{ recovery_plan.plan_uuid }} will be deleted."
+      - output.plan_uuid == "{{ recovery_plan.plan_uuid }}"
+    fail_msg: "Recovery plan has been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
 
 - name: Delete recovery plan
   ntnx_recovery_plans:

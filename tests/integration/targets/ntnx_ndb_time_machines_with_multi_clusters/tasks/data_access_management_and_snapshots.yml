@@ -171,6 +171,26 @@
     success_msg: snapshot replicated successfully
 
 #######################
+- name: Delete time machine  with check mode
+  ntnx_ndb_time_machine_clusters:
+    state: absent
+    time_machine_uuid: "{{ time_machine.uuid }}"
+    cluster:
+      uuid: "{{cluster.cluster2.uuid}}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Cluster with uuid:{{ time_machine.uuid}} will be deleted from Time Machine."
+      - output.time_machine_uuid  == "{{ time_machine.uuid }}"
+      - output.cluster_uuid == "{{cluster.cluster2.uuid}}"
+    fail_msg: "Time machine  been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
 
 - name: Delete time machine
   ntnx_ndb_time_machine_clusters:

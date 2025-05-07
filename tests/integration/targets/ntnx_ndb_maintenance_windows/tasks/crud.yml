@@ -301,6 +301,23 @@
     success_msg: maintenance window updated successfully
 
 ############################################## delete tests ####################################
+- name: Delete window with check mode
+  ntnx_ndb_maintenance_window:
+    state: absent
+    uuid: "{{ window1_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Window with uuid:{{  window1_uuid }} will be deleted."
+      - output.uuid == "{{ window1_uuid  }}"
+    fail_msg: "window been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
 
 - name: Delete window 1
   ntnx_ndb_maintenance_window:

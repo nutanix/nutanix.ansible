@@ -407,7 +407,26 @@
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
-- name: Delete the database server based tag
+- name: Delete Tag with check mode
+  ntnx_ndb_tags:
+    state: absent
+    uuid: "{{ db_server_tag_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Tag with uuid:{{ db_server_tag_uuid}} will be deleted."
+      - output.uuid == "{{ db_server_tag_uuid }}"
+    fail_msg: "Tag been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
+
+- name: delete the database server based tag
   ntnx_ndb_tags:
     state: absent
     uuid: "{{ db_server_tag_uuid }}"

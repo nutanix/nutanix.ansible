@@ -283,12 +283,19 @@ def remove_database(module, result):
         err_msg = "database_uuid and instance_uuid are required fields for deleting database from database instance"
         module.fail_json(msg=err_msg, **result)
 
+    if module.check_mode:
+        result["db_instance_uuid"] = instance_uuid
+        result["db_uuid"] = database_uuid
+        result["msg"] = "Database with uuid:{0} will be removed.".format(database_uuid)
+        return
+
     _databases = DatabaseInstance(module)
     resp = _databases.remove_linked_database(
         linked_database_uuid=database_uuid, database_instance_uuid=instance_uuid
     )
     result["response"] = resp
     result["db_instance_uuid"] = instance_uuid
+    result["db_uuid"] = database_uuid
 
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]

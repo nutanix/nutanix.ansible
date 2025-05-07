@@ -265,8 +265,15 @@ def delete_user(module, result):
 
     user = User(module)
     resp = user.delete(uuid)
+
+    if module.check_mode:
+        result["uuid"] = uuid
+        result["msg"] = "User with uuid:{0} will be deleted.".format(uuid)
+        return
+
     result["response"] = resp
     result["changed"] = True
+    result["uuid"] = uuid
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

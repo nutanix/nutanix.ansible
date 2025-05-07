@@ -719,7 +719,14 @@ def update_protection_rule(module, result):
 def delete_protection_rule(module, result):
     protection_rule = ProtectionRule(module)
     rule_uuid = module.params["rule_uuid"]
+
+    if module.check_mode:
+        result["rule_uuid"] = rule_uuid
+        result["msg"] = "Role with uuid:{0} will be deleted.".format(rule_uuid)
+        return
+
     resp = protection_rule.delete(uuid=rule_uuid)
+    result["rule_uuid"] = rule_uuid
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
     result["changed"] = True
 

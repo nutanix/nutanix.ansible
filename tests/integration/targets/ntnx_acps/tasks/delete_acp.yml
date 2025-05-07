@@ -49,6 +49,25 @@
     fail_msg: " Unable to Create ACP all specfactions "
     success_msg: " ACP with all specfactions created successfully "
 
+- name: Delete acp with check mode
+  ntnx_acps:
+    state: absent
+    acp_uuid: "{{ result.response.metadata.uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Acp with uuid:{{  result.response.metadata.uuid }} will be deleted."
+      - output.acp_uuid == "{{ result.response.metadata.uuid  }}"
+    fail_msg: "Acp Policy been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
+
 - name: Delete acp
   ntnx_acps:
     state: absent
