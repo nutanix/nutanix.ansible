@@ -474,11 +474,11 @@ def deploy_template(module, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         version_ext_id = module.params.get("version_id")
-        result[
-            "msg"
-        ] = "Template ({0}) with given version ({1}) will be deployed.".format(
-            ext_id,
+        result["msg"] = (
+            "Template ({0}) with given version ({1}) will be deployed.".format(
+                ext_id,
             version_ext_id  # fmt: skip
+            )
         )
         return
 
