@@ -58,8 +58,15 @@
     mainetance_tasks:
       maintenanceWindowId: test_window_uuid
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+            payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+            taskType: OS_PATCHING,
+          }
+        - {
+            payload:
+              { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+            taskType: DB_PATCHING,
+          }
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -70,7 +77,10 @@
       response:
         actionArguments:
           - { name: vm_name, value: ansible-created-vm1-from-time-machine }
-          - { name: client_public_key, value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER }
+          - {
+              name: client_public_key,
+              value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER,
+            }
         computeProfileId: test_compute_uuid
         databaseType: postgres_database
         description: ansible-created-vm1-from-time-machine-time-machine
@@ -78,8 +88,16 @@
         maintenanceTasks:
           maintenanceWindowId: test_window_uuid
           tasks:
-            - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-            - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+            - {
+                payload:
+                  { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+                taskType: OS_PATCHING,
+              }
+            - {
+                payload:
+                  { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+                taskType: DB_PATCHING,
+              }
         networkProfileId: test_network_uuid
         nxClusterId: test_cluster_uuid
         snapshotId: test_snapshot_uuid
@@ -134,7 +152,14 @@
       error:
       failed: false
       response:
-        actionArguments: [{ name: vm_name, value: "{{ vm1_name }}" }, { name: client_public_key, value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER }]
+        actionArguments:
+          [
+            { name: vm_name, value: "{{ vm1_name }}" },
+            {
+              name: client_public_key,
+              value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER,
+            },
+          ]
         computeProfileId: "{{ compute_profile.uuid }}"
         databaseType: postgres_database
         description: ansible-created-vm1-desc
@@ -142,8 +167,16 @@
         maintenanceTasks:
           maintenanceWindowId: "{{ maintenance.window_uuid }}"
           tasks:
-            - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-            - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+            - {
+                payload:
+                  { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+                taskType: OS_PATCHING,
+              }
+            - {
+                payload:
+                  { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+                taskType: DB_PATCHING,
+              }
         networkProfileId: "{{ network_profile.uuid }}"
         nxClusterId: "{{ cluster.cluster1.uuid }}"
         softwareProfileId: "{{ software_profile.uuid }}"
@@ -474,11 +507,23 @@
       error:
       failed: false
       response:
-        entities: { ERA_DBSERVER: ["{{ db_server_uuid }}", test_vm_1], ERA_DBSERVER_CLUSTER: [test_cluter_1, test_cluter_2] }
+        entities:
+          {
+            ERA_DBSERVER: ["{{ db_server_uuid }}", test_vm_1],
+            ERA_DBSERVER_CLUSTER: [test_cluter_1, test_cluter_2],
+          }
         maintenanceWindowId: "{{ maintenance.window_uuid }}"
         tasks:
-          - { payload: { prePostCommand: { postCommand: ls, preCommand: ls -a } }, taskType: OS_PATCHING }
-          - { payload: { prePostCommand: { postCommand: ls, preCommand: ls -a } }, taskType: DB_PATCHING }
+          - {
+              payload:
+                { prePostCommand: { postCommand: ls, preCommand: ls -a } },
+              taskType: OS_PATCHING,
+            }
+          - {
+              payload:
+                { prePostCommand: { postCommand: ls, preCommand: ls -a } },
+              taskType: DB_PATCHING,
+            }
       uuid: "{{ maintenance.window_uuid }}"
 
 - name: Check mode status
@@ -505,7 +550,12 @@
       changed: false
       error:
       failed: false
-      response: { entities: { ERA_DBSERVER: ["{{ db_server_uuid }}"] }, maintenanceWindowId: "{{ maintenance.window_uuid }}", tasks: [] }
+      response:
+        {
+          entities: { ERA_DBSERVER: ["{{ db_server_uuid }}"] },
+          maintenanceWindowId: "{{ maintenance.window_uuid }}",
+          tasks: [],
+        }
       uuid: "{{ maintenance.window_uuid }}"
 
 - name: Check mode status
@@ -729,8 +779,15 @@
     maintenance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+            payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+            taskType: OS_PATCHING,
+          }
+        - {
+            payload:
+              { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+            taskType: DB_PATCHING,
+          }
 
 - name: Check mode status
   ansible.builtin.assert:

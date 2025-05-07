@@ -67,7 +67,6 @@
     fail_msg: "Acp Policy been deleted successfully within check_mode"
     success_msg: "Returned As expected"
 
-
 - name: Delete acp
   ntnx_acps:
     state: absent

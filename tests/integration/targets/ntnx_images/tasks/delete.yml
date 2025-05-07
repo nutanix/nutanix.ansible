@@ -21,7 +21,6 @@
     fail_msg: "Unable to create image with minimal spec for delete tests"
     success_msg: "Image with minimal spec created successfully"
 
-
 - name: Delete image with check mode
   ntnx_images:
     state: absent

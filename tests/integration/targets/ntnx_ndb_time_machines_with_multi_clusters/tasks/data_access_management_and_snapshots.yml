@@ -144,7 +144,12 @@
       changed: false
       error:
       failed: false
-      response: { lcmConfig: { snapshotLCMConfig: { expiryDetails: { expireInDays: 20 } } }, nxClusterIds: ["{{ cluster.cluster2.uuid }}"] }
+      response:
+        {
+          lcmConfig:
+            { snapshotLCMConfig: { expiryDetails: { expireInDays: 20 } } },
+          nxClusterIds: ["{{ cluster.cluster2.uuid }}"],
+        }
       snapshot_uuid: "{{ snapshot_uuid }}"
 - name: Check snapshot replication spec
   ansible.builtin.assert:
@@ -273,5 +278,4 @@
       - result.failed == false
     fail_msg: "fail: Unable to remove cluster from time machine"
     success_msg: "pass: cluster from time machine removed successfully"
-
 #######################

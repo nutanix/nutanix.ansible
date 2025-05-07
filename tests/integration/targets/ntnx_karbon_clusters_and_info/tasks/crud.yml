@@ -467,8 +467,8 @@
 - name: Delete pool with check mode
   ntnx_karbon_clusters_node_pools:
     state: absent
-    node_pool_name:  "{{node1_name}}"
-    cluster_name:  "{{karbon_name}}"
+    node_pool_name: "{{node1_name}}"
+    cluster_name: "{{karbon_name}}"
   register: output
   ignore_errors: true
   check_mode: true

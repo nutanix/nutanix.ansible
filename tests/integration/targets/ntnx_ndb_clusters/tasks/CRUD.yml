@@ -339,8 +339,8 @@
 
 - name: delete cluster
   ntnx_ndb_clusters:
-      uuid:    "{{todelete}}"
-      state: absent
+    uuid: "{{todelete}}"
+    state: absent
   register: result
   ignore_errors: true
   no_log: true

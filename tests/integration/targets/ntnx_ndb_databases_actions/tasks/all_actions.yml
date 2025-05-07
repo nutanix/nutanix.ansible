@@ -118,7 +118,8 @@
       response:
         lcmConfig: { snapshotLCMConfig: { expiryDetails: { expireInDays: 4 } } }
         name: "{{ snapshot_name }}"
-        replicateToClusterIds: ["{{ cluster.cluster1.uuid }}", test_uuid2, test_uuid3]
+        replicateToClusterIds:
+          ["{{ cluster.cluster1.uuid }}", test_uuid2, test_uuid3]
       snapshot_uuid:
 
 - name: Check mode status
@@ -271,7 +272,15 @@
       changed: false
       error:
       failed: false
-      response: { actionArguments: [{ name: preRestoreLogCatchup, value: false }, { name: switch_log, value: true }], forRestore: false }
+      response:
+        {
+          actionArguments:
+            [
+              { name: preRestoreLogCatchup, value: false },
+              { name: switch_log, value: true },
+            ],
+          forRestore: false,
+        }
 - name: Check mode status
   ansible.builtin.assert:
     that:
@@ -292,8 +301,15 @@
       changed: false
       error:
       failed: false
-      response: { actionArguments: [{ name: preRestoreLogCatchup, value: true }, { name: switch_log, value: true }], forRestore: true }
-
+      response:
+        {
+          actionArguments:
+            [
+              { name: preRestoreLogCatchup, value: true },
+              { name: switch_log, value: true },
+            ],
+          forRestore: true,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -368,7 +384,6 @@
         snapshotId:
         timeZone:
         userPitrTimestamp:
-
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -506,7 +521,11 @@
       db_instance_uuid: "{{ db_uuid }}"
       error:
       failed: false
-      response: { databases: [databaseName: test1, databaseName: test2, databaseName: test3] }
+      response:
+        {
+          databases:
+            [databaseName: test1, databaseName: test2, databaseName: test3],
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -543,8 +562,7 @@
     fail_msg: Unable to add database to database instance
     success_msg: databases added to database instance successfully
 
-
-- name:  remove databases in database instance  with check mode
+- name: remove databases in database instance  with check mode
   ntnx_ndb_linked_databases:
     state: absent
     db_instance_uuid: "{{db_uuid}}"

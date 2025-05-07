@@ -674,7 +674,6 @@
     fail_msg: "Recovery plan has been deleted successfully within check_mode"
     success_msg: "Returned As expected"
 
-
 - name: Delete recovery plan
   ntnx_recovery_plans:
     plan_uuid: "{{recovery_plan.plan_uuid}}"

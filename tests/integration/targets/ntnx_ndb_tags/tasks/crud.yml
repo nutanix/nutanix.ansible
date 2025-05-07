@@ -25,7 +25,13 @@
 
 - name: Define variable for expected response
   ansible.builtin.set_fact:
-    expected_response: { description: tag-created-by-ansible, entityType: TIME_MACHINE, name: "{{ tag_name }}-timemachine", required: true }
+    expected_response:
+      {
+        description: tag-created-by-ansible,
+        entityType: TIME_MACHINE,
+        name: "{{ tag_name }}-timemachine",
+        required: true,
+      }
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -424,7 +430,6 @@
       - output.uuid == "{{ db_server_tag_uuid }}"
     fail_msg: "Tag been deleted successfully within check_mode"
     success_msg: "Returned As expected"
-
 
 - name: delete the database server based tag
   ntnx_ndb_tags:

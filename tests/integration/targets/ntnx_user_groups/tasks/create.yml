@@ -129,7 +129,6 @@
 #     fail_msg: "Unable to list user groups using ascending name sorting"
 #     success_msg: "user groups listed successfully using ascending name sorting"
 
-
 - name: Delete user group with check mode
   ntnx_user_groups:
     state: absent
