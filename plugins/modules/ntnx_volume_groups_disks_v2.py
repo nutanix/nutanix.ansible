@@ -354,6 +354,10 @@ def delete_disk(module, result):
     result["ext_id"] = ext_id
     result["volume_group_ext_id"] = volume_group_ext_id
 
+    if module.check_mode:
+        result["msg"] = "VG Disk with ext_id: {0} will be deleted.".format(ext_id)
+        return
+
     vgs = get_vg_api_instance(module)
     vg = get_volume_group_disk(module, vgs, ext_id, volume_group_ext_id)
     etag = get_etag(vg)

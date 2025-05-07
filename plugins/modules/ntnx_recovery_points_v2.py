@@ -391,9 +391,9 @@ def update_expiry_date_recovery_point(module, result):
     new_expiration_time = module.params.get("expiration_time")
 
     if new_expiration_time is None:
-        result[
-            "error"
-        ] = "Expiration time is required for updating recovery point and other fields can't be updated."
+        result["error"] = (
+            "Expiration time is required for updating recovery point and other fields can't be updated."
+        )
         module.fail_json(msg="Expiration time is required", **result)
 
     if int(old_expiration_time.timestamp()) == int(
@@ -413,9 +413,9 @@ def update_expiry_date_recovery_point(module, result):
     elif not check_recovery_point_idempotency_without_expiration(
         old_spec.to_dict(), update_spec.to_dict()
     ):
-        result[
-            "warning"
-        ] = "Only Expiration time Updation is allowed. Can't update other fields."
+        result["warning"] = (
+            "Only Expiration time Updation is allowed. Can't update other fields."
+        )
 
     expirationTimeSpec = data_protection_sdk.ExpirationTimeSpec()
     expirationTimeSpec.expiration_time = new_expiration_time
@@ -447,6 +447,12 @@ def delete_recovery_point(module, result):
     recovery_points = get_recovery_point_api_instance(module)
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "Recovery point with ext_id: {0} will be deleted.".format(
+            ext_id
+        )
+        return
 
     old_spec = get_recovery_point(module, recovery_points, ext_id)
 

@@ -461,6 +461,10 @@ def delete_image(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
+    if module.check_mode:
+        result["msg"] = "Image with ext_id: {0} will be deleted.".format(ext_id)
+        return
+
     current_spec = get_image(module, images, ext_id=ext_id)
 
     etag = get_etag(data=current_spec)

@@ -199,6 +199,12 @@ def delete_template_version(module, result):
     result["template_ext_id"] = template_ext_id
     result["ext_id"] = ext_id
 
+    if module.check_mode:
+        result["msg"] = "Template version with ext_id: {0} will be deleted.".format(
+            ext_id
+        )
+        return
+
     current_spec = get_template(module, templates, template_ext_id)
 
     etag = get_etag(data=current_spec)
