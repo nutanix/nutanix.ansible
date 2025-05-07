@@ -359,7 +359,7 @@ def delete_cd_rom(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "CD ROM with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "CD ROM with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     vm = get_vm(module, vms, vm_ext_id)

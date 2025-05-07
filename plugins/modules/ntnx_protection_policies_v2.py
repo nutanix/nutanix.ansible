@@ -712,7 +712,7 @@ def delete_protection_policy(module, protection_policies, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Protection policy with ext_id: {0} will be deleted.".format(
+        result["msg"] = "Protection policy with ext_id:{0} will be deleted.".format(
             ext_id
         )
         return

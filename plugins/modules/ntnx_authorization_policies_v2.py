@@ -400,7 +400,9 @@ def delete_authorization_policy(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Authorization policy with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "Authorization policy with ext_id:{0} will be deleted.".format(
+            ext_id
+        )
         return
 
     current_spec = get_authorization_policy(
@@ -428,9 +430,9 @@ def delete_authorization_policy(module, result):
 
     result["changed"] = True
     if resp is None:
-        result[
-            "msg"
-        ] = "Authorization policy with ext_id: {} deleted successfully".format(ext_id)
+        result["msg"] = (
+            "Authorization policy with ext_id: {} deleted successfully".format(ext_id)
+        )
     else:
         result["response"] = strip_internal_attributes(resp.to_dict())
 

@@ -449,9 +449,7 @@ def delete_recovery_point(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Recovery point with ext_id: {0} will be deleted.".format(
-            ext_id
-        )
+        result["msg"] = "Recovery point with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     old_spec = get_recovery_point(module, recovery_points, ext_id)

@@ -504,7 +504,7 @@ def delete_storage_container(module, storage_container_api, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Storage container with ext_id: {0} will be deleted.".format(
+        result["msg"] = "Storage container with ext_id:{0} will be deleted.".format(
             ext_id
         )
         return

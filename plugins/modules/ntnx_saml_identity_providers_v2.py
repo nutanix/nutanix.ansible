@@ -389,7 +389,7 @@ def delete_identity_provider(module, identity_providers, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Identity provider with ext_id: {0} will be deleted.".format(
+        result["msg"] = "Identity provider with ext_id:{0} will be deleted.".format(
             ext_id
         )
         return

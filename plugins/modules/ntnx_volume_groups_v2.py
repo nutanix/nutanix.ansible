@@ -356,7 +356,7 @@ def delete_vg(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "VG with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "VG with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     vgs = get_vg_api_instance(module)

@@ -538,7 +538,7 @@ def delete_route_table(module, route_api_instance, result):
     result["route_table_ext_id"] = route_table_ext_id
 
     if module.check_mode:
-        result["msg"] = "Route table with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "Route table with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     resp = None

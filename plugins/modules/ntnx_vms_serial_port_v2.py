@@ -285,7 +285,7 @@ def delete_serial_port(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Serial port with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "Serial port with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     vmm = get_vm_api_instance(module)

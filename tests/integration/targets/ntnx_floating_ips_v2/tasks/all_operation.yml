@@ -369,6 +369,26 @@
     fail_msg: " Unable to list fips "
     success_msg: " fips listed successfully "
 #########################################################
+
+- name: Delete floating IP with check mode enabled
+  ntnx_floating_ips_v2:
+    state: absent
+    ext_id: "{{ fip_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete floating IP with check mode Status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ fip_ext_id }}"
+      - result.msg == "Floating IP with ext_id:{{ fip_ext_id }} will be deleted."
+    fail_msg: "Delete floating ip with check mode failed"
+    success_msg: "Delete floating ip with check mode passed"
+
 - name: Delete all created floating ips
   ntnx_floating_ips_v2:
     state: absent

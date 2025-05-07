@@ -897,7 +897,7 @@ def delete_network_security_policy(module, result):
 
     if module.check_mode:
         result["msg"] = (
-            "Network security policy with ext_id: {0} will be deleted.".format(ext_id)
+            "Network security policy with ext_id:{0} will be deleted.".format(ext_id)
         )
         return
 

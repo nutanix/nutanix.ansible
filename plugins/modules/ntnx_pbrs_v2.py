@@ -937,7 +937,7 @@ def delete_pbr(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "PBR with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "PBR with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     current_spec = get_routing_policy(module, pbrs, ext_id=ext_id)

@@ -324,7 +324,7 @@ def delete_address_group(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Address group with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "Address group with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     current_spec = get_address_group(module, address_groups, ext_id)

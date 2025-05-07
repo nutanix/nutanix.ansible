@@ -477,7 +477,7 @@ def delete_policy(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Policy with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "Policy with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     current_spec = get_policy(module, policies, ext_id=ext_id)

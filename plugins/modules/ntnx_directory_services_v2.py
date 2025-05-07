@@ -420,7 +420,9 @@ def delete_directory_service(module, directory_services, result):
     current_spec = get_directory_service(module, directory_services, ext_id=ext_id)
 
     if module.check_mode:
-        result["msg"] = "Directory Service with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "Directory service with ext_id:{0} will be deleted.".format(
+            ext_id
+        )
         return
 
     etag = get_etag(data=current_spec)

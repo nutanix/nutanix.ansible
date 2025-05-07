@@ -459,7 +459,7 @@ def delete_floating_ip(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Floating IP with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "Floating IP with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     current_spec = get_floating_ip(module, floating_ips, ext_id=ext_id)

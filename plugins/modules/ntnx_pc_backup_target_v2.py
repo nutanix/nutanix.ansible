@@ -405,7 +405,7 @@ def delete_backup_target(module, domain_manager_backups_api, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Backup target with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "Backup target with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     current_spec = get_backup_target(module, domain_manager_backups_api, ext_id)

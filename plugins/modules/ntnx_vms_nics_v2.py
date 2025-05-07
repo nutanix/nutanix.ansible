@@ -474,7 +474,7 @@ def delete_nic(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "NIC with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "NIC with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     vms = get_vm_api_instance(module)

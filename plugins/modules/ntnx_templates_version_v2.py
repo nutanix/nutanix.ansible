@@ -200,7 +200,7 @@ def delete_template_version(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Template version with ext_id: {0} will be deleted.".format(
+        result["msg"] = "Template version with ext_id:{0} will be deleted.".format(
             ext_id
         )
         return

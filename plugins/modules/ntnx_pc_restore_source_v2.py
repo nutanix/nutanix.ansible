@@ -286,7 +286,7 @@ def delete_restore_source(module, domain_manager_backups_api, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "Restore source with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "Restore source with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     current_spec = get_restore_source(module, domain_manager_backups_api, ext_id)

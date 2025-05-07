@@ -598,7 +598,7 @@ def delete_vpc(module, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = "VPC with ext_id: {0} will be deleted.".format(ext_id)
+        result["msg"] = "VPC with ext_id:{0} will be deleted.".format(ext_id)
         return
 
     current_spec = get_vpc(module, vpcs, ext_id=ext_id)
