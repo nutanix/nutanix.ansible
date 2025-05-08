@@ -354,6 +354,25 @@
 
 ################################################################
 
+- name: Delete subnet with check mode enabled
+  ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete subnet with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Subnet with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: " Delete subnet with check mode enabled failed "
+    success_msg: " Delete subnet with check mode enabled passed "
+
 - name: Delete all Created Subnets
   ntnx_subnets_v2:
     state: absent

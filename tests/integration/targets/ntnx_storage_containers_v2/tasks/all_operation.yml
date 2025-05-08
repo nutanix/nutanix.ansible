@@ -370,6 +370,25 @@
     fail_msg: Unable to fetch all storage containers with limit
     success_msg: All storage containers fetched successfully with limit
 
+- name: Delete storage container with check mode enabled
+  ntnx_storage_containers_v2:
+    state: absent
+    ext_id: "{{ storage_container_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete storage container with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ storage_container_ext_id }}"
+      - result.msg == "Storage container with ext_id:{{ storage_container_ext_id }} will be deleted."
+    fail_msg: "Delete storage container with check mode enabled failed"
+    success_msg: "Delete storage container with check mode enabled passed"
+
 - name: Delete all Created storage containers
   ntnx_storage_containers_v2:
     state: absent

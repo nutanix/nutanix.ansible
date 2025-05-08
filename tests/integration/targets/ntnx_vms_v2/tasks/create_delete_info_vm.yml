@@ -608,6 +608,27 @@
     fail_msg: "Unable to list VMs "
     success_msg: VMs  listed successfully
 ########################################################################
+
+- name: Delete VM with check mode is enabled
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete VM with check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "VM with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete VM with check mode is enabled failed"
+    success_msg: "Delete VM with check mode is enabled passed"
+########################################################################
+
 - name: Delete all Created VMs
   ntnx_vms_v2:
     state: absent
