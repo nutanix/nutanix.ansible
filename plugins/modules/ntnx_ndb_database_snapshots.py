@@ -366,12 +366,18 @@ def delete_snapshot(module, result):
     snapshots = Snapshot(module)
     resp = snapshots.delete(uuid=snapshot_uuid)
 
+    if module.check_mode:
+        result["snapshot_uuid"] = snapshot_uuid
+        result["msg"] = "Snapshot with uuid:{0} will be deleted.".format(snapshot_uuid)
+        return
+
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]
         operations = Operation(module)
         time.sleep(3)  # to get ops ID functional
         resp = operations.wait_for_completion(ops_uuid, delay=2)
 
+    result["snapshot_uuid"] = snapshot_uuid
     result["response"] = resp
     result["changed"] = True
 

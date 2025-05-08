@@ -298,6 +298,26 @@
 
 ######################################### Delete disk tests #########################################
 
+- name: Delete disk with check mode is enabled
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    ext_id: "{{ disk1_uuid }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete disk with check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ disk1_uuid }}"
+      - result.msg == "VG Disk with ext_id:{{ disk1_uuid }} will be deleted."
+    fail_msg: "Delete disk with check mode is enabled failed"
+    success_msg: "Delete disk with check mode is enabled passed"
+
 - name: Delete disk
   nutanix.ncp.ntnx_volume_groups_disks_v2:
     state: absent

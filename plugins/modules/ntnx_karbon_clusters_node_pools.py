@@ -320,6 +320,12 @@ def delete_pool(module, result):
     cluster_name = module.params["cluster_name"]
     pool_name = module.params["node_pool_name"]
 
+    if module.check_mode:
+        result["cluster_name"] = cluster_name
+        result["node_pool_name"] = pool_name
+        result["msg"] = "Pool with name:{0} will be deleted.".format(pool_name)
+        return
+
     delete_nodes_of_pool(module, result)
 
     node_pool = NodePool(module, resource_type="/v1-beta.1/k8s/clusters")

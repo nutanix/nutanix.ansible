@@ -771,6 +771,27 @@
     fail_msg: " Unable to list pbrs "
     success_msg: " PBRs listed successfully "
 ###############################################################################################################################
+
+- name: Delete pbr with check mode enabled
+  ntnx_pbrs_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete pbr with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "PBR with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: " Delete pbr with check mode enabled failed"
+    success_msg: " Delete pbr with check mode enabled finished successfully"
+###############################################################################################################################
+
 - name: Delete all created pbrs
   ntnx_pbrs_v2:
     state: absent

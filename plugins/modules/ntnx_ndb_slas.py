@@ -207,6 +207,11 @@ def delete_sla(module, result):
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
 
+    if module.check_mode:
+        result["uuid"] = uuid
+        result["msg"] = "Sla with uuid:{0} will be deleted.".format(uuid)
+        return
+
     sla, err = _sla.get_sla(uuid=uuid)
     if err:
         module.fail_json(msg="Failed fetching sla info", **result)
@@ -221,6 +226,7 @@ def delete_sla(module, result):
             msg="sla delete failed",
             response=resp,
         )
+    result["uuid"] = uuid
     result["changed"] = True
 
 

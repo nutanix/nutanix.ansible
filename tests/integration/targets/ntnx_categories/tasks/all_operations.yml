@@ -131,7 +131,25 @@
     fail_msg: "Fail: unable to update existing category by deleting all values "
     success_msg: "Passed: update existing category by deleting all values finished successfully"
 #################
-- name: Delete the category
+- name: Delete category with check mode
+  ntnx_categories:
+    state: absent
+    name: "{{ first_category.name }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Category with name:{{ first_category.name }} will be deleted."
+      - output.category_name == "{{ first_category.name }}"
+    fail_msg: "category been deleted successfully within check_mode"
+    success_msg: "Returned As expected"
+
+- name: Delte the category
   ntnx_categories:
     state: "absent"
     name: "{{first_category.name}}"

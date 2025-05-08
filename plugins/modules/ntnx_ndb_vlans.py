@@ -373,8 +373,14 @@ def delete_vlan(module, result):
     if not uuid:
         module.fail_json(msg="vlan_uuid is required field for delete", **result)
 
+    if module.check_mode:
+        result["uuid"] = uuid
+        result["msg"] = "Vlan with uuid:{0} will be deleted.".format(uuid)
+        return
+
     resp = vlan.delete(uuid)
 
+    result["uuid"] = uuid
     result["response"] = resp
     result["changed"] = True
 

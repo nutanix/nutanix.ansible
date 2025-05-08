@@ -542,6 +542,27 @@
 
 ##################################################################################
 
+- name: Delete image with check mode enabled
+  ntnx_images_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete image with check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Image with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete image with check mode enabled failed  "
+    success_msg: "Delete image with check mode enabled passed "
+
+#################################################################################
+
 - name: Delete images
   ntnx_images_v2:
     state: absent

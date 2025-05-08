@@ -192,6 +192,12 @@ def update_address_group(module, result):
 def delete_address_group(module, result):
     address_group = AddressGroup(module)
     uuid = module.params["address_group_uuid"]
+
+    if module.check_mode:
+        result["address_group_uuid"] = uuid
+        result["msg"] = "Address group with uuid:{0} will be deleted.".format(uuid)
+        return
+
     address_group.delete(uuid=uuid, no_response=True)
     result["response"] = {"msg": "Address group deleted successfully"}
     result["address_group_uuid"] = uuid

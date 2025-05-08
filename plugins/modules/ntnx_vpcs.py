@@ -256,6 +256,12 @@ def delete_vpc(module, result):
     vpc_uuid = module.params["vpc_uuid"]
 
     vpc = Vpc(module)
+
+    if module.check_mode:
+        result["vpc_uuid"] = vpc_uuid
+        result["msg"] = "VPC with uuid:{0} will be deleted.".format(vpc_uuid)
+        return
+
     resp = vpc.delete(vpc_uuid)
     result["changed"] = True
     result["response"] = resp

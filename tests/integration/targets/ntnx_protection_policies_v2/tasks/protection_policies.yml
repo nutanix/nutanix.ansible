@@ -1543,6 +1543,25 @@
 
 ########################################################################################
 
+- name: Delete protection policy with check mode enabled
+  nutanix.ncp.ntnx_protection_policies_v2:
+    ext_id: "{{ todelete[0] }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete protection policy with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Protection policy with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete protection policy with check mode failed"
+    success_msg: "Delete protection policy with check mode passed"
+
 - name: Delete all protection policies
   nutanix.ncp.ntnx_protection_policies_v2:
     ext_id: "{{ item }}"

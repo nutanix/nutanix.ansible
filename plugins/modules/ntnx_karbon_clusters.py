@@ -462,6 +462,11 @@ def delete_cluster(module, result):
         result["error"] = "Missing parameter name in playbook"
         module.fail_json(msg="Failed deleting cluster", **result)
 
+    if module.check_mode:
+        result["cluster_name"] = cluster_name
+        result["msg"] = "Cluster with name:{0} will be deleted.".format(cluster_name)
+        return
+
     cluster = Cluster(module)
     resp = cluster.delete(cluster_name)
     result["changed"] = True
