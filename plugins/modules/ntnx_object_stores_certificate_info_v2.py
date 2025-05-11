@@ -13,6 +13,7 @@ version_added: 2.2.0
 description:
     - Fetch specific object store certificate info if external ID is provided
     - Fetch list of multiple object store certificates info if external ID is not provided with optional filters
+    - This module uses PC v4 APIs based SDKs
 options:
     object_store_ext_id:
         description: object store external ID

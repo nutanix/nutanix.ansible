@@ -43,21 +43,6 @@ class ObjectsSpecs:
         ipv6=dict(type="dict", options=ipv6_spec, obj=objects_sdk.IPv6Address),
     )
 
-    storage_network_vip_spec = dict(
-        ipv4=dict(type="dict", options=ipv4_spec, obj=objects_sdk.IPv4Address),
-        ipv6=dict(type="dict", options=ipv6_spec, obj=objects_sdk.IPv6Address),
-    )
-
-    storage_network_dns_ip_spec = dict(
-        ipv4=dict(type="dict", options=ipv4_spec, obj=objects_sdk.IPv4Address),
-        ipv6=dict(type="dict", options=ipv6_spec, obj=objects_sdk.IPv6Address),
-    )
-
-    public_network_ips_spec = dict(
-        ipv4=dict(type="dict", options=ipv4_spec, obj=objects_sdk.IPv4Address),
-        ipv6=dict(type="dict", options=ipv6_spec, obj=objects_sdk.IPv6Address),
-    )
-
     object_store_spec = dict(
         name=dict(type="str"),
         metadata=dict(type="dict", options=metadata_spec, obj=objects_sdk.Metadata),
@@ -70,19 +55,19 @@ class ObjectsSpecs:
         storage_network_reference=dict(type="str"),
         storage_network_vip=dict(
             type="dict",
-            options=storage_network_vip_spec,
+            options=ip_address_spec,
             obj=objects_sdk.IPAddress,
         ),
         storage_network_dns_ip=dict(
             type="dict",
-            options=storage_network_dns_ip_spec,
+            options=ip_address_spec,
             obj=objects_sdk.IPAddress,
         ),
         public_network_reference=dict(type="str"),
         public_network_ips=dict(
             type="list",
             elements="dict",
-            options=public_network_ips_spec,
+            options=ip_address_spec,
             obj=objects_sdk.IPAddress,
         ),
         total_capacity_gi_b=dict(type="int"),

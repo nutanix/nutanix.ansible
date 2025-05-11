@@ -2,9 +2,9 @@
 # Summary:
 # This playbook will do:
 # 1. Deploy an object store with one worker node
-# 2. List all certificates for an object store
 # 3. Create a temporary JSON file for certificate details
 # 4. Create a certificate for an object store
+# 5. List all certificates for an object store
 # 5. Fetch certificate details using external ID
 # 6. List all object stores
 # 7. List all object stores with filter
@@ -32,7 +32,7 @@
           domain: "msp.pc-fjci.nutanix.com"
           num_worker_nodes: 1
           bucket_name: "objectsbrowser"
-          total_capacity_gi_b: 21474836480
+          total_capacity_gi_b: 2147483648
           storage_network_reference:
             uuid: "313c37c1-6f1d-4520-9245-528e3162af5c"
             IPs:
@@ -42,10 +42,10 @@
             uuid: "313c37c1-6f1d-4520-9245-528e3162af5c"
             IPs:
               - "10.44.77.123"
-        api_ip: 10.44.76.15
+        api_ip: 10.22.75.43
         api_port: 9440
-        username: admin
-        password: Nutanix.123
+        username: username
+        password: password
 
     - name: Deploy object store with one worker node
       nutanix.ncp.ntnx_object_stores_v2:
@@ -71,15 +71,6 @@
     - name: Set object store external ID
       ansible.builtin.set_fact:
         object_store_ext_id: "{{ result.response.ext_id }}"
-
-    - name: List all certificates for an object store
-      nutanix.ncp.ntnx_object_stores_certificate_info_v2:
-        object_store_ext_id: "{{ object_store_ext_id }}"
-      register: result
-
-    - name: Set certificate external ID
-      ansible.builtin.set_fact:
-        certificate_ext_id: "{{ result.response[0].ext_id }}"
 
     - name: Create a temporary JSON file for certificate details
       ansible.builtin.copy:

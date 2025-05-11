@@ -107,8 +107,8 @@
       - result.response.public_network_ips[0].ipv4.value == "{{ objects.public_network_reference.IPs[0] }}"
       - result.response.total_capacity_gi_b == {{ objects.total_capacity_gi_b }}
       - result.response.state == "OBJECT_STORE_AVAILABLE"
-    success_msg: "Object store is deployed successfully"
-    fail_msg: "Object store is not deployed successfully"
+    success_msg: "Object store with one worker node is deployed successfully"
+    fail_msg: "Object store with one worker node is not deployed successfully"
 
 - name: Set object store external ID
   ansible.builtin.set_fact:
@@ -126,8 +126,8 @@
       - result.failed is false
       - result.response is defined
       - result.response | length == 1
-    success_msg: "Certificates are listed successfully"
-    fail_msg: "Certificates are not listed successfully"
+    success_msg: "All certificates are listed successfully"
+    fail_msg: "All certificates are not listed successfully"
 
 - name: Set certificate external ID
   ansible.builtin.set_fact:
@@ -180,8 +180,8 @@
       - result.response is defined
       - result.response | length == 1
       - result.response[0].ext_id != "{{ certificate_ext_id }}"
-    success_msg: "Certificates are listed successfully"
-    fail_msg: "Certificates are not listed successfully"
+    success_msg: "All certificates are listed successfully"
+    fail_msg: "All certificates are not listed successfully"
 
 - name: Set certificate external ID
   ansible.builtin.set_fact:
@@ -214,8 +214,8 @@
       - result.failed is false
       - result.response is defined
       - result.response | length > 0
-    success_msg: "Object stores are listed successfully"
-    fail_msg: "Object stores are not listed successfully"
+    success_msg: "All object stores are listed successfully"
+    fail_msg: "All object stores are not listed successfully"
 
 - name: Set object store name
   ansible.builtin.set_fact:
@@ -265,6 +265,18 @@
       - result.failed is false
       - result.response is defined
       - result.response.ext_id == "{{ object_store_ext_id }}"
+      - result.response.name == "ansible-object"
+      - result.response.description == "object store test"
+      - result.response.domain == "{{ objects.domain }}"
+      - result.response.num_worker_nodes == {{ objects.num_worker_nodes }}
+      - result.response.storage_network_reference == "{{ objects.storage_network_reference.uuid }}"
+      - result.response.storage_network_vip.ipv4.value == "{{ objects.storage_network_reference.IPs[0] }}"
+      - result.response.storage_network_dns_ip.ipv4.value == "{{ objects.storage_network_reference.IPs[1] }}"
+      - result.response.public_network_reference == "{{ objects.public_network_reference.uuid }}"
+      - result.response.public_network_ips[0].ipv4.value == "{{ objects.public_network_reference.IPs[0] }}"
+      - result.response.total_capacity_gi_b == {{ objects.total_capacity_gi_b }}
+      - result.response.state == "OBJECT_STORE_AVAILABLE"
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
     success_msg: "Object store details are fetched successfully using external ID"
     fail_msg: "Object store details are not fetched successfully using external ID"
 

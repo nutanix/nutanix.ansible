@@ -14,6 +14,7 @@ short_description: Create, Update and Delete a Nutanix object store
 version_added: 2.2.0
 description:
     - Create, Update and Delete a Nutanix object store.
+    - This module uses PC v4 APIs based SDKs
 options:
     state:
         description:
@@ -22,6 +23,8 @@ options:
             - If C(state) is set to C(present) and ext_id is not provided then it will create a new object store.
             - If C(state) is set to C(present) and ext_id is provided then it will update the object store.
             - If C(state) is absent, and ext_id is provided then it will delete the object store.
+            - Update object store is only supported for object stores in C(OBJECT_STORE_DEPLOYMENT_FAILED) state.
+            - If the object store is in C(OBJECT_STORE_DEPLOYMENT_FAILED) state, it can be updated to redeploy the object store.
         choices: ['present', 'absent']
         type: str
         default: present
@@ -38,7 +41,7 @@ options:
         required: false
     metadata:
         description:
-            - Metadata of the object store.
+            - Metadata associated with the object store.
         type: dict
         required: false
         suboptions:
@@ -54,17 +57,17 @@ options:
                 required: false
             project_reference_id:
                 description:
-                    - Project reference ID of the object store.
+                    - Reference ID that represents the project this object store belongs to.
                 type: str
                 required: false
             project_name:
                 description:
-                    - Project name of the object store.
+                    - The name of the project this object store belongs to.
                 type: str
                 required: false
             category_ids:
                 description:
-                    - Category IDs of the object store.
+                    - Categories IDs which are associated to object store.
                 type: list
                 elements: str
                 required: false
@@ -80,17 +83,23 @@ options:
         required: false
     domain:
         description:
-            - Domain of the object store.
+            - The DNS domain/subdomain the Object store belongs to.
+            - All the Object stores under one Prism Central must have the same domain name.
+            - The domain name must consist of at least 2 parts separated by a '.'.
+            - Each part can contain upper and lower case letters, digits, hyphens, or underscores.
+            - Each part can be up to 63 characters long.
+            - The domain must begin and end with an alphanumeric character. For example - 'objects-0.pc_nutanix.com'.
         type: str
         required: false
     region:
         description:
-            - Region of the object store.
+            - The region in which the Object store is deployed.
         type: str
         required: false
     num_worker_nodes:
         description:
-            - Number of worker nodes in the object store.
+            - The number of worker nodes (VMs) to be created for the Object store.
+            - Each worker node requires 10 vCPUs and 32 GiB of memory.
         type: int
         required: false
     cluster_ext_id:
@@ -100,24 +109,26 @@ options:
         required: false
     storage_network_reference:
         description:
-            - Reference ID of the storage network for the object store.
+            - Reference to the Storage Network of the Object store.
+            - This is the subnet UUID for an AHV cluster or the IPAM name for an ESXi cluster.
+            - Used for internal service calls.
         type: str
         required: false
     storage_network_vip:
         description:
-            - Storage network VIP of the object store.
+            - A unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
             ipv4:
                 description:
-                    - IPv4 address of the storage network VIP.
+                    - A unique address that identifies a device on the internet or a local network in IPv4 format.
                 type: dict
                 required: false
                 suboptions:
                     value:
                         description:
-                            - IPv4 address value.
+                            - IPv4 address value of the host.
                         type: str
                         required: true
                     prefix_length:
@@ -127,13 +138,13 @@ options:
                         default: 32
             ipv6:
                 description:
-                    - IPv6 address of the storage network VIP.
+                    - A unique address that identifies a device on the internet or a local network in IPv6 format.
                 type: dict
                 required: false
                 suboptions:
                     value:
                         description:
-                            - IPv6 address value.
+                            - IPv6 address value of the host.
                         type: str
                         required: true
                     prefix_length:
@@ -143,19 +154,19 @@ options:
                         default: 128
     storage_network_dns_ip:
         description:
-            - Storage network DNS IP of the object store.
+            - A unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
             ipv4:
                 description:
-                    - IPv4 address of the storage network DNS IP.
+                    - A unique address that identifies a device on the internet or a local network in IPv4 format.
                 type: dict
                 required: false
                 suboptions:
                     value:
                         description:
-                            - IPv4 address value.
+                            - IPv4 address value of the host.
                         type: str
                         required: true
                     prefix_length:
@@ -165,13 +176,13 @@ options:
                         default: 32
             ipv6:
                 description:
-                    - IPv6 address of the storage network DNS IP.
+                    - A unique address that identifies a device on the internet or a local network in IPv6 format.
                 type: dict
                 required: false
                 suboptions:
                     value:
                         description:
-                            - IPv6 address value.
+                            - IPv6 address value of the host.
                         type: str
                         required: true
                     prefix_length:
@@ -181,25 +192,27 @@ options:
                         default: 128
     public_network_reference:
         description:
-            - Reference ID of the public network for the object store.
+            - Public network reference of the Object store.
+            - This is the subnet UUID for an AHV cluster or the IPAM name for an ESXi cluster.
+            - Used to allow access from external clients.
         type: str
         required: false
     public_network_ips:
         description:
-            - Public network IPs of the object store.
+            - A list of static IP addresses used as public IPs to access the Object store.
         type: list
         elements: dict
         required: false
         suboptions:
             ipv4:
                 description:
-                    - IPv4 address of the public network IP.
+                    - A unique address that identifies a device on the internet or a local network in IPv4 format.
                 type: dict
                 required: false
                 suboptions:
                     value:
                         description:
-                            - IPv4 address value.
+                            - IPv4 address value of the host.
                         type: str
                         required: true
                     prefix_length:
@@ -209,13 +222,13 @@ options:
                         default: 32
             ipv6:
                 description:
-                    - IPv6 address of the public network IP.
+                    - A unique address that identifies a device on the internet or a local network in IPv6 format.
                 type: dict
                 required: false
                 suboptions:
                     value:
                         description:
-                            - IPv6 address value.
+                            - IPv6 address value of the host.
                         type: str
                         required: true
                     prefix_length:
@@ -264,7 +277,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Create Object Store
+- name: Update Object Store if the deployment failed
   nutanix.ncp.ntnx_object_stores_v2:
     name: "ansible-object"
     ext_id: "6dd6df38-5d5c-40a8-561f-10862416c1c0"
@@ -453,7 +466,7 @@ def create_object_store(module, object_stores_api, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Failed to create object store",
+            msg="API Exception raised while creating object store",
         )
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
@@ -499,17 +512,18 @@ def update_object_store(module, object_stores_api, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
+    kwargs = {"if_match": etag_value}
 
     resp = None
     try:
         resp = object_stores_api.update_objectstore_by_id(
-            extId=ext_id, body=update_spec, ifMatch=etag_value
+            extId=ext_id, body=update_spec, **kwargs
         )
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Failed to update object store",
+            msg="API Exception raised while updating object store",
         )
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
@@ -565,6 +579,7 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "absent", ["ext_id"]),
+            ("state", "present", ["name"]),
         ],
     )
     if SDK_IMP_ERROR:

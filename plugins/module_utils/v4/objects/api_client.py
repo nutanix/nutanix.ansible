@@ -17,10 +17,14 @@ except ImportError:
     objects_SDK_IMP_ERROR = traceback.format_exc()
 
 
-def get_pc_api_client(module):
+def get_api_client(module):
     """
     This method will return client to be used in api connection using
     given connection details.
+    Args:
+        module (object): Ansible module object
+    return:
+        client (object): ApiClient instance
     """
     if objects_SDK_IMP_ERROR:
         module.fail_json(
@@ -51,6 +55,8 @@ def get_etag(data):
     This method will fetch etag from a v4 api response.
     Args:
         data (dict): v4 api response
+    return:
+        etag (str): etag value
     """
     return ntnx_objects_py_client.ApiClient.get_etag(data)
 
@@ -61,7 +67,7 @@ def get_objects_api_instance(module):
     Args:
         module (object): Ansible module object
     return:
-        api_instance (object): object stores api instance
+        api_instance (object): ObjectStoresApi instance
     """
-    api_client = get_pc_api_client(module)
+    api_client = get_api_client(module)
     return ntnx_objects_py_client.ObjectStoresApi(api_client)

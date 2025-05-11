@@ -13,6 +13,7 @@ version_added: 2.2.0
 description:
     - Fetch specific object store info if external ID is provided
     - Fetch list of multiple object stores info if external ID is not provided with optional filters
+    - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
         description: External ID to fetch specific object store info
@@ -38,6 +39,11 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_object_stores_info_v2:
     limit: 1
     page: 0
+  register: result
+
+- name: Fetch object store details using external ID
+  nutanix.ncp.ntnx_object_stores_info_v2:
+      ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
   register: result
 """
 

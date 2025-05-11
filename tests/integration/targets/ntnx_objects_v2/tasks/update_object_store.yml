@@ -1,72 +1,18 @@
 ---
+# This playbook is used to test the update operation of object stores in Nutanix.
+# Update operation is used to redeploy an object store in case of deployment failure.
+# To test the update operation, we do the following:
+# 1. Create an object store with one worker node.
+# 2. We take backup of the original buckets_tools_template.yaml file.
+# 3. Modify the image tag in buckets_tools_template.yaml file to an invalid version.
+# 4. Deploy the object store with one worker node using invalid image tag, which should fail.
+# 5. List all object stores with filter to check the status of the object store, which should be in failed state.
+# 6. Restore the original buckets_tools_template.yaml file.
+# 7. Deploy the object store with one worker node using update operation, which should succeed.
+
 - name: Start update objects tests
   ansible.builtin.debug:
     msg: Start update objects tests
-
-- name: Generate spec for updating object store with check mode
-  nutanix.ncp.ntnx_object_stores_v2:
-    name: "ansible-object"
-    ext_id: "00e7603f-15ec-4ff2-7b18-5934ad97f667"
-    metadata:
-      owner_reference_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-      owner_user_name: "owner_user_name"
-      project_reference_id: "123e4567-e89b-12d3-a456-426614174000"
-      project_name: "project_name"
-      category_ids:
-        - "bbc3555a-133b-5348-9764-bfff196e84e4"
-        - "ac587354-7894-3625-5178-bfff18523654"
-    description: "object store test"
-    deployment_version: "5.1.1"
-    domain: "test.domain.nutanix.com"
-    region: "us-west-1"
-    num_worker_nodes: 3
-    cluster_ext_id: "00063125-0d92-06e0-185b-ac1f6b6f97e2"
-    storage_network_reference: "13870980-c370-4aa3-846b-f6cb864f61e5"
-    storage_network_vip:
-      ipv4:
-        value: "10.30.30.10"
-    storage_network_dns_ip:
-      ipv4:
-        value: "10.30.30.11"
-    public_network_reference: "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
-    public_network_ips:
-      - ipv4:
-          value: "10.30.30.12"
-      - ipv4:
-          value: "10.30.30.13"
-    total_capacity_gi_b: 21474836480
-  register: result
-  check_mode: true
-  ignore_errors: true
-
-- name: Generate spec for updating object store with check mode status
-  ansible.builtin.assert:
-    that:
-      - result.changed is false
-      - result.failed is false
-      - result.response is defined
-      - result.response.cluster_ext_id == "00063125-0d92-06e0-185b-ac1f6b6f97e2"
-      - result.response.name == "ansible-object"
-      - result.response.ext_id == "00e7603f-15ec-4ff2-7b18-5934ad97f667"
-      - result.response.metadata.owner_reference_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-      - result.response.metadata.owner_user_name == "owner_user_name"
-      - result.response.metadata.project_reference_id == "123e4567-e89b-12d3-a456-426614174000"
-      - result.response.metadata.project_name == "project_name"
-      - result.response.metadata.category_ids == ["bbc3555a-133b-5348-9764-bfff196e84e4", "ac587354-7894-3625-5178-bfff18523654"]
-      - result.response.description == "object store test"
-      - result.response.deployment_version == "5.1.1"
-      - result.response.domain == "test.domain.nutanix.com"
-      - result.response.region == "us-west-1"
-      - result.response.num_worker_nodes == 3
-      - result.response.storage_network_reference == "13870980-c370-4aa3-846b-f6cb864f61e5"
-      - result.response.storage_network_vip.ipv4.value == "10.30.30.10"
-      - result.response.storage_network_dns_ip.ipv4.value == "10.30.30.11"
-      - result.response.public_network_reference == "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
-      - result.response.public_network_ips[0].ipv4.value == "10.30.30.12"
-      - result.response.public_network_ips[1].ipv4.value == "10.30.30.13"
-      - result.response.total_capacity_gi_b == 21474836480
-    success_msg: "Spec for updating object store is generated successfully with check mode"
-    fail_msg: "Spec for updating object store is not generated successfully with check mode"
 
 - name: Backup the original buckets_tools_template.yaml file
   ansible.builtin.shell: |
@@ -156,6 +102,71 @@
   register: result
   ignore_errors: true
   changed_when: false
+
+- name: Generate spec for updating object store with check mode
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object"
+    ext_id: "{{ object_store_ext_id }}"
+    metadata:
+      owner_reference_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+      owner_user_name: "owner_user_name"
+      project_reference_id: "123e4567-e89b-12d3-a456-426614174000"
+      project_name: "project_name"
+      category_ids:
+        - "bbc3555a-133b-5348-9764-bfff196e84e4"
+        - "ac587354-7894-3625-5178-bfff18523654"
+    description: "object store test"
+    deployment_version: "5.1.1"
+    domain: "test.domain.nutanix.com"
+    region: "us-west-1"
+    num_worker_nodes: 3
+    cluster_ext_id: "00063125-0d92-06e0-185b-ac1f6b6f97e2"
+    storage_network_reference: "13870980-c370-4aa3-846b-f6cb864f61e5"
+    storage_network_vip:
+      ipv4:
+        value: "10.30.30.10"
+    storage_network_dns_ip:
+      ipv4:
+        value: "10.30.30.11"
+    public_network_reference: "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
+    public_network_ips:
+      - ipv4:
+          value: "10.30.30.12"
+      - ipv4:
+          value: "10.30.30.13"
+    total_capacity_gi_b: 21474836480
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Generate spec for updating object store with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response.cluster_ext_id == "00063125-0d92-06e0-185b-ac1f6b6f97e2"
+      - result.response.name == "ansible-object"
+      - result.response.ext_id == "{{ object_store_ext_id }}"
+      - result.response.metadata.owner_reference_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+      - result.response.metadata.owner_user_name == "owner_user_name"
+      - result.response.metadata.project_reference_id == "123e4567-e89b-12d3-a456-426614174000"
+      - result.response.metadata.project_name == "project_name"
+      - result.response.metadata.category_ids == ["bbc3555a-133b-5348-9764-bfff196e84e4", "ac587354-7894-3625-5178-bfff18523654"]
+      - result.response.description == "object store test"
+      - result.response.deployment_version == "5.1.1"
+      - result.response.domain == "test.domain.nutanix.com"
+      - result.response.region == "us-west-1"
+      - result.response.num_worker_nodes == 3
+      - result.response.storage_network_reference == "13870980-c370-4aa3-846b-f6cb864f61e5"
+      - result.response.storage_network_vip.ipv4.value == "10.30.30.10"
+      - result.response.storage_network_dns_ip.ipv4.value == "10.30.30.11"
+      - result.response.public_network_reference == "7f4a6e2b-91c2-4d9e-9f3e-2d8c1c9983a4"
+      - result.response.public_network_ips[0].ipv4.value == "10.30.30.12"
+      - result.response.public_network_ips[1].ipv4.value == "10.30.30.13"
+      - result.response.total_capacity_gi_b == 21474836480
+    success_msg: "Spec for updating object store is generated successfully with check mode"
+    fail_msg: "Spec for updating object store is not generated successfully with check mode"
 
 - name: Deploy object store with one worker node using update operation
   nutanix.ncp.ntnx_object_stores_v2:
