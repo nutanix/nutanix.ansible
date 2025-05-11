@@ -148,6 +148,25 @@
       }
     dest: "/tmp/certificate_details.json"
 
+- name: Create certificate for an object store using check mode
+  nutanix.ncp.ntnx_object_stores_certificate_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    path: "/tmp/certificate_details.json"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create certificate for an object store using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.object_store_ext_id == "{{ object_store_ext_id }}"
+      - result.path == "/tmp/certificate_details.json"
+      - result.msg == "New certificate will be created for the object store with ext_id:{{ object_store_ext_id }} using the certificate details file:/tmp/certificate_details.json"
+    success_msg: "Create certificate for an object store using check mode passed"
+    fail_msg: "Create certificate for an object store using check mode failed"
+
 - name: Create certificate for an object store
   nutanix.ncp.ntnx_object_stores_certificate_v2:
     object_store_ext_id: "{{ object_store_ext_id }}"
@@ -279,6 +298,25 @@
       - result.response.cluster_ext_id == "{{ cluster.uuid }}"
     success_msg: "Object store details are fetched successfully using external ID"
     fail_msg: "Object store details are not fetched successfully using external ID"
+
+- name: Delete object store with check mode
+  nutanix.ncp.ntnx_object_stores_v2:
+    ext_id: "{{ object_store_ext_id }}"
+    state: absent
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Delete object store with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed is false
+      - result.failed is false
+      - result.ext_id == "{{ object_store_ext_id }}"
+      - result.msg == "Object store with ext_id:{{ object_store_ext_id }} will be deleted."
+    success_msg: "Delete object store with check mode passed"
+    fail_msg: "Delete object store with check mode failed"
 
 - name: Delete bucket in object store
   ansible.builtin.uri:

@@ -546,6 +546,11 @@ def delete_object_store(module, object_stores_api, result):
     """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "Object store with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     current_spec = get_object_store(module, object_stores_api, ext_id)
 
     etag_value = get_etag(data=current_spec)

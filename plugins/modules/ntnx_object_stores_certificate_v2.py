@@ -230,6 +230,17 @@ def create_certificate(module, object_stores_api, result):
             "Path to the JSON file which contains the public certificates, private key, and CA certificate or chain is invalid",
             **result  # fmt: skip
         )
+
+    if module.check_mode:
+        result["object_store_ext_id"] = object_store_ext_id
+        result["path"] = module.params.get("path")
+        result["msg"] = (
+            "New certificate will be created for the object store with ext_id:{0} using the certificate details file:{1}".format(
+                object_store_ext_id, path
+            )
+        )
+        return
+
     current_spec = get_object_store(module, object_stores_api, object_store_ext_id)
     etag_value = get_etag(data=current_spec)
     if not etag_value:
