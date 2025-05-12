@@ -104,7 +104,7 @@
     fail_msg: "Delete registry with check mode failed"
     success_msg: "Delete registry with check mode passed"
 
-- name: delete registry
+- name: Delete registry
   ntnx_karbon_registries:
     name: "{{ registry_name }}"
     state: absent

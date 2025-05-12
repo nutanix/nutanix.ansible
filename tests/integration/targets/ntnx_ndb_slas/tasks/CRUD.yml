@@ -276,7 +276,7 @@
     fail_msg: "Delete Sla with check mode failed"
     success_msg: "Delete Sla with check mode passed"
 
-- name: verify slas delete flow
+- name: Verify slas delete flow
   ntnx_ndb_slas:
     state: absent
     sla_uuid: "{{ item }}"

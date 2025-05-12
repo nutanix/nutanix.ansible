@@ -507,7 +507,7 @@
     fail_msg: "Delete clone db with check mode failed"
     success_msg: "Delete clone db with check mode passed"
 
-- name: delete clone db
+- name: Delete clone db
   ntnx_ndb_database_clones:
     state: absent
     uuid: "{{ clone_uuid }}"

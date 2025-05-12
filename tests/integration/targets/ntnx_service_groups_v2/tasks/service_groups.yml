@@ -372,9 +372,6 @@
   ignore_errors: true
   check_mode: true
 
-- ansible.builtin.debug:
-    var: result
-
 - name: Delete service group with check mode status
   ansible.builtin.assert:
     that:

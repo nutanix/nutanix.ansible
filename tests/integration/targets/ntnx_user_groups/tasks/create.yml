@@ -147,7 +147,7 @@
     fail_msg: "Delete user group with check mode failed"
     success_msg: "Delete user group with check mode passed"
 
-- name: delete user group
+- name: Delete user group
   ntnx_user_groups:
     state: absent
     user_group_uuid: "{{user_group_to_delete}}"

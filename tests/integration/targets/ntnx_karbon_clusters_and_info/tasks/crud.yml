@@ -166,7 +166,7 @@
     fail_msg: "Delete cluster with check mode failed"
     success_msg: "Delete cluster with check mode passed"
 
-- name: delete  dev cluster  with Flannel network provider
+- name: Delete  dev cluster  with Flannel network provider
   ntnx_karbon_clusters:
     state: absent
     name: "{{ result.response.name }}"
@@ -183,7 +183,7 @@
     fail_msg: " Fail: unable to delete  dev cluster  with Flannel network provider"
     success_msg: " Pass: delete  dev cluster  with Flannel network provider finished successfully"
 ############################
-- name: create  DEV cluster with Calico network provider
+- name: Create  DEV cluster with Calico network provider
   ntnx_karbon_clusters:
     cluster:
       name: "{{ cluster.name }}"
@@ -484,7 +484,7 @@
     fail_msg: "Delete pool with check mode failed"
     success_msg: "Delete pool with check mode passed"
 
-- name: delete pool
+- name: Delete pool
   ntnx_karbon_clusters_node_pools:
     state: absent
     node_pool_name: "{{ node1_name }}"

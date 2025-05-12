@@ -306,10 +306,10 @@
   ntnx_ndb_clusters_info:
     name: "abcd"
   register: result
-  ignore_errors: True
+  ignore_errors: true
   no_log: true
 
-- name: check listing status
+- name: Check listing status
   ansible.builtin.assert:
     that:
       - result.error is defined
@@ -337,7 +337,7 @@
     fail_msg: "Delete cluster with check mode failed"
     success_msg: "Delete cluster with check mode passed"
 
-- name: delete cluster
+- name: Delete cluster
   ntnx_ndb_clusters:
     uuid: "{{todelete}}"
     state: absent

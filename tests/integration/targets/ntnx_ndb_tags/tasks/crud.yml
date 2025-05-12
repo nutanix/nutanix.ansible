@@ -431,7 +431,7 @@
     fail_msg: "Delete tag with check mode failed"
     success_msg: "Delete tag with check mode passed"
 
-- name: delete the database server based tag
+- name: Delete the database server based tag
   ntnx_ndb_tags:
     state: absent
     uuid: "{{ db_server_tag_uuid }}"

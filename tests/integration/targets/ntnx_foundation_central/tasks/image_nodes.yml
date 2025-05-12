@@ -60,7 +60,7 @@
   ansible.builtin.set_fact:
     imaged_cluster_uuid: "{{result.imaged_cluster_uuid}}"
 
-- name: check mode for delete operation
+- name: Check mode for delete operation
   ntnx_foundation_central:
     state: absent
     imaged_cluster_uuid: "{{imaged_cluster_uuid}}"

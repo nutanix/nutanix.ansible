@@ -655,7 +655,7 @@
     fail_msg: "Cleanup job failed"
     success_msg: "Cleanup job run successfully"
 
-############################################################### Delete Recovery Plan Test###########################################################################################
+######################################### Delete Recovery Plan Test###########################################################
 - name: Delete Recovery plan with check mode
   ntnx_recovery_plans:
     state: absent

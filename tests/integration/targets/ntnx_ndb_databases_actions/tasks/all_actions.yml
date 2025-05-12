@@ -582,7 +582,7 @@
     fail_msg: "Remove databases in database instance with check mode failed"
     success_msg: "Remove databases in database instance with check mode passed"
 
-- name: remove databases in database instance
+- name: Remove databases in database instance
   ntnx_ndb_linked_databases:
     state: absent
     db_instance_uuid: "{{ db_uuid }}"

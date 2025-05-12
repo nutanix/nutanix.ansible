@@ -128,7 +128,7 @@
     fail_msg: "Delete app security rule with check mode failed"
     success_msg: "Delete app security rule with check mode passed"
 
-- name: delete app security rule
+- name: Delete app security rule
   ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
