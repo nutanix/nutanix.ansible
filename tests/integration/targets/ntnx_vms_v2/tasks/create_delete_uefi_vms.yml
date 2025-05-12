@@ -1,0 +1,415 @@
+---
+- name: Start ntnx_vms_v2 tests for UEFI Boot
+  ansible.builtin.debug:
+    msg: start ntnx_vms_v2 tests
+
+- name: Generate random category key & value
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name suffix
+  ansible.builtin.set_fact:
+    suffix_name: ansible-ag
+
+- name: Set VM name and to delete list
+  ansible.builtin.set_fact:
+    todelete: []
+    vm_name: "{{ random_name }}{{ suffix_name }}vm"
+
+# Define a spec, run the VM build in check mode, and confirm that the request will be built with the appropriate configuration
+
+########################################################################
+# Secure Boot with Boot Order DISK and specified boot device - Check Mode
+########################################################################
+- name: Create Secure Boot UEFI VM with Boot Order DISK and specified boot device with check_mode
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test for uefi boot secure boot with boot order disk and boot device specified
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 3
+    memory_size_bytes: 6442450944
+    machine_type: Q35
+    hardware_clock_timezone: UTC
+    vtpm_config:
+      is_vtpm_enabled: true
+      version: "2.0"
+    cd_roms:
+      - disk_address:
+          bus_type: SATA
+        backing_info:
+          data_source:
+            reference:
+              image_reference:
+                image_ext_id: "{{ iso_image.image_ext_ids[0] }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 64424509440
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+    boot_config:
+      uefi_boot:
+        is_secure_boot_enabled: true
+        boot_device:
+          boot_device_disk:
+            disk_address:
+              bus_type: SCSI
+              index: 2
+        boot_order: 
+          - DISK
+          - CDROM
+          - NETWORK
+    nics:
+    - backing_info:
+        is_connected: True
+      network_info:
+        nic_type: NORMAL_NIC
+        subnet:
+          ext_id: "{{ subnets.subnet_ext_ids[0] }}"
+        vlan_mode: ACCESS
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test for uefi boot secure boot with boot order disk and boot device specified"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 3
+      - result.response.memory_size_bytes == 6442450944
+      - result.response.machine_type == "Q35"
+      - result.response.hardware_clock_timezone == "UTC"
+      - result.response.vtpm_config.is_vtpm_enabled == true
+      - result.response.vtpm_config.version == "2.0"
+      - result.response.cd_roms[0].backing_info.data_source.reference.image_ext_id == "{{ iso_image.image_ext_ids[0] }}"
+      - result.response.cd_roms[0].disk_address.bus_type == "SATA"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.boot_config.is_secure_boot_enabled == true
+      - result.response.boot_config.boot_order[0] == "DISK"
+      - result.response.boot_config.boot_device.disk_address.bus_type == "SCSI"
+      - result.response.boot_config.boot_device.disk_address.index == 2
+      - result.response.nics[0].backing_info.is_connected == true
+      - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].network_info.subnet.ext_id == subnets.subnet_ext_ids[0]
+      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
+    fail_msg: " Unable to create UEFI Boot VM with specified requirements " 
+    success_msg: Returned as expected
+
+########################################################################
+# Secure Boot with Boot Order NETWORK - Check Mode
+########################################################################
+- name: Create Secure Boot UEFI VM with Boot Order NETWORK with check_mode
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test for uefi boot secure boot with boot order NETWORK
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 3
+    memory_size_bytes: 6442450944
+    machine_type: Q35
+    hardware_clock_timezone: UTC
+    vtpm_config:
+      is_vtpm_enabled: true
+      version: "2.0"
+    cd_roms:
+      - disk_address:
+          bus_type: SATA
+        backing_info:
+          data_source:
+            reference:
+              image_reference:
+                image_ext_id: "{{ iso_image.image_ext_ids[0] }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 64424509440
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+    boot_config:
+      uefi_boot:
+        is_secure_boot_enabled: true
+        boot_order: 
+          - NETWORK
+          - CDROM
+          - DISK
+    nics:
+    - backing_info:
+        is_connected: True
+      network_info:
+        nic_type: NORMAL_NIC
+        subnet:
+          ext_id: "{{ subnets.subnet_ext_ids[0] }}"
+        vlan_mode: ACCESS
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == False
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test for uefi boot secure boot with boot order NETWORK"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 3
+      - result.response.memory_size_bytes == 6442450944
+      - result.response.machine_type == "Q35"
+      - result.response.hardware_clock_timezone == "UTC"
+      - result.response.vtpm_config.is_vtpm_enabled == true
+      - result.response.vtpm_config.version == "2.0"
+      - result.response.cd_roms[0].backing_info.data_source.reference.image_ext_id == "{{ iso_image.image_ext_ids[0] }}"
+      - result.response.cd_roms[0].disk_address.bus_type == "SATA"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.boot_config.is_secure_boot_enabled == true
+      - result.response.boot_config.boot_order[0] == "NETWORK"
+      - result.response.nics[0].backing_info.is_connected == true
+      - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].network_info.subnet.ext_id == subnets.subnet_ext_ids[0]
+      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
+    fail_msg: " Unable to create UEFI Boot VM with specified requirements " 
+    success_msg: Returned as expected
+
+########################################################################
+# Secure Boot Boot with Boot Order DISK and specified boot device - Actual Build
+########################################################################
+- name: Create Secure Boot UEFI VM with Boot Order DISK and specified boot device
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test for uefi boot secure boot with boot order disk and boot device specified
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 3
+    memory_size_bytes: 6442450944
+    machine_type: Q35
+    hardware_clock_timezone: UTC
+    vtpm_config:
+      is_vtpm_enabled: true
+      version: "2.0"
+    cd_roms:
+      - disk_address:
+          bus_type: SATA
+        backing_info:
+          data_source:
+            reference:
+              image_reference:
+                image_ext_id: "{{ iso_image.image_ext_ids[0] }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 64424509440
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+    boot_config:
+      uefi_boot:
+        is_secure_boot_enabled: true
+        boot_device:
+          boot_device_disk:
+            disk_address:
+              bus_type: SCSI
+              index: 2
+        boot_order:
+          - DISK
+          - CDROM
+          - NETWORK
+    nics:
+    - backing_info:
+        is_connected: True
+      network_info:
+        nic_type: NORMAL_NIC
+        subnet:
+          ext_id: "{{ subnets.subnet_ext_ids[0] }}"
+        vlan_mode: ACCESS
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test for uefi boot secure boot with boot order disk and boot device specified"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 3
+      - result.response.memory_size_bytes == 6442450944
+      - result.response.machine_type == "Q35"
+      - result.response.hardware_clock_timezone == "UTC"
+      - result.response.vtpm_config.is_vtpm_enabled == true
+      - result.response.vtpm_config.version == "2.0"
+      - result.response.cd_roms[0].backing_info.data_source.reference.image_ext_id == "{{ iso_image.image_ext_ids[0] }}"
+      - result.response.cd_roms[0].disk_address.bus_type == "SATA"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.boot_config.is_secure_boot_enabled == true
+      - result.response.boot_config.boot_order[0] == "DISK"
+      - result.response.boot_config.boot_device.disk_address.bus_type == "SCSI"
+      - result.response.boot_config.boot_device.disk_address.index == 2
+      - result.response.nics[0].backing_info.is_connected == true
+      - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].network_info.subnet.ext_id == subnets.subnet_ext_ids[0]
+      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
+    fail_msg: " Unable to create UEFI boot VM with specified requirements "
+    success_msg: " UEFI boot VM with specified requirements created successfully "
+
+- name: Fetch vm using ext_id
+  ntnx_vms_info_v2:
+    ext_id: "{{ result.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+########################################################################
+# Secure Boot Boot with Boot Order NETWORK - Actual Build
+########################################################################
+- name: Create Secure Boot UEFI VM with Boot Order NETWORK
+  ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible test for uefi boot secure boot with boot order network
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 3
+    memory_size_bytes: 6442450944
+    machine_type: Q35
+    hardware_clock_timezone: UTC
+    vtpm_config:
+      is_vtpm_enabled: true
+      version: "2.0"
+    cd_roms:
+      - disk_address:
+          bus_type: SATA
+        backing_info:
+          data_source:
+            reference:
+              image_reference:
+                image_ext_id: "{{ iso_image.image_ext_ids[0] }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 64424509440
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 2
+    boot_config:
+      uefi_boot:
+        is_secure_boot_enabled: true
+        boot_device:
+        boot_order:
+          - NETWORK
+          - CDROM
+          - DISK
+    nics:
+    - backing_info:
+        is_connected: True
+      network_info:
+        nic_type: NORMAL_NIC
+        subnet:
+          ext_id: "{{ subnets.subnet_ext_ids[0] }}"
+        vlan_mode: ACCESS
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == True
+      - result.failed == False
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "{{ vm_name }}"
+      - result.response.description == "ansible test for uefi boot secure boot with boot order network"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 3
+      - result.response.memory_size_bytes == 6442450944
+      - result.response.machine_type == "Q35"
+      - result.response.hardware_clock_timezone == "UTC"
+      - result.response.vtpm_config.is_vtpm_enabled == true
+      - result.response.vtpm_config.version == "2.0"
+      - result.response.cd_roms[0].backing_info.data_source.reference.image_ext_id == "{{ iso_image.image_ext_ids[0] }}"
+      - result.response.cd_roms[0].disk_address.bus_type == "SATA"
+      - result.response.disks[0].backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.disks[0].disk_address.bus_type == "SCSI"
+      - result.response.disks[0].disk_address.index == 2
+      - result.response.boot_config.is_secure_boot_enabled == true
+      - result.response.boot_config.boot_order[0] == "NETWORK"
+      - result.response.nics[0].backing_info.is_connected == true
+      - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
+      - result.response.nics[0].network_info.subnet.ext_id == subnets.subnet_ext_ids[0]
+      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
+    fail_msg: " Unable to create UEFI Boot VM with specified requirements " 
+    success_msg: Returned as expected
+
+- name: Fetch vm using ext_id
+  ntnx_vms_info_v2:
+    ext_id: "{{ result.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Adding VM to todelete list
+  ansible.builtin.set_fact:
+    todelete: '{{ todelete + [result["ext_id"]] }}'
+
+#########################################################################
+# Delete VMS
+#########################################################################
+- name: Delete all Created VMs
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+      - item.response is defined
+      - item.changed == True
+      - item.failed == False
+      #- item.ext_id == "{{ todelete[vms_index] }}"
+      - item.ext_id == todelete[vms_index]
+    fail_msg: "Unable to delete VM "
+    success_msg: "VM is deleted successfully "
+  loop: "{{ result.results }}"
+  loop_control:
+    index_var: vms_index
+
+- name: Reset to delete list
+  ansible.builtin.set_fact:
+    todelete: []
