@@ -451,15 +451,13 @@ def delete_image(module, result):
     if not uuid:
         result["error"] = "Missing parameter image_uuid"
         module.fail_json(msg="Failed deleting Image", **result)
-
+    result["uuid"] = uuid
     if module.check_mode:
-        result["uuid"] = uuid
         result["msg"] = "Image with uuid:{0} will be deleted.".format(uuid)
         return
 
     image = Image(module)
     resp = image.delete(uuid)
-    result["uuid"] = uuid
     result["response"] = resp
     result["changed"] = True
     task_uuid = resp["status"]["execution_context"]["task_uuid"]

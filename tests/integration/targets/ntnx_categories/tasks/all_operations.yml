@@ -149,7 +149,7 @@
     fail_msg: "Delete category with check mode failed"
     success_msg: "Delete category with check mode passed"
 
-- name: Delte the category
+- name: Delete the category
   ntnx_categories:
     state: "absent"
     name: "{{first_category.name}}"

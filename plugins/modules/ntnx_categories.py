@@ -291,7 +291,6 @@ def delete_categories(module, result):
             )
         }
 
-    result["category_name"] = name
     result["changed"] = True
 
 

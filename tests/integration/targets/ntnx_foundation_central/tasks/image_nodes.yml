@@ -68,7 +68,7 @@
   register: result
   ignore_errors: true
 
-- name: Creation Status
+- name: Check mode Status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -76,6 +76,6 @@
       - result.changed==false
       - result.msg =="Cluster with uuid:{{imaged_cluster_uuid}} will be deleted."
       - result.imaged_cluster_uuid == "{{imaged_cluster_uuid}}"
-    fail_msg: "fail: Unable to delete cluster "
-    success_msg: "succes: Cluster deleted successfully "
+    fail_msg: "Check mode for delete operation failed"
+    success_msg: "Check mode for delete operation passed"
   # when: false # make it true or remove to unskip task
