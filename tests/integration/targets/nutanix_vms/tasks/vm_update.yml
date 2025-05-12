@@ -347,9 +347,9 @@
 
 - name: Get UUID of CDROM
   ansible.builtin.set_fact:
-    cdrom_uuid: "{{ result.response.spec.resources.disk_list | json_query(query) }}"
+    cdrom_uuid: "{{ result.response.spec.resources.disk_list | json_query(cdrom_query) }}"
   vars:
-    query: "[?device_properties.device_type == 'CDROM'].uuid"
+    cdrom_query: "[?device_properties.device_type == 'CDROM'].uuid"
   ignore_errors: true
   register: result
 
