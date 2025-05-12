@@ -163,7 +163,8 @@
       - result.failed is false
       - result.object_store_ext_id == "{{ object_store_ext_id }}"
       - result.path == "/tmp/certificate_details.json"
-      - result.msg == "New certificate will be created for the object store with ext_id:{{ object_store_ext_id }} using the certificate details file:/tmp/certificate_details.json"
+      - result.msg == "New certificate will be created for the object store with ext_id:{{ object_store_ext_id }}
+        using the certificate details file:/tmp/certificate_details.json"
     success_msg: "Create certificate for an object store using check mode passed"
     fail_msg: "Create certificate for an object store using check mode failed"
 

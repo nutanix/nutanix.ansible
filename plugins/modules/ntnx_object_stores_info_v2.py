@@ -43,7 +43,7 @@ EXAMPLES = r"""
 
 - name: Fetch object store details using external ID
   nutanix.ncp.ntnx_object_stores_info_v2:
-      ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
   register: result
 """
 

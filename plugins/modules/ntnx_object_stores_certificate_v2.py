@@ -16,8 +16,10 @@ description:
     - It also creates the alternate FQDNs and alternate IPs for the Object store.
     - The certificate of an Object store can be created when it is in a OBJECT_STORE_AVAILABLE or OBJECT_STORE_CERT_CREATION_FAILED state.
     - If the publicCert, privateKey, and ca values are provided in the request body, these values are used to create the new certificate.
-    - If these values are not provided, a new certificate will be generated if 'shouldGenerate' is set to true and if it is set to false, the existing certificate will be used as the new certificate.
-    - Optionally, a list of additional alternate FQDNs and alternate IPs can be provided. These alternateFqdns and alternateIps must be included in the CA certificate if it has been provided.
+    - If these values are not provided, a new certificate will be generated if 'shouldGenerate' is set to true
+    - if it is set to false, the existing certificate will be used as the new certificate.
+    - Optionally, a list of additional alternate FQDNs and alternate IPs can be provided.
+    - These alternateFqdns and alternateIps must be included in the CA certificate if it has been provided.
     - This module uses PC v4 APIs based SDKs
 options:
     object_store_ext_id:
@@ -29,33 +31,18 @@ options:
         description:
             - Path to a JSON file containing certificate details.
             - The JSON file can contain alternateFqdns, alternateIps, shouldGenerate, ca, publicCert, and privateKey.
-            - The JSON file should be in the following format:
-                {
-                    "alternateFqdns": [
-                        {
-                            "value": "fqdn1.nutanix.com"
-                        },
-                        {
-                            "value": "fqdn2.nutanix.com"
-                        }
-                    ],
-                    "alternateIps": [
-                        {
-                            "ipv4": {
-                                "value": "92.41.252.152"
-                            }
-                        },
-                        {
-                            "ipv4": {
-                                "value": "92.41.252.153"
-                            }
-                        }
-                    ],
-                    "shouldGenerate": true,
-                    "ca": "-----BEGIN CERTIFICATE-----\nMIIDzTCCArWgAwIBAgIUI...\n-----END CERTIFICATE-----",
-                    "publicCert": "-----BEGIN CERTIFICATE-----\nMIIDzTCCArWgAwIBAgIUI...\n-----END CERTIFICATE-----",
-                    "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIDzTCCArWgAwIBAgIUI...\n-----END RSA PRIVATE KEY-----"
-                }
+            - The JSON file should be in the following format
+            - |
+              ```
+              {
+                  "alternateFqdns": [{"value": "fqdn1.nutanix.com"}, {"value": "fqdn2.nutanix.com"}],
+                  "alternateIps": [{"ipv4": {"value": "92.41.252.152"}}, {"ipv4": {"value": "92.41.252.153"}}],
+                  "shouldGenerate": true,
+                  "ca": "-----BEGIN CERTIFICATE-----\nMIIDzTCCArWgAwIBAgIUI...\n-----END CERTIFICATE-----",
+                  "publicCert": "-----BEGIN CERTIFICATE-----\nMIIDzTCCArWgAwIBAgIUI...\n-----END CERTIFICATE-----",
+                  "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIDzTCCArWgAwIBAgIUI...\n-----END RSA PRIVATE KEY-----"
+              }
+              ```
         type: str
         required: true
     wait:
