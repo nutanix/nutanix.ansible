@@ -41,15 +41,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete rule with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Role with uuid:{{ test_role.role_uuid}} will be deleted."
       - output.role_uuid == "{{ test_role.role_uuid }}"
-    fail_msg: "Role been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete role with check mode failed"
+    success_msg: "Delete role with check mode passed"
 
 - name: Delete role
   ntnx_roles:

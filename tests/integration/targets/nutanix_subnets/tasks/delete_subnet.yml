@@ -38,15 +38,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete subnet with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Subnet with uuid:{{ result.subnet_uuid }} will be deleted."
       - output.subnet_uuid == "{{ result.subnet_uuid }}"
-    fail_msg: "Subnet has been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete subnet with check mode failed"
+    success_msg: "Delete subnet with check mode passed"
 
 - name: Delete subnet
   ntnx_subnets:

@@ -32,15 +32,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete image with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Placement policy with uuid:{{  result.response.metadata.uuid }} will be deleted."
       - output.policy_uuid == "{{ result.response.metadata.uuid  }}"
-    fail_msg: "Image Policy been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete image with check mode failed"
+    success_msg: "Delete image with check mode passed"
 
 - name: Delete image placement policy created above
   ntnx_image_placement_policy:

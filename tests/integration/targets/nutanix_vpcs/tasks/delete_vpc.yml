@@ -28,15 +28,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete vpc with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="VPC with uuid:{{ result.vpc_uuid }} will be deleted."
       - output.vpc_uuid == "{{ result.vpc_uuid }}"
-    fail_msg: "vpc has been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete vpc with check mode failed"
+    success_msg: "Delete vpc with check mode passed"
 
 - name: Delete vpc
   ntnx_vpcs:

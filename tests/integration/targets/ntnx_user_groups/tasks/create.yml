@@ -137,15 +137,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete user group with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =='User group with uuid:{{ user_group_to_delete }} will be deleted.'
       - output.uuid == '{{ user_group_to_delete  }}'
-    fail_msg: "user group has been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete user group with check mode failed"
+    success_msg: "Delete user group with check mode passed"
 
 - name: delete user group
   ntnx_user_groups:

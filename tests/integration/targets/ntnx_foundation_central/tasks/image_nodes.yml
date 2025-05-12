@@ -57,7 +57,7 @@
   # when: false # make it true or remove to unskip task
 
 - name: Store imaged cluster uuid
-  set_fact:
+  ansible.builtin.set_fact:
     imaged_cluster_uuid: "{{result.imaged_cluster_uuid}}"
 
 - name: check mode for delete operation
@@ -69,7 +69,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed==false

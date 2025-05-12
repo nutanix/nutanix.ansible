@@ -497,15 +497,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete clone db with check mode status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Db clone with uuid:{{  clone_uuid }} will be deleted."
       - output.uuid == "{{  clone_uuid }}"
-    fail_msg: "clone db been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete clone db with check mode failed"
+    success_msg: "Delete clone db with check mode passed"
 
 - name: delete clone db
   ntnx_ndb_database_clones:

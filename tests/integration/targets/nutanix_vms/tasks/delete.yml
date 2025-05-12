@@ -9,7 +9,7 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -24,15 +24,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete vm with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =='VM with uuid:{{  result.response.metadata.uuid }} will be deleted.'
       - output.vm_uuid == '{{ result.response.metadata.uuid }}'
-    fail_msg: "vm has been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete VM with check mode failed"
+    success_msg: "Delete VM with check mode passed"
 
 - name: Delete VM
   ntnx_vms:

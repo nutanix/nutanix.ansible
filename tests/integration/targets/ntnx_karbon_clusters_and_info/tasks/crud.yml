@@ -157,14 +157,14 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete Cluster with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Cluster with name:{{  result.response.name }} will be deleted."
-    fail_msg: "Cluster been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete cluster with check mode failed"
+    success_msg: "Delete cluster with check mode passed"
 
 - name: delete  dev cluster  with Flannel network provider
   ntnx_karbon_clusters:
@@ -473,16 +473,16 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete pool with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Pool with name:{{ node1_name }} will be deleted."
       - output.cluster_name == "{{karbon_name}}"
       - output.node_pool_name == "{{node1_name}}"
-    fail_msg: "pool been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete pool with check mode failed"
+    success_msg: "Delete pool with check mode passed"
 
 - name: delete pool
   ntnx_karbon_clusters_node_pools:

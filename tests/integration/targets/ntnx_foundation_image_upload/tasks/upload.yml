@@ -39,15 +39,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete Image with nos installer_type with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Image with name:integration-test-ntnx-package.tar.gz will be deleted."
       - output.image_name == "integration-test-ntnx-package.tar.gz"
-    fail_msg: "Image with nos installer_type been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete image with nos installer_type with check mode failed"
+    success_msg: "Delete image with nos installer_type with check mode passed"
 
 - name: Delete Image with nos installer_type
   ntnx_foundation_image_upload:

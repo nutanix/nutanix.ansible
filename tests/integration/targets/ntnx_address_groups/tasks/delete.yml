@@ -42,15 +42,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete address group with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Address group with uuid:{{  test_ag.address_group_uuid }} will be deleted."
       - output.address_group_uuid == "{{ test_ag.address_group_uuid }}"
-    fail_msg: "Address group Policy been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete address group with check mode failed"
+    success_msg: "Delete address group with check mode passed"
 
 - name: Delete address group
   ntnx_address_groups:

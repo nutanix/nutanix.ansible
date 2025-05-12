@@ -310,7 +310,7 @@
   no_log: true
 
 - name: check listing status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.error is defined
       - result.failed == true
@@ -327,15 +327,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete cluster with check mode status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Cluster with uuid:{{  todelete }} will be deleted."
       - output.cluster_uuid == "{{  todelete  }}"
-    fail_msg: "Cluster been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete cluster with check mode failed"
+    success_msg: "Delete cluster with check mode passed"
 
 - name: delete cluster
   ntnx_ndb_clusters:

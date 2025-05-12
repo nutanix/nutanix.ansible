@@ -874,15 +874,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete db server vm with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Db server with uuid:{{  db_server_uuid }} will be deleted."
       - output.uuid == "{{ db_server_uuid  }}"
-    fail_msg: "db server vm been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete db server vm with check mode failed"
+    success_msg: "Delete db server vm with check mode passed"
 
 - name: Unregister db server vm
   ntnx_ndb_db_server_vms:

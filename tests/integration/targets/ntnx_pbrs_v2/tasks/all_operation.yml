@@ -70,7 +70,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
+- name: Delete PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -85,8 +85,8 @@
       - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
       - result.changed == false
       - result.failed == false
-    fail_msg: " Unable to Create PBR with vpc , source network, external destination, with PERMIT action and icmp with check mode"
-    success_msg: "Returned as expected in check mode"
+    fail_msg: " Delete PBR with vpc , source network, external destination, with PERMIT action and icmp with check_mode failed"
+    success_msg: " Delete PBR with vpc , source network, external destination, with PERMIT action and icmp with check_mode passed"
 ###############################################################################################################################
 - name: Create PBR with vpc , source network, external destination, with PERMIT action and icmp
   ntnx_pbrs_v2:

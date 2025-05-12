@@ -562,7 +562,7 @@
     fail_msg: Unable to add database to database instance
     success_msg: databases added to database instance successfully
 
-- name: remove databases in database instance  with check mode
+- name: Remove databases in database instance  with check mode
   ntnx_ndb_linked_databases:
     state: absent
     db_instance_uuid: "{{db_uuid}}"
@@ -571,16 +571,16 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Remove databases in database instance check mode status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Database with uuid:{{  db_uuid }} will be removed."
       - output.db_uuid == "{{  db_uuid  }}"
       - output.db_instance_uuid == "{{  linked_databases.test1  }}"
-    fail_msg: " Remove databases in database instance within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Remove databases in database instance with check mode failed"
+    success_msg: "Remove databases in database instance with check mode passed"
 
 - name: remove databases in database instance
   ntnx_ndb_linked_databases:

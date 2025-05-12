@@ -259,15 +259,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete Pbr with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Pbr with uuid:{{ result.pbr_uuid}} will be deleted."
       - output.pbr_uuid == "{{ result.pbr_uuid }}"
-    fail_msg: "Pbr been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete Pbr with check mode failed"
+    success_msg: "Delete Pbr with check mode passed"
 
 - name: Delete all created pbrs
   ntnx_pbrs:

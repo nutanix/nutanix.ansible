@@ -118,15 +118,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete app security rule with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Security rule with uuid:{{ result.response.metadata.uuid}} will be deleted."
       - output.security_rule_uuid == "{{ result.response.metadata.uuid }}"
-    fail_msg: "app security  has rule been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete app security rule with check mode failed"
+    success_msg: "Delete app security rule with check mode passed"
 
 - name: delete app security rule
   ntnx_security_rules:

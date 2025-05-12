@@ -57,15 +57,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete acp with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Acp with uuid:{{  result.response.metadata.uuid }} will be deleted."
       - output.acp_uuid == "{{ result.response.metadata.uuid  }}"
-    fail_msg: "Acp Policy been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete acp with check mode failed"
+    success_msg: "Delete acp with check mode passed"
 
 - name: Delete acp
   ntnx_acps:

@@ -172,15 +172,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete service groups with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =='Service group with uuid:{{ result.response.uuid }} will be deleted.'
       - output.service_group_uuid == '{{  result.response.uuid  }}'
-    fail_msg: "service groups has been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete service group with check mode failed"
+    success_msg: "Delete service group with check mode passed"
 
 - name: Delete all created service groups
   ntnx_service_groups:

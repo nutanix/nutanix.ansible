@@ -95,14 +95,14 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete registry with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Registry with name:{{  registry_name }} will be deleted."
-    fail_msg: "registry been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete registry with check mode failed"
+    success_msg: "Delete registry with check mode passed"
 
 - name: delete registry
   ntnx_karbon_registries:

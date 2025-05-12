@@ -155,15 +155,16 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete profiles with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Profile with uuid:{{  todelete[0] }} will be deleted."
       - output.uuid == "{{  todelete[0]  }}"
-    fail_msg: "Profile been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete profiles with check mode failed"
+    success_msg: "Delete profiles with check mode passed"
+################################################################
 
 - name: Delete all created cmpute profiles
   ntnx_ndb_profiles:

@@ -664,15 +664,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete Recovery plan with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Recovery plan with uuid:{{ recovery_plan.plan_uuid }} will be deleted."
       - output.plan_uuid == "{{ recovery_plan.plan_uuid }}"
-    fail_msg: "Recovery plan has been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete recovery plan with check mode failed"
+    success_msg: "Delete recovery plan with check mode passed"
 
 - name: Delete recovery plan
   ntnx_recovery_plans:

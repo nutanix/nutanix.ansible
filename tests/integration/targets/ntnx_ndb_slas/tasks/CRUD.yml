@@ -266,15 +266,15 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
-  assert:
+- name: Delete Sla with check mode Status
+  ansible.builtin.assert:
     that:
       - output.failed == false
       - output.changed == false
       - output.msg =="Sla with uuid:{{  todelete[0] }} will be deleted."
       - output.uuid == "{{  todelete[0]  }}"
-    fail_msg: "Sla been deleted successfully within check_mode"
-    success_msg: "Returned As expected"
+    fail_msg: "Delete Sla with check mode failed"
+    success_msg: "Delete Sla with check mode passed"
 
 - name: verify slas delete flow
   ntnx_ndb_slas:
