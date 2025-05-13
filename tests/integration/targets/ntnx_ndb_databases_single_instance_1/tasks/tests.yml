@@ -122,14 +122,14 @@
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
         - {
-            payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-            taskType: OS_PATCHING,
-          }
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
         - {
-            payload:
-              { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-            taskType: DB_PATCHING,
-          }
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -481,14 +481,14 @@
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
         - {
-            payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-            taskType: OS_PATCHING,
-          }
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
         - {
-            payload:
-              { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-            taskType: DB_PATCHING,
-          }
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -507,7 +507,7 @@
     fail_msg: Unable to create register database spec
     success_msg: single instance postgres database register spec created successfully
 
-- name: register previously unregistered database from previously created VM
+- name: Register previously unregistered database from previously created VM
   ntnx_ndb_register_database:
     wait: true
 

@@ -59,14 +59,14 @@
       maintenanceWindowId: test_window_uuid
       tasks:
         - {
-            payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-            taskType: OS_PATCHING,
-          }
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
         - {
-            payload:
-              { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-            taskType: DB_PATCHING,
-          }
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -78,9 +78,9 @@
         actionArguments:
           - { name: vm_name, value: ansible-created-vm1-from-time-machine }
           - {
-              name: client_public_key,
-              value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER,
-            }
+            name: client_public_key,
+            value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER,
+          }
         computeProfileId: test_compute_uuid
         databaseType: postgres_database
         description: ansible-created-vm1-from-time-machine-time-machine
@@ -89,15 +89,15 @@
           maintenanceWindowId: test_window_uuid
           tasks:
             - {
-                payload:
-                  { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-                taskType: OS_PATCHING,
-              }
+              payload:
+                { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+              taskType: OS_PATCHING,
+            }
             - {
-                payload:
-                  { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-                taskType: DB_PATCHING,
-              }
+              payload:
+                { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+              taskType: DB_PATCHING,
+            }
         networkProfileId: test_network_uuid
         nxClusterId: test_cluster_uuid
         snapshotId: test_snapshot_uuid
@@ -168,15 +168,15 @@
           maintenanceWindowId: "{{ maintenance.window_uuid }}"
           tasks:
             - {
-                payload:
-                  { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-                taskType: OS_PATCHING,
-              }
+              payload:
+                { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+              taskType: OS_PATCHING,
+            }
             - {
-                payload:
-                  { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-                taskType: DB_PATCHING,
-              }
+              payload:
+                { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+              taskType: DB_PATCHING,
+            }
         networkProfileId: "{{ network_profile.uuid }}"
         nxClusterId: "{{ cluster.cluster1.uuid }}"
         softwareProfileId: "{{ software_profile.uuid }}"
@@ -515,15 +515,15 @@
         maintenanceWindowId: "{{ maintenance.window_uuid }}"
         tasks:
           - {
-              payload:
-                { prePostCommand: { postCommand: ls, preCommand: ls -a } },
-              taskType: OS_PATCHING,
-            }
+            payload:
+              { prePostCommand: { postCommand: ls, preCommand: ls -a } },
+            taskType: OS_PATCHING,
+          }
           - {
-              payload:
-                { prePostCommand: { postCommand: ls, preCommand: ls -a } },
-              taskType: DB_PATCHING,
-            }
+            payload:
+              { prePostCommand: { postCommand: ls, preCommand: ls -a } },
+            taskType: DB_PATCHING,
+          }
       uuid: "{{ maintenance.window_uuid }}"
 
 - name: Check mode status
@@ -780,14 +780,14 @@
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
         - {
-            payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
-            taskType: OS_PATCHING,
-          }
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
         - {
-            payload:
-              { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
-            taskType: DB_PATCHING,
-          }
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
