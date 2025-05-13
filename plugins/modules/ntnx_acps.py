@@ -155,14 +155,14 @@ EXAMPLES = r"""
     user_group_uuids:
       - "{{ user_group_uuid }}"
 
-- name: Create ACP with all specfactions
+- name: Create ACP with all specifications
   ntnx_acps:
     validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    name: acp_with_all_specfactions
+    name: acp_with_all_specifications
     role:
       uuid: "{{ role.uuid }}"
     user_uuids:

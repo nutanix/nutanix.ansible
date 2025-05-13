@@ -479,7 +479,7 @@
       - result.response.ext_id == "{{ recovery_point_ext_id_1 }}"
       - actual_expiration_time == expected_expiration_time
       - result.response.name == "{{ recovery_point_name }}_1"
-      - result.warning == "Only Expiration time Updation is allowed. Can't update other fields."
+      - result.warning == "Only Expiration time Update is allowed. Can't update other fields."
     fail_msg: "Check if expiration time is updated but name is same failed"
     success_msg: "Check if expiration time is updated but name is same passed"
 
@@ -497,7 +497,7 @@
   ansible.builtin.assert:
     that:
       - result.changed == false
-      - result.msg == "Update of other operations is not supported. Only updation of Expiration time is allowed."
+      - result.msg == "Update of other operations is not supported. Only update of Expiration time is allowed."
     fail_msg: "Updated name but expiration time is same"
     success_msg: "Didn't update name as expiration time is same"
 

@@ -115,10 +115,10 @@
   ansible.builtin.set_fact:
     todelete: []
 ##########################################################
-- name: Create VPC with all specfactions
+- name: Create VPC with all specifications
   ntnx_vpcs:
     state: present
-    name: vpc_with_add_specfactions
+    name: vpc_with_add_specifications
     external_subnets:
       - subnet_name: "{{ external_nat_subnet.name }}"
     dns_servers: "{{ dns_servers }}"
@@ -133,8 +133,8 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create vpc all specfactions "
-    success_msg: " VPC with all specfactions created successfully "
+    fail_msg: " Unable to create vpc all specifications "
+    success_msg: " VPC with all specifications created successfully "
 
 - name: Adding vpc uuid to delete list
   ansible.builtin.set_fact:

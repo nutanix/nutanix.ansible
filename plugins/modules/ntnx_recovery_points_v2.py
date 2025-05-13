@@ -224,7 +224,7 @@ warning:
     description: Warning message if any
     type: str
     returned: when a warning occurs
-    sample: "Only Expiration time Updation is allowed. Can't update other fields."
+    sample: "Only Expiration time update is allowed. Can't update other fields."
 """
 
 import traceback  # noqa: E402
@@ -405,7 +405,7 @@ def update_expiry_date_recovery_point(module, result):
             old_spec.to_dict(), update_spec.to_dict()
         ):
             result["skipped"] = True
-            msg = "Update of other operations is not supported. Only updation of Expiration time is allowed."
+            msg = "Update of other operations is not supported. Only update of Expiration time is allowed."
             module.exit_json(msg=msg, **result)
         else:
             result["skipped"] = True
@@ -415,7 +415,7 @@ def update_expiry_date_recovery_point(module, result):
     ):
         result[
             "warning"
-        ] = "Only Expiration time Updation is allowed. Can't update other fields."
+        ] = "Only Expiration time update is allowed. Can't update other fields."
 
     expirationTimeSpec = data_protection_sdk.ExpirationTimeSpec()
     expirationTimeSpec.expiration_time = new_expiration_time

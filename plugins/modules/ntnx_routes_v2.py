@@ -21,7 +21,7 @@ options:
   state:
     description:
       - State of the route.
-      - if C(state) is C(present) and route exteral ID is given, then route will be updated.
+      - if C(state) is C(present) and route external ID is given, then route will be updated.
       - if C(state) is C(present) and route external ID is absent, then route will be created.
       - if C(state) is C(absent) and route external ID is given, then route will be deleted.
     choices: ["present", "absent"]

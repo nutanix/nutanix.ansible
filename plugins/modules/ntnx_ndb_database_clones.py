@@ -126,7 +126,7 @@ options:
 
             use_authorized_server:
                 description:
-                    - conifgure authorized database server VM for hosting database clone
+                    - configure authorized database server VM for hosting database clone
                 type: dict
                 suboptions:
                     name:

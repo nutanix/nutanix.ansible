@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_security_rules
-short_description: security_rule module which suports security_rule CRUD operations
+short_description: security_rule module which supports security_rule CRUD operations
 version_added: 1.3.0
 description: 'Create, Update, Delete security_rule'
 options:

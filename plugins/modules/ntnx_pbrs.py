@@ -51,7 +51,7 @@ options:
         type: bool
       network:
         description:
-          - Traffic from specfic network address
+          - Traffic from specific network address
           - Mutually exclusive with C(any) and C(external)
         type: dict
         suboptions:
@@ -77,7 +77,7 @@ options:
         type: bool
       network:
         description:
-          - Traffic to specfic network address
+          - Traffic to specific network address
           - Mutually exclusive with C(any) and C(external)
         type: dict
         suboptions:
