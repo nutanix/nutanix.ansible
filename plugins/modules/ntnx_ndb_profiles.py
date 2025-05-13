@@ -17,11 +17,12 @@ description:
     - currently, compute, network, database parameters and software profiles are supported
     - only software profile supports versions operations
     - version related operations can be configured under "software"
-    - only software profile supports multi cluster availibility
+    - only software profile supports multi cluster availability
 options:
       profile_uuid:
         description:
             - uuid of profile for delete or update
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       name:
         description:

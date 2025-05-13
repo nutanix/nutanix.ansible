@@ -62,7 +62,9 @@ options:
     required: false
     type: str
   security_rule_uuid:
-    description: security_rule UUID
+    description:
+        - security_rule UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   allow_ipv6_traffic:
     description: Allow traffic from ipv6

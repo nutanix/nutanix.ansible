@@ -25,6 +25,7 @@ options:
       sla_uuid:
         description:
             - sla uuid
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       frequency:
         description:

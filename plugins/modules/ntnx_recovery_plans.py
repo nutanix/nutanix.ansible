@@ -14,7 +14,9 @@ version_added: 1.5.0
 description: 'Create, Update, Delete Recovery Plan'
 options:
   plan_uuid:
-    description: recovery_plan uuid
+    description:
+        - recovery_plan uuid
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
     required: false
   name:
