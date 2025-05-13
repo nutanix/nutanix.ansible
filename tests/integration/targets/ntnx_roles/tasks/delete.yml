@@ -62,6 +62,6 @@
     that:
       - result.response is defined
       - result.changed == True
-
+      - result.role_uuid == "{{ test_role.role_uuid }}"
     fail_msg: "role delete failed"
     success_msg: "role deleted successfully"

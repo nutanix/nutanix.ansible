@@ -686,6 +686,6 @@
       - result.response is defined
       - result.changed == True
       - result.response.status == 'SUCCEEDED'
-
+      - result.plan_uuid == "{{ recovery_plan.plan_uuid }}"
     fail_msg: "recovery plan delete failed"
     success_msg: "recovery plan deleted successfully"

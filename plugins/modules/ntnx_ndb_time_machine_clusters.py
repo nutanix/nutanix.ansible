@@ -308,9 +308,9 @@ def delete_data_access_instance(module, result):
         err_msg = "'cluster' is required field for removing cluster from time machine"
         module.fail_json(msg=err_msg, **result)
 
+    result["cluster_uuid"] = cluster_uuid
+    result["time_machine_uuid"] = tm_uuid
     if module.check_mode:
-        result["cluster_uuid"] = cluster_uuid
-        result["time_machine_uuid"] = tm_uuid
         result[
             "msg"
         ] = "Cluster with uuid:{0} will be deleted from Time Machine.".format(
@@ -320,8 +320,6 @@ def delete_data_access_instance(module, result):
 
     resp = tm.delete_data_access_instance(tm_uuid, cluster_uuid)
 
-    result["cluster_uuid"] = cluster_uuid
-    result["time_machine_uuid"] = tm_uuid
     result["response"] = resp
     result["changed"] = True
 

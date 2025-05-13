@@ -503,15 +503,14 @@ def delete_pbr(module, result):
 
     pbr = Pbr(module)
 
+    result["pbr_uuid"] = pbr_uuid
     if module.check_mode:
-        result["pbr_uuid"] = pbr_uuid
         result["msg"] = "Pbr with uuid:{0} will be deleted.".format(pbr_uuid)
         return
 
     resp = pbr.delete(pbr_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["pbr_uuid"] = pbr_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

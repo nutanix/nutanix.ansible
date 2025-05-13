@@ -132,15 +132,16 @@
   ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
-  register: result
+  register: output
   ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.failed == false
-      - result.response.status == 'SUCCEEDED'
+      - output.response is defined
+      - output.failed == false
+      - output.response.status == 'SUCCEEDED'
+      - output.security_rule_uuid == "{{ result.response.metadata.uuid }}"
     fail_msg: " fail: unable to delete app security rule "
     success_msg: "pass : delete app security rule successfully"
 - name: Create app security rule with allow all inbound and outbound list

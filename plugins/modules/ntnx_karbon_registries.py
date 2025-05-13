@@ -122,12 +122,12 @@ def create_registry(module, result):
 
 def delete_registry(module, result):
     registry_name = module.params["name"]
+    result["name"] = registry_name
     if not registry_name:
         result["error"] = "Missing parameter name in playbook"
         module.fail_json(msg="Failed deleting registry", **result)
 
     if module.check_mode:
-        result["name"] = registry_name
         result["msg"] = "Registry with name:{0} will be deleted.".format(registry_name)
         return
 

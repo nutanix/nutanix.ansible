@@ -229,9 +229,9 @@ def create_floating_ip(module, result):
 
 def delete_floating_ip(module, result):
     fip_uuid = module.params["fip_uuid"]
+    result["fip_uuid"] = fip_uuid
 
     if module.check_mode:
-        result["fip_uuid"] = fip_uuid
         result["msg"] = "Floating IP with uuid:{0} will be deleted.".format(fip_uuid)
         return
 
@@ -239,7 +239,6 @@ def delete_floating_ip(module, result):
     resp = floating_ip.delete(fip_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["fip_uuid"] = fip_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

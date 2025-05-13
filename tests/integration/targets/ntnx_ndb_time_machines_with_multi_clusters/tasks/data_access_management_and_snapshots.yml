@@ -212,6 +212,8 @@
       - result.time_machine_uuid is defined
       - result.changed == true
       - result.failed == false
+      - result.time_machine_uuid == "{{ time_machine.uuid }}"
+      - result.cluster_uuid == "{{ cluster.cluster2.uuid }}"
     fail_msg: "fail: Unable to remove cluster from time machine"
     success_msg: "pass: cluster from time machine removed successfully"
 
@@ -267,15 +269,17 @@
     time_machine_uuid: "{{ result.time_machine_uuid }}"
     cluster:
       uuid: "{{ cluster.cluster2.uuid }}"
-  register: result
+  register: output
 
 - name: Check delete status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.time_machine_uuid is defined
-      - result.changed == true
-      - result.failed == false
+      - output.response is defined
+      - output.time_machine_uuid is defined
+      - output.changed == true
+      - output.failed == false
+      - output.time_machine_uuid == "{{ result.time_machine_uuid }}"
+      - output.cluster_uuid == "{{ cluster.cluster2.uuid }}"
     fail_msg: "fail: Unable to remove cluster from time machine"
     success_msg: "pass: cluster from time machine removed successfully"
 #######################

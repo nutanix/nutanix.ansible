@@ -63,6 +63,7 @@
     that:
       - result.response is defined
       - result.changed == true
+      - result.address_group_uuid == "{{ test_ag.address_group_uuid }}"
 
     fail_msg: "address group delete failed"
     success_msg: "address group deleted successfully"

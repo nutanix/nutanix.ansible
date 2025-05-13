@@ -120,14 +120,15 @@
   ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.security_rule_uuid }}"
-  register: result
+  register: output
   ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.failed == false
-      - result.response.status == 'SUCCEEDED'
+      - output.response is defined
+      - output.failed == false
+      - output.response.status == 'SUCCEEDED'
+      - result.security_rule_uuid == "{{ result.security_rule_uuid }}"
     fail_msg: " fail: unable to delete isolation security rule "
     success_msg: "pass : delete isolation security rule successfully"

@@ -43,14 +43,15 @@
   ntnx_images:
     state: absent
     image_uuid: "{{ result.response.metadata.uuid }}"
-  register: result
+  register: output
 
 - name: Delete Status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
+      - output.response is defined
+      - output.changed == true
+      - output.failed == false
+      - output.uuid == "{{ result.response.metadata.uuid }}"
     fail_msg: "Unable to delete image"
     success_msg: "Image deleted successfully"
 

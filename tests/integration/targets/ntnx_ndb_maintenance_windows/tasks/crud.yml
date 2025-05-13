@@ -338,6 +338,7 @@
       - result.changed == True
       - result.failed == false
       - result.response.status == "success"
+      - result.uuid == "{{ window1_uuid }}"
     fail_msg: unable to delete window
     success_msg: window deleted successfully
 
@@ -353,5 +354,6 @@
       - result.changed == True
       - result.failed == false
       - result.response.status == "success"
+      - result.uuid == "{{ window2_uuid }}"
     fail_msg: unable to delete window
     success_msg: window deleted successfully

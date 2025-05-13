@@ -351,6 +351,7 @@
       - result.error is defined
       - result.failed == true
       - result.changed == false
+      - result.cluster_uuid == "{{todelete}}"
     fail_msg: module didn't errored out correctly when incorrect name is given
     success_msg: module errored out correctly when incorrect name is given
 

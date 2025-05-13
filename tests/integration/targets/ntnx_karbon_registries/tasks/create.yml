@@ -101,6 +101,7 @@
       - output.failed == false
       - output.changed == false
       - output.msg =="Registry with name:{{  registry_name }} will be deleted."
+      - output.name == "{{ registry_name }}"
     fail_msg: "Delete registry with check mode failed"
     success_msg: "Delete registry with check mode passed"
 
@@ -118,5 +119,6 @@
       - result.failed == false
       - result.changed == true
       - "'{{ registry_name }}' in result.response.registry_name"
+      - result.name == "{{ registry_name }}"
     fail_msg: "Fail: unable to delete created registry with username and password"
     success_msg: "Pass: delete registry finished successfully"

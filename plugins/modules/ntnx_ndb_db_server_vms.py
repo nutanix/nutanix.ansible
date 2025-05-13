@@ -682,10 +682,11 @@ def delete_db_server(module, result):
         module.fail_json("Failed getting db server delete update spec", **result)
 
     spec["remove"] = not spec["delete"]
-
+    result["uuid"] = uuid
+    
     if module.check_mode:
         result["response"] = spec
-        result["uuid"] = uuid
+
         result["msg"] = "Db server with uuid:{0} will be deleted.".format(uuid)
         return
 

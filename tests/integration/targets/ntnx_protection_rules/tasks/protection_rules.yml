@@ -368,14 +368,14 @@
     state: absent
     wait: true
     rule_uuid: "{{ result.rule_uuid }}"
-  register: result
+  register: output
 
 - name: Delete Status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == True
-      - result.response.status == 'SUCCEEDED'
-
+      - output.response is defined
+      - output.changed == True
+      - output.response.status == 'SUCCEEDED'
+      - output.rule_uuid == "{{ result.rule_uuid }}"
     fail_msg: "protection policy delete failed"
     success_msg: "protection policy deleted successfully"

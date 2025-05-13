@@ -64,5 +64,6 @@
       - result.response.status_code == 200
       - result.failed==false
       - result.changed==true
+      - result.image_name == "integration-test-ntnx-package.tar.gz"
     fail_msg: " Fail : unable to delete image  with nos installer_type "
     success_msg: "Succes: image  with nos installer_type deleted successfully "

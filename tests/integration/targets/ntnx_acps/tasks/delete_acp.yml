@@ -71,15 +71,16 @@
   ntnx_acps:
     state: absent
     acp_uuid: "{{ result.acp_uuid }}"
-  register: result
+  register: output
   ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.response.status == 'SUCCEEDED'
-      - result.failed == false
-      - result.changed == true
+      - output.response is defined
+      - output.response.status == 'SUCCEEDED'
+      - output.failed == false
+      - output.changed == true
+      - output.acp_uuid == "{{ result.acp_uuid }}"
     fail_msg: " Unable to delete ACP with all specfactions "
     success_msg: " ACP has been deleted successfully "

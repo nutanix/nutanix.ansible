@@ -1184,14 +1184,13 @@ def delete_profile(module, result):
     if not uuid:
         return module.fail_json(msg="'profile_uuid' is a required for deleting profile")
 
+    result["uuid"] = uuid
     if module.check_mode:
-        result["uuid"] = uuid
         result["msg"] = "Profile with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = profiles.delete(uuid)
 
-    result["uuid"] = uuid
     result["response"] = resp
     result["changed"] = True
 

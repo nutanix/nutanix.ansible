@@ -743,13 +743,12 @@ def delete_project(module, result):
 
     projects = Project(module)
 
+    result["uuid"] = uuid
     if module.check_mode:
-        result["uuid"] = uuid
         result["msg"] = "Project with uuid:{0} will be deleted.".format(uuid)
         return
 
     resp = projects.delete(uuid)
-    result["uuid"] = uuid
     result["response"] = resp
     result["changed"] = True
     task_uuid = resp["status"]["execution_context"]["task_uuid"]

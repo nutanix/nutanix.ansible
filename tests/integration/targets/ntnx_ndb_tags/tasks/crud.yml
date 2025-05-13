@@ -365,6 +365,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ database_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
@@ -380,6 +381,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ database_tag2_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
@@ -395,6 +397,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ clone_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
@@ -410,6 +413,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ time_machine_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
@@ -443,5 +447,6 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ db_server_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully

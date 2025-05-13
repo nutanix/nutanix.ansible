@@ -258,6 +258,23 @@
     fail_msg: snapshot got updated
     success_msg: snapshot update got skipped due to no state changes
 
+- name: Delete snapshot with check mode
+  check_mode: true
+  ntnx_ndb_database_snapshots:
+    snapshot_uuid: "{{ snapshot_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete snapshot check mode status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.msg == "Snapshot with uuid:{{ snapshot_uuid }} will be deleted."
+      - result.snapshot_uuid == "{{ snapshot_uuid }}"
+    fail_msg: "Delete snapshot with check mode failed"
+    success_msg: "Delete snapshot with check mode passed"
+
 ############################################ log catchup ######################################
 
 - name: Create spec for log catchup

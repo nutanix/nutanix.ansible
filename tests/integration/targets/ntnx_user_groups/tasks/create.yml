@@ -161,6 +161,7 @@
       - result.failed == false
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
+      - result.uuid == "{{user_group_to_delete}}"
     fail_msg: "Unable to delete user  group  "
     success_msg: "user  group deletd successfully"
 # - name: create user group with idp

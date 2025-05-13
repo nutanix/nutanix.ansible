@@ -950,15 +950,14 @@ def delete_vm(module, result):
 
     vm = VM(module)
 
+    result["vm_uuid"] = vm_uuid
     if module.check_mode:
-        result["vm_uuid"] = vm_uuid
         result["msg"] = "VM with uuid:{0} will be deleted.".format(vm_uuid)
         return
 
     resp = vm.delete(vm_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["vm_uuid"] = vm_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

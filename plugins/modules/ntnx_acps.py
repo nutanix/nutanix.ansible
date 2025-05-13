@@ -466,8 +466,8 @@ def delete_acp(module, result):
         result["error"] = "Missing parameter acp_uuid in playbook"
         module.fail_json(msg="Failed deleting acp", **result)
 
+    result["acp_uuid"] = acp_uuid
     if module.check_mode:
-        result["acp_uuid"] = acp_uuid
         result["msg"] = "Acp with uuid:{0} will be deleted.".format(acp_uuid)
         return
 
@@ -475,7 +475,6 @@ def delete_acp(module, result):
     resp = acp.delete(acp_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["acp_uuid"] = acp_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

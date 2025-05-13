@@ -194,14 +194,15 @@
   ntnx_users:
     state: absent
     user_uuid: "{{ result.user_uuid }}"
-  register: result
+  register: output
   ignore_errors: true
 
 - name: Check delete status
   ansible.builtin.assert:
     that:
-      - result.changed == true
-      - result.response is defined
-      - result.response.status == 'SUCCEEDED'
+      - output.changed == true
+      - output.response is defined
+      - output.response.status == 'SUCCEEDED'
+      - output.uuid == '{{ result.user_uuid }}'
     fail_msg: "Fail: unable to delete users"
     success_msg: "Pass: users deleted successfully"

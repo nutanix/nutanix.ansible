@@ -1500,11 +1500,6 @@ def delete_db_servers(module, result, database_info):
             delete=module.params.get("delete_db_server_vms", False)
         )
 
-        if module.check_mode:
-            result["uuid"] = uuid
-            result["msg"] = "Db server with uuid:{0} will be deleted.".format(uuid)
-            return
-
         resp = db_servers.delete(uuid=uuid, data=spec)
 
         ops_uuid = resp["operationId"]
@@ -1528,10 +1523,10 @@ def delete_instance(module, result):
     database = _databases.read(uuid, query=query)
 
     spec = _databases.get_delete_spec()
+    result["uuid"] = uuid
 
     if module.check_mode:
         result["response"] = spec
-        result["uuid"] = uuid
         result["msg"] = "Instance with uuid:{0} will be deleted.".format(uuid)
         return
 

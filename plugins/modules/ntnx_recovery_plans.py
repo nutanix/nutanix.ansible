@@ -1101,13 +1101,12 @@ def delete_recovery_plan(module, result):
     recovery_plan = RecoveryPlan(module)
     plan_uuid = module.params["plan_uuid"]
 
+    result["plan_uuid"] = plan_uuid
     if module.check_mode:
-        result["plan_uuid"] = plan_uuid
         result["msg"] = "Recovery plan with uuid:{0} will be deleted.".format(plan_uuid)
         return
 
     resp = recovery_plan.delete(uuid=plan_uuid)
-    result["plan_uuid"] = plan_uuid
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
     result["changed"] = True
 
