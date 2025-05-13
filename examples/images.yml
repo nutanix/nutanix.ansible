@@ -67,7 +67,7 @@
             - Backup
         wait: true
 
-    - name: detach all categories from existing image
+    - name: Detach all categories from existing image
       nutanix.ncp.ntnx_images:
         state: "present"
         image_uuid: "00000000-0000-0000-0000-000000000000"
