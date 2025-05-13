@@ -235,6 +235,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 for key, value in host_vars.items():
                     self.inventory.set_variable(vm_name, key, value)
 
+            self.inventory.set_variable(
+                vm_name,
+                "project_reference",
+                entity.get("metadata", {}).get("project_reference", {}),
+            )
+
+            # Add variables created by the user's Jinja2 expressions to the host
             self._set_composite_vars(
                 self.get_option("compose"),
                 host_vars,
