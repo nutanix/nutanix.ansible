@@ -927,9 +927,9 @@ def update_vm(module, result):
             wait_for_task_completion(module, result, False)
             response_state = result["response"].get("status")
             if response_state == "FAILED":
-                result["warning"] = (
-                    "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
-                )
+                result[
+                    "warning"
+                ] = "VM 'soft_shutdown' operation failed, use 'hard_poweroff' instead"
 
             resp = vm.read(vm_uuid)
             result["response"] = resp
