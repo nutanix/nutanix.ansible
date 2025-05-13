@@ -1,7 +1,7 @@
 ---
 - name: Start ntnx_vms_v2 tests for UEFI Boot
   ansible.builtin.debug:
-    msg: start ntnx_vms_v2 tests
+    msg: Start ntnx_vms_v2 tests for UEFI Boot
 
 - name: Generate random category key & value
   ansible.builtin.set_fact:
@@ -15,8 +15,6 @@
   ansible.builtin.set_fact:
     todelete: []
     vm_name: "{{ random_name }}{{ suffix_name }}vm"
-
-# Define a spec, run the VM build in check mode, and confirm that the request will be built with the appropriate configuration
 
 ########################################################################
 # Secure Boot with Boot Order DISK and specified boot device - Check Mode
@@ -70,13 +68,13 @@
       network_info:
         nic_type: NORMAL_NIC
         subnet:
-          ext_id: "{{ subnets.subnet_ext_ids[0] }}"
+          ext_id: "{{ static.uuid }}"
         vlan_mode: ACCESS
   register: result
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
+- name: Create Secure Boot UEFI VM with Boot Order DISK and specified boot device with check_mode status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -103,10 +101,10 @@
       - result.response.boot_config.boot_device.disk_address.index == 2
       - result.response.nics[0].backing_info.is_connected == true
       - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
-      - result.response.nics[0].network_info.subnet.ext_id == subnets.subnet_ext_ids[0]
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
-    fail_msg: " Unable to create UEFI Boot VM with specified requirements " 
-    success_msg: Returned as expected
+    fail_msg: "Unable to create secure boot UEFI VM with boot order DISK and specified boot device with check_mode"
+    success_msg: "Secure boot UEFI VM with boot order DISK and specified boot device with check_mode created successfully"
 
 ########################################################################
 # Secure Boot with Boot Order NETWORK - Check Mode
@@ -155,13 +153,13 @@
       network_info:
         nic_type: NORMAL_NIC
         subnet:
-          ext_id: "{{ subnets.subnet_ext_ids[0] }}"
+          ext_id: "{{ static.uuid }}"
         vlan_mode: ACCESS
   register: result
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
+- name: Create Secure Boot UEFI VM with Boot Order NETWORK with check_mode status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -186,10 +184,10 @@
       - result.response.boot_config.boot_order[0] == "NETWORK"
       - result.response.nics[0].backing_info.is_connected == true
       - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
-      - result.response.nics[0].network_info.subnet.ext_id == subnets.subnet_ext_ids[0]
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
-    fail_msg: " Unable to create UEFI Boot VM with specified requirements " 
-    success_msg: Returned as expected
+    fail_msg: "Unable to create secure boot UEFI VM with boot order NETWORK with check_mode"
+    success_msg: "Secure Boot UEFI VM with Boot Order NETWORK with check_mode created successfully"
 
 ########################################################################
 # Secure Boot Boot with Boot Order DISK and specified boot device - Actual Build
@@ -243,12 +241,12 @@
       network_info:
         nic_type: NORMAL_NIC
         subnet:
-          ext_id: "{{ subnets.subnet_ext_ids[0] }}"
+          ext_id: "{{ static.uuid }}"
         vlan_mode: ACCESS
   register: result
   ignore_errors: true
 
-- name: Creation Status
+- name: Create Secure Boot UEFI VM with Boot Order DISK and specified boot device status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -275,10 +273,10 @@
       - result.response.boot_config.boot_device.disk_address.index == 2
       - result.response.nics[0].backing_info.is_connected == true
       - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
-      - result.response.nics[0].network_info.subnet.ext_id == subnets.subnet_ext_ids[0]
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
-    fail_msg: " Unable to create UEFI boot VM with specified requirements "
-    success_msg: " UEFI boot VM with specified requirements created successfully "
+    fail_msg: "Unable to create Secure Boot UEFI VM with Boot Order DISK and specified boot device"
+    success_msg: "Secure Boot UEFI VM with Boot Order DISK and specified boot device created successfully"
 
 - name: Fetch vm using ext_id
   ntnx_vms_info_v2:
@@ -338,12 +336,12 @@
       network_info:
         nic_type: NORMAL_NIC
         subnet:
-          ext_id: "{{ subnets.subnet_ext_ids[0] }}"
+          ext_id: "{{ static.uuid }}"
         vlan_mode: ACCESS
   register: result
   ignore_errors: true
 
-- name: Creation Status
+- name: Create Secure Boot UEFI VM with Boot Order NETWORK status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -368,10 +366,10 @@
       - result.response.boot_config.boot_order[0] == "NETWORK"
       - result.response.nics[0].backing_info.is_connected == true
       - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
-      - result.response.nics[0].network_info.subnet.ext_id == subnets.subnet_ext_ids[0]
+      - result.response.nics[0].network_info.subnet.ext_id == "{{ static.uuid }}"
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
-    fail_msg: " Unable to create UEFI Boot VM with specified requirements " 
-    success_msg: Returned as expected
+    fail_msg: "Unable to create Secure Boot UEFI VM with Boot Order NETWORK"
+    success_msg: "Secure Boot UEFI VM with Boot Order NETWORK created successfully"
 
 - name: Fetch vm using ext_id
   ntnx_vms_info_v2:
@@ -402,7 +400,7 @@
       - item.response is defined
       - item.changed == True
       - item.failed == False
-      #- item.ext_id == "{{ todelete[vms_index] }}"
+      - item.ext_id == "{{ todelete[vms_index] }}"
       - item.ext_id == todelete[vms_index]
     fail_msg: "Unable to delete VM "
     success_msg: "VM is deleted successfully "
