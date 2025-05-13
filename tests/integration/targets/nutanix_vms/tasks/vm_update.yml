@@ -23,8 +23,8 @@
       - result.response.status.state == 'COMPLETE'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: " Unable to create VM with minimum requiremnts "
-    success_msg: " VM with minimum requiremnts created successfully "
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
 ####################################################################
 - name: Update vm by set owner by uuid
   ntnx_vms:
@@ -299,7 +299,7 @@
       - result.response.status.state == "COMPLETE"
     fail_msg: " Unable to update vm by removing PCI disks with force_power_off "
     success_msg: " VM updated successfully by removing PCI disks with force_power_off "
-##### CRUD opperation for IDE disks
+##### CRUD operation for IDE disks
 - name: Update VM by adding  IDE disks with force_power_off
   ntnx_vms:
     vm_uuid: "{{ result.vm_uuid }}"
@@ -344,6 +344,54 @@
       - result.response.status.state == "COMPLETE"
     fail_msg: " Unable to update vm by increasing the size of the IDE  disks with force_power_off "
     success_msg: " VM updated successfully by increasing the size of the IDE  disks with force_power_off "
+
+- name: Get UUID of CDROM
+  ansible.builtin.set_fact:
+    cdrom_uuid: "{{ result.response.spec.resources.disk_list | json_query(cdrom_query) }}"
+  vars:
+    cdrom_query: "[?device_properties.device_type == 'CDROM'].uuid"
+  ignore_errors: true
+  register: result1
+
+- name: Get number of disks attached to VM
+  ansible.builtin.set_fact:
+    disk_count: "{{ result.response.spec.resources.disk_list | length }}"
+  ignore_errors: true
+  register: result2
+
+- name: Update VM by cloning image into CD ROM
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "CDROM"
+        uuid: "{{ cdrom_uuid[0] }}"
+        clone_image:
+          name: "{{ centos }}"
+  register: result
+  ignore_errors: true
+
+- name: Get index of CDROM
+  ansible.builtin.set_fact:
+    item_index: "{{ index }}"
+  loop: "{{ result.response.spec.resources.disk_list }}"
+  loop_control:
+    index_var: index
+  when: item.uuid == cdrom_uuid[0]
+  no_log: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.vm_uuid
+      - result.task_uuid
+      - result.response.spec.resources.disk_list[item_index].device_properties.device_type == "CDROM"
+      - result.response.spec.resources.disk_list[item_index].data_source_reference.kind == "image"
+      - result.response.spec.resources.disk_list[item_index].data_source_reference.uuid is defined
+      - result.response.spec.resources.disk_list | length == {{ disk_count }}
+      - result.response.status.state == "COMPLETE"
+    fail_msg: " Unable to update vm by cloning image into CD ROM "
+    success_msg: " VM updated successfully by cloning image into CD ROM"
 
 - name: Update VM by removing IDE disks with force_power_off
   ntnx_vms:
