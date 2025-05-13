@@ -683,7 +683,7 @@ def delete_db_server(module, result):
 
     spec["remove"] = not spec["delete"]
     result["uuid"] = uuid
-    
+
     if module.check_mode:
         result["response"] = spec
 
