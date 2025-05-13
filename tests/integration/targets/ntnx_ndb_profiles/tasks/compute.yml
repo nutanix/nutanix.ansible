@@ -147,7 +147,7 @@
     fail_msg: "Fail: unable to verify unpublish flow in compute profile "
     success_msg: "Pass: verify unpublish flow in compute profile finished successfully"
 ################################################################
-- name: Delete all created cmpute profiles
+- name: Delete all created compute profiles
   ntnx_ndb_profiles:
     state: absent
     profile_uuid: "{{ item }}"

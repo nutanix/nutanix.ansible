@@ -15,4 +15,4 @@
       - result.failed==false
       - result.changed==false
     fail_msg: " Fail : unable to get aos_packages "
-    success_msg: "Succes: got aos_packages successfully "
+    success_msg: "Success: got aos_packages successfully "

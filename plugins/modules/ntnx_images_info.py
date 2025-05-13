@@ -136,7 +136,7 @@ entities:
                         "resources": {
                             "architecture": "X86_64",
                             "image_type": "DISK_IMAGE",
-                            "source_uri": "<ssource-uri>"
+                            "source_uri": "<source-uri>"
                         }
                     },
                     "status": {

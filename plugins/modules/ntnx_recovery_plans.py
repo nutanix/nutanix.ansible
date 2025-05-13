@@ -564,7 +564,7 @@ spec:
                                             {
                                                 "ip_config_list": [
                                                     {
-                                                        "ip_address": "cutom_ip_1"
+                                                        "ip_address": "custom_ip_1"
                                                     }
                                                 ],
                                                 "vm_reference": {
@@ -1042,7 +1042,7 @@ def check_recovery_plan_idempotency(old_spec, update_spec):
         if config not in old_ip_assignments:
             return False
 
-    # comparing availibility zones
+    # comparing availability zones
     if (
         old_spec["spec"]["resources"]["parameters"]["availability_zone_list"]
         != update_spec["spec"]["resources"]["parameters"]["availability_zone_list"]

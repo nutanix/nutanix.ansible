@@ -41,7 +41,7 @@ EXAMPLES = r"""
     nutanix_username: <user>
     nutanix_password: <pass>
     ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
-  register: resul
+  register: result
 """
 
 RETURN = r"""

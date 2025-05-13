@@ -60,7 +60,7 @@
       - result.response.status.resources.default_route["nexthop"]["external_subnet_reference"]["name"] == "{{ external_nat_subnet.name }}"
 
     fail_msg: "Fail: Unable to get static routes for vpc"
-    success_msg: "Succes"
+    success_msg: "Success"
 
 ###########################################################################################################
 

@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_ndb_slas
-short_description: moudle for creating, updating and deleting slas
+short_description: module for creating, updating and deleting slas
 version_added: 1.8.0
-description: moudle for creating, updating and deleting slas
+description: module for creating, updating and deleting slas
 options:
       name:
         description:

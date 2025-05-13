@@ -328,11 +328,11 @@ def run_module():
     }
 
     state = module.params.get("state")
-    prsim = get_domain_manager_backup_api_instance(module)
+    prism = get_domain_manager_backup_api_instance(module)
     if state == "present":
-        create_restore_source(module, prsim, result)
+        create_restore_source(module, prism, result)
     else:
-        delete_restore_source(module, prsim, result)
+        delete_restore_source(module, prism, result)
 
     module.exit_json(**result)
 

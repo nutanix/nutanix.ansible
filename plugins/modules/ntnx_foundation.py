@@ -295,7 +295,7 @@ options:
                                         required: false
                                     other_config:
                                         description:
-                                            - Auxillary lacp configurations. Applicable only for AHV
+                                            - Auxiliary lacp configurations. Applicable only for AHV
                                         type: list
                                         elements: str
                                         required: false
@@ -327,7 +327,7 @@ options:
                                         required: false
                     discovery_mode:
                         description:
-                            - discover and use existing network informatio pulled from internal info apis
+                            - discover and use existing network information pulled from internal info apis
                             - mutually exclusive with manual_mode
                             - can override certain fields, which are pulled during discovery
                         type: dict
@@ -549,7 +549,7 @@ options:
                                         required: false
                                     other_config:
                                         description:
-                                            - Auxillary lacp configurations. Applicable only for AHV
+                                            - Auxiliary lacp configurations. Applicable only for AHV
                                         type: list
                                         elements: str
                                         required: false
@@ -792,12 +792,12 @@ options:
         required: false
     default_ipmi_user:
         description:
-            - default ipmi username, required either at node leve or here incase of ipmi based imaging
+            - default ipmi username, required either at node level or here incase of ipmi based imaging
         type: str
         required: false
     default_ipmi_password:
         description:
-        - default ipmi password, required either at node leve or here incase of ipmi based imaging
+        - default ipmi password, required either at node level or here incase of ipmi based imaging
         type: str
         required: false
     skip_hypervisor:
