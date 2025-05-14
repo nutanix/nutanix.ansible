@@ -96,6 +96,7 @@
       name: "{{ cluster.name }}"
     networks:
       - is_connected: true
+        vlan_mode: "ACCESS"
         subnet:
           name: "{{ network.dhcp.name }}"
     disks:
@@ -120,6 +121,11 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.metadata.categories_mapping["AppType"] == ["Default"]
       - result.response.metadata.categories_mapping["Environment"] == ["Dev"]
+      - result.response.spec.name == "VM with Ubuntu image"
+      - result.response.spec.cluster_reference.name == "{{ cluster.name }}"
+      - result.response.spec.resources.nic_list[0].subnet_reference.name == "{{ network.dhcp.name }}"
+      - result.response.spec.resources.nic_list[0].vlan_mode == "ACCESS"
+      - result.response.spec.resources.nic_list[0].is_connected == true
     fail_msg: "Unable to Create VM with Ubuntu image and different specifications  "
     success_msg: "VM with Ubuntu image and different specifications created successfully "
 
@@ -213,6 +219,7 @@
       name: "{{ cluster.name }}"
     networks:
       - is_connected: false
+        vlan_mode: "TRUNK"
         subnet:
           uuid: "{{ network.dhcp.uuid }}"
     disks:
@@ -225,6 +232,11 @@
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
+      - result.response.spec.name == "VM with Cluster Network and Disk"
+      - result.response.spec.cluster_reference.name == "{{ cluster.name }}"
+      - result.response.spec.resources.nic_list[0].subnet_reference.uuid == "{{ network.dhcp.uuid }}"
+      - result.response.spec.resources.nic_list[0].vlan_mode == "TRUNK"
+      - result.response.spec.resources.nic_list[0].is_connected == false
     fail_msg: "Unable to create VM with Cluster , Network, Universal time zone, one Disk"
     success_msg: "VM with Cluster , Network, Universal time zone, one Disk created successfully "
 

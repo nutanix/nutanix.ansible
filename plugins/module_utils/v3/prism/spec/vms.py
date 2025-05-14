@@ -27,6 +27,7 @@ class DefaultVMSpec:
         mac_address=dict(type="str", required=False),
         private_ip=dict(type="str", required=False),
         is_connected=dict(type="bool", default=True),
+        vlan_mode=dict(type="str", choices=["ACCESS", "TRUNK"]),
     )
 
     boot_config_spec = dict(
