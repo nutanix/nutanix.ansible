@@ -118,7 +118,8 @@
       response:
         lcmConfig: { snapshotLCMConfig: { expiryDetails: { expireInDays: 4 } } }
         name: "{{ snapshot_name }}"
-        replicateToClusterIds: ["{{ cluster.cluster1.uuid }}", test_uuid2, test_uuid3]
+        replicateToClusterIds:
+          ["{{ cluster.cluster1.uuid }}", test_uuid2, test_uuid3]
       snapshot_uuid:
 
 - name: Check mode status
@@ -257,6 +258,23 @@
     fail_msg: snapshot got updated
     success_msg: snapshot update got skipped due to no state changes
 
+- name: Delete snapshot with check mode
+  check_mode: true
+  ntnx_ndb_database_snapshots:
+    snapshot_uuid: "{{ snapshot_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete snapshot check mode status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.msg == "Snapshot with uuid:{{ snapshot_uuid }} will be deleted."
+      - result.snapshot_uuid == "{{ snapshot_uuid }}"
+    fail_msg: "Delete snapshot with check mode failed"
+    success_msg: "Delete snapshot with check mode passed"
+
 ############################################ log catchup ######################################
 
 - name: Create spec for log catchup
@@ -271,7 +289,15 @@
       changed: false
       error:
       failed: false
-      response: { actionArguments: [{ name: preRestoreLogCatchup, value: false }, { name: switch_log, value: true }], forRestore: false }
+      response:
+        {
+          actionArguments:
+            [
+              { name: preRestoreLogCatchup, value: false },
+              { name: switch_log, value: true },
+            ],
+          forRestore: false,
+        }
 - name: Check mode status
   ansible.builtin.assert:
     that:
@@ -292,8 +318,15 @@
       changed: false
       error:
       failed: false
-      response: { actionArguments: [{ name: preRestoreLogCatchup, value: true }, { name: switch_log, value: true }], forRestore: true }
-
+      response:
+        {
+          actionArguments:
+            [
+              { name: preRestoreLogCatchup, value: true },
+              { name: switch_log, value: true },
+            ],
+          forRestore: true,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -368,7 +401,6 @@
         snapshotId:
         timeZone:
         userPitrTimestamp:
-
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -506,7 +538,11 @@
       db_instance_uuid: "{{ db_uuid }}"
       error:
       failed: false
-      response: { databases: [databaseName: test1, databaseName: test2, databaseName: test3] }
+      response:
+        {
+          databases:
+            [databaseName: test1, databaseName: test2, databaseName: test3],
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -542,6 +578,26 @@
       - "'test2' in linked_databases"
     fail_msg: Unable to add database to database instance
     success_msg: databases added to database instance successfully
+
+- name: Remove databases in database instance  with check mode
+  ntnx_ndb_linked_databases:
+    state: absent
+    db_instance_uuid: "{{db_uuid}}"
+    database_uuid: "{{linked_databases.test1}}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Remove databases in database instance check mode status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Database with uuid:{{  db_uuid }} will be removed."
+      - output.db_uuid == "{{  db_uuid  }}"
+      - output.db_instance_uuid == "{{  linked_databases.test1  }}"
+    fail_msg: "Remove databases in database instance with check mode failed"
+    success_msg: "Remove databases in database instance with check mode passed"
 
 - name: Remove databases in database instance
   ntnx_ndb_linked_databases:

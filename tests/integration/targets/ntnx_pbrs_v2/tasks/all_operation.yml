@@ -42,7 +42,7 @@
       vpc:
         uuid: "{{ result.ext_id }}"
 ###############################################################################################################################
-- name: Create PBR with vpc , source network, external destination, with PERMIT action and icmp with check_mode
+- name: Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode
   ntnx_pbrs_v2:
     state: present
     name: "{{pbr_name}}1"
@@ -70,7 +70,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
+- name: Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -85,8 +85,8 @@
       - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
       - result.changed == false
       - result.failed == false
-    fail_msg: " Unable to Create PBR with vpc , source network, external destination, with PERMIT action and icmp with check mode"
-    success_msg: "Returned as expected in check mode"
+    fail_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode failed"
+    success_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp with check_mode passed"
 ###############################################################################################################################
 - name: Create PBR with vpc , source network, external destination, with PERMIT action and icmp
   ntnx_pbrs_v2:
@@ -133,8 +133,8 @@
       - result.response.policies.0.policy_match.protocol_parameters.icmp_type == 25
       - result.changed == true
       - result.failed == false
-    fail_msg: " Unable to Create PBR with vpc , source network, external destination, with PERMIT action and icmp"
-    success_msg: " Create PBR with vpc , source network, external destination, with PERMIT action and icmp created successfully "
+    fail_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp failed"
+    success_msg: " Create PBR with vpc, source network, external destination, with PERMIT action and icmp passed"
 
 - name: Adding PBR external ID to delete list
   ansible.builtin.set_fact:
@@ -771,6 +771,27 @@
     fail_msg: " Unable to list pbrs "
     success_msg: " PBRs listed successfully "
 ###############################################################################################################################
+
+- name: Delete pbr with check mode enabled
+  ntnx_pbrs_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete pbr with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "PBR with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: " Delete pbr with check mode enabled failed"
+    success_msg: " Delete pbr with check mode enabled finished successfully"
+###############################################################################################################################
+
 - name: Delete all created pbrs
   ntnx_pbrs_v2:
     state: absent

@@ -319,6 +319,12 @@ def delete_nodes_of_pool(module, result):
 def delete_pool(module, result):
     cluster_name = module.params["cluster_name"]
     pool_name = module.params["node_pool_name"]
+    result["cluster_name"] = cluster_name
+    result["node_pool_name"] = pool_name
+
+    if module.check_mode:
+        result["msg"] = "Pool with name:{0} will be deleted.".format(pool_name)
+        return
 
     delete_nodes_of_pool(module, result)
 
@@ -326,8 +332,6 @@ def delete_pool(module, result):
     resp = node_pool.remove_node_pool(cluster_name, pool_name)
 
     result["changed"] = True
-    result["cluster_name"] = cluster_name
-    result["node_pool_name"] = pool_name
     task_uuid = resp["task_uuid"]
     result["task_uuid"] = task_uuid
 

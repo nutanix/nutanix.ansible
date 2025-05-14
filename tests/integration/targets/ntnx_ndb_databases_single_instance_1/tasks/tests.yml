@@ -351,6 +351,7 @@
       - result.response.delete == True
       - result.response.remove == False
       - result.response.deleteTimeMachine == False
+      - result.uuid == db_uuid
     fail_msg: creation of spec for delete db from vm failed
     success_msg: spec for delete db from vm created successfully
 
@@ -373,6 +374,7 @@
       - result.response.remove == False
       - result.response.softRemove == True
       - result.response.deleteTimeMachine == True
+      - result.uuid == db_uuid
     fail_msg: creation of spec for soft remove with time machine delete failed
     success_msg: spec for soft remove with time machine delete created successfully
 

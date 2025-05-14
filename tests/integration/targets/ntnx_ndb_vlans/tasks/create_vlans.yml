@@ -408,7 +408,42 @@
 #    fail_msg: "fail: Unable to update ndb_stretched subnet_mask, gateway "
 #    success_msg: "pass:  update ndb_stretched subnet_mask, gateway finished successfully"
 
+- name: Delete ndb_stretched vlan with check mode
+  ntnx_ndb_stretched_vlans:
+    state: absent
+    stretched_vlan_uuid: "1f549eb2-94f2-544f-9db3-eb0571d0d86e"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete ndb_stretched vlan with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Stretched vlan with uuid:1f549eb2-94f2-544f-9db3-eb0571d0d86e will be deleted."
+      - output.uuid == "1f549eb2-94f2-544f-9db3-eb0571d0d86e"
+    fail_msg: "Delete ndb_stretched vlan with check mode failed"
+    success_msg: "Delete ndb_stretched vlan with check mode passed"
+
 ################################################################
+- name: Delete vlan with check mode
+  ntnx_ndb_vlans:
+    state: absent
+    vlan_uuid: "{{ result.vlan_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete vlan with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Vlan with uuid:{{ result.vlan_uuid }} will be deleted."
+      - output.uuid == "{{ result.vlan_uuid }}"
+    fail_msg: "Delete vlan with check mode failed"
+    success_msg: "Delete vlan with check mode passed"
 
 - name: Delete all created vlan's
   ntnx_ndb_vlans:
