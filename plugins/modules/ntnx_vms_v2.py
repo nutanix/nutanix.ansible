@@ -15,6 +15,10 @@ version_added: 2.0.0
 description:
     - Create, Update and delete VMs in Nutanix AHV based PC
     - This module uses PC v4 APIs based SDKs
+    - Workaround for the disk resizing issue in the SDK:
+        - After VM creation, use ntnx_vms_disks_v2 module to resize the disks.
+        - The disk resizing donot work properly in the v4 SDK. This will get fixed in the future releases.
+
 notes:
     - During vm update, Update or create of subresources like disks, nics, cd_roms, gpus, serial_ports, etc. is not supported.
     - Use subresources specific modules to update or create subresources.
