@@ -42,6 +42,7 @@
           name: "{{cluster_name}}"
         networks:
           - is_connected: true
+            vlan_mode: "ACCESS"
             subnet:
               name: "{{ subnet_name }}"
               # mention cluster only when there are multiple subnets with same name accross clusters

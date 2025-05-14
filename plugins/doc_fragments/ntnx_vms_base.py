@@ -117,6 +117,17 @@ options:
         type: bool
         required: false
         default: true
+      vlan_mode:
+        description:
+          - Specifies the VLAN configuration mode for the virtual NIC
+          - ACCESS mode (default) -> permits only one VLAN per virtual network.
+          - TRUNKED mode -> allows multiple VLANs on a single VM NIC for network-aware user VMs.
+        type: str
+        choices:
+          - ACCESS
+          - TRUNKED
+        required: false
+
   vcpus:
     description:
       - Number of sockets
