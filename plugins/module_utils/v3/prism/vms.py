@@ -298,6 +298,7 @@ class VM(Prism):
                 nic["mac_address"] = network["mac_address"]
 
             nic["is_connected"] = network["is_connected"]
+            nic["vlan_mode"] = network["vlan_mode"]
             if network.get("subnet"):
 
                 if network.get("subnet", {}).get("uuid"):

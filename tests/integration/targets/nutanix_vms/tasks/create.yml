@@ -219,7 +219,7 @@
       name: "{{ cluster.name }}"
     networks:
       - is_connected: false
-        vlan_mode: "TRUNK"
+        vlan_mode: "TRUNKED"
         subnet:
           uuid: "{{ network.dhcp.uuid }}"
     disks:
@@ -235,7 +235,7 @@
       - result.response.spec.name == "VM with Cluster Network and Disk"
       - result.response.spec.cluster_reference.name == "{{ cluster.name }}"
       - result.response.spec.resources.nic_list[0].subnet_reference.uuid == "{{ network.dhcp.uuid }}"
-      - result.response.spec.resources.nic_list[0].vlan_mode == "TRUNK"
+      - result.response.spec.resources.nic_list[0].vlan_mode == "TRUNKED"
       - result.response.spec.resources.nic_list[0].is_connected == false
     fail_msg: "Unable to create VM with Cluster , Network, Universal time zone, one Disk"
     success_msg: "VM with Cluster , Network, Universal time zone, one Disk created successfully "
