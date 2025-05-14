@@ -58,18 +58,18 @@
             disk_address:
               bus_type: SCSI
               index: 2
-        boot_order: 
+        boot_order:
           - DISK
           - CDROM
           - NETWORK
     nics:
-    - backing_info:
-        is_connected: True
-      network_info:
-        nic_type: NORMAL_NIC
-        subnet:
-          ext_id: "143801bd-f58e-4685-9df7-bb4c676a2672"
-        vlan_mode: ACCESS
+      - backing_info:
+          is_connected: true
+        network_info:
+          nic_type: NORMAL_NIC
+          subnet:
+            ext_id: "143801bd-f58e-4685-9df7-bb4c676a2672"
+          vlan_mode: ACCESS
   register: result
   ignore_errors: true
   check_mode: true
@@ -78,8 +78,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
+      - result.changed == false
+      - result.failed == false
       - result.response.cluster.ext_id == "0006326a-6c11-0dcd-0b6e-4caec93aacfe"
       - result.response.name == "uefi-vm01"
       - result.response.description == "ansible test for uefi boot secure boot with boot order disk and boot device specified"
@@ -105,89 +105,6 @@
       - result.response.nics[0].network_info.vlan_mode == "ACCESS"
     fail_msg: "Unable to create secure boot UEFI VM with boot order DISK and specified boot device with check_mode"
     success_msg: "Secure boot UEFI VM with boot order DISK and specified boot device with check_mode created successfully"
-
-########################################################################
-# Secure Boot with Boot Order NETWORK - Check Mode
-########################################################################
-- name: Create Secure Boot UEFI VM with Boot Order NETWORK with check_mode
-  ntnx_vms_v2:
-    name: "uefi-vm02"
-    description: ansible test for uefi boot secure boot with boot order NETWORK
-    cluster:
-      ext_id: "0006326a-6c11-0dcd-0b6e-4caec93aacfe"
-    num_sockets: 1
-    num_cores_per_socket: 3
-    memory_size_bytes: 6442450944
-    machine_type: Q35
-    hardware_clock_timezone: UTC
-    vtpm_config:
-      is_vtpm_enabled: true
-      version: "2.0"
-    cd_roms:
-      - disk_address:
-          bus_type: SATA
-        backing_info:
-          data_source:
-            reference:
-              image_reference:
-                image_ext_id: "f4bd11f3-74ad-4d0b-ac44-9357f3abde39"
-    disks:
-      - backing_info:
-          vm_disk:
-            disk_size_bytes: 64424509440
-            storage_container:
-              ext_id: "fae08563-af90-41a5-91d7-4febf4dc6198"
-        disk_address:
-          bus_type: SCSI
-          index: 2
-    boot_config:
-      uefi_boot:
-        is_secure_boot_enabled: true
-        boot_order: 
-          - NETWORK
-          - CDROM
-          - DISK
-    nics:
-    - backing_info:
-        is_connected: True
-      network_info:
-        nic_type: NORMAL_NIC
-        subnet:
-          ext_id: "143801bd-f58e-4685-9df7-bb4c676a2672"
-        vlan_mode: ACCESS
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Create Secure Boot UEFI VM with Boot Order NETWORK with check_mode status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == False
-      - result.failed == False
-      - result.response.cluster.ext_id == "0006326a-6c11-0dcd-0b6e-4caec93aacfe"
-      - result.response.name == "uefi-vm02"
-      - result.response.description == "ansible test for uefi boot secure boot with boot order NETWORK"
-      - result.response.num_sockets == 1
-      - result.response.num_cores_per_socket == 3
-      - result.response.memory_size_bytes == 6442450944
-      - result.response.machine_type == "Q35"
-      - result.response.hardware_clock_timezone == "UTC"
-      - result.response.vtpm_config.is_vtpm_enabled == true
-      - result.response.vtpm_config.version == "2.0"
-      - result.response.cd_roms[0].backing_info.data_source.reference.image_ext_id == "f4bd11f3-74ad-4d0b-ac44-9357f3abde39"
-      - result.response.cd_roms[0].disk_address.bus_type == "SATA"
-      - result.response.disks[0].backing_info.storage_container.ext_id == "fae08563-af90-41a5-91d7-4febf4dc6198"
-      - result.response.disks[0].disk_address.bus_type == "SCSI"
-      - result.response.disks[0].disk_address.index == 2
-      - result.response.boot_config.is_secure_boot_enabled == true
-      - result.response.boot_config.boot_order[0] == "NETWORK"
-      - result.response.nics[0].backing_info.is_connected == true
-      - result.response.nics[0].network_info.nic_type == "NORMAL_NIC"
-      - result.response.nics[0].network_info.subnet.ext_id == "143801bd-f58e-4685-9df7-bb4c676a2672"
-      - result.response.nics[0].network_info.vlan_mode == "ACCESS"
-    fail_msg: "Unable to create secure boot UEFI VM with boot order NETWORK with check_mode"
-    success_msg: "Secure Boot UEFI VM with Boot Order NETWORK with check_mode created successfully"
 
 ########################################################################
 # Secure Boot Boot with Boot Order DISK and specified boot device - Actual Build
@@ -236,13 +153,13 @@
           - CDROM
           - NETWORK
     nics:
-    - backing_info:
-        is_connected: True
-      network_info:
-        nic_type: NORMAL_NIC
-        subnet:
-          ext_id: "{{ static.uuid }}"
-        vlan_mode: ACCESS
+      - backing_info:
+          is_connected: true
+        network_info:
+          nic_type: NORMAL_NIC
+          subnet:
+            ext_id: "{{ static.uuid }}"
+          vlan_mode: ACCESS
   register: result
   ignore_errors: true
 
@@ -250,8 +167,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.name == "{{ vm_name }}"
       - result.response.description == "ansible test for uefi boot secure boot with boot order disk and boot device specified"
@@ -331,13 +248,13 @@
           - CDROM
           - DISK
     nics:
-    - backing_info:
-        is_connected: True
-      network_info:
-        nic_type: NORMAL_NIC
-        subnet:
-          ext_id: "{{ static.uuid }}"
-        vlan_mode: ACCESS
+      - backing_info:
+          is_connected: true
+        network_info:
+          nic_type: NORMAL_NIC
+          subnet:
+            ext_id: "{{ static.uuid }}"
+          vlan_mode: ACCESS
   register: result
   ignore_errors: true
 
@@ -345,8 +262,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
+      - result.changed == true
+      - result.failed == false
       - result.response.cluster.ext_id == "{{ cluster.uuid }}"
       - result.response.name == "{{ vm_name }}"
       - result.response.description == "ansible test for uefi boot secure boot with boot order network"
@@ -398,8 +315,8 @@
       - item.failed == false
       - item.response.status == 'SUCCEEDED'
       - item.response is defined
-      - item.changed == True
-      - item.failed == False
+      - item.changed == true
+      - item.failed == false
       - item.ext_id == "{{ todelete[vms_index] }}"
       - item.ext_id == todelete[vms_index]
     fail_msg: "Unable to delete VM "

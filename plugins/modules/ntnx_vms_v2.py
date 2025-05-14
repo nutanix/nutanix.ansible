@@ -315,14 +315,16 @@ options:
                                         type: dict
                                         suboptions:
                                             bus_type:
-                                                description: 
-                                                    - Bus type for the device. 
+                                                description:
+                                                    - Bus type for the device.
                                                     - The acceptable values are SCSI, IDE, PCI, SATA, SPAPR (only PPC).
                                                 type: str
                                                 choices: ["SCSI", "IDE", "PCI", "SATA", "SPAPR"]
                                                 required: true
                                             index:
-                                                description: Device index on the bus. This field is ignored unless the bus details are specified.
+                                                description:
+                                                    - Device index on the bus.
+                                                    - This field is ignored unless the bus details are specified.
                                                 type: int
                             boot_device_nic:
                                 description: Specification for booting from network interface controller (NIC).
