@@ -582,15 +582,35 @@
   register: result
   ignore_errors: true
 
-- name: Status of all VMs
+- name: Set total number of VMs
+  ansible.builtin.set_fact:
+    total_vms: "{{ result.total_available_results }}"
+    num_vms_per_page: 100
+
+- name: Get number of pages
+  ansible.builtin.set_fact:
+    num_pages: "{{ ((total_vms | int) // (num_vms_per_page | int)) + (((total_vms | int) % (num_vms_per_page | int)) > 0 | int) }}"
+
+# all_vms is a list of all available VMs details
+- name: Get all VMs
+  ntnx_vms_info_v2:
+    limit: "{{ num_vms_per_page }}"
+    page: "{{ item }}"
+  register: all_vms
+  loop: "{{ range(0, (num_pages | int)) | list }}"
+  when: (total_vms | int) > 0
+  ignore_errors: true
+
+- name: Status for fetching all VMs
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == False
-      - result.failed == False
-      - result.response | length > 1
-    fail_msg: "Unable to list VMs "
-    success_msg: VMs  listed successfully
+      - all_vms.changed == false
+      - all_vms.msg == "All items completed"
+      - all_vms.results | length == num_pages | int
+      - all_vms.results | map(attribute='response') | map('length') | sum == total_vms | int
+    fail_msg: "Unable to fetch all VMs "
+    success_msg: "All VMs fetched successfully "
+
 ########################################################################
 - name: List all VMs with limit 3
   ntnx_vms_info_v2:
