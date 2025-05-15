@@ -185,7 +185,7 @@ def get_vms(module, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    
+
     if resp is None or getattr(resp, "data", None) is None:
         result["response"] = []
     else:
