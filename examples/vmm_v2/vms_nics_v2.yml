@@ -1,0 +1,94 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create nic for a VM
+# 2. Update nic for a VM
+# 3. Migrate nic to another subnet
+# 4. Retrieve nic info after migrating nic to another subnet
+# 5. Assign IP address to nic
+# 6. Release IP address from nic
+# 7. Delete nic
+
+- name: VM nics playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_uuid: "323e4567-8547-12d3-a456-426614174001"
+        subnet_uuid: "123e4567-e89b-12d3-a456-426614174000"
+        nic_ext_id: "123e4567-1324-12d3-a456-426614174002"
+        ip_address: "10.0.0.1"
+
+    - name: Create nic
+      nutanix.ncp.ntnx_vms_nics_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        state: present
+        network_info:
+          subnet:
+            ext_id: "{{ subnet_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update nic
+      nutanix.ncp.ntnx_vms_nics_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ nic_ext_id }}"
+        state: present
+        backing_info:
+          is_connected: false
+      register: result
+      ignore_errors: true
+
+    - name: Migrate nic to another subnet with assigning given IP
+      nutanix.ncp.ntnx_vms_nics_migrate_v2:
+        ext_id: "{{ nic_ext_id }}"
+        vm_ext_id: "{{ vm_uuid }}"
+        migrate_type: "ASSIGN_IP"
+        subnet:
+          ext_id: "{{ subnet_uuid }}"
+        ip_address:
+          value: "{{ ip_address }}"
+      register: result
+      ignore_errors: true
+
+    - name: Retrieve nic info after migrating nic to another subnet
+      nutanix.ncp.ntnx_vms_nics_info_v2:
+        ext_id: "{{ nic_ext_id }}"
+        vm_ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Assign IP address to nic
+      nutanix.ncp.ntnx_vms_nics_ip_v2:
+        state: present
+        ext_id: "{{ nic_ext_id }}"
+        vm_ext_id: "{{ vm_uuid }}"
+        ip_address:
+          value: "{{ ip_address }}"
+      register: result
+      ignore_errors: true
+
+    - name: Release IP address from nic
+      nutanix.ncp.ntnx_vms_nics_ip_v2:
+        state: absent
+        ext_id: "{{ nic_ext_id }}"
+        vm_ext_id: "{{ vm_uuid }}"
+        ip_address:
+          value: "{{ ip_address }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete nic
+      nutanix.ncp.ntnx_vms_nics_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ nic_ext_id }}"
+        state: absent
+      register: result
+      ignore_errors: true

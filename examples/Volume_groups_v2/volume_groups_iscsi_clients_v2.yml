@@ -1,0 +1,42 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Attach iscsi client to VG using initiator name
+# 2. List all clients attached to VG
+# 3. Fetch specific client
+# 4. Detach client from VG
+
+- name: Volume groups iscsi clients playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vg1_uuid: "d1b1b3b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
+        iscsi_client_name: "test-iscsi-client"
+        iscsi_client_uuid: "12345678-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
+
+    - name: Attach iscsi client to VG using initiator name
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+        volume_group_ext_id: "{{ vg1_uuid }}"
+        iscsi_initiator_name: "{{ iscsi_client_name }}"
+        num_virtual_targets: 32
+      register: result
+
+    - name: Fetch specific client
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
+        ext_id: "{{ iscsi_client_uuid }}"
+      register: result
+
+    - name: Detach client from VG
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+        volume_group_ext_id: "{{ vg1_uuid }}"
+        ext_id: "{{ iscsi_client_uuid }}"
+        state: absent
+      register: result

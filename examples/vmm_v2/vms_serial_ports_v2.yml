@@ -1,0 +1,55 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create serial port for a VM
+# 2. Get serial port details
+# 3. Update serial port connection
+# 4. Delete serial port
+
+- name: VM serial ports playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_uuid: "323e4567-e89b-12d3-a456-426614174001"
+        subnet_uuid: "123e4567-e89b-12d3-a456-426614174000"
+        serial_port_uuid: "123e4567-1234-12d3-a456-426614174002"
+
+    - name: Create Serial Port
+      nutanix.ncp.ntnx_vms_serial_port_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        state: present
+        index: 0
+        is_connected: true
+      register: result
+      ignore_errors: true
+
+    - name: Fetch serial port information
+      nutanix.ncp.ntnx_vms_serial_port_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update Serial Port connection
+      nutanix.ncp.ntnx_vms_serial_port_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ serial_port_uuid }}"
+        state: present
+        is_connected: false
+      register: result
+      ignore_errors: true
+
+    - name: Delete Serial Port
+      nutanix.ncp.ntnx_vms_serial_port_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        ext_id: "{{ serial_port_uuid }}"
+        state: absent
+      register: result
+      ignore_errors: true

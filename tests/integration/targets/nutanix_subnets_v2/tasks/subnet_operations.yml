@@ -1,0 +1,948 @@
+---
+- name: Start nutanix_subnets_v2 tests
+  ansible.builtin.debug:
+    msg: "Start nutanix_subnets_v2 tests"
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set Subnet and VPC name
+  ansible.builtin.set_fact:
+    subnet_name: "{{ random_name }}_subnet_test"
+    vpc_name: "{{ random_name }}_vpc_test"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Create VLAN subnet with check mode enabled
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_1"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    virtual_switch_reference: "{{ virtual_switch.uuid }}"
+    network_id: "{{ vlan_subnets_ids.0 }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ ip_address_management.network_ip }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ ip_address_management.gateway_ip_address }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          pool_list:
+            - start_ip:
+                value: "{{ ip_address_pools.start_address }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address }}"
+    dhcp_options:
+      domain_name_servers:
+        - ipv4:
+            value: "{{ dhcp_settings.dns_servers.0 }}"
+        - ipv4:
+            value: "{{ dhcp_settings.dns_servers.1 }}"
+      search_domains: "{{ dhcp_settings.domain_search }}"
+      domain_name: "{{ dhcp_settings.domain_name }}"
+      tftp_server_name:
+        - "{{ dhcp_settings.tftp_server_name }}"
+      boot_file_name: "{{ dhcp_settings.boot_file }}"
+    is_external: true
+    is_nat_enabled: true
+    network_function_chain_reference: "00061663-9fa0-28ca-185b-ac1f6b6f97e1"
+    is_advanced_networking: true
+    metadata:
+      project_reference_id: "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
+      owner_reference_id: "00061663-9fa0-28ca-185b-ac1f6b6f97e3"
+      category_ids:
+        - "00061663-9fa0-28ca-185b-ac1f6b6f97e4"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create VLAN subnet with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.response.subnet_type == "VLAN"
+      - result.response.name == "{{ subnet_name }}_1"
+      - result.response.virtual_switch_reference == "{{ virtual_switch.uuid }}"
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.response.network_id == {{ vlan_subnets_ids.0 }}
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+      - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ ip_address_pools.start_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ ip_address_pools.end_address }}"
+      - result.response.dhcp_options.boot_file_name == "{{ dhcp_settings.boot_file }}"
+      - result.response.dhcp_options.domain_name == "{{ dhcp_settings.domain_name }}"
+      - result.response.dhcp_options.search_domains == {{ dhcp_settings.domain_search }}
+      - result.response.dhcp_options.domain_name_servers.0.ipv4.value == "{{ dhcp_settings.dns_servers.0 }}"
+      - result.response.dhcp_options.domain_name_servers.1.ipv4.value == "{{ dhcp_settings.dns_servers.1 }}"
+      - result.response.is_external == true
+      - result.response.is_nat_enabled == true
+      - result.response.metadata.project_reference_id == "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
+      - result.response.metadata.owner_reference_id == "00061663-9fa0-28ca-185b-ac1f6b6f97e3"
+      - result.response.metadata.category_ids.0 == "00061663-9fa0-28ca-185b-ac1f6b6f97e4"
+      - result.response.network_function_chain_reference == "00061663-9fa0-28ca-185b-ac1f6b6f97e1"
+      - result.response.is_advanced_networking == true
+    fail_msg: " Unable to create VLAN subnet with check mode enabled "
+    success_msg: " VLAN subnet with check mode enabled created successfully "
+
+##################################################
+- name: VLAN subnet without IPAM
+  ntnx_subnets_v2:
+    state: present
+    wait: true
+    name: "{{ subnet_name }}_1"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    virtual_switch_reference: "{{ virtual_switch.uuid }}"
+    network_id: "{{ vlan_subnets_ids.0 }}"
+  register: result
+  ignore_errors: true
+
+- name: Check creating subnet status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ subnet_name }}_1"
+      - result.response.subnet_type == "VLAN"
+      - result.response.virtual_switch_reference == "{{ virtual_switch.uuid }}"
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.response.network_id == {{ vlan_subnets_ids.0 }}
+    fail_msg: " Unable to create VLAN subnet without IPAM "
+    success_msg: " VLAN subnet without IPAM created successfully "
+
+- name: Fetch subnet after creation for verification
+  ntnx_subnets_info_v2:
+    filter: "name eq '{{ subnet_name }}_1'"
+  register: result
+  ignore_errors: true
+
+- name: Set result variable for verification
+  ansible.builtin.set_fact:
+    result: "{{ result.response[0] }}"
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.subnet_type == "VLAN"
+      - result.name == "{{ subnet_name }}_1"
+      - result.virtual_switch_reference == "{{ virtual_switch.uuid }}"
+      - result.cluster_reference == "{{ cluster.uuid }}"
+      - result.network_id == {{ vlan_subnets_ids.0 }}
+    fail_msg: " Unable to verify created subnet "
+    success_msg: " VLAN subnet without IPAM created and verified successfully "
+
+- name: Adding subnet external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+################################################################
+- name: VLAN subnet with IPAM and IP pools
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_2"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    virtual_switch_reference: "{{ virtual_switch.uuid }}"
+    network_id: "{{ vlan_subnets_ids.2 }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ ip_address_management.network_ip }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ ip_address_management.gateway_ip_address }}"
+          dhcp_server_address:
+            value: "{{ ip_address_management.dhcp_server_address }}"
+          pool_list:
+            - start_ip:
+                value: "{{ ip_address_pools.start_address }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address }}"
+  register: result
+  ignore_errors: true
+
+- name: Check creating subnet status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ subnet_name }}_2"
+      - result.response.subnet_type == "VLAN"
+      - result.response.virtual_switch_reference == "{{ virtual_switch.uuid }}"
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.response.network_id == {{ vlan_subnets_ids.2 }}
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+      - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ ip_address_pools.start_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ ip_address_pools.end_address }}"
+      - result.response.ip_config.0.ipv4.dhcp_server_address.value == "{{ ip_address_management.dhcp_server_address }}"
+    fail_msg: " Unable to create VLAN subnet with IPAM "
+    success_msg: " VLAN subnet with IPAM created successfully "
+
+- name: Fetch subnet after creation for verification
+  ntnx_subnets_info_v2:
+    filter: "name eq '{{ subnet_name }}_2'"
+  register: result
+  ignore_errors: true
+
+- name: Set result variable for verification
+  ansible.builtin.set_fact:
+    result: "{{ result.response[0] }}"
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.subnet_type == "VLAN"
+      - result.name == "{{ subnet_name }}_2"
+      - result.virtual_switch_reference == "{{ virtual_switch.uuid }}"
+      - result.cluster_reference == "{{ cluster.uuid }}"
+      - result.network_id == {{ vlan_subnets_ids.2 }}
+      - result.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+      - result.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+      - result.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ ip_address_pools.start_address }}"
+      - result.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ ip_address_pools.end_address }}"
+      - result.ip_config.0.ipv4.dhcp_server_address.value == "{{ ip_address_management.dhcp_server_address }}"
+    fail_msg: " Unable to verify created subnet "
+    success_msg: " VLAN subnet with IPAM and IP pools created successfully "
+
+- name: Set external ID
+  ansible.builtin.set_fact:
+    ext_id: "{{ result.ext_id }}"
+
+- name: Adding subnet external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  ext_id ] }}"
+
+################################################################
+
+- name: Update VLAN subnet with check mode enabled
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_2_updated_check_mode"
+    ext_id: "{{ ext_id }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ ip_address_management.network_ip }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ ip_address_management.gateway_ip_address }}"
+          pool_list:
+            - start_ip:
+                value: "{{ ip_address_pools.start_address }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address }}"
+            - start_ip:
+                value: "{{ ip_address_pools.start_address_2 }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address_2 }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id is defined
+      - result.response.ext_id == ext_id
+      - result.changed == false
+      - result.response.name == "{{ subnet_name }}_2_updated_check_mode"
+      - result.response.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ ip_address_pools.start_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ ip_address_pools.end_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.1.start_ip.value == "{{ ip_address_pools.start_address_2 }}"
+      - result.response.ip_config.0.ipv4.pool_list.1.end_ip.value == "{{ ip_address_pools.end_address_2 }}"
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+    fail_msg: " Unable to update VLAN subnet name and IP pools "
+    success_msg: " VLAN subnet name and IP pools updated successfully "
+
+################################################################
+
+- name: Update VLAN subnet name and IP pools
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_2_updated"
+    ext_id: "{{ ext_id }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ ip_address_management.network_ip }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ ip_address_management.gateway_ip_address }}"
+          dhcp_server_address:
+            value: "{{ ip_address_management.dhcp_server_address }}"
+          pool_list:
+            - start_ip:
+                value: "{{ ip_address_pools.start_address }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address }}"
+            - start_ip:
+                value: "{{ ip_address_pools.start_address_2 }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id is defined
+      - result.changed == true
+      - result.response.name == "{{ subnet_name }}_2_updated"
+      - result.response.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ ip_address_pools.start_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ ip_address_pools.end_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.1.start_ip.value == "{{ ip_address_pools.start_address_2 }}"
+      - result.response.ip_config.0.ipv4.pool_list.1.end_ip.value == "{{ ip_address_pools.end_address_2 }}"
+      - result.response.ip_config.0.ipv4.dhcp_server_address.value == "{{ ip_address_management.dhcp_server_address }}"
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+    fail_msg: " Unable to update VLAN subnet name and IP pools "
+    success_msg: " VLAN subnet name and IP pools updated successfully "
+
+################################################################
+- name: Check idempotency by updating Subnet with same values
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_2_updated"
+    ext_id: "{{ result.response.ext_id }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ ip_address_management.network_ip }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          dhcp_server_address:
+            value: "{{ ip_address_management.dhcp_server_address }}"
+          default_gateway_ip:
+            value: "{{ ip_address_management.gateway_ip_address }}"
+          pool_list:
+            - start_ip:
+                value: "{{ ip_address_pools.start_address }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address }}"
+            - start_ip:
+                value: "{{ ip_address_pools.start_address_2 }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: " Unable to update VLAN subnet name and IP pools "
+    success_msg: " VLAN subnet name and IP pools updated successfully "
+
+################################################################
+
+- name: Delete all Created Subnets
+  ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete Subnet "
+    success_msg: "Subnet is deleted successfully "
+  loop: "{{ result.results }}"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+################################################################
+- name: VLAN subnet with IPAM and DHCP options enabled
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_3"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    virtual_switch_reference: "{{ virtual_switch.uuid }}"
+    network_id: "{{ vlan_subnets_ids.4 }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ ip_address_management.network_ip }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ ip_address_management.gateway_ip_address }}"
+          dhcp_server_address:
+            value: "{{ ip_address_management.dhcp_server_address }}"
+          pool_list:
+            - start_ip:
+                value: "{{ ip_address_pools.start_address }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address }}"
+    dhcp_options:
+      domain_name_servers:
+        - ipv4:
+            value: "{{ dhcp_settings.dns_servers.0 }}"
+        - ipv4:
+            value: "{{ dhcp_settings.dns_servers.1 }}"
+      search_domains: "{{ dhcp_settings.domain_search }}"
+      domain_name: "{{ dhcp_settings.domain_name }}"
+      tftp_server_name:
+        - "{{ dhcp_settings.tftp_server_name }}"
+      boot_file_name: "{{ dhcp_settings.boot_file }}"
+  register: result
+  ignore_errors: true
+
+- name: Check creating subnet status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ subnet_name }}_3"
+      - result.response.subnet_type == "VLAN"
+      - result.response.virtual_switch_reference == "{{ virtual_switch.uuid }}"
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.response.network_id == {{ vlan_subnets_ids.4 }}
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+      - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ ip_address_pools.start_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ ip_address_pools.end_address }}"
+      - result.response.ip_config.0.ipv4.dhcp_server_address.value == "{{ ip_address_management.dhcp_server_address }}"
+      - result.response.dhcp_options.boot_file_name == "{{ dhcp_settings.boot_file }}"
+      - result.response.dhcp_options.domain_name == "{{ dhcp_settings.domain_name }}"
+      - result.response.dhcp_options.search_domains == {{ dhcp_settings.domain_search }}
+      - result.response.dhcp_options.domain_name_servers.0.ipv4.value == "{{ dhcp_settings.dns_servers.0 }}"
+      - result.response.dhcp_options.domain_name_servers.1.ipv4.value == "{{ dhcp_settings.dns_servers.1 }}"
+    fail_msg: " Unable to create VLAN subnet without IPAM and DHCP options"
+    success_msg: " VLAN subnet with IPAM and DHCP options created successfully "
+
+- name: Fetch subnet after creation for verification
+  ntnx_subnets_info_v2:
+    filter: "name eq '{{ subnet_name }}_3'"
+  register: result
+  ignore_errors: true
+
+- name: Set result variable for verification
+  ansible.builtin.set_fact:
+    result: "{{ result.response[0] }}"
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.subnet_type == "VLAN"
+      - result.name == "{{ subnet_name }}_3"
+      - result.virtual_switch_reference == "{{ virtual_switch.uuid }}"
+      - result.cluster_reference == "{{ cluster.uuid }}"
+      - result.network_id == {{ vlan_subnets_ids.4 }}
+      - result.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+      - result.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+      - result.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ ip_address_pools.start_address }}"
+      - result.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ ip_address_pools.end_address }}"
+      - result.ip_config.0.ipv4.dhcp_server_address.value == "{{ ip_address_management.dhcp_server_address }}"
+      - result.dhcp_options.boot_file_name == "{{ dhcp_settings.boot_file }}"
+      - result.dhcp_options.domain_name == "{{ dhcp_settings.domain_name }}"
+      - result.dhcp_options.search_domains == {{ dhcp_settings.domain_search }}
+      - result.dhcp_options.domain_name_servers.0.ipv4.value == "{{ dhcp_settings.dns_servers.0 }}"
+      - result.dhcp_options.domain_name_servers.1.ipv4.value == "{{ dhcp_settings.dns_servers.1 }}"
+    fail_msg: " Unable to verify creation of VLAN subnet with IPAM, IP pools and DHCP "
+    success_msg: " VLAN subnet with IPAM, IP pools and DHCP created and verified successfully "
+
+- name: Adding subnet external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+################################################################
+- name: External subnet without NAT
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_4"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    network_id: "{{external_nonat_subnet.vlan_id}}"
+    is_external: true
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ external_nonat_subnet.network_ip }}"
+            prefix_length: "{{ external_nonat_subnet.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ external_nonat_subnet.gateway_ip_address }}"
+          pool_list:
+            - start_ip:
+                value: "{{ external_nonat_subnet.dhcp.start_address }}"
+              end_ip:
+                value: "{{ external_nonat_subnet.dhcp.end_address }}"
+            - start_ip:
+                value: "{{ external_nonat_subnet.static.start_address }}"
+              end_ip:
+                value: "{{ external_nonat_subnet.static.end_address }}"
+  register: result
+  ignore_errors: true
+
+- name: Check creating subnet status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ subnet_name }}_4"
+      - result.response.subnet_type == "VLAN"
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.response.network_id == {{external_nonat_subnet.vlan_id}}
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ external_nonat_subnet.gateway_ip_address }}"
+      - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ external_nonat_subnet.network_prefix }}
+      - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ external_nonat_subnet.network_ip }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ external_nonat_subnet.dhcp.start_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ external_nonat_subnet.dhcp.end_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.1.start_ip.value == "{{ external_nonat_subnet.static.start_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.1.end_ip.value == "{{ external_nonat_subnet.static.end_address }}"
+    fail_msg: " Unable to create External subnet without NAT  "
+    success_msg: " External subnet without NAT  created successfully "
+
+- name: Fetch subnet after creation for verification
+  ntnx_subnets_info_v2:
+    filter: "name eq '{{ subnet_name }}_4'"
+  register: result
+  ignore_errors: true
+
+- name: Set result variable for verification
+  ansible.builtin.set_fact:
+    result: "{{ result.response[0] }}"
+
+- name: Verify creation status Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.subnet_type == "VLAN"
+      - result.name == "{{ subnet_name }}_4"
+      - result.cluster_reference == "{{ cluster.uuid }}"
+      - result.network_id == {{external_nonat_subnet.vlan_id}}
+      - result.ip_config.0.ipv4.default_gateway_ip.value == "{{ external_nonat_subnet.gateway_ip_address }}"
+      - result.ip_config.0.ipv4.ip_subnet.prefix_length == {{ external_nonat_subnet.network_prefix }}
+      - result.ip_config.0.ipv4.ip_subnet.ip.value ==  "{{ external_nonat_subnet.network_ip }}"
+      - result.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ external_nonat_subnet.dhcp.start_address }}"
+      - result.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ external_nonat_subnet.dhcp.end_address }}"
+      - result.ip_config.0.ipv4.pool_list.1.start_ip.value == "{{ external_nonat_subnet.static.start_address }}"
+      - result.ip_config.0.ipv4.pool_list.1.end_ip.value == "{{ external_nonat_subnet.static.end_address }}"
+    fail_msg: " Unable to verify External subnet without NAT  "
+    success_msg: " External subnet without NAT  created and verified successfully "
+
+- name: Adding subnet external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+
+#################################################################
+- name: External subnet with NAT
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_5"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    network_id: "{{ external_nat_subnet.vlan_id }}"
+    is_external: true
+    is_nat_enabled: true
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ external_nat_subnet.network_ip }}"
+            prefix_length: "{{ external_nat_subnet.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ external_nat_subnet.gateway_ip_address }}"
+          pool_list:
+            - start_ip:
+                value: "{{ external_nat_subnet.dhcp.start_address }}"
+              end_ip:
+                value: "{{ external_nat_subnet.dhcp.end_address }}"
+            - start_ip:
+                value: "{{ external_nat_subnet.static.start_address }}"
+              end_ip:
+                value: "{{ external_nat_subnet.static.end_address }}"
+  register: result
+  ignore_errors: true
+
+- name: Check creating subnet status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ subnet_name }}_5"
+      - result.response.subnet_type == "VLAN"
+      - result.response.cluster_reference == "{{ cluster.uuid }}"
+      - result.response.network_id == {{ external_nat_subnet.vlan_id }}
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ external_nat_subnet.gateway_ip_address }}"
+      - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ external_nat_subnet.network_prefix }}
+      - result.response.ip_config.0.ipv4.ip_subnet.ip.value ==  "{{ external_nat_subnet.network_ip }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ external_nat_subnet.dhcp.start_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ external_nat_subnet.dhcp.end_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.1.start_ip.value == "{{ external_nat_subnet.static.start_address }}"
+      - result.response.ip_config.0.ipv4.pool_list.1.end_ip.value == "{{ external_nat_subnet.static.end_address }}"
+    fail_msg: " Unable to create External subnet without NAT  "
+    success_msg: " External subnet without NAT  created successfully "
+
+- name: Fetch subnet after creation for verification
+  ntnx_subnets_info_v2:
+    filter: "name eq '{{ subnet_name }}_5'"
+  register: result
+  ignore_errors: true
+
+- name: Set result variable for verification
+  ansible.builtin.set_fact:
+    result: "{{ result.response[0] }}"
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.ext_id is defined
+      - result.subnet_type == "VLAN"
+      - result.is_external == true
+      - result.name == "{{ subnet_name }}_5"
+      - result.cluster_reference == "{{ cluster.uuid }}"
+      - result.network_id == {{ external_nat_subnet.vlan_id }}
+      - result.ip_config.0.ipv4.default_gateway_ip.value == "{{ external_nat_subnet.gateway_ip_address }}"
+      - result.ip_config.0.ipv4.ip_subnet.prefix_length == {{ external_nat_subnet.network_prefix }}
+      - result.ip_config.0.ipv4.ip_subnet.ip.value ==  "{{ external_nat_subnet.network_ip }}"
+      - result.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ external_nat_subnet.dhcp.start_address }}"
+      - result.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ external_nat_subnet.dhcp.end_address }}"
+      - result.ip_config.0.ipv4.pool_list.1.start_ip.value == "{{ external_nat_subnet.static.start_address }}"
+      - result.ip_config.0.ipv4.pool_list.1.end_ip.value == "{{ external_nat_subnet.static.end_address }}"
+      - result.is_external == true
+      - result.is_nat_enabled == true
+    fail_msg: " Unable to verify creation of External subnet without NAT  "
+    success_msg: " External subnet without NAT  created and verified successfully "
+
+- name: Adding subnet external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+################################################################
+
+- name: Create min VPC
+  ntnx_vpcs_v2:
+    state: present
+    name: "{{ vpc_name }}"
+  register: result
+  ignore_errors: true
+
+- name: Create min VPC Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.ext_id is defined
+      - result.response.vpc_type == "REGULAR"
+      - result.response.name == "{{ vpc_name }}"
+      - result.task_ext_id is defined
+    fail_msg: "Create min VPC failed "
+    success_msg: "Create min VPC passed "
+
+- name: Set VPC external ID
+  ansible.builtin.set_fact:
+    vpc_uuid: "{{ result.ext_id }}"
+
+################################################################
+
+- name: Overlay Subnet with minimum requirements
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_6"
+    subnet_type: OVERLAY
+    vpc_reference: "{{ vpc_uuid }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ ip_address_management.network_ip }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ ip_address_management.gateway_ip_address }}"
+  register: result
+  ignore_errors: true
+
+- name: Check creating subnet status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ subnet_name }}_6"
+      - result.response.subnet_type == "OVERLAY"
+      - result.response.vpc_reference == "{{ vpc_uuid }}"
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+      - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+    fail_msg: " Unable to create Overlay Subnet with minimum requirements "
+    success_msg: " Overlay Subnet with minimum requirements created successfully "
+
+- name: Fetch subnet after creation for verification
+  ntnx_subnets_info_v2:
+    filter: "name eq '{{ subnet_name }}_6'"
+  register: result
+  ignore_errors: true
+
+- name: Set result variable for verification
+  ansible.builtin.set_fact:
+    result: "{{ result.response[0] }}"
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.subnet_type == "OVERLAY"
+      - result.vpc_reference == "{{ vpc_uuid }}"
+      - result.name == "{{ subnet_name }}_6"
+      - result.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+      - result.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+    fail_msg: " Unable to verify creation of Overlay Subnet with minimum requirements "
+    success_msg: " Overlay Subnet with minimum requirements created and verified successfully "
+
+- name: Adding subnet external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+#################################################################
+
+- name: List subnets using limit
+  ntnx_subnets_info_v2:
+    limit: 1
+  check_mode: true
+  register: subnets
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - subnets.response is defined
+      - subnets.response | length == 1
+    fail_msg: " Unable to list subnets using limit "
+    success_msg: " Subnets listed successfully using limit"
+#########################################################
+- name: List subnets using subnet_type filter criteria
+  ntnx_subnets_info_v2:
+    filter: "name eq '{{subnets.response.0.name}}'"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length >= 1
+      - result.response.0.name == subnets.response.0.name
+    fail_msg: " Unable to list subnets using subnet_type filter criteria "
+    success_msg: " Subnets listed successfully using subnet_type filter criteria "
+##########################################################
+- name: Get subnet using ext_id
+  ntnx_subnets_info_v2:
+    ext_id: "{{subnets.response.0.ext_id}}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id == '{{subnets.response.0.ext_id}}'
+    fail_msg: " Unable to Get subnet using ext_id "
+    success_msg: " Subnet fetched successfully using ext_id"
+#########################################################
+- name: List subnets using VPC reference
+  ntnx_subnets_info_v2:
+    filter: "vpcReference eq '{{ vpc_uuid }}'"
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].vpc_reference == "{{vpc_uuid}}"
+    fail_msg: " Unable to list subnets using vpc_reference "
+    success_msg: " Subnets listed successfully using vpc_reference"
+#########################################################
+- name: List subnets using cluster reference
+  ntnx_subnets_info_v2:
+    filter: "clusterReference eq '{{ cluster.uuid }}'"
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length > 0
+      - result.response.0.cluster_reference == "{{ cluster.uuid }}"
+    fail_msg: " Unable to list subnets using vpc_reference "
+    success_msg: " Subnets listed successfully using vpc_reference"
+#########################################################
+
+- name: Delete all Created Subnets
+  ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete Subnet "
+    success_msg: "Subnet is deleted successfully "
+  loop: "{{ result.results }}"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+#################################################################
+- name: Overlay Subnet with IP_pools and DHCP
+  ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_7"
+    subnet_type: OVERLAY
+    vpc_reference: "{{ vpc_uuid }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ ip_address_management.network_ip }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ ip_address_management.gateway_ip_address }}"
+            prefix_length: "{{ ip_address_management.network_prefix }}"
+          pool_list:
+            - start_ip:
+                value: "{{ ip_address_pools.start_address }}"
+              end_ip:
+                value: "{{ ip_address_pools.end_address }}"
+    dhcp_options:
+      domain_name_servers:
+        - ipv4:
+            value: "{{ dhcp_settings.dns_servers.0 }}"
+        - ipv4:
+            value: "{{ dhcp_settings.dns_servers.1 }}"
+      search_domains: "{{ dhcp_settings.domain_search }}"
+      domain_name: "{{ dhcp_settings.domain_name }}"
+      tftp_server_name:
+        - "{{ dhcp_settings.tftp_server_name }}"
+      boot_file_name: "{{ dhcp_settings.boot_file }}"
+  register: result
+  ignore_errors: true
+
+- name: Check creating subnet status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.response.name == "{{ subnet_name }}_7"
+      - result.response.subnet_type == "OVERLAY"
+      - result.response.vpc_reference == "{{ vpc_uuid }}"
+      - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+    fail_msg: " Unable to create Overlay Subnet with IP_pools and DHCP "
+    success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
+
+- name: Fetch subnet after creation for verification
+  ntnx_subnets_info_v2:
+    filter: "name eq '{{ subnet_name }}_7'"
+  register: result
+  ignore_errors: true
+
+- name: Set result variable for verification
+  ansible.builtin.set_fact:
+    result: "{{ result.response[0] }}"
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.subnet_type == "OVERLAY"
+      - result.vpc_reference == "{{ vpc_uuid }}"
+      - result.name == "{{ subnet_name }}_7"
+      - result.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
+      - result.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+      - result.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+      - result.ip_config.0.ipv4.pool_list.0.start_ip.value == "{{ ip_address_pools.start_address }}"
+      - result.ip_config.0.ipv4.pool_list.0.end_ip.value == "{{ ip_address_pools.end_address }}"
+      - result.dhcp_options.boot_file_name == "{{ dhcp_settings.boot_file }}"
+      - result.dhcp_options.domain_name == "{{ dhcp_settings.domain_name }}"
+      - result.dhcp_options.search_domains == {{ dhcp_settings.domain_search }}
+      - result.dhcp_options.domain_name_servers.0.ipv4.value == "{{ dhcp_settings.dns_servers.0 }}"
+      - result.dhcp_options.domain_name_servers.1.ipv4.value == "{{ dhcp_settings.dns_servers.1 }}"
+    fail_msg: " Unable to verify creation of Overlay Subnet with IP_pools and DHCP "
+    success_msg: " Overlay Subnet with IP_pools and DHCP created and verified successfully "
+
+- name: Adding subnet external ID to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+
+#################################################################
+
+- name: Delete all Created Subnets
+  ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete Subnet "
+    success_msg: "Subnet is deleted successfully "
+  loop: "{{ result.results }}"
+
+- name: Reset todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+#################################################################
+
+- name: Delete vpc
+  ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ vpc_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vpc_uuid }}"
+      - result.task_ext_id is defined
+    fail_msg: " Unable to Delete  VPC"
+    success_msg: "Vpc has been deleted successfully"
+#################################################################

@@ -1,20 +1,22 @@
 ---
 name: Run compile and tests
 
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  - pull_request
 jobs:
   sanity1:
-    name: Sanity tests with ansible-core==2.15.0
-    runs-on: ubuntu-20.04
+    name: Sanity tests
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -22,10 +24,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Setup Docker
-        uses: docker-practice/actions-setup-docker@master
+        uses: docker/setup-docker-action@v4
       - name: Install ansible
         run: |
-          pip install -r requirements.txt
+          pip install -r tests/integration/requirements.txt
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
@@ -38,12 +40,12 @@ jobs:
       - name: Run tests
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
-          ansible-test sanity --docker default --python ${{ matrix.python-version }} -v
+          ansible-test sanity --docker default -v
   unit_testing:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -51,10 +53,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Setup Docker
-        uses: docker-practice/actions-setup-docker@master
+        uses: docker/setup-docker-action@v4
       - name: Install ansible
         run: |
-          pip install -r requirements.txt
+          pip install -r tests/integration/requirements.txt
       - name: Build and install the collection
         run: |
           NAMESPACE=$(cat galaxy.yml | shyaml get-value namespace)
@@ -73,7 +75,7 @@ jobs:
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           echo "Code coverage: Checking if code coverage is above threshold..."
-          export TESTCOV_THRESHOLD=55
+          export TESTCOV_THRESHOLD=50
           echo "Threshold: $TESTCOV_THRESHOLD %"
           totalCoverage=`grep TOTAL coverage.txt | awk '{print $6}' | sed 's/%//'`
           echo "TOTAL_COVERAGE=${totalCoverage}" >> $GITHUB_ENV

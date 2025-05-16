@@ -36,28 +36,28 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: Get API key with alias filter
-    ntnx_foundation_central_api_keys_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      alias: "test"
+- name: Get API key with alias filter
+  ntnx_foundation_central_api_keys_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    alias: "test"
 
-  - name: Get API key with key_uuid filter
-    ntnx_foundation_central_api_keys_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      key_uuid : "{{ uuid of key }}"
+- name: Get API key with key_uuid filter
+  ntnx_foundation_central_api_keys_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    key_uuid: "{{ uuid of key }}"
 
-  - name: List all the API key within FC
-    ntnx_foundation_central_api_keys_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
+- name: List all the API key within FC
+  ntnx_foundation_central_api_keys_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
 """
 
 RETURN = r"""
@@ -77,8 +77,8 @@ API_key:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.fc.api_keys import ApiKey  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.fc.api_keys import ApiKey  # noqa: E402
 
 
 def get_module_spec():

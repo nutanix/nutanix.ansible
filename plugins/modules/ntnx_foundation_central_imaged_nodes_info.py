@@ -62,24 +62,24 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: Get node details using uuid
-    ntnx_foundation_central_imaged_nodes_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      imaged_node_uuid: "{{node_uuid}}"
+- name: Get node details using uuid
+  ntnx_foundation_central_imaged_nodes_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    imaged_node_uuid: "{{node_uuid}}"
 
-  - name: Get imaged node list based on filters
-    ntnx_foundation_central_imaged_nodes_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: false
-      filters:
-        node_state: STATE_AVAILABLE
-      length: 5
-      offset: 1
+- name: Get imaged node list based on filters
+  ntnx_foundation_central_imaged_nodes_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filters:
+      node_state: STATE_AVAILABLE
+    length: 5
+    offset: 1
 """
 
 RETURN = r"""
@@ -139,8 +139,8 @@ Imaged_Node_List:
 """
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.fc.imaged_nodes import ImagedNode  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.fc.imaged_nodes import ImagedNode  # noqa: E402
 
 
 def get_module_spec():

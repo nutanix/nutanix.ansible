@@ -45,7 +45,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: List recovery plan job using uuid criteria
   ntnx_recovery_plan_jobs_info:
@@ -55,7 +55,6 @@ EXAMPLES = r"""
     validate_certs: "{{ validate_certs }}"
     job_uuid: "{{ job_uuid }}"
   register: result
-
 """
 RETURN = r"""
 api_version:
@@ -305,9 +304,9 @@ status:
             }
 """
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.recovery_plan_jobs import RecoveryPlanJob  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.prism.recovery_plan_jobs import RecoveryPlanJob  # noqa: E402
 
 
 def get_module_spec():

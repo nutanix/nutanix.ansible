@@ -1,0 +1,114 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a storage container
+# 2. Update the storage container
+# 3. Fetch storage container configurations
+# 4. Fetch storage container stats
+# 5. Fetch storage container stats with interval defined
+# 6. Fetch all storage containers
+# 7. Delete the storage container
+
+- name: Storage container playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        storage_container_name: "ansible_storage_container"
+        cluster_ext_id: "00062899-4a29-0cf9-0000-000000028f57"
+        owner_uuid: "0005b6b4-0000-0000-0000-000000000000"
+        nfs_whitelist_address:
+          - ipv4:
+              value: "10.0.0.1"
+          - ipv4:
+              value: "10.0.0.2"
+        storage_container_ext_id: "0005b6b4-1234-1111-2222-000000000000"
+
+    - name: Get current time minus 5 minutes in the required format
+      ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: start_time
+      changed_when: false
+
+    - name: Get current time in the required format
+      ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: end_time
+      changed_when: false
+
+    - name: Create storage container
+      nutanix.ncp.ntnx_storage_containers_v2:
+        name: "{{ storage_container_name }}"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        owner_ext_id: "{{ owner_uuid }}"
+        logical_explicit_reserved_capacity_bytes: 20
+        logical_advertised_capacity_bytes: 1073741824000
+        on_disk_dedup: "OFF"
+        is_compression_enabled: true
+        compression_delay_secs: 3600
+        is_internal: false
+        is_software_encryption_enabled: false
+        is_inline_ec_enabled: false
+        has_higher_ec_fault_domain_preference: true
+        nfs_whitelist_address:
+          - ipv4:
+              value: "{{ nfs_whitelist_address[0].ipv4.value }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update storage container
+      nutanix.ncp.ntnx_storage_containers_v2:
+        state: present
+        ext_id: "{{ storage_container_ext_id }}"
+        name: "{{ storage_container_name }}_updated"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        owner_ext_id: "{{ owner_uuid }}"
+        logical_explicit_reserved_capacity_bytes: 25
+        logical_advertised_capacity_bytes: 2147483648000
+        nfs_whitelist_address:
+          - ipv4:
+              value: "{{ nfs_whitelist_address[1].ipv4.value }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch storage container configurations
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        ext_id: "{{ storage_container_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch storage container stats
+      nutanix.ncp.ntnx_storage_containers_stats_v2:
+        ext_id: "{{ storage_container_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch storage container stats with interval defined
+      nutanix.ncp.ntnx_storage_containers_stats_v2:
+        ext_id: "{{ storage_container_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: SUM
+      register: result
+      ignore_errors: true
+
+    - name: Fetch all storage containers
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Delete storage container
+      nutanix.ncp.ntnx_storage_containers_v2:
+        state: absent
+        ext_id: "{{ storage_container_ext_id }}"
+        ignore_small_files: true
+      register: result
+      ignore_errors: true

@@ -1,40 +1,40 @@
-- name:
-  debug:
+- name: Start ntnx_project tests with role mappings
+  ansible.builtin.debug:
     msg: "Start ntnx_project tests with role mappings"
 
 - name: Generate random project_name
-  set_fact:
+  ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
-- set_fact:
+- name: Define suffix name variable
+  ansible.builtin.set_fact:
     suffix_name: "ansible-role-mapping"
 
-- set_fact:
+- name: Define project name variable
+  ansible.builtin.set_fact:
     project1_name: "{{random_name}}{{suffix_name}}1"
     project2_name: "{{random_name}}{{suffix_name}}2"
     project3_name: "{{random_name}}{{suffix_name}}3"
-
-- set_fact:
-    ignore_errors: false
 
 - name: Create Project with min spec
   ntnx_projects:
     name: "{{project1_name}}"
     desc: "project with role mappings"
-    collaboration: True
+    collaboration: true
     role_mappings:
       - role:
-          name: "{{roles[0]}}"
+          name: "{{role_mappings[0]}}"
         user:
           uuid: "{{users[0]}}"
   register: result
-  ignore_errors: "{{ignore_errors}}"
+  ignore_errors: true
 
-- set_fact:
+- name: Set response acp
+  ansible.builtin.set_fact:
     response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -44,17 +44,18 @@
       - result.response.status.access_control_policy_list_status | length == 1
       - response_acp.filter_list.context_list[0].entity_filter_expression_list[0].left_hand_side.entity_type == "ALL"
       - response_acp.filter_list.context_list | length == 3
-      - response_acp.role_reference.name == "{{roles[0]}}"
+      - response_acp.role_reference.name == "{{role_mappings[0]}}"
       - response_acp.user_reference_list[0].uuid ==  "{{users[0]}}"
     fail_msg: "Unable to create project with minimal spec of role mappings"
     success_msg: "Project with minimal spec of role mappings created successfully"
 
-- set_fact:
+- name: Add project uuid to delete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.project_uuid ] }}"
 
 ################################################################
 
-- name: Creat project with all specs
+- name: Create project with all specs
   ntnx_projects:
     name: "{{project2_name}}"
     desc: desc-123
@@ -78,29 +79,31 @@
       - user:
           uuid: "{{users[0]}}"
         role:
-          name: "{{roles[0]}}"
+          name: "{{role_mappings[0]}}"
       - user:
           uuid: "{{users[1]}}"
         role:
-          name: "{{roles[1]}}"
+          name: "{{role_mappings[1]}}"
       - user:
           principal_name: "{{new_user}}"
           directory_service_uuid: "{{directory_service_uuid}}"
         role:
-          name: "{{roles[2]}}"
+          name: "{{role_mappings[2]}}"
       - user_group:
           distinguished_name: "{{new_user_group}}"
         role:
-          name: "{{roles[3]}}"
+          name: "{{role_mappings[3]}}"
   register: result
-  ignore_errors: "{{ignore_errors}}"
+  ignore_errors: true
 
-- set_fact:
-    expected_subnets: ["{{ network.dhcp.uuid }}", "{{ static.uuid }}", "{{ overlay.uuid }}"]
+- name: Set expected subnets
+  ansible.builtin.set_fact:
+    expected_subnets:
+      ["{{ network.dhcp.uuid }}", "{{ static.uuid }}", "{{ overlay.uuid }}"]
     response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -124,13 +127,20 @@
     fail_msg: "Unable to create project with all specifications"
     success_msg: "Project with all specifications created successfully"
 
-
-- set_fact:
+- name: Add project uuid to delete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.project_uuid ] }}"
 
-- set_fact:
+- name: Set user_group_to_delete
+  ansible.builtin.set_fact:
     user_group_to_delete: "{{result.response.status.project_status.resources.external_user_group_reference_list[0].uuid}}"
 
+- name: Get user UUID to delete
+  ansible.builtin.set_fact:
+    user_to_delete: "{{ item.uuid }}"
+  loop: "{{ result.response.status.project_status.resources.user_reference_list }}"
+  when: item.name == new_user
+  no_log: true
 
 - name: Update Project role mappings and subnets and quotas
   ntnx_projects:
@@ -148,7 +158,7 @@
         limit: 2147483648
       - resource_type: MEMORY
         limit: 2147483648
-    collaboration: True
+    collaboration: true
     role_mappings:
       - role:
           name: "{{acp.role.name}}"
@@ -164,54 +174,69 @@
           uuid: "{{user_groups[0]}}"
 
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- name: Set expected subnets
+  ansible.builtin.set_fact:
     expected_subnets: ["{{ network.dhcp.uuid }}", "{{ static.uuid }}"]
-- set_fact:
+- name: Set acp_users
+  ansible.builtin.set_fact:
     response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
-- set_fact:
-    acp_users: ["{{response_acp.user_reference_list[0].uuid}}", "{{response_acp.user_reference_list[1].uuid}}"]
-- set_fact:
-    sorted_acp_users: '{{ acp_users | sort() }}'
-- set_fact:
+- name: Set acp_users
+  ansible.builtin.set_fact:
+    acp_users:
+      [
+        "{{response_acp.user_reference_list[0].uuid}}",
+        "{{response_acp.user_reference_list[1].uuid}}",
+      ]
+- name: Set sorted acp_users
+  ansible.builtin.set_fact:
+    sorted_acp_users: "{{ acp_users | sort() }}"
+- name: Set expected_users
+  ansible.builtin.set_fact:
     expected_users: ["{{users[0]}}", "{{users[1]}}"]
-- set_fact:
-    expected_users_sorted: '{{ expected_users | sort() }}'
-- set_fact:
-    project_user_reference_list: ["{{result.response.status.project_status.resources.user_reference_list[0].uuid}}", "{{result.response.status.project_status.resources.user_reference_list[1].uuid}}"]
-- set_fact:
-    project_user_references_sorted: '{{ project_user_reference_list|sort() }}'
-- set_fact:
-    expected_quotas: [
-                      {
-                          "limit": 5,
-                          "resource_type": "VCPUS",
-                          "units": "COUNT",
-                          "value": 0
-                      },
-                      {
-                          "limit": 2147483648,
-                          "resource_type": "STORAGE",
-                          "units": "BYTES",
-                          "value": 0
-                      },
-                      {
-                          "limit": 2147483648,
-                          "resource_type": "MEMORY",
-                          "units": "BYTES",
-                          "value": 0
-                      }
-                  ]
-- set_fact:
+- name: Set expected_users_sorted
+  ansible.builtin.set_fact:
+    expected_users_sorted: "{{ expected_users | sort() }}"
+- name: Set project_user_reference_list
+  ansible.builtin.set_fact:
+    project_user_reference_list:
+      [
+        "{{result.response.status.project_status.resources.user_reference_list[0].uuid}}",
+        "{{result.response.status.project_status.resources.user_reference_list[1].uuid}}",
+      ]
+- name: Set project_user_references_sorted
+  ansible.builtin.set_fact:
+    project_user_references_sorted: "{{ project_user_reference_list|sort() }}"
+- name: Set expected quotas
+  ansible.builtin.set_fact:
+    expected_quotas:
+      [
+        { "limit": 5, "resource_type": "VCPUS", "units": "COUNT", "value": 0 },
+        {
+          "limit": 2147483648,
+          "resource_type": "STORAGE",
+          "units": "BYTES",
+          "value": 0,
+        },
+        {
+          "limit": 2147483648,
+          "resource_type": "MEMORY",
+          "units": "BYTES",
+          "value": 0,
+        },
+      ]
+- name: Set quotas
+  ansible.builtin.set_fact:
     quotas: "{{result.response.status.project_status.resources.resource_domain.resources}}"
 
-- set_fact:
+- name: Sort quotas and expected quotas
+  ansible.builtin.set_fact:
     sorted_quotas: "{{ quotas| sort(attribute='resource_type') }}"
     sorted_expected_quotas: "{{ expected_quotas | sort(attribute='resource_type') }}"
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
@@ -254,7 +279,7 @@
         limit: 2147483648
       - resource_type: MEMORY
         limit: 2147483648
-    collaboration: True
+    collaboration: true
     role_mappings:
       - role:
           name: "{{acp.role.name}}"
@@ -272,18 +297,17 @@
   ignore_errors: true
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - "'Nothing to update' in result.msg"
     fail_msg: "Project update didnt got skipped for update spec same as existing project"
     success_msg: "Project got skipped successfully for no change in spec"
 
-
 - name: Create project with existing name
   ntnx_projects:
     name: "{{project3_name}}"
-    collaboration: True
+    collaboration: true
     role_mappings:
       - role:
           name: "{{acp.role.name}}"
@@ -296,9 +320,8 @@
   register: result
   ignore_errors: true
 
-
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - "'Project with given name already exists' in result.msg"
@@ -312,20 +335,21 @@
     project_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: true
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []
 
-- name: delete user group
+- name: Delete user group
   ntnx_user_groups:
     state: absent
     user_group_uuid: "{{user_group_to_delete}}"
   register: result
   ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check deleting user group
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
@@ -333,3 +357,20 @@
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
     fail_msg: "Unable to delete user  group  "
     success_msg: "user group deletd successfully"
+
+- name: Delete user
+  ntnx_users:
+    state: absent
+    user_uuid: "{{user_to_delete}}"
+  register: result
+  ignore_errors: true
+
+- name: Check deleting user
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.failed == false
+      - result.changed == true
+      - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
+    fail_msg: "Unable to delete user  "
+    success_msg: "user deletd successfully"

@@ -26,23 +26,22 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List registries
-    ntnx_karbon_registries_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-    register: result
+- name: List registries
+  ntnx_karbon_registries_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+  register: result
 
-  - name: Get registries using name
-    ntnx_registries_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      registry_name: "registry-name"
-    register: result
-
+- name: Get registries using name
+  ntnx_registries_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    registry_name: "registry-name"
+  register: result
 """
 RETURN = r"""
 name:
@@ -67,8 +66,8 @@ endpoint:
     sample: "xxx.xxx.xxx.xxx:5000"
 """
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.karbon.registries import Registry  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.karbon.registries import Registry  # noqa: E402
 
 
 def get_module_spec():

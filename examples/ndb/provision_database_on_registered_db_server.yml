@@ -2,8 +2,6 @@
 - name: Single instance postgres database creation on registered db server
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <ndb-era-server-ip>
@@ -12,9 +10,8 @@
       validate_certs: false
 
   tasks:
-
     - name: Create single instance postgres database on registered db server vm
-      ntnx_ndb_databases:
+      nutanix.ncp.ntnx_ndb_databases:
 
         name: POSTGRES_DATABASE_ANSIBLE
 
@@ -46,5 +43,6 @@
 
       register: output
 
-    - debug:
-        msg: "{{output}}"
+    - name: Print output
+      ansible.builtin.debug:
+        msg: "{{ output }}"
