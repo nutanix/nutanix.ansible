@@ -48,7 +48,6 @@
 ######################################### Create disk tests #########################################
 
 - name: Create disk with check mode
-  check_mode: true
   ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
@@ -63,6 +62,7 @@
       ext_id: "{{ storage_container.uuid }}"
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Verify disk spec
   ansible.builtin.assert:
@@ -146,7 +146,6 @@
     disk1_uuid: "{{ result.ext_id }}"
 
 - name: Create disk with vdisk ref in check mode
-  check_mode: true
   ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
@@ -160,6 +159,7 @@
       ext_id: "{{disk1_uuid}}"
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Verify spec of disk
   ansible.builtin.assert:
@@ -178,7 +178,6 @@
     success_msg: "Spec generated successfully for disk create"
 
 - name: Create disk from recovery point in check mode
-  check_mode: true
   ntnx_volume_groups_disks_v2:
     state: "present"
     volume_group_ext_id: "{{ vg1_uuid }}"
@@ -192,6 +191,7 @@
       ext_id: "{{disk1_uuid}}"
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Verify spec of disk
   ansible.builtin.assert:

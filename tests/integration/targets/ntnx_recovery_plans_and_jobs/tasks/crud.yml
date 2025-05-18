@@ -166,7 +166,6 @@
       }
 
 - name: Create checkmode spec for recovery plan with networks and 2 stage
-  check_mode: true
   ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp
@@ -193,6 +192,8 @@
           prod:
             name: "{{dr.recovery_site_network}}"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Checkmode spec assert
   ansible.builtin.assert:
@@ -404,7 +405,6 @@
       }
 
 - name: Checkmode spec for Update recovery plan. Update networks and stages.
-  check_mode: true
   ntnx_recovery_plans:
     plan_uuid: "{{plan_uuid}}"
     state: "present"
@@ -442,8 +442,9 @@
             name: "{{dr.recovery_site_network}}"
           prod:
             name: "{{dr.recovery_site_network}}"
-
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Check mode spec for Update status
   ansible.builtin.assert:

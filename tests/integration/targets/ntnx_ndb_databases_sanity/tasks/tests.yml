@@ -18,7 +18,6 @@
 ################################### Single instance postgres database tests #############################
 
 - name: Create spec for single instance postgres database on new db server vm
-  check_mode: true
   ntnx_ndb_databases:
     wait: true
     name: "{{ db1_name }}"
@@ -80,6 +79,8 @@
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Define variables
   ansible.builtin.set_fact:
@@ -263,7 +264,6 @@
 ################################### update tests #############################
 
 - name: Update database with check mode
-  check_mode: true
   ntnx_ndb_databases:
     wait: true
     db_uuid: "{{ db_uuid }}"
@@ -273,6 +273,8 @@
     tags:
       databases: single-instance-dbs-updated
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -335,13 +337,14 @@
 ################################### delete tests #############################
 
 - name: Create spec for delete db from vm
-  check_mode: true
   ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
     delete_db_from_vm: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Verify delete check mode spec
   ansible.builtin.assert:
@@ -355,7 +358,6 @@
     success_msg: spec for delete db from vm created successfully
 
 - name: Create spec for soft remove
-  check_mode: true
   ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
@@ -363,6 +365,8 @@
     soft_delete: true
     delete_time_machine: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Verify soft remove check mode spec
   ansible.builtin.assert:

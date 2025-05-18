@@ -14,7 +14,6 @@
 
 ################################### DB server VM Provision tests #############################
 - name: Create ndb vm using time machine and check mode
-  check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     name: ansible-created-vm1-from-time-machine
@@ -41,8 +40,9 @@
         - type: DB_PATCHING
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
-
   register: check_mode_result
+  check_mode: true
+  no_log: true
 
 # skip jekyll/Liquid syntax check
 # {% raw %}
@@ -116,7 +116,6 @@
     success_msg: DB server VM spec created successfully
 
 - name: Create spec for db server vm using software profile and names of profile
-  check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     name: "{{ vm1_name }}"
@@ -144,6 +143,8 @@
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -310,7 +311,6 @@
     success_msg: db server vm update skipped successfully due to no changes in state
 
 - name: Update db server vm name with check mode and check defaults
-  check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     uuid: "{{ db_server_uuid }}"
@@ -318,6 +318,8 @@
       - username: user
         password: pass
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -481,7 +483,6 @@
 ################################### maintenance tasks update tests #############################
 
 - name: Create spec for adding maintenance window tasks to db server vm
-  check_mode: true
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{ vm1_name_updated }}"
@@ -499,6 +500,8 @@
         pre_task_cmd: ls -a
         post_task_cmd: ls
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -535,7 +538,6 @@
     success_msg: spec for adding maintenance tasks for db server vm created successfully
 
 - name: Create spec for removing maintenance window tasks from above created vm
-  check_mode: true
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{ db_server_uuid }}"
@@ -543,6 +545,8 @@
       uuid: "{{ maintenance.window_uuid }}"
     tasks: []
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -668,12 +672,13 @@
 ################################### DB server VM unregistration tests #############################
 
 - name: Generate check mode spec for unregister with default values
-  check_mode: true
   ntnx_ndb_db_server_vms:
     state: absent
     wait: true
     uuid: "{{ db_server_uuid }}"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -690,7 +695,6 @@
     success_msg: DB server VM unregister spec generated successfully
 
 - name: Genereate check mode spec for delete vm with vgs and snapshots
-  check_mode: true
   ntnx_ndb_db_server_vms:
     state: absent
     uuid: "{{ db_server_uuid }}"
@@ -698,6 +702,8 @@
     delete_vgs: true
     delete_vm_snapshots: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -736,7 +742,6 @@
 ################################### DB server VM Registration tests #############################
 
 - name: Generate spec for registeration of the previous unregistered vm using check mode
-  check_mode: true
   ntnx_ndb_register_db_server_vm:
     ip: "{{ vm_ip }}"
     desc: register-vm-desc
@@ -759,6 +764,8 @@
           post_task_cmd: ls -F
     working_directory: /check
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Create action_arguments map
   ansible.builtin.set_fact:

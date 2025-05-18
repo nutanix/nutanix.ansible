@@ -16,7 +16,6 @@
     vg2_name: "{{suffix_name}}-{{random_name}}2"
 
 - name: Create Volume group with check mode
-  check_mode: true
   ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
     description: "Volume group 1"
@@ -34,6 +33,7 @@
       enabled_authentications: "CHAP"
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Verify spec of VG
   ansible.builtin.assert:

@@ -14,7 +14,6 @@
 
 ############################################## create tests ####################################
 - name: Create spec for maintenance window
-  check_mode: true
   ntnx_ndb_maintenance_window:
     name: "{{ window1_name }}"
     desc: anisble-created-window
@@ -25,6 +24,8 @@
       start_time: "11:00:00"
       day_of_week: tuesday
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Define variables for expected result
   ansible.builtin.set_fact:

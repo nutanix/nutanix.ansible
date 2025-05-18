@@ -130,13 +130,14 @@
     snapshot_uuid: "{{ result.snapshot_uuid }}"
 
 - name: Create spec for replicating snapshot from cluster1 on cluster2
-  check_mode: true
   ntnx_ndb_replicate_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     clusters:
       - name: "{{ cluster.cluster2.name }}"
     expiry_days: 20
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Setting expected result for snapshot replication
   ansible.builtin.set_fact:

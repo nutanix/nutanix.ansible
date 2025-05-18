@@ -473,7 +473,6 @@ EXAMPLES = r"""
             name: "{{dr.recovery_site_network}}"
 
 - name: Update stage categories
-  check_mode: true
   ntnx_recovery_plans:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -495,6 +494,7 @@ EXAMPLES = r"""
       - categories:
           - key: Environment
             value: Testing
+  check_mode: true
 
 - name: Delete created recovery plans
   ntnx_recovery_plans:

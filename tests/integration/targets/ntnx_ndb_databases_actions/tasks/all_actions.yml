@@ -98,7 +98,6 @@
 ############################################ snapshots test ###########################################
 
 - name: Create snapshot create spec
-  check_mode: true
   ntnx_ndb_database_snapshots:
     name: "{{ snapshot_name }}"
     time_machine_uuid: "{{ time_machine_uuid }}"
@@ -108,6 +107,8 @@
       - uuid: test_uuid3
     expiry_days: 4
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Set expected response
   ansible.builtin.set_fact:
@@ -278,10 +279,11 @@
 ############################################ log catchup ######################################
 
 - name: Create spec for log catchup
-  check_mode: true
   ntnx_ndb_database_log_catchup:
     time_machine_uuid: "{{ time_machine_uuid }}"
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Set expected response
   ansible.builtin.set_fact:
@@ -306,11 +308,12 @@
     success_msg: log catchup spec created successfully
 
 - name: Create spec for log catchup for restore
-  check_mode: true
   ntnx_ndb_database_log_catchup:
     time_machine_uuid: "{{ time_machine_uuid }}"
     for_restore: true
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Set expected response
   ansible.builtin.set_fact:
@@ -354,12 +357,13 @@
 ########################################### restore ###########################################
 
 - name: Create restore database spec using pitr timestamp
-  check_mode: true
   ntnx_ndb_database_restore:
     db_uuid: "{{ db_uuid }}"
     pitr_timestamp: "2023-01-02 11:02:22"
     timezone: UTC
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -383,10 +387,11 @@
     success_msg: Spec for databas restore using pitr timetsmap created successfully
 
 - name: Create restore database spec with latest snapshot
-  check_mode: true
   ntnx_ndb_database_restore:
     db_uuid: "{{ db_uuid }}"
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -410,11 +415,12 @@
     success_msg: Spec for databas restore using latest snapshot created successfully
 
 - name: Create restore database spec using snapshot uuid
-  check_mode: true
   ntnx_ndb_database_restore:
     db_uuid: "{{ db_uuid }}"
     snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -470,14 +476,14 @@
 ########################################### scaling ###########################################
 
 - name: Create spec for scaling
-  check_mode: true
   ntnx_ndb_database_scale:
     db_uuid: "{{ db_uuid }}"
     storage_gb: 10
     pre_update_cmd: ls
     post_update_cmd: ls -a
-
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -522,7 +528,6 @@
 ############################################ add / remove linked databases ###########################################
 
 - name: Create databases in database instance
-  check_mode: true
   ntnx_ndb_linked_databases:
     db_instance_uuid: "{{ db_uuid }}"
     databases:
@@ -530,6 +535,8 @@
       - test2
       - test3
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Set expected result
   ansible.builtin.set_fact:

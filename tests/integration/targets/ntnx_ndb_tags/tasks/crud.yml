@@ -15,13 +15,14 @@
 ############################# Create tests ########################
 
 - name: Check mode for creation
-  check_mode: true
   ntnx_ndb_tags:
     name: "{{ tag_name }}-timemachine"
     desc: tag-created-by-ansible
     tag_value_required: true
     entity_type: TIME_MACHINE
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Define variable for expected response
   ansible.builtin.set_fact:

@@ -5,7 +5,6 @@
 
 ############################################ CREATE Protection Policy tests #########################
 - name: Create protection rule with synchronous schedule and check mode
-  check_mode: true
   ntnx_protection_rules:
     state: present
     wait: true
@@ -31,6 +30,8 @@
         protection_type: SYNC
         auto_suspend_timeout: 10
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -326,7 +327,6 @@
 ####################################################################################
 
 - name: Check Mode while update
-  check_mode: true
   ntnx_protection_rules:
     state: present
     wait: true
@@ -334,6 +334,8 @@
     name: test-ansible-updated-check-mode
     desc: test-ansible-desc-updated
   register: temp_result
+  ignore_errors: true
+  check_mode: true
 
 - name: Check mode Status
   ansible.builtin.assert:

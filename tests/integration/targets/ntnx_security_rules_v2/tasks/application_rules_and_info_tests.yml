@@ -554,7 +554,6 @@
 ######################################### Update tests #########################################
 
 - name: Generate spec to update the policy using check mode
-  check_mode: true
   ntnx_security_rules_v2:
     ext_id: "{{ policy_ext_id2 }}"
     name: "{{ rule_name_2 }}-updated"
@@ -634,6 +633,8 @@
               - "{{ address_group_ext_id }}"
             is_all_protocol_allowed: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Verify update spec
   ansible.builtin.assert:
