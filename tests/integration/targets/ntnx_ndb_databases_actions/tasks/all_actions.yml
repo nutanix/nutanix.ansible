@@ -259,11 +259,11 @@
     success_msg: snapshot update got skipped due to no state changes
 
 - name: Delete snapshot with check mode
-  check_mode: true
   ntnx_ndb_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Delete snapshot check mode status
   ansible.builtin.assert:
@@ -594,8 +594,8 @@
       - output.failed == false
       - output.changed == false
       - output.msg =="Database with uuid:{{  db_uuid }} will be removed."
-      - output.db_uuid == "{{  db_uuid  }}"
-      - output.db_instance_uuid == "{{  linked_databases.test1  }}"
+      - output.db_uuid == "{{ linked_databases.test1 }}"
+      - output.db_instance_uuid == "{{ db_uuid }}"
     fail_msg: "Remove databases in database instance with check mode failed"
     success_msg: "Remove databases in database instance with check mode passed"
 
@@ -605,6 +605,16 @@
     db_instance_uuid: "{{ db_uuid }}"
     database_uuid: "{{ linked_databases.test1 }}"
   register: result
+
+- name: Remove databases in database instance status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.db_uuid == "{{ linked_databases.test1 }}"
+      - result.db_instance_uuid == "{{ db_uuid }}"
+    fail_msg: Unable to remove database from database instance
+    success_msg: database removed from database instance successfully
 
 # {% raw %}
 

@@ -335,13 +335,13 @@
 ################################### delete tests #############################
 
 - name: Create spec for delete db from vm
-  check_mode: true
   ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
     wait: true
     delete_db_from_vm: true
   register: result
+  check_mode: true
 
 - name: Verify delete check mode spec
   ansible.builtin.assert:
@@ -356,7 +356,6 @@
     success_msg: spec for delete db from vm created successfully
 
 - name: Create spec for soft remove
-  check_mode: true
   ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
@@ -364,6 +363,8 @@
     soft_delete: true
     delete_time_machine: true
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Verify soft remove check mode spec
   ansible.builtin.assert:

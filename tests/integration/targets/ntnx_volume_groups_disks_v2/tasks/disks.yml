@@ -314,6 +314,7 @@
       - result.changed == false
       - result.failed == false
       - result.ext_id == "{{ disk1_uuid }}"
+      - result.volume_group_ext_id == "{{ vg1_uuid }}"
       - result.msg == "VG Disk with ext_id:{{ disk1_uuid }} will be deleted."
     fail_msg: "Delete disk with check mode is enabled failed"
     success_msg: "Delete disk with check mode is enabled passed"
