@@ -337,24 +337,6 @@
     fail_msg: "Delete cluster with check mode failed"
     success_msg: "Delete cluster with check mode passed"
 
-- name: Delete cluster
-  ntnx_ndb_clusters:
-    uuid: "{{todelete}}"
-    state: absent
-  register: result
-  ignore_errors: true
-  no_log: true
-
-- name: Check listing status
-  ansible.builtin.assert:
-    that:
-      - result.error is defined
-      - result.failed == true
-      - result.changed == false
-      - result.cluster_uuid == "{{todelete}}"
-    fail_msg: module didn't errored out correctly when incorrect name is given
-    success_msg: module errored out correctly when incorrect name is given
-
 ################################################################
 
 - name: Delete cluster
@@ -372,6 +354,7 @@
       - result.changed == true
       - result.failed == false
       - result.response.status == "5"
+      - result.cluster_uuid == "{{ todelete }}"
     fail_msg: Unable to delete custer
     success_msg: cluster  deleted successfully
 
