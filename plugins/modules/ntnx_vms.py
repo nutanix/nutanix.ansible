@@ -883,7 +883,8 @@ def update_vm(module, result):
     if is_vm_on and vm.is_restart_required():
         if not module.params.get("force_power_off"):
             module.fail_json(
-                "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+                msg="To make these changes, the VM should be restarted, but 'force_power_off' is False",
+                **result  # fmt: skip
             )
 
         power_off_vm(vm, module, result)
