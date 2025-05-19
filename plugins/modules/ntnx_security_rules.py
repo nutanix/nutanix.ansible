@@ -61,6 +61,10 @@ options:
     description: security_rule Name
     required: false
     type: str
+  desc:
+    description: security_rule Description
+    required: false
+    type: str
   security_rule_uuid:
     description:
         - security_rule UUID
@@ -881,6 +885,7 @@ EXAMPLES = r"""
 - name: create app security rule
   ntnx_security_rules:
     name: test_app_rule
+    desc: App Security Rule
     allow_ipv6_traffic: true
     policy_hitlog: true
     app_rule:
@@ -986,6 +991,7 @@ spec:
   type: dict
   sample:
     name: test_app_rule
+    description: App Security Rule
     resources:
       allow_ipv6_traffic: true
       app_rule:
@@ -1185,6 +1191,7 @@ def get_module_spec():
     )
     module_args = dict(
         name=dict(type="str"),
+        desc=dict(type="str"),
         security_rule_uuid=dict(type="str"),
         allow_ipv6_traffic=dict(type="bool"),
         policy_hitlog=dict(type="bool"),
