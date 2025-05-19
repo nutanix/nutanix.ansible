@@ -3,10 +3,10 @@
     filter:
       subnet_type: "VLAN"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list subnets "
@@ -18,10 +18,10 @@
     offset: 2
   check_mode: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list subnets "
@@ -33,12 +33,27 @@
     sort_attribute: "vlan_id"
     kind: subnet
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: " Unable to list subnets "
     success_msg: " Subnets listed successfully "
+#########################################################
+- name: List subnet using custom_filter
+  ntnx_subnets_info:
+    custom_filter:
+      vswitch_name: br0
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.entities[0].status.resources.vswitch_name == "br0"
+    fail_msg: " Unable to List subnet using custom_filter "
+    success_msg: "List subnet using custom_filter listed successfully "
 #########################################################

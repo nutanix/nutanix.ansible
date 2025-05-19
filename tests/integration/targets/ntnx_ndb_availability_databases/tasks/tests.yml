@@ -5,81 +5,81 @@
 #   2. Create HA postgres database instance with multicluster nodes
 #   3. Create HA postgres database instance with static IP and cluster IP assigments
 
-- debug:
-    msg: "start ndb databases test flow for testing high availability databases"
+- name: Start ndb databases test flow for testing high availability databases
+  ansible.builtin.debug:
+    msg: start ndb databases test flow for testing high availability databases
 
 - name: Generate random name
-  set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
-- set_fact:
-    db1_name: "{{random_name[0]}}-ha"
-    db1_name_updated: "{{random_name[0]}}-updated"
-    cluster1_name: "{{random_name[0]}}-cluster"
+- name: Define variables for db1_name, db1_name_updated and cluster1_name
+  ansible.builtin.set_fact:
+    db1_name: "{{ random_name[0] }}-ha"
+    db1_name_updated: "{{ random_name[0] }}-updated"
+    cluster1_name: "{{ random_name[0] }}-cluster"
 
-- name: create HA instance postgres database spec using check mode
-  check_mode: yes
+- name: Create HA instance postgres database spec using check mode
+  check_mode: true
   ntnx_ndb_databases:
     wait: true
-    name: "{{db1_name}}"
-    desc: "ansible-created-db-desc"
+    name: "{{ db1_name }}"
+    desc: ansible-created-db-desc
 
     db_params_profile:
-      name: "{{postgres_ha_profiles.db_params_profile.name}}"
-    
+      name: "{{ postgres_ha_profiles.db_params_profile.name }}"
+
     db_server_cluster:
       new_cluster:
-        name: "{{cluster1_name}}"
-        cluster: 
-          name: "{{cluster.cluster1.name}}"
+        name: "{{ cluster1_name }}"
+        cluster:
+          name: "{{ cluster.cluster1.name }}"
         software_profile:
           name: "{{ postgres_ha_profiles.software_profile.name }}"
         network_profile:
           name: "{{ postgres_ha_profiles.static_network_profile.name }}"
         compute_profile:
           name: "{{ postgres_ha_profiles.compute_profile.name }}"
-        password: "temp_password"
-        pub_ssh_key: "test_key"
-        vms: 
-          - name: "{{cluster1_name}}-vm-1"
-            node_type: "database"
-            role: "Primary"
-            archive_log_destination: "/temp/"
-          - name: "{{cluster1_name}}-vm-2"
-            node_type: "database"
-            role: "Secondary"
-            archive_log_destination: "/temp/"
-          - name: "{{cluster1_name}}-vm-3"
+        password: temp_password
+        pub_ssh_key: test_key
+        vms:
+          - name: "{{ cluster1_name }}-vm-1"
+            node_type: database
+            role: Primary
+            archive_log_destination: /temp/
+          - name: "{{ cluster1_name }}-vm-2"
+            node_type: database
+            role: Secondary
+            archive_log_destination: /temp/
+          - name: "{{ cluster1_name }}-vm-3"
             cluster:
-              name: "{{cluster.cluster2.name}}"
-            node_type: "database"
-            role: "Secondary"
-            archive_log_destination: "/temp/"
+              name: "{{ cluster.cluster2.name }}"
+            node_type: database
+            role: Secondary
+            archive_log_destination: /temp/
             compute_profile:
-              uuid: "test_compute_uuid"
-          - name: "{{cluster1_name}}-ha-vm"
+              uuid: test_compute_uuid
+          - name: "{{ cluster1_name }}-ha-vm"
             cluster:
-              name: "{{cluster.cluster2.name}}"
-            node_type: "haproxy"
-            
-    
+              name: "{{ cluster.cluster2.name }}"
+            node_type: haproxy
+
     postgres:
-      type: "ha"
+      type: ha
       db_name: testAnsible
       db_password: "{{ vm_password }}"
       db_size: 200
       listener_port: "9999"
-      patroni_cluster_name: "patroni_cluster"
+      patroni_cluster_name: patroni_cluster
       enable_synchronous_mode: true
       archive_wal_expire_days: 3
-      post_create_script: "ls"
-      pre_create_script: "ls -a"
+      post_create_script: ls
+      pre_create_script: ls -a
       enable_peer_auth: true
       ha_proxy:
         provision_virtual_ip: true
         write_port: "9999"
         read_port: "8888"
-
 
     time_machine:
       name: TM1
@@ -87,265 +87,133 @@
       sla:
         name: "{{ sla.name }}"
       clusters:
-        - name: "{{cluster.cluster1.name}}"
-        - uuid: "test_uuid"
+        - name: "{{ cluster.cluster1.name }}"
+        - uuid: test_uuid
 
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
       tasks:
-        - type: "OS_PATCHING"
-          pre_task_cmd: "ls"
-          post_task_cmd: "ls -a"
-        - type: "DB_PATCHING"
-          pre_task_cmd: "ls -l"
-          post_task_cmd: "ls -F"
+        - type: OS_PATCHING
+          pre_task_cmd: ls
+          post_task_cmd: ls -a
+        - type: DB_PATCHING
+          pre_task_cmd: ls -l
+          post_task_cmd: ls -F
 
   register: result
 
-- set_fact:
-    expected_response: {
-            "actionArguments": [
-                {
-                    "name": "cluster_name",
-                    "value": "{{cluster1_name}}"
-                },
-                {
-                    "name": "listener_port",
-                    "value": "9999"
-                },
-                {
-                    "name": "allocate_pg_hugepage",
-                    "value": false
-                },
-                {
-                    "name": "cluster_database",
-                    "value": false
-                },
-                {
-                    "name": "db_password",
-                    "value": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
-                },
-                {
-                    "name": "pre_create_script",
-                    "value": "ls -a"
-                },
-                {
-                    "name": "post_create_script",
-                    "value": "ls"
-                },
-                {
-                    "name": "patroni_cluster_name",
-                    "value": "patroni_cluster"
-                },
-                {
-                    "name": "archive_wal_expire_days",
-                    "value": "3"
-                },
-                {
-                    "name": "enable_synchronous_mode",
-                    "value": true
-                },
-                {
-                    "name": "enable_peer_auth",
-                    "value": true
-                },
-                {
-                    "name": "node_type",
-                    "value": "database"
-                },
-                {
-                    "name": "backup_policy",
-                    "value": "primary_only"
-                },
-                {
-                    "name": "failover_mode",
-                    "value": "Automatic"
-                },
-                {
-                    "name": "database_names",
-                    "value": "testAnsible"
-                },
-                {
-                    "name": "database_size",
-                    "value": "200"
-                },
-                {
-                    "name": "provision_virtual_ip",
-                    "value": true
-                },
-                {
-                    "name": "proxy_write_port",
-                    "value": "9999"
-                },
-                {
-                    "name": "proxy_read_port",
-                    "value": "8888"
-                },
-                {
-                    "name": "deploy_haproxy",
-                    "value": true
-                }
-            ],
-            "autoTuneStagingDrive": true,
-            "clustered": true,
-            "computeProfileId": "{{postgres_ha_profiles.compute_profile.uuid}}",
-            "createDbserver": true,
-            "databaseDescription": "ansible-created-db-desc",
-            "databaseType": "postgres_database",
-            "dbParameterProfileId": "{{postgres_ha_profiles.db_params_profile.uuid}}",
-            "maintenanceTasks": {
-                "maintenanceWindowId": "{{ maintenance.window_uuid }}",
-                "tasks": [
-                    {
-                        "payload": {
-                            "prePostCommand": {
-                                "postCommand": "ls -a",
-                                "preCommand": "ls"
-                            }
-                        },
-                        "taskType": "OS_PATCHING"
-                    },
-                    {
-                        "payload": {
-                            "prePostCommand": {
-                                "postCommand": "ls -F",
-                                "preCommand": "ls -l"
-                            }
-                        },
-                        "taskType": "DB_PATCHING"
-                    }
-                ]
-            },
-            "name": "{{db1_name}}",
-            "networkProfileId": "{{postgres_ha_profiles.static_network_profile.uuid}}",
-            "nodeCount": 4,
-            "nodes": [
-                {
-                    "computeProfileId": "{{postgres_ha_profiles.compute_profile.uuid}}",
-                    "networkProfileId": "{{postgres_ha_profiles.static_network_profile.uuid}}",
-                    "nxClusterId": "{{cluster.cluster1.uuid}}",
-                    "properties": [
-                        {
-                            "name": "role",
-                            "value": "Primary"
-                        },
-                        {
-                            "name": "node_type",
-                            "value": "database"
-                        },
-                        {
-                            "name": "remote_archive_destination",
-                            "value": "/temp/"
-                        }
-                    ],
-                    "vmName": "{{cluster1_name}}-vm-1"
-                },
-                {
-                    "computeProfileId": "{{postgres_ha_profiles.compute_profile.uuid}}",
-                    "networkProfileId": "{{postgres_ha_profiles.static_network_profile.uuid}}",
-                    "nxClusterId": "{{cluster.cluster1.uuid}}",
-                    "properties": [
-                        {
-                            "name": "role",
-                            "value": "Secondary"
-                        },
-                        {
-                            "name": "node_type",
-                            "value": "database"
-                        },
-                        {
-                            "name": "remote_archive_destination",
-                            "value": "/temp/"
-                        }
-                    ],
-                    "vmName": "{{cluster1_name}}-vm-2"
-                },
-                {
-                    "computeProfileId": "test_compute_uuid",
-                    "networkProfileId": "{{postgres_ha_profiles.static_network_profile.uuid}}",
-                    "nxClusterId": "{{cluster.cluster2.uuid}}",
-                    "properties": [
-                        {
-                            "name": "role",
-                            "value": "Secondary"
-                        },
-                        {
-                            "name": "node_type",
-                            "value": "database"
-                        },
-                        {
-                            "name": "remote_archive_destination",
-                            "value": "/temp/"
-                        }
-                    ],
-                    "vmName": "{{cluster1_name}}-vm-3"
-                },
-                {
-                    "computeProfileId": "{{postgres_ha_profiles.compute_profile.uuid}}",
-                    "networkProfileId": "{{postgres_ha_profiles.static_network_profile.uuid}}",
-                    "nxClusterId": "{{cluster.cluster2.uuid}}",
-                    "properties": [
-                        {
-                            "name": "node_type",
-                            "value": "haproxy"
-                        }
-                    ],
-                    "vmName": "{{cluster1_name}}-ha-vm"
-                }
-            ],
-            "nxClusterId": "{{cluster.cluster1.uuid}}",
-            "softwareProfileId": "{{postgres_ha_profiles.software_profile.uuid}}",
-            "softwareProfileVersionId": "{{postgres_ha_profiles.software_profile.latest_version_id}}",
-            "sshPublicKey": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
-            "tags": [],
-            "timeMachineInfo": {
-                "autoTuneLogDrive": true,
-                "description": "TM-desc",
-                "name": "TM1",
-                "schedule": {},
-                "slaDetails": {
-                    "primarySla": {
-                        "nxClusterIds": [
-                            "{{cluster.cluster1.uuid}}",
-                            "test_uuid"
-                        ],
-                        "slaId": "{{sla.uuid}}"
-                    }
-                }
-            },
-            "vmPassword": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
-        }
+- name: Set expected response
+  ansible.builtin.set_fact:
+    expected_response:
+      actionArguments:
+        - { name: cluster_name, value: "{{ cluster1_name }}" }
+        - { name: listener_port, value: "9999" }
+        - { name: allocate_pg_hugepage, value: false }
+        - { name: cluster_database, value: false }
+        - { name: db_password, value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER }
+        - { name: pre_create_script, value: ls -a }
+        - { name: post_create_script, value: ls }
+        - { name: patroni_cluster_name, value: patroni_cluster }
+        - { name: archive_wal_expire_days, value: "3" }
+        - { name: enable_synchronous_mode, value: true }
+        - { name: enable_peer_auth, value: true }
+        - { name: node_type, value: database }
+        - { name: backup_policy, value: primary_only }
+        - { name: failover_mode, value: Automatic }
+        - { name: database_names, value: testAnsible }
+        - { name: database_size, value: "200" }
+        - { name: provision_virtual_ip, value: true }
+        - { name: proxy_write_port, value: "9999" }
+        - { name: proxy_read_port, value: "8888" }
+        - { name: deploy_haproxy, value: true }
+      autoTuneStagingDrive: true
+      clustered: true
+      computeProfileId: "{{ postgres_ha_profiles.compute_profile.uuid }}"
+      createDbserver: true
+      databaseDescription: ansible-created-db-desc
+      databaseType: postgres_database
+      dbParameterProfileId: "{{ postgres_ha_profiles.db_params_profile.uuid }}"
+      maintenanceTasks:
+        maintenanceWindowId: "{{ maintenance.window_uuid }}"
+        tasks:
+          - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
+          - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+      name: "{{ db1_name }}"
+      networkProfileId: "{{ postgres_ha_profiles.static_network_profile.uuid }}"
+      nodeCount: 4
+      nodes:
+        - computeProfileId: "{{ postgres_ha_profiles.compute_profile.uuid }}"
+          networkProfileId: "{{ postgres_ha_profiles.static_network_profile.uuid }}"
+          nxClusterId: "{{ cluster.cluster1.uuid }}"
+          properties:
+            - { name: role, value: Primary }
+            - { name: node_type, value: database }
+            - { name: remote_archive_destination, value: /temp/ }
+          vmName: "{{ cluster1_name }}-vm-1"
+        - computeProfileId: "{{ postgres_ha_profiles.compute_profile.uuid }}"
+          networkProfileId: "{{ postgres_ha_profiles.static_network_profile.uuid }}"
+          nxClusterId: "{{ cluster.cluster1.uuid }}"
+          properties:
+            - { name: role, value: Secondary }
+            - { name: node_type, value: database }
+            - { name: remote_archive_destination, value: /temp/ }
+          vmName: "{{ cluster1_name }}-vm-2"
+        - computeProfileId: test_compute_uuid
+          networkProfileId: "{{ postgres_ha_profiles.static_network_profile.uuid }}"
+          nxClusterId: "{{ cluster.cluster2.uuid }}"
+          properties:
+            - { name: role, value: Secondary }
+            - { name: node_type, value: database }
+            - { name: remote_archive_destination, value: /temp/ }
+          vmName: "{{ cluster1_name }}-vm-3"
+        - computeProfileId: "{{ postgres_ha_profiles.compute_profile.uuid }}"
+          networkProfileId: "{{ postgres_ha_profiles.static_network_profile.uuid }}"
+          nxClusterId: "{{ cluster.cluster2.uuid }}"
+          properties: [{ name: node_type, value: haproxy }]
+          vmName: "{{ cluster1_name }}-ha-vm"
+      nxClusterId: "{{ cluster.cluster1.uuid }}"
+      softwareProfileId: "{{ postgres_ha_profiles.software_profile.uuid }}"
+      softwareProfileVersionId: "{{ postgres_ha_profiles.software_profile.latest_version_id }}"
+      sshPublicKey: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER
+      tags: []
+      timeMachineInfo:
+        autoTuneLogDrive: true
+        description: TM-desc
+        name: TM1
+        schedule: {}
+        slaDetails: { primarySla: { nxClusterIds: ["{{ cluster.cluster1.uuid }}", test_uuid], slaId: "{{ sla.uuid }}" } }
+      vmPassword: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER
 
 - name: Check mode status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == False
       - result.response == expected_response
 
-    fail_msg: "Unable to create ha instance database create spec"
-    success_msg: "HA instance postgres database spec created successfully"
+    fail_msg: Unable to create ha instance database create spec
+    success_msg: HA instance postgres database spec created successfully
 
-- name: create HA instance postgres database with static IP assignments
+- name: Create HA instance postgres database with static IP assignments
   ntnx_ndb_databases:
     wait: true
     timeout: 5400
-    name: "{{db1_name}}"
-    desc: "ansible-created-db-desc"
+    name: "{{ db1_name }}"
+    desc: ansible-created-db-desc
 
     db_params_profile:
-      name: "{{postgres_ha_profiles.db_params_profile.name}}"
-    
+      name: "{{ postgres_ha_profiles.db_params_profile.name }}"
+
     db_server_cluster:
       new_cluster:
-        name: "{{cluster1_name}}"
-        cluster: 
-          name: "{{cluster.cluster1.name}}"
+        name: "{{ cluster1_name }}"
+        cluster:
+          name: "{{ cluster.cluster1.name }}"
         ips:
           - cluster:
-              name: "{{cluster.cluster1.name}}"
-            ip: "{{cluster_ips.vip}}"
+              name: "{{ cluster.cluster1.name }}"
+            ip: "{{ cluster_ips.vip }}"
 
         software_profile:
           name: "{{ postgres_ha_profiles.software_profile.name }}"
@@ -353,39 +221,38 @@
           name: "{{ postgres_ha_profiles.static_network_profile.name }}"
         compute_profile:
           name: "{{ postgres_ha_profiles.compute_profile.name }}"
-        password: "{{vm_password}}"
-        pub_ssh_key: "{{public_ssh_key}}"
-        vms: 
+        password: "{{ vm_password }}"
+        pub_ssh_key: "{{ public_ssh_key }}"
+        vms:
+          - name: "{{ cluster1_name }}-vm-1"
+            node_type: database
+            role: Primary
+            ip: "{{ cluster_ips.ip1 }}"
 
-          - name: "{{cluster1_name}}-vm-1"
-            node_type: "database"
-            role: "Primary"
-            ip: "{{cluster_ips.ip1}}"
-        
-          - name: "{{cluster1_name}}-vm-2"
-            node_type: "database"
-            role: "Secondary"
-            ip: "{{cluster_ips.ip2}}"
-        
-          - name: "{{cluster1_name}}-vm-3"
-            node_type: "database"
-            role: "Secondary"
-            ip: "{{cluster_ips.ip3}}"
+          - name: "{{ cluster1_name }}-vm-2"
+            node_type: database
+            role: Secondary
+            ip: "{{ cluster_ips.ip2 }}"
 
-          - name: "{{cluster1_name}}-vm-ha-proxy1"
-            node_type: "haproxy"
-            ip: "{{cluster_ips.ip4}}"
-          
-          - name: "{{cluster1_name}}-vm-ha-proxy2"
-            node_type: "haproxy"
-            ip: "{{cluster_ips.ip5}}"
+          - name: "{{ cluster1_name }}-vm-3"
+            node_type: database
+            role: Secondary
+            ip: "{{ cluster_ips.ip3 }}"
+
+          - name: "{{ cluster1_name }}-vm-ha-proxy1"
+            node_type: haproxy
+            ip: "{{ cluster_ips.ip4 }}"
+
+          - name: "{{ cluster1_name }}-vm-ha-proxy2"
+            node_type: haproxy
+            ip: "{{ cluster_ips.ip5 }}"
 
     postgres:
-      type: "ha"
+      type: ha
       db_name: testAnsible
       db_password: "{{ vm_password }}"
       db_size: 200
-      patroni_cluster_name: "patroni_cluster"
+      patroni_cluster_name: patroni_cluster
       ha_proxy:
         provision_virtual_ip: true
 
@@ -394,7 +261,7 @@
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
@@ -402,34 +269,34 @@
         log_catchup: 30
         snapshots_per_day: 2
       clusters:
-        - name: "{{cluster.cluster1.name}}"
+        - name: "{{ cluster.cluster1.name }}"
     tags:
-      ansible-databases: "ha-instance-dbs"
-    
+      ansible-databases: ha-instance-dbs
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
       tasks:
-        - type: "OS_PATCHING"
-          pre_task_cmd: "ls"
-          post_task_cmd: "ls -a"
-        - type: "DB_PATCHING"
-          pre_task_cmd: "ls -l"
-          post_task_cmd: "ls -F"
+        - type: OS_PATCHING
+          pre_task_cmd: ls
+          post_task_cmd: ls -a
+        - type: DB_PATCHING
+          pre_task_cmd: ls -l
+          post_task_cmd: ls -F
 
   register: result
 
 # skip jekyll/Liquid syntax check
 # {% raw %}
-- name: create properties map
-  set_fact: 
-      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+- name: Create properties map
+  ansible.builtin.set_fact:
+    properties: "{{ properties | default({}) | combine({item['name']: item['value']}) }}"
   loop: "{{result.response.properties}}"
   no_log: true
 # {% endraw %}
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -439,92 +306,89 @@
       - result.response.description == "ansible-created-db-desc"
       - properties["db_parameter_profile_id"] == postgres_ha_profiles.db_params_profile.uuid
       - properties["listener_port"] == "5432"
-      - properties["cluster_ip"] == "['{{cluster_ips.vip}}']"     
+      - properties["cluster_ip"] == "['{{ cluster_ips.vip }}']"
       - result.response.databaseNodes | length == 3
       - result.response.databaseNodes[0].status == "READY"
       - result.response.databaseNodes[1].status == "READY"
       - result.response.databaseNodes[2].status == "READY"
       - result.response.type == "postgres_database"
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].tagName == "{{ tags.databases.name }}"
       - result.response.tags[0].value == "ha-instance-dbs"
 
-    fail_msg: "Unable to provision postgres HA database instance"
-    success_msg: "postgres HA database instance provision successfully"
+    fail_msg: Unable to provision postgres HA database instance
+    success_msg: postgres HA database instance provision successfully
 
-
-- name: unregister db along with delete time machine and db server vms
+- name: Unregister db along with delete time machine and db server vms
   ntnx_ndb_databases:
-    db_uuid: "{{result.db_uuid}}" 
-    state: "absent"
+    db_uuid: "{{ result.db_uuid }}"
+    state: absent
     wait: true
     delete_time_machine: true
-    delete_db_server_vms: True
+    delete_db_server_vms: true
   register: result
 
-- name: verify status of delete of database along with time machine delete
-  assert: 
+- name: Verify status of delete of database along with time machine delete
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
       - result.response.db_server_vms_delete_status.status == "5"
-    fail_msg: "database delete failed"
-    success_msg: "database deleted successfully"
+    fail_msg: database delete failed
+    success_msg: database deleted successfully
 
-
-- name: create HA instance postgres database with multicluster vms
+- name: Create HA instance postgres database with multicluster vms
   ntnx_ndb_databases:
     timeout: 5400
     wait: true
-    name: "{{db1_name}}"
-    desc: "ansible-created-db-desc"
+    name: "{{ db1_name }}"
+    desc: ansible-created-db-desc
 
     db_params_profile:
-      name: "{{postgres_ha_profiles.db_params_profile.name}}"
-    
+      name: "{{ postgres_ha_profiles.db_params_profile.name }}"
+
     db_server_cluster:
       new_cluster:
-        name: "{{cluster1_name}}"
-        cluster: 
-          name: "{{cluster.cluster1.name}}"
+        name: "{{ cluster1_name }}"
+        cluster:
+          name: "{{ cluster.cluster1.name }}"
         software_profile:
           name: "{{ postgres_ha_profiles.software_profile.name }}"
         network_profile:
           name: "{{ postgres_ha_profiles.multicluster_network_profile.name }}"
         compute_profile:
           name: "{{ postgres_ha_profiles.compute_profile.name }}"
-        password: "{{vm_password}}"
-        pub_ssh_key: "{{public_ssh_key}}"
-        vms: 
+        password: "{{ vm_password }}"
+        pub_ssh_key: "{{ public_ssh_key }}"
+        vms:
+          - name: "{{ cluster1_name }}-vm-1"
+            node_type: database
+            role: Primary
 
-          - name: "{{cluster1_name}}-vm-1"
-            node_type: "database"
-            role: "Primary"
-        
-          - name: "{{cluster1_name}}-vm-2"
-            node_type: "database"
-            role: "Secondary"
-        
-          - name: "{{cluster1_name}}-vm-3"
+          - name: "{{ cluster1_name }}-vm-2"
+            node_type: database
+            role: Secondary
+
+          - name: "{{ cluster1_name }}-vm-3"
             cluster:
-              name: "{{cluster.cluster2.name}}"
-            node_type: "database"
-            role: "Secondary"
-    
+              name: "{{ cluster.cluster2.name }}"
+            node_type: database
+            role: Secondary
+
     postgres:
-      type: "ha"
+      type: ha
       db_name: testAnsible
       db_password: "{{ vm_password }}"
       db_size: 200
-      patroni_cluster_name: "patroni_cluster"
+      patroni_cluster_name: patroni_cluster
 
     time_machine:
       name: TM1
       desc: TM-desc
       sla:
         name: "{{ sla.name }}"
-      schedule: 
+      schedule:
         daily: "11:10:02"
         weekly: WEDNESDAY
         monthly: 4
@@ -532,35 +396,35 @@
         log_catchup: 30
         snapshots_per_day: 2
       clusters:
-        - name: "{{cluster.cluster1.name}}"
-        - uuid: "{{cluster.cluster2.uuid}}"
+        - name: "{{ cluster.cluster1.name }}"
+        - uuid: "{{ cluster.cluster2.uuid }}"
     tags:
-      ansible-databases: "ha-instance-dbs"
-    
+      ansible-databases: ha-instance-dbs
+
     automated_patching:
       maintenance_window:
         name: "{{ maintenance.window_name }}"
       tasks:
-        - type: "OS_PATCHING"
-          pre_task_cmd: "ls"
-          post_task_cmd: "ls -a"
-        - type: "DB_PATCHING"
-          pre_task_cmd: "ls -l"
-          post_task_cmd: "ls -F"
+        - type: OS_PATCHING
+          pre_task_cmd: ls
+          post_task_cmd: ls -a
+        - type: DB_PATCHING
+          pre_task_cmd: ls -l
+          post_task_cmd: ls -F
 
   register: result
 
 # skip jekyll/Liquid syntax check
 # {% raw %}
-- name: create properties map
-  set_fact: 
-      properties: "{{ properties | default({}) | combine ({ item['name'] : item['value'] }) }}"
+- name: Create properties map
+  ansible.builtin.set_fact:
+    properties: "{{ properties | default({}) | combine({item['name']: item['value']}) }}"
   loop: "{{result.response.properties}}"
   no_log: true
 # {% endraw %}
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status == 'READY'
@@ -578,27 +442,27 @@
       - result.response.databaseNodes[2].status == "READY"
       - result.response.type == "postgres_database"
       - result.response.tags | length == 1
-      - result.response.tags[0].tagName == "{{tags.databases.name}}"
+      - result.response.tags[0].tagName == "{{ tags.databases.name }}"
       - result.response.tags[0].value == "ha-instance-dbs"
 
-    fail_msg: "Unable to provision postgres HA database instance"
-    success_msg: "postgres HA database instance provision successfully"
+    fail_msg: Unable to provision postgres HA database instance
+    success_msg: postgres HA database instance provision successfully
 
-- name: unregister db along with delete time machine and db server vms
+- name: Unregister db along with delete time machine and db server vms
   ntnx_ndb_databases:
-    db_uuid: "{{result.db_uuid}}" 
-    state: "absent"
+    db_uuid: "{{ result.db_uuid }}"
+    state: absent
     wait: true
     delete_time_machine: true
-    delete_db_server_vms: True
+    delete_db_server_vms: true
   register: result
 
-- name: verify status of delete of database along with time machine delete
-  assert: 
+- name: Verify status of delete of database along with time machine delete
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == false
       - result.response.status == "5"
       - result.response.db_server_vms_delete_status.status == "5"
-    fail_msg: "database delete failed"
-    success_msg: "database deleted successfully"
+    fail_msg: database delete failed
+    success_msg: database deleted successfully

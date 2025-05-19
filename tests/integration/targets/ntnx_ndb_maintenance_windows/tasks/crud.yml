@@ -1,75 +1,69 @@
 ---
-
-- debug:
-    msg: "start ndb database maintenance winndow tests"
+- name: Ntnx_ndb_maintenance_window integration tests
+  ansible.builtin.debug:
+    msg: start ndb database maintenance winndow tests
 
 - name: Generate random name
-  set_fact:
-    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)}}"
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12) }}"
 
-- set_fact:
-    window1_name: "{{random_name[0]}}1"
-    window2_name: "{{random_name[0]}}2"
-  
+- name: Define variables for window names
+  ansible.builtin.set_fact:
+    window1_name: "{{ random_name[0] }}1"
+    window2_name: "{{ random_name[0] }}2"
+
 ############################################## create tests ####################################
-- name: create spec for maintenance window
-  check_mode: yes
+- name: Create spec for maintenance window
+  check_mode: true
   ntnx_ndb_maintenance_window:
-    name: "{{window1_name}}"
-    desc: "anisble-created-window"
+    name: "{{ window1_name }}"
+    desc: anisble-created-window
     schedule:
-      recurrence: "weekly"
+      recurrence: weekly
       duration: 2
-      timezone: "Asia/Calcutta"
+      timezone: Asia/Calcutta
       start_time: "11:00:00"
-      day_of_week: "tuesday"
+      day_of_week: tuesday
   register: result
 
-- set_fact:
-    expected_result: {
-        "changed": false,
-        "error": null,
-        "failed": false,
-        "response": {
-            "description": "anisble-created-window",
-            "name": "{{window1_name}}",
-            "schedule": {
-                "dayOfWeek": "TUESDAY",
-                "duration": 2,
-                "recurrence": "WEEKLY",
-                "startTime": "11:00:00",
-                "weekOfMonth": null
-            },
-            "timezone": "Asia/Calcutta"
-        },
-        "uuid": null
-    }
+- name: Define variables for expected result
+  ansible.builtin.set_fact:
+    expected_result:
+      changed: false
+      error:
+      failed: false
+      response:
+        description: anisble-created-window
+        name: "{{ window1_name }}"
+        schedule: { dayOfWeek: TUESDAY, duration: 2, recurrence: WEEKLY, startTime: "11:00:00", weekOfMonth: !!null "" }
+        timezone: Asia/Calcutta
+      uuid:
 
 - name: Check mode status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result == expected_result
-    fail_msg: "Unable to create spec for creating window"
-    success_msg: "spec for maintenance window generated successfully"
+    fail_msg: Unable to create spec for creating window
+    success_msg: spec for maintenance window generated successfully
 
-
-- name: create window with weekly schedule
+- name: Create window with weekly schedule
   ntnx_ndb_maintenance_window:
-    name: "{{window1_name}}"
-    desc: "anisble-created-window"
+    name: "{{ window1_name }}"
+    desc: anisble-created-window
     schedule:
-      recurrence: "weekly"
+      recurrence: weekly
       duration: 2
       start_time: "11:00:00"
-      day_of_week: "tuesday"
-      timezone: "UTC"
+      day_of_week: tuesday
+      timezone: UTC
   register: result
 
-- set_fact:
-    window1_uuid: "{{result.uuid}}"
+- name: Define variable for window uuid
+  ansible.builtin.set_fact:
+    window1_uuid: "{{ result.uuid }}"
 
-- name: create status
-  assert: 
+- name: Create status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -85,29 +79,29 @@
       - result.response.schedule.weekOfMonth == None
       - result.response.schedule.duration == 2
 
-    fail_msg: "Unable to create maintenance window with weekly schedule"
-    success_msg: "maintenance window with weekly schedule created successfully"
+    fail_msg: Unable to create maintenance window with weekly schedule
+    success_msg: maintenance window with weekly schedule created successfully
 
-
-- name: create window with monthly schedule
+- name: Create window with monthly schedule
   ntnx_ndb_maintenance_window:
-    name: "{{window2_name}}"
-    desc: "anisble-created-window"
+    name: "{{ window2_name }}"
+    desc: anisble-created-window
     schedule:
-      recurrence: "monthly"
+      recurrence: monthly
       duration: 2
       start_time: "11:00:00"
-      day_of_week: "tuesday"
+      day_of_week: tuesday
       week_of_month: 2
-      timezone: "UTC"
+      timezone: UTC
 
   register: result
 
-- set_fact:
-    window2_uuid: "{{result.uuid}}"
+- name: Define variable for window uuid
+  ansible.builtin.set_fact:
+    window2_uuid: "{{ result.uuid }}"
 
-- name: create status
-  assert: 
+- name: Create status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
@@ -122,21 +116,20 @@
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == 2
       - result.response.schedule.duration == 2
-      
-    
-    fail_msg: "Unable to create maintenance window with monthly schedule"
-    success_msg: "maintenance window with monthly schedule created successfully"
+
+    fail_msg: Unable to create maintenance window with monthly schedule
+    success_msg: maintenance window with monthly schedule created successfully
 
 ############################################## info module tests ####################################
 
 - name: Info module check
   ntnx_ndb_maintenance_windows_info:
-    uuid: "{{window2_uuid}}"
+    uuid: "{{ window2_uuid }}"
 
   register: result
 
 - name: Info module status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == False
@@ -144,49 +137,48 @@
       - result.response.name == window2_name
       - result.response.id == window2_uuid
       - result.uuid == window2_uuid
-    fail_msg: "Unable to fetch window info"
-    success_msg: "maintenance window info obtained successfully"
+    fail_msg: Unable to fetch window info
+    success_msg: maintenance window info obtained successfully
 
-- name: get all windows
+- name: Get all windows
   ntnx_ndb_maintenance_windows_info:
   register: result
 
 - name: Info module status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == False
       - result.failed == False
       - result.response | length > 1
-    fail_msg: "Unable to fetch all windows"
-    success_msg: "all maintenance window info obtained successfully"
+    fail_msg: Unable to fetch all windows
+    success_msg: all maintenance window info obtained successfully
 
 ############################################## update tests ####################################
 
-
-- name: update window schedule
+- name: Update window schedule
   ntnx_ndb_maintenance_window:
-    uuid: "{{window2_uuid}}"
-    name: "{{window2_name}}-updated"
-    desc: "anisble-created-window-updated"
+    uuid: "{{ window2_uuid }}"
+    name: "{{ window2_name }}-updated"
+    desc: anisble-created-window-updated
     schedule:
-      recurrence: "monthly"
+      recurrence: monthly
       duration: 3
       start_time: "12:00:00"
-      timezone: "UTC"
-      day_of_week: "wednesday"
+      timezone: UTC
+      day_of_week: wednesday
       week_of_month: 3
   register: result
 
-- name: update status
-  assert: 
+- name: Update status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
-      - result.response.name == "{{window2_name}}-updated"
+      - result.response.name == "{{ window2_name }}-updated"
       - result.response.description == "anisble-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
       - result.response.schedule.recurrence == "MONTHLY"
@@ -194,32 +186,31 @@
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == 3
       - result.response.schedule.duration == 3
-      
 
-    fail_msg: "Unable to update maintenance window"
-    success_msg: "maintenance window updated successfully"
+    fail_msg: Unable to update maintenance window
+    success_msg: maintenance window updated successfully
 
-- name: update schedule type
+- name: Update schedule type
   ntnx_ndb_maintenance_window:
-    uuid: "{{window2_uuid}}"
+    uuid: "{{ window2_uuid }}"
     schedule:
-      recurrence: "weekly"
+      recurrence: weekly
       duration: 3
       start_time: "12:00:00"
-      day_of_week: "wednesday"
-      timezone: "UTC"
+      day_of_week: wednesday
+      timezone: UTC
 
   register: result
 
-- name: create status
-  assert: 
+- name: Create status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
-      - result.response.name == "{{window2_name}}-updated"
+      - result.response.name == "{{ window2_name }}-updated"
       - result.response.description == "anisble-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
       - result.response.schedule.recurrence == "WEEKLY"
@@ -227,81 +218,78 @@
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == None
       - result.response.schedule.duration == 3
-      
 
-    fail_msg: "Unable to update maintenance window"
-    success_msg: "maintenance window updated successfully"
+    fail_msg: Unable to update maintenance window
+    success_msg: maintenance window updated successfully
 
-- name: idempotency checks
+- name: Idempotency checks
   ntnx_ndb_maintenance_window:
-    uuid: "{{window2_uuid}}"
-    name: "{{window2_name}}-updated"
-    desc: "anisble-created-window-updated"
+    uuid: "{{ window2_uuid }}"
+    name: "{{ window2_name }}-updated"
+    desc: anisble-created-window-updated
     schedule:
-      recurrence: "weekly"
+      recurrence: weekly
       duration: 3
       start_time: "12:00:00"
-      day_of_week: "wednesday"
-      timezone: "UTC"
+      day_of_week: wednesday
+      timezone: UTC
 
   register: result
 
-- name: check idempotency status
-  assert: 
+- name: Check idempotency status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
       - "'Nothing to change' in result.msg"
-    fail_msg: "window got updated"
-    success_msg: "window update got skipped due to no state changes"
+    fail_msg: window got updated
+    success_msg: window update got skipped due to no state changes
 
-- name: updated day of week
+- name: Updated day of week
   ntnx_ndb_maintenance_window:
-    uuid: "{{window2_uuid}}"
+    uuid: "{{ window2_uuid }}"
     schedule:
-      day_of_week: "saturday"
+      day_of_week: saturday
 
   register: result
 
-
-- name: update status
-  assert: 
+- name: Update status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
-      - result.response.name == "{{window2_name}}-updated"
+      - result.response.name == "{{ window2_name }}-updated"
       - result.response.schedule.dayOfWeek == "SATURDAY"
       - result.response.schedule.recurrence == "WEEKLY"
       - result.response.schedule.startTime == "12:00:00"
       - result.response.schedule.timeZone == "UTC"
       - result.response.schedule.weekOfMonth == None
       - result.response.schedule.duration == 3
-      
 
-    fail_msg: "Unable to update maintenance window"
-    success_msg: "maintenance window updated successfully"
+    fail_msg: Unable to update maintenance window
+    success_msg: maintenance window updated successfully
 
-- name: just update start time
+- name: Just update start time
   ntnx_ndb_maintenance_window:
-    uuid: "{{window2_uuid}}"
+    uuid: "{{ window2_uuid }}"
     schedule:
       start_time: "11:00:00"
-      timezone: "Asia/Calcutta"
+      timezone: Asia/Calcutta
 
   register: result
 
-- name: update status
-  assert:
+- name: Update status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.failed == False
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
-      - result.response.name == "{{window2_name}}-updated"
+      - result.response.name == "{{ window2_name }}-updated"
       - result.response.schedule.dayOfWeek == "SATURDAY"
       - result.response.schedule.recurrence == "WEEKLY"
       - result.response.schedule.startTime == "05:30:00"
@@ -309,39 +297,37 @@
       - result.response.schedule.weekOfMonth == None
       - result.response.schedule.duration == 3
 
-    fail_msg: "Unable to update maintenance window"
-    success_msg: "maintenance window updated successfully"
-
+    fail_msg: Unable to update maintenance window
+    success_msg: maintenance window updated successfully
 
 ############################################## delete tests ####################################
 
-- name: delete window 1 
+- name: Delete window 1
   ntnx_ndb_maintenance_window:
-    uuid: "{{window1_uuid}}"
-    state: "absent"
+    uuid: "{{ window1_uuid }}"
+    state: absent
   register: result
 
-- name: check delete status
-  assert: 
+- name: Check delete status
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == false
       - result.response.status == "success"
-    fail_msg: "unable to delete window"
-    success_msg: "window deleted successfully"
+    fail_msg: unable to delete window
+    success_msg: window deleted successfully
 
-- name: delete window 2
+- name: Delete window 2
   ntnx_ndb_maintenance_window:
-    uuid: "{{window2_uuid}}"
-    state: "absent"
+    uuid: "{{ window2_uuid }}"
+    state: absent
   register: result
 
-
-- name: check delete status
-  assert: 
+- name: Check delete status
+  ansible.builtin.assert:
     that:
       - result.changed == True
       - result.failed == false
       - result.response.status == "success"
-    fail_msg: "unable to delete window"
-    success_msg: "window deleted successfully"
+    fail_msg: unable to delete window
+    success_msg: window deleted successfully

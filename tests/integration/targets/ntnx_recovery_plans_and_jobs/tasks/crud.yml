@@ -1,173 +1,172 @@
 ---
-- debug:
+- name: Start testing recovery plan and recovery plan jobs
+  ansible.builtin.debug:
     msg: Start testing recovery plan and recovery plan jobs
 
-############################################################### CREATE Recovery Plan ###########################################################################################
+################################################## CREATE Recovery Plan #######################################
 
-- set_fact:
-    expected_availability_zone_list: [
+- name: Define variables for recovery plan
+  ansible.builtin.set_fact:
+    expected_availability_zone_list:
+      [
+        { "availability_zone_url": "{{dr.primary_az_url}}" },
+        { "availability_zone_url": "{{dr.recovery_az_url}}" },
+      ]
+    expected_network_mapping_list_for_check_mode:
+      [
+        {
+          "are_networks_stretched": true,
+          "availability_zone_network_mapping_list":
+            [
               {
-                  "availability_zone_url": "{{dr.primary_az_url}}"
+                "availability_zone_url": "{{dr.primary_az_url}}",
+                "recovery_network": { "name": "{{network.dhcp.name}}" },
+                "test_network": { "name": "{{network.dhcp.name}}" },
               },
               {
-                  "availability_zone_url": "{{dr.recovery_az_url}}"
-              }
-            ]
-    expected_network_mapping_list_for_check_mode: [
-                            {
-                                "are_networks_stretched": True,
-                                "availability_zone_network_mapping_list": [
-                                    {
-                                        "availability_zone_url": "{{dr.primary_az_url}}",
-                                        "recovery_network": {
-                                            "name": "{{network.dhcp.name}}"
-                                        },
-                                        "test_network": {
-                                            "name": "{{network.dhcp.name}}"
-                                        }
-                                    },
-                                    {
-                                        "availability_zone_url": "{{dr.recovery_az_url}}",
-                                        "recovery_network": {
-                                            "name": "{{dr.recovery_site_network}}"
-                                        },
-                                        "test_network": {
-                                            "name": "{{dr.recovery_site_network}}"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-    expected_network_mapping_list: [
-                            {
-                                "are_networks_stretched": False,
-                                "availability_zone_network_mapping_list": [
-                                    {
-                                        "availability_zone_url": "{{dr.primary_az_url}}",
-                                        "recovery_ip_assignment_list": [
-                                            {
-                                                "ip_config_list": [
-                                                    {
-                                                        "ip_address": "{{dr.recovery_ip2}}"
-                                                    }
-                                                ],
-                                                "vm_reference": {
-                                                    "kind": "vm",
-                                                    "name": "{{dr_vm_name}}",
-                                                    "uuid": "{{dr_vm.uuid}}"
-                                                }
-                                            }
-                                        ],
-                                        "recovery_network": {
-                                            "name": "{{network.dhcp.name}}",
-                                            "subnet_list": [
-                                                {
-                                                    "external_connectivity_state": "DISABLED",
-                                                    "gateway_ip": "{{dr.gateway_ip}}",
-                                                    "prefix_length": 24
-                                                }
-                                            ]
-                                        },
-                                        "test_ip_assignment_list": [
-                                            {
-                                                "ip_config_list": [
-                                                    {
-                                                        "ip_address": "{{dr.recovery_ip1}}"
-                                                    }
-                                                ],
-                                                "vm_reference": {
-                                                    "kind": "vm",
-                                                    "name": "{{dr_vm_name}}",
-                                                    "uuid": "{{dr_vm.uuid}}"
-                                                }
-                                            }
-                                        ],
-                                        "test_network": {
-                                            "name": "{{network.dhcp.name}}",
-                                            "subnet_list": [
-                                                {
-                                                    "external_connectivity_state": "DISABLED",
-                                                    "gateway_ip": "{{dr.gateway_ip}}",
-                                                    "prefix_length": 24
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "availability_zone_url": "{{dr.recovery_az_url}}",
-                                        "recovery_ip_assignment_list": [
-                                            {
-                                                "ip_config_list": [
-                                                    {
-                                                        "ip_address": "{{dr.recovery_ip2}}"
-                                                    }
-                                                ],
-                                                "vm_reference": {
-                                                    "kind": "vm",
-                                                    "name": "{{dr_vm_name}}",
-                                                    "uuid": "{{dr_vm.uuid}}"
-                                                }
-                                            }
-                                        ],
-                                        "recovery_network": {
-                                            "name": "{{dr.recovery_site_network}}",
-                                            "subnet_list": [
-                                                {
-                                                    "external_connectivity_state": "DISABLED",
-                                                    "gateway_ip": "{{dr.gateway_ip}}",
-                                                    "prefix_length": 24
-                                                }
-                                            ]
-                                        },
-                                        "test_ip_assignment_list": [
-                                            {
-                                                "ip_config_list": [
-                                                    {
-                                                        "ip_address": "{{dr.recovery_ip1}}"
-                                                    }
-                                                ],
-                                                "vm_reference": {
-                                                    "kind": "vm",
-                                                    "name": "{{dr_vm_name}}",
-                                                    "uuid": "{{dr_vm.uuid}}"
-                                                }
-                                            }
-                                        ],
-                                        "test_network": {
-                                            "name": "{{dr.recovery_site_network}}",
-                                            "subnet_list": [
-                                                {
-                                                    "external_connectivity_state": "DISABLED",
-                                                    "gateway_ip": "{{dr.gateway_ip}}",
-                                                    "prefix_length": 24
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-    expected_stage_work_0: {
-                                "recover_entities": {
-                                    "entity_info_list": [
-                                        {
-                                            "any_entity_reference": {
-                                                "kind": "vm",
-                                                "name": "{{dr_vm_name}}",
-                                                "uuid": "{{dr_vm.uuid}}"
-                                            },
-                                            "script_list": [
-                                                {
-                                                    "enable_script_exec": true
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
+                "availability_zone_url": "{{dr.recovery_az_url}}",
+                "recovery_network": { "name": "{{dr.recovery_site_network}}" },
+                "test_network": { "name": "{{dr.recovery_site_network}}" },
+              },
+            ],
+        },
+      ]
+    expected_network_mapping_list:
+      [
+        {
+          "are_networks_stretched": false,
+          "availability_zone_network_mapping_list":
+            [
+              {
+                "availability_zone_url": "{{dr.primary_az_url}}",
+                "recovery_ip_assignment_list":
+                  [
+                    {
+                      "ip_config_list":
+                        [{ "ip_address": "{{dr.recovery_ip2}}" }],
+                      "vm_reference":
+                        {
+                          "kind": "vm",
+                          "name": "{{dr_vm_name}}",
+                          "uuid": "{{dr_vm.uuid}}",
+                        },
+                    },
+                  ],
+                "recovery_network":
+                  {
+                    "name": "{{network.dhcp.name}}",
+                    "subnet_list":
+                      [
+                        {
+                          "external_connectivity_state": "DISABLED",
+                          "gateway_ip": "{{dr.gateway_ip}}",
+                          "prefix_length": 24,
+                        },
+                      ],
+                  },
+                "test_ip_assignment_list":
+                  [
+                    {
+                      "ip_config_list":
+                        [{ "ip_address": "{{dr.recovery_ip1}}" }],
+                      "vm_reference":
+                        {
+                          "kind": "vm",
+                          "name": "{{dr_vm_name}}",
+                          "uuid": "{{dr_vm.uuid}}",
+                        },
+                    },
+                  ],
+                "test_network":
+                  {
+                    "name": "{{network.dhcp.name}}",
+                    "subnet_list":
+                      [
+                        {
+                          "external_connectivity_state": "DISABLED",
+                          "gateway_ip": "{{dr.gateway_ip}}",
+                          "prefix_length": 24,
+                        },
+                      ],
+                  },
+              },
+              {
+                "availability_zone_url": "{{dr.recovery_az_url}}",
+                "recovery_ip_assignment_list":
+                  [
+                    {
+                      "ip_config_list":
+                        [{ "ip_address": "{{dr.recovery_ip2}}" }],
+                      "vm_reference":
+                        {
+                          "kind": "vm",
+                          "name": "{{dr_vm_name}}",
+                          "uuid": "{{dr_vm.uuid}}",
+                        },
+                    },
+                  ],
+                "recovery_network":
+                  {
+                    "name": "{{dr.recovery_site_network}}",
+                    "subnet_list":
+                      [
+                        {
+                          "external_connectivity_state": "DISABLED",
+                          "gateway_ip": "{{dr.gateway_ip}}",
+                          "prefix_length": 24,
+                        },
+                      ],
+                  },
+                "test_ip_assignment_list":
+                  [
+                    {
+                      "ip_config_list":
+                        [{ "ip_address": "{{dr.recovery_ip1}}" }],
+                      "vm_reference":
+                        {
+                          "kind": "vm",
+                          "name": "{{dr_vm_name}}",
+                          "uuid": "{{dr_vm.uuid}}",
+                        },
+                    },
+                  ],
+                "test_network":
+                  {
+                    "name": "{{dr.recovery_site_network}}",
+                    "subnet_list":
+                      [
+                        {
+                          "external_connectivity_state": "DISABLED",
+                          "gateway_ip": "{{dr.gateway_ip}}",
+                          "prefix_length": 24,
+                        },
+                      ],
+                  },
+              },
+            ],
+        },
+      ]
+    expected_stage_work_0:
+      {
+        "recover_entities":
+          {
+            "entity_info_list":
+              [
+                {
+                  "any_entity_reference":
+                    {
+                      "kind": "vm",
+                      "name": "{{dr_vm_name}}",
+                      "uuid": "{{dr_vm.uuid}}",
+                    },
+                  "script_list": [{ "enable_script_exec": true }],
+                },
+              ],
+          },
+      }
 
 - name: Create checkmode spec for recovery plan with networks and 2 stage
-  check_mode: yes
+  check_mode: true
   ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp
@@ -195,9 +194,8 @@
             name: "{{dr.recovery_site_network}}"
   register: result
 
-
 - name: Checkmode spec assert
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed is false
@@ -209,8 +207,8 @@
       - result.response.spec.resources.stage_list[0]["stage_work"] == expected_stage_work_0
       - result.response.spec.resources.parameters.availability_zone_list == expected_availability_zone_list
       - result.response.spec.resources.parameters.network_mapping_list == expected_network_mapping_list_for_check_mode
-    fail_msg: 'Unable to create recovery plan check mode spec'
-    success_msg: 'Recovery plan check mode spec created successfully'
+    fail_msg: "Unable to create recovery plan check mode spec"
+    success_msg: "Recovery plan check mode spec created successfully"
 
 - name: Create recovery plan with networks and 2 stage
   ntnx_recovery_plans:
@@ -265,11 +263,12 @@
 
   register: result
 
-- set_fact: 
+- name: Set plan_uuid
+  ansible.builtin.set_fact:
     plan_uuid: "{{result.plan_uuid}}"
 
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed is true
@@ -284,138 +283,128 @@
       - result.response.status.resources.stage_list[0]["stage_work"] == expected_stage_work_0
       - result.response.status.resources.parameters.availability_zone_list == expected_availability_zone_list
       - result.response.status.resources.parameters.network_mapping_list == expected_network_mapping_list
-    fail_msg: 'Unable to create recovery plans'
-    success_msg: 'Recovery plan created successfully'
+    fail_msg: "Unable to create recovery plans"
+    success_msg: "Recovery plan created successfully"
 
-############################################################### Update Recovery Plan ###########################################################################################
+############# Update Recovery Plan ###########################
 
-- set_fact:
-    expected_availability_zone_list: [
+- name: Define variables for update recovery plan
+  ansible.builtin.set_fact:
+    expected_availability_zone_list:
+      [
+        { "availability_zone_url": "{{dr.primary_az_url}}" },
+        { "availability_zone_url": "{{dr.recovery_az_url}}" },
+      ]
+    expected_network_mapping_list_in_check_mode:
+      [
+        {
+          "are_networks_stretched": false,
+          "availability_zone_network_mapping_list":
+            [
               {
-                  "availability_zone_url": "{{dr.primary_az_url}}"
+                "availability_zone_url": "{{dr.primary_az_url}}",
+                "recovery_network":
+                  {
+                    "name": "{{static.name}}",
+                    "subnet_list":
+                      [
+                        {
+                          "gateway_ip": "{{static.gateway_ip}}",
+                          "prefix_length": 24,
+                        },
+                      ],
+                  },
+                "test_network":
+                  {
+                    "name": "{{static.name}}",
+                    "subnet_list":
+                      [
+                        {
+                          "gateway_ip": "{{static.gateway_ip}}",
+                          "prefix_length": 24,
+                        },
+                      ],
+                  },
               },
               {
-                  "availability_zone_url": "{{dr.recovery_az_url}}"
-              }
-            ]
-    expected_network_mapping_list_in_check_mode: [
-                            {
-                                "are_networks_stretched": false,
-                                "availability_zone_network_mapping_list": [
-                                    {
-                                        "availability_zone_url": "{{dr.primary_az_url}}",
-                                        "recovery_network": {
-                                            "name": "{{static.name}}",
-                                            "subnet_list": [
-                                                {
-                                                    "gateway_ip": "{{static.gateway_ip}}",
-                                                    "prefix_length": 24
-                                                }
-                                            ]
-                                        },
-                                        "test_network": {
-                                            "name": "{{static.name}}",
-                                            "subnet_list": [
-                                                {
-                                                    "gateway_ip": "{{static.gateway_ip}}",
-                                                    "prefix_length": 24
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "availability_zone_url": "{{dr.recovery_az_url}}",
-                                        "recovery_network": {
-                                            "name": "{{dr.recovery_site_network}}"
-                                        },
-                                        "test_network": {
-                                            "name": "{{dr.recovery_site_network}}"
-                                        }
-                                    }
-                                ]
-                            }
-                        ] 
-    expected_network_mapping_list: [
-                            {
-                                "are_networks_stretched": false,
-                                "availability_zone_network_mapping_list": [
-                                    {
-                                        "availability_zone_url": "{{dr.primary_az_url}}",
-                                        "recovery_network": {
-                                            "name": "{{static.name}}",
-                                            "subnet_list": [
-                                                {
-                                                    "external_connectivity_state": "DISABLED",
-                                                    "gateway_ip": "{{static.gateway_ip}}",
-                                                    "prefix_length": 24
-                                                }
-                                            ]
-                                        },
-                                        "test_network": {
-                                            "name": "{{static.name}}",
-                                            "subnet_list": [
-                                                {
-                                                    "external_connectivity_state": "DISABLED",
-                                                    "gateway_ip": "{{static.gateway_ip}}",
-                                                    "prefix_length": 24
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "availability_zone_url": "{{dr.recovery_az_url}}",
-                                        "recovery_network": {
-                                            "name": "{{dr.recovery_site_network}}"
-                                        },
-                                        "test_network": {
-                                            "name": "{{dr.recovery_site_network}}"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-    exepected_stage_work_0: {
-                                "recover_entities": {
-                                    "entity_info_list": [
-                                        {
-                                            "any_entity_reference": {
-                                                "kind": "vm",
-                                                "name": "{{dr_vm.name}}",
-                                                "uuid": "{{dr_vm.uuid}}"
-                                            },
-                                            "script_list": [
-                                                {
-                                                    "enable_script_exec": true
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "categories": {
-                                                "Environment": "Staging"
-                                            },
-                                            "script_list": [
-                                                {
-                                                    "enable_script_exec": true
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                          }
-    exepected_stage_work_1: {
-                                "recover_entities": {
-                                    "entity_info_list": [
-                                        {
-                                            "categories": {
-                                                "Environment": "Dev"
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-        
+                "availability_zone_url": "{{dr.recovery_az_url}}",
+                "recovery_network": { "name": "{{dr.recovery_site_network}}" },
+                "test_network": { "name": "{{dr.recovery_site_network}}" },
+              },
+            ],
+        },
+      ]
+    expected_network_mapping_list:
+      [
+        {
+          "are_networks_stretched": false,
+          "availability_zone_network_mapping_list":
+            [
+              {
+                "availability_zone_url": "{{dr.primary_az_url}}",
+                "recovery_network":
+                  {
+                    "name": "{{static.name}}",
+                    "subnet_list":
+                      [
+                        {
+                          "external_connectivity_state": "DISABLED",
+                          "gateway_ip": "{{static.gateway_ip}}",
+                          "prefix_length": 24,
+                        },
+                      ],
+                  },
+                "test_network":
+                  {
+                    "name": "{{static.name}}",
+                    "subnet_list":
+                      [
+                        {
+                          "external_connectivity_state": "DISABLED",
+                          "gateway_ip": "{{static.gateway_ip}}",
+                          "prefix_length": 24,
+                        },
+                      ],
+                  },
+              },
+              {
+                "availability_zone_url": "{{dr.recovery_az_url}}",
+                "recovery_network": { "name": "{{dr.recovery_site_network}}" },
+                "test_network": { "name": "{{dr.recovery_site_network}}" },
+              },
+            ],
+        },
+      ]
+    exepected_stage_work_0:
+      {
+        "recover_entities":
+          {
+            "entity_info_list":
+              [
+                {
+                  "any_entity_reference":
+                    {
+                      "kind": "vm",
+                      "name": "{{dr_vm.name}}",
+                      "uuid": "{{dr_vm.uuid}}",
+                    },
+                  "script_list": [{ "enable_script_exec": true }],
+                },
+                {
+                  "categories": { "Environment": "Staging" },
+                  "script_list": [{ "enable_script_exec": true }],
+                },
+              ],
+          },
+      }
+    exepected_stage_work_1:
+      {
+        "recover_entities":
+          { "entity_info_list": [{ "categories": { "Environment": "Dev" } }] },
+      }
+
 - name: Checkmode spec for Update recovery plan. Update networks and stages.
-  check_mode: yes
+  check_mode: true
   ntnx_recovery_plans:
     plan_uuid: "{{plan_uuid}}"
     state: "present"
@@ -456,8 +445,8 @@
 
   register: result
 
-- name: check mode spec for Update status
-  assert:
+- name: Check mode spec for Update status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed is false
@@ -470,9 +459,8 @@
       - result.response.spec.resources.stage_list[1]["stage_work"] == exepected_stage_work_1
       - result.response.spec.resources.stage_list[0]["delay_time_secs"] == 2
 
-    fail_msg: 'Unable to create update recovery plan checkmode spec'
-    success_msg: 'Recovery plan update spec created successfully'
-
+    fail_msg: "Unable to create update recovery plan checkmode spec"
+    success_msg: "Recovery plan update spec created successfully"
 
 - name: Update recovery plan. Add another stage, vm and update networks.
   ntnx_recovery_plans:
@@ -515,7 +503,7 @@
   register: recovery_plan
 
 - name: Update status
-  assert:
+  ansible.builtin.assert:
     that:
       - recovery_plan.response is defined
       - recovery_plan.changed is true
@@ -530,9 +518,8 @@
       - recovery_plan.response.status.resources.stage_list[1]["stage_work"] == exepected_stage_work_1
       - recovery_plan.response.status.resources.stage_list[0]["delay_time_secs"] == 2
 
-    fail_msg: 'Unable to updae recovery plans'
-    success_msg: 'Recovery plan updated successfully'
-
+    fail_msg: "Unable to updae recovery plans"
+    success_msg: "Recovery plan updated successfully"
 
 - name: Idempotency Check
   ntnx_recovery_plans:
@@ -575,8 +562,8 @@
 
   register: result
 
-- name: idempotency check status
-  assert: 
+- name: Idempotency check status
+  ansible.builtin.assert:
     that:
       - result.changed == False
       - result.failed == False
@@ -585,8 +572,7 @@
     fail_msg: "Idempotency check failed"
     success_msg: "Idempotency check passed"
 
-############################################################### Run Recovery Plan Jobs###########################################################################################
-
+######################################### Run Recovery Plan Jobs############################################
 
 - name: Run Test Failover with validation errors for checking negative scenario. It will fail in validation phase
   ntnx_recovery_plan_jobs:
@@ -605,8 +591,8 @@
 
   register: result
 
-- name: assert job status
-  assert: 
+- name: Assert job status
+  ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == true
@@ -632,9 +618,8 @@
 
   register: test_failover_job
 
-
-- name: assert job status
-  assert: 
+- name: Assert job status
+  ansible.builtin.assert:
     that:
       - test_failover_job.changed == true
       - test_failover_job.failed == false
@@ -649,7 +634,6 @@
     fail_msg: "Test failover job failed"
     success_msg: "Test failover job run successfully"
 
-
 - name: Run Cleanup
   ntnx_recovery_plan_jobs:
     job_uuid: "{{test_failover_job.job_uuid}}"
@@ -658,9 +642,8 @@
     action: CLEANUP
   register: result
 
-
-- name: assert job status
-  assert: 
+- name: Assert job status
+  ansible.builtin.assert:
     that:
       - result.changed == true
       - result.failed == false
@@ -672,7 +655,7 @@
     fail_msg: "Cleanup job failed"
     success_msg: "Cleanup job run successfully"
 
-############################################################### Delete Recovery Plan Test###########################################################################################
+################################## Delete Recovery Plan Test########################################
 
 - name: Delete recovery plan
   ntnx_recovery_plans:
@@ -680,8 +663,8 @@
     state: "absent"
   register: result
 
-- name: delete Status
-  assert: 
+- name: Delete Status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True

@@ -18,10 +18,7 @@ options:
         description:
         - Specify state
         - If C(state) is set to C(present) then the operation will be  create the item.
-        - if C(state) is set to C(present) and C(user_uuid) is given then it will update that user.
-        - >-
-            If C(state) is set to C(absent) and if the item exists, then
-            item is removed.
+        - If C(state) is set to C(absent) and if the item exists, then item is removed.
         choices:
         - present
         - absent
@@ -88,9 +85,9 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     principal_name: "{{principal_name}}"
-    directory_service_uuid:  "{{directory_service_uuid}}"
+    directory_service_uuid: "{{directory_service_uuid}}"
     project:
       uuid: "{{project_uuid}}"
     categories:
@@ -105,7 +102,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    validate_certs: False
+    validate_certs: false
     identity_provider_uuid: "{{identity_provider_uuid}}"
     username: "{{username}}"
   register: result
@@ -206,8 +203,8 @@ user_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.users import User  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.users import User  # noqa: E402
 
 
 def get_module_spec():

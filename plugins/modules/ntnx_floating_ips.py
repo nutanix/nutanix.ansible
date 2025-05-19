@@ -15,7 +15,9 @@ version_added: 1.0.0
 description: 'Create, Update, Delete floating_ips'
 options:
   fip_uuid:
-    description: floating_ip UUID
+    description:
+        - floating_ip UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   external_subnet:
     description: A subnet with external connectivity
@@ -74,7 +76,7 @@ author:
 EXAMPLES = r"""
 - name: create Floating IP with External Subnet Name
   ntnx_floating_ips:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -84,7 +86,7 @@ EXAMPLES = r"""
 
 - name: create Floating IP with vpc Name with external subnet uuid
   ntnx_floating_ips:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -92,12 +94,12 @@ EXAMPLES = r"""
     external_subnet:
       uuid: "{{external_subnet.subnet_uuiid}}"
     vpc:
-       name: "{{vpc.vpc_name}}"
+      name: "{{vpc.vpc_name}}"
     private_ip: "{{private_ip}}"
 
 - name: create Floating IP with External Subnet with vm
   ntnx_floating_ips:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -178,9 +180,9 @@ task_uuid:
 
 
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.floating_ips import FloatingIP  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.prism.floating_ips import FloatingIP  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

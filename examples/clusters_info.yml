@@ -2,8 +2,6 @@
 - name: Clusters_Info playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -11,20 +9,28 @@
       nutanix_password: <pass>
       validate_certs: false
 
-  tasks:        
-  - name: test getting all clusters
-    ntnx_clusters_info:
-    register: clusters
+  tasks:
+    - name: Test getting all clusters
+      nutanix.ncp.ntnx_clusters_info:
+      register: clusters
 
-  - name: test getting particular cluster using uuid
-    ntnx_clusters_info:
-      cluster_uuid: '{{ clusters.response.entities[0].metadata.uuid }}'
-    register: result
+    - name: Test getting particular cluster using uuid
+      nutanix.ncp.ntnx_clusters_info:
+        cluster_uuid: "{{ clusters.response.entities[0].metadata.uuid }}"
+      register: result
 
-  - name: List clusters using length, offset, sort order and priority sort attribute
-    ntnx_clusters_info:
-      length: 2
-      offset: 0
-      sort_order: "ASCENDING"
-      sort_attribute: "name"
-    register: result
+    - name: List clusters using length, offset, sort order and priority sort attribute
+      nutanix.ncp.ntnx_clusters_info:
+        length: 2
+        offset: 0
+        sort_order: "ASCENDING"
+        sort_attribute: "name"
+      register: result
+
+    - name: List clusters using filter and custom_filter
+      nutanix.ncp.ntnx_clusters_info:
+        filter:
+          name: <name>
+        custom_filter:
+          external_ip: <external_ip>
+      register: result

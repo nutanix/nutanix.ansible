@@ -1,6 +1,7 @@
 ---
-- debug:
-    msg: start ntnx_image delete tests
+- name: Start ntnx_images delete tests
+  ansible.builtin.debug:
+    msg: Start ntnx_image delete tests
 
 - name: Create image with minimal spec and source uri for delete tests
   ntnx_images:
@@ -12,7 +13,7 @@
   register: result
 
 - name: Creation Status
-  assert: 
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
@@ -27,14 +28,14 @@
   register: result
 
 - name: Delete Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == true
       - result.failed == false
     fail_msg: "Unable to delete image"
     success_msg: "Image deleted successfully"
-      
+
 #####################################################################################################
 
 - name: "Negative scenario when delete image with incorrect uuid"
@@ -42,10 +43,10 @@
     state: absent
     image_uuid: abcd
   register: result
-  ignore_errors: True
-      
+  ignore_errors: true
+
 - name: Creation Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == True

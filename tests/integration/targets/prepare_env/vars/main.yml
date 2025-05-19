@@ -1,0 +1,145 @@
+# ip: TEST_PC_IP
+# username: TEST_PC_USERNAME
+# password: TEST_PC_PASSWORD
+# validate_certs: TEST_VALIDATE_CERT_FLAG
+
+# # for NKE related tests
+# k8s_version: TEST_K8S_VERSION
+# host_os: TEST_HOST_OS
+# nutanix_cluster_password: TEST_CLUSTER_PASSWORD
+# nutanix_cluster_username: TEST_CLUSTER_USERNAME
+# cni:
+#   node_cidr_mask_size: "TEST_MASK_CIDR"
+#   service_ipv4_cidr: "TEST_SERVICE_CIDR"
+#   pod_ipv4_cidr: "TEST_POD_CIDR"
+
+# # docker registry url for nke tests
+# url: TEST_REGISTRIES_URL
+
+# # cluster reference for several tests
+# cluster:
+#   name: TEST_CLUSTER_NAME
+#   uuid: TEST_CLUSTER_UUID
+
+# # For tests like vms, etc.
+# network:
+#   dhcp:
+#     name: TEST_VLAN_NAME
+#     uuid: TEST_VLAN_UUID
+#   static:
+#     ip: TEST_STATIC_IP
+
+# vm_owner:
+#   name: TEST_OWNER_NAME
+#   uuid: TEST_OWNER_UUID
+
+# # can be skipped
+# todelete: []
+
+# # for ntnx_image tests
+# disk_image:
+#   url: TEST_IMAGE_URL
+#   dest: TEST_DEST_PATH
+#   checksum: TEST_CHECKSUM
+#   centos: "TEST_CENTOS"
+
+# # used in test setup for creation of networks and some networking tests
+# external_nat_subnets:
+#   name: TEST_NAT_NAME
+#   vlan_id: TEST_VLAN_ID
+#   gateway_ip_address: TEST_GATEWAY_IP
+#   network_prefix: TEST_PREFIX
+#   network_ip: TEST_NETWORK_IP
+#   dhcp:
+#     start_address: TEST_START_DHCP
+#     end_address: TEST_END_DHCP
+#   static:
+#     start_address: TEST_START_STATIC
+#     end_address: TEST_END_STATIC
+
+# # Details for creating this resources during test setup and same are used related tests
+# vpc_name: TEST_VPC_NAME
+# vm_name: TEST_VM_NAME
+# static_subnet_name: TEST_STATIC_SUBNET
+# overlay_subnet:
+#   name: TEST_OVERLAY_NAME
+#   network_ip: TEST_OVERLAY_NETWORK_IP
+#   network_prefix: TEST_OVERLAY_PREFIX
+#   gateway_ip: TEST_OVERLAY_GATEWAY_IP
+#   private_ip: TEST_OVERLAY_PRIVATE_IP
+
+# # security rule related tests
+# quarantine_rule_uuid: TEST_QUARANTINE_UUID
+# categories:
+#   apptiers:
+#     - Default
+#     - sub_app_1
+
+# # name of images in setup for vms test
+# centos: "TEST_CENTOS"
+# ubuntu: "TEST_UBUNTU"
+
+# # virtual switch reference primarily for vms test
+# virtual_switch:
+#   name: TEST_SWITCH_NAME
+#   uuid: TEST_SWITCH_UUID
+
+# # storage reference primarily for vms test
+# storage_container:
+#   name: TEST_CONTAINER_NAME
+#   uuid: TEST_CONTAINER_UUID
+
+# # user and user groups from AD for user and user groups tests
+# users:
+#   - TEST_USER_UUID_1
+#   - TEST_USER_UUID_2
+# user_groups:
+#   - TEST_GROUP_UUID
+
+# # project reference for vms test
+# project:
+#   name: TEST_PROJECT_NAME
+#   uuid: TEST_PROJECT_UUID
+
+# # list of roles for advanced projects tests
+# roles:
+#   - "TEST_ROLES_NAME_1"
+#   - "TEST_ROLES_NAME_2"
+#   - "TEST_ROLES_NAME_3"
+#   - "TEST_ROLES_NAME_4"
+
+# # account reference for advanced projects related tests
+# accounts:
+#   - name: "NTNX_LOCAL_AZ"
+#     uuid: "TEST_ACCOUNT_UUID"
+
+# # user and user groups for projects tests when new users are to be added
+# new_user: "TEST_NEW_USER_EMAIL"
+# new_user_group: "TEST_NEW_USER_GROUP_DN"
+
+# # acp tests related vars
+# acp:
+#   role:
+#     name: "Project Admin"
+#     uuid: TEST_ROLE_UUID
+#   user_uuid: TEST_USER_UUID
+#   user_group_uuid: TEST_GROUP_UUID
+
+# # auth details for projects, acps, user and user groups related tests
+# distinguished_name: "TEST_DISTINGUISHED_NAME"
+# principal_name: "TEST_PRINCIPAL_NAME"
+# directory_service_uuid: "TEST_DIRECTORY_UUID"
+# identity_provider_uuid: "TEST_IDENTITY_UUID"
+
+# # vm created during test setup for dr tests
+# dr_vm_name: TEST_VM_NAME
+
+# # dr related tests vars
+# dr:
+#   primary_az_url: TEST_PRIMARY_URL
+#   recovery_az_url: TEST_RECOVERY_URL
+#   recovery_site_network: "TEST_RECOVERY_NETWORK"
+#   recovery_ip1: TEST_RECOVERY_IP1
+#   recovery_ip2: TEST_RECOVERY_IP2
+#   gateway_ip: TEST_GATEWAY_IP
+#   prefix: TEST_PREFIX

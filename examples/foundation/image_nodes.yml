@@ -1,63 +1,63 @@
-# Here we will image three kind of nodes with different methods. 
+---
+# Here we will image three kind of nodes with different methods.
 # We will image one node using manual mode. Second node, which can be dos running node, will be imaged using discovery mode using cvm
 # Third node, which can be nutanix imaged(aos running) node, will be imaged using discovery mode using IPMI
 - name: Image nodes
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   tasks:
-  - name: Image nodes using manual and discovery modes. Create cluster
-    ntnx_foundation:
-      timeout: 4500
-      nutanix_host: "10.xx.xx.xx"
-      cvm_gateway: "10.xx.xx.xx"
-      cvm_netmask: "xx.xx.xx.xx"
-      hypervisor_gateway: "10.xx.xx.xx"
-      hypervisor_netmask: "xx.xx.xx.xx"
-      default_ipmi_user: "<default-username>"
-      nos_package: "<nos-package-file-name>"
-      blocks:
-        - block_id: "xxxxx"
-          nodes:
-            - manual_mode:
-                cvm_ip: "10.xx.xx.xx"
-                cvm_gb_ram: 50
-                hypervisor_hostname: "superman1"
-                ipmi_netmask: "xx.xx.xx.xx"
-                ipmi_gateway: "10.xx.xx.xx"
-                ipmi_ip: "10.xx.xx.xx"
-                ipmi_password: "<ipmi-password-of-node>"
-                hypervisor: "kvm"
-                hypervisor_ip: "10.xx.xx.xx"
-                node_position: "A"
-            #dos node using cvm and discover it using discovery mode. Here we have to provide hypervisor details mandatorily as its dos nodes.
-            #You can skip hypervisor details incase of aos running node and discovery mode. AOS running nodes have hypervisor running and network
-            #configuration is pulled internally.
-            - discovery_mode:
-                cvm_gb_ram: 50
-                node_serial: "xxxxxx"
-                device_hint: "vm_installer"
-                discovery_override:
-                  hypervisor_hostname: "superman2"
-                  hypervisor_ip: "10.xx.xx.xx"
-                  cvm_ip: "10.xx.xx.xx"
-                  hypervisor: "kvm"
-            #image aos running node using ipmi and discover it using discovery mode
-            - discovery_mode:
-                cvm_gb_ram: 50
-                ipmi_password: "<ipmi-password-of-node>"
-                node_serial: "xxxxxx"
-                discovery_override:
-                  hypervisor_hostname: "superman3"
-      clusters:
+    - name: Image nodes using manual and discovery modes. Create cluster
+      nutanix.ncp.ntnx_foundation:
+        timeout: 4500
+        nutanix_host: 10.xx.xx.xx
+        cvm_gateway: 10.xx.xx.xx
+        cvm_netmask: xx.xx.xx.xx
+        hypervisor_gateway: 10.xx.xx.xx
+        hypervisor_netmask: xx.xx.xx.xx
+        default_ipmi_user: <default-username>
+        nos_package: <nos-package-file-name>
+        blocks:
+          - block_id: xxxxx
+            nodes:
+              - manual_mode:
+                  cvm_ip: 10.xx.xx.xx
+                  cvm_gb_ram: 50
+                  hypervisor_hostname: superman1
+                  ipmi_netmask: xx.xx.xx.xx
+                  ipmi_gateway: 10.xx.xx.xx
+                  ipmi_ip: 10.xx.xx.xx
+                  ipmi_password: <ipmi-password-of-node>
+                  hypervisor: kvm
+                  hypervisor_ip: 10.xx.xx.xx
+                  node_position: A
+              # dos node using cvm and discover it using discovery mode. Here we have to provide hypervisor details mandatorily as its dos nodes.
+              # You can skip hypervisor details incase of aos running node and discovery mode. AOS running nodes have hypervisor running and network
+              # configuration is pulled internally.
+              - discovery_mode:
+                  cvm_gb_ram: 50
+                  node_serial: xxxxxx
+                  device_hint: vm_installer
+                  discovery_override:
+                    hypervisor_hostname: superman2
+                    hypervisor_ip: 10.xx.xx.xx
+                    cvm_ip: 10.xx.xx.xx
+                    hypervisor: kvm
+              # image aos running node using ipmi and discover it using discovery mode
+              - discovery_mode:
+                  cvm_gb_ram: 50
+                  ipmi_password: <ipmi-password-of-node>
+                  node_serial: xxxxxx
+                  discovery_override:
+                    hypervisor_hostname: superman3
+        clusters:
           - redundancy_factor: 2
-            cluster_members: 
-              - "10.xx.xx.xx"
-              - "10.xx.xx.xx"
-              - "10.xx.xx.xx"
-            name: "test-cluster"
-    register: output
+            cluster_members:
+              - 10.xx.xx.xx
+              - 10.xx.xx.xx
+              - 10.xx.xx.xx
+            name: test-cluster
+      register: output
 
-  - debug:
-      msg: '{{ output }}'
+    - name: Print output
+      ansible.builtin.debug:
+        msg: "{{ output }}"

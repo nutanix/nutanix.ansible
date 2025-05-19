@@ -34,10 +34,10 @@ EXAMPLES = r"""
   ntnx_vms_clone:
       src_vm_uuid: "{{ vm.vm_uuid }}"
       networks:
-        - is_connected: false
-          subnet:
-            name: "{{ network.dhcp.name }}"
-  check_mode: yes
+          - is_connected: false
+            subnet:
+                name: "{{ network.dhcp.name }}"
+  check_mode: true
 
 - name: clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
   ntnx_vms_clone:
@@ -54,20 +54,20 @@ EXAMPLES = r"""
   ntnx_vms_clone:
       src_vm_uuid: "{{ vm.vm_uuid }}"
       networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
-        - is_connected: true
-          subnet:
-            uuid: "{{ static.uuid }}"
+          - is_connected: true
+            subnet:
+                uuid: "{{ network.dhcp.uuid }}"
+          - is_connected: true
+            subnet:
+                uuid: "{{ static.uuid }}"
 
 - name: clone vm  with script
   ntnx_vms_clone:
       src_vm_uuid: "{{ vm.vm_uuid }}"
       guest_customization:
-        type: "cloud_init"
-        script_path: "./cloud_init.yml"
-        is_overridable: True
+          type: "cloud_init"
+          script_path: "./cloud_init.yml"
+          is_overridable: true
 """
 
 RETURN = r"""
@@ -270,9 +270,9 @@ from copy import deepcopy  # noqa: E402
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.spec.vms import DefaultVMSpec  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.vms import VM  # noqa: E402
+from ..module_utils.v3.prism.spec.vms import DefaultVMSpec  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.vms import VM  # noqa: E402
 
 
 def get_module_spec():
@@ -285,6 +285,7 @@ def get_module_spec():
 
 def clone_vm(module, result):
     src_vm_uuid = module.params["src_vm_uuid"]
+    result["src_vm_uuid"] = src_vm_uuid
 
     vm = VM(module)
 
@@ -305,7 +306,8 @@ def clone_vm(module, result):
 
     if module.params.get("wait"):
         wait_for_task_completion(module, result)
-        resp = vm.read(src_vm_uuid)
+        vm_uuid = result["response"]["entity_reference_list"][0]["uuid"]
+        resp = vm.read(vm_uuid)
         result["response"] = resp
 
 

@@ -2,8 +2,6 @@
 - name: VM_Info playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,22 +10,37 @@
       validate_certs: false
   tasks:
     - name: Setting Variables
-      set_fact:
+      ansible.builtin.set_fact:
         vm_name: ""
-        
+
     - name: List vms using name filter criteria
-      ntnx_vms_info:
-        filter: 
+      nutanix.ncp.ntnx_vms_info:
+        filter:
           vm_name: "{{ vm_name }}"
         kind: vm
       register: result
-      ignore_errors: True
-    
-    - name: List vms using length, offset and ascending vm_name sorting 
-      ntnx_vms_info:
+      ignore_errors: true
+
+    - name: List vms using FIQL filter string
+      nutanix.ncp.ntnx_vms_info:
+        filter_string: "vm_name=={{vm.name}};power_state==off"
+      register: result
+      ignore_errors: true
+
+    - name: List vms using length, offset and ascending vm_name sorting
+      nutanix.ncp.ntnx_vms_info:
         length: 10
         offset: 1
         sort_order: "ASCENDING"
         sort_attribute: "vm_name"
       register: result
-      ignore_errors: True
+      ignore_errors: true
+
+    - name: List vms using filter and custom_filter
+      nutanix.ncp.ntnx_vms_info:
+        filter:
+          vm_name: <name>
+        custom_filter:
+          num_sockets: <num_sockets>
+
+      register: result

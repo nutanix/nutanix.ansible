@@ -19,6 +19,7 @@ options:
   vlan_uuid:
     description:
       - uuid for update or delete of vlan
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   name:
     description:
@@ -107,7 +108,7 @@ EXAMPLES = r"""
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
-    name:  test-vlan-name
+    name: test-vlan-name
     vlan_type: DHCP
     cluster:
       uuid: "<cluster-uuid>"
@@ -119,7 +120,7 @@ EXAMPLES = r"""
     nutanix_username: <user>
     nutanix_password: <pass>
     validate_certs: false
-    name:  test-vlan-name
+    name: test-vlan-name
     vlan_type: Static
     cluster:
       uuid: "<cluster-uuid>"
@@ -156,7 +157,6 @@ EXAMPLES = r"""
     state: absent
     vlan_uuid: "<vlan-uuid>"
   register: result
-
 """
 
 RETURN = r"""
@@ -263,9 +263,9 @@ properties:
                 }
             ]
 """
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.vlans import VLAN  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.vlans import VLAN  # noqa: E402
 
 
 def get_module_spec():

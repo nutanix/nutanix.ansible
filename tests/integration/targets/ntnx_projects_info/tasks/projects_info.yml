@@ -1,18 +1,19 @@
-- name:
-  debug:
+- name: Start ntnx_project_info tests
+  ansible.builtin.debug:
     msg: "Start ntnx_project_info tests"
 
-- name: Generate random project_name 
-  set_fact:
+- name: Generate random project_name
+  ansible.builtin.set_fact:
     random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
 
-- set_fact:
+- name: Set suffix name
+  ansible.builtin.set_fact:
     suffix_name: "ansible-role-mapping"
 
-- set_fact:
+- name: Set project names
+  ansible.builtin.set_fact:
     project1_name: "{{random_name}}{{suffix_name}}1"
     project2_name: "{{random_name}}{{suffix_name}}2"
-
 
 - name: Create Project with minimal spec
   ntnx_projects:
@@ -23,63 +24,65 @@
 - name: Create Project with role mappings
   ntnx_projects:
     name: "{{project2_name}}"
-    collaboration: True
+    collaboration: true
     role_mappings:
-      - role: 
-          name: "{{roles[0]}}"
+      - role:
+          name: "{{role_mappings[0]}}"
         user:
           uuid: "{{users[0]}}"
   register: project_2
   ignore_errors: true
 
-- set_fact:
+- name: Adding project uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  project_1.project_uuid ] }}"
 
-- set_fact:
+- name: Adding project uuid to todelete list
+  ansible.builtin.set_fact:
     todelete: "{{ todelete + [  project_2.project_uuid ] }}"
 
-################################################## 
+##################################################
 
 - name: List project using name filter criteria
   ntnx_projects_info:
     filter:
       name: "{{project1_name}}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.entities[0].status.name == "{{project1_name}}"
     fail_msg: "Unable to list projects using filter"
     success_msg: "Project info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List all projects
   ntnx_projects_info:
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.metadata.total_matches > 2
     fail_msg: "Unable to list all projects"
     success_msg: "Project info of all projects obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List project using project uuid criteria
   ntnx_projects_info:
     project_uuid: "{{ project_2.project_uuid }}"
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.name == "{{ project2_name }}"
@@ -87,36 +90,36 @@
     fail_msg: "Unable to list projects using uuid"
     success_msg: "Project info obtained successfully"
 
-################################################## 
+##################################################
 
 - name: List project using project uuid criteria including acps
   ntnx_projects_info:
     project_uuid: "{{ project_2.project_uuid }}"
-    include_acps: True
+    include_acps: true
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.name == "{{ project2_name }}"
-      - result.response.acps is defined 
+      - result.response.acps is defined
       - result.response.acps | length == 1
       - result.response.metadata.kind == "project"
     fail_msg: "Unable to list projects with acps using uuid"
     success_msg: "Project info obtained successfully"
 
-################################################## 
+##################################################
 - name: List project using length and offset
   ntnx_projects_info:
     length: 1
     offset: 1
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: "Unable to list projects using length and offset"
@@ -129,10 +132,10 @@
     sort_attribute: "name"
     kind: project
   register: result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: Listing Status
-  assert:
+  ansible.builtin.assert:
     that:
       - result.response is defined
     fail_msg: "Unable to list projects"
@@ -145,7 +148,8 @@
     project_uuid: "{{ item }}"
   register: result
   loop: "{{ todelete }}"
-  ignore_errors: True
+  ignore_errors: false
 
-- set_fact:
+- name: Reset todelete list
+  ansible.builtin.set_fact:
     todelete: []

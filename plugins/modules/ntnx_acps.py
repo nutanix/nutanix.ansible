@@ -19,7 +19,9 @@ options:
     required: False
     type: str
   acp_uuid:
-    description: acp UUID
+    description:
+        - acp UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   desc:
     description: The description of the association of a role to a user in a given context
@@ -117,7 +119,7 @@ author:
 EXAMPLES = r"""
 - name: Create min ACP
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -129,7 +131,7 @@ EXAMPLES = r"""
 
 - name: Create ACP with user reference
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -142,7 +144,7 @@ EXAMPLES = r"""
 
 - name: Create ACP with user ad user group reference
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -157,7 +159,7 @@ EXAMPLES = r"""
 
 - name: Create ACP with all specfactions
   ntnx_acps:
-    validate_certs: False
+    validate_certs: false
     state: present
     nutanix_host: "{{ IP }}"
     nutanix_username: "{{ username }}"
@@ -303,9 +305,9 @@ task_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.acps import ACP  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.prism.acps import ACP  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():
@@ -419,6 +421,10 @@ def check_acp_idempotency(old_spec, update_spec):
     )
     for context in old_context_list:
         if context not in update_context_list:
+            return False
+
+    for context in update_context_list:
+        if context not in old_context_list:
             return False
 
     return True

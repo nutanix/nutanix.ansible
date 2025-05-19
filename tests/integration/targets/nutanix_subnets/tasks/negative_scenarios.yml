@@ -1,84 +1,86 @@
-  - debug:
-      msg: "Started Negative Creation Cases"
+---
+- name: Started Negative Creation Cases
+  ansible.builtin.debug:
+    msg: "Started Negative Creation Cases"
 
-  - name: Unknow virtual switch name
-    ntnx_subnets:
-      state: present
-      name: VLAN subnet without IPAM
-      vlan_subnet:
-        vlan_id: "{{ vlan_subnets_ids.0 }}"
-        virtual_switch:
-          name: "virtual_switch"
-        cluster:
-          uuid: "{{ cluster.uuid }}"
-    register: result
-    ignore_errors: True
-    
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed==True
-        - result.msg=="Failed generating subnet spec"
-      success_msg: ' Success: returned error as expected '
+- name: Unknow virtual switch name
+  ntnx_subnets:
+    state: present
+    name: VLAN subnet without IPAM
+    vlan_subnet:
+      vlan_id: "{{ vlan_subnets_ids.0 }}"
+      virtual_switch:
+        name: "virtual_switch"
+      cluster:
+        uuid: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed==true
+      - result.msg=="Failed generating subnet spec"
+    success_msg: " Success: returned error as expected "
 ###############################################################
-  - name: Unknow virtual switch uuid
-    ntnx_subnets:
-      state: present
-      name: VLAN subnet with IPAM
-      vlan_subnet:
-        vlan_id: "{{ vlan_subnets_ids.1 }}"
-        virtual_switch:
-          uuid: 91639374-c0b9-48c3-bfc1-f9c89343b3e
-        cluster:
-          name: "{{ cluster.name }}"
-        ipam:
-          network_ip: "{{ ip_address_management.network_ip }}"
-          network_prefix: "{{ ip_address_management.network_prefix }}"
-          gateway_ip: "{{ ip_address_management.gateway_ip_address }}"
-    register: result
-    ignore_errors: true
-    
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed==True
-      success_msg: ' Success: returned error as expected '
+- name: Unknow virtual switch uuid
+  ntnx_subnets:
+    state: present
+    name: VLAN subnet with IPAM
+    vlan_subnet:
+      vlan_id: "{{ vlan_subnets_ids.1 }}"
+      virtual_switch:
+        uuid: 91639374-c0b9-48c3-bfc1-f9c89343b3e
+      cluster:
+        name: "{{ cluster.name }}"
+      ipam:
+        network_ip: "{{ ip_address_management.network_ip }}"
+        network_prefix: "{{ ip_address_management.network_prefix }}"
+        gateway_ip: "{{ ip_address_management.gateway_ip_address }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed==true
+    success_msg: " Success: returned error as expected "
 ###############################################################
-  - name: Unknown Cluster 
-    ntnx_subnets:
-      state: present
-      name: VLAN subnet with IPAM and IP pools
-      vlan_subnet:
-        vlan_id: "{{vlan_subnets_ids.2}}"
-        virtual_switch:
-          name: "{{ virtual_switch.name }}"
-        cluster:
-          name: auto_cluster_prod_1a642ea0a5c
-        ipam:
-          network_ip: "{{ ip_address_management.network_ip }}"
-          network_prefix: "{{ ip_address_management.network_prefix }}"
-          gateway_ip: "{{ ip_address_management.gateway_ip_address }}"
-          ip_pools:
-            - start_ip: "{{ ip_address_pools.start_address }}"
-              end_ip: "{{ ip_address_pools.end_address }}"
-    register: result
-    ignore_errors: true
-    
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed==True
-      success_msg: ' Success: returned error as expected '
+- name: Unknown Cluster
+  ntnx_subnets:
+    state: present
+    name: VLAN subnet with IPAM and IP pools
+    vlan_subnet:
+      vlan_id: "{{vlan_subnets_ids.2}}"
+      virtual_switch:
+        name: "{{ virtual_switch.name }}"
+      cluster:
+        name: auto_cluster_prod_1a642ea0a5c
+      ipam:
+        network_ip: "{{ ip_address_management.network_ip }}"
+        network_prefix: "{{ ip_address_management.network_prefix }}"
+        gateway_ip: "{{ ip_address_management.gateway_ip_address }}"
+        ip_pools:
+          - start_ip: "{{ ip_address_pools.start_address }}"
+            end_ip: "{{ ip_address_pools.end_address }}"
+  register: result
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed==true
+    success_msg: " Success: returned error as expected "
 ###############################################################
-  - name: Delete subnet with unknown uuid
-    ntnx_subnets:
-      state: absent
-      subnet_uuid: 5
-    register: resultt
-    ignore_errors: true
-      
-  - name: Creation Status
-    assert:
-      that:
-        - result.failed==True
-      success_msg: ' Success: returned error as expected '
+- name: Delete subnet with unknown uuid
+  ntnx_subnets:
+    state: absent
+    subnet_uuid: 5
+  register: resultt
+  ignore_errors: true
+
+- name: Creation Status
+  ansible.builtin.assert:
+    that:
+      - result.failed==true
+    success_msg: " Success: returned error as expected "

@@ -33,36 +33,36 @@ author:
  - Alaa Bishtawi (@alaa-bish)
 """
 EXAMPLES = r"""
-  - name: List users using name filter criteria
-    ntnx_users_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      filter:
-        username: "{{ name }}"
-    register: result
+- name: List users using name filter criteria
+  ntnx_users_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter:
+      username: "{{ name }}"
+  register: result
 
-  - name: List users using length, offset, sort order and sort attribute
-    ntnx_users_info:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      length: 2
-      offset: 1
-      sort_order: "DESCENDING"
-      sort_attribute: "username"
-    register: result
+- name: List users using length, offset, sort order and sort attribute
+  ntnx_users_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    length: 2
+    offset: 1
+    sort_order: "DESCENDING"
+    sort_attribute: "username"
+  register: result
 
-  - name: test getting particular user using uuid
-    ntnx_users_info:
-        nutanix_host: "{{ ip }}"
-        nutanix_username: "{{ username }}"
-        nutanix_password: "{{ password }}"
-        validate_certs: False
-        user_uuid: '{{ uuid  }}'
-    register: result
+- name: test getting particular user using uuid
+  ntnx_users_info:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    user_uuid: '{{ uuid  }}'
+  register: result
 """
 RETURN = r"""
 api_version:
@@ -152,9 +152,9 @@ entities:
 """
 
 
-from ..module_utils.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.prism.users import User  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v3.prism.users import User  # noqa: E402
 
 
 def get_module_spec():

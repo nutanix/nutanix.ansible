@@ -1,0 +1,72 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a floating IP with external subnet uuid
+# 2. Update the floating IP name and private IP
+# 3. Fetch the floating IP details using ext_id
+# 4. Delete the floating IP
+
+- name: Floating IP playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        floating_ip_name: "fip1"
+        floating_ip_ext_id: "d7419d65-1254-9632-1122-ec1431516bbe"
+        external_nat_subnet_uuid: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
+        project_uuid: "d7419d65-100e-4c99-a666-ec1431516bbe"
+        user_uuid: "7c62834e-43f0-4c20-a5d4-cbf36b9a142b"
+        category_ext_id: "2dff5b0a-99c5-46d6-9002-d42439a8b6e5"
+        floating_ip: "10.0.0.1"
+        private_ip: "10.0.0.2"
+        vpc_uuid: "2dff5b0a-2368-3456-1236-d42439a8b6e5"
+
+    - name: Create floating ip with external subnet uuid
+      nutanix.ncp.ntnx_floating_ips_v2:
+        state: present
+        name: "{{ floating_ip_name }}"
+        external_subnet_reference: "{{ external_nat_subnet_uuid }}"
+        metadata:
+          project_reference_id: "{{ project_uuid }}"
+          owner_reference_id: "{{ user_uuid }}"
+          category_ids:
+            - "{{ category_ext_id }}"
+        floating_ip:
+          ipv4:
+            value: "{{ floating_ip }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update floating ip name and private IP
+      nutanix.ncp.ntnx_floating_ips_v2:
+        state: present
+        name: "{{ floating_ip_name }}_updated"
+        ext_id: "{{ floating_ip_ext_id }}"
+        association:
+          private_ip_association:
+            private_ip:
+              ipv4:
+                value: "{{ private_ip }}"
+            vpc_reference: "{{ vpc_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get floating_ips using ext_id
+      nutanix.ncp.ntnx_floating_ips_info_v2:
+        ext_id: "{{ floating_ip_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete floating ip
+      nutanix.ncp.ntnx_floating_ips_v2:
+        state: absent
+        ext_id: "{{ floating_ip_ext_id }}"
+      register: result
+      ignore_errors: true

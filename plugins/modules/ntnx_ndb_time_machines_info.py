@@ -260,9 +260,9 @@ response:
 
 """
 
-from ..module_utils.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
-from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 from ..module_utils.utils import format_filters_map  # noqa: E402
+from ..module_utils.v3.ndb.base_info_module import NdbBaseInfoModule  # noqa: E402
+from ..module_utils.v3.ndb.time_machines import TimeMachine  # noqa: E402
 
 
 def get_module_spec():
@@ -307,7 +307,7 @@ def get_time_machine(module, result):
     resp, err = tm.get_time_machine(uuid=uuid, name=name, query=query_params)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed fetching sla info", **result)
+        module.fail_json(msg="Failed fetching time machine info", **result)
     result["response"] = resp
 
 

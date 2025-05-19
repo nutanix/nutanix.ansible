@@ -53,7 +53,7 @@ EXAMPLES = r"""
 - name: Delete Image with esx installer_type
   ntnx_foundation_image_upload:
     nutanix_host: "{{ ip }}"
-    state : "absent"
+    state: "absent"
     filename: "temptar_dont_use.iso"
     installer_type: "esx"
 """
@@ -61,9 +61,9 @@ EXAMPLES = r"""
 RETURN = r"""
 
 """
-from ..module_utils.foundation.base_module import FoundationBaseModule  # noqa: E402
-from ..module_utils.foundation.image_upload import Image  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.foundation.base_module import FoundationBaseModule  # noqa: E402
+from ..module_utils.v3.foundation.image_upload import Image  # noqa: E402
 
 
 def get_module_spec():

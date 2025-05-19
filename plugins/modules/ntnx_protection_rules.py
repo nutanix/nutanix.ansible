@@ -17,6 +17,7 @@ options:
     description:
       - protection_rule uuid
       - required for update and delete
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
     required: false
   start_time:
@@ -237,7 +238,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    wait: True
+    wait: true
     name: test-ansible
     desc: test-ansible-desc
     protected_categories:
@@ -268,7 +269,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    wait: True
+    wait: true
     name: test-ansible
     desc: test-ansible-desc
     protected_categories:
@@ -279,7 +280,7 @@ EXAMPLES = r"""
       availability_zone_url: "{{primary_az_url}}"
     schedules:
       - source:
-            availability_zone_url: "{{primary_az_url}}"
+          availability_zone_url: "{{primary_az_url}}"
         destination:
           availability_zone_url: "{{recovery_az_url}}"
         protection_type: ASYNC
@@ -314,7 +315,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    wait: True
+    wait: true
     rule_uuid: "{{rule_uuid}}"
     name: test-ansible-updated
     desc: test-ansible-desc-updated
@@ -325,7 +326,7 @@ EXAMPLES = r"""
       availability_zone_url: "{{primary_az_url}}"
     schedules:
       - source:
-            availability_zone_url: "{{primary_az_url}}"
+          availability_zone_url: "{{primary_az_url}}"
         destination:
           availability_zone_url: "{{recovery_az_url}}"
         protection_type: ASYNC
@@ -360,10 +361,9 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
-    wait: True
+    wait: true
     rule_uuid: "{{ rule_uuid }}"
   register: result
-
 """
 
 RETURN = r"""
@@ -541,8 +541,8 @@ rule_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.protection_rules import ProtectionRule  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.protection_rules import ProtectionRule  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():

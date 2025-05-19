@@ -1,65 +1,65 @@
 ---
-- debug:
+- name: Start testing ntnx_ndb_clones_info
+  ansible.builtin.debug:
     msg: Start testing ntnx_ndb_clones_info
 
 - name: List all era clones
   ntnx_ndb_clones_info:
   register: clones
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - clones.response is defined
       - clones.failed == false
       - clones.changed == false
       - clones.response | length > 0
-    fail_msg: "Unable to list all era clones"
-    success_msg: "era clones listed successfully"
+    fail_msg: Unable to list all era clones
+    success_msg: era clones listed successfully
 ################################################################
-- name: get era clones using it's name  
+- name: Get era clones using it's name
   ntnx_ndb_clones_info:
-    name: "{{clones.response[0].name}}"
+    name: "{{ clones.response[0].name }}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name == "{{clones.response[0].name}}"
+      - result.response.name == "{{ clones.response[0].name }}"
     fail_msg: "Unable to get era clones using it's name  "
-    success_msg: "get  era clones using it's name  successfully"
+    success_msg: get  era clones using it's name  successfully
 ################################################################
 - name: List clones use id
   ntnx_ndb_clones_info:
-    uuid: "{{clones.response[0].id}}"
+    uuid: "{{ clones.response[0].id }}"
   register: result
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.response is defined
       - result.failed == false
       - result.changed == false
-      - result.response.name == "{{clones.response[0].name}}"
+      - result.response.name == "{{ clones.response[0].name }}"
     fail_msg: "Unable to get era clones using it's id  "
-    success_msg: "get  era clones using it's id  successfully"
+    success_msg: get  era clones using it's id  successfully
 ################################################################
 
-
-- name: get era clones with incorrect name
+- name: Get era clones with incorrect name
   ntnx_ndb_clones_info:
-    name: "abcd"
+    name: abcd
   register: result
   no_log: true
-  ignore_errors: True
+  ignore_errors: true
 
-- name: check listing status
-  assert:
+- name: Check listing status
+  ansible.builtin.assert:
     that:
       - result.error is defined
       - result.failed == true
       - result.changed == false
-    fail_msg: "module didn't errored out correctly when incorrect name is given"
-    success_msg: "module errored out correctly when incorrect name is given"
+    fail_msg: module didn't errored out correctly when incorrect name is given
+    success_msg: module errored out correctly when incorrect name is given

@@ -16,6 +16,7 @@ options:
       uuid:
         description:
             - uuid of database clone for update and delete
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       name:
         description:
@@ -169,6 +170,10 @@ options:
                 description:
                     - timestamp for create clone from point in time
                 type: str
+            latest_snapshot:
+                description:
+                    - write
+                type: bool
       postgres:
         description:
             - postgres database related config
@@ -307,7 +312,7 @@ EXAMPLES = r"""
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
-      delete_database: True
+      delete_database: true
 
     refresh_schedule:
       days: 2
@@ -351,7 +356,7 @@ EXAMPLES = r"""
       days: 2
       timezone: "Asia/Calcutta"
       remind_before_in_days: 1
-      delete_database: True
+      delete_database: true
 
     refresh_schedule:
       days: 2
@@ -361,7 +366,6 @@ EXAMPLES = r"""
     tags:
       ansible-clones: ansible-test-db-clones
   register: result
-
 """
 
 RETURN = r"""
@@ -598,13 +602,13 @@ uuid:
 
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.database_clones import DatabaseClone  # noqa: E402
-from ..module_utils.ndb.db_server_vm import DBServerVM  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
-from ..module_utils.ndb.tags import Tag  # noqa: E402
-from ..module_utils.ndb.time_machines import TimeMachine  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.database_clones import DatabaseClone  # noqa: E402
+from ..module_utils.v3.ndb.db_server_vm import DBServerVM  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
+from ..module_utils.v3.ndb.tags import Tag  # noqa: E402
+from ..module_utils.v3.ndb.time_machines import TimeMachine  # noqa: E402
 
 
 def get_module_spec():
@@ -652,6 +656,7 @@ def get_module_spec():
         uuid=dict(type="str", required=False),
         snapshot_uuid=dict(type="str", required=False),
         pitr_timestamp=dict(type="str", required=False),
+        latest_snapshot=dict(type="bool", required=False),
         timezone=dict(type="str", default="Asia/Calcutta", required=False),
     )
 
@@ -700,7 +705,7 @@ def get_module_spec():
         time_machine=dict(
             type="dict",
             options=time_machine,
-            mutually_exclusive=[("snapshot_uuid", "pitr_timestamp")],
+            mutually_exclusive=[("snapshot_uuid", "pitr_timestamp", "latest_snapshot")],
             required=False,
         ),
         postgres=dict(type="dict", options=postgres, required=False),

@@ -4,6 +4,200 @@ Nutanix.Ncp Release Notes
 
 .. contents:: Topics
 
+v2.1.1
+======
+
+Release Summary
+---------------
+
+Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements.txt
+
+Bugfixes
+--------
+
+- requirements file - [Bug] The entries in the requirements file MUST NOT have a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
+
+v2.1.0
+======
+
+Release Summary
+---------------
+
+Releasing new modules for Prism, Data Protection, Data Policies, LCM and Volumes using PC GA v4 sdks
+
+Breaking Changes / Porting Guide
+--------------------------------
+
+- nutanix.ncp collection - We are deprecating support for ansible-core==2.15.0 and minimum version to use this collection is ansible-core==2.16.0.
+
+New Modules
+-----------
+
+- ntnx_lcm_config_info_v2 - Fetch LCM Configuration
+- ntnx_lcm_config_v2 - Update LCM Configuration
+- ntnx_lcm_entities_info_v2 - Fetch LCM Entities Info
+- ntnx_lcm_inventory_v2 - Perform Inventory
+- ntnx_lcm_prechecks_v2 - Perform LCM Prechecks
+- ntnx_lcm_status_info_v2 - Get the LCM framework status.
+- ntnx_lcm_upgrades_v2 - Perform LCM upgrades
+- ntnx_pc_backup_target_info_v2 - Get PC backup targets info
+- ntnx_pc_backup_target_v2 - Create, Update and Delete a PC backup target.
+- ntnx_pc_config_info_v2 - Get PC Configuration info
+- ntnx_pc_deploy_v2 - Deploys a Prism Central using the provided details
+- ntnx_pc_restorable_domain_managers_info_v2 - Fetch restorable domain managers info
+- ntnx_pc_restore_points_info_v2 - Fetch pc restore points info
+- ntnx_pc_restore_source_info_v2 - Get PC restore source info
+- ntnx_pc_restore_source_v2 - Creates or Deletes a restore source pointing to a cluster or object store to restore the domain manager.
+- ntnx_pc_restore_v2 - Restores a domain manager(PC) from a cluster or object store backup location based on the selected restore point.
+- ntnx_pc_unregistration_v2 - Unregister a PC-PC setup connected using availability zone.
+- ntnx_promote_protected_resources_v2 - Module to promote a protected resource in Nutanix Prism Central.
+- ntnx_protected_resources_info_v2 - Module to fetch protected resource in Nutanix Prism Central.
+- ntnx_protection_policies_info_v2 - Fetch protection policies info in Nutanix Prism Central
+- ntnx_protection_policies_v2 - Create, Update, Delete protection policy in Nutanix Prism Central
+- ntnx_restore_protected_resources_v2 - Module to restore a protected resource in Nutanix Prism Central.
+- ntnx_volume_groups_categories_v2 - Module to associate or disassociate categories with a volume group in Nutanix Prism Central.
+
+v2.0.0
+======
+
+Release Summary
+---------------
+
+Releasing new modules using PC GA v4 sdks
+
+New Modules
+-----------
+
+- ntnx_address_groups_info_v2 - Get address groups info
+- ntnx_address_groups_v2 - Create, Update, Delete address groups
+- ntnx_authorization_policies_info_v2 - Fetch Authorization policies info from Nutanix PC.
+- ntnx_authorization_policies_v2 - Manage Nutanix PC IAM authorization policies
+- ntnx_categories_info_v2 - Nutanix PC categories info module
+- ntnx_categories_v2 - Manage categories in Nutanix Prism Central
+- ntnx_clusters_info_v2 - Retrieve information about Nutanix clusters from PC
+- ntnx_clusters_nodes_v2 - Add or Remove nodes from cluster using Nutanix PC
+- ntnx_clusters_v2 - Manage Nutanix clusters in Prism Central
+- ntnx_directory_services_info_v2 - Fetch directory services info
+- ntnx_directory_services_v2 - Module to create, update and delete directory services in Nutanix PC.
+- ntnx_discover_unconfigured_nodes_v2 - Discover unconfigured nodes from Nutanix Prism Central
+- ntnx_floating_ips_info_v2 - floating_ip info module
+- ntnx_floating_ips_v2 - floating_ips module which supports floating_ip CRUD operations
+- ntnx_hosts_info_v2 - Retrieve information about Nutanix hosts from PC.
+- ntnx_image_placement_policies_info_v2 - Fetches information about Nutanix PC image placement policies.
+- ntnx_image_placement_policies_v2 - Manage image placement policies in Nutanix Prism Central
+- ntnx_images_info_v2 - Fetch information about Nutanix images
+- ntnx_images_v2 - Manage Nutanix Prism Central images.
+- ntnx_nodes_network_info_v2 - Get netowrk information for uncofigured cluster nodes
+- ntnx_operations_info_v2 - Module to fetch IAM operations info (previously `permissions`)
+- ntnx_pbrs_info_v2 - Routing Policies info module
+- ntnx_pbrs_v2 - Module for create, update and delete of Policy based routing.
+- ntnx_pc_registration_v2 - Registers a domain manager (Prism Central) instance to other entities like PE and PC
+- ntnx_recovery_point_replicate_v2 - Replicate recovery points
+- ntnx_recovery_point_restore_v2 - Restore recovery points, Creates a clone of the VM/VG from the selected recovery point
+- ntnx_recovery_points_info_v2 - Get recovery points info
+- ntnx_recovery_points_v2 - Create, Update, Delete  recovery points
+- ntnx_roles_info_v2 - Get roles info
+- ntnx_roles_v2 - Create, update, and delete roles.
+- ntnx_route_tables_info_v2 - Route tables info module
+- ntnx_routes_info_v2 - Routes info module
+- ntnx_routes_v2 - Module to create, update, and delete routes in route table in VPC
+- ntnx_saml_identity_providers_info_v2 - Fetch SAML identity providers from Nutanix PC
+- ntnx_saml_identity_providers_v2 - Manage SAML identity providers in Nutanix PC
+- ntnx_security_rules_info_v2 - Fetch network security policies info from Nutanix PC.
+- ntnx_security_rules_v2 - Manage network security policies in Nutanix Prism Central
+- ntnx_service_groups_info_v2 - service_group info module
+- ntnx_service_groups_v2 - Create, Update, Delete service groups
+- ntnx_storage_containers_info_v2 - Retrieve information about Nutanix storage continer from PC
+- ntnx_storage_containers_stats_v2 - Retrieve stats about Nutanix storage continer from PC
+- ntnx_storage_containers_v2 - Manage storage containers in Nutanix Prism Central
+- ntnx_subnets_info_v2 - subnet info module
+- ntnx_subnets_v2 - subnets module which supports Create, Update, Delete subnets
+- ntnx_templates_deploy_v2 - Deploy Nutanix templates
+- ntnx_templates_guest_os_v2 - Manage guest OS updates for Nutanix AHV templates.
+- ntnx_templates_info_v2 - template info module
+- ntnx_templates_v2 - Manage Nutanix AHV template resources
+- ntnx_templates_version_v2 - Manage Nutanix template versions
+- ntnx_templates_versions_info_v2 - Fetches information about Nutanix template versions.
+- ntnx_user_groups_info_v2 - Fetch user groups
+- ntnx_user_groups_v2 - Create and Delete user groups
+- ntnx_users_info_v2 - Get users info
+- ntnx_users_v2 - Module to create and update users from Nutanix PC.
+- ntnx_vm_recovery_point_info_v2 - Get VM recovery point info
+- ntnx_vm_revert_v2 - Revert VM from recovery point
+- ntnx_vms_categories_v2 - Associate or disassociate categories to a VM in AHV Nutanix.
+- ntnx_vms_cd_rom_info_v2 - Fetch information about Nutanix VM's CD ROM
+- ntnx_vms_cd_rom_iso_v2 - Insert or Eject ISO from CD ROM of Nutanix VMs
+- ntnx_vms_cd_rom_v2 - Manage CDROM for Nutanix AHV VMs
+- ntnx_vms_clone_v2 - Clone a virtual machine in Nutanix AHV.
+- ntnx_vms_disks_info_v2 - Fetch information about Nutanix VM's disks
+- ntnx_vms_disks_v2 - Manage disks for Nutanix AHV VMs
+- ntnx_vms_info_v2 - Fetch information about Nutanix AHV based PC VMs
+- ntnx_vms_ngt_info_v2 - Get Nutanix Guest Tools (NGT) current config for a virtual machine.
+- ntnx_vms_ngt_insert_iso_v2 - Insert Nutanix Guest Tools (NGT) ISO into a virtual machine.
+- ntnx_vms_ngt_update_v2 - Update Nutanix Guest Tools (NGT) configuration for a VM.
+- ntnx_vms_ngt_upgrade_v2 - Upgrade Nutanix Guest Tools on a VM
+- ntnx_vms_ngt_v2 - Install or uninstall Nutanix Guest Tools (NGT) on a VM.
+- ntnx_vms_nics_info_v2 - Fetch information about Nutanix VM's NICs
+- ntnx_vms_nics_ip_v2 - Assign/Release IP to/from Nutanix VM NICs.
+- ntnx_vms_nics_v2 - Manage NICs of Nutanix VMs
+- ntnx_vms_serial_port_info_v2 - Fetch information about Nutanix VM's serial ports
+- ntnx_vms_serial_port_v2 - VM Serial Port module which supports VM serial port CRUD states
+- ntnx_vms_stage_guest_customization_v2 - Stage guest customization configuration for a Nutanix VM
+- ntnx_vms_v2 - Create, Update and delete VMs in Nutanix AHV based PC
+- ntnx_volume_groups_disks_info_v2 - Fetch information about Nutanix PC Volume group disks.
+- ntnx_volume_groups_disks_v2 - Manage Nutanix volume group disks
+- ntnx_volume_groups_info_v2 - Fetch information about Nutanix PC Volume groups.
+- ntnx_volume_groups_iscsi_clients_info_v2 - Fetch ISCSI clients info.
+- ntnx_volume_groups_iscsi_clients_v2 - Manage Nutanix volume groups iscsi clients in Nutanix PC.
+- ntnx_volume_groups_v2 - Manage Nutanix volume group in PC
+- ntnx_volume_groups_vms_v2 - Attach/Detach volume group to AHV VMs in Nutanix PC
+- ntnx_vpcs_info_v2 - vpc info module
+- ntnx_vpcs_v2 - vpcs module which supports vpc CRUD operations
+
+v1.9.2
+======
+
+Release Summary
+---------------
+
+Deprecating support for ansible-core less than v2.15.0
+
+Breaking Changes / Porting Guide
+--------------------------------
+
+- nutanix.ncp collection - Due to all versions of ansible-core version less than v2.15.0 are EOL, we are also deprecating support for same and minimum version to use this collection is ansible-core==2.15.0. [[\#479](https://github.com/nutanix/nutanix.ansible/issues/479)]
+
+v1.9.1
+======
+
+Release Summary
+---------------
+
+This release included bug fixes and improvement.
+
+Minor Changes
+-------------
+
+- docs - [Imprv] add doc regarding running integration tests locally [[\#435](https://github.com/nutanix/nutanix.ansible/issues/435)]
+- info modules - [Imprv] add examples for custom_filter  [[\#416](https://github.com/nutanix/nutanix.ansible/issues/416)]
+- ndb clones - [Imprv] Enable database clones and clone refresh using latest snapshot flag [[\#391](https://github.com/nutanix/nutanix.ansible/issues/391)]
+- ndb clones - [Imprv] add examples for NDB database clone under examples folder [[\#386](https://github.com/nutanix/nutanix.ansible/issues/386)]
+- ntnx_prism_vm_inventory - Add support for PC Categories [[\#405](https://github.com/nutanix/nutanix.ansible/issues/405)]
+- ntnx_prism_vm_inventory - [Imprv] add examples for dynamic inventory using ntnx_prism_vm_inventory  [[\#401](https://github.com/nutanix/nutanix.ansible/issues/401)]
+- ntnx_vms - [Imprv] add possibility to specify / modify vm user ownership and project [[\#378](https://github.com/nutanix/nutanix.ansible/issues/378)]
+- ntnx_vms - owner association upon vm creation module [[\#359](https://github.com/nutanix/nutanix.ansible/issues/359)]
+- ntnx_vms_info - [Imprv] add examples with guest customization for module ntnx_vms [[\#395](https://github.com/nutanix/nutanix.ansible/issues/395)]
+
+Bugfixes
+--------
+
+- ntnx_foundation - [Bug] Error when Clusters Block is missing in module ntnx_foundation [[\#397](https://github.com/nutanix/nutanix.ansible/issues/397)]
+- ntnx_ndb_time_machines_info - [Bug] ntnx_ndb_time_machines_info not fetching all attributes when name is used for fetching [[\#418](https://github.com/nutanix/nutanix.ansible/issues/418)]
+- ntnx_security_rules - Fix Syntax Errors in Create App Security Rule Example [[\#394](https://github.com/nutanix/nutanix.ansible/pull/394/files)]
+- ntnx_vms - [Bug] Error when updating size_gb using the int filter in module ntnx_vms [[\#400](https://github.com/nutanix/nutanix.ansible/issues/400)]
+- ntnx_vms - [Bug] hard_poweroff has been moved to state from operation [[\#415](https://github.com/nutanix/nutanix.ansible/issues/415)]
+- ntnx_vms_clone - [Bug] cannot change boot_config when cloning in module ntnx_vms_clone [[\#360](https://github.com/nutanix/nutanix.ansible/issues/359)]
+- website - [Bug] Github page deployment action is failing. [[\#483](https://github.com/nutanix/nutanix.ansible/issues/483)]
 
 v1.9.0
 ======
@@ -100,9 +294,9 @@ v1.6.0
 New Modules
 -----------
 
-- ntnx_karbon_clusters - Nutanix module for karbon clusters
+- ntnx_karbon_clusters - v4 sdks based module for karbon clusters
 - ntnx_karbon_clusters_info - Nutanix info module for karbon clusters with kubeconifg and ssh config
-- ntnx_karbon_registries - Nutanix module for karbon private registry
+- ntnx_karbon_registries - v4 sdks based module for karbon private registry
 - ntnx_karbon_registries_info - Nutanix info module for karbon private registry
 
 v1.5.0
@@ -111,11 +305,11 @@ v1.5.0
 New Modules
 -----------
 
-- ntnx_protection_rules - Nutanix module for protection rules
+- ntnx_protection_rules - v4 sdks based module for protection rules
 - ntnx_protection_rules_info - Nutanix info module for protection rules
-- ntnx_recovery_plan_jobs - Nutanix module for recovery plan jobs
+- ntnx_recovery_plan_jobs - v4 sdks based module for recovery plan jobs
 - ntnx_recovery_plan_jobs_info - Nutanix info module for protection
-- ntnx_recovery_plans - Nutanix module for recovery plan
+- ntnx_recovery_plans - v4 sdks based module for recovery plan
 - ntnx_recovery_plans_info - Nutanix info module for recovery plan
 
 v1.4.0
@@ -250,8 +444,8 @@ Bugfixes
 New Modules
 -----------
 
-- ntnx_floating_ips - Nutanix module for floating Ips
-- ntnx_pbrs - Nutanix module for policy based routing
-- ntnx_subnets - Nutanix module for subnets
-- ntnx_vms - Nutanix module for vms
-- ntnx_vpcs - Nutanix module for vpcs
+- ntnx_floating_ips - v4 sdks based module for floating Ips
+- ntnx_pbrs - v4 sdks based module for policy based routing
+- ntnx_subnets - v4 sdks based module for subnets
+- ntnx_vms - v4 sdks based module for vms
+- ntnx_vpcs - v4 sdks based module for vpcs

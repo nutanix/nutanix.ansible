@@ -17,6 +17,7 @@ options:
   stretched_vlan_uuid:
     description:
       - uuid for update or delete of stretched vlan
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   vlans:
     description:
@@ -50,40 +51,39 @@ author:
 """
 
 EXAMPLES = r"""
- - name: create ndb stretched vlan
-   ntnx_ndb_stretched_vlans:
-     nutanix_host: <pc_ip>
-     nutanix_username: <user>
-     nutanix_password: <pass>
-     validate_certs: false
-     name:  test-vlan-name
-     vlans:
-             - "00000000-0000-0000-0000-000000000000"
-             - "00000000-0000-0000-0000-000000000000"
-   register: result
+- name: create ndb stretched vlan
+  ntnx_ndb_stretched_vlans:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    name: test-vlan-name
+    vlans:
+      - "00000000-0000-0000-0000-000000000000"
+      - "00000000-0000-0000-0000-000000000000"
+  register: result
 
- - name: update ndb stretched vlan
-   ntnx_ndb_stretched_vlans:
-     nutanix_host: <pc_ip>
-     nutanix_username: <user>
-     nutanix_password: <pass>
-     validate_certs: false
-     stretched_vlan_uuid: "<vlan-uuid>"
-     vlans:
-             - "00000000-0000-0000-0000-000000000000"
-             - "00000000-0000-0000-0000-000000000000"
-   register: result
+- name: update ndb stretched vlan
+  ntnx_ndb_stretched_vlans:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    stretched_vlan_uuid: "<vlan-uuid>"
+    vlans:
+      - "00000000-0000-0000-0000-000000000000"
+      - "00000000-0000-0000-0000-000000000000"
+  register: result
 
- - name: Delete stretched vlan
-   ntnx_ndb_stretched_vlans:
-     nutanix_host: "<pc_ip>"
-     nutanix_username: <user>
-     nutanix_password: <pass>
-     validate_certs: false
-     state: absent
-     stretched_vlan_uuid: "<vlan-uuid>"
-   register: result
-
+- name: Delete stretched vlan
+  ntnx_ndb_stretched_vlans:
+    nutanix_host: "<pc_ip>"
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: false
+    state: absent
+    stretched_vlan_uuid: "<vlan-uuid>"
+  register: result
 """
 
 RETURN = r"""
@@ -104,9 +104,9 @@ name:
   sample: "test-name"
 """
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.stretched_vlans import StretchedVLAN  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.stretched_vlans import StretchedVLAN  # noqa: E402
 
 
 def get_module_spec():

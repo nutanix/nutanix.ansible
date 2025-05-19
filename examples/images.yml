@@ -2,8 +2,6 @@
 - name: Images playbook
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <host_ip>
@@ -12,14 +10,14 @@
       validate_certs: false
   tasks:
     - name: Setting Variables
-      set_fact:
+      ansible.builtin.set_fact:
         image_uuid: ""
         source_path: ""
         source_uri: ""
-        clusters_name:  ""
-  
-    - name: create image from local workstation
-      ntnx_images:
+        clusters_name: ""
+
+    - name: Create image from local workstation
+      nutanix.ncp.ntnx_images:
         state: "present"
         source_path: "{{source_path}}"
         clusters:
@@ -38,8 +36,8 @@
           product_version: "1.2.0"
         wait: true
 
-    - name: create image from with source as remote server file location
-      ntnx_images:
+    - name: Create image from with source as remote server file location
+      nutanix.ncp.ntnx_images:
         state: "present"
         source_uri: "{{source_uri}}"
         clusters:
@@ -58,8 +56,8 @@
           product_version: "1.2.0"
         wait: true
 
-    - name: override categories of existing image
-      ntnx_images:
+    - name: Override categories of existing image
+      nutanix.ncp.ntnx_images:
         state: "present"
         image_uuid: "{{image-uuid}}"
         categories:
@@ -69,16 +67,15 @@
             - Backup
         wait: true
 
-    - name: dettach all categories from existing image
-      ntnx_images:
+    - name: Dettach all categories from existing image
+      nutanix.ncp.ntnx_images:
         state: "present"
         image_uuid: "00000000-0000-0000-0000-000000000000"
         remove_categories: true
         wait: true
 
-    - name: delete existing image
-      ntnx_images:
+    - name: Delete existing image
+      nutanix.ncp.ntnx_images:
         state: "absent"
         image_uuid: "00000000-0000-0000-0000-000000000000"
         wait: true
-        

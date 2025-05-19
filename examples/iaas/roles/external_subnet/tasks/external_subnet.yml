@@ -1,22 +1,27 @@
 ---
-  - name: Create {{ item.name }} external subnet
-    ntnx_subnets:
-      state: present
-      name: "{{ item.name }}"
-      external_subnet:
-        vlan_id: "{{ item.vlan_id }}"
-        cluster:
-          name: "{{ cluster.name }}"
-        enable_nat: "{{ item.eNat }}"
-        ipam:
-          network_ip: "{{ item.ip }}"
-          network_prefix: "{{ item.prefix }}"
-          gateway_ip: "{{ item.gip }}"
-          ip_pools:
-            - start_ip: "{{ item.sip }}"
-              end_ip: "{{ item.eip }}"
-    register: external_network
-  - debug:
-      msg: 
-        - "name: Ext_Nat" 
-        - "uuid: {{ external_network.subnet_uuid }}"
+- name: Start external subnet task
+  ansible.builtin.debug:
+    msg: Create {{ item.name }} external subnet
+
+- name: Create external subnet
+  nutanix.ncp.ntnx_subnets:
+    state: present
+    name: "{{ item.name }}"
+    external_subnet:
+      vlan_id: "{{ item.vlan_id }}"
+      cluster:
+        name: "{{ cluster.name }}"
+      enable_nat: "{{ item.eNat }}"
+      ipam:
+        network_ip: "{{ item.ip }}"
+        network_prefix: "{{ item.prefix }}"
+        gateway_ip: "{{ item.gip }}"
+        ip_pools:
+          - start_ip: "{{ item.sip }}"
+            end_ip: "{{ item.eip }}"
+  register: external_network
+- name: Print external subnet name and uuid
+  ansible.builtin.debug:
+    msg:
+      - "name: Ext_Nat"
+      - "uuid: {{ external_network.subnet_uuid }}"

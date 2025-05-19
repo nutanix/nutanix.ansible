@@ -31,6 +31,10 @@ options:
             - timestamp for point in time database cone refresh
             - format is 'yyyy-mm-dd hh:mm:ss'
         type: str
+      latest_snapshot:
+        description:
+            - write
+        type: bool
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_ndb_base_module
       - nutanix.ncp.ntnx_operations
@@ -41,7 +45,7 @@ author:
 """
 EXAMPLES = r"""
 - name: create spec for refresh clone to a pitr timestamp
-  check_mode: yes
+  check_mode: true
   ntnx_ndb_database_clone_refresh:
     uuid: "{{clone_uuid}}"
     pitr_timestamp: "2023-02-04 07:29:36"
@@ -53,7 +57,6 @@ EXAMPLES = r"""
     uuid: "{{clone_uuid}}"
     snapshot_uuid: "{{snapshot_uuid}}"
   register: result
-
 """
 RETURN = r"""
 response:
@@ -288,10 +291,10 @@ uuid:
 """
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.database_clones import DatabaseClone  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.database_clones import DatabaseClone  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
 
 
 def get_module_spec():
@@ -301,6 +304,7 @@ def get_module_spec():
         snapshot_uuid=dict(type="str", required=False),
         timezone=dict(type="str", default="Asia/Calcutta", required=False),
         pitr_timestamp=dict(type="str", required=False),
+        latest_snapshot=dict(type="bool", required=False),
     )
     return module_args
 
@@ -340,12 +344,19 @@ def refresh_clone(module, result):
 
 def run_module():
     mutually_exclusive_list = [
-        ("snapshot_uuid", "pitr_timestamp"),
+        ("snapshot_uuid", "pitr_timestamp", "latest_snapshot"),
     ]
     module = NdbBaseModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[("state", "present", ("snapshot_uuid", "pitr_timestamp"), True)],
+        required_if=[
+            (
+                "state",
+                "present",
+                ("snapshot_uuid", "pitr_timestamp", "latest_snapshot"),
+                True,
+            )
+        ],
         mutually_exclusive=mutually_exclusive_list,
     )
     remove_param_with_none_value(module.params)

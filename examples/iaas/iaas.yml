@@ -2,8 +2,6 @@
 - name: IaaS Provisioning
   hosts: localhost
   gather_facts: false
-  collections:
-    - nutanix.ncp    
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: <pc_ip>
@@ -12,17 +10,23 @@
       validate_certs: false
   tasks:
     - name: Include vars file
-      include_vars:
+      ansible.builtin.include_vars:
         file: vars.yml
-    - include_role:
+    - name: Include  external_subnet role
+      ansible.builtin.include_role:
         name: external_subnet
-    - include_role:
+    - name: Include vpc role
+      ansible.builtin.include_role:
         name: vpc
-    - include_role:
+    - name: Include static_route role
+      ansible.builtin.include_role:
         name: static_route
-    - include_role:
+    - name: Include overlay_subnet role
+      ansible.builtin.include_role:
         name: overlay_subnet
-    - include_role:
+    - name: Include vm role
+      ansible.builtin.include_role:
         name: vm
-    - include_role:
+    - name: Include fip role
+      ansible.builtin.include_role:
         name: fip

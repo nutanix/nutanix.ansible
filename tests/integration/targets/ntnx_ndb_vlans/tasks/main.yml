@@ -1,10 +1,13 @@
 ---
-- module_defaults:
+- name: Ntnx_ndb_vlans integration tests
+  module_defaults:
     group/nutanix.ncp.ntnx:
-        nutanix_host: "{{ndb_ip}}"
-        nutanix_username: "{{ndb_username}}"
-        nutanix_password: "{{ndb_password}}"
-        validate_certs: false
+      nutanix_host: "{{ ndb_ip }}"
+      nutanix_username: "{{ ndb_username }}"
+      nutanix_password: "{{ ndb_password }}"
+      validate_certs: false
   block:
-        - import_tasks: "create_vlans.yml"
-        - import_tasks: "negativ_scenarios.yml"
+    - name: Import tasks
+      ansible.builtin.import_tasks: create_vlans.yml
+    - name: Import tasks
+      ansible.builtin.import_tasks: negativ_scenarios.yml

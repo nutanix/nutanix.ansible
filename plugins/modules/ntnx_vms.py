@@ -44,7 +44,9 @@ options:
     required: false
     type: str
   vm_uuid:
-    description: VM UUID
+    description:
+        - VM UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   remove_categories:
     description:
@@ -136,322 +138,323 @@ author:
 """
 
 EXAMPLES = r"""
-  - name: VM with CentOS-7-cloud-init image
-    ntnx_vms:
-      state: present
-      name: VM with CentOS-7-cloud-init image
-      timezone: "UTC"
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      cluster:
-        name: "{{ cluster_name }}"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          clone_image:
-            name:  "{{ centos }}"
-          bus: "SCSI"
-      guest_customization:
-        type: "cloud_init"
-        script_path: "./cloud_init.yml"
-        is_overridable: True
+- name: VM with CentOS-7-cloud-init image
+  ntnx_vms:
+    state: present
+    name: VM with CentOS-7-cloud-init image
+    timezone: "UTC"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    cluster:
+      name: "{{ cluster_name }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        clone_image:
+          name: "{{ centos }}"
+        bus: "SCSI"
+    guest_customization:
+      type: "cloud_init"
+      script_path: "./cloud_init.yml"
+      is_overridable: true
 
-  - name: VM with Cluster, Network, Universal time zone, one Disk
-    ntnx_vms:
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      name: "VM with Cluster Network and Disk"
-      timezone: "Universal"
-      cluster:
-        name: "{{ cluster_name }}"
-      networks:
-        - is_connected: True
-          subnet:
-            name: "{{ network_name }}"
-      disks:
-        - type: "DISK"
-          size_gb: 10
-          bus: "PCI"
+- name: VM with Cluster, Network, Universal time zone, one Disk
+  ntnx_vms:
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    name: "VM with Cluster Network and Disk"
+    timezone: "Universal"
+    cluster:
+      name: "{{ cluster_name }}"
+    networks:
+      - is_connected: true
+        subnet:
+          name: "{{ network_name }}"
+    disks:
+      - type: "DISK"
+        size_gb: 10
+        bus: "PCI"
 
-  - name: VM with Cluster, different CDROMs
-    ntnx_vms:
-      state: present
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      name: "VM with multiple CDROMs"
-      cluster:
-        name: "{{ cluster_name }}"
-      disks:
-        - type: "CDROM"
-          bus: "SATA"
-          empty_cdrom: True
-        - type: "CDROM"
-          bus: "IDE"
-          empty_cdrom: True
-      cores_per_vcpu: 1
+- name: VM with Cluster, different CDROMs
+  ntnx_vms:
+    state: present
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    name: "VM with multiple CDROMs"
+    cluster:
+      name: "{{ cluster_name }}"
+    disks:
+      - type: "CDROM"
+        bus: "SATA"
+        empty_cdrom: true
+      - type: "CDROM"
+        bus: "IDE"
+        empty_cdrom: true
+    cores_per_vcpu: 1
 
-  - name: VM with diffrent disk types and diffrent sizes with UEFI boot type
-    ntnx_vms:
-      state: present
-      name: VM with UEFI boot type
-      timezone: GMT
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      cluster:
-        name: "{{ cluster_name }}"
-      categories:
-        AppType:
-          - Apache_Spark
-      disks:
-        - type: "DISK"
-          clone_image:
-            name: "{{ ubuntu }}"
-          bus: "SCSI"
-          size_gb: 20
-        - type: DISK
-          size_gb: 1
-          bus: SCSI
-        - type: DISK
-          size_gb: 2
-          bus: PCI
-          storage_container:
-            name: "{{ storage_container_name }}"
-        - type: DISK
-          size_gb: 3
-          bus: SATA
-      boot_config:
-        boot_type: UEFI
-        boot_order:
-          - DISK
-          - CDROM
-          - NETWORK
-      vcpus: 2
-      cores_per_vcpu: 1
-      memory_gb: 1
+- name: VM with diffrent disk types and diffrent sizes with UEFI boot type
+  ntnx_vms:
+    state: present
+    name: VM with UEFI boot type
+    timezone: GMT
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    cluster:
+      name: "{{ cluster_name }}"
+    categories:
+      AppType:
+        - Apache_Spark
+    disks:
+      - type: "DISK"
+        clone_image:
+          name: "{{ ubuntu }}"
+        bus: "SCSI"
+        size_gb: 20
+      - type: DISK
+        size_gb: 1
+        bus: SCSI
+      - type: DISK
+        size_gb: 2
+        bus: PCI
+        storage_container:
+          name: "{{ storage_container_name }}"
+      - type: DISK
+        size_gb: 3
+        bus: SATA
+    boot_config:
+      boot_type: UEFI
+      boot_order:
+        - DISK
+        - CDROM
+        - NETWORK
+    vcpus: 2
+    cores_per_vcpu: 1
+    memory_gb: 1
 
-  - name: VM with managed and unmanaged network
-    ntnx_vms:
-      state: present
-      name: VM_NIC
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      timezone: UTC
-      cluster:
-        name: "{{ cluster.name }}"
-      networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.static.uuid }}"
-      disks:
-        - type: DISK
-          size_gb: 1
-          bus: SCSI
-        - type: DISK
-          size_gb: 3
-          bus: PCI
-        - type: CDROM
-          bus: SATA
-          empty_cdrom: True
-        - type: CDROM
-          bus: IDE
-          empty_cdrom: True
-      boot_config:
-        boot_type: UEFI
-        boot_order:
-          - DISK
-          - CDROM
-          - NETWORK
-      vcpus: 2
-      cores_per_vcpu: 2
-      memory_gb: 2
+- name: VM with managed and unmanaged network
+  ntnx_vms:
+    state: present
+    name: VM_NIC
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    timezone: UTC
+    cluster:
+      name: "{{ cluster.name }}"
+    networks:
+      - is_connected: true
+        subnet:
+          uuid: "{{ network.dhcp.uuid }}"
+      - is_connected: true
+        subnet:
+          uuid: "{{ network.static.uuid }}"
+    disks:
+      - type: DISK
+        size_gb: 1
+        bus: SCSI
+      - type: DISK
+        size_gb: 3
+        bus: PCI
+      - type: CDROM
+        bus: SATA
+        empty_cdrom: true
+      - type: CDROM
+        bus: IDE
+        empty_cdrom: true
+    boot_config:
+      boot_type: UEFI
+      boot_order:
+        - DISK
+        - CDROM
+        - NETWORK
+    vcpus: 2
+    cores_per_vcpu: 2
+    memory_gb: 2
 
-  - name: Delete VM
-    ntnx_vms:
-      state: absent
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      validate_certs: False
-      vm_uuid: '{{ vm_uuid }}'
+- name: Delete VM
+  ntnx_vms:
+    state: absent
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    vm_uuid: '{{ vm_uuid }}'
 
-  - name: update vm by  values for memory, vcpus and cores_per_vcpu, timezone
-    ntnx_vms:
-      vm_uuid: "{{ vm.vm_uuid }}"
-      vcpus: 1
-      cores_per_vcpu: 1
-      memory_gb: 1
-      timezone: UTC
+- name: update vm by  values for memory, vcpus and cores_per_vcpu, timezone
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    vcpus: 1
+    cores_per_vcpu: 1
+    memory_gb: 1
+    timezone: UTC
 
-  - name: Update VM by adding all type of  disks
-    ntnx_vms:
-      vm_uuid: "{{ vm.vm_uuid }}"
-      disks:
-        - type: "DISK"
-          clone_image:
-            name: "{{ ubuntu }}"
-          bus: "SCSI"
-          size_gb: 20
-        - type: DISK
-          size_gb: 1
-          bus: PCI
-        - type: "DISK"
-          size_gb: 1
-          bus: "SATA"
-        - type: "DISK"
-          size_gb: 1
-          bus: "SCSI"
-        - type: DISK
-          size_gb: 1
-          bus: SCSI
-          storage_container:
-            uuid: "{{ storage_container.uuid }}"
-        - type: "DISK"
-          bus: "IDE"
-          size_gb: 1
-        - type: "CDROM"
-          bus: "IDE"
-          empty_cdrom: True
+- name: Update VM by adding all type of  disks
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        clone_image:
+          name: "{{ ubuntu }}"
+        bus: "SCSI"
+        size_gb: 20
+      - type: DISK
+        size_gb: 1
+        bus: PCI
+      - type: "DISK"
+        size_gb: 1
+        bus: "SATA"
+      - type: "DISK"
+        size_gb: 1
+        bus: "SCSI"
+      - type: DISK
+        size_gb: 1
+        bus: SCSI
+        storage_container:
+          uuid: "{{ storage_container.uuid }}"
+      - type: "DISK"
+        bus: "IDE"
+        size_gb: 1
+      - type: "CDROM"
+        bus: "IDE"
+        empty_cdrom: true
 
-  - name: Update VM by increasing  the size of the disks
-    ntnx_vms:
-      vm_uuid: "{{ result.vm_uuid }}"
-      disks:
-        - type: "DISK"
-          uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
-          size_gb: 22
-        - type: DISK
-          uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
-          size_gb: 2
-        - type: "DISK"
-          uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
-          size_gb: 2
-        - type: "DISK"
-          size_gb: 2
-          uuid: "{{ result.response.spec.resources.disk_list[3].uuid }}"
-        - type: DISK
-          size_gb: 2
-          uuid: "{{ result.response.spec.resources.disk_list[4].uuid }}"
-        - type: "DISK"
-          uuid: "{{ result.response.spec.resources.disk_list[5].uuid }}"
-          size_gb: 1
+- name: Update VM by increasing  the size of the disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+        size_gb: 22
+      - type: DISK
+        uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+        size_gb: 2
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+        size_gb: 2
+      - type: "DISK"
+        size_gb: 2
+        uuid: "{{ result.response.spec.resources.disk_list[3].uuid }}"
+      - type: DISK
+        size_gb: 2
+        uuid: "{{ result.response.spec.resources.disk_list[4].uuid }}"
+      - type: "DISK"
+        uuid: "{{ result.response.spec.resources.disk_list[5].uuid }}"
+        size_gb: 1
 
-  - name: Update VM by removing all type of  disks
-    ntnx_vms:
-      vm_uuid: "{{ result.vm_uuid }}"
-      disks:
-        - state: absent
-          uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
-        - state: absent
-          uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
-        - state: absent
-          uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
-        - state: absent
-          uuid: "{{ result.response.spec.resources.disk_list[3].uuid }}"
-        - state: absent
-          uuid: "{{ result.response.spec.resources.disk_list[4].uuid }}"
-        - state: absent
-          uuid: "{{ result.response.spec.resources.disk_list[5].uuid }}"
-        - state: absent
-          uuid: "{{ result.response.spec.resources.disk_list[6].uuid }}"
+- name: Update VM by removing all type of  disks
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    disks:
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[0].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[1].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[2].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[3].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[4].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[5].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.disk_list[6].uuid }}"
 
-  - name: Update VM by adding subnets
-    ntnx_vms:
-      vm_uuid: "{{ result.vm_uuid }}"
-      networks:
-        - is_connected: true
-          subnet:
-            uuid: "{{ network.dhcp.uuid }}"
-        - is_connected: false
-          subnet:
-            uuid: "{{ static.uuid }}"
-          private_ip: "{{ network.static.ip }}"
+- name: Update VM by adding subnets
+  ntnx_vms:
+    vm_uuid: "{{ result.vm_uuid }}"
+    networks:
+      - is_connected: true
+        subnet:
+          uuid: "{{ network.dhcp.uuid }}"
+      - is_connected: false
+        subnet:
+          uuid: "{{ static.uuid }}"
+        private_ip: "{{ network.static.ip }}"
 
-  - name: Update VM by editing a subnet is_connected
-    ntnx_vms:
-      vm_uuid: "{{ vm.vm_uuid }}"
-      desc: disconnect and connects nic's
-      networks:
-        - is_connected: true
-          uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
-        - is_connected: false
-          uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
+- name: Update VM by editing a subnet is_connected
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    desc: disconnect and connects nic's
+    networks:
+      - is_connected: true
+        uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+      - is_connected: false
+        uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
 
-  - name: Update VM by change the private ip for subnet
-    ntnx_vms:
-      vm_uuid: "{{ vm.vm_uuid }}"
-      name: updated
-      desc: change ip
-      networks:
-        - is_connected: true
-          private_ip: "10.30.30.79"
-          uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+- name: Update VM by change the private ip for subnet
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    name: updated
+    desc: change ip
+    networks:
+      - is_connected: true
+        private_ip: "10.30.30.79"
+        uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
 
-  - name: Update VM by change vlan subnet
-    ntnx_vms:
-      vm_uuid: "{{ vm.vm_uuid }}"
-      name: updated
-      desc: change vlan
-      categories:
-        AppType:
-          - Apache_Spark
-      networks:
-        - is_connected: false
-          subnet:
-            name: vlan1211
-          uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
+- name: Update VM by change vlan subnet
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    name: updated
+    desc: change vlan
+    categories:
+      AppType:
+        - Apache_Spark
+    networks:
+      - is_connected: false
+        subnet:
+          name: vlan1211
+        uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
 
-  - name: Update VM by deleting a subnet
-    ntnx_vms:
-      vm_uuid: "{{ vm.vm_uuid }}"
-      networks:
-        - state: absent
-          uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
-        - state: absent
-          uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
+- name: Update VM by deleting a subnet
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    networks:
+      - state: absent
+        uuid: "{{ result.response.spec.resources.nic_list[0].uuid }}"
+      - state: absent
+        uuid: "{{ result.response.spec.resources.nic_list[1].uuid }}"
 
-  - name: hard power off the vm
-    ntnx_vms:
-        vm_uuid: "{{ vm.vm_uuid }}"
-        state: hard_poweroff
-    register: result
-    ignore_errors: true
-  - name: power on the vm
-    ntnx_vms:
-        state: power_on
-        vm_uuid: "{{ vm.vm_uuid }}"
+- name: hard power off the vm
+  ntnx_vms:
+    vm_uuid: "{{ vm.vm_uuid }}"
+    state: hard_poweroff
+  register: result
+  ignore_errors: true
 
-  - name: soft shut down the vm
-    ntnx_vms:
-        state: soft_shutdown
-        vm_uuid: "{{ vm.vm_uuid }}"
+- name: power on the vm
+  ntnx_vms:
+    state: power_on
+    vm_uuid: "{{ vm.vm_uuid }}"
 
-  - name: Create VM with minimum requiremnts with hard_poweroff opperation
-    ntnx_vms:
-        state: hard_poweroff
-        name: integration_test_opperations_vm
-        cluster:
-          name: "{{ cluster.name }}"
+- name: soft shut down the vm
+  ntnx_vms:
+    state: soft_shutdown
+    vm_uuid: "{{ vm.vm_uuid }}"
 
-  - name: Create VM with minimum requiremnts with poweroff opperation
-    ntnx_vms:
-        state: power_off
-        name: integration_test_opperations_vm
-        cluster:
-          name: "{{ cluster.name }}"
+- name: Create VM with minimum requiremnts with hard_poweroff opperation
+  ntnx_vms:
+    state: hard_poweroff
+    name: integration_test_opperations_vm
+    cluster:
+      name: "{{ cluster.name }}"
+
+- name: Create VM with minimum requiremnts with poweroff opperation
+  ntnx_vms:
+    state: power_off
+    name: integration_test_opperations_vm
+    cluster:
+      name: "{{ cluster.name }}"
 """
 
 RETURN = r"""
@@ -744,9 +747,10 @@ from copy import deepcopy  # noqa: E402
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.spec.vms import DefaultVMSpec  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
-from ..module_utils.prism.vms import VM  # noqa: E402
+from ..module_utils.v3.prism.spec.vms import DefaultVMSpec  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.vms import VM  # noqa: E402
+from ..module_utils.v3.utils import check_for_idempotency  # noqa: E402
 
 
 def get_module_spec():
@@ -869,7 +873,7 @@ def update_vm(module, result):
         result["response"] = spec
         return
 
-    if utils.check_for_idempotency(spec, resp, state=state):
+    if check_for_idempotency(spec, resp, state=state):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change")
 
@@ -879,7 +883,8 @@ def update_vm(module, result):
     if is_vm_on and vm.is_restart_required():
         if not module.params.get("force_power_off"):
             module.fail_json(
-                "To make these changes, the VM should be restarted, but 'force_power_off' is False"
+                msg="To make these changes, the VM should be restarted, but 'force_power_off' is False",
+                **result  # fmt: skip
             )
 
         power_off_vm(vm, module, result)

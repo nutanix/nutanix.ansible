@@ -17,11 +17,12 @@ description:
     - currently, compute, network, database parameters and software profiles are supported
     - only software profile supports versions operations
     - version related operations can be configured under "software"
-    - only software profile supports multi cluster availibility
+    - only software profile supports multi cluster availability
 options:
       profile_uuid:
         description:
             - uuid of profile for delete or update
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       name:
         description:
@@ -369,7 +370,7 @@ EXAMPLES = r"""
         autovacuum_vacuum_scale_factor: "{{autovacuum_vacuum_scale_factor}}"
         autovacuum_work_mem: "{{autovacuum_work_mem}}"
         autovacuum_max_workers: "{{autovacuum_max_workers}}"
-        autovacuum_vacuum_cost_delay:  "{{autovacuum_vacuum_cost_delay}}"
+        autovacuum_vacuum_cost_delay: "{{autovacuum_vacuum_cost_delay}}"
         wal_buffers: "{{wal_buffers}}"
         synchronous_commit: "{{synchronous_commit}}"
         random_page_cost: "{{random_page_cost}}"
@@ -415,9 +416,9 @@ EXAMPLES = r"""
     desc: "testdesc"
     type: compute
     compute:
-          vcpus: 2
-          cores_per_cpu: 4
-          memory: 8
+      vcpus: 2
+      cores_per_cpu: 4
+      memory: 8
   register: result
 
 - name: create software profile with base version and cluster instance topology. Replicated to multiple clusters
@@ -472,9 +473,8 @@ EXAMPLES = r"""
     profile_uuid: "{{profile_uuid}}"
     software:
       version_uuid: "{{version_uuid}}"
-      publish: True
+      publish: true
   register: result
-
 """
 
 RETURN = r"""
@@ -788,11 +788,13 @@ version_uuid:
 
 import time  # noqa: E402
 
-from ..module_utils.ndb.base_module import NdbBaseModule  # noqa: E402
-from ..module_utils.ndb.operations import Operation  # noqa: E402
-from ..module_utils.ndb.profiles.profile_types import get_profile_type_obj  # noqa: E402
-from ..module_utils.ndb.profiles.profiles import Profile  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v3.ndb.base_module import NdbBaseModule  # noqa: E402
+from ..module_utils.v3.ndb.operations import Operation  # noqa: E402
+from ..module_utils.v3.ndb.profiles.profile_types import (  # noqa: E402
+    get_profile_type_obj,
+)
+from ..module_utils.v3.ndb.profiles.profiles import Profile  # noqa: E402
 
 profile_types_with_version_support = ["software"]
 profile_types_with_wait_support = ["software"]

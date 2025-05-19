@@ -1,0 +1,643 @@
+---
+- name: Start testing ntnx_routes_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_routes_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set Subnet and VPC name
+  ansible.builtin.set_fact:
+    subnet_name: "{{ random_name }}_subnet_test"
+    vpc_name: "{{ random_name }}_vpc_test"
+
+############################################################################################
+
+- name: List subnets using subnet name and define external subent variable
+  ntnx_subnets_info_v2:
+    filter: name eq '{{ external_nat_subnets[0].name }}'
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Listing Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length >= 1
+      - result.response[0].name == "{{ external_nat_subnets[0].name }}"
+    fail_msg: "List subnets using subnet name and define external subent variable failed "
+    success_msg: "List subnets using subnet name and define external subent variable passed "
+
+- name: Define variable
+  ansible.builtin.set_fact:
+    external_subnet_uuid: "{{ result.response[0].ext_id }}"
+
+############################################################################################
+
+- name: Create first VPC
+  ntnx_vpcs_v2:
+    state: present
+    name: "{{ vpc_name }}_1"
+    external_subnets:
+      - subnet_reference: "{{ external_subnet_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create first VPC Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.ext_id is defined
+      - result.response.external_subnets | length == 1
+      - result.response.external_subnets[0].external_ips[0].ipv4.value is defined
+      - result.response.external_subnets[0].subnet_reference == "{{ external_subnet_uuid }}"
+      - result.response.vpc_type == "REGULAR"
+      - result.response.name == "{{ vpc_name }}_1"
+      - result.task_ext_id is defined
+    fail_msg: "Create first VPC failed "
+    success_msg: "Create first VPC passed "
+
+- name: Set VPC UUID
+  ansible.builtin.set_fact:
+    vpc_uuid_1: "{{ result.ext_id }}"
+
+###########################################################################################################
+
+- name: Create second VPC
+  ntnx_vpcs_v2:
+    state: present
+    name: "{{ vpc_name }}_2"
+    external_subnets:
+      - subnet_reference: "{{ external_subnet_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create second VPC Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.ext_id is defined
+      - result.response.external_subnets | length == 1
+      - result.response.external_subnets[0].external_ips[0].ipv4.value is defined
+      - result.response.external_subnets[0].subnet_reference == "{{ external_subnet_uuid }}"
+      - result.response.vpc_type == "REGULAR"
+      - result.response.name == "{{ vpc_name }}_2"
+      - result.task_ext_id is defined
+    fail_msg: "Create second VPC failed "
+    success_msg: "Create second VPC passed "
+
+- name: Set VPC UUID
+  ansible.builtin.set_fact:
+    vpc_uuid_2: "{{ result.ext_id }}"
+
+###########################################################################################################
+
+- name: Fetch first VPC route table with filter and set route table external ID
+  ntnx_route_tables_info_v2:
+    filter: vpcReference eq '{{ vpc_uuid_1 }}'
+  register: route_tables_filter_1
+  ignore_errors: true
+
+- name: Fetch first VPC route table with filter and set route table external ID status
+  ansible.builtin.assert:
+    that:
+      - route_tables_filter_1 is defined
+      - route_tables_filter_1.failed == false
+      - route_tables_filter_1.changed == false
+      - route_tables_filter_1.response | length == 1
+      - route_tables_filter_1.response[0].vpc_reference == vpc_uuid_1
+    fail_msg: "Failed to fetch first VPC route table with filter and set route table external ID"
+    success_msg: "Successfully fetched first VPC route table with filter and set route table external ID"
+
+- name: Set route table external ID
+  ansible.builtin.set_fact:
+    route_table_external_id_1: "{{ route_tables_filter_1.response[0].ext_id }}"
+
+###########################################################################################################
+
+- name: Fetch second VPC route table with filter and set route table external ID
+  ntnx_route_tables_info_v2:
+    filter: vpcReference eq '{{ vpc_uuid_2 }}'
+  register: route_tables_filter_2
+  ignore_errors: true
+
+- name: Fetch second VPC route table with filter and set route table external ID status
+  ansible.builtin.assert:
+    that:
+      - route_tables_filter_2 is defined
+      - route_tables_filter_2.failed == false
+      - route_tables_filter_2.changed == false
+      - route_tables_filter_2.response | length == 1
+      - route_tables_filter_2.response[0].vpc_reference == vpc_uuid_2
+    fail_msg: "Failed to fetch second VPC route table with filter and set route table external ID"
+    success_msg: "Successfully fetched second VPC route table with filter and set route table external ID"
+
+- name: Set route table external ID
+  ansible.builtin.set_fact:
+    route_table_external_id_2: "{{ route_tables_filter_2.response[0].ext_id }}"
+
+###########################################################################################################
+
+- name: Create route with check mode enabled
+  ntnx_routes_v2:
+    state: present
+    name: "route_test"
+    description: "Route for testing"
+    vpc_reference: "54228821-52b9-4862-a623-05b28ce93a92"
+    route_table_ext_id: "60448d4b-0532-44c3-8e10-9662cb138b37"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.0.1"
+        prefix_length: 32
+    nexthop:
+      nexthop_type: "EXTERNAL_SUBNET"
+      nexthop_reference: "f4b3b3b4-4b3b-4b3b-4b3b-4b3b4b3b4b3b"
+    metadata:
+      owner_reference_id: "a88a8226-83a4-4159-aa99-298eefcc5af0"
+      project_reference_id: "6aeec7b5-6ab6-4eb6-acf9-cf1e8b14a0b8"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Create route with check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.name == "route_test"
+      - result.response.description == "Route for testing"
+      - result.response.vpc_reference == "54228821-52b9-4862-a623-05b28ce93a92"
+      - result.response.route_type == "STATIC"
+      - result.response.destination.ipv4.ip.value == "10.0.0.1"
+      - result.response.destination.ipv4.prefix_length == 32
+      - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
+      - result.response.nexthop.nexthop_reference == "f4b3b3b4-4b3b-4b3b-4b3b-4b3b4b3b4b3b"
+      - result.response.metadata.owner_reference_id == "a88a8226-83a4-4159-aa99-298eefcc5af0"
+      - result.response.metadata.project_reference_id == "6aeec7b5-6ab6-4eb6-acf9-cf1e8b14a0b8"
+    fail_msg: "Create route with check mode enabled failed "
+    success_msg: "Create route with check mode enabled passed "
+
+###########################################################################################################
+
+- name: Create first static route
+  ntnx_routes_v2:
+    state: present
+    name: "{{ random_name }}_route_1"
+    description: "Route for testing"
+    vpc_reference: "{{ vpc_uuid_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.0.1"
+        prefix_length: 32
+    nexthop:
+      nexthop_type: "EXTERNAL_SUBNET"
+      nexthop_reference: "{{ external_subnet_uuid }}"
+    metadata:
+      owner_reference_id: "{{ vpc_uuid_1 }}"
+      project_reference_id: "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create first static route Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.name == "{{ random_name }}_route_1"
+      - result.response.description == "Route for testing"
+      - result.response.vpc_reference == "{{ vpc_uuid_1 }}"
+      - result.response.route_type == "STATIC"
+      - result.response.destination.ipv4.ip.value == "10.0.0.1"
+      - result.response.destination.ipv4.prefix_length == 32
+      - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
+      - result.response.nexthop.nexthop_reference == "{{ external_subnet_uuid }}"
+      - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
+      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.task_ext_id is defined
+    fail_msg: "Create first static route failed "
+    success_msg: "Create first static route passed "
+
+- name: Set route external ID
+  ansible.builtin.set_fact:
+    static_route_external_id_1: "{{ result.response.ext_id }}"
+
+###########################################################################################################
+
+- name: Create second static route
+  ntnx_routes_v2:
+    state: present
+    name: "{{ random_name }}_route_2"
+    description: "Route for testing"
+    vpc_reference: "{{ vpc_uuid_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.0.2"
+        prefix_length: 32
+    nexthop:
+      nexthop_type: "EXTERNAL_SUBNET"
+      nexthop_reference: "{{ external_subnet_uuid }}"
+    metadata:
+      owner_reference_id: "{{ vpc_uuid_1 }}"
+      project_reference_id: "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create second static route Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.name == "{{ random_name }}_route_2"
+      - result.response.description == "Route for testing"
+      - result.response.vpc_reference == "{{ vpc_uuid_1 }}"
+      - result.response.route_type == "STATIC"
+      - result.response.destination.ipv4.ip.value == "10.0.0.2"
+      - result.response.destination.ipv4.prefix_length == 32
+      - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
+      - result.response.nexthop.nexthop_reference == "{{ external_subnet_uuid }}"
+      - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
+      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.task_ext_id is defined
+    fail_msg: "Create second static route failed "
+    success_msg: "Create second static route passed "
+
+- name: Set route external ID
+  ansible.builtin.set_fact:
+    static_route_external_id_2: "{{ result.response.ext_id }}"
+
+###########################################################################################################
+
+- name: Update route with check mode enabled
+  ntnx_routes_v2:
+    state: present
+    name: "{{ random_name }}_route_updated"
+    description: "Route for testing updated"
+    vpc_reference: "{{ vpc_uuid_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    ext_id: "{{ static_route_external_id_1 }}"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.0.3"
+        prefix_length: 32
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Update route with check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ static_route_external_id_1 }}"
+      - result.response.name == "{{ random_name }}_route_updated"
+      - result.response.description == "Route for testing updated"
+      - result.response.vpc_reference == "{{ vpc_uuid_1 }}"
+      - result.response.route_type == "STATIC"
+      - result.response.destination.ipv4.ip.value == "10.0.0.3"
+      - result.response.destination.ipv4.prefix_length == 32
+    fail_msg: "Update route with check mode enabled failed "
+    success_msg: "Update route with check mode enabled passed "
+
+###########################################################################################################
+
+- name: Update route
+  ntnx_routes_v2:
+    state: present
+    name: "{{ random_name }}_route_updated"
+    description: "Route for testing updated"
+    vpc_reference: "{{ vpc_uuid_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    ext_id: "{{ static_route_external_id_1 }}"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.0.3"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Update route Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.ext_id == "{{ static_route_external_id_1 }}"
+      - result.response.name == "{{ random_name }}_route_updated"
+      - result.response.description == "Route for testing updated"
+      - result.response.vpc_reference == "{{ vpc_uuid_1 }}"
+      - result.response.route_type == "STATIC"
+      - result.response.destination.ipv4.ip.value == "10.0.0.3"
+      - result.response.destination.ipv4.prefix_length == 32
+      - result.task_ext_id is defined
+    fail_msg: "Update route failed "
+    success_msg: "Update route passed "
+
+###########################################################################################################
+
+- name: Check idempotency by updating route with the same data
+  ntnx_routes_v2:
+    state: present
+    name: "{{ random_name }}_route_updated"
+    description: "Route for testing updated"
+    vpc_reference: "{{ vpc_uuid_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    ext_id: "{{ static_route_external_id_1 }}"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.0.3"
+        prefix_length: 32
+    nexthop:
+      nexthop_type: "EXTERNAL_SUBNET"
+      nexthop_reference: "{{ external_subnet_uuid }}"
+    metadata:
+      owner_reference_id: "{{ vpc_uuid_1 }}"
+      project_reference_id: "{{ project.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Check idempotency by updating route with the same data Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == "{{ static_route_external_id_1 }}"
+      - result.route_table_ext_id == "{{ route_table_external_id_1 }}"
+      - result.msg == "Nothing to change."
+    fail_msg: "Check idempotency by updating route with the same data failed "
+    success_msg: "Check idempotency by updating route with the same data passed "
+
+###########################################################################################################
+
+- name: Fetch route by external ID
+  ntnx_routes_info_v2:
+    ext_id: "{{ static_route_external_id_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch route by external ID status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id == static_route_external_id_1
+      - result.route_table_ext_id == route_table_external_id_1
+      - result.response is defined
+      - result.response.ext_id == static_route_external_id_1
+      - result.route_table_ext_id == route_table_external_id_1
+      - result.response.name == "{{ random_name }}_route_updated"
+      - result.response.description == "Route for testing updated"
+      - result.response.vpc_reference == "{{ vpc_uuid_1 }}"
+      - result.response.route_type == "STATIC"
+      - result.response.destination.ipv4.ip.value == "10.0.0.3"
+      - result.response.destination.ipv4.prefix_length == 32
+      - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
+      - result.response.nexthop.nexthop_reference == "{{ external_subnet_uuid }}"
+      - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
+      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+    fail_msg: "Fetch route by external ID failed "
+    success_msg: "Fetch route by external ID passed "
+
+###########################################################################################################
+
+- name: List all routes
+  ntnx_routes_info_v2:
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: List all routes Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 2
+    fail_msg: "List all routes failed "
+    success_msg: "List all routes passed "
+
+###########################################################################################################
+
+- name: List all routes with limit
+  ntnx_routes_info_v2:
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    limit: 2
+  register: result
+  ignore_errors: true
+
+- name: List all routes with limit Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 2
+    fail_msg: "List all routes with limit failed "
+    success_msg: "List all routes with limit passed "
+
+###########################################################################################################
+
+- name: List all routes with filter
+  ntnx_routes_info_v2:
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    filter: name eq '{{ random_name }}_route_updated'
+  register: result
+  ignore_errors: true
+
+- name: List all routes with filter Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "List all routes with filter failed "
+    success_msg: "List all routes with filter passed "
+
+###########################################################################################################
+
+- name: List all route tables
+  ntnx_route_tables_info_v2:
+  register: route_tables
+  ignore_errors: true
+
+- name: List all route tables status
+  ansible.builtin.assert:
+    that:
+      - route_tables is defined
+      - route_tables.failed == false
+      - route_tables.changed == false
+      - route_tables.response | length > 1
+    fail_msg: "Failed to list route tables"
+    success_msg: "Successfully listed route tables"
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    vpc_reference: "{{ route_tables.response[0].vpc_reference }}"
+
+###########################################################################################################
+
+- name: Fetch route table by external_id
+  ntnx_route_tables_info_v2:
+    ext_id: "{{ route_table_external_id_1 }}"
+  register: route_table
+  ignore_errors: true
+
+- name: Fetch route table by external_id status
+  ansible.builtin.assert:
+    that:
+      - route_table is defined
+      - route_table.failed == false
+      - route_table.changed == false
+      - route_table.ext_id == "{{route_table_external_id_1}}"
+      - route_table.response.ext_id == "{{route_table_external_id_1}}"
+      - route_table.response.vpc_reference == "{{ vpc_uuid_1 }}"
+    fail_msg: "Failed to fetch route table by external_id"
+    success_msg: "Successfully fetched route table by external_id"
+
+###########################################################################################################
+
+- name: List all route tables with limit
+  ntnx_route_tables_info_v2:
+    limit: 2
+  register: route_tables_limit
+  ignore_errors: true
+
+- name: List all route tables with limit status
+  ansible.builtin.assert:
+    that:
+      - route_tables_limit is defined
+      - route_tables_limit.failed == false
+      - route_tables_limit.changed == false
+      - route_tables_limit.response | length == 2
+    fail_msg: "Failed to list route tables with limit"
+    success_msg: "Successfully listed route tables with limit"
+
+###########################################################################################################
+
+- name: List all route tables with filter
+  ntnx_route_tables_info_v2:
+    filter: vpcReference eq '{{ vpc_uuid_2 }}'
+  register: route_tables_filter
+  ignore_errors: true
+
+- name: List all route tables with filter status
+  ansible.builtin.assert:
+    that:
+      - route_tables_filter is defined
+      - route_tables_filter.failed == false
+      - route_tables_filter.changed == false
+      - route_tables_filter.response | length == 1
+      - route_tables_filter.response[0].vpc_reference == "{{ vpc_uuid_2 }}"
+      - route_tables_filter.response[0].ext_id == route_table_external_id_2
+    fail_msg: "Failed to list route tables with filter"
+    success_msg: "Successfully listed route tables with filter"
+
+###########################################################################################################
+
+- name: Delete first static route
+  ntnx_routes_v2:
+    state: absent
+    ext_id: "{{ static_route_external_id_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete first static route Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == "{{ static_route_external_id_1 }}"
+      - result.route_table_ext_id == "{{ route_table_external_id_1 }}"
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.response.entities_affected[0].ext_id == "{{ static_route_external_id_1 }}"
+      - result.response.ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Delete first static route failed "
+    success_msg: "Delete first static route passed "
+
+###########################################################################################################
+
+- name: Delete second static route
+  ntnx_routes_v2:
+    state: absent
+    ext_id: "{{ static_route_external_id_2 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete second static route Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == "{{ static_route_external_id_2 }}"
+      - result.route_table_ext_id == "{{ route_table_external_id_1 }}"
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.response.entities_affected[0].ext_id == "{{ static_route_external_id_2 }}"
+      - result.response.ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Delete second static route failed "
+    success_msg: "Delete second static route passed "
+
+###########################################################################################################
+
+- name: Delete first VPC
+  ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ vpc_uuid_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete first VPC Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vpc_uuid_1 }}"
+      - result.task_ext_id is defined
+    fail_msg: " Unable to Delete first VPC"
+    success_msg: "First VPC has been deleted successfully"
+
+############################################################################################
+
+- name: Delete second VPC
+  ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ vpc_uuid_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete second VPC Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vpc_uuid_2 }}"
+      - result.task_ext_id is defined
+    fail_msg: " Unable to Delete second VPC"
+    success_msg: "second VPC has been deleted successfully"

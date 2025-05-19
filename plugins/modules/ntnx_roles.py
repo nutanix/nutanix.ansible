@@ -30,6 +30,7 @@ options:
         description:
             - uuid of the role
             - only required while updating or deleting
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         required: false
         type: str
     desc:
@@ -180,8 +181,8 @@ role_uuid:
 
 from ..module_utils import utils  # noqa: E402
 from ..module_utils.base_module import BaseModule  # noqa: E402
-from ..module_utils.prism.roles import Role  # noqa: E402
-from ..module_utils.prism.tasks import Task  # noqa: E402
+from ..module_utils.v3.prism.roles import Role  # noqa: E402
+from ..module_utils.v3.prism.tasks import Task  # noqa: E402
 
 
 def get_module_spec():
