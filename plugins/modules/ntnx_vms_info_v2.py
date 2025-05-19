@@ -129,6 +129,12 @@ ext_id:
     type: str
     returned: always
     sample: "530567f3-abda-4913-b5d0-0ab6758ec168"
+total_available_results:
+    description:
+        - The total number of available VMs in PC.
+    type: int
+    returned: when all vms are fetched
+    sample: 125
 """
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
@@ -182,6 +188,10 @@ def get_vms(module, result):
             exception=e,
             msg="Api Exception raised while fetching vms info",
         )
+
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+
     if resp is None or getattr(resp, "data", None) is None:
         result["response"] = []
     else:
