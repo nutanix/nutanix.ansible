@@ -50,6 +50,12 @@ DOCUMENTATION = r"""
             type: str
             env:
                 - name: NUTANIX_PORT
+        fetch_all_vms:
+            description:
+                - Set to C(True) to fetch all VMs
+                - Set to C(False) to fetch specified number of VMs based on offset and length
+                - If set to C(True), offset and length will be ignored
+                - By default, this is set to C(False)
         data:
             description:
                 - Pagination support for listing VMs
@@ -85,7 +91,9 @@ from ..module_utils.v3.prism import vms  # noqa: E402
 
 
 class Mock_Module:
-    def __init__(self, host, port, username, password, validate_certs=False):
+    def __init__(
+        self, host, port, username, password, validate_certs=False, fetch_all_vms=False
+    ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
             "nutanix_host": host,
@@ -93,6 +101,7 @@ class Mock_Module:
             "nutanix_username": username,
             "nutanix_password": password,
             "validate_certs": validate_certs,
+            "fetch_all_vms": fetch_all_vms,
             "load_params_without_defaults": False,
         }
 
@@ -196,6 +205,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.nutanix_port = self.get_option("nutanix_port")
         self.data = self.get_option("data")
         self.validate_certs = self.get_option("validate_certs")
+        self.fetch_all_vms = self.get_option("fetch_all_vms")
         # Determines if composed variables or groups using nonexistent variables is an error
         strict = self.get_option("strict")
         host_filters = self.get_option("filters")
@@ -206,11 +216,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_username,
             self.nutanix_password,
             self.validate_certs,
+            self.fetch_all_vms,
         )
         vm = vms.VM(module)
         self.data["offset"] = self.data.get("offset", 0)
-        resp = vm.list(self.data)
-
+        resp = vm.list(data=self.data, fetch_all_vms=self.fetch_all_vms)
         for entity in resp.get("entities", []):
             host_vars = self._build_host_vars(entity)
 
