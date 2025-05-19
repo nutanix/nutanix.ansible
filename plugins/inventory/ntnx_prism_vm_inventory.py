@@ -55,6 +55,7 @@ DOCUMENTATION = r"""
                 - Set to C(True) to fetch all VMs
                 - Set to C(False) to fetch specified number of VMs based on offset and length
                 - If set to C(True), offset and length will be ignored
+                - By default, this is set to C(False)
         data:
             description:
                 - Pagination support for listing VMs
