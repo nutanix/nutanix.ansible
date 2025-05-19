@@ -1,0 +1,43 @@
+---
+# Summary:
+# This playbook will fetch all available VMs in PC using these steps:
+# 1. List all VMs
+# 2. Get total number of VMs (total_available_results)
+# 3. Set number of VMs per page (default is 100)
+# 4. Get number of pages which is total number of VMs divided by number of VMs per page
+# 5. If you have a remainder from the division, add 1 to the number of pages so that you can get all VMs
+# 6. Loop through the number of pages and get 100 VMs per page
+
+- name: VM crud playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all VMs
+      nutanix.ncp.ntnx_vms_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Set total number of VMs
+      ansible.builtin.set_fact:
+        total_vms: "{{ result.total_available_results }}"
+        num_vms_per_page: 100
+
+    - name: Get number of pages
+      ansible.builtin.set_fact:
+        num_pages: "{{ ((total_vms | int) // (num_vms_per_page | int)) + (((total_vms | int) % (num_vms_per_page | int)) > 0 | int) }}"
+
+    # all_vms is a list of all available VMs details
+    - name: Get all VMs
+      nutanix.ncp.ntnx_vms_info_v2:
+        limit: "{{ num_vms_per_page }}"
+        page: "{{ item }}"
+      register: all_vms
+      loop: "{{ range(0, (num_pages | int)) | list }}"
+      when: (total_vms | int) > 0
+      ignore_errors: true
