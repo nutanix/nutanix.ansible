@@ -19,7 +19,9 @@ options:
     required: False
     type: str
   acp_uuid:
-    description: acp UUID
+    description:
+        - acp UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   desc:
     description: The description of the association of a role to a user in a given context

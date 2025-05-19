@@ -27,6 +27,7 @@ options:
     uuid:
         description:
             - uuid of database server vm for updating or deleting vm
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
     desc:
         description:
