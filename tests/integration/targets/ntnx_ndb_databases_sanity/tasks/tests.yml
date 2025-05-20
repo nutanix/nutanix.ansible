@@ -209,15 +209,15 @@
   when: properties is undefined
 
 - name: Combine properties
+  no_log: true
+  loop: "{{ result.response.properties }}"
   block:
     - name: Set temp dict
       ansible.builtin.set_fact:
-        temp_dict: "{ '{{' }} item['name']: item['value'] {{ '}}' }}"
+        temp_dict: "{{ { item['name']: item['value'] } }}"
     - name: Combine properties with temp dict
       ansible.builtin.set_fact:
         properties: "{{ properties | combine(temp_dict) }}"
-  loop: "{{ result.response.properties }}"
-  no_log: true
 
 - name: Creation Status
   ansible.builtin.assert:
