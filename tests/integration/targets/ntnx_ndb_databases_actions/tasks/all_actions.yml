@@ -515,12 +515,8 @@
       db_instance_uuid: "{{ db_uuid }}"
       error:
       failed: false
-      response:
-        {
-          databases:
-            [databaseName: test1, databaseName: test2, databaseName: test3],
-        }
-
+      response: { databases: [databaseName: test1, databaseName: test2, databaseName: test3] }
+      
 - name: Check mode status
   ansible.builtin.assert:
     that:
