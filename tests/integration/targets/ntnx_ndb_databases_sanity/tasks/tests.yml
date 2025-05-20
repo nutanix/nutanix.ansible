@@ -205,17 +205,19 @@
 
 - name: Ensure properties is defined
   ansible.builtin.set_fact:
-    properties: {}
+    properties: "{}"
   when: properties is undefined
 
-# skip jekyll/Liquid syntax check
-#
-- name: Create properties map
-  ansible.builtin.set_fact:
-    properties: "{{ properties | combine({item['name']: item['value']}) }}"
-  loop: "{{result.response.properties}}"
+- name: Combine properties
   no_log: true
-#
+  loop: "{{ result.response.properties }}"
+  block:
+    - name: Set temp dict
+      ansible.builtin.set_fact:
+        temp_dict: "{{ { item['name']: item['value'] } }}"
+    - name: Combine properties with temp dict
+      ansible.builtin.set_fact:
+        properties: "{{ properties | combine(temp_dict) }}"
 
 - name: Creation Status
   ansible.builtin.assert:
