@@ -43,7 +43,7 @@ class UserGroup(Prism):
         return payload, None
 
     def _build_spec_user_distinguished_name(self, payload, config):
-        if "ou=" in config:
+        if config[0:3] == "ou=":
             payload["spec"]["resources"]["directory_service_ou"] = {
                 "distinguished_name": config
             }
