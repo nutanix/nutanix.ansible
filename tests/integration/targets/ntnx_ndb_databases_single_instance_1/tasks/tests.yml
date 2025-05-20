@@ -6,6 +6,21 @@
 #   3. Unregister database instance
 #   4. Register the database created in point 1 from the db server vm created earlier
 
+# Variables required before running this playbook:
+# - db_params_profile
+# - vm_password
+# - vm_ip
+# - cluster
+# - software_profile
+# - network_profile
+# - static_network_profile
+# - compute_profile
+# - public_ssh_key
+# - sla
+# - maintenance
+# - tags
+# - postgres
+
 - name: Start ndb databases test flow 1
   ansible.builtin.debug:
     msg: start ndb databases test flow 1

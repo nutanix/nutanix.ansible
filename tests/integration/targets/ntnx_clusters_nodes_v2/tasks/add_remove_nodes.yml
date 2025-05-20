@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - clusters
+# - username
+# - password
+
 - name: Start ntnx_clusters_nodes_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_clusters_nodes_v2 tests

@@ -5,6 +5,16 @@
 #   2. Create HA postgres database instance with multicluster nodes
 #   3. Create HA postgres database instance with static IP and cluster IP assigments
 
+# Variables required before running this playbook:
+# - postgres_ha_profiles
+# - cluster
+# - sla
+# - maintenance
+# - vm_password
+# - public_ssh_key
+# - cluster_ips
+# - tags
+
 - name: Start ndb databases test flow for testing high availability databases
   ansible.builtin.debug:
     msg: start ndb databases test flow for testing high availability databases

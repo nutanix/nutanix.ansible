@@ -1,5 +1,4 @@
 ---
-
 - name: Create tcp service group
   ntnx_service_groups:
     name: tcp_srvive_group

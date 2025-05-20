@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - dr
+
 - name: Start testing protection policies crud tests
   ansible.builtin.debug:
     msg: Start testing protection policies crud tests

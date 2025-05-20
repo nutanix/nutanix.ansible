@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - xml_content
+
 - name: Start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_saml_identity_providers_v2   and ntnx_saml_identity_providers_info_v2 tests

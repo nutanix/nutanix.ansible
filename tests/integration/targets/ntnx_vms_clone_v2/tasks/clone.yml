@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+
 - name: Start ntnx_vms_clone_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_vms_clone_v2 tests
@@ -139,7 +142,7 @@
           datasource_type: CONFIG_DRIVE_V2
           cloud_init_script:
             user_data:
-              value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+              value: I2NsbGluZS1jb250YWluZXI6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
   register: result
   ignore_errors: true
 

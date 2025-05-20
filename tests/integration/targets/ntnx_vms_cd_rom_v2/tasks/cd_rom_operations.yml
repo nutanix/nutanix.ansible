@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - disk_image
+# - iso_image
+
 - name: Start testing ntnx_vms_cd_rom_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_vms_cd_rom_v2

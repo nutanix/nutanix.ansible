@@ -1,3 +1,4 @@
+---
 # Pre-requisite:
 # - Ensure that These variables from prepare_env/vars/main.yml are defined and set correctly:
 #   - cluster:
@@ -14,7 +15,6 @@
 #       access_key: "qwertyuiopasdfgh" # S3 bucket access key
 #       secret_key: "jklzxcvbnm" # S3 bucket secret key
 
----
 - name: Start testing for modules for PC backup restore using objects store.
   ansible.builtin.debug:
     msg: Start testing for modules for PC backup restore using objects store.

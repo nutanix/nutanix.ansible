@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - disk_image
+
 - name: Start ntnx_images delete tests
   ansible.builtin.debug:
     msg: Start ntnx_image delete tests

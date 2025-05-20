@@ -1,3 +1,15 @@
+---
+# Variables required before running this playbook:
+# - vpc
+# - network
+# - priority
+# - protocol
+# - tcp
+# - udp
+# - icmp
+# - reroute_ip
+# - todelete
+
 - name: Create PBR with vpc name, source network, external destination, with reroute action and any type and code icmp
   ntnx_pbrs:
     validate_certs: false

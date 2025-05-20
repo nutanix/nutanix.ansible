@@ -1,3 +1,8 @@
+---
+# Variables required before running this playbook:
+# - vm
+# - cluster
+
 - name: Initialize todelete list
   ansible.builtin.set_fact:
     todelete: []

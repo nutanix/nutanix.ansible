@@ -9,6 +9,16 @@
 #   6. Scale database
 #   7. Add/Remove linked databases
 
+# Variables required before running this playbook:
+# - db_params_profile
+# - vm_password
+# - cluster
+# - software_profile
+# - network_profile
+# - compute_profile
+# - public_ssh_key
+# - sla
+
 - name: Start ndb database day2 actions tests
   ansible.builtin.debug:
     msg: start ndb database day2 actions tests
@@ -369,7 +379,6 @@
         timeZone:
         userPitrTimestamp:
 
-
 - name: Check mode status
   ansible.builtin.assert:
     that:
@@ -506,7 +515,11 @@
       db_instance_uuid: "{{ db_uuid }}"
       error:
       failed: false
-      response: { databases: [databaseName: test1, databaseName: test2, databaseName: test3] }
+      response:
+        {
+          databases:
+            [databaseName: test1, databaseName: test2, databaseName: test3],
+        }
 
 - name: Check mode status
   ansible.builtin.assert:

@@ -1,4 +1,12 @@
 ---
+# Variables required before running this playbook:
+# - dr
+# - dr_vm_name
+# - dr_vm
+# - network
+# - static
+# - recovery_site_ip
+
 - name: Start testing recovery plan and recovery plan jobs
   ansible.builtin.debug:
     msg: Start testing recovery plan and recovery plan jobs

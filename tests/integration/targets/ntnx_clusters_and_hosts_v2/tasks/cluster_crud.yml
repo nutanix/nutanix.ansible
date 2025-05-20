@@ -13,6 +13,11 @@
 #   10. Test info module for fetching host details
 #   11. Test cluster destroy
 
+# Variables required before running this test:
+# - clusters: List of clusters with all required nested fields (nodes, config, network, etc.)
+# - username: Cluster admin username (used for SSH and registration)
+# - password: Cluster admin password (used for SSH and registration)
+
 - name: Start clusters crud tests
   ansible.builtin.debug:
     msg: start clusters crud tests

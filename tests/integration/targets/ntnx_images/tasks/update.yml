@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - disk_image
+# - cluster
+
 - name: Start ntnx_images update tests
   ansible.builtin.debug:
     msg: Start ntnx_image update tests

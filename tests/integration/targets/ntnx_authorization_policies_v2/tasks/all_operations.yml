@@ -1,4 +1,10 @@
 ---
+# Variables required before running this test:
+# - users: List of user UUIDs (used as users[0], users[1])
+# - user_groups: List of user group UUIDs (used as user_groups[0])
+# - directory_service_uuid: Directory service UUID (used in entities)
+# - project: Project object with 'uuid' field (used as project.uuid)
+
 - name: Start authorization CRUD tests
   ansible.builtin.debug:
     msg: Start authorization CRUD tests

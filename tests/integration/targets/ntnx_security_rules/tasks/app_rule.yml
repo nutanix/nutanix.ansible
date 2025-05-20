@@ -1,3 +1,7 @@
+---
+# Variables required before running this playbook:
+# - categories
+
 - name: Create app security rule with inbound and outbound list
   ntnx_security_rules:
     name: test_app_rule
@@ -68,7 +72,6 @@
     policy_hitlog: true
   register: result
   ignore_errors: true
-
 
 - name: Creation Status
   ansible.builtin.assert:

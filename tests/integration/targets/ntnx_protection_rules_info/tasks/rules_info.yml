@@ -1,3 +1,7 @@
+---
+# Variables required before running this playbook:
+# - dr
+
 - name: Start testing ntnx_protection_rules_info
   ansible.builtin.debug:
     msg: Start testing ntnx_protection_rules_info
