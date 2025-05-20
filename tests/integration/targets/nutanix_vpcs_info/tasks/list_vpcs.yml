@@ -1,3 +1,7 @@
+---
+# Variables required before running this playbook:
+# - vpc
+
 - name: List VPC using name filter criteria
   ntnx_vpcs_info:
     filter:

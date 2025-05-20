@@ -1,3 +1,4 @@
+---
 - name: Start ntnx_project delete tests
   ansible.builtin.debug:
     msg: "Start ntnx_project delete tests"

@@ -1,3 +1,11 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - ubuntu
+# - static
+# - network
+# - password
+
 - name: Start testing VM clone
   ansible.builtin.debug:
     msg: Start testing VM clone

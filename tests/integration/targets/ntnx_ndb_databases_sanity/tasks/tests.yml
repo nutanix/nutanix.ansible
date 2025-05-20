@@ -1,6 +1,21 @@
 ---
 # Summary:
 # This playbook will test basic database flows
+
+# Variables required before running this playbook:
+# - db_params_profile
+# - vm_password
+# - vm_ip
+# - cluster
+# - software_profile
+# - network_profile
+# - static_network_profile
+# - compute_profile
+# - public_ssh_key
+# - sla
+# - maintenance
+# - tags
+
 - name: Start ndb databases crud tests
   ansible.builtin.debug:
     msg: start ndb databases crud tests

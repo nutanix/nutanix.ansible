@@ -6,6 +6,20 @@
 #   3. Unregister database instance (db1) and db server vm (vm1)
 #   4. Register db1 from unregistered vm1
 
+# Variables required before running this playbook:
+# - db_params_profile
+# - vm_password
+# - vm_username
+# - cluster
+# - software_profile
+# - network_profile
+# - compute_profile
+# - public_ssh_key
+# - sla
+# - maintenance
+# - tags
+# - postgres
+
 - name: Start ndb databases test flow 2
   ansible.builtin.debug:
     msg: start ndb databases test flow 2

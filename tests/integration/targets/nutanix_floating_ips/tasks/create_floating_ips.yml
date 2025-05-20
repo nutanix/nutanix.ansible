@@ -1,4 +1,10 @@
 ---
+# Variables required before running this playbook:
+# - external_nat_subnet
+# - vpc
+# - private_ip
+# - vm
+
 - name: Create floating ip with external subnet uuid
   ntnx_floating_ips:
     state: present

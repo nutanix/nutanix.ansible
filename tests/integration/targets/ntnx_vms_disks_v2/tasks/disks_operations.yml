@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - storage_container
+# - disk_image
+
 - name: Start testing ntnx_vms_disks_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_vms_disks_v2

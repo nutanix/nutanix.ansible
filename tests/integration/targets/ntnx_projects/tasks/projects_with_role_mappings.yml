@@ -1,3 +1,16 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - network
+# - static
+# - overlay
+# - vpc
+# - accounts
+# - users
+# - user_groups
+# - project
+# - todelete
+
 - name: Start ntnx_project tests with role mappings
   ansible.builtin.debug:
     msg: "Start ntnx_project tests with role mappings"

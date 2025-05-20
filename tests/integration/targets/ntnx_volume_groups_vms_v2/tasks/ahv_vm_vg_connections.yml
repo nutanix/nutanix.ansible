@@ -1,3 +1,8 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - network
+
 - name: "Start Volume groups disks tests"
   ansible.builtin.debug:
     msg: "Start Volume groups disks tests"

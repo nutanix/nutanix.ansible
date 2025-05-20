@@ -1,3 +1,4 @@
+---
 # Description: This file uses variables from ../../vars/main.yml to create/update protection policies
 # instead of setting attributes values directly in tasks
 # we have declared them as nested attributes in ../../vars.yml so that we can reuse it at multiple places directly.
@@ -41,7 +42,6 @@
 #       - name: "auto_cluster_prod_360f737a18b9"
 #         uuid: "00062ffc-95ad-19e9-185b-ac1f6b6f97e2"
 
----
 - name: Start protection policies and data protection tests
   ansible.builtin.debug:
     msg: Start protection policies and data protection tests

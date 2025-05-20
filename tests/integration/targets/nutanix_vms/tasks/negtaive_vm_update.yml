@@ -1,3 +1,9 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - ubuntu
+# - storage_container
+
 - name: Create VM with minimum requiremnts to update
   ntnx_vms:
     state: present

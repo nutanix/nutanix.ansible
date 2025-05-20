@@ -1,4 +1,10 @@
 ---
+# Variables required before running this playbook:
+# - distinguished_name
+# - directory_service_uuid
+# - identity_provider_uuid
+# - new_saml_user_group
+
 - name: Start ntnx_user_groups_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_user_groups_v2 tests

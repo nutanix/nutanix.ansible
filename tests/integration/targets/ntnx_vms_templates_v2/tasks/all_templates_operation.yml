@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+
 - name: >
     Start ntnx_templates_deploy_v2,ntnx_templates_guest_os_v2,ntnx_templates_v2,ntnx_templates_info_v2,
     ntnx_templates_version_v2,ntnx_templates_versions_info_v2 tests
