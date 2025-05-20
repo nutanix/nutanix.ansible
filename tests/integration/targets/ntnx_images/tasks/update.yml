@@ -5,7 +5,7 @@
 
 - name: Start ntnx_images update tests
   ansible.builtin.debug:
-    msg: Start ntnx_image update tests
+    msg: Start ntnx_images update tests
 
 - name: Create image for update tests
   ntnx_images:

@@ -4,7 +4,7 @@
 
 - name: Start ntnx_images delete tests
   ansible.builtin.debug:
-    msg: Start ntnx_image delete tests
+    msg: Start ntnx_images delete tests
 
 - name: Create image with minimal spec and source uri for delete tests
   ntnx_images:
