@@ -210,15 +210,14 @@
 
 - name: Combine properties
   block:
-    - ansible.builtin.set_fact:
+    - name: Set temp dict
+      ansible.builtin.set_fact:
         temp_dict: "{ '{{' }} item['name']: item['value'] {{ '}}' }}"
-    - ansible.builtin.set_fact:
+    - name: Combine properties with temp dict
+      ansible.builtin.set_fact:
         properties: "{{ properties | combine(temp_dict) }}"
   loop: "{{ result.response.properties }}"
   no_log: true
-#
-
-
 
 - name: Creation Status
   ansible.builtin.assert:
