@@ -179,6 +179,15 @@ class Entity(object):
             no_response=no_response,
             timeout=timeout,
         )
+        if resp and resp.get("state") == "ERROR":
+            if raise_error:
+                self.module.fail_json(
+                    msg="Failed fetching URL: {0}".format(url),
+                    error=resp.get("message_list"),
+                    response=resp,
+                )
+            else:
+                return resp
         if resp:
             custom_filters = self.module.params.get("custom_filter")
 
