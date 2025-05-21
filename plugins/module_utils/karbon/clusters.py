@@ -22,6 +22,7 @@ class Cluster(Karbon):
             "cni": self._build_spec_cni,
             "custom_node_configs": self._build_spec_node_configs,
             "storage_class": self._build_spec_storage_class,
+            "disable_monitoring": self._build_spec_disable_monitoring,
         }
 
     def _get_default_spec(self):
@@ -113,6 +114,10 @@ class Cluster(Karbon):
             },
         }
         payload["storage_class_config"] = storage_class
+        return payload, None
+    
+    def _build_spec_disable_monitoring(self, payload, value=False):
+        payload["disable_monitoring"] = value
         return payload, None
 
     def _generate_resource_spec(self, config, resource_type):

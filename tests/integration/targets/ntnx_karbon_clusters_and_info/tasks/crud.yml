@@ -104,6 +104,7 @@
       - result.response.cni_config.node_cidr_mask_size == {{cni.node_cidr_mask_size}}
       - result.response.cni_config.pod_ipv4_cidr == "{{cni.pod_ipv4_cidr}}"
       - result.response.cni_config.service_ipv4_cidr ==  "{{cni.service_ipv4_cidr}}"
+      - result.response.disable_monitoring == true
     success_msg: "Success: check mode spec returned  as expected"
     fail_msg: "Check mode for ntnx_karbon_clusters failed"
 ############################
