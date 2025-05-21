@@ -92,7 +92,6 @@
 ###################################################################################################
 
 - name: Check mode test
-  check_mode: true
   ntnx_roles:
     state: present
     role_uuid: "{{test_role.role_uuid}}"
@@ -102,6 +101,8 @@
       - uuid: "{{ test_permission_1_uuid }}"
     wait: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:

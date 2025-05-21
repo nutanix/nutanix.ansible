@@ -166,7 +166,6 @@
       }
 
 - name: Create checkmode spec for recovery plan with networks and 2 stage
-  check_mode: true
   ntnx_recovery_plans:
     state: "present"
     name: test-integration-rp
@@ -193,6 +192,8 @@
           prod:
             name: "{{dr.recovery_site_network}}"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Checkmode spec assert
   ansible.builtin.assert:
@@ -404,7 +405,6 @@
       }
 
 - name: Checkmode spec for Update recovery plan. Update networks and stages.
-  check_mode: true
   ntnx_recovery_plans:
     plan_uuid: "{{plan_uuid}}"
     state: "present"
@@ -442,8 +442,9 @@
             name: "{{dr.recovery_site_network}}"
           prod:
             name: "{{dr.recovery_site_network}}"
-
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Check mode spec for Update status
   ansible.builtin.assert:
@@ -655,7 +656,24 @@
     fail_msg: "Cleanup job failed"
     success_msg: "Cleanup job run successfully"
 
-################################## Delete Recovery Plan Test########################################
+######################################### Delete Recovery Plan Test###########################################################
+- name: Delete Recovery plan with check mode
+  ntnx_recovery_plans:
+    state: absent
+    plan_uuid: "{{ recovery_plan.plan_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete Recovery plan with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Recovery plan with uuid:{{ recovery_plan.plan_uuid }} will be deleted."
+      - output.plan_uuid == "{{ recovery_plan.plan_uuid }}"
+    fail_msg: "Delete recovery plan with check mode failed"
+    success_msg: "Delete recovery plan with check mode passed"
 
 - name: Delete recovery plan
   ntnx_recovery_plans:
@@ -669,6 +687,6 @@
       - result.response is defined
       - result.changed == True
       - result.response.status == 'SUCCEEDED'
-
+      - result.plan_uuid == "{{ recovery_plan.plan_uuid }}"
     fail_msg: "recovery plan delete failed"
     success_msg: "recovery plan deleted successfully"

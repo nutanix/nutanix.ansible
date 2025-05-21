@@ -69,7 +69,6 @@
   register: result
   ignore_errors: true
 
-
 - name: Creation Status
   ansible.builtin.assert:
     that:
@@ -115,19 +114,38 @@
     fail_msg: " fail: unable to update app security rule with   outbound list "
     success_msg: "pass :update app security rule with   outbound list successfully"
 
+- name: Delete app security rule with check mode
+  ntnx_security_rules:
+    state: absent
+    security_rule_uuid: "{{ result.response.metadata.uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete app security rule with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Security rule with uuid:{{ result.response.metadata.uuid}} will be deleted."
+      - output.security_rule_uuid == "{{ result.response.metadata.uuid }}"
+    fail_msg: "Delete app security rule with check mode failed"
+    success_msg: "Delete app security rule with check mode passed"
+
 - name: Delete app security rule
   ntnx_security_rules:
     state: absent
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
-  register: result
+  register: output
   ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.failed == false
-      - result.response.status == 'SUCCEEDED'
+      - output.response is defined
+      - output.failed == false
+      - output.response.status == 'SUCCEEDED'
+      - output.security_rule_uuid == "{{ result.response.metadata.uuid }}"
     fail_msg: " fail: unable to delete app security rule "
     success_msg: "pass : delete app security rule successfully"
 - name: Create app security rule with allow all inbound and outbound list

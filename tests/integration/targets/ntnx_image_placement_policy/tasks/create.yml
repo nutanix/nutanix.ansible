@@ -70,7 +70,6 @@
 ################################################################################################################
 
 - name: Create image placement policy in check mode
-  check_mode: true
   ntnx_image_placement_policy:
     name: "test_policy_3"
     desc: "test_policy_3_desc"
@@ -83,6 +82,8 @@
       AppTier:
         - Default
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Creation Status
   ansible.builtin.assert:

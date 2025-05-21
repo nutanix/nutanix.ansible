@@ -30,7 +30,6 @@
     success_msg: " Success: returned error as expected "
 #############################################################
 - name: Check if error is produced when disk size is not given for storage container
-  check_mode: true
   ntnx_vms:
     state: present
     name: VM with storage container
@@ -50,6 +49,7 @@
     memory_gb: 1
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Creation Status
   ansible.builtin.assert:

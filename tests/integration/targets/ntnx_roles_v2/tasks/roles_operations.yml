@@ -281,6 +281,27 @@
 
 ###################################################################################################
 
+- name: Delete role with check mode enabled
+  ntnx_roles_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Delete role with check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete }}"
+      - result.msg == "Role with ext_id:{{ todelete }} will be deleted."
+    fail_msg: Delete role with check mode enabled failed
+    success_msg: Delete role with check mode enabled passed
+
+###############################################################################################
+
 - name: Delete roles
   ntnx_roles_v2:
     state: absent

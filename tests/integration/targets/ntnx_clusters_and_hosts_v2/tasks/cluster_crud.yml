@@ -700,7 +700,6 @@
 ############################################## Update cluster test ##############################################
 
 - name: Create update spec for cluster using dummy values
-  check_mode: true
   ntnx_clusters_v2:
     name: "{{ cluster_name }}_updated"
     ext_id: "{{ cluster_ext_id }}"
@@ -743,6 +742,7 @@
         pii_scrubbing_level: DEFAULT
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Verify generated update spec
   ansible.builtin.assert:

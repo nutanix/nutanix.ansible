@@ -403,6 +403,11 @@ def delete_backup_target(module, domain_manager_backups_api, result):
     ext_id = module.params.get("ext_id")
     domain_manager_ext_id = module.params.get("domain_manager_ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "Backup target with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     current_spec = get_backup_target(module, domain_manager_backups_api, ext_id)
 
     etag_value = get_etag(data=current_spec)

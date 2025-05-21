@@ -365,6 +365,27 @@
 
 ########################################################################
 
+- name: Delete directory service with check mode enabled
+  ntnx_directory_services_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete directory service with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete }}"
+      - result.msg == "Directory service with ext_id:{{ todelete }} will be deleted."
+    fail_msg: Delete directory service with check mode failed
+    success_msg: Delete directory service with check mode passed
+
+########################################################################
+
 - name: Delete directory service
   ntnx_directory_services_v2:
     state: absent

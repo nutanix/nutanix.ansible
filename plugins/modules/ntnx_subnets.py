@@ -579,10 +579,15 @@ def delete_subnet(module, result):
     subnet_uuid = module.params["subnet_uuid"]
 
     subnet = Subnet(module)
+
+    result["subnet_uuid"] = subnet_uuid
+    if module.check_mode:
+        result["msg"] = "Subnet with uuid:{0} will be deleted.".format(subnet_uuid)
+        return
+
     resp = subnet.delete(subnet_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["subnet_uuid"] = subnet_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

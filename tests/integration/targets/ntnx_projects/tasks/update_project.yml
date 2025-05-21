@@ -44,7 +44,6 @@
 #################################################################
 
 - name: Check check mode for update
-  check_mode: true
   ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
@@ -63,6 +62,7 @@
         limit: 2046
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Check mode Status
   ansible.builtin.assert:

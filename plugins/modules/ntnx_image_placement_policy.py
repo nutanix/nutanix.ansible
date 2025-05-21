@@ -378,6 +378,13 @@ def delete_policy(module, result):
         result["error"] = "Missing parameter policy_uuid in task"
         module.fail_json(msg="Failed deleting Image placement policy", **result)
 
+    result["policy_uuid"] = policy_uuid
+    if module.check_mode:
+        result["msg"] = "Placement policy with uuid:{0} will be deleted.".format(
+            policy_uuid
+        )
+        return
+
     policy_obj = ImagePlacementPolicy(module)
     resp = policy_obj.delete(policy_uuid)
     result["response"] = resp

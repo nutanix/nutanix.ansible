@@ -15,17 +15,24 @@
 ############################# Create tests ########################
 
 - name: Check mode for creation
-  check_mode: true
   ntnx_ndb_tags:
     name: "{{ tag_name }}-timemachine"
     desc: tag-created-by-ansible
     tag_value_required: true
     entity_type: TIME_MACHINE
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Define variable for expected response
   ansible.builtin.set_fact:
-    expected_response: { description: tag-created-by-ansible, entityType: TIME_MACHINE, name: "{{ tag_name }}-timemachine", required: true }
+    expected_response:
+      {
+        description: tag-created-by-ansible,
+        entityType: TIME_MACHINE,
+        name: "{{ tag_name }}-timemachine",
+        required: true,
+      }
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -359,6 +366,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ database_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
@@ -374,6 +382,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ database_tag2_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
@@ -389,6 +398,7 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ clone_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
 
@@ -404,8 +414,27 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ time_machine_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully
+
+- name: Delete Tag with check mode
+  ntnx_ndb_tags:
+    state: absent
+    uuid: "{{ db_server_tag_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete Tag with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Tag with uuid:{{ db_server_tag_uuid}} will be deleted."
+      - output.uuid == "{{ db_server_tag_uuid }}"
+    fail_msg: "Delete tag with check mode failed"
+    success_msg: "Delete tag with check mode passed"
 
 - name: Delete the database server based tag
   ntnx_ndb_tags:
@@ -419,5 +448,6 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.uuid == "{{ db_server_tag_uuid }}"
     fail_msg: Unable to delete tag
     success_msg: tag deleted successfully

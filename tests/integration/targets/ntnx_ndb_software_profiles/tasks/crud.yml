@@ -23,7 +23,6 @@
     profile2_name: "{{ random_name[0] }}2"
 
 - name: Create software profile create spec
-  check_mode: true
   ntnx_ndb_profiles:
     name: "{{ profile1_name }}"
     desc: "{{ profile1_name }}-desc"
@@ -42,6 +41,8 @@
       - name: "{{ cluster.cluster1.name }}"
       - uuid: "{{ cluster.cluster2.uuid }}"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result for profile create
   ansible.builtin.set_fact:
@@ -206,7 +207,6 @@
     success_msg: "Pass: Update skipped successfully due to no state changes"
 
 - name: Create software profile version spec
-  check_mode: true
   ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     database_type: postgres
@@ -218,8 +218,9 @@
         db_software: db_notes for v2
       db_server_vm:
         name: "{{ db_server_vm.name }}"
-
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result for version create
   ansible.builtin.set_fact:
@@ -289,7 +290,6 @@
     version_uuid: "{{ result.version_uuid }}"
 
 - name: Create spec for update software profile version
-  check_mode: true
   ntnx_ndb_profiles:
     profile_uuid: "{{ profile_uuid }}"
     database_type: postgres
@@ -297,8 +297,9 @@
       version_uuid: "{{ result.version_uuid }}"
       name: v2.0-updated
       desc: v2.0-desc-updated
-
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check status of spec
   ansible.builtin.assert:
