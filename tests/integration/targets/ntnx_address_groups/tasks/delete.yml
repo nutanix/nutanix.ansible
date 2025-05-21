@@ -15,7 +15,6 @@
   ansible.builtin.set_fact:
     ag1: "{{random_name}}{{suffix_name}}1"
 
-
 - name: Create address group
   ntnx_address_groups:
     state: present
@@ -32,7 +31,7 @@
       - test_ag.response is defined
       - test_ag.changed == true
     fail_msg: "Unable to create address group"
-    success_msg: "address group created susccessfully"
+    success_msg: "address group created successfully"
 
 ###################################################################################################
 

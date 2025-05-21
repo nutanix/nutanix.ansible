@@ -146,7 +146,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    name: "test_policy_2-uodated"
+    name: "test_policy_2-updated"
     desc: "test_policy_2_desc-updated"
     placement_type: hard
     categories:

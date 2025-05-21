@@ -108,7 +108,8 @@
       description: TM-desc
       name: TM1
       schedule:
-        continuousSchedule: { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
+        continuousSchedule:
+          { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
         monthlySchedule: { dayOfMonth: 4, enabled: true }
         quartelySchedule: { dayOfMonth: 4, enabled: true, startMonth: JANUARY }
         snapshotTimeOfDay: { hours: 11, minutes: 10, seconds: 2 }
@@ -117,11 +118,18 @@
 
 - name: Set maintenance tasks
   ansible.builtin.set_fact:
-    mainetance_tasks:
+    maintenance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
+        - {
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -140,7 +148,7 @@
       - result.response.nodes | length == 1
       - result.response.nodeCount == 1
       - result.response.nodes[0].nxClusterId == "{{ cluster.cluster1.uuid }}"
-      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.maintenanceTasks == maintenance_tasks
       - result.response.createDbserver == True
     fail_msg: Unable to create single instance postgres database provision spec
     success_msg: single instance postgres database provision spec created successfully
@@ -459,7 +467,8 @@
       description: TM-desc
       name: TM1
       schedule:
-        continuousSchedule: { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
+        continuousSchedule:
+          { enabled: true, logBackupInterval: 30, snapshotsPerDay: 2 }
         monthlySchedule: { dayOfMonth: 4, enabled: true }
         quartelySchedule: { dayOfMonth: 4, enabled: true, startMonth: JANUARY }
         snapshotTimeOfDay: { hours: 11, minutes: 10, seconds: 2 }
@@ -468,11 +477,18 @@
 
 - name: Set maintenance tasks
   ansible.builtin.set_fact:
-    mainetance_tasks:
+    maintenance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
+        - {
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -486,12 +502,12 @@
       - result.response.autoTuneStagingDrive == False
       - result.response.timeMachineInfo == expected_time_machine_info
       - result.response.vmIp == "10.10.10.10"
-      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.maintenanceTasks == maintenance_tasks
       - result.response.workingDirectory == "/check"
     fail_msg: Unable to create register database spec
     success_msg: single instance postgres database register spec created successfully
 
-- name: Regsiter previously unregistered database from previously created VM
+- name: Register previously unregistered database from previously created VM
   ntnx_ndb_register_database:
     wait: true
 

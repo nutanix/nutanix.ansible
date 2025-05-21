@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_nodes_network_info_v2
-short_description: Get netowrk information for uncofigured cluster nodes
+short_description: Get network information for unconfigured cluster nodes
 description:
-  - This module allows you to Get netowrk information for uncofigured cluster nodes.
+  - This module allows you to Get network information for unconfigured cluster nodes.
   - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
 options:
@@ -185,7 +185,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Get network information for uncofigured cluster nodes
+- name: Get network information for unconfigured cluster nodes
   nutanix.ncp.ntnx_nodes_network_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
@@ -204,7 +204,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - Response for getting network information for uncofigured cluster nodes.
+        - Response for getting network information for unconfigured cluster nodes.
     type: dict
     returned: always
     sample:

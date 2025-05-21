@@ -141,7 +141,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Register Cluster with prisim_vlan
+- name: Register Cluster with prism_vlan
   ntnx_ndb_clusters:
     nutanix_host: "<ndb_era_ip>"
     nutanix_username: "<ndb_era_username>"

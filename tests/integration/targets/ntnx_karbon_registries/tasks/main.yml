@@ -7,7 +7,7 @@
       nutanix_password: "{{ password }}"
       validate_certs: "{{ validate_certs }}"
   block:
-    - name: Import Tasks
+    - name: Import create.yml
       ansible.builtin.import_tasks: create.yml
-    - name: Import Tasks
-      ansible.builtin.import_tasks: negativ_scenarios.yml
+    - name: Import negative_scenarios.yml
+      ansible.builtin.import_tasks: negative_scenarios.yml

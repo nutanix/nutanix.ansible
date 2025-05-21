@@ -1,14 +1,14 @@
-- name: Start testing VM with different opperations
+- name: Start testing VM with different operations
   ansible.builtin.debug:
-    msg: Start testing VM with different opperations
+    msg: Start testing VM with different operations
 
 - name: Reset todelete list
   ansible.builtin.set_fact:
     todelete: []
-- name: VM with minimum requiremnts
+- name: VM with minimum requirements
   ntnx_vms:
     state: present
-    name: integration_test_opperations_vm
+    name: integration_test_operations_vm
     cluster:
       name: "{{ cluster.name }}"
     disks:
@@ -25,14 +25,14 @@
     that:
       - vm.response is defined
       - vm.response.status.state == 'COMPLETE'
-    fail_msg: " Unable to create VM with minimum requiremnts "
-    success_msg: " VM with minimum requiremnts created successfully "
+    fail_msg: " Unable to create VM with minimum requirements "
+    success_msg: " VM with minimum requirements created successfully "
 
 ############################################
-- name: VM with minimum requiremnts with check mode
+- name: VM with minimum requirements with check mode
   ntnx_vms:
     state: present
-    name: integration_test_opperations_vm
+    name: integration_test_operations_vm
     cluster:
       name: "{{ cluster.name }}"
     disks:
@@ -118,10 +118,10 @@
 #     success_msg: ' VM soft_shutdown  successfully '
 ###########################################
 ###############################
-# - name: VM with minimum requiremnts and soft_shutdown
+# - name: VM with minimum requirements and soft_shutdown
 #   ntnx_vms:
 #       state: present
-#       name: integration_test_opperations_vm
+#       name: integration_test_operations_vm
 #       operation: soft_shutdown
 #       cluster:
 #         name: "{{ cluster.name }}"
@@ -141,16 +141,16 @@
 #       - result.response.status.state == 'COMPLETE'
 #       - result.response.status.resources.power_state == 'OFF'
 #       - result.response.status.resources.power_state_mechanism.mechanism == 'ACPI'
-#     fail_msg: ' Unable to create VM with minimum requiremnts and soft_shutdown '
-#     success_msg: ' VM with minimum requiremnts created successfully and soft_shutdown '
+#     fail_msg: ' Unable to create VM with minimum requirements and soft_shutdown '
+#     success_msg: ' VM with minimum requirements created successfully and soft_shutdown '
 
 # - ansible.builtin.set_fact:
 #       todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
-- name: Create VM with minimum requiremnts with hard_poweroff opperation
+- name: Create VM with minimum requirements with hard_poweroff operation
   ntnx_vms:
     state: hard_poweroff
-    name: integration_test_opperations_vm
+    name: integration_test_operations_vm
     cluster:
       name: "{{ cluster.name }}"
   register: result
@@ -163,17 +163,17 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.resources.power_state == 'OFF'
       - result.response.status.resources.power_state_mechanism.mechanism == 'HARD'
-    fail_msg: " Unable to create VM with minimum requiremnts with hard_poweroff opperation "
-    success_msg: " VM with minimum requiremnts and hard_poweroff state created successfully "
+    fail_msg: " Unable to create VM with minimum requirements with hard_poweroff operation "
+    success_msg: " VM with minimum requirements and hard_poweroff state created successfully "
 
 - name: Adding VM uuid to todelete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  result["response"]["metadata"]["uuid"] ] }}'
 
-- name: Create VM with minimum requiremnts with hard_poweroff opperation without wait
+- name: Create VM with minimum requirements with hard_poweroff operation without wait
   ntnx_vms:
     state: hard_poweroff
-    name: integration_test_opperations_vm_111
+    name: integration_test_operations_vm_111
     cluster:
       name: "{{ cluster.name }}"
     wait: false
@@ -187,8 +187,8 @@
       - result.response.status.state == 'COMPLETE' or result.response.status.state == 'PENDING'
       - result.vm_uuid
       - result.task_uuid
-    fail_msg: " Unable to create VM with minimum requiremnts with hard_poweroff opperation "
-    success_msg: " VM with minimum requiremnts and hard_poweroff state created successfully "
+    fail_msg: " Unable to create VM with minimum requirements with hard_poweroff operation "
+    success_msg: " VM with minimum requirements and hard_poweroff state created successfully "
 
 - name: Adding VM uuid to todelete list
   ansible.builtin.set_fact:
