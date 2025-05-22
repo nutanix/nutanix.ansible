@@ -82,8 +82,8 @@ DOCUMENTATION = r"""
 """
 
 import json  # noqa: E402
+import socket  # noqa: E402
 import tempfile  # noqa: E402
-import socket
 
 from ansible.errors import AnsibleError  # noqa: E402
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable  # noqa: E402
