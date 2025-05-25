@@ -2,7 +2,7 @@
   hosts: all
   gather_facts: false
   vars_files:
-    - files/nutanix.yml
+    - nutanix.yaml
   tasks:
     - name: Assert the number of VMs in case of fetch_all_vms is false
       ansible.builtin.assert:
@@ -40,16 +40,16 @@
           - hostvars[inventory_hostname].groups | length >= 3
           - hostvars[inventory_hostname].groups.all is defined
           - hostvars[inventory_hostname].groups.all | length >= 0
-          - hostvars[inventory_hostname].groups.dev is defined
-          - hostvars[inventory_hostname].groups.default is defined
-          - hostvars[inventory_hostname].groups.others is defined
-          - hostvars[inventory_hostname].groups.dev | length +
-            hostvars[inventory_hostname].groups.default | length +
-            hostvars[inventory_hostname].groups.others | length ==
+          - hostvars[inventory_hostname].groups.group1 is defined
+          - hostvars[inventory_hostname].groups.group2 is defined
+          - hostvars[inventory_hostname].groups.group3 is defined
+          - hostvars[inventory_hostname].groups.group1 | length +
+            hostvars[inventory_hostname].groups.group2 | length +
+            hostvars[inventory_hostname].groups.group3 | length ==
             hostvars[inventory_hostname].groups.all | length
-          - hostvars[inventory_hostname].groups.dev | intersect(hostvars[inventory_hostname].groups.default) | length == 0
-          - hostvars[inventory_hostname].groups.dev | intersect(hostvars[inventory_hostname].groups.others) | length == 0
-          - hostvars[inventory_hostname].groups.default | intersect(hostvars[inventory_hostname].groups.others) | length == 0
+          - hostvars[inventory_hostname].groups.group1 | intersect(hostvars[inventory_hostname].groups.group2) | length == 0
+          - hostvars[inventory_hostname].groups.group1 | intersect(hostvars[inventory_hostname].groups.group3) | length == 0
+          - hostvars[inventory_hostname].groups.group2 | intersect(hostvars[inventory_hostname].groups.group3) | length == 0
         fail_msg: "Hosts are not in the expected groups"
         success_msg: "Hosts are in the expected groups"
       run_once: true
