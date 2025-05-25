@@ -12,5 +12,8 @@ groups:
   group_3: "'integration' not in name and 'auto' not in name"
 keyed_groups:
   - prefix: host
-    separator: ":"
+    separator: "_"
     key: ansible_host
+  - prefix: fqdn
+    separator: "_"
+    key: ansible_fqdn
