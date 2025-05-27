@@ -62,28 +62,11 @@
               value: "{{ objects.public_network_reference.IPs[0] }}"
         total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
       register: result
+# currently, delete object store is not supported since you need to delete bucket first
+# As of now, please delete the bucket and object store manually from UI.
 
-    - name: Set Delete bucket API
-      ansible.builtin.set_fact:
-        delete_bucket_api: |
-          "https://{{ api_ip }}:{{ api_port }} \
-          /oss/api/nutanix/v3/objectstore_proxy/{{ object_store_ext_id }}/buckets/{{ objects.bucket_name }}?force_empty_bucket=true"
-
-    - name: Delete bucket in object store
-      ansible.builtin.uri:
-        url: "{{ delete_bucket_api }}"
-        method: DELETE
-        user: "{{ username }}"
-        password: "{{ password }}"
-        force_basic_auth: true
-        validate_certs: false
-        headers:
-          Accept: "application/json"
-        status_code: [200, 202]
-      register: result
-
-    - name: Delete object store
-      nutanix.ncp.ntnx_object_stores_v2:
-        ext_id: "{{ object_store_ext_id }}"
-        state: absent
-      register: result
+# - name: Delete object store
+#   nutanix.ncp.ntnx_object_stores_v2:
+#     ext_id: "{{ object_store_ext_id }}"
+#     state: absent
+#   register: result
