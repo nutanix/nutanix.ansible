@@ -132,11 +132,11 @@
         ext_id: "{{ object_store_ext_id }}"
       register: result
 
-# for deleting an object store, you need to delete the bucket first
-# Please delete the bucket manually from UI before running the delete task below.
+    # for deleting an object store, you need to delete the bucket first
+    # Please delete the bucket manually from UI before running the delete task below.
 
-- name: Delete object store
-  nutanix.ncp.ntnx_object_stores_v2:
-    ext_id: "{{ object_store_ext_id }}"
-    state: absent
-  register: result
+    - name: Delete object store
+      nutanix.ncp.ntnx_object_stores_v2:
+        ext_id: "{{ object_store_ext_id }}"
+        state: absent
+      register: result
