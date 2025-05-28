@@ -13,14 +13,14 @@ version_added: 2.2.0
 description:
     - Fetch specific object store certificate info if external ID is provided
     - Fetch list of multiple object store certificates info if external ID is not provided with optional filters
-    - This module uses PC v4 APIs based SDKs
+    - This module uses PC v4 APIs based GA SDKs
 options:
     object_store_ext_id:
         description: object store external ID
         type: str
         required: true
     ext_id:
-        description: external ID to fetch specific object store certificate info
+        description: external ID of certificate to fetch
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials

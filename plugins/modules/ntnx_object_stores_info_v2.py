@@ -18,6 +18,29 @@ options:
     ext_id:
         description: External ID to fetch specific object store info
         type: str
+    filter:
+        description: Filter to apply when a list of object stores is fetched
+        type: str
+        choices:
+            - certificateExtIds
+            - clusterExtId
+            - creationTime
+            - deploymentVersion
+            - description
+            - domain
+            - lastUpdateTime
+            - name
+            - numWorkerNodes
+            - publicNetworkIps/ipv4/value
+            - publicNetworkIps/ipv6/value
+            - publicNetworkReference
+            - region
+            - storageNetworkDnsIp/ipv4/value
+            - storageNetworkDnsIp/ipv6/value
+            - storageNetworkReference
+            - storageNetworkVip/ipv4/value
+            - storageNetworkVip/ipv6/value
+            - totalCapacityGiB
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2

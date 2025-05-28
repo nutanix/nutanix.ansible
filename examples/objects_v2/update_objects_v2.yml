@@ -41,7 +41,7 @@
         username: username
         password: password
 
-    - name: Deploy object store with one worker node using update operation
+    - name: Deploy the object store which failed in create operation
       nutanix.ncp.ntnx_object_stores_v2:
         name: "ansible-object"
         ext_id: "{{ object_store_ext_id }}"

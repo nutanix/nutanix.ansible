@@ -12,15 +12,12 @@ module: ntnx_object_stores_certificate_v2
 short_description: Create SSL certificate for a Nutanix object store
 version_added: 2.2.0
 description:
-    - This operation creates a new default certificate and keys.
-    - It also creates the alternate FQDNs and alternate IPs for the Object store.
+    - This module creates a new default certificate and keys.
+    - This module can be used to create the alternate FQDNs and alternate IPs for the Object store.
     - The certificate of an Object store can be created when it is in a OBJECT_STORE_AVAILABLE or OBJECT_STORE_CERT_CREATION_FAILED state.
-    - If the publicCert, privateKey, and ca values are provided in the request body, these values are used to create the new certificate.
-    - If these values are not provided, a new certificate will be generated if 'shouldGenerate' is set to true
-    - if it is set to false, the existing certificate will be used as the new certificate.
-    - Optionally, a list of additional alternate FQDNs and alternate IPs can be provided.
-    - These alternateFqdns and alternateIps must be included in the CA certificate if it has been provided.
-    - This module uses PC v4 APIs based SDKs
+    - If the publicCert, privateKey, and ca values are provided in the request body, these values are used to create the new certificate. If these values are not provided, a new certificate will be generated if 'shouldGenerate' is set to true, if it is set to false, the existing certificate will be used as the new certificate.
+    - Optionally, a list of additional alternate FQDNs and alternate IPs can be provided. These alternateFqdns and alternateIps must be included in the CA certificate if it has been provided.
+    - This module uses PC v4 APIs based GA SDKs
 options:
     object_store_ext_id:
         description:

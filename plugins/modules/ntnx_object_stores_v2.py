@@ -57,7 +57,7 @@ options:
                 required: false
             project_reference_id:
                 description:
-                    - Reference ID that represents the project this object store belongs to.
+                    - Reference ID that represents the project this object store should belong to.
                 type: str
                 required: false
             project_name:
