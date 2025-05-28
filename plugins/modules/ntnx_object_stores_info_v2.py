@@ -19,9 +19,8 @@ options:
         description: External ID to fetch specific object store info
         type: str
     filter:
-        description: Filter to apply when a list of object stores is fetched
-        type: str
-        choices:
+        description:
+            - Filter to apply when a list of object stores is fetched, we can filter by the following attributes
             - certificateExtIds
             - clusterExtId
             - creationTime
@@ -41,6 +40,8 @@ options:
             - storageNetworkVip/ipv4/value
             - storageNetworkVip/ipv6/value
             - totalCapacityGiB
+        type: str
+
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
@@ -169,30 +170,6 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
-        filter=dict(
-            type="str",
-            choices=[
-                "certificateExtIds",
-                "clusterExtId",
-                "creationTime",
-                "deploymentVersion",
-                "description",
-                "domain",
-                "lastUpdateTime",
-                "name",
-                "numWorkerNodes",
-                "publicNetworkIps/ipv4/value",
-                "publicNetworkIps/ipv6/value",
-                "publicNetworkReference",
-                "region",
-                "storageNetworkDnsIp/ipv4/value",
-                "storageNetworkDnsIp/ipv6/value",
-                "storageNetworkReference",
-                "storageNetworkVip/ipv4/value",
-                "storageNetworkVip/ipv6/value",
-                "totalCapacityGiB",
-            ],
-        ),
     )
     return module_args
 
