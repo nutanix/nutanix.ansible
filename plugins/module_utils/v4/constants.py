@@ -40,6 +40,7 @@ class Tasks:
         VM_RECOVERY_POINT = "dataprotection:config:vm-recovery-point"
         STORAGE_CONTAINER = "clustermgmt:config:storage-containers"
         ROUTE = "networking:config:route"
+        OBJECTS = "objects:config:object-store"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
