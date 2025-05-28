@@ -13,11 +13,16 @@ short_description: Create SSL certificate for a Nutanix object store
 version_added: 2.2.0
 description:
     - This module creates a new default certificate and keys.
-    - This module can be used to create the alternate FQDNs and alternate IPs for the Object store.
-    - The certificate of an Object store can be created when it is in a OBJECT_STORE_AVAILABLE or OBJECT_STORE_CERT_CREATION_FAILED state.
-    - If the publicCert, privateKey, and ca values are provided in the request body, these values are used to create the new certificate. If these values are not provided, a new certificate will be generated if 'shouldGenerate' is set to true, if it is set to false, the existing certificate will be used as the new certificate.
-    - Optionally, a list of additional alternate FQDNs and alternate IPs can be provided. These alternateFqdns and alternateIps must be included in the CA certificate if it has been provided.
-    - This module uses PC v4 APIs based GA SDKs
+    - It can be used to configure alternate FQDNs and alternative IPs for the Object Store.
+    - The certificate can be created when the Object Store is in an OBJECT_STORE_AVAILABLE or
+      OBJECT_STORE_CERT_CREATION_FAILED state.
+    - If 'publicCert', 'privateKey', and 'ca' are provided in the request body, they will be used
+      to create the new certificate.
+    - If those values are not provided, a new certificate will be generated if 'shouldGenerate' is true.
+    - If 'shouldGenerate' is false, the existing certificate will be reused as the new certificate.
+    - Optionally, a list of alternate FQDNs and IPs can be provided.
+    - These 'alternateFqdns' and 'alternateIps' must be included in the CA certificate if a CA is provided.
+    - This module uses PC v4 APIs based GA SDKs.
 options:
     object_store_ext_id:
         description:
@@ -218,10 +223,10 @@ def create_certificate(module, object_stores_api, result):
     if module.check_mode:
         result["object_store_ext_id"] = object_store_ext_id
         result["path"] = module.params.get("path")
-        result[
-            "msg"
-        ] = "New certificate will be created for the object store with ext_id:{0} using the certificate details file:{1}".format(
-            object_store_ext_id, path
+        result["msg"] = (
+            "New certificate will be created for the object store with ext_id:{0} using the certificate details file:{1}".format(
+                object_store_ext_id, path
+            )
         )
         return
 
