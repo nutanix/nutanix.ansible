@@ -66,11 +66,11 @@
     success_msg: "Spec for creating object store is generated successfully with check mode"
     fail_msg: "Spec for creating object store is not generated successfully with check mode"
 
-- name: Deploy object store with one worker node
+- name: Deploy first object store with one worker node
   nutanix.ncp.ntnx_object_stores_v2:
-    name: "ansible-object"
+    name: "ansible-object-1"
     cluster_ext_id: "{{ cluster.uuid }}"
-    description: "object store test"
+    description: "object store test 1"
     domain: "{{ objects.domain }}"
     num_worker_nodes: "{{ objects.num_worker_nodes }}"
     storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
@@ -88,7 +88,7 @@
   register: result
   ignore_errors: true
 
-- name: Deploy object store with one worker node status
+- name: Deploy first object store with one worker node status
   ansible.builtin.assert:
     that:
       - result.changed is true
@@ -96,8 +96,8 @@
       - result.response is defined
       - result.task_ext_id is defined
       - result.response.cluster_ext_id == "{{ cluster.uuid }}"
-      - result.response.name == "ansible-object"
-      - result.response.description == "object store test"
+      - result.response.name == "ansible-object-1"
+      - result.response.description == "object store test 1"
       - result.response.domain == "{{ objects.domain }}"
       - result.response.num_worker_nodes == {{ objects.num_worker_nodes }}
       - result.response.storage_network_reference == "{{ objects.storage_network_reference.uuid }}"
@@ -107,16 +107,64 @@
       - result.response.public_network_ips[0].ipv4.value == "{{ objects.public_network_reference.IPs[0] }}"
       - result.response.total_capacity_gi_b == {{ objects.total_capacity_gi_b }}
       - result.response.state == "OBJECT_STORE_AVAILABLE"
-    success_msg: "Object store with one worker node is deployed successfully"
-    fail_msg: "Object store with one worker node is not deployed successfully"
+    success_msg: "First object store with one worker node is deployed successfully"
+    fail_msg: "First object store with one worker node is not deployed successfully"
 
 - name: Set object store external ID
   ansible.builtin.set_fact:
-    object_store_ext_id: "{{ result.response.ext_id }}"
+    object_store_ext_id_1: "{{ result.response.ext_id }}"
+
+- name: Deploy second object store with one worker node
+  nutanix.ncp.ntnx_object_stores_v2:
+    name: "ansible-object-2"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    description: "object store test 2"
+    domain: "{{ objects.domain }}"
+    num_worker_nodes: 2
+    storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
+    storage_network_vip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[2] }}"
+    storage_network_dns_ip:
+      ipv4:
+        value: "{{ objects.storage_network_reference.IPs[3] }}"
+    public_network_reference: "{{ objects.public_network_reference.uuid }}"
+    public_network_ips:
+      - ipv4:
+          value: "{{ objects.public_network_reference.IPs[1] }}"
+    total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
+  register: result
+  ignore_errors: true
+
+- name: Deploy second object store with one worker node status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.cluster_ext_id == "{{ cluster.uuid }}"
+      - result.response.name == "ansible-object-2"
+      - result.response.description == "object store test 2"
+      - result.response.domain == "{{ objects.domain }}"
+      - result.response.num_worker_nodes == 1
+      - result.response.storage_network_reference == "{{ objects.storage_network_reference.uuid }}"
+      - result.response.storage_network_vip.ipv4.value == "{{ objects.storage_network_reference.IPs[2] }}"
+      - result.response.storage_network_dns_ip.ipv4.value == "{{ objects.storage_network_reference.IPs[3] }}"
+      - result.response.public_network_reference == "{{ objects.public_network_reference.uuid }}"
+      - result.response.public_network_ips[0].ipv4.value == "{{ objects.public_network_reference.IPs[1] }}"
+      - result.response.total_capacity_gi_b == {{ objects.total_capacity_gi_b }}
+      - result.response.state == "OBJECT_STORE_AVAILABLE"
+    success_msg: "Second object store with one worker node is deployed successfully"
+    fail_msg: "Second object store with one worker node is not deployed successfully"
+
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id_2: "{{ result.response.ext_id }}"
 
 - name: List all certificates for an object store
   nutanix.ncp.ntnx_object_stores_certificate_info_v2:
-    object_store_ext_id: "{{ object_store_ext_id }}"
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
   register: result
 
 - name: List all certificates for an object store status
@@ -150,7 +198,7 @@
 
 - name: Create certificate for an object store using check mode
   nutanix.ncp.ntnx_object_stores_certificate_v2:
-    object_store_ext_id: "{{ object_store_ext_id }}"
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
     path: "/tmp/certificate_details.json"
   register: result
   check_mode: true
@@ -161,16 +209,16 @@
     that:
       - result.changed is false
       - result.failed is false
-      - result.object_store_ext_id == "{{ object_store_ext_id }}"
+      - result.object_store_ext_id == "{{ object_store_ext_id_1 }}"
       - result.path == "/tmp/certificate_details.json"
-      - result.msg == "New certificate will be created for the object store with ext_id:{{ object_store_ext_id }}
+      - result.msg == "New certificate will be created for the object store with ext_id:{{ object_store_ext_id_1 }}
         using the certificate details file:/tmp/certificate_details.json"
     success_msg: "Create certificate for an object store using check mode passed"
     fail_msg: "Create certificate for an object store using check mode failed"
 
 - name: Create certificate for an object store
   nutanix.ncp.ntnx_object_stores_certificate_v2:
-    object_store_ext_id: "{{ object_store_ext_id }}"
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
     path: "/tmp/certificate_details.json"
   register: result
   ignore_errors: true
@@ -188,7 +236,7 @@
 
 - name: List all certificates for an object store
   nutanix.ncp.ntnx_object_stores_certificate_info_v2:
-    object_store_ext_id: "{{ object_store_ext_id }}"
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
   register: result
   ignore_errors: true
 
@@ -209,7 +257,7 @@
 
 - name: Fetch certificate details using external ID
   nutanix.ncp.ntnx_object_stores_certificate_info_v2:
-    object_store_ext_id: "{{ object_store_ext_id }}"
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
     ext_id: "{{ certificate_ext_id }}"
   register: result
 
@@ -233,7 +281,7 @@
       - result.changed is false
       - result.failed is false
       - result.response is defined
-      - result.response | length > 0
+      - result.response | length >= 2
     success_msg: "All object stores are listed successfully"
     fail_msg: "All object stores are not listed successfully"
 
@@ -275,7 +323,7 @@
 
 - name: Fetch object store details using external ID
   nutanix.ncp.ntnx_object_stores_info_v2:
-    ext_id: "{{ object_store_ext_id }}"
+    ext_id: "{{ object_store_ext_id_1 }}"
   register: result
 
 - name: Fetch object store details using external ID status
@@ -284,9 +332,9 @@
       - result.changed is false
       - result.failed is false
       - result.response is defined
-      - result.response.ext_id == "{{ object_store_ext_id }}"
-      - result.response.name == "ansible-object"
-      - result.response.description == "object store test"
+      - result.response.ext_id == "{{ object_store_ext_id_1 }}"
+      - result.response.name == "ansible-object-1"
+      - result.response.description == "object store test 1"
       - result.response.domain == "{{ objects.domain }}"
       - result.response.num_worker_nodes == {{ objects.num_worker_nodes }}
       - result.response.storage_network_reference == "{{ objects.storage_network_reference.uuid }}"
@@ -302,7 +350,7 @@
 
 - name: Delete object store with check mode
   nutanix.ncp.ntnx_object_stores_v2:
-    ext_id: "{{ object_store_ext_id }}"
+    ext_id: "{{ object_store_ext_id_1 }}"
     state: absent
   register: result
   check_mode: true
@@ -314,12 +362,19 @@
       - result.msg is defined
       - result.changed is false
       - result.failed is false
-      - result.ext_id == "{{ object_store_ext_id }}"
-      - result.msg == "Object store with ext_id:{{ object_store_ext_id }} will be deleted."
+      - result.ext_id == "{{ object_store_ext_id_1 }}"
+      - result.msg == "Object store with ext_id:{{ object_store_ext_id_1 }} will be deleted."
     success_msg: "Delete object store with check mode passed"
     fail_msg: "Delete object store with check mode failed"
 
-- name: Delete bucket in object store
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
+
+# example of delete bucket API (delete_bucket_api):
+# https://{{ ip }}:{{ port }}/oss/api/nutanix/v3/objectstore_proxy/{{ object_store_ext_id }}/buckets/{{ objects.bucket_name }}?force_empty_bucket=true
+
+- name: Delete bucket in first object store
   ansible.builtin.uri:
     url: "{{ delete_bucket_api }}"
     method: DELETE
@@ -340,7 +395,7 @@
     success_msg: "Bucket is deleted successfully"
     fail_msg: "Bucket is not deleted successfully"
 
-- name: Delete object store
+- name: Delete first object store
   nutanix.ncp.ntnx_object_stores_v2:
     ext_id: "{{ object_store_ext_id }}"
     state: absent
@@ -357,3 +412,46 @@
       - result.response.status == "SUCCEEDED"
     success_msg: "Object store is deleted successfully"
     fail_msg: "Object store is not deleted successfully"
+
+- name: Set object store external ID
+  ansible.builtin.set_fact:
+    object_store_ext_id: "{{ object_store_ext_id_2 }}"
+
+- name: Delete bucket in second object store
+  ansible.builtin.uri:
+    url: "{{ delete_bucket_api }}"
+    method: DELETE
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Accept: "application/json"
+    status_code: [200, 202]
+  register: result
+
+- name: Delete bucket status
+  ansible.builtin.assert:
+    that:
+      - result.failed is false
+      - result.status == 200 or result.status == 202
+    success_msg: "Bucket is deleted successfully"
+    fail_msg: "Bucket is not deleted successfully"
+
+- name: Delete second object store
+  nutanix.ncp.ntnx_object_stores_v2:
+    ext_id: "{{ object_store_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete second object store status
+  ansible.builtin.assert:
+    that:
+      - result.changed is true
+      - result.failed is false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Second object store is deleted successfully"
+    fail_msg: "Second object store is not deleted successfully"

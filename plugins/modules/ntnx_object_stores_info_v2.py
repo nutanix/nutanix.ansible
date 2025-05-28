@@ -169,6 +169,30 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        filter=dict(
+            type="str",
+            choices=[
+                "certificateExtIds",
+                "clusterExtId",
+                "creationTime",
+                "deploymentVersion",
+                "description",
+                "domain",
+                "lastUpdateTime",
+                "name",
+                "numWorkerNodes",
+                "publicNetworkIps/ipv4/value",
+                "publicNetworkIps/ipv6/value",
+                "publicNetworkReference",
+                "region",
+                "storageNetworkDnsIp/ipv4/value",
+                "storageNetworkDnsIp/ipv6/value",
+                "storageNetworkReference",
+                "storageNetworkVip/ipv4/value",
+                "storageNetworkVip/ipv6/value",
+                "totalCapacityGiB",
+            ],
+        ),
     )
     return module_args
 
