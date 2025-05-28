@@ -214,9 +214,12 @@
     success_msg: "Object store is deployed successfully using update operation"
     fail_msg: "Object store is not deployed successfully using update operation"
 
+# example of delete bucket API (delete_bucket_api):
+# https://{{ ip }}:{{ port }}/oss/api/nutanix/v3/objectstore_proxy/{{ object_store_ext_id }}/buckets/{{ objects.bucket_name }}?force_empty_bucket=true
+
 - name: Delete bucket in object store
   ansible.builtin.uri:
-    url: "{{ delete_bucket_api }}" # https://{{ ip }}:{{ port }}/oss/api/nutanix/v3/objectstore_proxy/{{ object_store_ext_id }}/buckets/{{ objects.bucket_name }}?force_empty_bucket=true
+    url: "{{ delete_bucket_api }}"
     method: DELETE
     user: "{{ username }}"
     password: "{{ password }}"
