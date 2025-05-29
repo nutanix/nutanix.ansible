@@ -49,7 +49,7 @@ response:
             "accessLevel": null,
             "dateCreated": "2023-02-25 06:34:44",
             "dateModified": "2023-02-28 00:00:00",
-            "description": "anisble-created-window",
+            "description": "ansible-created-window",
             "entityTaskAssoc": [
                 {
                     "accessLevel": null,

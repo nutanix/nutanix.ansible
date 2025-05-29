@@ -101,7 +101,7 @@ EXAMPLES = r"""
     tasks: []
   register: result
 
-- name: Add maitenance window task for vm
+- name: Add maintenance window task for vm
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{vm1_name_updated}}"
@@ -125,7 +125,7 @@ response:
             "accessLevel": null,
             "dateCreated": "2023-02-25 06:34:44",
             "dateModified": "2023-02-28 00:00:00",
-            "description": "anisble-created-window",
+            "description": "ansible-created-window",
             "entityTaskAssoc": [
                 {
                     "accessLevel": null,

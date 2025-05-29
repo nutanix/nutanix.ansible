@@ -286,7 +286,7 @@ options:
                             checkpoint_completion_target:
                                 description:
                                     - checkpoint completion target
-                                    - deafult is 0.5
+                                    - default is 0.5
                                 type: float
                             autovacuum_freeze_max_age:
                                 description:
@@ -311,7 +311,7 @@ options:
                             autovacuum_max_workers:
                                 description:
                                     - autovacuum max workers
-                                    - deafult is 3
+                                    - default is 3
                                 type: int
                             autovacuum_vacuum_cost_delay:
                                 description:
@@ -930,7 +930,7 @@ def check_profile_idempotency(old_spec, new_spec):
         if len(new_clusters) != len(old_clusters):
             return False
 
-        # update if availibility of cluster is required
+        # update if availability of cluster is required
         for cluster in new_clusters:
             if cluster not in old_clusters:
                 return False
@@ -1082,7 +1082,7 @@ def create_profile(module, result):
     result["response"] = resp
     uuid = resp.get("id")
 
-    # incase there is process of replication triggered, operation info is recieved
+    # incase there is process of replication triggered, operation info is received
     if profile_type == "software" and not uuid:
         uuid = resp.get("entityId")
 
@@ -1184,6 +1184,11 @@ def delete_profile(module, result):
     uuid = module.params.get("profile_uuid")
     if not uuid:
         return module.fail_json(msg="'profile_uuid' is a required for deleting profile")
+
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Profile with uuid:{0} will be deleted.".format(uuid)
+        return
 
     resp = profiles.delete(uuid)
 

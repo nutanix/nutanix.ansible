@@ -130,13 +130,14 @@
     snapshot_uuid: "{{ result.snapshot_uuid }}"
 
 - name: Create spec for replicating snapshot from cluster1 on cluster2
-  check_mode: true
   ntnx_ndb_replicate_database_snapshots:
     snapshot_uuid: "{{ snapshot_uuid }}"
     clusters:
       - name: "{{ cluster.cluster2.name }}"
     expiry_days: 20
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Setting expected result for snapshot replication
   ansible.builtin.set_fact:
@@ -144,7 +145,12 @@
       changed: false
       error:
       failed: false
-      response: { lcmConfig: { snapshotLCMConfig: { expiryDetails: { expireInDays: 20 } } }, nxClusterIds: ["{{ cluster.cluster2.uuid }}"] }
+      response:
+        {
+          lcmConfig:
+            { snapshotLCMConfig: { expiryDetails: { expireInDays: 20 } } },
+          nxClusterIds: ["{{ cluster.cluster2.uuid }}"],
+        }
       snapshot_uuid: "{{ snapshot_uuid }}"
 - name: Check snapshot replication spec
   ansible.builtin.assert:
@@ -171,6 +177,26 @@
     success_msg: snapshot replicated successfully
 
 #######################
+- name: Delete time machine  with check mode
+  ntnx_ndb_time_machine_clusters:
+    state: absent
+    time_machine_uuid: "{{ time_machine.uuid }}"
+    cluster:
+      uuid: "{{cluster.cluster2.uuid}}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete time machine with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Cluster with uuid:{{ time_machine.uuid}} will be deleted from Time Machine."
+      - output.time_machine_uuid  == "{{ time_machine.uuid }}"
+      - output.cluster_uuid == "{{cluster.cluster2.uuid}}"
+    fail_msg: "Delete time machine with check mode failed"
+    success_msg: "Delete time machine with check mode passed"
 
 - name: Delete time machine
   ntnx_ndb_time_machine_clusters:
@@ -187,6 +213,8 @@
       - result.time_machine_uuid is defined
       - result.changed == true
       - result.failed == false
+      - result.time_machine_uuid == "{{ time_machine.uuid }}"
+      - result.cluster_uuid == "{{ cluster.cluster2.uuid }}"
     fail_msg: "fail: Unable to remove cluster from time machine"
     success_msg: "pass: cluster from time machine removed successfully"
 
@@ -242,16 +270,17 @@
     time_machine_uuid: "{{ result.time_machine_uuid }}"
     cluster:
       uuid: "{{ cluster.cluster2.uuid }}"
-  register: result
+  register: output
 
 - name: Check delete status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.time_machine_uuid is defined
-      - result.changed == true
-      - result.failed == false
+      - output.response is defined
+      - output.time_machine_uuid is defined
+      - output.changed == true
+      - output.failed == false
+      - output.time_machine_uuid == "{{ result.time_machine_uuid }}"
+      - output.cluster_uuid == "{{ cluster.cluster2.uuid }}"
     fail_msg: "fail: Unable to remove cluster from time machine"
     success_msg: "pass: cluster from time machine removed successfully"
-
 #######################

@@ -15,6 +15,11 @@ version_added: 2.0.0
 description:
     - Create, Update and delete VMs in Nutanix AHV based PC
     - This module uses PC v4 APIs based SDKs
+    - Workaround for the disk resizing issue in the SDK.
+        - After VM creation, use ntnx_vms_disks_v2 module to resize the disks.
+        - Disk resizing gets skipped from API during VM create. Module will start working as expected when API is fixed.
+        - Contact Nutanix Support to check status on this enhancement request for API.
+
 notes:
     - During vm update, Update or create of subresources like disks, nics, cd_roms, gpus, serial_ports, etc. is not supported.
     - Use subresources specific modules to update or create subresources.
@@ -1277,6 +1282,11 @@ def update_vm(module, result):
 def delete_vm(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "VM with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     vms = get_vm_api_instance(module)
     vm = get_vm(module, vms, ext_id)
     etag = get_etag(vm)

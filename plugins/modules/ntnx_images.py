@@ -67,7 +67,7 @@ options:
         type: dict
     remove_categories:
         description:
-            - set this flag to remove dettach all categories attached to image
+            - set this flag to remove detach all categories attached to image
             - mutually_exclusive with C(categories)
         type: bool
         required: false
@@ -196,7 +196,7 @@ EXAMPLES = r"""
         - Backup
     wait: true
 
-- name: dettach all categories from existing image
+- name: detach all categories from existing image
   ntnx_images:
     state: "present"
     image_uuid: "00000000-0000-0000-0000-000000000000"
@@ -451,6 +451,10 @@ def delete_image(module, result):
     if not uuid:
         result["error"] = "Missing parameter image_uuid"
         module.fail_json(msg="Failed deleting Image", **result)
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Image with uuid:{0} will be deleted.".format(uuid)
+        return
 
     image = Image(module)
     resp = image.delete(uuid)

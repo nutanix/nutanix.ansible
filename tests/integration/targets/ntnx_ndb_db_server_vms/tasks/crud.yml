@@ -26,7 +26,6 @@
 
 ################################### DB server VM Provision tests #############################
 - name: Create ndb vm using time machine and check mode
-  check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     name: ansible-created-vm1-from-time-machine
@@ -53,8 +52,9 @@
         - type: DB_PATCHING
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
-
   register: check_mode_result
+  check_mode: true
+  no_log: true
 
 # skip jekyll/Liquid syntax check
 # {% raw %}
@@ -65,13 +65,20 @@
   no_log: true
 # {% endraw %}
 
-- name: Set mainetance_tasks
+- name: Set maintenance_tasks
   ansible.builtin.set_fact:
-    mainetance_tasks:
+    maintenance_tasks:
       maintenanceWindowId: test_window_uuid
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
+        - {
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -82,7 +89,10 @@
       response:
         actionArguments:
           - { name: vm_name, value: ansible-created-vm1-from-time-machine }
-          - { name: client_public_key, value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER }
+          - {
+            name: client_public_key,
+            value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER,
+          }
         computeProfileId: test_compute_uuid
         databaseType: postgres_database
         description: ansible-created-vm1-from-time-machine-time-machine
@@ -90,8 +100,16 @@
         maintenanceTasks:
           maintenanceWindowId: test_window_uuid
           tasks:
-            - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-            - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+            - {
+              payload:
+                { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+              taskType: OS_PATCHING,
+            }
+            - {
+              payload:
+                { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+              taskType: DB_PATCHING,
+            }
         networkProfileId: test_network_uuid
         nxClusterId: test_cluster_uuid
         snapshotId: test_snapshot_uuid
@@ -110,7 +128,6 @@
     success_msg: DB server VM spec created successfully
 
 - name: Create spec for db server vm using software profile and names of profile
-  check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     name: "{{ vm1_name }}"
@@ -138,6 +155,8 @@
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -146,7 +165,14 @@
       error:
       failed: false
       response:
-        actionArguments: [{ name: vm_name, value: "{{ vm1_name }}" }, { name: client_public_key, value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER }]
+        actionArguments:
+          [
+            { name: vm_name, value: "{{ vm1_name }}" },
+            {
+              name: client_public_key,
+              value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER,
+            },
+          ]
         computeProfileId: "{{ compute_profile.uuid }}"
         databaseType: postgres_database
         description: ansible-created-vm1-desc
@@ -154,8 +180,16 @@
         maintenanceTasks:
           maintenanceWindowId: "{{ maintenance.window_uuid }}"
           tasks:
-            - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-            - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+            - {
+              payload:
+                { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+              taskType: OS_PATCHING,
+            }
+            - {
+              payload:
+                { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+              taskType: DB_PATCHING,
+            }
         networkProfileId: "{{ network_profile.uuid }}"
         nxClusterId: "{{ cluster.cluster1.uuid }}"
         softwareProfileId: "{{ software_profile.uuid }}"
@@ -289,7 +323,6 @@
     success_msg: db server vm update skipped successfully due to no changes in state
 
 - name: Update db server vm name with check mode and check defaults
-  check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     uuid: "{{ db_server_uuid }}"
@@ -297,6 +330,8 @@
       - username: user
         password: pass
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -460,14 +495,13 @@
 ################################### maintenance tasks update tests #############################
 
 - name: Create spec for adding maintenance window tasks to db server vm
-  check_mode: true
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{ vm1_name_updated }}"
       - uuid: test_vm_1
     db_server_clusters:
-      - uuid: test_cluter_1
-      - uuid: test_cluter_2
+      - uuid: test_cluster_1
+      - uuid: test_cluster_2
     maintenance_window:
       name: "{{ maintenance.window_name }}"
     tasks:
@@ -478,6 +512,8 @@
         pre_task_cmd: ls -a
         post_task_cmd: ls
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -486,11 +522,23 @@
       error:
       failed: false
       response:
-        entities: { ERA_DBSERVER: ["{{ db_server_uuid }}", test_vm_1], ERA_DBSERVER_CLUSTER: [test_cluter_1, test_cluter_2] }
+        entities:
+          {
+            ERA_DBSERVER: ["{{ db_server_uuid }}", test_vm_1],
+            ERA_DBSERVER_CLUSTER: [test_cluter_1, test_cluter_2],
+          }
         maintenanceWindowId: "{{ maintenance.window_uuid }}"
         tasks:
-          - { payload: { prePostCommand: { postCommand: ls, preCommand: ls -a } }, taskType: OS_PATCHING }
-          - { payload: { prePostCommand: { postCommand: ls, preCommand: ls -a } }, taskType: DB_PATCHING }
+          - {
+            payload:
+              { prePostCommand: { postCommand: ls, preCommand: ls -a } },
+            taskType: OS_PATCHING,
+          }
+          - {
+            payload:
+              { prePostCommand: { postCommand: ls, preCommand: ls -a } },
+            taskType: DB_PATCHING,
+          }
       uuid: "{{ maintenance.window_uuid }}"
 
 - name: Check mode status
@@ -502,7 +550,6 @@
     success_msg: spec for adding maintenance tasks for db server vm created successfully
 
 - name: Create spec for removing maintenance window tasks from above created vm
-  check_mode: true
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{ db_server_uuid }}"
@@ -510,6 +557,8 @@
       uuid: "{{ maintenance.window_uuid }}"
     tasks: []
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -517,7 +566,12 @@
       changed: false
       error:
       failed: false
-      response: { entities: { ERA_DBSERVER: ["{{ db_server_uuid }}"] }, maintenanceWindowId: "{{ maintenance.window_uuid }}", tasks: [] }
+      response:
+        {
+          entities: { ERA_DBSERVER: ["{{ db_server_uuid }}"] },
+          maintenanceWindowId: "{{ maintenance.window_uuid }}",
+          tasks: [],
+        }
       uuid: "{{ maintenance.window_uuid }}"
 
 - name: Check mode status
@@ -564,7 +618,7 @@
     fail_msg: Unable to remove maintenance tasks for given db server vm
     success_msg: maintenance tasks for given db server vm removed successfully
 
-- name: Add maitenance window task for vm
+- name: Add maintenance window task for vm
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{ vm1_name_updated }}"
@@ -630,12 +684,13 @@
 ################################### DB server VM unregistration tests #############################
 
 - name: Generate check mode spec for unregister with default values
-  check_mode: true
   ntnx_ndb_db_server_vms:
     state: absent
     wait: true
     uuid: "{{ db_server_uuid }}"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -652,7 +707,6 @@
     success_msg: DB server VM unregister spec generated successfully
 
 - name: Genereate check mode spec for delete vm with vgs and snapshots
-  check_mode: true
   ntnx_ndb_db_server_vms:
     state: absent
     uuid: "{{ db_server_uuid }}"
@@ -660,6 +714,8 @@
     delete_vgs: true
     delete_vm_snapshots: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -698,7 +754,6 @@
 ################################### DB server VM Registration tests #############################
 
 - name: Generate spec for registeration of the previous unregistered vm using check mode
-  check_mode: true
   ntnx_ndb_register_db_server_vm:
     ip: "{{ vm_ip }}"
     desc: register-vm-desc
@@ -721,6 +776,8 @@
           post_task_cmd: ls -F
     working_directory: /check
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Create action_arguments map
   ansible.builtin.set_fact:
@@ -741,8 +798,15 @@
     maintenance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
+        - {
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -821,6 +885,23 @@
     db_server_uuid: "{{ result.uuid }}"
 
 ################################### DB server VM Delete test #############################
+- name: Delete db server vm with check mode
+  ntnx_ndb_db_server_vms:
+    state: absent
+    uuid: "{{ db_server_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete db server vm with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Db server with uuid:{{  db_server_uuid }} will be deleted."
+      - output.uuid == "{{ db_server_uuid  }}"
+    fail_msg: "Delete db server vm with check mode failed"
+    success_msg: "Delete db server vm with check mode passed"
 
 - name: Unregister db server vm
   ntnx_ndb_db_server_vms:
@@ -832,12 +913,12 @@
     delete_vm_snapshots: true
   register: result
 
-- name: Check mode Status
+- name: Unregister db server vm Status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.response.status == "5"
-
-    fail_msg: Unable to delete db server vm
-    success_msg: DB server VM deleted successfully
+      - result.uuid == "{{ db_server_uuid  }}"
+    fail_msg: "Unable to unregister db server vm"
+    success_msg: "Unregister db server vm successfully"

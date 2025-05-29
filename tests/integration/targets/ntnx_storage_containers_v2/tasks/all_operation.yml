@@ -104,7 +104,7 @@
   register: result
   ignore_errors: true
 
-- name: Creaion status
+- name: Creation status
   ansible.builtin.assert:
     that:
       - result.changed == false
@@ -112,7 +112,7 @@
     fail_msg: "Fail: storage container created with missing cluster id"
     success_msg: "Success: Returned as expected"
 
-- name: Create storage container with diffrent attributes
+- name: Create storage container with different attributes
   ntnx_storage_containers_v2:
     name: "{{ storage_container_name }}2"
     cluster_ext_id: "{{ cluster.uuid }}"
@@ -136,7 +136,7 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [result.ext_id] }}"
 
-- name: Check storage container creation with diffrent attributes
+- name: Check storage container creation with different attributes
   ansible.builtin.assert:
     that:
       - result.changed == true
@@ -151,8 +151,8 @@
       - result.response.logical_advertised_capacity_bytes == 1073741824000
       - result.response.nfs_whitelist_address[0].ipv4.value == "192.168.12.0"
       - result.response.nfs_whitelist_address[0].ipv4.prefix_length == 32
-    fail_msg: Unable to create storage container with diffrent attributes
-    success_msg: Storage container created successfully with diffrent attributes
+    fail_msg: Unable to create storage container with different attributes
+    success_msg: Storage container created successfully with different attributes
 
 - name: Set storage container external id
   ansible.builtin.set_fact:
@@ -374,6 +374,25 @@
       - result.response | length == 1
     fail_msg: Unable to fetch all storage containers with limit
     success_msg: All storage containers fetched successfully with limit
+
+- name: Delete storage container with check mode enabled
+  ntnx_storage_containers_v2:
+    state: absent
+    ext_id: "{{ storage_container_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete storage container with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ storage_container_ext_id }}"
+      - result.msg == "Storage container with ext_id:{{ storage_container_ext_id }} will be deleted."
+    fail_msg: "Delete storage container with check mode enabled failed"
+    success_msg: "Delete storage container with check mode enabled passed"
 
 - name: Delete all Created storage containers
   ntnx_storage_containers_v2:

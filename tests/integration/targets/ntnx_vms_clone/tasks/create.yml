@@ -22,7 +22,7 @@
           expire: False
       fqdn: myNutanixVM
 
-- name: VM with minimum requiremnts to clone
+- name: VM with minimum requirements to clone
   ntnx_vms:
     state: present
     name: integration_test_clone_vm
@@ -42,8 +42,8 @@
     that:
       - vm.response is defined
       - vm.response.status.state == 'COMPLETE'
-    fail_msg: "Fail: Unable to create VM with minimum requiremnts to clone "
-    success_msg: "Succes: VM with minimum requiremnts created successfully "
+    fail_msg: "Fail: Unable to create VM with minimum requirements to clone "
+    success_msg: "Success: VM with minimum requirements created successfully "
 ##############################
 
 - name: Clone vm  and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off
@@ -64,7 +64,7 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Fail: Unable to clone vm and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off"
-    success_msg: "Succes: VM cloned  successfully and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off "
+    success_msg: "Success: VM cloned  successfully and change vcpus,memory_gb,cores_per_vcpu,timezone,desc,name with force_power_off "
 
 - name: Adding VM uuid to delete list
   ansible.builtin.set_fact:
@@ -86,7 +86,7 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Fail: Unable to clone vm while it is off "
-    success_msg: "Succes: VM cloned  successfully "
+    success_msg: "Success: VM cloned  successfully "
 
 - name: Adding VM uuid to delete list
   ansible.builtin.set_fact:
@@ -129,7 +129,7 @@
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
     fail_msg: "Fail: Unable to clone vm vm  with script"
-    success_msg: "Succes: VM cloned   with script  successfully "
+    success_msg: "Success: VM cloned   with script  successfully "
 
 - name: Adding VM uuid to delete list
   ansible.builtin.set_fact:

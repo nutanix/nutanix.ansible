@@ -12,7 +12,7 @@
     that:
       - result.response is defined
     fail_msg: " Unable to list floating_ips "
-    success_msg: " Floatong_ips listed successfully "
+    success_msg: " Floating_ips listed successfully "
 ##############################################################
 - name: List floating_ips using length and offset
   ntnx_floating_ips_info:
@@ -27,7 +27,7 @@
     that:
       - result.response is defined
     fail_msg: " Unable to list floating_ips "
-    success_msg: " Floatong_ips listed successfully "
+    success_msg: " Floating_ips listed successfully "
 #############################################################
 - name: List floating_ips using ascending ip sorting
   ntnx_floating_ips_info:
@@ -41,5 +41,5 @@
     that:
       - result.response is defined
     fail_msg: " Unable to list floating_ips "
-    success_msg: " Floatong_ips listed successfully "
+    success_msg: " Floating_ips listed successfully "
 #############################################################

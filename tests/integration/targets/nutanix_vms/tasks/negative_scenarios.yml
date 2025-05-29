@@ -37,7 +37,6 @@
     success_msg: " Success: returned error as expected "
 #############################################################
 - name: Check if error is produced when disk size is not given for storage container
-  check_mode: true
   ntnx_vms:
     state: present
     name: VM with storage container
@@ -57,6 +56,7 @@
     memory_gb: 1
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Creation Status
   ansible.builtin.assert:
@@ -174,7 +174,7 @@
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail VM created successfully with unknown network name "
 ###################################################################################
-- name: Unknow Image name
+- name: Unknown Image name
   ntnx_vms:
     state: present
     name: unknown image_vm
@@ -262,7 +262,7 @@
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail: VM created successfully with image size is less than actual "
 #################################################################################
-- name: Unknow storage container name
+- name: Unknown storage container name
   ntnx_vms:
     state: present
     name: unknown storage container

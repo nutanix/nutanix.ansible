@@ -67,7 +67,6 @@
 ############################################ Verify check modes ############################################
 
 - name: Generate check mode response for Iscsi attachments using IQN
-  check_mode: true
   ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     iscsi_initiator_name: "{{ iscsi_client_name }}"
@@ -76,6 +75,8 @@
     client_secret: "1234455"
     attachment_site: "PRIMARY"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Verify spec
   ansible.builtin.assert:
@@ -92,7 +93,6 @@
     success_msg: "ISCSI client attach spec generated successfully using IQN"
 
 - name: Generate check mode response for Iscsi attachments using Ipv4
-  check_mode: true
   ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     num_virtual_targets: 32
@@ -103,6 +103,8 @@
       ipv4:
         value: "0.0.0.0"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Verify spec
   ansible.builtin.assert:
@@ -115,7 +117,6 @@
     success_msg: "ISCSI client attach spec generated successfully using IPv4"
 
 - name: Generate check mode response for Iscsi attachments using fqdn
-  check_mode: true
   ntnx_volume_groups_iscsi_clients_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
     num_virtual_targets: 32
@@ -126,6 +127,8 @@
       fqdn:
         value: "test.com"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Verify spec
   ansible.builtin.assert:

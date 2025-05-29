@@ -84,6 +84,26 @@
     fail_msg: " Unable to update vpc name "
     success_msg: " VPC name updated successfully "
 ###########################################################
+
+- name: Delete VPC with check mode is enabled
+  ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete VPC with check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "VPC with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete VPC with check mode is enabled failed"
+    success_msg: "Delete VPC with check mode is enabled passed"
+
 - name: Delete all created vpcs
   ntnx_vpcs_v2:
     state: absent

@@ -101,12 +101,12 @@ releases:
         name: ntnx_foundation_central_api_keys_info
         namespace: ""
       - description:
-          Nutanix module which returns the imaged clusters within the Foudation
+          Nutanix module which returns the imaged clusters within the Foundation
           Central
         name: ntnx_foundation_central_imaged_clusters_info
         namespace: ""
       - description:
-          Nutanix module which returns the imaged nodes within the Foudation
+          Nutanix module which returns the imaged nodes within the Foundation
           Central
         name: ntnx_foundation_central_imaged_nodes_info
         namespace: ""
@@ -325,7 +325,7 @@ releases:
       - description: module to add and remove maintenance related tasks
         name: ntnx_ndb_maintenance_tasks
         namespace: ""
-      - description: module to create, update and delete mainetance window
+      - description: module to create, update and delete maintenance window
         name: ntnx_ndb_maintenance_window
         namespace: ""
       - description: module for fetching maintenance windows info
@@ -345,7 +345,7 @@ releases:
           machine
         name: ntnx_ndb_replicate_database_snapshots
         namespace: ""
-      - description: moudle for creating, updating and deleting slas
+      - description: module for creating, updating and deleting slas
         name: ntnx_ndb_slas
         namespace: ""
       - description: info module for ndb snapshots info
@@ -531,7 +531,7 @@ releases:
         - description: Manage Nutanix Prism Central images.
           name: ntnx_images_v2
           namespace: ""
-        - description: Get netowrk information for uncofigured cluster nodes
+        - description: Get network information for unconfigured cluster nodes
           name: ntnx_nodes_network_info_v2
           namespace: ""
         - description: Module to fetch IAM operations info (previously `permissions`)
@@ -595,10 +595,10 @@ releases:
         - description: Create, Update, Delete service groups
           name: ntnx_service_groups_v2
           namespace: ""
-        - description: Retrieve information about Nutanix storage continer from PC
+        - description: Retrieve information about Nutanix storage container from PC
           name: ntnx_storage_containers_info_v2
           namespace: ""
-        - description: Retrieve stats about Nutanix storage continer from PC
+        - description: Retrieve stats about Nutanix storage container from PC
           name: ntnx_storage_containers_stats_v2
           namespace: ""
         - description: Manage storage containers in Nutanix Prism Central

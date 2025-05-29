@@ -385,6 +385,27 @@
 
 ###############################################################################
 
+- name: Delete CD ROM with check mode enabled
+  ntnx_vms_cd_rom_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete CD ROM with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "CD ROM with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete CD ROM with check mode enabled failed "
+    success_msg: "Delete CD ROM with check mode enabled passed "
+#################################################################################
+
 - name: Delete All CD ROMs
   ntnx_vms_cd_rom_v2:
     state: absent

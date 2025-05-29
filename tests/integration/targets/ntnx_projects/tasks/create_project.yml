@@ -51,7 +51,6 @@
 #################################################################
 
 - name: Create Project with check mode
-  check_mode: true
   ntnx_projects:
     name: "{{project2_name}}"
     desc: desc-123
@@ -70,6 +69,7 @@
         limit: 2046
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -154,7 +154,7 @@
     todelete: "{{ todelete + [  result.project_uuid ] }}"
 
 #################################################################
-- name: Create Project with alredy existing project name
+- name: Create Project with already existing project name
   ntnx_projects:
     name: "{{ project.name }}"
   register: result

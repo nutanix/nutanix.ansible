@@ -388,6 +388,12 @@ def delete_identity_provider(module, identity_providers, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
+    if module.check_mode:
+        result["msg"] = "Identity provider with ext_id:{0} will be deleted.".format(
+            ext_id
+        )
+        return
+
     current_spec = get_identity_provider(module, identity_providers, ext_id=ext_id)
 
     etag = get_etag(data=current_spec)

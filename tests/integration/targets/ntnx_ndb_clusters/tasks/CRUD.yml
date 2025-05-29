@@ -49,8 +49,8 @@
       - result.response.networksInfo[0].networkInfo[2].value == "{{ cluster.cluster3.vlan_access.prism_vlan.gateway }}"
       - result.response.networksInfo[0].networkInfo[3].value == "{{ cluster.cluster3.vlan_access.prism_vlan.subnet_mask }}"
       - result.response.networksInfo[0].type==  "{{ cluster.cluster3.vlan_access.prism_vlan.vlan_type }}"
-    fail_msg: "fail: Wring with check mode for registring cluster"
-    success_msg: "pass: retunred as expected"
+    fail_msg: "fail: Wring with check mode for registering cluster"
+    success_msg: "pass: Returned as expected"
 
 - name: Register cluster with prism_vlan
   ntnx_ndb_clusters:
@@ -92,8 +92,8 @@
       - result.response.name == "{{ cluster.cluster3.name }}"
       - result.response.description == "{{ cluster.cluster3.desc }}"
       - result.response.ipAddresses[0] == "{{ cluster.cluster3.cluster_ip }}"
-    fail_msg: "fail: Unable to Register cluster with prisim_vlan"
-    success_msg: "pass: Register cluster with prisim_vlan finished successfully"
+    fail_msg: "fail: Unable to Register cluster with prism_vlan"
+    success_msg: "pass: Register cluster with prism_vlan finished successfully"
 
 ################################################################
 
@@ -118,7 +118,7 @@
   ansible.builtin.set_fact:
     todelete: "{{ result.cluster_uuid }}"
 ################################################################
-- name: Update cluster credeential in check_mode
+- name: Update cluster credential in check_mode
   ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     cluster_credentials:
@@ -138,11 +138,11 @@
       - result.response.username is defined
       - result.response.password is defined
       - result.cluster_uuid is defined
-    fail_msg: "fail: update cluster credeential while check_mode"
-    success_msg: "pass: retunred as expected"
+    fail_msg: "fail: update cluster credential while check_mode"
+    success_msg: "pass: Returned as expected"
 ################################################################
 
-- name: Negative Secnarios update storage container
+- name: Negative Scenarios update storage container
   ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     storage_container: "{{ cluster.cluster3.storage_container }}"
@@ -156,12 +156,12 @@
       - out.changed == false
       - out.failed == true
       - out.msg == "parameters are mutually exclusive: uuid|storage_container"
-    fail_msg: "Fail: storage_continer updated "
+    fail_msg: "Fail: storage_container updated "
     success_msg: " Success: returned error as expected "
 
 ################################################################
 
-- name: Negative Secnarios update vlan access
+- name: Negative Scenarios update vlan access
   ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     vlan_access:
@@ -186,7 +186,7 @@
 
 ################################################################
 
-- name: Negative Secnarios update agent network
+- name: Negative Scenarios update agent network
   ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     agent_network:
@@ -213,7 +213,7 @@
 
 ################################################################
 
-- name: Negative Secnarios update agent network
+- name: Negative Scenarios update agent network
   ntnx_ndb_clusters:
     uuid: "{{ result.cluster_uuid }}"
     name_prefix: "{{ cluster.cluster3.name_prefix }}"
@@ -304,7 +304,7 @@
 
 - name: Get NDB clusters with incorrect name
   ntnx_ndb_clusters_info:
-    name: abcd
+    name: "abcd"
   register: result
   ignore_errors: true
   no_log: true
@@ -315,8 +315,27 @@
       - result.error is defined
       - result.failed == true
       - result.changed == false
-    fail_msg: module didn't errored out correctly when incorrect name is given
-    success_msg: module errored out correctly when incorrect name is given
+    fail_msg: "module didn't errored out correctly when incorrect name is given"
+    success_msg: "module errored out correctly when incorrect name is given"
+
+################################################################
+- name: Delete Cluster with check mode
+  ntnx_ndb_clusters:
+    state: absent
+    uuid: "{{ todelete  }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete cluster with check mode status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Cluster with uuid:{{  todelete }} will be deleted."
+      - output.cluster_uuid == "{{  todelete  }}"
+    fail_msg: "Delete cluster with check mode failed"
+    success_msg: "Delete cluster with check mode passed"
 
 ################################################################
 
@@ -335,6 +354,7 @@
       - result.changed == true
       - result.failed == false
       - result.response.status == "5"
+      - result.cluster_uuid == "{{ todelete }}"
     fail_msg: Unable to delete custer
     success_msg: cluster  deleted successfully
 

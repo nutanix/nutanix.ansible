@@ -20,7 +20,6 @@
     vg2_name: "{{suffix_name}}-{{random_name}}2"
 
 - name: Create Volume group with check mode
-  check_mode: true
   ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
     description: "Volume group 1"
@@ -38,6 +37,7 @@
       enabled_authentications: "CHAP"
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Verify spec of VG
   ansible.builtin.assert:
@@ -187,6 +187,25 @@
       - result.response | length == 1
     fail_msg: "Unable to fetch VGs using limits"
     success_msg: "VGs fetched successfully"
+
+- name: Delete volume group with check mode is enabled
+  ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg1_uuid }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete volume group with check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vg1_uuid }}"
+      - result.msg == "VG with ext_id:{{ vg1_uuid }} will be deleted."
+    fail_msg: "Delete volume group with check mode is enabled failed"
+    success_msg: "Delete volume group with check mode is enabled passed"
 
 - name: Delete Volume groups
   ntnx_volume_groups_v2:
