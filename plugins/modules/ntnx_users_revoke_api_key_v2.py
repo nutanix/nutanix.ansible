@@ -71,7 +71,7 @@ error:
     returned: when error occurs
 response:
     description:
-        - The response from the API call of revoking a user API key.
+        - Prism Central response for API key revoke.
     type: dict
     returned: always
     sample: {

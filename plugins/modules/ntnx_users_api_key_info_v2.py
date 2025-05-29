@@ -103,6 +103,7 @@ ext_id:
 response:
     description:
         - The response of fetching API keys info.
+        - The respone of API key info using API key external
     type: dict
     returned: always
     sample: [
@@ -151,7 +152,7 @@ def get_module_spec():
     return module_args
 
 
-def get_user_by_ext_id(module, users, result):
+def get_user_key_by_ext_id(module, users, result):
     ext_id = module.params.get("ext_id")
     user_ext_id = module.params.get("user_ext_id")
     resp = get_requested_key(module, users, ext_id, user_ext_id)
@@ -196,7 +197,7 @@ def run_module():
     result = {"changed": False, "error": None, "response": None}
     users = get_user_api_instance(module)
     if module.params.get("ext_id"):
-        get_user_by_ext_id(module, users, result)
+        get_user_key_by_ext_id(module, users, result)
     else:
         get_user_api_keys(module, users, result)
 
