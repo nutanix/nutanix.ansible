@@ -82,7 +82,7 @@
     fail_msg: " fail: unable to create app security rule with inbound and outbound list"
     success_msg: "pass: create app security rule with inbound and outbound list successfully"
 
-- name: Update app security rule by adding to outbound list and remove tule from inbound list
+- name: Update app security rule by adding to outbound list and remove rule from inbound list
   ntnx_security_rules:
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
     desc: App Security Rule Updated

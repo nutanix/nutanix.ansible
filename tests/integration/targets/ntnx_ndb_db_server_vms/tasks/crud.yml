@@ -53,13 +53,20 @@
   no_log: true
 # {% endraw %}
 
-- name: Set mainetance_tasks
+- name: Set maintenance_tasks
   ansible.builtin.set_fact:
-    mainetance_tasks:
+    maintenance_tasks:
       maintenanceWindowId: test_window_uuid
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
+        - {
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -70,7 +77,10 @@
       response:
         actionArguments:
           - { name: vm_name, value: ansible-created-vm1-from-time-machine }
-          - { name: client_public_key, value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER }
+          - {
+            name: client_public_key,
+            value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER,
+          }
         computeProfileId: test_compute_uuid
         databaseType: postgres_database
         description: ansible-created-vm1-from-time-machine-time-machine
@@ -78,8 +88,16 @@
         maintenanceTasks:
           maintenanceWindowId: test_window_uuid
           tasks:
-            - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-            - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+            - {
+              payload:
+                { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+              taskType: OS_PATCHING,
+            }
+            - {
+              payload:
+                { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+              taskType: DB_PATCHING,
+            }
         networkProfileId: test_network_uuid
         nxClusterId: test_cluster_uuid
         snapshotId: test_snapshot_uuid
@@ -134,7 +152,14 @@
       error:
       failed: false
       response:
-        actionArguments: [{ name: vm_name, value: "{{ vm1_name }}" }, { name: client_public_key, value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER }]
+        actionArguments:
+          [
+            { name: vm_name, value: "{{ vm1_name }}" },
+            {
+              name: client_public_key,
+              value: VALUE_SPECIFIED_IN_NO_LOG_PARAMETER,
+            },
+          ]
         computeProfileId: "{{ compute_profile.uuid }}"
         databaseType: postgres_database
         description: ansible-created-vm1-desc
@@ -142,8 +167,16 @@
         maintenanceTasks:
           maintenanceWindowId: "{{ maintenance.window_uuid }}"
           tasks:
-            - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-            - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+            - {
+              payload:
+                { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+              taskType: OS_PATCHING,
+            }
+            - {
+              payload:
+                { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+              taskType: DB_PATCHING,
+            }
         networkProfileId: "{{ network_profile.uuid }}"
         nxClusterId: "{{ cluster.cluster1.uuid }}"
         softwareProfileId: "{{ software_profile.uuid }}"
@@ -454,8 +487,8 @@
       - name: "{{ vm1_name_updated }}"
       - uuid: test_vm_1
     db_server_clusters:
-      - uuid: test_cluter_1
-      - uuid: test_cluter_2
+      - uuid: test_cluster_1
+      - uuid: test_cluster_2
     maintenance_window:
       name: "{{ maintenance.window_name }}"
     tasks:
@@ -474,11 +507,23 @@
       error:
       failed: false
       response:
-        entities: { ERA_DBSERVER: ["{{ db_server_uuid }}", test_vm_1], ERA_DBSERVER_CLUSTER: [test_cluter_1, test_cluter_2] }
+        entities:
+          {
+            ERA_DBSERVER: ["{{ db_server_uuid }}", test_vm_1],
+            ERA_DBSERVER_CLUSTER: [test_cluster_1, test_cluster_2],
+          }
         maintenanceWindowId: "{{ maintenance.window_uuid }}"
         tasks:
-          - { payload: { prePostCommand: { postCommand: ls, preCommand: ls -a } }, taskType: OS_PATCHING }
-          - { payload: { prePostCommand: { postCommand: ls, preCommand: ls -a } }, taskType: DB_PATCHING }
+          - {
+            payload:
+              { prePostCommand: { postCommand: ls, preCommand: ls -a } },
+            taskType: OS_PATCHING,
+          }
+          - {
+            payload:
+              { prePostCommand: { postCommand: ls, preCommand: ls -a } },
+            taskType: DB_PATCHING,
+          }
       uuid: "{{ maintenance.window_uuid }}"
 
 - name: Check mode status
@@ -505,7 +550,12 @@
       changed: false
       error:
       failed: false
-      response: { entities: { ERA_DBSERVER: ["{{ db_server_uuid }}"] }, maintenanceWindowId: "{{ maintenance.window_uuid }}", tasks: [] }
+      response:
+        {
+          entities: { ERA_DBSERVER: ["{{ db_server_uuid }}"] },
+          maintenanceWindowId: "{{ maintenance.window_uuid }}",
+          tasks: [],
+        }
       uuid: "{{ maintenance.window_uuid }}"
 
 - name: Check mode status
@@ -552,7 +602,7 @@
     fail_msg: Unable to remove maintenance tasks for given db server vm
     success_msg: maintenance tasks for given db server vm removed successfully
 
-- name: Add maitenance window task for vm
+- name: Add maintenance window task for vm
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{ vm1_name_updated }}"
@@ -639,7 +689,7 @@
     fail_msg: Unable to generate check mode spec for unregister
     success_msg: DB server VM unregister spec generated successfully
 
-- name: Genereate check mode spec for delete vm with vgs and snapshots
+- name: Generate check mode spec for delete vm with vgs and snapshots
   check_mode: true
   ntnx_ndb_db_server_vms:
     state: absent
@@ -685,7 +735,7 @@
 
 ################################### DB server VM Registration tests #############################
 
-- name: Generate spec for registeration of the previous unregistered vm using check mode
+- name: Generate spec for registration of the previous unregistered vm using check mode
   check_mode: true
   ntnx_ndb_register_db_server_vm:
     ip: "{{ vm_ip }}"
@@ -729,8 +779,15 @@
     maintenance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
+        - {
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:

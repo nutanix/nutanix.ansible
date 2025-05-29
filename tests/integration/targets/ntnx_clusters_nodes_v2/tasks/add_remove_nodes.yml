@@ -462,7 +462,7 @@
     that:
       - result.response is defined
       - result.response | length > 0
-    fail_msg: Failed vefifying PE PC registration
+    fail_msg: Failed verifying PE PC registration
     success_msg: PE PC registration passed successfully
 
 - name: Set cluster external ID
