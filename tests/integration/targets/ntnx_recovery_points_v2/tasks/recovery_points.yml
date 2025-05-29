@@ -479,7 +479,7 @@
       - result.response.ext_id == "{{ recovery_point_ext_id_1 }}"
       - actual_expiration_time == expected_expiration_time
       - result.response.name == "{{ recovery_point_name }}_1"
-      - result.warning == "Only Expiration time Update is allowed. Can't update other fields."
+      - result.warning == "Only Expiration time update is allowed. Can't update other fields."
     fail_msg: "Check if expiration time is updated but name is same failed"
     success_msg: "Check if expiration time is updated but name is same passed"
 
