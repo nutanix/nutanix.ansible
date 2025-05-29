@@ -150,7 +150,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         if vm_ip:
             try:
                 vm_fqdn = socket.gethostbyaddr(vm_ip)[0]
-            except Exception as e:
+            except Exception:
                 vm_fqdn = None
 
         # Remove unwanted keys.
