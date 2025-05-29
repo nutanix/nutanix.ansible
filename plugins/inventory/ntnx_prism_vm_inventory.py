@@ -152,6 +152,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
                 vm_fqdn = socket.gethostbyaddr(vm_ip)[0]
             except socket.herror:
                 vm_fqdn = None
+            except (IndexError, TypeError):
+                vm_fqdn = None
 
         # Remove unwanted keys.
         for key in [
