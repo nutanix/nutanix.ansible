@@ -21,9 +21,7 @@ options:
         - if C(state) is set to C(present) and C(image_uuid) is given then it will update that image.
         - if C(state) is set to C(present) then C(image_uuid), C(source_uri) and C(source_path) are mutually exclusive.
         - if C(state) is set to C(present) then C(image_uuid) or C(name) needs to be set.
-        - >-
-            If C(state) is set to C(absent) and if the item exists, then
-            item is removed.
+        - If C(state) is set to C(absent) and if the item exists, then item is removed.
         choices:
         - present
         - absent
@@ -39,7 +37,9 @@ options:
         required: false
         type: str
     image_uuid:
-        description: Image uuid
+        description:
+            - Image uuid
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
         required: false
     desc:
@@ -67,7 +67,7 @@ options:
         type: dict
     remove_categories:
         description:
-            - set this flag to remove dettach all categories attached to image
+            - set this flag to remove detach all categories attached to image
             - mutually_exclusive with C(categories)
         type: bool
         required: false
@@ -196,7 +196,7 @@ EXAMPLES = r"""
         - Backup
     wait: true
 
-- name: dettach all categories from existing image
+- name: detach all categories from existing image
   ntnx_images:
     state: "present"
     image_uuid: "00000000-0000-0000-0000-000000000000"

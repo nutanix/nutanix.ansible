@@ -53,9 +53,9 @@
   no_log: true
 # {% endraw %}
 
-- name: Set mainetance_tasks
+- name: Set maintenance_tasks
   ansible.builtin.set_fact:
-    mainetance_tasks:
+    maintenance_tasks:
       maintenanceWindowId: test_window_uuid
       tasks:
         - {
@@ -488,8 +488,8 @@
       - name: "{{ vm1_name_updated }}"
       - uuid: test_vm_1
     db_server_clusters:
-      - uuid: test_cluter_1
-      - uuid: test_cluter_2
+      - uuid: test_cluster_1
+      - uuid: test_cluster_2
     maintenance_window:
       name: "{{ maintenance.window_name }}"
     tasks:
@@ -606,7 +606,7 @@
     fail_msg: Unable to remove maintenance tasks for given db server vm
     success_msg: maintenance tasks for given db server vm removed successfully
 
-- name: Add maitenance window task for vm
+- name: Add maintenance window task for vm
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{ vm1_name_updated }}"

@@ -62,7 +62,7 @@
       pass: create isolation security rule with first_entity_filter and
       second_entity_filter successfully
 
-- name: Update isoloation security rule action with check_mode
+- name: Update isolation security rule action with check_mode
   ntnx_security_rules:
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
     isolation_rule:
@@ -79,11 +79,11 @@
       - output.changed == false
       - output.response.spec.name=="test_isolation_rule"
       - output.security_rule_uuid is none
-    fail_msg: " fail: unable to update isoloation security rule action with check_mode"
+    fail_msg: " fail: unable to update isolation security rule action with check_mode"
     success_msg: >-
-      pass: update isoloation security rule action with check_mode successfully
+      pass: update isolation security rule action with check_mode successfully
 
-- name: Update isoloation security rule action
+- name: Update isolation security rule action
   ntnx_security_rules:
     security_rule_uuid: "{{ result.security_rule_uuid}}"
     isolation_rule:
@@ -101,7 +101,7 @@
       - result.response.spec.resources.isolation_rule.action == "APPLY"
     fail_msg: " fail: unable to update isolation rule action  "
     success_msg: "pass : update isolation rule action successfully"
-- name: Update isoloation security with same values
+- name: Update isolation security with same values
   ntnx_security_rules:
     security_rule_uuid: "{{result.security_rule_uuid}}"
     isolation_rule:

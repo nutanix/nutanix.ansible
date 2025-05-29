@@ -49,7 +49,7 @@ options:
                 type: bool
             value:
                 description:
-                    - value correponding to C(value_type)
+                    - value corresponding to C(value_type)
                 type: str
             value_type:
                 description:
@@ -91,7 +91,7 @@ EXAMPLES = r"""
     nutanix_username: "<ndb_era_username>"
     nutanix_password: "<ndb_era_password>"
     validate_certs: false
-    uuid: "<uuid of time mashine>"
+    uuid: "<uuid of time machine>"
   register: result
 """
 RETURN = r"""

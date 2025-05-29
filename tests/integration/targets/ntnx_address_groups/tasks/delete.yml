@@ -31,7 +31,7 @@
       - test_ag.response is defined
       - test_ag.changed == true
     fail_msg: "Unable to create address group"
-    success_msg: "address group created susccessfully"
+    success_msg: "address group created successfully"
 
 ###################################################################################################
 - name: Delete address group with check mode

@@ -9,7 +9,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 module: ntnx_security_rules
-short_description: security_rule module which suports security_rule CRUD operations
+short_description: security_rule module which supports security_rule CRUD operations
 version_added: 1.3.0
 description: 'Create, Update, Delete security_rule'
 options:
@@ -61,8 +61,14 @@ options:
     description: security_rule Name
     required: false
     type: str
+  desc:
+    description: security_rule Description
+    required: false
+    type: str
   security_rule_uuid:
-    description: security_rule UUID
+    description:
+        - security_rule UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   allow_ipv6_traffic:
     description: Allow traffic from ipv6
@@ -879,6 +885,7 @@ EXAMPLES = r"""
 - name: create app security rule
   ntnx_security_rules:
     name: test_app_rule
+    desc: App Security Rule
     allow_ipv6_traffic: true
     policy_hitlog: true
     app_rule:
@@ -984,6 +991,7 @@ spec:
   type: dict
   sample:
     name: test_app_rule
+    description: App Security Rule
     resources:
       allow_ipv6_traffic: true
       app_rule:
@@ -1183,6 +1191,7 @@ def get_module_spec():
     )
     module_args = dict(
         name=dict(type="str"),
+        desc=dict(type="str"),
         security_rule_uuid=dict(type="str"),
         allow_ipv6_traffic=dict(type="bool"),
         policy_hitlog=dict(type="bool"),

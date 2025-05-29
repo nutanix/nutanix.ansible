@@ -53,7 +53,7 @@
       - result.failed==false
       - result.changed==true
     fail_msg: "fail: Unable to image nodes or create cluster "
-    success_msg: "succes: Imaging and cluster created successfully "
+    success_msg: "Success: Imaging and cluster created successfully "
   # when: false # make it true or remove to unskip task
 
 - name: Store imaged cluster uuid

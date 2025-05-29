@@ -167,7 +167,7 @@
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail VM created successfully with unknown network name "
 ###################################################################################
-- name: Unknow Image name
+- name: Unknown Image name
   ntnx_vms:
     state: present
     name: unknown image_vm
@@ -255,7 +255,7 @@
     success_msg: " Success: returned error as expected "
     fail_msg: " Fail: VM created successfully with image size is less than actual "
 #################################################################################
-- name: Unknow storage container name
+- name: Unknown storage container name
   ntnx_vms:
     state: present
     name: unknown storage container

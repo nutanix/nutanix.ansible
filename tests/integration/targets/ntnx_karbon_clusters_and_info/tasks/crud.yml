@@ -356,7 +356,7 @@
       - result.changed == false
       - result.failed == false
       - result.msg == "Nothing to change."
-    fail_msg: "Fail: idempotecy check fail "
+    fail_msg: "Fail: idempotency check fail "
     success_msg: "Passed: Returned as expected "
 #################################
 - name: Try to update node pool config with wrong labels

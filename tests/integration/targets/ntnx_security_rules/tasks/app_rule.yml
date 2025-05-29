@@ -1,6 +1,7 @@
 - name: Create app security rule with inbound and outbound list
   ntnx_security_rules:
     name: test_app_rule
+    desc: App Security Rule
     app_rule:
       target_group:
         categories:
@@ -76,12 +77,14 @@
       - result.response.status.state == 'COMPLETE'
       - result.response.status.name=="test_app_rule"
       - result.response.status.resources.app_rule.target_group.filter.params.AppTier | length == 2
+      - result.response.spec.description == "App Security Rule"
     fail_msg: " fail: unable to create app security rule with inbound and outbound list"
     success_msg: "pass: create app security rule with inbound and outbound list successfully"
 
-- name: Update app security rule by adding to outbound list and remove tule from inbound list
+- name: Update app security rule by adding to outbound list and remove rule from inbound list
   ntnx_security_rules:
     security_rule_uuid: "{{ result.response.metadata.uuid }}"
+    desc: App Security Rule Updated
     app_rule:
       policy_mode: APPLY
       inbounds:
@@ -105,6 +108,7 @@
       - result.response is defined
       - result.failed == false
       - result.response.status.state == 'COMPLETE'
+      - result.response.spec.description == "App Security Rule Updated"
       - result.response.spec.resources.app_rule.action == "APPLY"
       - result.response.spec.resources.app_rule.outbound_allow_list.0.icmp_type_code_list is defined
     fail_msg: " fail: unable to update app security rule with   outbound list "

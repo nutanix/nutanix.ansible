@@ -16,6 +16,7 @@ options:
       uuid:
         description:
             - uuid of database clone for update and delete
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       name:
         description:
@@ -126,7 +127,7 @@ options:
 
             use_authorized_server:
                 description:
-                    - conifgure authorized database server VM for hosting database clone
+                    - configure authorized database server VM for hosting database clone
                 type: dict
                 suboptions:
                     name:

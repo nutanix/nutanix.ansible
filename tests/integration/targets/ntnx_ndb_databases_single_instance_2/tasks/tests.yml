@@ -132,7 +132,7 @@
     fail_msg: Unable to create single instance postgres database
     success_msg: single instance postgres database created successfully
 
-- name: Unregister db along with delete time machine and unregister db servr vm
+- name: Unregister db along with delete time machine and unregister db server vm
   ntnx_ndb_databases:
     state: absent
     db_uuid: "{{ db_uuid }}"
@@ -207,15 +207,29 @@
 
 - name: Set expected time machine info
   ansible.builtin.set_fact:
-    expected_time_machine_info: { autoTuneLogDrive: true, description: TM-desc, name: TM1, schedule: {}, slaId: "{{ sla.uuid }}"}
+    expected_time_machine_info:
+      {
+        autoTuneLogDrive: true,
+        description: TM-desc,
+        name: TM1,
+        schedule: {},
+        slaId: "{{ sla.uuid }}",
+      }
 
 - name: Set maintenance tasks
   ansible.builtin.set_fact:
-    mainetance_tasks:
+    maintenance_tasks:
       maintenanceWindowId: "{{ maintenance.window_uuid }}"
       tasks:
-        - { payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } }, taskType: OS_PATCHING }
-        - { payload: { prePostCommand: { postCommand: ls -F, preCommand: ls -l } }, taskType: DB_PATCHING }
+        - {
+          payload: { prePostCommand: { postCommand: ls -a, preCommand: ls } },
+          taskType: OS_PATCHING,
+        }
+        - {
+          payload:
+            { prePostCommand: { postCommand: ls -F, preCommand: ls -l } },
+          taskType: DB_PATCHING,
+        }
 
 - name: Check mode status
   ansible.builtin.assert:
@@ -233,7 +247,7 @@
       - result.response.databaseType == "postgres_database"
       - result.response.timeMachineInfo == expected_time_machine_info
       - result.response.nxClusterId == cluster.cluster1.uuid
-      - result.response.maintenanceTasks == mainetance_tasks
+      - result.response.maintenanceTasks == maintenance_tasks
       - result.response.workingDirectory == "/tmp"
     fail_msg: Unable to create register database spec
     success_msg: single instance postgres database register spec created successfully

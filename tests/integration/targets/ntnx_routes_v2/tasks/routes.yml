@@ -14,7 +14,7 @@
 
 ############################################################################################
 
-- name: List subnets using subnet name and define external subent variable
+- name: List subnets using subnet name and define external subnet variable
   ntnx_subnets_info_v2:
     filter: name eq '{{ external_nat_subnets[0].name }}'
     limit: 1
@@ -27,8 +27,8 @@
       - result.response is defined
       - result.response | length >= 1
       - result.response[0].name == "{{ external_nat_subnets[0].name }}"
-    fail_msg: "List subnets using subnet name and define external subent variable failed "
-    success_msg: "List subnets using subnet name and define external subent variable passed "
+    fail_msg: "List subnets using subnet name and define external subnet variable failed "
+    success_msg: "List subnets using subnet name and define external subnet variable passed "
 
 - name: Define variable
   ansible.builtin.set_fact:

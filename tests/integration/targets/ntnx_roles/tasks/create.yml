@@ -50,7 +50,7 @@
           ("{{ p2 }}" == "{{ test_permission_1_uuid }}" and "{{ p1 }}" == "{{ test_permission_2_uuid }}")
         )
     fail_msg: "Unable to create roles with certain permissions"
-    success_msg: "Roles with given permissions created susccessfully"
+    success_msg: "Roles with given permissions created successfully"
 
 - name: Set role uuid to delete later
   ansible.builtin.set_fact:

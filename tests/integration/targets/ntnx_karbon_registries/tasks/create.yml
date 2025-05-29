@@ -46,7 +46,7 @@
       - result.changed == true
       - result.response.name == "{{ registry_name }}"
       - result.response.uuid is defined
-    fail_msg: "Fail: Unable to create registery"
+    fail_msg: "Fail: Unable to create registry"
     success_msg: "Pass: create registry finished successfully"
     ################################################################
 - name: Delete registry

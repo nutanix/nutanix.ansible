@@ -17,6 +17,7 @@ options:
     description:
       - protection_rule uuid
       - required for update and delete
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
     required: false
   start_time:
@@ -653,7 +654,7 @@ def check_rule_idempotency(rule_spec, update_spec):
     ].get("category_filter"):
         return False
 
-    # check if availibility zones have updated
+    # check if availability zones have updated
     if len(rule_spec["spec"]["resources"]["ordered_availability_zone_list"]) != len(
         update_spec["spec"]["resources"]["ordered_availability_zone_list"]
     ):

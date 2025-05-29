@@ -20,6 +20,7 @@ options:
   db_uuid:
     description:
       - uuid for update or delete of database instance
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   name:
     description:
@@ -385,7 +386,7 @@ options:
                         cluster:
                           description:
                             - cluster where they will be hosted
-                            - this will overide default cluster provided for all vms
+                            - this will override default cluster provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -401,7 +402,7 @@ options:
                         network_profile:
                           description:
                             - network profile details
-                            - this will overide default network profile provided for all vms
+                            - this will override default network profile provided for all vms
                           type: dict
                           suboptions:
                             name:
@@ -417,7 +418,7 @@ options:
                         compute_profile:
                           description:
                             - compute profile details for the node
-                            - this will overide default compute profile provided for all vms
+                            - this will override default compute profile provided for all vms
                           type: dict
                           suboptions:
                             name:

@@ -87,7 +87,7 @@ New Modules
 - ntnx_image_placement_policies_v2 - Manage image placement policies in Nutanix Prism Central
 - ntnx_images_info_v2 - Fetch information about Nutanix images
 - ntnx_images_v2 - Manage Nutanix Prism Central images.
-- ntnx_nodes_network_info_v2 - Get netowrk information for uncofigured cluster nodes
+- ntnx_nodes_network_info_v2 - Get network information for unconfigured cluster nodes
 - ntnx_operations_info_v2 - Module to fetch IAM operations info (previously `permissions`)
 - ntnx_pbrs_info_v2 - Routing Policies info module
 - ntnx_pbrs_v2 - Module for create, update and delete of Policy based routing.
@@ -107,8 +107,8 @@ New Modules
 - ntnx_security_rules_v2 - Manage network security policies in Nutanix Prism Central
 - ntnx_service_groups_info_v2 - service_group info module
 - ntnx_service_groups_v2 - Create, Update, Delete service groups
-- ntnx_storage_containers_info_v2 - Retrieve information about Nutanix storage continer from PC
-- ntnx_storage_containers_stats_v2 - Retrieve stats about Nutanix storage continer from PC
+- ntnx_storage_containers_info_v2 - Retrieve information about Nutanix storage container from PC
+- ntnx_storage_containers_stats_v2 - Retrieve stats about Nutanix storage container from PC
 - ntnx_storage_containers_v2 - Manage storage containers in Nutanix Prism Central
 - ntnx_subnets_info_v2 - subnet info module
 - ntnx_subnets_v2 - subnets module which supports Create, Update, Delete subnets
@@ -250,14 +250,14 @@ New Modules
 - ntnx_ndb_db_servers_info - info module for ndb db server vms info
 - ntnx_ndb_linked_databases - module to manage linked databases of a database instance
 - ntnx_ndb_maintenance_tasks - module to add and remove maintenance related tasks
-- ntnx_ndb_maintenance_window - module to create, update and delete mainetance window
+- ntnx_ndb_maintenance_window - module to create, update and delete maintenance window
 - ntnx_ndb_maintenance_windows_info - module for fetching maintenance windows info
 - ntnx_ndb_profiles - module for create, update and delete of profiles
 - ntnx_ndb_profiles_info - info module for ndb profiles
 - ntnx_ndb_register_database - module for database instance registration
 - ntnx_ndb_register_db_server_vm - module for registration of database server vm
 - ntnx_ndb_replicate_database_snapshots - module for replicating database snapshots across clusters of time machine
-- ntnx_ndb_slas - moudle for creating, updating and deleting slas
+- ntnx_ndb_slas - module for creating, updating and deleting slas
 - ntnx_ndb_slas_info - info module for ndb slas
 - ntnx_ndb_snapshots_info - info module for ndb snapshots info
 - ntnx_ndb_stretched_vlans - Module for create, update and delete of stretched vlan.
@@ -393,8 +393,8 @@ New Modules
 - ntnx_foundation_central - Nutanix module to imaged Nodes and optionally create cluster
 - ntnx_foundation_central_api_keys - Nutanix module which creates api key for foundation central
 - ntnx_foundation_central_api_keys_info - Nutanix module which returns the api key
-- ntnx_foundation_central_imaged_clusters_info - Nutanix module which returns the imaged clusters within the Foudation Central
-- ntnx_foundation_central_imaged_nodes_info - Nutanix module which returns the imaged nodes within the Foudation Central
+- ntnx_foundation_central_imaged_clusters_info - Nutanix module which returns the imaged clusters within the Foundation Central
+- ntnx_foundation_central_imaged_nodes_info - Nutanix module which returns the imaged nodes within the Foundation Central
 - ntnx_foundation_discover_nodes_info - Nutanix module which returns nodes discovered by Foundation
 - ntnx_foundation_hypervisor_images_info - Nutanix module which returns the hypervisor images uploaded to Foundation
 - ntnx_foundation_image_upload - Nutanix module which uploads hypervisor or AOS image to foundation vm.

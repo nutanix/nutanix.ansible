@@ -359,7 +359,7 @@
       - result.response.tags[0].value == "ansible-test-db-clones-updated"
 
     fail_msg: Unable to update clone
-    success_msg: Database clone updated succefully
+    success_msg: Database clone updated successfully
 
 - name: Check idempotency
   ntnx_ndb_database_clones:
@@ -413,7 +413,7 @@
       - result.response.lcmConfig.expiryDetails == None
       - result.response.lcmConfig.refreshDetails == None
     fail_msg: schedules update failed
-    success_msg: schedules removed succefully
+    success_msg: schedules removed successfully
 
 ########################################### refresh clone ###########################################
 
@@ -450,7 +450,7 @@
       - result.uuid is defined
       - result.response.status == "READY"
     fail_msg: database refresh failed
-    success_msg: database refresh completed succefully
+    success_msg: database refresh completed successfully
 
 ########################################### delete clone tests###########################################
 
@@ -634,7 +634,7 @@
       - result.response.databaseNodes[0].dbserverId == db_server_uuid
       - result.response.parentTimeMachineId ==  time_machine_uuid
     fail_msg: Unable to create clone
-    success_msg: Database clone created succefully
+    success_msg: Database clone created successfully
 
 - name: Define variable for delete clone
   ansible.builtin.set_fact:
