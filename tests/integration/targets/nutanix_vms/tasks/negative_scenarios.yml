@@ -1,3 +1,10 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - centos
+# - storage_container
+# - network
+
 - name: Started Negative Creation Cases
   ansible.builtin.debug:
     msg: "Started Negative Creation Cases"

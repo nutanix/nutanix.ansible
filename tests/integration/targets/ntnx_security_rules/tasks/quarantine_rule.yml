@@ -1,3 +1,7 @@
+---
+# Variables required before running this playbook:
+# - quarantine_rule_uuid
+
 - name: Update quarantine_rule by adding inbound and outbound list
   ntnx_security_rules:
     security_rule_uuid: "{{quarantine_rule_uuid}}"

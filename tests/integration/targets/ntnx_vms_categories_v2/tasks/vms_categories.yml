@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+
 - name: Start testing ntnx_vms_categories_v2 module
   ansible.builtin.debug:
     msg: "Start testing ntnx_vms_categories_v2 module"
