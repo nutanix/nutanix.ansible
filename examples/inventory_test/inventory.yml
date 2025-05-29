@@ -3,7 +3,7 @@
   hosts: all
   gather_facts: false
   vars_files:
-    - inventory/nutanix.yaml
+    - nutanix.yml
   tasks:
     - name: Assert the number of VMs in case of fetch_all_vms is false # noqa run-once[task]
       ansible.builtin.assert:
@@ -61,26 +61,37 @@
         host_ip: "{{ hostvars[inventory_hostname].ansible_host | regex_replace('\\.', '_') }}"
         host_fqdn: "{{ hostvars[inventory_hostname].ansible_fqdn | regex_replace('\\.', '_') }}"
 
-    - name: Assert host keyed groups # noqa run-once[task]
+    - name: Assert host keyed groups
       ansible.builtin.assert:
         that:
           - ('host_' ~ host_ip) in hostvars[inventory_hostname].groups.keys()
         fail_msg: "Host keyed groups not found for {{ inventory_hostname }}"
         success_msg: "Host keyed groups found for {{ inventory_hostname }}"
-      run_once: true
       when:
         - hostvars[inventory_hostname].ansible_host is defined
         - hostvars[inventory_hostname].ansible_host is not none
         - hostvars[inventory_hostname].ansible_host | length > 0
 
-    - name: Assert FQDN keyed groups # noqa run-once[task]
+    - name: Assert FQDN keyed groups
       ansible.builtin.assert:
         that:
           - ('fqdn_' ~ host_fqdn) in hostvars[inventory_hostname].groups.keys()
         fail_msg: "FQDN keyed groups not found for {{ inventory_hostname }}"
         success_msg: "FQDN keyed groups found for {{ inventory_hostname }}"
-      run_once: true
       when:
         - hostvars[inventory_hostname].ansible_fqdn is defined
         - hostvars[inventory_hostname].ansible_fqdn is not none
         - hostvars[inventory_hostname].ansible_fqdn | length > 0
+
+    - name: Assert cluster group
+      ansible.builtin.assert:
+        that:
+          - hostvars[inventory_hostname].cluster is defined
+          - hostvars[inventory_hostname].cluster | length > 0
+          - hostvars[inventory_hostname].cluster in hostvars[inventory_hostname].groups.keys()
+        fail_msg: "Cluster group not found for {{ inventory_hostname }}"
+        success_msg: "Cluster group found for {{ inventory_hostname }}"
+      when:
+        - hostvars[inventory_hostname].cluster is defined
+        - hostvars[inventory_hostname].cluster is not none
+        - hostvars[inventory_hostname].cluster | length > 0

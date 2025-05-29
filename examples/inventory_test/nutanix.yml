@@ -4,7 +4,7 @@ nutanix_hostname: <pc_ip>
 nutanix_username: <username>
 nutanix_password: <password>
 validate_certs: false
-data: { offset: 0, length: 1000 }
+data: { offset: 0, length: 20 }
 fetch_all_vms: false
 groups:
   group_1: "'integration' in name"
