@@ -236,6 +236,11 @@ def delete_window(module, result):
     if not uuid:
         module.fail_json(msg="uuid is required field for delete", **result)
 
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Window with uuid:{0} will be deleted.".format(uuid)
+        return
+
     resp = _maintenance_window.delete(uuid=uuid, data={})
     result["response"] = resp
     result["changed"] = True

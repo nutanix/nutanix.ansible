@@ -502,6 +502,13 @@ def update_storage_container(module, storage_container_api, result):
 def delete_storage_container(module, storage_container_api, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "Storage container with ext_id:{0} will be deleted.".format(
+            ext_id
+        )
+        return
+
     ignore_small_files = module.params.get("ignore_small_files")
     try:
         resp = storage_container_api.delete_storage_container_by_id(

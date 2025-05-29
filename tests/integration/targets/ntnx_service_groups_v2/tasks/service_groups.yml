@@ -363,6 +363,27 @@
     fail_msg: Fail service group updated with same values
     success_msg: "Pass : return as expected "
 ################################################################
+
+- name: Delete service group with check mode enabled
+  ntnx_service_groups_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete service group with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "Service group with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete service group with check mode enabled failed"
+    success_msg: "Delete service group with check mode enabled passed"
+################################################################
+
 - name: Delete all created service groups
   ntnx_service_groups_v2:
     state: absent

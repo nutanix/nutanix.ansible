@@ -14,7 +14,6 @@
 
 ################################### DB server VM Provision tests #############################
 - name: Create ndb vm using time machine and check mode
-  check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     name: ansible-created-vm1-from-time-machine
@@ -41,8 +40,9 @@
         - type: DB_PATCHING
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
-
   register: check_mode_result
+  check_mode: true
+  no_log: true
 
 # skip jekyll/Liquid syntax check
 # {% raw %}
@@ -116,7 +116,6 @@
     success_msg: DB server VM spec created successfully
 
 - name: Create spec for db server vm using software profile and names of profile
-  check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     name: "{{ vm1_name }}"
@@ -144,6 +143,8 @@
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -310,7 +311,6 @@
     success_msg: db server vm update skipped successfully due to no changes in state
 
 - name: Update db server vm name with check mode and check defaults
-  check_mode: true
   ntnx_ndb_db_server_vms:
     wait: true
     uuid: "{{ db_server_uuid }}"
@@ -318,6 +318,8 @@
       - username: user
         password: pass
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -481,7 +483,6 @@
 ################################### maintenance tasks update tests #############################
 
 - name: Create spec for adding maintenance window tasks to db server vm
-  check_mode: true
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - name: "{{ vm1_name_updated }}"
@@ -499,6 +500,8 @@
         pre_task_cmd: ls -a
         post_task_cmd: ls
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -510,7 +513,7 @@
         entities:
           {
             ERA_DBSERVER: ["{{ db_server_uuid }}", test_vm_1],
-            ERA_DBSERVER_CLUSTER: [test_cluster_1, test_cluster_2],
+            ERA_DBSERVER_CLUSTER: [test_cluter_1, test_cluter_2],
           }
         maintenanceWindowId: "{{ maintenance.window_uuid }}"
         tasks:
@@ -535,7 +538,6 @@
     success_msg: spec for adding maintenance tasks for db server vm created successfully
 
 - name: Create spec for removing maintenance window tasks from above created vm
-  check_mode: true
   ntnx_ndb_maintenance_tasks:
     db_server_vms:
       - uuid: "{{ db_server_uuid }}"
@@ -543,6 +545,8 @@
       uuid: "{{ maintenance.window_uuid }}"
     tasks: []
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected result
   ansible.builtin.set_fact:
@@ -668,12 +672,13 @@
 ################################### DB server VM unregistration tests #############################
 
 - name: Generate check mode spec for unregister with default values
-  check_mode: true
   ntnx_ndb_db_server_vms:
     state: absent
     wait: true
     uuid: "{{ db_server_uuid }}"
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -689,8 +694,7 @@
     fail_msg: Unable to generate check mode spec for unregister
     success_msg: DB server VM unregister spec generated successfully
 
-- name: Generate check mode spec for delete vm with vgs and snapshots
-  check_mode: true
+- name: Genereate check mode spec for delete vm with vgs and snapshots
   ntnx_ndb_db_server_vms:
     state: absent
     uuid: "{{ db_server_uuid }}"
@@ -698,6 +702,8 @@
     delete_vgs: true
     delete_vm_snapshots: true
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:
@@ -735,8 +741,7 @@
 
 ################################### DB server VM Registration tests #############################
 
-- name: Generate spec for registration of the previous unregistered vm using check mode
-  check_mode: true
+- name: Generate spec for registeration of the previous unregistered vm using check mode
   ntnx_ndb_register_db_server_vm:
     ip: "{{ vm_ip }}"
     desc: register-vm-desc
@@ -759,6 +764,8 @@
           post_task_cmd: ls -F
     working_directory: /check
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Create action_arguments map
   ansible.builtin.set_fact:
@@ -866,6 +873,23 @@
     db_server_uuid: "{{ result.uuid }}"
 
 ################################### DB server VM Delete test #############################
+- name: Delete db server vm with check mode
+  ntnx_ndb_db_server_vms:
+    state: absent
+    uuid: "{{ db_server_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete db server vm with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Db server with uuid:{{  db_server_uuid }} will be deleted."
+      - output.uuid == "{{ db_server_uuid  }}"
+    fail_msg: "Delete db server vm with check mode failed"
+    success_msg: "Delete db server vm with check mode passed"
 
 - name: Unregister db server vm
   ntnx_ndb_db_server_vms:
@@ -877,12 +901,12 @@
     delete_vm_snapshots: true
   register: result
 
-- name: Check mode Status
+- name: Unregister db server vm Status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.changed == True
       - result.response.status == "5"
-
-    fail_msg: Unable to delete db server vm
-    success_msg: DB server VM deleted successfully
+      - result.uuid == "{{ db_server_uuid  }}"
+    fail_msg: "Unable to unregister db server vm"
+    success_msg: "Unregister db server vm successfully"

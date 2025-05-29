@@ -20,6 +20,24 @@
     fail_msg: " Unable to create vpc all specifications "
     success_msg: " VPC with all specifications created successfully "
 
+- name: Delete vpc with check mode
+  ntnx_vpcs:
+    state: absent
+    vpc_uuid: "{{ result.vpc_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete vpc with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="VPC with uuid:{{ result.vpc_uuid }} will be deleted."
+      - output.vpc_uuid == "{{ result.vpc_uuid }}"
+    fail_msg: "Delete vpc with check mode failed"
+    success_msg: "Delete vpc with check mode passed"
+
 - name: Delete vpc
   ntnx_vpcs:
     state: absent

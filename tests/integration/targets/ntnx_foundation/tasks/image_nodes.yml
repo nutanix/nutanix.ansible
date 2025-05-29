@@ -22,7 +22,6 @@
 ###################################
 
 - name: Image nodes with check mode
-  check_mode: true
   ntnx_foundation:
     timeout: 3660
     nutanix_host: "{{foundation_host}}"
@@ -52,6 +51,7 @@
         name: "test-cluster"
   register: result
   no_log: true
+  check_mode: true
 
 - name: Creation Status
   ansible.builtin.assert:

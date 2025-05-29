@@ -460,6 +460,10 @@ def delete_disk(module, result):
     result["vm_ext_id"] = vm_ext_id
     result["ext_id"] = ext_id
 
+    if module.check_mode:
+        result["msg"] = "VM Disk with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     vmm = get_vm_api_instance(module)
     disk = get_disk(module, vmm, ext_id, vm_ext_id=vm_ext_id)
     etag = get_etag(disk)

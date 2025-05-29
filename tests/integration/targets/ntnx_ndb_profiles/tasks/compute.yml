@@ -147,7 +147,26 @@
     fail_msg: "Fail: unable to verify unpublish flow in compute profile "
     success_msg: "Pass: verify unpublish flow in compute profile finished successfully"
 ################################################################
-- name: Delete all created compute profiles
+- name: Delete profiles with check mode
+  ntnx_ndb_profiles:
+    state: absent
+    profile_uuid: "{{ todelete[0] }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete profiles with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Profile with uuid:{{  todelete[0] }} will be deleted."
+      - output.uuid == "{{  todelete[0]  }}"
+    fail_msg: "Delete profiles with check mode failed"
+    success_msg: "Delete profiles with check mode passed"
+################################################################
+
+- name: Delete all created cmpute profiles
   ntnx_ndb_profiles:
     state: absent
     profile_uuid: "{{ item }}"

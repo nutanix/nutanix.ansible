@@ -451,6 +451,10 @@ def delete_image(module, result):
     if not uuid:
         result["error"] = "Missing parameter image_uuid"
         module.fail_json(msg="Failed deleting Image", **result)
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Image with uuid:{0} will be deleted.".format(uuid)
+        return
 
     image = Image(module)
     resp = image.delete(uuid)

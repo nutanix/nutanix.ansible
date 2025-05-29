@@ -1292,11 +1292,17 @@ def delete_security_rule(module, result):
         result["error"] = "Missing parameter security_rule_uuid in playbook"
         module.fail_json(msg="Failed deleting security_rule", **result)
 
+    result["security_rule_uuid"] = security_rule_uuid
+    if module.check_mode:
+        result["msg"] = "Security rule with uuid:{0} will be deleted.".format(
+            security_rule_uuid
+        )
+        return
+
     security_rule = SecurityRule(module)
     resp = security_rule.delete(security_rule_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["security_rule_uuid"] = security_rule_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

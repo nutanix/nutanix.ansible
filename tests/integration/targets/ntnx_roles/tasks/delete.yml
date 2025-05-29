@@ -33,6 +33,23 @@
     success_msg: "Roles with given permissions created successfully"
 
 ###################################################################################################
+- name: Delete rule with check mode
+  ntnx_roles:
+    state: absent
+    role_uuid: "{{ test_role.role_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete rule with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Role with uuid:{{ test_role.role_uuid}} will be deleted."
+      - output.role_uuid == "{{ test_role.role_uuid }}"
+    fail_msg: "Delete role with check mode failed"
+    success_msg: "Delete role with check mode passed"
 
 - name: Delete role
   ntnx_roles:
@@ -45,6 +62,6 @@
     that:
       - result.response is defined
       - result.changed == True
-
+      - result.role_uuid == "{{ test_role.role_uuid }}"
     fail_msg: "role delete failed"
     success_msg: "role deleted successfully"

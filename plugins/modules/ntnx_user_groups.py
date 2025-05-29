@@ -247,9 +247,17 @@ def delete_user_group(module, result):
         module.fail_json(msg="Failed deleting user_group", **result)
 
     user_group = UserGroup(module)
+
+    result["uuid"] = uuid
+    if module.check_mode:
+
+        result["msg"] = "User group with uuid:{0} will be deleted.".format(uuid)
+        return
+
     resp = user_group.delete(uuid)
     result["response"] = resp
     result["changed"] = True
+
     task_uuid = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

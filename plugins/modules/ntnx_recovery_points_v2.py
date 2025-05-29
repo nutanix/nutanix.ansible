@@ -448,6 +448,10 @@ def delete_recovery_point(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
+    if module.check_mode:
+        result["msg"] = "Recovery point with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     old_spec = get_recovery_point(module, recovery_points, ext_id)
 
     etag = get_etag(data=old_spec)

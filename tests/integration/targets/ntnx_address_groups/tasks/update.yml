@@ -92,7 +92,6 @@
 ###################################################################################################
 
 - name: Check mode test
-  check_mode: true
   ntnx_address_groups:
     state: present
     address_group_uuid: "{{test_ag.address_group_uuid}}"
@@ -104,6 +103,8 @@
       - network_ip: "10.1.2.1"
         network_prefix: 32
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Check mode Status
   ansible.builtin.assert:

@@ -1282,6 +1282,11 @@ def update_vm(module, result):
 def delete_vm(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "VM with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     vms = get_vm_api_instance(module)
     vm = get_vm(module, vms, ext_id)
     etag = get_etag(vm)

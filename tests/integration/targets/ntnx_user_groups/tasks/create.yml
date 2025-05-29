@@ -129,6 +129,24 @@
 #     fail_msg: "Unable to list user groups using ascending name sorting"
 #     success_msg: "user groups listed successfully using ascending name sorting"
 
+- name: Delete user group with check mode
+  ntnx_user_groups:
+    state: absent
+    user_group_uuid: "{{ user_group_to_delete }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete user group with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =='User group with uuid:{{ user_group_to_delete }} will be deleted.'
+      - output.uuid == '{{ user_group_to_delete  }}'
+    fail_msg: "Delete user group with check mode failed"
+    success_msg: "Delete user group with check mode passed"
+
 - name: Delete user group
   ntnx_user_groups:
     state: absent
@@ -143,6 +161,7 @@
       - result.failed == false
       - result.changed == true
       - result.response.status == "SUCCEEDED" or  result.response.status.state == "DELETE_PENDING"
+      - result.uuid == "{{user_group_to_delete}}"
     fail_msg: "Unable to delete user  group  "
     success_msg: "user  group deleted successfully"
 # - name: create user group with idp

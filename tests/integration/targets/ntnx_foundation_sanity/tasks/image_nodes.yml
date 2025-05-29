@@ -20,7 +20,6 @@
     hypervisor_images: "{{ hypervisor_images.hypervisor_images.kvm | selectattr('filename', 'search', hypervisor_package_filter) | list }}"
 
 - name: Create spec for imaging and creating cluster out of bare metal nodes
-  check_mode: true
   ntnx_foundation:
     timeout: 4500
     cvm_gateway: "{{ nodes.cvm_gateway }}"
@@ -70,6 +69,7 @@
         backplane_netmask: "{{ nodes.backplane_netmask }}"
   register: spec
   ignore_errors: true
+  check_mode: true
 
 - name: Set expected spec
   ansible.builtin.set_fact:

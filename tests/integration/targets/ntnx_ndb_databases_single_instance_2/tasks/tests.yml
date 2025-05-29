@@ -152,7 +152,6 @@
     success_msg: database unregistered successfully
 
 - name: Create spec for registering previously unregistered DB from previously unregistered DB server vm
-  check_mode: true
   ntnx_ndb_register_database:
     wait: true
     name: "{{ db1_name }}"
@@ -192,8 +191,9 @@
         - type: DB_PATCHING
           pre_task_cmd: ls -l
           post_task_cmd: ls -F
-
   register: result
+  check_mode: true
+  ignore_errors: true
 
 - name: Set expected action arguments
   ansible.builtin.set_fact:
