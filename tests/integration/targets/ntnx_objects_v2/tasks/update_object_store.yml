@@ -107,14 +107,6 @@
   nutanix.ncp.ntnx_object_stores_v2:
     name: "ansible-object"
     ext_id: "{{ object_store_ext_id }}"
-    metadata:
-      owner_reference_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-      owner_user_name: "owner_user_name"
-      project_reference_id: "123e4567-e89b-12d3-a456-426614174000"
-      project_name: "project_name"
-      category_ids:
-        - "bbc3555a-133b-5348-9764-bfff196e84e4"
-        - "ac587354-7894-3625-5178-bfff18523654"
     description: "object store test"
     deployment_version: "5.1.1"
     domain: "test.domain.nutanix.com"
@@ -148,11 +140,6 @@
       - result.response.cluster_ext_id == "00063125-0d92-06e0-185b-ac1f6b6f97e2"
       - result.response.name == "ansible-object"
       - result.response.ext_id == "{{ object_store_ext_id }}"
-      - result.response.metadata.owner_reference_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-      - result.response.metadata.owner_user_name == "owner_user_name"
-      - result.response.metadata.project_reference_id == "123e4567-e89b-12d3-a456-426614174000"
-      - result.response.metadata.project_name == "project_name"
-      - result.response.metadata.category_ids == ["bbc3555a-133b-5348-9764-bfff196e84e4", "ac587354-7894-3625-5178-bfff18523654"]
       - result.response.description == "object store test"
       - result.response.deployment_version == "5.1.1"
       - result.response.domain == "test.domain.nutanix.com"

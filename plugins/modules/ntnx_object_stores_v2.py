@@ -39,38 +39,6 @@ options:
             - Name of the object store.
         type: str
         required: false
-    metadata:
-        description:
-            - Metadata associated with the object store.
-        type: dict
-        required: false
-        suboptions:
-            owner_reference_id:
-                description:
-                    - Owner reference ID of the object store.
-                type: str
-                required: false
-            owner_user_name:
-                description:
-                    - Owner user name of the object store.
-                type: str
-                required: false
-            project_reference_id:
-                description:
-                    - Reference ID that represents the project this object store should belong to.
-                type: str
-                required: false
-            project_name:
-                description:
-                    - The name of the project this object store belongs to.
-                type: str
-                required: false
-            category_ids:
-                description:
-                    - Categories IDs which are associated to object store.
-                type: list
-                elements: str
-                required: false
     description:
         description:
             - Description of the object store.

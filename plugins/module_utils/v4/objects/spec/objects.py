@@ -20,14 +20,6 @@ except ImportError:
 class ObjectsSpecs:
     """Module specs related to object stores"""
 
-    metadata_spec = dict(
-        owner_reference_id=dict(type="str"),
-        owner_user_name=dict(type="str"),
-        project_reference_id=dict(type="str"),
-        project_name=dict(type="str"),
-        category_ids=dict(type="list", elements="str"),
-    )
-
     ipv4_spec = dict(
         value=dict(type="str", required=True),
         prefix_length=dict(type="int", default=32),
@@ -45,7 +37,6 @@ class ObjectsSpecs:
 
     object_store_spec = dict(
         name=dict(type="str"),
-        metadata=dict(type="dict", options=metadata_spec, obj=objects_sdk.Metadata),
         description=dict(type="str"),
         deployment_version=dict(type="str"),
         domain=dict(type="str"),
