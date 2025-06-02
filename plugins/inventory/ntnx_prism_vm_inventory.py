@@ -108,6 +108,13 @@ class Mock_Module:
     def jsonify(self, data):
         return json.dumps(data)
 
+    def fail_json(self, msg, **kwargs):
+        """Fail with a message"""
+        kwargs["failed"] = True
+        kwargs["msg"] = msg
+        print("\n%s" % self.jsonify(kwargs))
+        raise AnsibleError(self.jsonify(kwargs))
+
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
     """Nutanix VM dynamic invetory module for ansible"""
