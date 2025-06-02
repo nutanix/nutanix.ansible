@@ -76,7 +76,6 @@ DOCUMENTATION = r"""
 """
 
 import json  # noqa: E402
-import sys  # noqa: E402
 import tempfile  # noqa: E402
 
 from ansible.errors import AnsibleError  # noqa: E402
@@ -105,7 +104,7 @@ class Mock_Module:
         kwargs["failed"] = True
         kwargs["msg"] = msg
         print("\n%s" % self.jsonify(kwargs))
-        sys.exit(1)
+        raise AnsibleError(self.jsonify(kwargs))
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable):
