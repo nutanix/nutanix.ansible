@@ -103,7 +103,7 @@ ext_id:
 response:
     description:
         - The response of fetching API keys info.
-        - The respone of API key info using API key external
+        - The respone of API key info using API key external ID.
     type: dict
     returned: always
     sample: [
