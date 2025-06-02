@@ -1,0 +1,19 @@
+---
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+nutanix_hostname: <pc_ip>
+nutanix_username: <username>
+nutanix_password: <password>
+validate_certs: false
+data: { offset: 0, length: 20 }
+fetch_all_vms: false
+groups:
+  group_1: "'integration' in name"
+  group_2: "'auto' in name"
+  group_3: "'integration' not in name and 'auto' not in name"
+keyed_groups:
+  - prefix: host
+    separator: "_"
+    key: ansible_host
+  - prefix: fqdn
+    separator: "_"
+    key: ansible_fqdn
