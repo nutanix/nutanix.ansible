@@ -9,13 +9,13 @@
   block:
     - name: Import create.yml
       ansible.builtin.import_tasks: "create.yml"
-    - name: Import negtaive_scenarios.yml
-      ansible.builtin.import_tasks: "negtaive_scenarios.yml"
+    - name: Import negative_scenarios.yml
+      ansible.builtin.import_tasks: "negative_scenarios.yml"
     - name: Import delete.yml
       ansible.builtin.import_tasks: "delete.yml"
     - name: Import vm_operations.yml
       ansible.builtin.import_tasks: "vm_operations.yml"
     - name: Import vm_update.yml
       ansible.builtin.import_tasks: "vm_update.yml"
-    - name: Import negtaive_vm_update.yml
-      ansible.builtin.import_tasks: "negtaive_vm_update.yml"
+    - name: Import negative_vm_update.yml
+      ansible.builtin.import_tasks: "negative_vm_update.yml"

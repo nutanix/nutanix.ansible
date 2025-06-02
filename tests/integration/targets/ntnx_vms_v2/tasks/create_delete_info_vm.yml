@@ -105,7 +105,7 @@
   ignore_errors: true
   check_mode: true
 
-- name: Creation Status
+- name: Create VM with full requirements with check_mode Status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -158,8 +158,8 @@
       - result.response.boot_config.nvram_device.backing_storage_info.storage_container.ext_id == "{{ storage_container.uuid }}"
       - result.response.boot_config.nvram_device.backing_storage_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
       - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
-    fail_msg: " Unable to create VM with full requirements "
-    success_msg: Returned as expected
+    fail_msg: " Create VM with full requirements with check_mode failed"
+    success_msg: "Create VM with full requirements with check_mode passed"
 ########################################################################
 - name: Create VM with minimum requirements
   ntnx_vms_v2:
@@ -582,15 +582,35 @@
   register: result
   ignore_errors: true
 
-- name: Status of all VMs
+- name: Set total number of VMs
+  ansible.builtin.set_fact:
+    total_vms: "{{ result.total_available_results }}"
+    num_vms_per_page: 100
+
+- name: Get number of pages
+  ansible.builtin.set_fact:
+    num_pages: "{{ ((total_vms | int) // (num_vms_per_page | int)) + (((total_vms | int) % (num_vms_per_page | int)) > 0 | int) }}"
+
+# all_vms is a list of all available VMs details
+- name: Get all VMs
+  ntnx_vms_info_v2:
+    limit: "{{ num_vms_per_page }}"
+    page: "{{ item }}"
+  register: all_vms
+  loop: "{{ range(0, (num_pages | int)) | list }}"
+  when: (total_vms | int) > 0
+  ignore_errors: true
+
+- name: Status for fetching all VMs
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.changed == False
-      - result.failed == False
-      - result.response | length > 1
-    fail_msg: "Unable to list VMs "
-    success_msg: VMs  listed successfully
+      - all_vms.changed == false
+      - all_vms.msg == "All items completed"
+      - all_vms.results | length == num_pages | int
+      - all_vms.results | map(attribute='response') | map('length') | sum == total_vms | int
+    fail_msg: "Unable to fetch all VMs "
+    success_msg: "All VMs fetched successfully "
+
 ########################################################################
 - name: List all VMs with limit 3
   ntnx_vms_info_v2:
@@ -608,6 +628,27 @@
     fail_msg: "Unable to list VMs "
     success_msg: VMs  listed successfully
 ########################################################################
+
+- name: Delete VM with check mode is enabled
+  ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete VM with check mode is enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete[0] }}"
+      - result.msg == "VM with ext_id:{{ todelete[0] }} will be deleted."
+    fail_msg: "Delete VM with check mode is enabled failed"
+    success_msg: "Delete VM with check mode is enabled passed"
+########################################################################
+
 - name: Delete all Created VMs
   ntnx_vms_v2:
     state: absent

@@ -284,6 +284,11 @@ def delete_restore_source(module, domain_manager_backups_api, result):
     """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "Restore source with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     current_spec = get_restore_source(module, domain_manager_backups_api, ext_id)
 
     etag_value = get_etag(data=current_spec)
@@ -328,11 +333,11 @@ def run_module():
     }
 
     state = module.params.get("state")
-    prsim = get_domain_manager_backup_api_instance(module)
+    prism = get_domain_manager_backup_api_instance(module)
     if state == "present":
-        create_restore_source(module, prsim, result)
+        create_restore_source(module, prism, result)
     else:
-        delete_restore_source(module, prsim, result)
+        delete_restore_source(module, prism, result)
 
     module.exit_json(**result)
 

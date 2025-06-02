@@ -19,6 +19,7 @@ options:
   vlan_uuid:
     description:
       - uuid for update or delete of vlan
+      - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   name:
     description:
@@ -27,7 +28,7 @@ options:
     type: str
   vlan_type:
     description:
-      - wheather the vlan is mannaged or no
+      - whether the vlan is managed or no
       - update allowed
     type: str
     choices: ["DHCP", "Static"]
@@ -185,12 +186,12 @@ type:
   type: str
   sample: "Static"
 managed:
-  description: mannaged or unmannged vlan
+  description: managed or unmanaged vlan
   returned: always
   type: bool
 
 propertiesMap:
-  description: confiuration of static vlan
+  description: configuration of static vlan
   type: dict
   returned: always
   sample:
@@ -230,7 +231,7 @@ ipPools:
                 ]
 
 properties:
-  description: list of confiuration of static vlan
+  description: list of configuration of static vlan
   type: list
   returned: always
   sample:
@@ -372,6 +373,11 @@ def delete_vlan(module, result):
     uuid = module.params.get("vlan_uuid")
     if not uuid:
         module.fail_json(msg="vlan_uuid is required field for delete", **result)
+
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Vlan with uuid:{0} will be deleted.".format(uuid)
+        return
 
     resp = vlan.delete(uuid)
 

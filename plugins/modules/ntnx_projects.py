@@ -27,8 +27,7 @@ options:
     project_uuid:
         description:
             - This field can be used for update and delete of project
-            - if C(project_uuid) and C(state)==present will update the project
-            - if C(project_uuid) and C(state)==absent will delete the project
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
         required: false
     desc:
@@ -742,6 +741,12 @@ def delete_project(module, result):
         module.fail_json(msg="Failed deleting Project", **result)
 
     projects = Project(module)
+
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "Project with uuid:{0} will be deleted.".format(uuid)
+        return
+
     resp = projects.delete(uuid)
     result["response"] = resp
     result["changed"] = True

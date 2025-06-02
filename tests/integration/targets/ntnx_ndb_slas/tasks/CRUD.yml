@@ -257,6 +257,25 @@
     success_msg: module errored out correctly when incorrect name is given
 
 ######################################################################## Delete flow #################################################
+
+- name: Delete Sla with check mode
+  ntnx_ndb_slas:
+    state: absent
+    sla_uuid: "{{ todelete[0] }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete Sla with check mode Status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Sla with uuid:{{  todelete[0] }} will be deleted."
+      - output.uuid == "{{  todelete[0]  }}"
+    fail_msg: "Delete Sla with check mode failed"
+    success_msg: "Delete Sla with check mode passed"
+
 - name: Verify slas delete flow
   ntnx_ndb_slas:
     state: absent

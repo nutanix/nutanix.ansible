@@ -20,7 +20,6 @@
     hypervisor_images: "{{ hypervisor_images.hypervisor_images.kvm | selectattr('filename', 'search', hypervisor_package_filter) | list }}"
 
 - name: Create spec for imaging and creating cluster out of bare metal nodes
-  check_mode: true
   ntnx_foundation:
     timeout: 4500
     cvm_gateway: "{{ nodes.cvm_gateway }}"
@@ -70,6 +69,7 @@
         backplane_netmask: "{{ nodes.backplane_netmask }}"
   register: spec
   ignore_errors: true
+  check_mode: true
 
 - name: Set expected spec
   ansible.builtin.set_fact:
@@ -125,7 +125,7 @@
       - spec.changed==false
       - spec.response == expected_spec
     fail_msg: " Fail : unable to create spec for imaging nodes"
-    success_msg: "Succes: spec generated successfully"
+    success_msg: "Success: spec generated successfully"
 
 - name: Image nodes without cluster creation
   ntnx_foundation:
@@ -165,7 +165,7 @@
       - result.failed==false
       - result.changed==true
     fail_msg: " Fail : unable to image nodes"
-    success_msg: "Succes: node imaging done successfully"
+    success_msg: "Success: node imaging done successfully"
 
 - name: Image nodes and create cluster out of it
   ntnx_foundation:
@@ -221,5 +221,5 @@
       - result.changed==true
       - result.response.cluster_urls is defined
     fail_msg: " Fail : unable to image nodes and create cluster"
-    success_msg: "Succes: cluster and node imaging done successfully"
+    success_msg: "Success: cluster and node imaging done successfully"
 ######################################################

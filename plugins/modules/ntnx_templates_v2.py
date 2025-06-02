@@ -646,6 +646,46 @@ options:
                                 description: UEFI boot configuration
                                 type: dict
                                 suboptions:
+                                    boot_device:
+                                        description:
+                                            - The boot device settings for UEFI boot.
+                                        type: dict
+                                        suboptions:
+                                            boot_device_disk:
+                                                description: Specification for booting from disk.
+                                                type: dict
+                                                suboptions:
+                                                    disk_address:
+                                                        description: Address specification for the disk.
+                                                        type: dict
+                                                        suboptions:
+                                                            bus_type:
+                                                                description:
+                                                                    - Bus type for the device.
+                                                                    - The acceptable values are SCSI, IDE, PCI, SATA, SPAPR (only PPC).
+                                                                type: str
+                                                                choices: ["SCSI", "IDE", "PCI", "SATA", "SPAPR"]
+                                                                required: true
+                                                            index:
+                                                                description:
+                                                                    - Device index on the bus.
+                                                                    - This field is ignored unless the bus details are specified.
+                                                                type: int
+                                            boot_device_nic:
+                                                description: Specification for booting from network interface controller (NIC).
+                                                type: dict
+                                                suboptions:
+                                                        mac_address:
+                                                                description: Mac address
+                                                                type: str
+                                    boot_order:
+                                        description:
+                                            - Indicates the order of device types in which the VM should try to boot from.
+                                                If the boot device order is not provided the system will
+                                                decide an appropriate boot device order.
+                                        type: list
+                                        elements: str
+                                        choices: ["CDROM", "NETWORK", "DISK"]
                                     is_secure_boot_enabled:
                                         description: Indicate whether to enable secure boot or not.
                                         type: bool
@@ -1604,6 +1644,10 @@ def delete_template(module, result):
     templates = get_templates_api_instance(module)
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "Template with ext_id:{0} will be deleted.".format(ext_id)
+        return
 
     current_spec = get_template(module, templates, ext_id)
 

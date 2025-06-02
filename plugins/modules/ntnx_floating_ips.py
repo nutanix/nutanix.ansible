@@ -15,7 +15,9 @@ version_added: 1.0.0
 description: 'Create, Update, Delete floating_ips'
 options:
   fip_uuid:
-    description: floating_ip UUID
+    description:
+        - floating_ip UUID
+        - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
     type: str
   external_subnet:
     description: A subnet with external connectivity
@@ -229,12 +231,16 @@ def create_floating_ip(module, result):
 
 def delete_floating_ip(module, result):
     fip_uuid = module.params["fip_uuid"]
+    result["fip_uuid"] = fip_uuid
+
+    if module.check_mode:
+        result["msg"] = "Floating IP with uuid:{0} will be deleted.".format(fip_uuid)
+        return
 
     floating_ip = FloatingIP(module)
     resp = floating_ip.delete(fip_uuid)
     result["changed"] = True
     result["response"] = resp
-    result["fip_uuid"] = fip_uuid
     result["task_uuid"] = resp["status"]["execution_context"]["task_uuid"]
 
     if module.params.get("wait"):

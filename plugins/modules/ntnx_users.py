@@ -18,10 +18,7 @@ options:
         description:
         - Specify state
         - If C(state) is set to C(present) then the operation will be  create the item.
-        - if C(state) is set to C(present) and C(user_uuid) is given then it will update that user.
-        - >-
-            If C(state) is set to C(absent) and if the item exists, then
-            item is removed.
+        - If C(state) is set to C(absent) and if the item exists, then item is removed.
         choices:
         - present
         - absent
@@ -49,7 +46,7 @@ options:
         type: dict
     remove_categories:
         description:
-            - set this flag to remove dettach all categories attached to user
+            - set this flag to remove detach all categories attached to user
             - mutually_exclusive with C(categories)
         type: bool
         required: false
@@ -265,6 +262,12 @@ def delete_user(module, result):
 
     user = User(module)
     resp = user.delete(uuid)
+
+    result["uuid"] = uuid
+    if module.check_mode:
+        result["msg"] = "User with uuid:{0} will be deleted.".format(uuid)
+        return
+
     result["response"] = resp
     result["changed"] = True
     task_uuid = resp["status"]["execution_context"]["task_uuid"]

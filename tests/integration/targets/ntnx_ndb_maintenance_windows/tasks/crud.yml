@@ -1,7 +1,7 @@
 ---
 - name: Ntnx_ndb_maintenance_window integration tests
   ansible.builtin.debug:
-    msg: start ndb database maintenance winndow tests
+    msg: start ndb database maintenance window tests
 
 - name: Generate random name
   ansible.builtin.set_fact:
@@ -14,10 +14,9 @@
 
 ############################################## create tests ####################################
 - name: Create spec for maintenance window
-  check_mode: true
   ntnx_ndb_maintenance_window:
     name: "{{ window1_name }}"
-    desc: anisble-created-window
+    desc: ansible-created-window
     schedule:
       recurrence: weekly
       duration: 2
@@ -25,6 +24,8 @@
       start_time: "11:00:00"
       day_of_week: tuesday
   register: result
+  ignore_errors: true
+  check_mode: true
 
 - name: Define variables for expected result
   ansible.builtin.set_fact:
@@ -33,9 +34,16 @@
       error:
       failed: false
       response:
-        description: anisble-created-window
+        description: ansible-created-window
         name: "{{ window1_name }}"
-        schedule: { dayOfWeek: TUESDAY, duration: 2, recurrence: WEEKLY, startTime: "11:00:00", weekOfMonth: !!null "" }
+        schedule:
+          {
+            dayOfWeek: TUESDAY,
+            duration: 2,
+            recurrence: WEEKLY,
+            startTime: "11:00:00",
+            weekOfMonth: !!null "",
+          }
         timezone: Asia/Calcutta
       uuid:
 
@@ -49,7 +57,7 @@
 - name: Create window with weekly schedule
   ntnx_ndb_maintenance_window:
     name: "{{ window1_name }}"
-    desc: anisble-created-window
+    desc: ansible-created-window
     schedule:
       recurrence: weekly
       duration: 2
@@ -71,7 +79,7 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == window1_name
-      - result.response.description == "anisble-created-window"
+      - result.response.description == "ansible-created-window"
       - result.response.schedule.dayOfWeek == "TUESDAY"
       - result.response.schedule.recurrence == "WEEKLY"
       - result.response.schedule.startTime == "11:00:00"
@@ -85,7 +93,7 @@
 - name: Create window with monthly schedule
   ntnx_ndb_maintenance_window:
     name: "{{ window2_name }}"
-    desc: anisble-created-window
+    desc: ansible-created-window
     schedule:
       recurrence: monthly
       duration: 2
@@ -109,7 +117,7 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == window2_name
-      - result.response.description == "anisble-created-window"
+      - result.response.description == "ansible-created-window"
       - result.response.schedule.dayOfWeek == "TUESDAY"
       - result.response.schedule.recurrence == "MONTHLY"
       - result.response.schedule.startTime == "11:00:00"
@@ -160,7 +168,7 @@
   ntnx_ndb_maintenance_window:
     uuid: "{{ window2_uuid }}"
     name: "{{ window2_name }}-updated"
-    desc: anisble-created-window-updated
+    desc: ansible-created-window-updated
     schedule:
       recurrence: monthly
       duration: 3
@@ -179,7 +187,7 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{ window2_name }}-updated"
-      - result.response.description == "anisble-created-window-updated"
+      - result.response.description == "ansible-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
       - result.response.schedule.recurrence == "MONTHLY"
       - result.response.schedule.startTime == "12:00:00"
@@ -211,7 +219,7 @@
       - result.uuid is defined
       - result.response.status == "ACTIVE" or result.response.status == "SCHEDULED"
       - result.response.name == "{{ window2_name }}-updated"
-      - result.response.description == "anisble-created-window-updated"
+      - result.response.description == "ansible-created-window-updated"
       - result.response.schedule.dayOfWeek == "WEDNESDAY"
       - result.response.schedule.recurrence == "WEEKLY"
       - result.response.schedule.startTime == "12:00:00"
@@ -226,7 +234,7 @@
   ntnx_ndb_maintenance_window:
     uuid: "{{ window2_uuid }}"
     name: "{{ window2_name }}-updated"
-    desc: anisble-created-window-updated
+    desc: ansible-created-window-updated
     schedule:
       recurrence: weekly
       duration: 3
@@ -301,6 +309,23 @@
     success_msg: maintenance window updated successfully
 
 ############################################## delete tests ####################################
+- name: Delete window with check mode
+  ntnx_ndb_maintenance_window:
+    state: absent
+    uuid: "{{ window1_uuid }}"
+  register: output
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete window with check mode status
+  ansible.builtin.assert:
+    that:
+      - output.failed == false
+      - output.changed == false
+      - output.msg =="Window with uuid:{{  window1_uuid }} will be deleted."
+      - output.uuid == "{{ window1_uuid  }}"
+    fail_msg: "Delete window with check mode failed"
+    success_msg: "Delete window with check mode passed"
 
 - name: Delete window 1
   ntnx_ndb_maintenance_window:
@@ -314,6 +339,7 @@
       - result.changed == True
       - result.failed == false
       - result.response.status == "success"
+      - result.uuid == "{{ window1_uuid }}"
     fail_msg: unable to delete window
     success_msg: window deleted successfully
 
@@ -329,5 +355,6 @@
       - result.changed == True
       - result.failed == false
       - result.response.status == "success"
+      - result.uuid == "{{ window2_uuid }}"
     fail_msg: unable to delete window
     success_msg: window deleted successfully

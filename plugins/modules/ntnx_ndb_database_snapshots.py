@@ -21,10 +21,11 @@ options:
       snapshot_uuid:
         description:
             - snapshot uuid for delete or update
+            - will be used to update if C(state) is C(present) and to delete if C(state) is C(absent)
         type: str
       name:
         description:
-            - name of snaphsot.
+            - name of snapshot.
             - required for create
             - update is allowed
         type: str
@@ -365,6 +366,11 @@ def delete_snapshot(module, result):
 
     snapshots = Snapshot(module)
     resp = snapshots.delete(uuid=snapshot_uuid)
+    result["snapshot_uuid"] = snapshot_uuid
+
+    if module.check_mode:
+        result["msg"] = "Snapshot with uuid:{0} will be deleted.".format(snapshot_uuid)
+        return
 
     if module.params.get("wait"):
         ops_uuid = resp["operationId"]

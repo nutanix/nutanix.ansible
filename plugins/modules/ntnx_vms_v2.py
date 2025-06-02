@@ -15,6 +15,11 @@ version_added: 2.0.0
 description:
     - Create, Update and delete VMs in Nutanix AHV based PC
     - This module uses PC v4 APIs based SDKs
+    - Workaround for the disk resizing issue in the SDK.
+        - After VM creation, use ntnx_vms_disks_v2 module to resize the disks.
+        - Disk resizing gets skipped from API during VM create. Module will start working as expected when API is fixed.
+        - Contact Nutanix Support to check status on this enhancement request for API.
+
 notes:
     - During vm update, Update or create of subresources like disks, nics, cd_roms, gpus, serial_ports, etc. is not supported.
     - Use subresources specific modules to update or create subresources.
@@ -301,6 +306,45 @@ options:
                 required: false
                 type: dict
                 suboptions:
+                    boot_device:
+                        description:
+                            - The boot device settings for UEFI boot.
+                        type: dict
+                        suboptions:
+                            boot_device_disk:
+                                description: Specification for booting from disk.
+                                type: dict
+                                suboptions:
+                                    disk_address:
+                                        description: Address specification for the disk.
+                                        type: dict
+                                        suboptions:
+                                            bus_type:
+                                                description:
+                                                    - Bus type for the device.
+                                                    - The acceptable values are SCSI, IDE, PCI, SATA, SPAPR (only PPC).
+                                                type: str
+                                                choices: ["SCSI", "IDE", "PCI", "SATA", "SPAPR"]
+                                                required: true
+                                            index:
+                                                description:
+                                                    - Device index on the bus.
+                                                    - This field is ignored unless the bus details are specified.
+                                                type: int
+                            boot_device_nic:
+                                description: Specification for booting from network interface controller (NIC).
+                                type: dict
+                                suboptions:
+                                        mac_address:
+                                                description: Mac address
+                                                type: str
+                    boot_order:
+                        description:
+                            - Indicates the order of device types in which the VM should try to boot from.
+                              If the boot device order is not provided the system will decide an appropriate boot device order.
+                        type: list
+                        elements: str
+                        choices: ["CDROM", "NETWORK", "DISK"]
                     is_secure_boot_enabled:
                         description: Indicate whether to enable secure boot or not.
                         type: bool
@@ -1238,6 +1282,11 @@ def update_vm(module, result):
 def delete_vm(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "VM with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     vms = get_vm_api_instance(module)
     vm = get_vm(module, vms, ext_id)
     etag = get_etag(vm)
