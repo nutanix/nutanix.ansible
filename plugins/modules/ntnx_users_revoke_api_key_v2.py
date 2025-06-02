@@ -110,6 +110,13 @@ def revoke_user_api_key(module, users_api, result):
     user_ext_id = module.params.get("user_ext_id")
     ext_id = module.params.get("ext_id")
 
+    result["user_ext_id"] = user_ext_id
+    result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "API key with ext_id:{0} will be revoked.".format(ext_id)
+        return
+
     try:
         users_api.revoke_user_key(userExtId=user_ext_id, extId=ext_id)
     except Exception as e:
@@ -119,8 +126,6 @@ def revoke_user_api_key(module, users_api, result):
             msg="Api Exception raised while revoking user api key",
         )
 
-    result["user_ext_id"] = user_ext_id
-    result["ext_id"] = ext_id
     result["changed"] = True
 
 

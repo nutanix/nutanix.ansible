@@ -227,6 +227,13 @@ def delete_user_api_key(module, users_api, result):
     user_ext_id = module.params.get("user_ext_id")
     ext_id = module.params.get("ext_id")
 
+    result["user_ext_id"] = user_ext_id
+    result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "API key with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
     old_spec = get_requested_key(module, users_api, ext_id, user_ext_id)
     etag = get_etag(data=old_spec)
     if not etag:
@@ -243,9 +250,6 @@ def delete_user_api_key(module, users_api, result):
             exception=e,
             msg="Api Exception raised while deleting user api key",
         )
-
-    result["user_ext_id"] = user_ext_id
-    result["ext_id"] = ext_id
     result["changed"] = True
 
 
