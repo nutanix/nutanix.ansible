@@ -260,13 +260,13 @@ def delete_user(module, result):
         result["error"] = "Missing parameter user_uuid"
         module.fail_json(msg="Failed deleting user", **result)
 
-    user = User(module)
-    resp = user.delete(uuid)
-
     result["uuid"] = uuid
     if module.check_mode:
         result["msg"] = "User with uuid:{0} will be deleted.".format(uuid)
         return
+
+    user = User(module)
+    resp = user.delete(uuid)
 
     result["response"] = resp
     result["changed"] = True
