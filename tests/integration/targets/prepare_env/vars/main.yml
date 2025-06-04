@@ -96,7 +96,7 @@
 #       cluster_functions: ["AOS"]
 #       auth_public_keys:
 #         - name: name
-#           key:  key
+#           key: key
 #       redundancy_factor_cluster_crud: 1
 #       redundancy_factor_cluster_expanding: 2
 #       cluster_arch: "X86_64"
@@ -107,7 +107,7 @@
 #       virtual_ip: "10.10.10.5"
 #       iscsi_ip: "10.10.11.0"
 #       iscsi_ip1: "10.10.11.1"
-#       dns_servers: ["10.10.12.0","10.10.12.1"]
+#       dns_servers: ["10.10.12.0", "10.10.12.1"]
 #       ntp_servers: ["fqdn1.com", "fqdn2.com", "fqdn3.com", "fqdn4.com"]
 #       smtp_server:
 #         ip: "10.10.10.9"
@@ -153,7 +153,8 @@
 #   dest: home/user/image
 #   checksum: image_checksum_disk
 #   centos: "image_name_centos"
-#   image_ext_ids: [b9120f28-1222-3333-4444-47f7d5066e91,6b34522d-1231-8555-8888-1388aede0a06]
+#   image_ext_ids:
+#     [b9120f28-1222-3333-4444-47f7d5066e91, 6b34522d-1231-8555-8888-1388aede0a06]
 # iso_image:
 #   url: iso_image_url
 #   checksum: iso_checksum
@@ -175,7 +176,7 @@
 # # variables generated from prepare_env.yml
 
 # # BEGIN ANSIBLE MANAGED BLOCK insertion 0
-# ip:  "pc_ip"
+# ip: "pc_ip"
 # username: "username"
 # password: "password"
 # recovery_site_ip: "recovery_site_ip"
@@ -220,13 +221,13 @@
 
 # todelete: []
 # vm_owner:
-#     name: "vm_owner"
-#     uuid: b0cce620-1111-2222-3333-a91e2c037862
+#   name: "vm_owner"
+#   uuid: b0cce620-1111-2222-3333-a91e2c037862
 
 # cni:
-#     node_cidr_mask_size: 24
-#     service_ipv4_cidr: "10.10.0.0/16"
-#     pod_ipv4_cidr: "10.20.0.0/16"
+#   node_cidr_mask_size: 24
+#   service_ipv4_cidr: "10.10.0.0/16"
+#   pod_ipv4_cidr: "10.20.0.0/16"
 # accounts:
 #   - name: "NTNX_LOCAL_AZ"
 #     uuid: "7a2a84d2-1234-9876-6788-279c861d187a"
@@ -238,4 +239,3 @@
 #   user_group_uuid: "f2a755e7-3333-5555-6666-8716437a104f"
 
 # principal_name: "principle_name"
-
