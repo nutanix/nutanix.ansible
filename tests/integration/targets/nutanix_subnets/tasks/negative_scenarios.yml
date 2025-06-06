@@ -1,4 +1,11 @@
 ---
+# Variables required before running this playbook:
+# - vlan_subnets_ids
+# - virtual_switch
+# - cluster
+# - ip_address_management
+# - ip_address_pools
+
 - name: Started Negative Creation Cases
   ansible.builtin.debug:
     msg: "Started Negative Creation Cases"

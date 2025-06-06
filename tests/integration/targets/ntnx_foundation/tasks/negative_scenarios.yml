@@ -1,3 +1,4 @@
+---
 - name: Start negative_scenarios for ntnx_foundation
   ansible.builtin.debug:
     msg: Start negative_scenarios for ntnx_foundation
