@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - ngt_config
+# - network
+
 - name: Start testing ntnx_vms_ngt_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_vms_ngt_v2

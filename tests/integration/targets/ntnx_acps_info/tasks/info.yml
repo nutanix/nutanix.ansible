@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - acp
+
 - name: Start ntnx_acps_info tests
   ansible.builtin.debug:
     msg: "Start ntnx_acps_info tests"

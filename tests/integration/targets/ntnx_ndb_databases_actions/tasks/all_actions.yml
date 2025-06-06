@@ -9,6 +9,16 @@
 #   6. Scale database
 #   7. Add/Remove linked databases
 
+# Variables required before running this playbook:
+# - db_params_profile
+# - vm_password
+# - cluster
+# - software_profile
+# - network_profile
+# - compute_profile
+# - public_ssh_key
+# - sla
+
 - name: Start ndb database day2 actions tests
   ansible.builtin.debug:
     msg: start ndb database day2 actions tests

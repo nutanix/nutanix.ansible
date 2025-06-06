@@ -1,4 +1,6 @@
 ---
+# Variables required before running this playbook:
+# - cluster
 - name: VM with minimum requirements
   ntnx_vms:
     state: present

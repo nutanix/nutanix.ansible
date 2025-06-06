@@ -1,3 +1,4 @@
+---
 # Pre-requisite:
 # - Ensure that These variables from prepare_env/vars/main.yml are defined and set correctly:
 #   - cluster:
@@ -9,7 +10,6 @@
 #   - password: "password" # Prism Central UI password
 #   - ip: "10.0.0.6" # IP address of the Prism Central
 
----
 - name: Start testing PC backup restore with cluster as backup store.
   ansible.builtin.debug:
     msg: Start testing PC backup restore with cluster as backup store.

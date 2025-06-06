@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# cluster
+# availability_zone_pc_uuid
+# cluster_availability_zone
+
 - name: Start recovery points related tests
   ansible.builtin.debug:
     msg: Start recovery points related tests

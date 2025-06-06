@@ -1,4 +1,14 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - virtual_switch
+# - vlan_subnets_ids
+# - ip_address_management
+# - ip_address_pools
+# - dhcp_settings
+# - external_nonat_subnet
+# - external_nat_subnet
+
 - name: Start nutanix_subnets_v2 tests
   ansible.builtin.debug:
     msg: "Start nutanix_subnets_v2 tests"
