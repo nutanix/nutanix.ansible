@@ -63,7 +63,6 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    module_args = vm_specs.get_vm_spec()
     checksum_allowed_types = {
         "ova_sha1_checksum": vmm_sdk.OvaSha1Checksum,
         "ova_sha256_checksum": vmm_sdk.OvaSha256Checksum,
@@ -159,9 +158,7 @@ def get_module_spec():
     return module_args
 
 
-def create_ova(module, result):
-    ova = get_ova_api_instance(module)
-
+def create_ova(module, ova, result):
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.Ova()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -207,8 +204,7 @@ def check_idempotency(current_spec, update_spec):
     return True
 
 
-def update_ova(module, result):
-    ova = get_ova_api_instance(module)
+def update_ova(module, ova, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -250,7 +246,7 @@ def update_ova(module, result):
     result["changed"] = True
 
 
-def delete_ova(module, result):
+def delete_ova(module, ova, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -258,7 +254,6 @@ def delete_ova(module, result):
         result["msg"] = "Ova with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    ova = get_ova_api_instance(module)
     resp = None
     try:
         resp = ova.delete_ova_by_id(extId=ext_id)
@@ -303,13 +298,14 @@ def run_module():
         "task_ext_id": None,
     }
     state = module.params.get("state")
+    ova = get_ova_api_instance(module)
     if state == "present":
         if module.params.get("ext_id"):
-            update_ova(module, result)
+            update_ova(module, ova, result)
         else:
-            create_ova(module, result)
+            create_ova(module, ova, result)
     else:
-        delete_ova(module, result)
+        delete_ova(module, ova, result)
 
     module.exit_json(**result)
 
