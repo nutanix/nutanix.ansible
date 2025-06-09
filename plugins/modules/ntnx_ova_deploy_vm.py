@@ -28,7 +28,6 @@ RETURN = r"""
 
 import traceback  # noqa: E402
 import warnings  # noqa: E402
-from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
@@ -44,7 +43,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import get_etag, get_ova_api_instance # noqa: E402
+from ..module_utils.v4.vmm.api_client import get_ova_api_instance # noqa: E402
 from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
 from ..module_utils.v4.vmm.spec.vms import VmSpecs as vm_specs  # noqa: E402
 

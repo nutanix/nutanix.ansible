@@ -210,6 +210,8 @@ def update_ova(module, ova, result):
 
     current_spec = get_ova(module, ova, ext_id=ext_id)
 
+    etag_value = get_etag(current_spec)
+
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
     if err:
@@ -227,7 +229,7 @@ def update_ova(module, ova, result):
 
     resp = None
     try:
-        resp = ova.update_ova_by_id(extId=ext_id, body=update_spec)
+        resp = ova.update_ova_by_id(extId=ext_id, body=update_spec, if_match=etag_value)
     except Exception as e:
         raise_api_exception(
             module=module,
