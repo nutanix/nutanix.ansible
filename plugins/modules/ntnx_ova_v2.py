@@ -19,10 +19,156 @@ author:
  - Abhinav Bansal (@abhinavbansal29)
 """
 EXAMPLES = r"""
+- name: Create Ova from the VM
+  nutanix.ncp.ntnx_ova_v2:
+    name: "ova_name"
+    source:
+      ova_vm_source:
+        vm_ext_id: "123e4567-e89b-12d3-a456-426614174000"
+        disk_file_format: "QCOW2"
+  register: ova_result
 
+- name: Delete Ova
+  nutanix.ncp.ntnx_ova_v2:
+    ext_id: "{{ todelete[0] }}"
+    state: absent
+  register: delete_result
 """
 RETURN = r"""
-
+response:
+    description: Response when we create, update or delete an Ova
+    returned: always
+    type: dict
+    sample:
+        {
+            "checksum": {
+                "hex_digest": "8b6b28a02d0630a7140adac3466bc5dabd4b3de2a02d1051b9815e82f5957390"
+            },
+            "cluster_location_ext_ids": [
+                "000636a4-e7ce-389e-185b-ac1f6b6f97e2"
+            ],
+            "create_time": "2025-06-09T10:32:38.810439+00:00",
+            "created_by": {
+                "additional_attributes": null,
+                "buckets_access_keys": null,
+                "created_by": null,
+                "created_time": null,
+                "creation_type": null,
+                "description": null,
+                "display_name": null,
+                "email_id": null,
+                "ext_id": "30303030-3030-3030-2d30-3030302d3030",
+                "first_name": null,
+                "idp_id": null,
+                "is_force_reset_password_enabled": null,
+                "last_login_time": null,
+                "last_name": null,
+                "last_updated_by": null,
+                "last_updated_time": null,
+                "links": null,
+                "locale": null,
+                "middle_initial": null,
+                "password": null,
+                "region": null,
+                "status": null,
+                "tenant_id": null,
+                "user_type": null,
+                "username": "admin"
+            },
+            "disk_format": "QCOW2",
+            "ext_id": "aab776d5-d83f-4e32-a9de-63e91f9f5e47",
+            "last_update_time": "2025-06-09T10:32:38.810439+00:00",
+            "links": null,
+            "name": "JSVJIbifvyVgansible-agova",
+            "parent_vm": "JSVJIbifvyVgansible-agvm",
+            "size_bytes": 10240,
+            "source": null,
+            "tenant_id": null,
+            "vm_config": {
+                "apc_config": null,
+                "availability_zone": null,
+                "bios_uuid": null,
+                "boot_config": {
+                    "boot_device": null,
+                    "boot_order": [
+                        "CDROM",
+                        "DISK",
+                        "NETWORK"
+                    ]
+                },
+                "categories": null,
+                "cd_roms": null,
+                "cluster": null,
+                "create_time": null,
+                "custom_attributes": null,
+                "description": "ansible test ova",
+                "disks": null,
+                "enabled_cpu_features": null,
+                "ext_id": null,
+                "generation_uuid": null,
+                "gpus": null,
+                "guest_customization": null,
+                "guest_tools": null,
+                "hardware_clock_timezone": "UTC",
+                "host": null,
+                "is_agent_vm": false,
+                "is_branding_enabled": null,
+                "is_cpu_hotplug_enabled": true,
+                "is_cpu_passthrough_enabled": false,
+                "is_cross_cluster_migration_in_progress": null,
+                "is_gpu_console_enabled": null,
+                "is_live_migrate_capable": null,
+                "is_memory_overcommit_enabled": null,
+                "is_scsi_controller_enabled": true,
+                "is_vcpu_hard_pinning_enabled": null,
+                "is_vga_console_enabled": null,
+                "links": null,
+                "machine_type": "PC",
+                "memory_size_bytes": 1073741824,
+                "name": "JSVJIbifvyVgansible-agvm",
+                "nics": null,
+                "num_cores_per_socket": 1,
+                "num_numa_nodes": null,
+                "num_sockets": 2,
+                "num_threads_per_core": 1,
+                "ownership_info": null,
+                "pcie_devices": null,
+                "power_state": null,
+                "project": null,
+                "protection_policy_state": null,
+                "protection_type": null,
+                "serial_ports": null,
+                "source": null,
+                "storage_config": null,
+                "tenant_id": null,
+                "update_time": null,
+                "vtpm_config": null
+            }
+        }
+task_ext_id:
+    description: Task ext_id if the operation is async
+    returned: always
+    type: str
+    sample: "ZXJnb24=:350f0fd5-097d-4ece-8f44-6e5bfbe2dc08"
+ext_id:
+    description: External id of the Ova
+    returned: always
+    type: str
+    sample: "aab776d5-d83f-4e32-a9de-63e91f9f5e47"
+error:
+    description: Error message if any
+    returned: always
+    type: str
+changed:
+    description: Indicates if the module made any changes
+    returned: always
+    type: bool
+    sample: true
+failed:
+    description: Indicates if the module failed
+    returned: when failed
+    type: bool
+    sample: false
 """
 
 
@@ -120,6 +266,10 @@ def get_module_spec():
             options=objects_lite_source_spec,
         ),
     )
+    created_by_spec = user_specs.get_users_spec()
+    created_by_spec.pop("ext_id", None)
+    vm_config_spec = vm_specs.get_vm_spec()
+    vm_config_spec.pop("ext_id", None)
 
     module_args = dict(
         name= dict(type="str"), #Make this required for state present
@@ -140,7 +290,7 @@ def get_module_spec():
         ),
         created_by=dict(
             type="dict",
-            options=user_specs.get_users_spec().pop("ext_id", None),
+            options=created_by_spec,
             obj=vmm_sdk.User,
         ),
         cluster_location_ext_ids= dict(
@@ -149,7 +299,7 @@ def get_module_spec():
         ),
         vm_config=dict(
             type="dict",
-            options=vm_specs.get_vm_spec().pop("ext_id", None),
+            options=vm_config_spec,
             obj=vmm_sdk.AhvConfigVm,
         ),
         disk_format= disk_format_spec,

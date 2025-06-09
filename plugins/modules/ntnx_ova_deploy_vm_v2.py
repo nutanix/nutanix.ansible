@@ -9,8 +9,8 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 DOCUMENTATION = r"""
 ---
-module: ntnx_ova_v2
-short_description: "Create, Update and Delete Ova"
+module: ntnx_ova_deploy_vm_v2
+short_description: "Deploy VM from an ova"
 version_added: 2.2.1
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials

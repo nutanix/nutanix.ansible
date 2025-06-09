@@ -1,7 +1,7 @@
-# ip: TEST_PC_IP
-# username: TEST_PC_USERNAME
-# password: TEST_PC_PASSWORD
-# validate_certs: TEST_VALIDATE_CERT_FLAG
+ip: 10.44.76.58
+username: admin
+password: Nutanix.123
+validate_certs: false
 
 # # for NKE related tests
 # k8s_version: TEST_K8S_VERSION
@@ -16,10 +16,10 @@
 # # docker registry url for nke tests
 # url: TEST_REGISTRIES_URL
 
-# # cluster reference for several tests
-# cluster:
-#   name: TEST_CLUSTER_NAME
-#   uuid: TEST_CLUSTER_UUID
+# cluster reference for several tests
+cluster:
+  name: auto_cluster_prod_364c79c90e0c
+  uuid: 000636a4-e7ce-389e-185b-ac1f6b6f97e2
 
 # # For tests like vms, etc.
 # network:
