@@ -43,7 +43,10 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import get_ova_api_instance # noqa: E402
+from ..module_utils.v4.vmm.api_client import ( # noqa: E402
+    get_ova_api_instance,
+    get_vm_api_instance,
+)
 from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
 from ..module_utils.v4.vmm.spec.vms import VmSpecs as vm_specs  # noqa: E402
 
@@ -70,8 +73,15 @@ def get_module_spec():
         num_cores_per_socket=dict(type="int"),
         num_threads_per_core=dict(type="int"),
         memory_size_bytes=dict(type="int"),
-        nics=dict(type="list", options=vm_specs.get_nic_spec(), obj=vmm_sdk.AhvConfigNic, required=True),
-        cd_roms=dict(type="list", options=vm_specs.get_cd_rom_spec(), obj=vmm_sdk.AhvConfigCdRom),
+        nics=dict(
+            type="list",
+            options=vm_specs.get_nic_spec(),
+            obj=vmm_sdk.AhvConfigNic,
+            required=True,
+        ),
+        cd_roms=dict(
+            type="list", options=vm_specs.get_cd_rom_spec(), obj=vmm_sdk.AhvConfigCdRom
+        ),
         categories=dict(
             type="list",
             options=reference_spec,
@@ -80,7 +90,12 @@ def get_module_spec():
     )
     module_args = dict(
         ext_id=dict(type="str", required=True),
-        override_vm_config=dict(type="dict", options=override_vm_config_spec, obj=vmm_sdk.OvaVmConfigOverrideSpec, required=True),
+        override_vm_config=dict(
+            type="dict",
+            options=override_vm_config_spec,
+            obj=vmm_sdk.OvaVmConfigOverrideSpec,
+            required=True,
+        ),
         cluster_location_ext_id=dict(type="str", required=True),
     )
 
@@ -91,11 +106,11 @@ def deploy_vm_using_ova(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     ova = get_ova_api_instance(module)
+    vm = get_vm_api_instance(module)
 
     sg = SpecGenerator(module)
-    default_spec = vmm_sdk.Ova()
+    default_spec = vmm_sdk.OvaDeploymentSpec()
     spec, err = sg.generate_spec(obj=default_spec)
-
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating deploy vm using ova spec", **result)
@@ -117,6 +132,7 @@ def deploy_vm_using_ova(module, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
+
     if task_ext_id and module.params.get("wait"):
         task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
@@ -124,7 +140,7 @@ def deploy_vm_using_ova(module, result):
             task_status, rel=TASK_CONSTANTS.RelEntityType.VM
         )
         if vm_ext_id:
-            resp = get_vm(module, ova, vm_ext_id)
+            resp = get_vm(module, vm, vm_ext_id)
             result["vm_ext_id"] = vm_ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
 
