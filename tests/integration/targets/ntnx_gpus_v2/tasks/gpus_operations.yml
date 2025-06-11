@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - gpus
+
 - name: Start ntnx_gpus_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_gpus_v2 tests

@@ -1,4 +1,9 @@
 ---
+# Variables required before running this playbook:
+# - external_nat_subnet
+# - routable_ips
+# - dns_servers
+
 - name: Start testing ntnx_vpcs_v2, ntnx_vpcs_info_v2
   ansible.builtin.debug:
     msg: Start testing ntnx_vpcs_v2, ntnx_vpcs_info_v2

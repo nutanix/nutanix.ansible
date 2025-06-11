@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+
 - name: Start ntnx_vms_clone_v2 tests
   ansible.builtin.debug:
     msg: Start ntnx_vms_clone_v2 tests

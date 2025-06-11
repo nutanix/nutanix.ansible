@@ -1,0 +1,72 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Deploy an object store with one worker node using update operation
+# 2. Delete the bucket in the object store
+# 3. Delete the object store
+# Note: You can use the update operation to deploy an object store that has failed, so that it will be redeployed again with the same specifications.
+
+- name: Update objects playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        object_store_ext_id: "a079c1ed-d091-46c5-4df8-7eaa2ba86d9b"
+        cluster:
+          name: "auto_cluster_prod_f660be0f6925"
+          uuid: "000633ea-e256-b6a1-185b-ac1f6b6f97e2"
+        objects:
+          domain: "msp.pc-fjci.nutanix.com"
+          num_worker_nodes: 1
+          bucket_name: "objectsbrowser"
+          total_capacity_gi_b: 21474836480
+          storage_network_reference:
+            uuid: "313c37c1-6f1d-4520-9245-528e3162af5c"
+            IPs:
+              - "10.44.77.124"
+              - "10.44.77.125"
+          public_network_reference:
+            uuid: "313c37c1-6f1d-4520-9245-528e3162af5c"
+            IPs:
+              - "10.44.77.123"
+        api_ip: 10.22.75.43
+        api_port: 9440
+        username: username
+        password: password
+
+    - name: Deploy the object store which failed in create operation
+      nutanix.ncp.ntnx_object_stores_v2:
+        name: "ansible-object"
+        ext_id: "{{ object_store_ext_id }}"
+        cluster_ext_id: "{{ cluster.uuid }}"
+        description: "object store test"
+        domain: "{{ objects.domain }}"
+        num_worker_nodes: "{{ objects.num_worker_nodes }}"
+        storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
+        storage_network_vip:
+          ipv4:
+            value: "{{ objects.storage_network_reference.IPs[0] }}"
+        storage_network_dns_ip:
+          ipv4:
+            value: "{{ objects.storage_network_reference.IPs[1] }}"
+        public_network_reference: "{{ objects.public_network_reference.uuid }}"
+        public_network_ips:
+          - ipv4:
+              value: "{{ objects.public_network_reference.IPs[0] }}"
+        total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
+      register: result
+# currently, delete object store is not supported since you need to delete bucket first
+# As of now, please delete the bucket and object store manually from UI.
+
+# - name: Delete object store
+#   nutanix.ncp.ntnx_object_stores_v2:
+#     ext_id: "{{ object_store_ext_id }}"
+#     state: absent
+#   register: result

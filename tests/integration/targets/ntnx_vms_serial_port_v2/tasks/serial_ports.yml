@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+
 - name: Create, Update, Fetch and Delete Serial Ports
   ansible.builtin.debug:
     msg: "Create, Update, Fetch and Delete Serial Ports"

@@ -1,4 +1,11 @@
 ---
+# Variables required before running this playbook:
+# - principal_name
+# - directory_service_uuid
+# - project
+# - identity_provider_uuid
+# - todelete
+
 - name: Start ntnx_users tests
   ansible.builtin.debug:
     msg: "Start ntnx_users tests"
