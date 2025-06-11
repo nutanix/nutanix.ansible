@@ -1,0 +1,142 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Deploy an object store with one worker node
+# 3. Create a temporary JSON file for certificate details
+# 4. Create a certificate for an object store
+# 5. List all certificates for an object store
+# 5. Fetch certificate details using external ID
+# 6. List all object stores
+# 7. List all object stores with filter
+# 8. List object stores with limit
+# 9. Fetch object store details using external ID
+# 10. Delete bucket in object store
+# 11. Delete object store
+
+- name: Deploy objects playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster:
+          name: "auto_cluster_prod_f660be0f6925"
+          uuid: "000633ea-e256-b6a1-185b-ac1f6b6f97e2"
+        objects:
+          domain: "msp.pc-fjci.nutanix.com"
+          num_worker_nodes: 1
+          bucket_name: "objectsbrowser"
+          total_capacity_gi_b: 2147483648
+          storage_network_reference:
+            uuid: "313c37c1-6f1d-4520-9245-528e3162af5c"
+            IPs:
+              - "10.44.77.124"
+              - "10.44.77.125"
+          public_network_reference:
+            uuid: "313c37c1-6f1d-4520-9245-528e3162af5c"
+            IPs:
+              - "10.44.77.123"
+        api_ip: 10.22.75.43
+        api_port: 9440
+        username: username
+        password: password
+
+    - name: Deploy object store with one worker node
+      nutanix.ncp.ntnx_object_stores_v2:
+        name: "ansible-object"
+        cluster_ext_id: "{{ cluster.uuid }}"
+        description: "object store test"
+        domain: "{{ objects.domain }}"
+        num_worker_nodes: "{{ objects.num_worker_nodes }}"
+        storage_network_reference: "{{ objects.storage_network_reference.uuid }}"
+        storage_network_vip:
+          ipv4:
+            value: "{{ objects.storage_network_reference.IPs[0] }}"
+        storage_network_dns_ip:
+          ipv4:
+            value: "{{ objects.storage_network_reference.IPs[1] }}"
+        public_network_reference: "{{ objects.public_network_reference.uuid }}"
+        public_network_ips:
+          - ipv4:
+              value: "{{ objects.public_network_reference.IPs[0] }}"
+        total_capacity_gi_b: "{{ objects.total_capacity_gi_b }}"
+      register: result
+
+    - name: Set object store external ID
+      ansible.builtin.set_fact:
+        object_store_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Create a temporary JSON file for certificate details
+      ansible.builtin.copy:
+        mode: "0644"
+        content: |
+          {
+            "alternateIps": [
+              {
+                "ipv4": {
+                  "value": "{{ objects.public_network_reference.IPs[0] }}"
+                }
+              }
+            ],
+          }
+        dest: "/tmp/certificate_details.json"
+
+    - name: Create certificate for an object store
+      nutanix.ncp.ntnx_object_stores_certificate_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        path: "/tmp/certificate_details.json"
+      register: result
+
+    - name: List all certificates for an object store
+      nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+      register: result
+
+    - name: Set certificate external ID
+      ansible.builtin.set_fact:
+        certificate_ext_id: "{{ result.response[0].ext_id }}"
+
+    - name: Fetch certificate details using external ID
+      nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        ext_id: "{{ certificate_ext_id }}"
+      register: result
+
+    - name: List all object stores
+      nutanix.ncp.ntnx_object_stores_info_v2:
+      register: result
+
+    - name: Set object store name
+      ansible.builtin.set_fact:
+        object_store_name: "{{ result.response[0].name }}"
+
+    - name: List all object stores with filter
+      nutanix.ncp.ntnx_object_stores_info_v2:
+        filter: name eq '{{ object_store_name }}'
+      register: result
+
+    - name: List object stores with limit
+      nutanix.ncp.ntnx_object_stores_info_v2:
+        limit: 1
+        page: 0
+      register: result
+
+    - name: Fetch object store details using external ID
+      nutanix.ncp.ntnx_object_stores_info_v2:
+        ext_id: "{{ object_store_ext_id }}"
+      register: result
+
+    # for deleting an object store, you need to delete the bucket first
+    # Please delete the bucket manually from UI before running the delete task below.
+
+    - name: Delete object store
+      nutanix.ncp.ntnx_object_stores_v2:
+        ext_id: "{{ object_store_ext_id }}"
+        state: absent
+      register: result
