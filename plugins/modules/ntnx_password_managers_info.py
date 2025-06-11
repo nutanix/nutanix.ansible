@@ -40,7 +40,9 @@ def get_password_status_system_users(module, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(module.params)
     if err:
-        module.fail_json("Failed creating query parameters for password status of system user info")
+        module.fail_json(
+            "Failed creating query parameters for password status of system user info"
+        )
     resp = None
     try:
         resp = password_manager_api.list_clusters(**kwargs)

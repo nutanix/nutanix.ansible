@@ -78,6 +78,7 @@ def get_storage_containers_api_instance(module):
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.StorageContainersApi(client)
 
+
 def get_password_manager_api_instance(module):
     """
     This method will return password manager api instance from sdk

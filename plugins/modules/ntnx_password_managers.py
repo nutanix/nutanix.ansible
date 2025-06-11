@@ -62,15 +62,19 @@ def update_password(module, password_manager_api, result):
     result["ext_id"] = ext_id
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating spec for updating password of system user", **result)
-    
+        module.fail_json(
+            msg="Failed generating spec for updating password of system user", **result
+        )
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
     resp = None
     try:
-        resp = password_manager_api.change_system_user_password_by_id(extId=ext_id, body=spec)
+        resp = password_manager_api.change_system_user_password_by_id(
+            extId=ext_id, body=spec
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
