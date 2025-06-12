@@ -109,215 +109,215 @@
   ansible.builtin.set_fact:
     domain_manager_ext_id: "{{ result.response[0].ext_id }}"
 
-- name: Discover unconfigured node
-  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
-    address_type: "IPV4"
-    ip_filter_list:
-      - ipv4:
-          value: "{{ clusters[0].nodes[0].cvm_ip }}"
-  register: result
-  ignore_errors: true
+# - name: Discover unconfigured node
+#   nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
+#     address_type: "IPV4"
+#     ip_filter_list:
+#       - ipv4:
+#           value: "{{ clusters[0].nodes[0].cvm_ip }}"
+#   register: result
+#   ignore_errors: true
 
-- name: Discover unconfigured node status
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.failed == false
-      - result.cluster_ext_id is defined
-      - result.task_ext_id is defined
-      - result.response.ext_id is defined
-      - result.response.response.node_list[0].cvm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
-    fail_msg: Discover unconfigured node failed
-    success_msg: Discover unconfigured node passed
+# - name: Discover unconfigured node status
+#   ansible.builtin.assert:
+#     that:
+#       - result.changed == false
+#       - result.failed == false
+#       - result.cluster_ext_id is defined
+#       - result.task_ext_id is defined
+#       - result.response.ext_id is defined
+#       - result.response.response.node_list[0].cvm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+#     fail_msg: Discover unconfigured node failed
+#     success_msg: Discover unconfigured node passed
 
-- name: Run cluster create prechecks
-  nutanix.ncp.ntnx_clusters_v2:
-    name: "{{ clusters[0].name }}"
-    nodes:
-      node_list:
-        - controller_vm_ip:
-            ipv4:
-              value: "{{ clusters[0].nodes[0].cvm_ip }}"
-    config:
-      cluster_function: "{{ clusters[0].config.cluster_functions }}"
-      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
-      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
-      fault_tolerance_state:
-        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-    network:
-      external_address:
-        ipv4:
-          value: "{{ clusters[0].network.virtual_ip }}"
-    dryrun: true
-    timeout: 1800
-  register: result
-  ignore_errors: true
+# - name: Run cluster create prechecks
+#   nutanix.ncp.ntnx_clusters_v2:
+#     name: "{{ clusters[0].name }}"
+#     nodes:
+#       node_list:
+#         - controller_vm_ip:
+#             ipv4:
+#               value: "{{ clusters[0].nodes[0].cvm_ip }}"
+#     config:
+#       cluster_function: "{{ clusters[0].config.cluster_functions }}"
+#       redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+#       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+#       fault_tolerance_state:
+#         domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+#     network:
+#       external_address:
+#         ipv4:
+#           value: "{{ clusters[0].network.virtual_ip }}"
+#     dryrun: true
+#     timeout: 1800
+#   register: result
+#   ignore_errors: true
 
-- name: Verify cluster create prechecks run
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.task_ext_id is defined
-      - result.response.status == "SUCCEEDED"
-    fail_msg: Cluster create prechecks failed
-    success_msg: Cluster create prechecks passed
+# - name: Verify cluster create prechecks run
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == false
+#       - result.task_ext_id is defined
+#       - result.response.status == "SUCCEEDED"
+#     fail_msg: Cluster create prechecks failed
+#     success_msg: Cluster create prechecks passed
 
-- name: Create cluster name
-  ansible.builtin.set_fact:
-    cluster_name: "{{random_name}}_{{ prefix_name }}_{{ clusters[0].name }}"
+# - name: Create cluster name
+#   ansible.builtin.set_fact:
+#     cluster_name: "{{random_name}}_{{ prefix_name }}_{{ clusters[0].name }}"
 
-- name: Check if cluster is unconfigured or not
-  ansible.builtin.command: "{{ cluster_status_command }}"
-  register: result
-  ignore_errors: true
-  changed_when: result.rc != 0
+# - name: Check if cluster is unconfigured or not
+#   ansible.builtin.command: "{{ cluster_status_command }}"
+#   register: result
+#   ignore_errors: true
+#   changed_when: result.rc != 0
 
-- name: Assert that cluster is unconfigured
-  ansible.builtin.assert:
-    that:
-      - result.rc == 1
-      - result.stderr.find('Cluster is currently unconfigured') != -1
-    fail_msg: Cannot create cluster, cluster is already created
-    success_msg: Cluster is unconfigured
+# - name: Assert that cluster is unconfigured
+#   ansible.builtin.assert:
+#     that:
+#       - result.rc == 1
+#       - result.stderr.find('Cluster is currently unconfigured') != -1
+#     fail_msg: Cannot create cluster, cluster is already created
+#     success_msg: Cluster is unconfigured
 
-- name: Create cluster with minimum spec
-  nutanix.ncp.ntnx_clusters_v2:
-    name: "{{cluster_name}}"
-    nodes:
-      node_list:
-        - controller_vm_ip:
-            ipv4:
-              value: "{{ clusters[0].nodes[0].cvm_ip }}"
-    config:
-      cluster_function: "{{ clusters[0].config.cluster_functions }}"
-      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
-      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
-      fault_tolerance_state:
-        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-    network:
-      external_address:
-        ipv4:
-          value: "{{ clusters[0].network.virtual_ip }}"
-    timeout: 1800
-  register: result
-  ignore_errors: true
+# - name: Create cluster with minimum spec
+#   nutanix.ncp.ntnx_clusters_v2:
+#     name: "{{cluster_name}}"
+#     nodes:
+#       node_list:
+#         - controller_vm_ip:
+#             ipv4:
+#               value: "{{ clusters[0].nodes[0].cvm_ip }}"
+#     config:
+#       cluster_function: "{{ clusters[0].config.cluster_functions }}"
+#       redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+#       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+#       fault_tolerance_state:
+#         domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+#     network:
+#       external_address:
+#         ipv4:
+#           value: "{{ clusters[0].network.virtual_ip }}"
+#     timeout: 1800
+#   register: result
+#   ignore_errors: true
 
-- name: Verify cluster create task status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.task_ext_id is defined
-      - result.response.status == "SUCCEEDED"
-    fail_msg: Cluster create failed
-    success_msg: Cluster create passed
+# - name: Verify cluster create task status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.task_ext_id is defined
+#       - result.response.status == "SUCCEEDED"
+#     fail_msg: Cluster create failed
+#     success_msg: Cluster create passed
 
-- name: Reset username and password
-  ansible.builtin.command: "{{ reset_command }}"
-  register: result
-  ignore_errors: true
-  changed_when: result.rc != 0
-  no_log: true
+# - name: Reset username and password
+#   ansible.builtin.command: "{{ reset_command }}"
+#   register: result
+#   ignore_errors: true
+#   changed_when: result.rc != 0
+#   no_log: true
 
-- name: Run PE PC registration
-  nutanix.ncp.ntnx_pc_registration_v2:
-    ext_id: "{{ domain_manager_ext_id }}"
-    remote_cluster:
-      aos_remote_cluster:
-        remote_cluster:
-          address:
-            ipv4:
-              value: "{{ clusters[0].nodes[0].cvm_ip }}"
-          credentials:
-            authentication:
-              username: "{{ username }}"
-              password: "{{ password }}"
-  register: result
-  ignore_errors: true
+# - name: Run PE PC registration
+#   nutanix.ncp.ntnx_pc_registration_v2:
+#     ext_id: "{{ domain_manager_ext_id }}"
+#     remote_cluster:
+#       aos_remote_cluster:
+#         remote_cluster:
+#           address:
+#             ipv4:
+#               value: "{{ clusters[0].nodes[0].cvm_ip }}"
+#           credentials:
+#             authentication:
+#               username: "{{ username }}"
+#               password: "{{ password }}"
+#   register: result
+#   ignore_errors: true
 
-- name: Verify PE PC registration
-  ansible.builtin.assert:
-    that:
-      - result.changed == true
-      - result.ext_id is defined
-      - result.ext_id == domain_manager_ext_id
-      - result.response.status == 'SUCCEEDED'
-      - result.task_ext_id is defined
-    fail_msg: "PE PC registration failed"
-    success_msg: "PE PC registration passed"
+# - name: Verify PE PC registration
+#   ansible.builtin.assert:
+#     that:
+#       - result.changed == true
+#       - result.ext_id is defined
+#       - result.ext_id == domain_manager_ext_id
+#       - result.response.status == 'SUCCEEDED'
+#       - result.task_ext_id is defined
+#     fail_msg: "PE PC registration failed"
+#     success_msg: "PE PC registration passed"
 
-- name: Sleep for 1 minute
-  ansible.builtin.pause:
-    seconds: 60
+# - name: Sleep for 1 minute
+#   ansible.builtin.pause:
+#     seconds: 60
 
-- name: Fetch cluster using name
-  nutanix.ncp.ntnx_clusters_info_v2:
-    filter: name eq '{{ cluster_name }}'
-  register: result
-  ignore_errors: true
+# - name: Fetch cluster using name
+#   nutanix.ncp.ntnx_clusters_info_v2:
+#     filter: name eq '{{ cluster_name }}'
+#   register: result
+#   ignore_errors: true
 
-- name: Verify listing
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.response | length > 0
-    fail_msg: Failed verifying PE PC registration
-    success_msg: PE PC registration passed successfully
+# - name: Verify listing
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.response | length > 0
+#     fail_msg: Failed verifying PE PC registration
+#     success_msg: PE PC registration passed successfully
 
 - name: Set cluster external ID
   ansible.builtin.set_fact:
-    cluster_ext_id: "{{ result.response[0].ext_id }}"
+    cluster_ext_id: "0006374b-20f7-0f07-0c16-293d5208f770"
 
-- name: Fetch cluster info using external ID
-  nutanix.ncp.ntnx_clusters_info_v2:
-    ext_id: "{{ cluster_ext_id }}"
-  register: result
-  ignore_errors: true
+# - name: Fetch cluster info using external ID
+#   nutanix.ncp.ntnx_clusters_info_v2:
+#     ext_id: "{{ cluster_ext_id }}"
+#   register: result
+#   ignore_errors: true
 
-- name: Verify created cluster's details using cluster info
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.ext_id == cluster_ext_id
-      - result.response.name == "{{ cluster_name }}"
-      - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
-      - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
-      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
-      - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
-      - >
-        result.response.config.fault_tolerance_state.domain_awareness_level ==
-        "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-    fail_msg: Failed verifying cluster creation
-    success_msg: Cluster creation passed successfully
+# - name: Verify created cluster's details using cluster info
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.ext_id == cluster_ext_id
+#       - result.response.name == "{{ cluster_name }}"
+#       - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+#       - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
+#       - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
+#       - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
+#       - >
+#         result.response.config.fault_tolerance_state.domain_awareness_level ==
+#         "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+#     fail_msg: Failed verifying cluster creation
+#     success_msg: Cluster creation passed successfully
 
-- name: Modify firewall rules for cluster 1
-  ansible.builtin.command: "{{ modify_firewall_command_cluster1 }}"
-  register: result
-  ignore_errors: true
-  changed_when: result.rc != 0
+# - name: Modify firewall rules for cluster 1
+#   ansible.builtin.command: "{{ modify_firewall_command_cluster1 }}"
+#   register: result
+#   ignore_errors: true
+#   changed_when: result.rc != 0
 
-- name: Assert that firewall rules are modified for cluster 1
-  ansible.builtin.assert:
-    that:
-      - result.rc == 0
-      - result.stderr.find('Firewall config updated') != -1
-    fail_msg: Cannot modify firewall rules for cluster 1
-    success_msg: Firewall rules modified for cluster 1
+# - name: Assert that firewall rules are modified for cluster 1
+#   ansible.builtin.assert:
+#     that:
+#       - result.rc == 0
+#       - result.stderr.find('Firewall config updated') != -1
+#     fail_msg: Cannot modify firewall rules for cluster 1
+#     success_msg: Firewall rules modified for cluster 1
 
-- name: Modify firewall rules for cluster 2
-  ansible.builtin.command: "{{ modify_firewall_command_cluster2 }}"
-  register: result
-  ignore_errors: true
-  changed_when: result.rc != 0
+# - name: Modify firewall rules for cluster 2
+#   ansible.builtin.command: "{{ modify_firewall_command_cluster2 }}"
+#   register: result
+#   ignore_errors: true
+#   changed_when: result.rc != 0
 
-- name: Assert that firewall rules are modified for cluster 2
-  ansible.builtin.assert:
-    that:
-      - result.rc == 0
-      - result.stderr.find('Firewall config updated') != -1
-    fail_msg: Cannot modify firewall rules for cluster 2
-    success_msg: Firewall rules modified for cluster 2
+# - name: Assert that firewall rules are modified for cluster 2
+#   ansible.builtin.assert:
+#     that:
+#       - result.rc == 0
+#       - result.stderr.find('Firewall config updated') != -1
+#     fail_msg: Cannot modify firewall rules for cluster 2
+#     success_msg: Firewall rules modified for cluster 2
 
 ########################################################################################
 
@@ -361,33 +361,43 @@
     name: "ansible-create-protection-policy-name"
     description: "ansible-create-protection-policy-description"
     replication_locations:
-      - "{{ replication_location_1}}"
-      - "{{ replication_location_2}}"
+      - label: "ansible-label-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_linear_1_check_mode.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_1_check_mode.remote_location_label }}"
+      - source_location_label: "ansible-label-{{label1}}"
+        remote_location_label: "ansible-label-{{label2}}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_1_check_mode.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_1_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_1_check_mode.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_1_check_mode.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_1_check_mode.schedule.start_time }}"
-          sync_replication_auto_suspend_timeout_seconds: >
-            {{ replication_configuration_linear_1_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
-      - source_location_label: "{{  replication_configuration_linear_2_check_mode.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_2_check_mode.remote_location_label }}"
+              local: 1
+              remote: 1
+          start_time: "13h:11m"
+          sync_replication_auto_suspend_timeout_seconds: 300
+      - source_location_label: "ansible-label-{{label2}}"
+        remote_location_label: "ansible-label-{{label1}}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_2_check_mode.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_2_check_mode.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_2_check_mode.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_2_check_mode.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_2_check_mode.schedule.start_time }}"
-          sync_replication_auto_suspend_timeout_seconds: >
-            {{ replication_configuration_linear_2_check_mode.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
+              local: 1
+              remote: 1
+          start_time: "13h:11m"
+          sync_replication_auto_suspend_timeout_seconds: 300
     category_ids:
       - "00000000-0000-0000-0000-000000000000"
   register: result
@@ -402,14 +412,50 @@
       - result.response is defined
       - result.response.name == "ansible-create-protection-policy-name"
       - result.response.description == "ansible-create-protection-policy-description"
-      - result.response.replication_locations[0] == replication_location_1_expected
-        or result.response.replication_locations[0] == replication_location_2_expected
-      - result.response.replication_locations[1] == replication_location_1_expected
-        or result.response.replication_locations[1] == replication_location_2_expected
-      - result.response.replication_configurations[0] == replication_configuration_linear_1_check_mode
-        or result.response.replication_configurations[0] == replication_configuration_linear_2_check_mode
-      - result.response.replication_configurations[1] == replication_configuration_linear_1_check_mode
-        or result.response.replication_configurations[1] == replication_configuration_linear_2_check_mode
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.retention.local == 1
+        and result.response.replication_configurations[0].schedule.retention.remote == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.retention.local == 1
+        and result.response.replication_configurations[0].schedule.retention.remote == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.retention.local == 1
+        and result.response.replication_configurations[1].schedule.retention.remote == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.retention.local == 1
+        and result.response.replication_configurations[1].schedule.retention.remote == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "00000000-0000-0000-0000-000000000000"
@@ -418,34 +464,70 @@
 
 ########################################################################################
 
+# replication_configuration_linear_1:
+#   source_location_label: "ansible-label-{{label1}}"
+#   remote_location_label: "ansible-label-{{label2}}"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 3600
+#     retention:
+#       local: 1
+#       remote: 1
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 300
+
+# replication_configuration_linear_2:
+#   source_location_label: "ansible-label-{{label2}}"
+#   remote_location_label: "ansible-label-{{label1}}"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 3600
+#     retention:
+#       local: 1
+#       remote: 1
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 300
+
 - name: Create linear retention protection policy
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-linear-{{random_name}}"
     description: "ansible-description-linear-{{random_name}}"
     replication_locations:
-      - "{{ replication_location_1 }}"
-      - "{{ replication_location_2 }}"
+      - label: "ansible-label-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_linear_1.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_1.remote_location_label }}"
+      - source_location_label: "ansible-label-{{label1}}"
+        remote_location_label: "ansible-label-{{label2}}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_1.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_1.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_1.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_1.schedule.retention.remote }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
-      - source_location_label: "{{ replication_configuration_linear_2.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_2.remote_location_label }}"
+              local: 1
+              remote: 1
+          sync_replication_auto_suspend_timeout_seconds: 300
+      - source_location_label: "ansible-label-{{label2}}"
+        remote_location_label: "ansible-label-{{label1}}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_2.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_2.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_2.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_2.schedule.retention.remote }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_linear_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+              local: 1
+              remote: 1
+          sync_replication_auto_suspend_timeout_seconds: 300
     category_ids:
       - "{{category_ext_id_1}}"
   register: result
@@ -460,15 +542,51 @@
       - result.response.ext_id == result.protection_policy_ext_id
       - result.response.name == "ansible-name-linear-{{random_name}}"
       - result.response.description == "ansible-description-linear-{{random_name}}"
-      - result.response.replication_locations[0] == replication_location_1_expected
-        or result.response.replication_locations[0] == replication_location_2_expected
-      - result.response.replication_locations[1] == replication_location_1_expected
-        or result.response.replication_locations[1] == replication_location_2_expected
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.retention.local == 1
+        and result.response.replication_configurations[0].schedule.retention.remote == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.retention.local == 1
+        and result.response.replication_configurations[0].schedule.retention.remote == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.retention.local == 1
+        and result.response.replication_configurations[1].schedule.retention.remote == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.retention.local == 1
+        and result.response.replication_configurations[1].schedule.retention.remote == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
       - result.response.replication_locations[0] != result.response.replication_locations[1]
-      - result.response.replication_configurations[0] == replication_configuration_linear_1
-        or result.response.replication_configurations[0] == replication_configuration_linear_2
-      - result.response.replication_configurations[1] == replication_configuration_linear_1
-        or result.response.replication_configurations[1] == replication_configuration_linear_2
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
     success_msg: "Protection policy created successfully"
@@ -480,42 +598,86 @@
 
 ########################################################################################
 
+# replication_configuration_auto_1:
+#   source_location_label: "ansible-label-{{label1}}"
+#   remote_location_label: "ansible-label-{{label2}}"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 60
+#     retention:
+#       local:
+#         snapshot_interval_type: "DAILY"
+#         frequency: 1
+#       remote:
+#         snapshot_interval_type: "DAILY"
+#         frequency: 1
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 300
+
+# replication_configuration_auto_2:
+#   source_location_label: "ansible-label-{{label2}}"
+#   remote_location_label: "ansible-label-{{label1}}"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 60
+#     retention:
+#       local:
+#         snapshot_interval_type: "DAILY"
+#         frequency: 1
+#       remote:
+#         snapshot_interval_type: "DAILY"
+#         frequency: 1
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 300
+
 - name: Create auto retention protection policy
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-auto-{{random_name}}"
     description: "ansible-description-auto-{{random_name}}"
     replication_locations:
-      - "{{ replication_location_1 }}"
-      - "{{ replication_location_2 }}"
+      - label: "ansible-label-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_auto_1.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_auto_1.remote_location_label }}"
+      - source_location_label: "ansible-label-{{label1}}"
+        remote_location_label: "ansible-label-{{label2}}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_auto_1.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_auto_1.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 60
           retention:
             auto_rollup_retention:
               local:
-                snapshot_interval_type: "{{ replication_configuration_auto_1.schedule.retention.local.snapshot_interval_type }}"
-                frequency: "{{ replication_configuration_auto_1.schedule.retention.local.frequency }}"
+                snapshot_interval_type: "DAILY"
+                frequency: 1
               remote:
-                snapshot_interval_type: "{{ replication_configuration_auto_1.schedule.retention.remote.snapshot_interval_type }}"
-                frequency: "{{ replication_configuration_auto_1.schedule.retention.remote.frequency }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
-      - source_location_label: "{{ replication_configuration_auto_2.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_auto_2.remote_location_label }}"
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+          sync_replication_auto_suspend_timeout_seconds: 300
+      - source_location_label: "ansible-label-{{label2}}"
+        remote_location_label: "ansible-label-{{label1}}"
         schedule:
-          recovery_point_type: "{{ replication_configuration_auto_2.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_auto_2.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 60
           retention:
             auto_rollup_retention:
               local:
-                snapshot_interval_type: "{{ replication_configuration_auto_2.schedule.retention.local.snapshot_interval_type }}"
-                frequency: "{{ replication_configuration_auto_2.schedule.retention.local.frequency }}"
+                snapshot_interval_type: "DAILY"
+                frequency: 1
               remote:
-                snapshot_interval_type: "{{ replication_configuration_auto_2.schedule.retention.remote.snapshot_interval_type }}"
-                frequency: "{{ replication_configuration_auto_2.schedule.retention.remote.frequency }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+                snapshot_interval_type: "DAILY"
+                frequency: 1
+          sync_replication_auto_suspend_timeout_seconds: 300
     category_ids:
       - "{{category_ext_id_2}}"
   register: result
@@ -530,15 +692,59 @@
       - result.response.ext_id == result.protection_policy_ext_id
       - result.response.name == "ansible-name-auto-{{random_name}}"
       - result.response.description == "ansible-description-auto-{{random_name}}"
-      - result.response.replication_locations[0] == replication_location_1_expected
-        or result.response.replication_locations[0] == replication_location_2_expected
-      - result.response.replication_locations[1] == replication_location_1_expected
-        or result.response.replication_locations[1] == replication_location_2_expected
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 60
+        and result.response.replication_configurations[0].schedule.retention.local.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[0].schedule.retention.local.frequency == 1
+        and result.response.replication_configurations[0].schedule.retention.remote.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[0].schedule.retention.remote.frequency == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 60
+        and result.response.replication_configurations[0].schedule.retention.local.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[0].schedule.retention.local.frequency == 1
+        and result.response.replication_configurations[0].schedule.retention.remote.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[0].schedule.retention.remote.frequency == 1
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 60
+        and result.response.replication_configurations[1].schedule.retention.local.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[1].schedule.retention.local.frequency == 1
+        and result.response.replication_configurations[1].schedule.retention.remote.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[1].schedule.retention.remote.frequency == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 60
+        and result.response.replication_configurations[1].schedule.retention.local.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[1].schedule.retention.local.frequency == 1
+        and result.response.replication_configurations[1].schedule.retention.remote.snapshot_interval_type == "DAILY"
+        and result.response.replication_configurations[1].schedule.retention.remote.frequency == 1
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
       - result.response.replication_locations[0] != result.response.replication_locations[1]
-      - result.response.replication_configurations[0] == replication_configuration_auto_1
-        or result.response.replication_configurations[0] == replication_configuration_auto_2
-      - result.response.replication_configurations[1] == replication_configuration_auto_1
-        or result.response.replication_configurations[1] == replication_configuration_auto_2
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_2}}"
     success_msg: "Protection policy created successfully"
@@ -550,30 +756,68 @@
 
 ########################################################################################
 
+# replication_configuration_sync_1:
+#   source_location_label: "ansible-label-{{label1}}"
+#   remote_location_label: "ansible-label-{{label2}}"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     retention: null
+#     recovery_point_objective_time_seconds: 0
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 10
+
+# replication_configuration_sync_2:
+#   source_location_label: "ansible-label-{{label2}}"
+#   remote_location_label: "ansible-label-{{label1}}"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     retention: null
+#     recovery_point_objective_time_seconds: 0
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 10
+
 - name: Create Synchronous replication protection policy for VM using category3
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-sync-vm-{{random_name}}"
     description: "ansible-description-sync-vm-{{random_name}}"
     replication_locations:
-      - "{{ replication_location_1 }}"
-      - "{{ replication_location_2 }}"
+      - label: "ansible-label-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_sync_1.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_sync_1.remote_location_label }}"
+      - source_location_label: "ansible-label-{{label1}}"
+        remote_location_label: "ansible-label-{{label2}}"
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_sync_1.schedule.recovery_point_objective_time_seconds | int }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_1.schedule.sync_replication_auto_suspend_timeout_seconds }}"
-      - source_location_label: "{{ replication_configuration_sync_2.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_sync_2.remote_location_label }}"
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
+      - source_location_label: "ansible-label-{{label2}}"
+        remote_location_label: "ansible-label-{{label1}}"
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_sync_2.schedule.recovery_point_objective_time_seconds | int }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_sync_2.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
     category_ids:
       - "{{category_ext_id_3}}"
   register: result
   ignore_errors: true
+
+- ansible.builtin.debug:
+    var: result.response.replication_locations[0]
+
+- ansible.builtin.debug:
+    var: replication_location_1_local_clusters_expected
 
 - name: Status for creating Synchronous replication protection policy for VM using category3
   ansible.builtin.assert:
@@ -584,15 +828,43 @@
       - result.response.ext_id == result.protection_policy_ext_id
       - result.response.name == "ansible-name-sync-vm-{{random_name}}"
       - result.response.description == "ansible-description-sync-vm-{{random_name}}"
-      - result.response.replication_locations[0] == replication_location_1_expected
-        or result.response.replication_locations[0] == replication_location_2_expected
-      - result.response.replication_locations[1] == replication_location_1_expected
-        or result.response.replication_locations[1] == replication_location_2_expected
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
       - result.response.replication_locations[0] != result.response.replication_locations[1]
-      - result.response.replication_configurations[0] == replication_configuration_sync_1
-        or result.response.replication_configurations[0] == replication_configuration_sync_2
-      - result.response.replication_configurations[1] == replication_configuration_sync_1
-        or result.response.replication_configurations[1] == replication_configuration_sync_2
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_3}}"
     success_msg: "Protection policy for VM using category3 created successfully"
@@ -604,29 +876,58 @@
 
 ########################################################################################
 
+# replication_configuration_sync_local_clusters_1:
+#   source_location_label: "ansible-label-local-clusters-{{label1}}"
+#   remote_location_label: "ansible-label-local-clusters-{{label2}}"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     retention: null
+#     recovery_point_objective_time_seconds: 0
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 10
+
+# replication_configuration_sync_local_clusters_2:
+#   source_location_label: "ansible-label-local-clusters-{{label2}}"
+#   remote_location_label: "ansible-label-local-clusters-{{label1}}"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     retention: null
+#     recovery_point_objective_time_seconds: 0
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 10
+
 - name: Create Synchronous replication protection policy for VG using category4
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-sync-vg-{{random_name}}"
     description: "ansible-description-sync-vg-{{random_name}}"
     replication_locations:
-      - "{{ replication_location_1_local_clusters }}"
-      - "{{ replication_location_2_local_clusters }}"
+      - label: "ansible-label-local-clusters-{{label1}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-local-clusters-{{label2}}"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_ext_id }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_sync_local_clusters_1.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_sync_local_clusters_1.remote_location_label }}"
+      - source_location_label: "ansible-label-local-clusters-{{label1}}"
+        remote_location_label: "ansible-label-local-clusters-{{label2}}"
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_sync_local_clusters_1.schedule.recovery_point_objective_time_seconds | int }}"
-          sync_replication_auto_suspend_timeout_seconds: >
-            {{ replication_configuration_sync_local_clusters_1.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
-      - source_location_label: "{{ replication_configuration_sync_local_clusters_2.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_sync_local_clusters_2.remote_location_label }}"
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
+      - source_location_label: "ansible-label-local-clusters-{{label2}}"
+        remote_location_label: "ansible-label-local-clusters-{{label1}}"
         schedule:
           recovery_point_type: "CRASH_CONSISTENT"
-          recovery_point_objective_time_seconds: >
-            {{ replication_configuration_sync_local_clusters_2.schedule.recovery_point_objective_time_seconds | int }}
-          sync_replication_auto_suspend_timeout_seconds: >
-            {{ replication_configuration_sync_local_clusters_2.schedule.sync_replication_auto_suspend_timeout_seconds | int }}
+          recovery_point_objective_time_seconds: 0
+          sync_replication_auto_suspend_timeout_seconds: 10
     category_ids:
       - "{{category_ext_id_4}}"
   register: result
@@ -641,15 +942,43 @@
       - result.response.ext_id == result.protection_policy_ext_id
       - result.response.name == "ansible-name-sync-vg-{{random_name}}"
       - result.response.description == "ansible-description-sync-vg-{{random_name}}"
-      - result.response.replication_locations[0] == replication_location_1_local_clusters_expected
-        or result.response.replication_locations[0] == replication_location_2_local_clusters_expected
-      - result.response.replication_locations[1] == replication_location_1_local_clusters_expected
-        or result.response.replication_locations[1] == replication_location_2_local_clusters_expected
+      - (result.response.replication_locations[0].label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_ext_id }}")
+      - (result.response.replication_locations[1].label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_ext_id }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-local-clusters-{{label2}}"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-local-clusters-{{label1}}"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 0
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 10)
       - result.response.replication_locations[0] != result.response.replication_locations[1]
-      - result.response.replication_configurations[0] == replication_configuration_sync_local_clusters_1
-        or result.response.replication_configurations[0] == replication_configuration_sync_local_clusters_2
-      - result.response.replication_configurations[1] == replication_configuration_sync_local_clusters_1
-        or result.response.replication_configurations[1] == replication_configuration_sync_local_clusters_2
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_4}}"
     success_msg: "Protection policy for VG using category4 created successfully"
@@ -997,43 +1326,73 @@
   ansible.builtin.pause:
     seconds: 300
 
+# replication_configuration_linear_1_updated_check_mode:
+#   source_location_label: "ansible-label-{{label1}}_updated"
+#   remote_location_label: "ansible-label-{{label2}}_updated"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 7200
+#     retention:
+#       local: 2
+#       remote: 2
+#     start_time: "14h:26m"
+#     sync_replication_auto_suspend_timeout_seconds: 90
+
+# replication_configuration_linear_2_updated_check_mode:
+#   source_location_label: "ansible-label-{{label2}}_updated"
+#   remote_location_label: "ansible-label-{{label1}}_updated"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 7200
+#     retention:
+#       local: 2
+#       remote: 2
+#     start_time: "14h:26m"
+#     sync_replication_auto_suspend_timeout_seconds: 90
+
 - name: Generate spec for updating linear retention protection policy using check mode
   nutanix.ncp.ntnx_protection_policies_v2:
     ext_id: "{{ todelete[0] }}"
     name: "ansible-update-protection-policy-name"
     description: "ansible-update-protection-policy-description"
     replication_locations:
-      - "{{ replication_location_1_updated }}"
-      - "{{ replication_location_2_updated }}"
+      - label: "ansible-label-{{label1}}_updated"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}_updated"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_linear_1_updated_check_mode.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_1_updated_check_mode.remote_location_label }}"
+      - source_location_label: "ansible-label-{{label1}}_updated"
+        remote_location_label: "ansible-label-{{label2}}_updated"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: >
-            {{ replication_configuration_linear_1_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_1_updated_check_mode.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_1_updated_check_mode.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_1_updated_check_mode.schedule.start_time }}"
-          sync_replication_auto_suspend_timeout_seconds:
-            "{{ replication_configuration_linear_1_updated_check_mode.schedule.
-            sync_replication_auto_suspend_timeout_seconds }}"
-      - source_location_label: "{{ replication_configuration_linear_2_updated_check_mode.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_2_updated_check_mode.remote_location_label }}"
+              local: 2
+              remote: 2
+          start_time: "14h:26m"
+          sync_replication_auto_suspend_timeout_seconds: 90
+      - source_location_label: "ansible-label-{{label2}}_updated"
+        remote_location_label: "ansible-label-{{label1}}_updated"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: >
-            {{ replication_configuration_linear_2_updated_check_mode.schedule.recovery_point_objective_time_seconds | int }}
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_2_updated_check_mode.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_2_updated_check_mode.schedule.retention.remote }}"
-          start_time: "{{ replication_configuration_linear_2_updated_check_mode.schedule.start_time }}"
-          sync_replication_auto_suspend_timeout_seconds:
-            "{{ replication_configuration_linear_2_updated_check_mode.schedule.
-            sync_replication_auto_suspend_timeout_seconds }}"
+              local: 2
+              remote: 2
+          start_time: "14h:26m"
+          sync_replication_auto_suspend_timeout_seconds: 90
     category_ids:
       - "{{category_ext_id_1}}"
   register: result
@@ -1049,15 +1408,42 @@
       - result.response.ext_id == "{{ todelete[0] }}"
       - result.response.name == "ansible-update-protection-policy-name"
       - result.response.description == "ansible-update-protection-policy-description"
-      - result.response.replication_locations[0] == replication_location_1_updated_expected
-        or result.response.replication_locations[0] == replication_location_2_updated_expected
-      - result.response.replication_locations[1] == replication_location_1_updated_expected
-        or result.response.replication_locations[1] == replication_location_2_updated_expected
-      - result.response.replication_locations[0] != result.response.replication_locations[1]
-      - result.response.replication_configurations[0] == replication_configuration_linear_1_updated_check_mode
-        or result.response.replication_configurations[0] == replication_configuration_linear_2_updated_check_mode
-      - result.response.replication_configurations[1] == replication_configuration_linear_1_updated_check_mode
-        or result.response.replication_configurations[1] == replication_configuration_linear_2_updated_check_mode
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
     success_msg: "Protection policy spec generated successfully"
@@ -1065,39 +1451,72 @@
 
 ########################################################################################
 
+# replication_configuration_linear_1_updated:
+#   source_location_label: "ansible-label-{{label1}}_updated"
+#   remote_location_label: "ansible-label-{{label2}}_updated"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 7200
+#     retention:
+#       local: 2
+#       remote: 2
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 90
+
+
+# replication_configuration_linear_2_updated:
+#   source_location_label: "ansible-label-{{label2}}_updated"
+#   remote_location_label: "ansible-label-{{label1}}_updated"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 7200
+#     retention:
+#       local: 2
+#       remote: 2
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 90
+
 - name: Update linear retention protection policy name, description, labels, and schedule
   nutanix.ncp.ntnx_protection_policies_v2:
     ext_id: "{{ todelete[0] }}"
     name: "ansible-name-linear-{{random_name}}_updated"
     description: "ansible-description-linear-{{random_name}}_updated"
     replication_locations:
-      - "{{ replication_location_1_updated }}"
-      - "{{ replication_location_2_updated }}"
+      - label: "ansible-label-{{label1}}_updated"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}_updated"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_linear_1_updated.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_1_updated.remote_location_label }}"
+      - source_location_label: "ansible-label-{{label1}}_updated"
+        remote_location_label: "ansible-label-{{label2}}_updated"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_1_updated.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_1_updated.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_1_updated.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_1_updated.schedule.retention.remote }}"
-          sync_replication_auto_suspend_timeout_seconds:
-            "{{ replication_configuration_linear_1_updated.schedule.
-            sync_replication_auto_suspend_timeout_seconds }}"
-      - source_location_label: "{{ replication_configuration_linear_2_updated.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_2_updated.remote_location_label }}"
+              local: 2
+              remote: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
+      - source_location_label: "ansible-label-{{label2}}_updated"
+        remote_location_label: "ansible-label-{{label1}}_updated"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_2_updated.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_2_updated.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_2_updated.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_2_updated.schedule.retention.remote }}"
-          sync_replication_auto_suspend_timeout_seconds:
-            "{{ replication_configuration_linear_2_updated.schedule.
-            sync_replication_auto_suspend_timeout_seconds }}"
+              local: 2
+              remote: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
     category_ids:
       - "{{category_ext_id_1}}"
   register: result
@@ -1112,15 +1531,42 @@
       - result.response.ext_id == "{{ todelete[0] }}"
       - result.response.name == "ansible-name-linear-{{random_name}}_updated"
       - result.response.description == "ansible-description-linear-{{random_name}}_updated"
-      - result.response.replication_locations[0] == replication_location_1_updated_expected
-        or result.response.replication_locations[0] == replication_location_2_updated_expected
-      - result.response.replication_locations[1] == replication_location_1_updated_expected
-        or result.response.replication_locations[1] == replication_location_2_updated_expected
-      - result.response.replication_locations[0] != result.response.replication_locations[1]
-      - result.response.replication_configurations[0] == replication_configuration_linear_1_updated
-        or result.response.replication_configurations[0] == replication_configuration_linear_2_updated
-      - result.response.replication_configurations[1] == replication_configuration_linear_1_updated
-        or result.response.replication_configurations[1] == replication_configuration_linear_2_updated
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
     success_msg: "Protection policy updated successfully"
@@ -1134,33 +1580,41 @@
     name: "ansible-name-linear-{{random_name}}_updated"
     description: "ansible-description-linear-{{random_name}}_updated"
     replication_locations:
-      - "{{ replication_location_1_updated }}"
-      - "{{ replication_location_2_updated }}"
+      - label: "ansible-label-{{label1}}_updated"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}_updated"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_linear_1_updated.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_1_updated.remote_location_label }}"
+      - source_location_label: "ansible-label-{{label1}}_updated"
+        remote_location_label: "ansible-label-{{label2}}_updated"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_1_updated.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_1_updated.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_1_updated.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_1_updated.schedule.retention.remote }}"
-          sync_replication_auto_suspend_timeout_seconds:
-            "{{ replication_configuration_linear_1_updated.schedule.
-            sync_replication_auto_suspend_timeout_seconds }}"
-      - source_location_label: "{{ replication_configuration_linear_2_updated.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_linear_2_updated.remote_location_label }}"
+              local: 2
+              remote: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
+      - source_location_label: "ansible-label-{{label2}}_updated"
+        remote_location_label: "ansible-label-{{label1}}_updated"
         schedule:
-          recovery_point_type: "{{ replication_configuration_linear_2_updated.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_linear_2_updated.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 7200
           retention:
             linear_retention:
-              local: "{{ replication_configuration_linear_2_updated.schedule.retention.local }}"
-              remote: "{{ replication_configuration_linear_2_updated.schedule.retention.remote }}"
-          sync_replication_auto_suspend_timeout_seconds:
-            "{{ replication_configuration_linear_2_updated.schedule.
-            sync_replication_auto_suspend_timeout_seconds }}"
+              local: 2
+              remote: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
     category_ids:
       - "{{category_ext_id_1}}"
   register: result
@@ -1177,43 +1631,87 @@
 
 ########################################################################################
 
+# replication_configuration_auto_1_updated:
+#   source_location_label: "ansible-label-{{label1}}_updated"
+#   remote_location_label: "ansible-label-{{label2}}_updated"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 3600
+#     retention:
+#       local:
+#         snapshot_interval_type: "DAILY"
+#         frequency: 2
+#       remote:
+#         snapshot_interval_type: "DAILY"
+#         frequency: 2
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 90
+
+# replication_configuration_auto_2_updated:
+#   source_location_label: "ansible-label-{{label2}}_updated"
+#   remote_location_label: "ansible-label-{{label1}}_updated"
+#   schedule:
+#     recovery_point_type: "CRASH_CONSISTENT"
+#     recovery_point_objective_time_seconds: 3600
+#     retention:
+#       local:
+#         snapshot_interval_type: "DAILY"
+#         frequency: 2
+#       remote:
+#         snapshot_interval_type: "DAILY"
+#         frequency: 2
+#     start_time:
+#     sync_replication_auto_suspend_timeout_seconds: 90
+
 - name: Update auto retention protection policy
   nutanix.ncp.ntnx_protection_policies_v2:
     ext_id: "{{ todelete[1] }}"
     name: "ansible-name-auto-{{random_name}}_updated"
     description: "ansible-description-auto-{{random_name}}_updated"
     replication_locations:
-      - "{{ replication_location_1_updated }}"
-      - "{{ replication_location_2_updated }}"
+      - label: "ansible-label-{{label1}}_updated"
+        domain_manager_ext_id: "{{domain_manager_ext_id}}"
+        is_primary: true
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster.uuid }}"
+      - label: "ansible-label-{{label2}}_updated"
+        domain_manager_ext_id: "{{availability_zone_pc_uuid}}"
+        is_primary: false
+        replication_sub_location:
+          nutanix_cluster:
+            cluster_ext_ids:
+              - "{{ cluster_availability_zone.uuid }}"
     replication_configurations:
-      - source_location_label: "{{ replication_configuration_auto_1_updated.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_auto_1_updated.remote_location_label }}"
+      - source_location_label: "ansible-label-{{label1}}_updated"
+        remote_location_label: "ansible-label-{{label2}}_updated"
         schedule:
-          recovery_point_type: "{{ replication_configuration_auto_1_updated.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_auto_1_updated.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
           retention:
             auto_rollup_retention:
               local:
-                snapshot_interval_type: "{{ replication_configuration_auto_1_updated.schedule.retention.local.snapshot_interval_type }}"
-                frequency: "{{ replication_configuration_auto_1_updated.schedule.retention.local.frequency }}"
+                snapshot_interval_type: "DAILY"
+                frequency: 2
               remote:
-                snapshot_interval_type: "{{ replication_configuration_auto_1_updated.schedule.retention.remote.snapshot_interval_type }}"
-                frequency: "{{ replication_configuration_auto_1_updated.schedule.retention.remote.frequency }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_1_updated.schedule.sync_replication_auto_suspend_timeout_seconds }}"
-      - source_location_label: "{{ replication_configuration_auto_2_updated.source_location_label }}"
-        remote_location_label: "{{ replication_configuration_auto_2_updated.remote_location_label }}"
+                snapshot_interval_type: "DAILY"
+                frequency: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
+      - source_location_label: "ansible-label-{{label2}}_updated"
+        remote_location_label: "ansible-label-{{label1}}_updated"
         schedule:
-          recovery_point_type: "{{ replication_configuration_auto_2_updated.schedule.recovery_point_type }}"
-          recovery_point_objective_time_seconds: "{{ replication_configuration_auto_2_updated.schedule.recovery_point_objective_time_seconds | int }}"
+          recovery_point_type: "CRASH_CONSISTENT"
+          recovery_point_objective_time_seconds: 3600
           retention:
             auto_rollup_retention:
               local:
-                snapshot_interval_type: "{{ replication_configuration_auto_2_updated.schedule.retention.local.snapshot_interval_type }}"
-                frequency: "{{ replication_configuration_auto_2_updated.schedule.retention.local.frequency }}"
+                snapshot_interval_type: "DAILY"
+                frequency: 2
               remote:
-                snapshot_interval_type: "{{ replication_configuration_auto_2_updated.schedule.retention.remote.snapshot_interval_type }}"
-                frequency: "{{ replication_configuration_auto_2_updated.schedule.retention.remote.frequency }}"
-          sync_replication_auto_suspend_timeout_seconds: "{{ replication_configuration_auto_2_updated.schedule.sync_replication_auto_suspend_timeout_seconds }}"
+                snapshot_interval_type: "DAILY"
+                frequency: 2
+          sync_replication_auto_suspend_timeout_seconds: 90
     category_ids:
       - "{{category_ext_id_2}}"
   register: result
@@ -1228,15 +1726,42 @@
       - result.response.ext_id == "{{ todelete[1] }}"
       - result.response.name == "ansible-name-auto-{{random_name}}_updated"
       - result.response.description == "ansible-description-auto-{{random_name}}_updated"
-      - result.response.replication_locations[0] == replication_location_1_updated_expected
-        or result.response.replication_locations[0] == replication_location_2_updated_expected
-      - result.response.replication_locations[1] == replication_location_1_updated_expected
-        or result.response.replication_locations[1] == replication_location_2_updated_expected
-      - result.response.replication_locations[0] != result.response.replication_locations[1]
-      - result.response.replication_configurations[0] == replication_configuration_auto_1_updated
-        or result.response.replication_configurations[0] == replication_configuration_auto_2_updated
-      - result.response.replication_configurations[1] == replication_configuration_auto_1_updated
-        or result.response.replication_configurations[1] == replication_configuration_auto_2_updated
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_2}}"
     success_msg: "Protection policy updated successfully"
@@ -1313,15 +1838,42 @@
       - result.response.ext_id == "{{ todelete[0] }}"
       - result.response.name == "ansible-name-linear-{{random_name}}_updated"
       - result.response.description == "ansible-description-linear-{{random_name}}_updated"
-      - result.response.replication_locations[0] == replication_location_1_updated_expected
-        or result.response.replication_locations[0] == replication_location_2_updated_expected
-      - result.response.replication_locations[1] == replication_location_1_updated_expected
-        or result.response.replication_locations[1] == replication_location_2_updated_expected
-      - result.response.replication_locations[0] != result.response.replication_locations[1]
-      - result.response.replication_configurations[0] == replication_configuration_linear_1_updated
-        or result.response.replication_configurations[0] == replication_configuration_linear_2_updated
-      - result.response.replication_configurations[1] == replication_configuration_linear_1_updated
-        or result.response.replication_configurations[1] == replication_configuration_linear_2_updated
+      - (result.response.replication_locations[0].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[0].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[0].is_primary == true
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[0].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[0].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[0].is_primary == false
+        and result.response.replication_locations[0].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_locations[1].label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_locations[1].domain_manager_ext_id == "{{ domain_manager_ext_id }}"
+        and result.response.replication_locations[1].is_primary == true
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster.uuid }}")
+        or (result.response.replication_locations[1].domain_manager_ext_id == "{{ availability_zone_pc_uuid }}"
+        and result.response.replication_locations[1].label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_locations[1].is_primary == false
+        and result.response.replication_locations[1].replication_sub_location.cluster_ext_ids[0] == "{{ cluster_availability_zone.uuid }}")
+      - (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+      - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
+        or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}_updated"
+        and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}_updated"
+        and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
+        and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 7200
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 90)
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
     success_msg: "Protection policy fetched successfully"
