@@ -1,14 +1,6 @@
 ---
-# Description: This file uses variables from ../../vars/main.yml to create/update protection policies
-# instead of setting attributes values directly in tasks
-# we have declared them as nested attributes in ../../vars.yml so that we can reuse it at multiple places directly.
-# for example, an attribute in further test tasks is set to replication_location_1 ... replication_location_2 ...
-# and it contains whole spec (label, domain_manager_ext_id, is_primary, replication_sub_location)
-# and so on for other variables
-
 # Pre-requisites:
-# 1. Variables in vars/main.yml are defined and set correctly
-# 2. These variables from prepare_env/vars/main.yml are defined and set correctly:
+# These variables from prepare_env/vars/main.yml are defined and set correctly:
 #   - pe_ssh_password: "password"
 #   - pe_ssh_username: "nutanix"
 #   - ip_pe: "10.0.0.1"
@@ -464,30 +456,6 @@
 
 ########################################################################################
 
-# replication_configuration_linear_1:
-#   source_location_label: "ansible-label-{{label1}}"
-#   remote_location_label: "ansible-label-{{label2}}"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 3600
-#     retention:
-#       local: 1
-#       remote: 1
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 300
-
-# replication_configuration_linear_2:
-#   source_location_label: "ansible-label-{{label2}}"
-#   remote_location_label: "ansible-label-{{label1}}"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 3600
-#     retention:
-#       local: 1
-#       remote: 1
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 300
-
 - name: Create linear retention protection policy
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-linear-{{random_name}}"
@@ -597,38 +565,6 @@
     todelete: "{{ todelete + [result.response.ext_id] }}"
 
 ########################################################################################
-
-# replication_configuration_auto_1:
-#   source_location_label: "ansible-label-{{label1}}"
-#   remote_location_label: "ansible-label-{{label2}}"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 60
-#     retention:
-#       local:
-#         snapshot_interval_type: "DAILY"
-#         frequency: 1
-#       remote:
-#         snapshot_interval_type: "DAILY"
-#         frequency: 1
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 300
-
-# replication_configuration_auto_2:
-#   source_location_label: "ansible-label-{{label2}}"
-#   remote_location_label: "ansible-label-{{label1}}"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 60
-#     retention:
-#       local:
-#         snapshot_interval_type: "DAILY"
-#         frequency: 1
-#       remote:
-#         snapshot_interval_type: "DAILY"
-#         frequency: 1
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 300
 
 - name: Create auto retention protection policy
   nutanix.ncp.ntnx_protection_policies_v2:
@@ -756,26 +692,6 @@
 
 ########################################################################################
 
-# replication_configuration_sync_1:
-#   source_location_label: "ansible-label-{{label1}}"
-#   remote_location_label: "ansible-label-{{label2}}"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     retention: null
-#     recovery_point_objective_time_seconds: 0
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 10
-
-# replication_configuration_sync_2:
-#   source_location_label: "ansible-label-{{label2}}"
-#   remote_location_label: "ansible-label-{{label1}}"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     retention: null
-#     recovery_point_objective_time_seconds: 0
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 10
-
 - name: Create Synchronous replication protection policy for VM using category3
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-sync-vm-{{random_name}}"
@@ -812,12 +728,6 @@
       - "{{category_ext_id_3}}"
   register: result
   ignore_errors: true
-
-- ansible.builtin.debug:
-    var: result.response.replication_locations[0]
-
-- ansible.builtin.debug:
-    var: replication_location_1_local_clusters_expected
 
 - name: Status for creating Synchronous replication protection policy for VM using category3
   ansible.builtin.assert:
@@ -875,26 +785,6 @@
     todelete: "{{ todelete + [result.response.ext_id] }}"
 
 ########################################################################################
-
-# replication_configuration_sync_local_clusters_1:
-#   source_location_label: "ansible-label-local-clusters-{{label1}}"
-#   remote_location_label: "ansible-label-local-clusters-{{label2}}"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     retention: null
-#     recovery_point_objective_time_seconds: 0
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 10
-
-# replication_configuration_sync_local_clusters_2:
-#   source_location_label: "ansible-label-local-clusters-{{label2}}"
-#   remote_location_label: "ansible-label-local-clusters-{{label1}}"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     retention: null
-#     recovery_point_objective_time_seconds: 0
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 10
 
 - name: Create Synchronous replication protection policy for VG using category4
   nutanix.ncp.ntnx_protection_policies_v2:
@@ -1326,30 +1216,6 @@
   ansible.builtin.pause:
     seconds: 300
 
-# replication_configuration_linear_1_updated_check_mode:
-#   source_location_label: "ansible-label-{{label1}}_updated"
-#   remote_location_label: "ansible-label-{{label2}}_updated"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 7200
-#     retention:
-#       local: 2
-#       remote: 2
-#     start_time: "14h:26m"
-#     sync_replication_auto_suspend_timeout_seconds: 90
-
-# replication_configuration_linear_2_updated_check_mode:
-#   source_location_label: "ansible-label-{{label2}}_updated"
-#   remote_location_label: "ansible-label-{{label1}}_updated"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 7200
-#     retention:
-#       local: 2
-#       remote: 2
-#     start_time: "14h:26m"
-#     sync_replication_auto_suspend_timeout_seconds: 90
-
 - name: Generate spec for updating linear retention protection policy using check mode
   nutanix.ncp.ntnx_protection_policies_v2:
     ext_id: "{{ todelete[0] }}"
@@ -1450,31 +1316,6 @@
     fail_msg: "Protection policy spec generation failed"
 
 ########################################################################################
-
-# replication_configuration_linear_1_updated:
-#   source_location_label: "ansible-label-{{label1}}_updated"
-#   remote_location_label: "ansible-label-{{label2}}_updated"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 7200
-#     retention:
-#       local: 2
-#       remote: 2
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 90
-
-
-# replication_configuration_linear_2_updated:
-#   source_location_label: "ansible-label-{{label2}}_updated"
-#   remote_location_label: "ansible-label-{{label1}}_updated"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 7200
-#     retention:
-#       local: 2
-#       remote: 2
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 90
 
 - name: Update linear retention protection policy name, description, labels, and schedule
   nutanix.ncp.ntnx_protection_policies_v2:
@@ -1630,38 +1471,6 @@
     fail_msg: "Update Protection Policy to test idempotency failed"
 
 ########################################################################################
-
-# replication_configuration_auto_1_updated:
-#   source_location_label: "ansible-label-{{label1}}_updated"
-#   remote_location_label: "ansible-label-{{label2}}_updated"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 3600
-#     retention:
-#       local:
-#         snapshot_interval_type: "DAILY"
-#         frequency: 2
-#       remote:
-#         snapshot_interval_type: "DAILY"
-#         frequency: 2
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 90
-
-# replication_configuration_auto_2_updated:
-#   source_location_label: "ansible-label-{{label2}}_updated"
-#   remote_location_label: "ansible-label-{{label1}}_updated"
-#   schedule:
-#     recovery_point_type: "CRASH_CONSISTENT"
-#     recovery_point_objective_time_seconds: 3600
-#     retention:
-#       local:
-#         snapshot_interval_type: "DAILY"
-#         frequency: 2
-#       remote:
-#         snapshot_interval_type: "DAILY"
-#         frequency: 2
-#     start_time:
-#     sync_replication_auto_suspend_timeout_seconds: 90
 
 - name: Update auto retention protection policy
   nutanix.ncp.ntnx_protection_policies_v2:
