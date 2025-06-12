@@ -109,215 +109,215 @@
   ansible.builtin.set_fact:
     domain_manager_ext_id: "{{ result.response[0].ext_id }}"
 
-# - name: Discover unconfigured node
-#   nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
-#     address_type: "IPV4"
-#     ip_filter_list:
-#       - ipv4:
-#           value: "{{ clusters[0].nodes[0].cvm_ip }}"
-#   register: result
-#   ignore_errors: true
+- name: Discover unconfigured node
+  nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
+    address_type: "IPV4"
+    ip_filter_list:
+      - ipv4:
+          value: "{{ clusters[0].nodes[0].cvm_ip }}"
+  register: result
+  ignore_errors: true
 
-# - name: Discover unconfigured node status
-#   ansible.builtin.assert:
-#     that:
-#       - result.changed == false
-#       - result.failed == false
-#       - result.cluster_ext_id is defined
-#       - result.task_ext_id is defined
-#       - result.response.ext_id is defined
-#       - result.response.response.node_list[0].cvm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
-#     fail_msg: Discover unconfigured node failed
-#     success_msg: Discover unconfigured node passed
+- name: Discover unconfigured node status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.cluster_ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.ext_id is defined
+      - result.response.response.node_list[0].cvm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+    fail_msg: Discover unconfigured node failed
+    success_msg: Discover unconfigured node passed
 
-# - name: Run cluster create prechecks
-#   nutanix.ncp.ntnx_clusters_v2:
-#     name: "{{ clusters[0].name }}"
-#     nodes:
-#       node_list:
-#         - controller_vm_ip:
-#             ipv4:
-#               value: "{{ clusters[0].nodes[0].cvm_ip }}"
-#     config:
-#       cluster_function: "{{ clusters[0].config.cluster_functions }}"
-#       redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
-#       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
-#       fault_tolerance_state:
-#         domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-#     network:
-#       external_address:
-#         ipv4:
-#           value: "{{ clusters[0].network.virtual_ip }}"
-#     dryrun: true
-#     timeout: 1800
-#   register: result
-#   ignore_errors: true
+- name: Run cluster create prechecks
+  nutanix.ncp.ntnx_clusters_v2:
+    name: "{{ clusters[0].name }}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+    network:
+      external_address:
+        ipv4:
+          value: "{{ clusters[0].network.virtual_ip }}"
+    dryrun: true
+    timeout: 1800
+  register: result
+  ignore_errors: true
 
-# - name: Verify cluster create prechecks run
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == false
-#       - result.task_ext_id is defined
-#       - result.response.status == "SUCCEEDED"
-#     fail_msg: Cluster create prechecks failed
-#     success_msg: Cluster create prechecks passed
+- name: Verify cluster create prechecks run
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create prechecks failed
+    success_msg: Cluster create prechecks passed
 
-# - name: Create cluster name
-#   ansible.builtin.set_fact:
-#     cluster_name: "{{random_name}}_{{ prefix_name }}_{{ clusters[0].name }}"
+- name: Create cluster name
+  ansible.builtin.set_fact:
+    cluster_name: "{{random_name}}_{{ prefix_name }}_{{ clusters[0].name }}"
 
-# - name: Check if cluster is unconfigured or not
-#   ansible.builtin.command: "{{ cluster_status_command }}"
-#   register: result
-#   ignore_errors: true
-#   changed_when: result.rc != 0
+- name: Check if cluster is unconfigured or not
+  ansible.builtin.command: "{{ cluster_status_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
 
-# - name: Assert that cluster is unconfigured
-#   ansible.builtin.assert:
-#     that:
-#       - result.rc == 1
-#       - result.stderr.find('Cluster is currently unconfigured') != -1
-#     fail_msg: Cannot create cluster, cluster is already created
-#     success_msg: Cluster is unconfigured
+- name: Assert that cluster is unconfigured
+  ansible.builtin.assert:
+    that:
+      - result.rc == 1
+      - result.stderr.find('Cluster is currently unconfigured') != -1
+    fail_msg: Cannot create cluster, cluster is already created
+    success_msg: Cluster is unconfigured
 
-# - name: Create cluster with minimum spec
-#   nutanix.ncp.ntnx_clusters_v2:
-#     name: "{{cluster_name}}"
-#     nodes:
-#       node_list:
-#         - controller_vm_ip:
-#             ipv4:
-#               value: "{{ clusters[0].nodes[0].cvm_ip }}"
-#     config:
-#       cluster_function: "{{ clusters[0].config.cluster_functions }}"
-#       redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
-#       cluster_arch: "{{ clusters[0].config.cluster_arch }}"
-#       fault_tolerance_state:
-#         domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-#     network:
-#       external_address:
-#         ipv4:
-#           value: "{{ clusters[0].network.virtual_ip }}"
-#     timeout: 1800
-#   register: result
-#   ignore_errors: true
+- name: Create cluster with minimum spec
+  nutanix.ncp.ntnx_clusters_v2:
+    name: "{{cluster_name}}"
+    nodes:
+      node_list:
+        - controller_vm_ip:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+    config:
+      cluster_function: "{{ clusters[0].config.cluster_functions }}"
+      redundancy_factor: "{{ clusters[0].config.redundancy_factor_cluster_crud }}"
+      cluster_arch: "{{ clusters[0].config.cluster_arch }}"
+      fault_tolerance_state:
+        domain_awareness_level: "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+    network:
+      external_address:
+        ipv4:
+          value: "{{ clusters[0].network.virtual_ip }}"
+    timeout: 1800
+  register: result
+  ignore_errors: true
 
-# - name: Verify cluster create task status
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == true
-#       - result.task_ext_id is defined
-#       - result.response.status == "SUCCEEDED"
-#     fail_msg: Cluster create failed
-#     success_msg: Cluster create passed
+- name: Verify cluster create task status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Cluster create failed
+    success_msg: Cluster create passed
 
-# - name: Reset username and password
-#   ansible.builtin.command: "{{ reset_command }}"
-#   register: result
-#   ignore_errors: true
-#   changed_when: result.rc != 0
-#   no_log: true
+- name: Reset username and password
+  ansible.builtin.command: "{{ reset_command }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
+  no_log: true
 
-# - name: Run PE PC registration
-#   nutanix.ncp.ntnx_pc_registration_v2:
-#     ext_id: "{{ domain_manager_ext_id }}"
-#     remote_cluster:
-#       aos_remote_cluster:
-#         remote_cluster:
-#           address:
-#             ipv4:
-#               value: "{{ clusters[0].nodes[0].cvm_ip }}"
-#           credentials:
-#             authentication:
-#               username: "{{ username }}"
-#               password: "{{ password }}"
-#   register: result
-#   ignore_errors: true
+- name: Run PE PC registration
+  nutanix.ncp.ntnx_pc_registration_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "{{ clusters[0].nodes[0].cvm_ip }}"
+          credentials:
+            authentication:
+              username: "{{ username }}"
+              password: "{{ password }}"
+  register: result
+  ignore_errors: true
 
-# - name: Verify PE PC registration
-#   ansible.builtin.assert:
-#     that:
-#       - result.changed == true
-#       - result.ext_id is defined
-#       - result.ext_id == domain_manager_ext_id
-#       - result.response.status == 'SUCCEEDED'
-#       - result.task_ext_id is defined
-#     fail_msg: "PE PC registration failed"
-#     success_msg: "PE PC registration passed"
+- name: Verify PE PC registration
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.ext_id is defined
+      - result.ext_id == domain_manager_ext_id
+      - result.response.status == 'SUCCEEDED'
+      - result.task_ext_id is defined
+    fail_msg: "PE PC registration failed"
+    success_msg: "PE PC registration passed"
 
-# - name: Sleep for 1 minute
-#   ansible.builtin.pause:
-#     seconds: 60
+- name: Sleep for 1 minute
+  ansible.builtin.pause:
+    seconds: 60
 
-# - name: Fetch cluster using name
-#   nutanix.ncp.ntnx_clusters_info_v2:
-#     filter: name eq '{{ cluster_name }}'
-#   register: result
-#   ignore_errors: true
+- name: Fetch cluster using name
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: name eq '{{ cluster_name }}'
+  register: result
+  ignore_errors: true
 
-# - name: Verify listing
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.response | length > 0
-#     fail_msg: Failed verifying PE PC registration
-#     success_msg: PE PC registration passed successfully
+- name: Verify listing
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response | length > 0
+    fail_msg: Failed verifying PE PC registration
+    success_msg: PE PC registration passed successfully
 
 - name: Set cluster external ID
   ansible.builtin.set_fact:
-    cluster_ext_id: "0006374b-20f7-0f07-0c16-293d5208f770"
+    cluster_ext_id: "{{ result.response[0].ext_id }}"
 
-# - name: Fetch cluster info using external ID
-#   nutanix.ncp.ntnx_clusters_info_v2:
-#     ext_id: "{{ cluster_ext_id }}"
-#   register: result
-#   ignore_errors: true
+- name: Fetch cluster info using external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
 
-# - name: Verify created cluster's details using cluster info
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.ext_id == cluster_ext_id
-#       - result.response.name == "{{ cluster_name }}"
-#       - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
-#       - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
-#       - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
-#       - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
-#       - >
-#         result.response.config.fault_tolerance_state.domain_awareness_level ==
-#         "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
-#     fail_msg: Failed verifying cluster creation
-#     success_msg: Cluster creation passed successfully
+- name: Verify created cluster's details using cluster info
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id == cluster_ext_id
+      - result.response.name == "{{ cluster_name }}"
+      - result.response.nodes.node_list[0].controller_vm_ip.ipv4.value == "{{ clusters[0].nodes[0].cvm_ip }}"
+      - '"{{ clusters[0].config.cluster_functions[0] }}" in "{{result.response.config.cluster_function}}"'
+      - result.response.config.redundancy_factor == clusters[0].config.redundancy_factor_cluster_crud
+      - result.response.config.cluster_arch == "{{ clusters[0].config.cluster_arch }}"
+      - >
+        result.response.config.fault_tolerance_state.domain_awareness_level ==
+        "{{ clusters[0].config.fault_tolerance_state.domain_awareness_level_cluster_crud }}"
+    fail_msg: Failed verifying cluster creation
+    success_msg: Cluster creation passed successfully
 
-# - name: Modify firewall rules for cluster 1
-#   ansible.builtin.command: "{{ modify_firewall_command_cluster1 }}"
-#   register: result
-#   ignore_errors: true
-#   changed_when: result.rc != 0
+- name: Modify firewall rules for cluster 1
+  ansible.builtin.command: "{{ modify_firewall_command_cluster1 }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
 
-# - name: Assert that firewall rules are modified for cluster 1
-#   ansible.builtin.assert:
-#     that:
-#       - result.rc == 0
-#       - result.stderr.find('Firewall config updated') != -1
-#     fail_msg: Cannot modify firewall rules for cluster 1
-#     success_msg: Firewall rules modified for cluster 1
+- name: Assert that firewall rules are modified for cluster 1
+  ansible.builtin.assert:
+    that:
+      - result.rc == 0
+      - result.stderr.find('Firewall config updated') != -1
+    fail_msg: Cannot modify firewall rules for cluster 1
+    success_msg: Firewall rules modified for cluster 1
 
-# - name: Modify firewall rules for cluster 2
-#   ansible.builtin.command: "{{ modify_firewall_command_cluster2 }}"
-#   register: result
-#   ignore_errors: true
-#   changed_when: result.rc != 0
+- name: Modify firewall rules for cluster 2
+  ansible.builtin.command: "{{ modify_firewall_command_cluster2 }}"
+  register: result
+  ignore_errors: true
+  changed_when: result.rc != 0
 
-# - name: Assert that firewall rules are modified for cluster 2
-#   ansible.builtin.assert:
-#     that:
-#       - result.rc == 0
-#       - result.stderr.find('Firewall config updated') != -1
-#     fail_msg: Cannot modify firewall rules for cluster 2
-#     success_msg: Firewall rules modified for cluster 2
+- name: Assert that firewall rules are modified for cluster 2
+  ansible.builtin.assert:
+    that:
+      - result.rc == 0
+      - result.stderr.find('Firewall config updated') != -1
+    fail_msg: Cannot modify firewall rules for cluster 2
+    success_msg: Firewall rules modified for cluster 2
 
 ########################################################################################
 
