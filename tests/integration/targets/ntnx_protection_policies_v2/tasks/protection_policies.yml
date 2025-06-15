@@ -1947,9 +1947,9 @@
 ########################################################################################
 # Destroy cluster
 
-- name: Sleep for 5 minutes before destroying the cluster
+- name: Sleep for 10 minutes before destroying the cluster
   ansible.builtin.pause:
-    seconds: 300
+    seconds: 600
 
 - name: Destroy the cluster for cleanup
   nutanix.ncp.ntnx_clusters_v2:
