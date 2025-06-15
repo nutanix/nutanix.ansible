@@ -1,4 +1,10 @@
 ---
+# Variables required before running this playbook:
+# - cluster
+# - iso_image
+# - storage_container
+# - static
+
 - name: Start ntnx_vms_v2 tests for UEFI Boot
   ansible.builtin.debug:
     msg: Start ntnx_vms_v2 tests for UEFI Boot

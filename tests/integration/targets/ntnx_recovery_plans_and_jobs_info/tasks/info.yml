@@ -1,3 +1,9 @@
+---
+# Variables required before running this playbook:
+# - dr
+# - network
+# - recovery_site_ip
+
 - name: Start testing ntnx_recovery_plans_info
   ansible.builtin.debug:
     msg: Start testing ntnx_recovery_plans_info

@@ -1,4 +1,8 @@
 ---
+# Variables required before running this playbook:
+# - distinguished_name
+# - project
+
 - name: Start ntnx_user_groups and info tests
   ansible.builtin.debug:
     msg: Start ntnx_user_groups and info tests

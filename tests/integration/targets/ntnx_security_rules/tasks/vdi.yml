@@ -1,3 +1,4 @@
+---
 - name: Create ad security rule with inbound and outbound list
   ntnx_security_rules:
     name: VDI Policy

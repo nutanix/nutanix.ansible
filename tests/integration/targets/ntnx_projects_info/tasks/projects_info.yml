@@ -1,3 +1,9 @@
+---
+# Variables required before running this playbook:
+# - role_mappings
+# - users
+# - todelete
+
 - name: Start ntnx_project_info tests
   ansible.builtin.debug:
     msg: "Start ntnx_project_info tests"
