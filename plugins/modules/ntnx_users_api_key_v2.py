@@ -132,7 +132,7 @@ response:
             "expiry_time": "2025-04-18T05:36:16.126000+00:00",
             "ext_id": "64008b39-fba5-5aa6-94ca-75c21ce7ced5",
             "key_details": {
-                "api_key": "7f1c9a32e4b14e3fa2bd91a6d7c38c45"
+                "api_key": "<api_key_value>"
             },
             "key_type": "API_KEY",
             "last_updated_by": "00000000-0000-0000-0000-000000000000",
