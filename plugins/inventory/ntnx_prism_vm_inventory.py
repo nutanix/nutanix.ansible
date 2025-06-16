@@ -179,7 +179,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         # Incorporate ntnx_categories if available.
         if "metadata" in entity and "categories" in entity["metadata"]:
             host_vars["ntnx_categories"] = entity["metadata"]["categories"]
-            
+        # Incorporate description if available.
         if "metadata" in entity and "description" in entity["spec"]:
             host_vars["description"] = entity["spec"]["description"]
             
