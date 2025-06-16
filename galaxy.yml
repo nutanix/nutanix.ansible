@@ -1,6 +1,6 @@
 namespace: "nutanix"
 name: "ncp"
-version: "2.1.1"
+version: "2.2.1"
 readme: "README.md"
 authors:
   - "Abhishek Chaudhary (@abhimutant)"
