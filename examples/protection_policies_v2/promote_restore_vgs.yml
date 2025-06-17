@@ -184,7 +184,7 @@
         cluster_reference: "{{ cluster.uuid }}"
       register: result
 
-    - name: Set VG UUID
+    - name: Set VG1 UUID
       ansible.builtin.set_fact:
         vg1_uuid: "{{ result.ext_id }}"
 
@@ -195,7 +195,7 @@
         cluster_reference: "{{ cluster.uuid }}"
       register: result
 
-    - name: Set VG UUID
+    - name: Set VG2 UUID
       ansible.builtin.set_fact:
         vg2_uuid: "{{ result.ext_id }}"
 
