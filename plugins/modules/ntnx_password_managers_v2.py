@@ -11,7 +11,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_password_managers_v2
 short_description: Update password of system user in Nutanix Clusters
-version_added: 2.2.1
+version_added: 2.3.0
 description:
     - This module allows you to update the password of a system user in Nutanix Clusters.
     - It uses the Nutanix Clusters Management API to change the password of a specified system user.

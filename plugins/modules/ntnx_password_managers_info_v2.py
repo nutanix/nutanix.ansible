@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_password_managers_info_v2
 short_description: Lists password status of system user accounts.
-version_added: 2.2.1
+version_added: 2.3.0
 description:
     - This module retrieves the password status of system user accounts in Nutanix Clusters.
     - It uses the Nutanix Clusters Management API to fetch the password status of system users.
