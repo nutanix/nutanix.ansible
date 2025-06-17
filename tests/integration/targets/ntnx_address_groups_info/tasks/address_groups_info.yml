@@ -1,3 +1,4 @@
+---
 - name: Start testing ntnx_address_groups_info
   ansible.builtin.debug:
     msg: Start testing ntnx_address_groups_info

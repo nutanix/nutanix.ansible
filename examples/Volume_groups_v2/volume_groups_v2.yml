@@ -48,7 +48,7 @@
 
     - name: Fetch all VGs using filters
       nutanix.ncp.ntnx_volume_groups_info_v2:
-        filter: "startswith(name, '{{name}}')"
+        filter: "startswith(name, '{{ name }}')"
       register: result
       ignore_errors: true
 

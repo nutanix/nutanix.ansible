@@ -130,13 +130,13 @@
       register: result
       ignore_errors: true
 
-    - name: List all directory services with filter
+    - name: List all directory services with filter using active directory name
       nutanix.ncp.ntnx_directory_services_info_v2:
         filter: name eq '{{ active_directory.name }}'
       register: result
       ignore_errors: true
 
-    - name: List all directory services with filter
+    - name: List all directory services with filter using open ldap name
       nutanix.ncp.ntnx_directory_services_info_v2:
         filter: name eq '{{ open_ldap.name }}'
       register: result

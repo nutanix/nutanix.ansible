@@ -45,7 +45,7 @@
             is_enabled: true
         disk_data_source_reference:
           entity_type: "VOLUME_DISK"
-          ext_id: "{{disk1_uuid}}"
+          ext_id: "{{ disk1_uuid }}"
       register: result
       ignore_errors: true
 

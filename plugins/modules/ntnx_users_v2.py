@@ -40,7 +40,7 @@ options:
             - Type of the User.
         required: false
         type: str
-        choices: ['LOCAL', 'SAML', 'LDAP', 'EXTERNAL']
+        choices: ['LOCAL', 'SAML', 'LDAP', 'EXTERNAL', 'SERVICE_ACCOUNT']
     display_name:
         description:
             - Display name for the User.
@@ -123,6 +123,17 @@ options:
         type: bool
         required: false
         default: true
+    description:
+        description:
+            - Description of the User.
+        required: false
+        type: str
+    creation_type:
+        description:
+            - The creation mechanism of this entity.
+        required: false
+        type: str
+        choices: ['PREDEFINED', 'SERVICEDEFINED', 'USERDEFINED']
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -130,6 +141,7 @@ author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
  - George Ghawali (@george-ghawali)
+ - Abhinav Bansal (@abhinavbansal29)
 """
 
 
@@ -179,6 +191,29 @@ EXAMPLES = r"""
     user_type: LDAP
     username: "user_test"
     idp_id: "40fe7aeb-f420-5aee-ba42-cfc2369bc1ec"
+
+- name: Create Service Account
+  nutanix.ncp.ntnx_users_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    user_type: SERVICE_ACCOUNT
+    username: "service_acc_1"
+    email_id: "service_acc_1@email.com"
+    description: "description_1"
+  register: result
+
+- name: Update Service Account
+  nutanix.ncp.ntnx_users_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "87892065-1d1b-5d66-ab17-a26038488b17"
+    email_id: "service_acc_1_updated@email.com"
+    description: "description_1_updated"
+  register: result
 """
 
 RETURN = r"""
@@ -286,7 +321,9 @@ def get_module_spec():
         state=dict(type="str", choices=["present"], default="present"),
         ext_id=dict(type="str"),
         username=dict(type="str"),
-        user_type=dict(type="str", choices=["LOCAL", "SAML", "LDAP", "EXTERNAL"]),
+        user_type=dict(
+            type="str", choices=["LOCAL", "SAML", "LDAP", "EXTERNAL", "SERVICE_ACCOUNT"]
+        ),
         display_name=dict(type="str"),
         first_name=dict(type="str"),
         middle_initial=dict(type="str"),
@@ -301,6 +338,10 @@ def get_module_spec():
             type="list", elements="dict", options=kvp_spec, obj=iam_sdk.KVPair
         ),
         status=dict(type="str", choices=["ACTIVE", "INACTIVE"]),
+        description=dict(type="str"),
+        creation_type=dict(
+            type="str", choices=["PREDEFINED", "SERVICEDEFINED", "USERDEFINED"]
+        ),
     )
     return module_args
 

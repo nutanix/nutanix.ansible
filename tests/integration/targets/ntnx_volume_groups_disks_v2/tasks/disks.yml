@@ -1,3 +1,8 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - storage_container
+
 - name: "Start Volume groups disks tests"
   ansible.builtin.debug:
     msg: "Start Volume groups disks tests"
