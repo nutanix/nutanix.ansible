@@ -25,7 +25,7 @@
         timezone: UTC
       register: output
 
-    - name: Print output
+    - name: Print output for check mode
       ansible.builtin.debug:
         msg: "{{ output }}"
 
