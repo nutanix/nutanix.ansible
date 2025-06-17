@@ -178,7 +178,7 @@
           - ext_id: "{{ category_ext_id_2 }}"
       register: result
 
-    - name: Set VM external ID
+    - name: Set VM1 external ID
       ansible.builtin.set_fact:
         vm_ext_id_1: "{{ result.response.ext_id }}"
 
@@ -192,7 +192,7 @@
           - ext_id: "{{ category_ext_id_1 }}"
       register: result
 
-    - name: Set VM external ID
+    - name: Set VM2 external ID
       ansible.builtin.set_fact:
         vm_ext_id_2: "{{ result.response.ext_id }}"
 
