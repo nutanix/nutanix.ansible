@@ -11,7 +11,7 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_password_managers_info_v2
-short_description: Lists password status of system user accounts on supported products (PC or AOS).
+short_description: Lists password status of system user accounts.
 version_added: 2.2.1
 description:
     - This module retrieves the password status of system user accounts in Nutanix Clusters.
@@ -119,7 +119,7 @@ response:
 error:
     description: The error message if an error occurs.
     type: str
-    returned: when an error occurs
+    returned: always
 changed:
     description: Indicates whether the module made any changes.
     type: bool
@@ -149,6 +149,7 @@ def get_password_status_system_users(module, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(module.params)
     if err:
+        result["error"] = err
         module.fail_json(
             "Failed creating query parameters for password status of system user info"
         )
@@ -159,7 +160,7 @@ def get_password_status_system_users(module, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching password status of system user info",
+            msg="Api Exception raised while fetching password status of system users info",
         )
 
     if getattr(resp, "data", None):

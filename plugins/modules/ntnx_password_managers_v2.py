@@ -45,13 +45,12 @@ EXAMPLES = r"""
     ext_id: "0a1b2c3d-4e5f-6789-abcd-ef0123456789"
     current_password: "Random.password123"
     new_password: "NewPassword.456"
-    state: present
   register: update_password
 """
 
 RETURN = r"""
 response:
-    description: The response from the API after updating the password.
+    description: The response of task that was created to update the password.
     returned: always
     type: dict
     sample: {
@@ -99,7 +98,7 @@ response:
             "sub_tasks": [
                 {
                     "ext_id": "ZXJnb24=:4325f855-9be9-4c68-42ff-e4c897151f11",
-                    "href": "https://10.96.29.97:9440/api/prism/v4.0/config/tasks/ZXJnb24=:4325f855-9be9-4c68-42ff-e4c897151f11",
+                    "href": "https://10.0.0.1:9440/api/prism/v4.0/config/tasks/ZXJnb24=:4325f855-9be9-4c68-42ff-e4c897151f11",
                     "rel": "subtask"
                 }
             ],
@@ -121,11 +120,11 @@ changed:
     type: bool
     sample: true
 error:
-    description: This field typically holds information about if the task have errors that occurred during the task execution
-    returned: When an error occurs
+    description: This field typically holds information about if the task has errors that occurred during the task execution
+    returned: always
     type: str
 failed:
-    description: This field typically holds information about if the task have failed
+    description: This field typically holds information about if the task has failed
     returned: always
     type: bool
     sample: false
