@@ -197,7 +197,7 @@
         vm_ext_id_2: "{{ result.response.ext_id }}"
 
     # Wait for the first VM to be protected
-    - name: Fetch VM using ext_id
+    - name: Fetch first VM using ext_id
       nutanix.ncp.ntnx_vms_info_v2:
         ext_id: "{{ vm_ext_id_1 }}"
       register: result
@@ -206,7 +206,7 @@
       delay: 10
 
     # Wait for the second VM to be protected
-    - name: Fetch VM using ext_id
+    - name: Fetch second VM using ext_id
       nutanix.ncp.ntnx_vms_info_v2:
         ext_id: "{{ vm_ext_id_2 }}"
       register: result
@@ -246,11 +246,11 @@
       nutanix.ncp.ntnx_vms_info_v2:
       register: result
 
-    - name: Filter only protected VMs
+    - name: Filter only protected VMs on local cluster
       ansible.builtin.set_fact:
         protected_vms: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vm') | list }}"
 
-    - name: Extract external ids of protected VMs
+    - name: Extract external ids of protected VMs from local cluster
       ansible.builtin.set_fact:
         protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
 
@@ -266,11 +266,11 @@
         nutanix_host: "{{ availability_zone_pc_ip }}"
       register: result
 
-    - name: Filter only protected VMs
+    - name: Filter only protected VMs on remote cluster
       ansible.builtin.set_fact:
         protected_vms: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vm') | list }}"
 
-    - name: Extract external ids of protected VMs
+    - name: Extract external ids of protected VMs from remote cluster
       ansible.builtin.set_fact:
         protected_vms_ext_ids: "{{ protected_vms | map(attribute='ext_id') | list }}"
 
