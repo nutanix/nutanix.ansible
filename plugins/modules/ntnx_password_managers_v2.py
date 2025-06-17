@@ -26,13 +26,11 @@ options:
         description:
             - Current password of the system user.
         type: str
-        no_log: true
         required: false
     new_password:
         description:
             - New password to be set for the system user.
         type: str
-        no_log: true
         required: true
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
