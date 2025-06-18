@@ -1,4 +1,12 @@
 ---
+# Variables required before running this playbook:
+# - users
+# - new_user
+# - new_saml_user
+# - directory_service_uuid
+# - identity_provider_uuid
+# - todelete
+
 - name: Start ntnx_users_v2 tests
   ansible.builtin.debug:
     msg: start ntnx_users_v2 tests

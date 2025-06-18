@@ -1,4 +1,7 @@
 ---
+# Variables required before running this playbook:
+# - availability_zone_pc_uuid
+
 - name: Start Unregister PC-PC connection (removing PC as availbility_zone) tests
   ansible.builtin.debug:
     msg: Start Unregister PC-PC connection (removing PC as availbility_zone) tests

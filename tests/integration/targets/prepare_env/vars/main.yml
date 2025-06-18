@@ -1,145 +1,241 @@
-ip: 10.44.76.58
-username: admin
-password: Nutanix.123
-validate_certs: false
-
-# # for NKE related tests
-# k8s_version: TEST_K8S_VERSION
-# host_os: TEST_HOST_OS
-# nutanix_cluster_password: TEST_CLUSTER_PASSWORD
-# nutanix_cluster_username: TEST_CLUSTER_USERNAME
-# cni:
-#   node_cidr_mask_size: "TEST_MASK_CIDR"
-#   service_ipv4_cidr: "TEST_SERVICE_CIDR"
-#   pod_ipv4_cidr: "TEST_POD_CIDR"
-
-# # docker registry url for nke tests
-# url: TEST_REGISTRIES_URL
-
-# cluster reference for several tests
-cluster:
-  name: auto_cluster_prod_364c79c90e0c
-  uuid: 000636a4-e7ce-389e-185b-ac1f6b6f97e2
-
-# # For tests like vms, etc.
-# network:
-#   dhcp:
-#     name: TEST_VLAN_NAME
-#     uuid: TEST_VLAN_UUID
-#   static:
-#     ip: TEST_STATIC_IP
-
-# vm_owner:
-#   name: TEST_OWNER_NAME
-#   uuid: TEST_OWNER_UUID
-
-# # can be skipped
-# todelete: []
-
-# # for ntnx_image tests
-# disk_image:
-#   url: TEST_IMAGE_URL
-#   dest: TEST_DEST_PATH
-#   checksum: TEST_CHECKSUM
-#   centos: "TEST_CENTOS"
-
-# # used in test setup for creation of networks and some networking tests
+# nutanix_cluster_username: cluster_username
+# nutanix_cluster_password: cluster_password
+# domain_manager_ssh_username: "domain_manager"
+# domain_manager_ssh_password: "domain_manager_password"
+# pe_ssh_username: "ssh_user"
+# pe_ssh_password: "ssh_password"
+# ip_pe_for_deploying_pc: "10.10.10.10"
+# availability_zone_pc_ip: "10.10.10.11"
+# lcm_entity_model: "Calm Policy Engine"
+# lcm_entity_model_version: "4.1.0"
+# VM_username: root
+# VM_password: VM_password
+# to_delete: []
+# s3_bucket:
+#   bucket: "bucket_name"
+#   region: "us-east-1"
+#   access_key: "access_key"
+#   secret_key: "secret_key"
+# pc:
+#   size: "SMALL"
+#   build_info:
+#     version: "pc.2024.3"
+#   external_networks:
+#     network_ext_id: "9306c8d3-bb00-4b98-b354-ef2dfbd2c7ba"
+#     default_gateway:
+#       ipv4: "10.10.10.1"
+#     subnet_mask:
+#       ipv4: "255.255.240.0"
+#     ip_ranges:
+#       begin:
+#         ipv4: "10.10.10.55"
+#       end:
+#         ipv4: "10.10.10.55"
+#   name_servers:
+#     ipv4: ["10.0.0.1", "10.0.0.2"]
+#   ntp_servers:
+#     fqdn: ["fqdn1.com", "fqdn2.com"]
 # external_nat_subnets:
-#   name: TEST_NAT_NAME
-#   vlan_id: TEST_VLAN_ID
-#   gateway_ip_address: TEST_GATEWAY_IP
-#   network_prefix: TEST_PREFIX
-#   network_ip: TEST_NETWORK_IP
-#   dhcp:
-#     start_address: TEST_START_DHCP
-#     end_address: TEST_END_DHCP
-#   static:
-#     start_address: TEST_START_STATIC
-#     end_address: TEST_END_STATIC
-
-# # Details for creating this resources during test setup and same are used related tests
-# vpc_name: TEST_VPC_NAME
-# vm_name: TEST_VM_NAME
-# static_subnet_name: TEST_STATIC_SUBNET
+#   - name: external_subnet_name
+#     vlan_id: 108
+#     gateway_ip_address: "10.10.3.193"
+#     network_prefix: 27
+#     network_ip: "10.10.3.192"
+#     dhcp:
+#       start_address: "10.10.3.198"
+#       end_address: "10.10.3.207"
+#     static:
+#       start_address: "10.10.3.208"
+#       end_address: "10.10.3.217"
+#     floating_ip: "10.10.3.207"
+# vpc_name: "vpc_name"
+# vm_name: "vm_name"
+# static_subnet_name: "static_subnet_name"
 # overlay_subnet:
-#   name: TEST_OVERLAY_NAME
-#   network_ip: TEST_OVERLAY_NETWORK_IP
-#   network_prefix: TEST_OVERLAY_PREFIX
-#   gateway_ip: TEST_OVERLAY_GATEWAY_IP
-#   private_ip: TEST_OVERLAY_PRIVATE_IP
-
-# # security rule related tests
-# quarantine_rule_uuid: TEST_QUARANTINE_UUID
+#   name: "overlay_subnet_name"
+#   network_ip: "192.168.1.0"
+#   network_prefix: 24
+#   gateway_ip: "192.168.1.1"
+#   private_ip: "192.168.1.13"
+#   private_ip1: "192.168.1.14"
 # categories:
 #   apptiers:
 #     - Default
-#     - sub_app_1
-
-# # name of images in setup for vms test
-# centos: "TEST_CENTOS"
-# ubuntu: "TEST_UBUNTU"
-
-# # virtual switch reference primarily for vms test
-# virtual_switch:
-#   name: TEST_SWITCH_NAME
-#   uuid: TEST_SWITCH_UUID
-
-# # storage reference primarily for vms test
-# storage_container:
-#   name: TEST_CONTAINER_NAME
-#   uuid: TEST_CONTAINER_UUID
-
-# # user and user groups from AD for user and user groups tests
-# users:
-#   - TEST_USER_UUID_1
-#   - TEST_USER_UUID_2
-# user_groups:
-#   - TEST_GROUP_UUID
-
-# # project reference for vms test
+#     - test_apptier
+# centos: "centos_image_name"
+# ubuntu: "ubuntu_image_name"
+# role_mappings:
+#   - "role1"
+#   - "role2"
+#   - "role3"
+#   - "role4"
+# white_listed_groups: ["test", "test_updated"]
+# active_directory:
+#   url: "ldap://10.10.10.10:479"
+#   username: "active_directory_username"
+#   password: "active_directory_password"
+#   domain_name: "domain.example.com"
+# new_user: new_user
+# new_saml_user_group: new_saml_user_group
+# new_saml_user: new_saml_user
+# new_user_group: new_user_group
+# distinguished_name: distinguished_name
+# directory_service_uuid: 1f076d9c-c47f-123d-2485-6992030950d1
+# identity_provider_uuid: 2bfd579d-3652-1542-2147-4a46ab066f48
+# user_groups: f741c8b8-1222-6789-3214-661ae43b3fa5
+# clusters:
+#   - name: "cluster_name"
+#     pe_username: "pe_username"
+#     pe_password: "pe_password"
+#     nodes:
+#       - cvm_ip: "10.10.10.1"
+#       - cvm_ip: "10.10.10.2"
+#       - cvm_ip: "10.10.10.3"
+#       - cvm_ip: "10.10.10.4"
+#     config:
+#       cluster_functions: ["AOS"]
+#       auth_public_keys:
+#         - name: name
+#           key: key
+#       redundancy_factor_cluster_crud: 1
+#       redundancy_factor_cluster_expanding: 2
+#       cluster_arch: "X86_64"
+#       fault_tolerance_state:
+#         domain_awareness_level_cluster_crud: "DISK"
+#         domain_awareness_level_cluster_expanding: "NODE"
+#     network:
+#       virtual_ip: "10.10.10.5"
+#       iscsi_ip: "10.10.11.0"
+#       iscsi_ip1: "10.10.11.1"
+#       dns_servers: ["10.10.12.0", "10.10.12.1"]
+#       ntp_servers: ["fqdn1.com", "fqdn2.com", "fqdn3.com", "fqdn4.com"]
+#       smtp_server:
+#         ip: "10.10.10.9"
+#         port: 25
+#         username: "username"
+#         password: "password"
+#         type: "STARTTLS"
+#         email_address: "email@example.com"
+# owner:
+#   uuid: "00000000-0000-0000-0000-000000000000"
+# gpus:
+#   - gpu_device_mode: "PASSTHROUGH_GRAPHICS"
+#     gpu_device_vendor: "VENDOR"
+#     gpu_device_id: 4896
+# firewall_ports:
+#   - 1234
+#   - 5678
+#   - 9123
+#   - 4567
+#   - 8912
 # project:
-#   name: TEST_PROJECT_NAME
-#   uuid: TEST_PROJECT_UUID
+#   name: "project_name"
+#   uuid: "24393581-1234-1122-7896-ab6f8a8fe72e"
+# users:
+#   - 2b5d6b01-1233-2222-4689-1b0e8d45adb6
+#   - a372f345-9867-9066-6655-992ed2f23ec4
+# cluster:
+#   name: "cluster_name"
+#   uuid: "0006361b-6855-3644-7458-2268f8ffb2bd"
+# ip_pe: "10.10.2.3"
+# virtual_ip_pe: "10.10.2.4"
+# cluster_availability_zone:
+#   name: "cluster_availability_zone_name"
+#   uuid: "0006361b-5874-1222-3333-04b32d80452a"
+# availability_zone_pc_uuid: "17838034-1111-2222-3333-e0c44b868efa"
+# quarantine_rule_uuid: 227fe9af-2222-3333-4444-d35185d842d8
+# ngt_config:
+#   image_uuid: "6b34522d-3333-4444-5555-1388aede0a06"
+#   username: "username"
+#   password: "password"
+# disk_image:
+#   url: disk_image_url
+#   dest: home/user/image
+#   checksum: image_checksum_disk
+#   centos: "image_name_centos"
+#   image_ext_ids:
+#     [b9120f28-1222-3333-4444-47f7d5066e91, 6b34522d-1231-8555-8888-1388aede0a06]
+# iso_image:
+#   url: iso_image_url
+#   checksum: iso_checksum
+#   name: "iso_image_name"
+#   image_ext_ids: [5570e12c-1111-2222-4444-da6f31b6eefc]
+# virtual_switch:
+#   name: "vs0"
+#   uuid: "5b2e4e93-2222-3333-7777-a015d302eec2"
+# storage_container:
+#   name: "storage_container_name"
+#   uuid: "cb3fd049-7896-9632-8555-e4f088711991"
+# xml_content:
+#   url: xml_content_url
+#   dest: "/home/user/"
+# unattendxml:
+#   url: unattendxml_url
+#   dest: "/home/user/"
 
-# # list of roles for advanced projects tests
-# roles:
-#   - "TEST_ROLES_NAME_1"
-#   - "TEST_ROLES_NAME_2"
-#   - "TEST_ROLES_NAME_3"
-#   - "TEST_ROLES_NAME_4"
+# # variables generated from prepare_env.yml
 
-# # account reference for advanced projects related tests
+# # BEGIN ANSIBLE MANAGED BLOCK insertion 0
+# ip: "pc_ip"
+# username: "username"
+# password: "password"
+# recovery_site_ip: "recovery_site_ip"
+# validate_certs: false
+# # END ANSIBLE MANAGED BLOCK insertion 0
+# # BEGIN ANSIBLE MANAGED BLOCK insertion 1
+# external_nat_subnet:
+#   name: "external_nat_subnet"
+#   uuid: "9306c8d3-1111-2222-3333-ef2dfbd2c7ba"
+# # END ANSIBLE MANAGED BLOCK insertion 1
+# # BEGIN ANSIBLE MANAGED BLOCK insertion 2
+# vpc:
+#   name: "vpc_name"
+#   uuid: "a4f3f04f-1222-8544-7896-28b62bcc3e3e"
+# # END ANSIBLE MANAGED BLOCK insertion 2
+# # BEGIN ANSIBLE MANAGED BLOCK insertion 3
+# static:
+#   name: "static_subnet"
+#   uuid: "b0cce620-3654-8522-9876-a91e2c037862"
+#   network_ip: 10.10.10.0
+#   network_prefix: 24
+#   gateway_ip: 10.10.10.254
+# # END ANSIBLE MANAGED BLOCK insertion 3
+# # BEGIN ANSIBLE MANAGED BLOCK insertion 4
+# overlay:
+#   name: "overlay_subnet"
+#   uuid: "6125d91e-4788-4125-6355-27d5e7667b93"
+# # END ANSIBLE MANAGED BLOCK insertion 4
+# # BEGIN ANSIBLE MANAGED BLOCK insertion 5
+# vm:
+#   name: "vm_name"
+#   uuid: "434a7383-3655-1235-7458-22f999e20e7b"
+# # END ANSIBLE MANAGED BLOCK insertion 5
+# network:
+#   dhcp:
+#     name: "dhcp_network"
+#     uuid: "b0cce620-6855-9876-1236-a91e2c037862"
+#   managed:
+#     IPs: ["10.10.10.10", "10.10.10.90"]
+#   static:
+#     ip: "10.10.10.10"
+
+# todelete: []
+# vm_owner:
+#   name: "vm_owner"
+#   uuid: b0cce620-1111-2222-3333-a91e2c037862
+
+# cni:
+#   node_cidr_mask_size: 24
+#   service_ipv4_cidr: "10.10.0.0/16"
+#   pod_ipv4_cidr: "10.20.0.0/16"
 # accounts:
 #   - name: "NTNX_LOCAL_AZ"
-#     uuid: "TEST_ACCOUNT_UUID"
-
-# # user and user groups for projects tests when new users are to be added
-# new_user: "TEST_NEW_USER_EMAIL"
-# new_user_group: "TEST_NEW_USER_GROUP_DN"
-
-# # acp tests related vars
+#     uuid: "7a2a84d2-1234-9876-6788-279c861d187a"
 # acp:
 #   role:
 #     name: "Project Admin"
-#     uuid: TEST_ROLE_UUID
-#   user_uuid: TEST_USER_UUID
-#   user_group_uuid: TEST_GROUP_UUID
+#     uuid: "f2a755e7-0987-42bd-4567-8716437a104f"
+#   user_uuid: "f2a755e7-1111-2222-4444-8716437a104f"
+#   user_group_uuid: "f2a755e7-3333-5555-6666-8716437a104f"
 
-# # auth details for projects, acps, user and user groups related tests
-# distinguished_name: "TEST_DISTINGUISHED_NAME"
-# principal_name: "TEST_PRINCIPAL_NAME"
-# directory_service_uuid: "TEST_DIRECTORY_UUID"
-# identity_provider_uuid: "TEST_IDENTITY_UUID"
-
-# # vm created during test setup for dr tests
-# dr_vm_name: TEST_VM_NAME
-
-# # dr related tests vars
-# dr:
-#   primary_az_url: TEST_PRIMARY_URL
-#   recovery_az_url: TEST_RECOVERY_URL
-#   recovery_site_network: "TEST_RECOVERY_NETWORK"
-#   recovery_ip1: TEST_RECOVERY_IP1
-#   recovery_ip2: TEST_RECOVERY_IP2
-#   gateway_ip: TEST_GATEWAY_IP
-#   prefix: TEST_PREFIX
+# principal_name: "principle_name"

@@ -36,7 +36,7 @@
     - name: Create ubuntu image from local workstation
       nutanix.ncp.ntnx_images:
         state: "present"
-        name: "ubuntu-image-{{suffix}}"
+        name: "ubuntu-image-{{ suffix }}"
         source_path: "{{ image_source }}"
         clusters:
           - name: "{{ cluster_name }}"
