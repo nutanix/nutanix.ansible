@@ -1,10 +1,6 @@
 namespace: "nutanix"
 name: "ncp"
-<<<<<<< HEAD
 version: "2.3.0"
-=======
-version: "2.2.0"
->>>>>>> release/2.2.0
 readme: "README.md"
 authors:
   - "Abhishek Chaudhary (@abhimutant)"
